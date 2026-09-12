@@ -18,9 +18,14 @@ fixation subsystem. Repository spelling is the user-requested `Sai_Rotbots`.
 - [x] Validate 002 locomotion and pickup/transport using physical contact,
   with no dependency on a removed clamp or artificial item attachment.
 - [x] Keep 001 regression and old release paths functional.
-- [ ] Publish source, robot documentation, reproducible assets and verification.
+- [x] Publish source, robot documentation, reproducible assets and verification.
 
 002 carries unsecured objects on a non-slip floor within the existing walls.
 No automatic clamping or guaranteed retention on arbitrary terrain is claimed.
 Hardware calibration, touchscreen firmware and Unity editor verification remain
 the previously documented project limitations, not new scope for this variant.
+
+Published as [v0.2.0-alpha.1](https://github.com/sgyli7/Sai_Rotbots/releases/tag/v0.2.0-alpha.1),
+release commit `29c88f66ff36b0c8df09dba012e739a01308df1d`.
+The anonymously downloaded wheel matches the isolated-install Godot-tested wheel.
+Source CI passed at `325a8fc`, whose file tree matches the release commit.
