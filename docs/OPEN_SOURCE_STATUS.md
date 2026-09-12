@@ -43,6 +43,8 @@ and Raspberry Pi derived assets retain their own notices here.
 - Two nominal camera placements: chassis and wrist. Simulation views have
   recorded frames/FOV assumptions. Package-front coordinates are not measured
   optical centres; lens distortion, focus and hardware calibration are pending.
+  The folded-arm transport pose partially occludes the rendered camera views;
+  working-pose selection and scene coverage still need validation before VLA use.
 - Rear Nextion touch display layout remains in the shell. A visible screen mesh
   does not mean its touch application or hardware driver has been implemented.
 

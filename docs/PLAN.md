@@ -60,7 +60,7 @@ Start with 64 parallel worlds and a short smoke run. Baseline throughput and phy
   rendering without changing contact meshes, inertias or joints.
 - Unity draft PR #3 now has flat and 20/40 mm stair scenes, actual terrain rays
   and a shared native MJCF world. Its 82D observation, mixed target, stair and
-  heading formulas match 224 Python fixtures in actual .NET execution. The
+  heading formulas match 384 Python fixtures in actual .NET execution. The
   same world source passes twelve physical cases on Linux ARM64 and Linux/
   Windows CI using MuJoCo 3.12.0 + ONNX Runtime. These are not Unity editor runs.
   The same C# world additionally passes nominal 60 mm up/down locally, with
@@ -85,4 +85,11 @@ Start with 64 parallel worlds and a short smoke run. Baseline throughput and phy
   previously released subset. Unity editor acceptance, broader stair terrain,
   loaded stairs and hardware/VLA milestones remain explicit gaps.
 
-The full user objective remains active; this is not a final release checklist.
+Alpha.3 is now publicly released, anonymously re-downloaded and hash-matched to
+the freshly installed/tested wheel. Godot PR #4 is merged and pins that source.
+The Unity branch passes twelve base plus two experimental native cases on
+Linux/Windows, but remains a draft. The next execution gate is a supported
+Unity/Tuanjie editor host for Barracuda, real keys, rendering and player checks;
+no editor is installed or connected in this environment. The full user
+objective is therefore incomplete. See evidence/release-a3.json for exact pins.
+Broader terrain, Unity cargo and physical hardware remain explicit later work.

@@ -49,7 +49,8 @@ and the same bounded heading control as the Godot adapter.
 
 The setup script fetched and installed the pinned GitHub assets. The C# control
 contract passed 64 flat plus 160 stair/heading Python fixtures under .NET 8;
-maximum absolute difference is below 4.2e-7. More importantly, the actual shared
+maximum absolute difference is below 4.2e-7. The expanded suite now covers
+384 total formula cases. More importantly, the actual shared
 `SaiNativeWorld` source passes eight movement/crouch/reset cases and four stair
 cases with MuJoCo 3.12.0 and ONNX Runtime 1.24.4. These passed on Linux ARM64 and
 in [Linux/Windows CI](https://github.com/sgyli7/MicroDuck-Unity-Sim2Sim/actions/runs/34680834372).
@@ -87,3 +88,11 @@ gravity bias. Unity's adapter advances native MuJoCo and only synchronizes
 display transforms. No engine drives the robot by setting the chassis pose.
 The terrain observations are simulation height queries/rays. Camera images are
 rendered but are not the source of those heights or a trained VLA policy.
+
+
+Alpha.3 is [released](https://github.com/sgyli7/Sai_Agent_001/releases/tag/v0.1.0-alpha.3).
+Godot [PR #4](https://github.com/sgyli7/MicroDuck-Godot-Simi2Sim/pull/4) is merged
+with the new exact source pin. Unity's twelve base plus two experimental cases
+also pass [Linux/Windows CI](https://github.com/sgyli7/MicroDuck-Unity-Sim2Sim/actions/runs/34685536330).
+Editor acceptance remains pending; the repeated lack of an editor host cannot
+be resolved by more native-console tests.
