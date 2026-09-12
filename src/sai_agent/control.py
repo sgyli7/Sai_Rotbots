@@ -25,7 +25,9 @@ class HeadingHold:
     Integrates requested yaw rate; observes actual attitude/gyro. It changes
     only wheel-speed targets, never pose or joint state. Reset while parked.
     """
-    def __init__(self):
+    def __init__(self,max_correction=.4):
+        if not 0<max_correction<=1.2:raise ValueError('Heading correction limit must be in (0, 1.2] rad/s')
+        self.max_correction=max_correction
         self.desired=None
 
     def apply(self,target,command,yaw,yaw_rate,dt=CONTROL_DT):
@@ -34,7 +36,7 @@ class HeadingHold:
         if np.linalg.norm(command[:2])<1e-5:return target
         self.desired+=float(command[1])*dt
         error=math.atan2(math.sin(self.desired-yaw),math.cos(self.desired-yaw))
-        correction=np.clip(1.5*error-.25*(yaw_rate-command[1]),-.4,.4)
+        correction=np.clip(1.5*error-.25*(yaw_rate-command[1]),-self.max_correction,self.max_correction)
         result=target.copy()
         result[3::4]-=correction*.146/.048
         return result

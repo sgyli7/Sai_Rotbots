@@ -7,11 +7,11 @@ model are used across training and game integration.
 **Development preview.** WASD and held-Shift crouch pass eight-case checks in
 CPU MuJoCo (reduced and fully articulated models) and Godot/Jolt. Continuous
 20/40 mm stairs pass the reduced/full MuJoCo and Godot development suites.
-The complete 60 mm suite is not passed. A slower experimental ascent now passes
-full MuJoCo and Godot; descent still fails Godot lane containment. See
-[experimental profiles](experiments/stair_profiles/README.md).
-A separate full-model tread/yaw holdout passed 14/16 cases;
-the two failures exceeded the lateral corridor on descent.
+Opt-in 60 mm ascent/descent profiles pass the nominal four-riser course under
+an explicitly declared 45-second budget. The new descent profile additionally
+passes 15/15 development parameter checks in both full MuJoCo and Godot.
+These do not establish arbitrary-terrain reliability; the default actor stays
+at its 20/40 mm scope. See [experimental profiles](experiments/stair_profiles/README.md).
 Hardware has not been built or measured.
 
 | Capability | Current evidence |
@@ -53,6 +53,19 @@ Experimental stair scene: `uv run sai-agent godot --stairs .02` (add
 and a slower approach speed. The four-riser 20/40 mm development cases pass;
 this is **not** camera-based VLA or validation on arbitrary stairs. Cameras
 render separate observation views.
+
+The wheel also includes the experimental profiles; no checkpoint download or
+training environment is required to try them:
+
+```sh
+uv run sai-agent godot --stairs .06 --stair-skill ascent60
+uv run sai-agent godot --stairs .06 --descending --stair-skill descent60
+```
+
+The descent profile lowers the body halfway and uses known-route steering at
+y=0; A/D overrides that steering while held. Both profiles are for the declared
+straight test flights. They are explicit choices, not an automatic classifier
+for every stair direction or arbitrary game terrain.
 
 Run the preserved physical pickup, cargo clamp and loaded transport demo:
 

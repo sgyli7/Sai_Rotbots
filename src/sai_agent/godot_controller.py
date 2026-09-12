@@ -23,7 +23,7 @@ class GodotController:
         options=ort.SessionOptions();options.intra_op_num_threads=2;options.inter_op_num_threads=1
         self.policy=ort.InferenceSession(str(root/'policies/flat-v1.onnx'),options,providers=['CPUExecutionProvider'])
         stair_path=root/'policies/stairs-dev40.onnx'
-        self.stair_settings=dict(speed=.12,lift_height=.055,leg_scale=.18,min_crouch=0.,route_center_y=None,motion_phase_start_seconds=None)
+        self.stair_settings=dict(speed=.12,lift_height=.055,leg_scale=.18,min_crouch=0.,route_center_y=None,motion_phase_start_seconds=None,yaw_correction_limit=.4)
         self.stair_profile_id='stairs-dev40'
         self.experimental_profile=stair_profile is not None
         if stair_profile is not None:
@@ -45,7 +45,7 @@ class GodotController:
         self.stair_policy=ort.InferenceSession(str(stair_path),options,providers=['CPUExecutionProvider']) if stair_path.is_file() else None
         self.previous=np.zeros(16)
         self.crouch=0.
-        self.heading=HeadingHold()
+        self.heading=HeadingHold(self.stair_settings['yaw_correction_limit'])
         self.motion_origin=None
 
     def command(self,state):

@@ -20,6 +20,8 @@ jobs:
       - run: uv run pytest -q
       - run: uv run python scripts/evaluate_flat.py --policy policies/flat-v1.onnx --out artifacts/ci-flat --full-robot --require-pass
       - run: uv run python scripts/evaluate_stairs.py --policy policies/stairs-dev40.onnx --out artifacts/ci-stairs --risers .02 .04 --full-robot --require-pass
+      - run: uv run python scripts/evaluate_stairs.py --policy policies/experimental/ascent60.onnx --out artifacts/ci-ascent60 --risers .06 --direction up --speed .08 --lift-height .07 --leg-scale .45 --heading-control --max-seconds 45 --full-robot --require-pass
+      - run: uv run python scripts/evaluate_stairs.py --policy policies/experimental/descent60.onnx --out artifacts/ci-descent60 --risers .02 .04 .06 --direction down --speed .08 --crouch .5 --heading-control --lane-control --yaw-correction-limit .6 --max-seconds 45 --full-robot --require-pass
       - run: uv run python scripts/evaluate_cargo.py --out artifacts/ci-cargo --require-pass
       - run: uv run python scripts/evaluate_cargo.py --out artifacts/ci-no-clamp --no-clamp --require-pass
       - run: uv build --wheel --out-dir artifacts/dist

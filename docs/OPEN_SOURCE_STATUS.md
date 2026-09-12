@@ -18,7 +18,7 @@ robot. Our comparison concerns deliverables, not copying their model or shape.
 | Deliverable | Sai current scope | Still needed |
 |---|---|---|
 | Robot/model contract | Named joints, SI frames, full and training models, actor manifests and hashes | Hardware model revision tied to measurements |
-| Training + actor export | Bounded GPU PPO, source snapshots, ONNX with normalizer, fixed evaluations | Reliable 60 mm stairs; broader terrain/loads and actuator randomization |
+| Training + actor export | Bounded GPU PPO, source snapshots, ONNX with normalizer, fixed evaluations | Broader 60 mm ascent terrain, loads and actuator randomization |
 | Reproducible tasks | WASD/Shift, 20/40 mm four-riser tests, separate physical cargo task | Interactive general picking and loaded stair tasks |
 | Game runtime | Godot/Jolt package and merged existing-project entry point | Unity editor acceptance and full task integration |
 | Source/asset release | Public code, permitted meshes, policy weights, licenses and provenance | Editable manufacturing CAD package and complete assembly instructions |

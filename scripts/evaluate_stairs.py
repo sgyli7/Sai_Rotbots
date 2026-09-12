@@ -34,6 +34,7 @@ p.add_argument('--max-seconds',type=float,default=30.,help='Declared per-flight 
 p.add_argument('--direction',choices=['both','up','down'],default='both')
 p.add_argument('--crouch',type=float,default=0.,help='Requested normalized crouch, slewed at the deployment rate')
 p.add_argument('--lane-control',action='store_true',help='Diagnostic known-route steering on the staircase center line')
+p.add_argument('--yaw-correction-limit',type=float,default=.4,help='Outer heading correction bound in rad/s; motor torque limits remain fixed')
 args=p.parse_args()
 if args.max_seconds<=3: p.error('--max-seconds must exceed the required 3 s final stop')
 if not 0<=args.crouch<=1: p.error('--crouch must be in [0, 1]')
@@ -67,7 +68,7 @@ for descending in ([False,True] if args.direction=='both' else [args.direction==
         wheels=[model.body(n+'_wheel').id for n in ['front_left','front_right','rear_left','rear_right']]
         last_edge=course.start+(course.count-1)*course.tread
         final_ground=float(course.height(last_edge+.1))
-        trace=[];previous=np.zeros(16);cleared_at=None;heading_hold=HeadingHold();crouch=0.
+        trace=[];previous=np.zeros(16);cleared_at=None;heading_hold=HeadingHold(args.yaw_correction_limit);crouch=0.
         for k in range(math.floor(args.max_seconds/.02)):
             command=[args.speed if k>=25 and cleared_at is None else 0.,0.]
             q,v=adapter.state(data)
@@ -128,6 +129,7 @@ result=dict(suite='continuous-stairs-v1',cases=rows,passed=all(r['passed'] for r
             max_simulated_seconds=args.max_seconds,
             direction=args.direction,crouch=args.crouch,
             lane_control=args.lane_control,
+            yaw_correction_limit=args.yaw_correction_limit,
             policy_sha256=hashlib.sha256(args.policy.read_bytes()).hexdigest(),
             runtime_seconds=time.monotonic()-started,mujoco_version=mujoco.__version__,
             sensor='Exact simulation height map; hardware depth reconstruction is not implemented')

@@ -22,6 +22,8 @@ var duration := 12.0
 var visuals := true
 var riser := 0.0
 var descending := false
+var stair_tread := .18
+var initial_yaw := 0.0
 var records: Array = []
 var input_events: Array = []
 var injected: Dictionary = {}
@@ -41,6 +43,8 @@ func _ready() -> void:
 		elif arg.begins_with("--screenshot-at="):screenshot_at=float(arg.split("=")[1])
 		elif arg.begins_with("--duration="):duration=float(arg.split("=")[1])
 		elif arg.begins_with("--stairs="):riser=float(arg.split("=")[1])
+		elif arg.begins_with("--stair-tread="):stair_tread=float(arg.split("=")[1])
+		elif arg.begins_with("--initial-yaw="):initial_yaw=float(arg.split("=")[1])
 		elif arg.begins_with("--task="):task=arg.split("=")[1]
 		elif arg.begins_with("--cargo-obstacle-height="):cargo_obstacle_height=float(arg.split("=")[1])
 		elif arg=="--descending":descending=true
@@ -55,6 +59,13 @@ func _ready() -> void:
 	add_child(robot)
 	build_ground()
 	robot.setup(specification,visuals,4*riser if descending else 0.0)
+	# Rotate the complete articulated initial state before the first physics tick.
+	# All joint anchors retain their original local frames; no runtime pose drive.
+	if initial_yaw!=0.:
+		var initial_basis := Basis(Vector3.UP,initial_yaw)
+		for body in robot.bodies.values():
+			body.position=initial_basis*body.position
+			body.basis=initial_basis*body.basis
 	if task=="cargo":robot.build_item()
 	if visuals:build_view()
 	peer.connect_to_host("127.0.0.1",port)
@@ -100,7 +111,7 @@ func build_ground() -> void:
 			var center: float=.55+.35*i
 			box_surface("course_"+str(i),center-.045,center+.045,.9,cargo_obstacle_height,.08)
 	if riser<=0:return
-	var boundaries := [-1.,.45,.63,.81,.99,3.]
+	var boundaries := [-1.,.45,.45+stair_tread,.45+2*stair_tread,.45+3*stair_tread,3.]
 	for i in range(5):
 		box_surface("stair_"+str(i),boundaries[i],boundaries[i+1],1.,riser*(4-i if descending else i),1.)
 
@@ -217,7 +228,7 @@ func _physics_process(_delta: float) -> void:
 		if riser>0 and test_case=="W" and cleared_at<0:
 			var cleared := true
 			for position in wheel_positions:
-				if position[0]<=1.07:cleared=false
+				if position[0]<=.45+3*stair_tread+.08:cleared=false
 			if cleared:cleared_at=float(state.time)
 		if test_case!="":records.append(state)
 		if (test_case!="" and float(state.time)>=duration) or float(state.upright)<.6 or (cleared_at>=0 and float(state.time)-cleared_at>=3):
@@ -237,6 +248,7 @@ func finish_run() -> void:
 			"physics":"Godot/Jolt","engine":Engine.get_version_info().string,
 			"physics_hz":2000,"controller_hz":50,"body_count":robot.bodies.size(),
 			"riser":riser,"descending":descending,"cleared_at":cleared_at,
+			"tread":stair_tread,"initial_yaw":initial_yaw,
 			"hinges":23,"sliders":2,"input_events":input_events,"samples":records}))
 		file.close()
 	print("SAI_GODOT_FINISHED seconds=",robot.tick*.0005)

@@ -9,12 +9,23 @@ from .terrain import Staircase, scene_xml
 
 class StairEnv(LocomotionEnv):
     def __init__(self, model_path, worlds=256, seed=47, max_riser=.02, output_dir=None,
-                 lift_height=.055,heading_control=False,ascent_only=False,min_riser=.006,speed=None,leg_scale=.18):
-        self.course=Staircase(riser=max_riser)
+                 lift_height=.055,heading_control=False,ascent_only=False,min_riser=.006,speed=None,leg_scale=.18,
+                 descent_only=False,crouch_command=0.,yaw_correction_limit=.4,lane_control=False,
+                 tread=.18,initial_yaw_range=0.,start_x_range=0.):
+        self.course=Staircase(riser=max_riser,tread=tread)
+        self.initial_yaw_range=initial_yaw_range
+        self.start_x_range=start_x_range
         self.max_riser=max_riser
         self.lift_height=lift_height
         self.heading_control=heading_control
         self.ascent_only=ascent_only
+        self.descent_only=descent_only
+        self.crouch_command=crouch_command
+        self.yaw_correction_limit=yaw_correction_limit
+        self.lane_control=lane_control
+        if ascent_only and descent_only:raise ValueError('Choose one stair direction')
+        if not 0<=crouch_command<=1:raise ValueError('Invalid crouch command')
+        if not 0<yaw_correction_limit<=1.2:raise ValueError('Invalid heading correction bound')
         self.min_riser=min_riser
         self.speed=speed
         self.leg_scale=leg_scale
@@ -40,16 +51,26 @@ class StairEnv(LocomotionEnv):
         samples=torch.rand(self.num_envs,device=self.device)
         h=torch.where(samples<.2,0.,self.min_riser+(self.max_riser-self.min_riser)*torch.rand_like(samples))
         self.risers[mask]=h[mask]
-        self.descending[mask]=(torch.rand_like(samples)>.5)[mask] & (not self.ascent_only)
+        self.descending[mask]=((torch.rand_like(samples)>.5) | self.descent_only)[mask] & (not self.ascent_only)
         for j in range(5):
             top=torch.where(self.descending,4-j,j)*self.risers
             self.mocap[mask,j,2]=top[mask]-.5
         self.backend.q[mask,2]+=torch.where(self.descending,self.risers*4,0.)[mask]
+        # Change only the episode's initial placement, before physics resumes.
+        # The actor must handle a different contact/gait alignment on each reset.
+        if self.initial_yaw_range:
+            yaw=(2*torch.rand_like(samples)-1)*self.initial_yaw_range
+            self.backend.q[mask,3]=torch.cos(yaw[mask]/2)
+            self.backend.q[mask,4:6]=0
+            self.backend.q[mask,6]=torch.sin(yaw[mask]/2)
+        if self.start_x_range:
+            self.backend.q[mask,0]+=(2*torch.rand_like(samples[mask])-1)*self.start_x_range
 
     def sample_commands(self,mask):
         n=self.num_envs
         commands=torch.zeros((n,3),device=self.device)
         commands[:,0]=.08+.06*torch.rand(n,device=self.device) if self.speed is None else self.speed
+        commands[:,2]=self.crouch_command
         self.command[mask]=commands[mask]
 
     def query(self,local_xy):
@@ -114,6 +135,8 @@ class StairEnv(LocomotionEnv):
         if self.heading_control:
             w,x,y,z=self.backend.q[:,3:7].unbind(-1)
             yaw=torch.atan2(2*(w*z+x*y),1-2*(y*y+z*z))
-            correction=torch.clamp(-1.5*yaw-.25*self.backend.v[:,5],-.4,.4)
+            desired=torch.clamp(torch.atan2(-self.backend.q[:,1],torch.full_like(yaw,.5)),-.4,.4) if self.lane_control else torch.zeros_like(yaw)
+            error=torch.atan2(torch.sin(desired-yaw),torch.cos(desired-yaw))
+            correction=torch.clamp(1.5*error-.25*self.backend.v[:,5],-self.yaw_correction_limit,self.yaw_correction_limit)
             target[:,3::4]-=correction[:,None]*.146/.048
         return target

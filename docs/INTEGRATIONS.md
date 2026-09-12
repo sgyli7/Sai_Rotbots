@@ -54,7 +54,10 @@ maximum absolute difference is below 4.2e-7. More importantly, the actual shared
 cases with MuJoCo 3.12.0 and ONNX Runtime 1.24.4. These passed on Linux ARM64 and
 in [Linux/Windows CI](https://github.com/sgyli7/MicroDuck-Unity-Sim2Sim/actions/runs/34680834372).
 The Windows run loads the actual project-bundled DLL with its locked SHA-256.
-The tests advance real native physics, not prescribed robot poses. The compact
+The tests advance real native physics, not prescribed robot poses. The same
+C# source now also passes nominal 60 mm up/down locally, using the separately
+paired ascent60/descent60 settings. The editor menu exposes those under
+**Build Experimental Stairs**. The compact
 record is [unity-native-physics.json](../evidence/unity-native-physics.json).
 
 **Unity/Tuanjie editor execution has not been tested on this Linux ARM workstation,
@@ -64,6 +67,12 @@ entry point is now prepared:
 ```sh
 python scripts/run-sai-editor-acceptance.py --editor "/absolute/path/to/editor"
 ```
+
+Add `--build-windows` on a host with the Windows build module to run that
+acceptance first and then build the player. The helper checks a fresh completion
+marker, executable and locked native DLL, and writes a file/hash manifest.
+This preparation passed Linux/Windows CI at integration commit `f38bd3c`;
+the editor build and player execution themselves have not run here.
 
 It imports the real ONNX assets and runs the same physical acceptance suite via
 the gameplay Barracuda wrapper, writing an explicit editor report. It has not

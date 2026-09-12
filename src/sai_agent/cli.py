@@ -1,5 +1,6 @@
 """One-process launcher for the policy service and independent Godot simulation."""
 import argparse
+import math
 from concurrent.futures import ThreadPoolExecutor
 import os
 from pathlib import Path
@@ -34,15 +35,23 @@ def main(argv=None):
     parser.add_argument('--screenshot-at',type=float,default=.5,help='Simulated time in seconds for the screenshot')
     parser.add_argument('--stairs',type=float,default=0.,help='Experimental four-riser course, height in metres')
     parser.add_argument('--descending',action='store_true')
-    parser.add_argument('--stair-profile',type=Path,help='Explicit experimental stair profile JSON; default remains the accepted 20/40 mm actor')
+    parser.add_argument('--stair-tread',type=float,default=.18,help='Declared stair tread length in metres')
+    parser.add_argument('--initial-yaw',type=float,default=0.,help='Initial robot yaw in radians, applied before simulation')
+    profiles=parser.add_mutually_exclusive_group()
+    profiles.add_argument('--stair-profile',type=Path,help='Explicit experimental stair profile JSON; default remains the accepted 20/40 mm actor')
+    profiles.add_argument('--stair-skill',choices=['ascent60','descent60'],help='Bundled experimental stair profile; selects an actor and its matching control settings')
     parser.add_argument('--duration',type=float,default=12.)
     parser.add_argument('--task',choices=['drive','cargo'],default='drive')
     parser.add_argument('--cargo-obstacle-height',type=float,default=.018)
     parser.add_argument('--no-clamp',action='store_true',help='Cargo interlock negative control')
     args=parser.parse_args(argv)
+    if not .10<=args.stair_tread<=.4:parser.error('--stair-tread must be in [.10, .40] m')
+    if not math.isfinite(args.initial_yaw):parser.error('--initial-yaw must be finite')
+    if args.task=='cargo' and args.initial_yaw!=0:parser.error('The frozen cargo task requires its original initial pose')
     if not args.godot_bin:parser.error('Godot executable not found; pass --godot-bin')
     from .godot_controller import GodotController
     root=resource_root()
+    if args.stair_skill:args.stair_profile=root/'policies/experimental'/f'{args.stair_skill}.json'
     cache=Path(os.environ.get('XDG_CACHE_HOME',str(Path.home()/'.cache')))/'Sai_Agent_001'
     destination=prepare_godot(root,args.runtime_dir or cache/'godot')
     # Import local GLB resources before runtime; no manual editor step required.
@@ -61,6 +70,7 @@ def main(argv=None):
             else:command+=['--disable-vsync','--max-fps','60']
             command+=['--',f'--port={port}']
             command+=[f'--stairs={args.stairs}',f'--duration={args.duration}']
+            command+=[f'--stair-tread={args.stair_tread}',f'--initial-yaw={args.initial_yaw}']
             command+=[f'--screenshot-at={args.screenshot_at}']
             command+=[f'--task={args.task}',f'--cargo-obstacle-height={args.cargo_obstacle_height}']
             if args.descending:command+=['--descending']

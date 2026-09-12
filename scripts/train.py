@@ -32,7 +32,21 @@ p.add_argument('--ascent-only',action='store_true')
 p.add_argument('--min-riser',type=float,default=.006)
 p.add_argument('--speed',type=float)
 p.add_argument('--leg-scale',type=float,default=.18)
+p.add_argument('--descent-only',action='store_true')
+p.add_argument('--crouch',type=float,default=0.)
+p.add_argument('--yaw-correction-limit',type=float,default=.4)
+p.add_argument('--lane-control',action='store_true')
+p.add_argument('--tread',type=float,default=.18)
+p.add_argument('--initial-yaw-range',type=float,default=0.)
+p.add_argument('--start-x-range',type=float,default=0.)
 args = p.parse_args()
+if args.ascent_only and args.descent_only:p.error('Choose only one stair direction')
+if not 0<=args.crouch<=1:p.error('--crouch must be in [0, 1]')
+if not 0<args.yaw_correction_limit<=1.2:p.error('--yaw-correction-limit must be in (0, 1.2] rad/s')
+if args.lane_control and not args.heading_control:p.error('--lane-control requires --heading-control')
+if not .10<=args.tread<=.4:p.error('--tread must be in [.10, .40] m')
+if not 0<=args.initial_yaw_range<=.3:p.error('--initial-yaw-range must be in [0, .3] rad')
+if not 0<=args.start_x_range<=.1:p.error('--start-x-range must be in [0, .1] m')
 out = ROOT/'artifacts'/args.name
 out.mkdir(parents=True, exist_ok=False)
 cfg = json.loads((ROOT/'configs/flat.json').read_text())
@@ -47,7 +61,10 @@ if args.stage=='stairs':
     from sai_agent.stair_env import StairEnv
     env=StairEnv(ROOT/'models/locomotion.xml',args.worlds,args.seed,args.max_riser,out,
                 lift_height=args.lift_height,heading_control=args.heading_control,
-                ascent_only=args.ascent_only,min_riser=args.min_riser,speed=args.speed,leg_scale=args.leg_scale)
+                ascent_only=args.ascent_only,min_riser=args.min_riser,speed=args.speed,leg_scale=args.leg_scale,
+                descent_only=args.descent_only,crouch_command=args.crouch,
+                yaw_correction_limit=args.yaw_correction_limit,lane_control=args.lane_control,
+                tread=args.tread,initial_yaw_range=args.initial_yaw_range,start_x_range=args.start_x_range)
 else:
     env = LocomotionEnv(ROOT/'models/locomotion.xml', args.worlds, args.seed)
 obs = env.get_observations()
@@ -79,6 +96,8 @@ def save_checkpoint(iterations,status,filename):
         lift_height=args.lift_height,heading_control=args.heading_control,
         ascent_only=args.ascent_only,min_riser=args.min_riser,speed=args.speed,
         leg_scale=args.leg_scale,
+        descent_only=args.descent_only,crouch=args.crouch,yaw_correction_limit=args.yaw_correction_limit,lane_control=args.lane_control,
+        tread=args.tread,initial_yaw_range=args.initial_yaw_range,start_x_range=args.start_x_range,
         reset_std=args.reset_std,status=status,iterations=iterations,
         device=torch.cuda.get_device_name(),cpu_threads=torch.get_num_threads(),
         training_wall_seconds=time.monotonic()-start,process_cpu_seconds=time.process_time()-cpu_start,

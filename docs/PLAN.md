@@ -41,24 +41,21 @@ Start with 64 parallel worlds and a short smoke run. Baseline throughput and phy
   events with all 26 robot bodies, 23 hinges and two cargo sliders retained.
 - Godot uses a bounded heading feedback loop to reduce solver-transfer yaw drift.
   It changes wheel speeds only. Exact results are in evidence/godot-flat.json.
-- Stair trial 004 passes four-riser 20/40 mm ascent and descent in reduced CPU
-  MuJoCo. The same 20/40 mm cases also pass with full MuJoCo articulation and
-  in Godot/Jolt. 60 mm remains outstanding. Full-model tread/alignment holdouts
-  passed 14/16; two descending cases exceeded the lateral corridor. These cases
-  retain their original results and are not reclassified as training successes.
-  Trial 005 failed with captured non-finite GPU
-  physics; replay isolated the previous acceleration initial guess as the trigger.
-  Clearing that numerical guess passed 1,280 captured-contact replays and three
-  subsequent five-minute GPU trials (006–008) without non-finite states. Their
-  policies regressed existing cases and have not replaced trial 004.
-  Trial 009 then encountered a new non-finite state at 157 seconds; the earlier
-  replay fix is scoped to that captured trigger, not a general stability claim.
-  Later diagnostics retained trial 008 for a slower 60 mm ascent: full MuJoCo
-  finishes in 33.38 s under a declared 45 s budget (the original 30 s failure
-  remains), and Godot finishes in 27.18 s. Trial 006 with half crouch and a
-  known-route wheel steering layer passes full MuJoCo descent in 15.46 s but
-  fails Godot lane containment. Both profiles are explicitly experimental,
-  separate from the unchanged default actor. This is not full 60 mm acceptance.
+- Default stair trial 004 retains the passed four-riser 20/40 mm ascent/descent
+  suite in reduced/full MuJoCo and Godot. Older 14/16 and 15/16 tread/yaw results
+  remain recorded; they are not relabelled as fresh successes.
+- Opt-in ascent60 (trial 008) passes nominal full MuJoCo in 33.38 seconds under
+  an explicit 45-second budget and Godot in 27.18 seconds. The original
+  30-second timeout remains in the diagnostic record.
+- Trial 010 trains half crouch and known-route steering: full MuJoCo 15/15,
+  Godot 14/15. Lower lift and lower speed do not fix the complete Godot matrix.
+  Trial 011 then randomizes start yaw/distance on 160 mm training treads. It
+  completes 5,816,320 GPU steps in 300.39 seconds and passes all 15 descent
+  parameter cases in full MuJoCo and all 15 in Godot. Alpha.3 includes it as
+  `--stair-skill descent60`. These are development regressions, not unseen
+  terrain guarantees. No morphology, torque or acceptance relaxation was used.
+- The earlier GPU non-finite experiments and their scoped numerical fix remain
+  in the ledger. Successful later trials do not erase those recorded failures.
 - Legal display assets and notices are published. Explicit GLB normals improve
   rendering without changing contact meshes, inertias or joints.
 - Unity draft PR #3 now has flat and 20/40 mm stair scenes, actual terrain rays
@@ -66,7 +63,9 @@ Start with 64 parallel worlds and a short smoke run. Baseline throughput and phy
   heading formulas match 224 Python fixtures in actual .NET execution. The
   same world source passes twelve physical cases on Linux ARM64 and Linux/
   Windows CI using MuJoCo 3.12.0 + ONNX Runtime. These are not Unity editor runs.
-  A real editor/Barracuda acceptance entry point now reuses the same criteria,
+  The same C# world additionally passes nominal 60 mm up/down locally, with
+  matching experimental actor settings. A real editor/Barracuda acceptance
+  entry point reuses the same twelve base plus two experimental cases,
   but no editor is installed or connected here; editor input/render acceptance
   remains outstanding. Unity cargo support is also still missing.
 - Godot project profile PR #2 is merged. A fresh GitHub dependency install ran
@@ -82,7 +81,8 @@ Start with 64 parallel worlds and a short smoke run. Baseline throughput and phy
   keeping the physics configuration unchanged. Visible W also passed.
 - GitHub Actions on Ubuntu x86 passed package installation, contract tests,
   full-articulated flat/20–40 mm stair/cargo tests and the no-clamp control.
-- The 0.1.0a2 simulation prerelease packages the verified subset. Unity editor acceptance,
-  full 60 mm stair acceptance, and hardware/VLA milestones remain explicit gaps.
+- The 0.1.0a3 simulation package adds named experimental 60 mm profiles to the
+  previously released subset. Unity editor acceptance, broader stair terrain,
+  loaded stairs and hardware/VLA milestones remain explicit gaps.
 
 The full user objective remains active; this is not a final release checklist.

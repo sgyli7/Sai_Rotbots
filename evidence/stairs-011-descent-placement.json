@@ -1,0 +1,1261 @@
+{
+  "schema_version": 1,
+  "experiment": "stairs-011-descent-placement",
+  "decision": "Publish as opt-in descent60 profile; default actor unchanged",
+  "hypothesis": "Randomize starting yaw and distance on a narrower tread so the actor cannot rely on one repeated contact/gait alignment.",
+  "training": {
+    "schema_version": 1,
+    "cfg": {
+      "num_steps_per_env": 32,
+      "obs_groups": {
+        "actor": [
+          "policy"
+        ],
+        "critic": [
+          "policy"
+        ]
+      },
+      "multi_gpu": null,
+      "actor": {
+        "class_name": "MLPModel",
+        "hidden_dims": [
+          128,
+          128
+        ],
+        "activation": "elu",
+        "obs_normalization": true,
+        "distribution_cfg": {
+          "class_name": "GaussianDistribution",
+          "init_std": 0.25,
+          "std_type": "log"
+        }
+      },
+      "critic": {
+        "class_name": "MLPModel",
+        "hidden_dims": [
+          128,
+          128
+        ],
+        "activation": "elu",
+        "obs_normalization": true
+      },
+      "algorithm": {
+        "class_name": "PPO",
+        "num_learning_epochs": 4,
+        "num_mini_batches": 4,
+        "clip_param": 0.2,
+        "gamma": 0.99,
+        "lam": 0.95,
+        "value_loss_coef": 1.0,
+        "entropy_coef": 0.002,
+        "learning_rate": 0.0003,
+        "max_grad_norm": 1.0,
+        "use_clipped_value_loss": true,
+        "schedule": "fixed",
+        "desired_kl": null,
+        "normalize_advantage_per_mini_batch": false
+      }
+    },
+    "seed": 47,
+    "steps": 5816320,
+    "stage": "stairs",
+    "max_riser": 0.06,
+    "lift_height": 0.055,
+    "heading_control": true,
+    "ascent_only": false,
+    "min_riser": 0.04,
+    "speed": 0.08,
+    "leg_scale": 0.18,
+    "descent_only": true,
+    "crouch": 0.5,
+    "yaw_correction_limit": 0.6,
+    "lane_control": true,
+    "tread": 0.16,
+    "initial_yaw_range": 0.12,
+    "start_x_range": 0.08,
+    "reset_std": 0.08,
+    "status": "training-complete-unvalidated",
+    "iterations": 710,
+    "device": "NVIDIA GB10",
+    "cpu_threads": 2,
+    "training_wall_seconds": 300.3936846390134,
+    "process_cpu_seconds": 299.62127044799996,
+    "model_sha256": "af174c649acca3dfec7e60c896c4a9603d3ed2864862534c81053517e6500f7f",
+    "training_scene_sha256": "e4bc7dd176f6f440b284bad9ffea1db985f4ce98378d38933aef594d7fff5115",
+    "observation_size": 82,
+    "action_size": 16,
+    "control_hz": 50,
+    "source_sha256": {
+      "src/sai_agent/stair_env.py": "c3d5d653927968d6ef48f46e8e5525b36b899a02926f279f91dbd1a2df51f9f3",
+      "src/sai_agent/gpu_backend.py": "09f6e3751f3ad1932f6885877f459f4dadecb8dadcbd549dc3c7576b8c70d2d8",
+      "src/sai_agent/env.py": "678aa55f99d0718752bf5cdaa2c458c2ee4bbdf3ebc5f71d07dfa28d60b79ba5",
+      "src/sai_agent/cli.py": "fc0b191129577b76614b93cd9b5b6ccdc9f46c2c92f668edbbad7c3898ee490a",
+      "src/sai_agent/__init__.py": "37879f234fb4f22281cb5c4eac272cf6a21865ee8f5009ada64f981dbe0d2609",
+      "src/sai_agent/runtime.py": "9616f1c499faf0ec826b7ce7c635926fcd7abc7324ece3145c9269187cd309a5",
+      "src/sai_agent/so101_fk.py": "dc5e0375cad59201aa9740de8866ae2f52d0e4328a596a8a72686eaff52ed8ba",
+      "src/sai_agent/cargo_task.py": "b605a14883ef2b028359f478c1799d3ca8f76f7a173fd2a11c045ca1df52ddea",
+      "src/sai_agent/cargo_godot.py": "976925a49404dd060527ead8f08229da1707d90f3d5eda5e76749c3789689d96",
+      "src/sai_agent/legacy_crawl.py": "84c9420a702815a5685acee98d15ac35d88c9f9d103be9f5842697486b07509e",
+      "src/sai_agent/godot_controller.py": "7a1da68409a8b646d281957a82e8bc9c25b54385b2aa147d4fb4a0c011518c23",
+      "src/sai_agent/paths.py": "8064c40303dad119f8fdb84cbbbfed4a2bb7e78ecf7b5b80d3548864d06e9102",
+      "src/sai_agent/manipulation.py": "a8ad83ec5da93ab789da8c3704861b03b4999231dbf800048dc799ab322497ae",
+      "src/sai_agent/terrain.py": "da22fef563212a30f865e6db92423f163abdc8a0b177fb400f3aac50e75b465c",
+      "src/sai_agent/control.py": "b04660ca95af32b560c4384ab57f8692a34ac08b5fd502050a32dee0c6bb4660",
+      "scripts/train.py": "2e154f2bb366be9426c01916fa2646daeaf957d1043600a843ae4761e99a1420"
+    },
+    "resume": "artifacts/stairs-010-crouched-descent/policy.pt"
+  },
+  "export": {
+    "checkpoint_sha256": "91a5f1707117d22d98eda7ce2e82495e2461daf4970c196444ee06da6e45392a",
+    "onnx_sha256": "821b2cededa8e204a850384b990828d8ac749a07580b6e4ddc563fd437089d57",
+    "onnx_opset": 17,
+    "normalization_included": true,
+    "batch_sizes": [
+      1,
+      17,
+      256
+    ],
+    "max_absolute_errors": [
+      4.76837158203125e-07,
+      1.1920928955078125e-06,
+      1.9073486328125e-06
+    ],
+    "passed": true,
+    "training": {
+      "schema_version": 1,
+      "cfg": {
+        "num_steps_per_env": 32,
+        "obs_groups": {
+          "actor": [
+            "policy"
+          ],
+          "critic": [
+            "policy"
+          ]
+        },
+        "multi_gpu": null,
+        "actor": {
+          "class_name": "MLPModel",
+          "hidden_dims": [
+            128,
+            128
+          ],
+          "activation": "elu",
+          "obs_normalization": true,
+          "distribution_cfg": {
+            "init_std": 0.25,
+            "std_type": "log"
+          }
+        },
+        "critic": {
+          "class_name": "MLPModel",
+          "hidden_dims": [
+            128,
+            128
+          ],
+          "activation": "elu",
+          "obs_normalization": true
+        },
+        "algorithm": {
+          "class_name": "PPO",
+          "num_learning_epochs": 4,
+          "num_mini_batches": 4,
+          "clip_param": 0.2,
+          "gamma": 0.99,
+          "lam": 0.95,
+          "value_loss_coef": 1.0,
+          "entropy_coef": 0.002,
+          "learning_rate": 0.0003,
+          "max_grad_norm": 1.0,
+          "use_clipped_value_loss": true,
+          "schedule": "fixed",
+          "desired_kl": null,
+          "normalize_advantage_per_mini_batch": false
+        }
+      },
+      "seed": 47,
+      "steps": 5816320,
+      "stage": "stairs",
+      "max_riser": 0.06,
+      "lift_height": 0.055,
+      "heading_control": true,
+      "ascent_only": false,
+      "min_riser": 0.04,
+      "speed": 0.08,
+      "leg_scale": 0.18,
+      "descent_only": true,
+      "crouch": 0.5,
+      "yaw_correction_limit": 0.6,
+      "lane_control": true,
+      "tread": 0.16,
+      "initial_yaw_range": 0.12,
+      "start_x_range": 0.08,
+      "reset_std": 0.08,
+      "status": "training-complete-unvalidated",
+      "iterations": 710,
+      "device": "NVIDIA GB10",
+      "cpu_threads": 2,
+      "training_wall_seconds": 300.3936846390134,
+      "process_cpu_seconds": 299.62127044799996,
+      "model_sha256": "af174c649acca3dfec7e60c896c4a9603d3ed2864862534c81053517e6500f7f",
+      "training_scene_sha256": "e4bc7dd176f6f440b284bad9ffea1db985f4ce98378d38933aef594d7fff5115",
+      "observation_size": 82,
+      "action_size": 16,
+      "control_hz": 50,
+      "source_sha256": {
+        "src/sai_agent/stair_env.py": "c3d5d653927968d6ef48f46e8e5525b36b899a02926f279f91dbd1a2df51f9f3",
+        "src/sai_agent/gpu_backend.py": "09f6e3751f3ad1932f6885877f459f4dadecb8dadcbd549dc3c7576b8c70d2d8",
+        "src/sai_agent/env.py": "678aa55f99d0718752bf5cdaa2c458c2ee4bbdf3ebc5f71d07dfa28d60b79ba5",
+        "src/sai_agent/cli.py": "fc0b191129577b76614b93cd9b5b6ccdc9f46c2c92f668edbbad7c3898ee490a",
+        "src/sai_agent/__init__.py": "37879f234fb4f22281cb5c4eac272cf6a21865ee8f5009ada64f981dbe0d2609",
+        "src/sai_agent/runtime.py": "9616f1c499faf0ec826b7ce7c635926fcd7abc7324ece3145c9269187cd309a5",
+        "src/sai_agent/so101_fk.py": "dc5e0375cad59201aa9740de8866ae2f52d0e4328a596a8a72686eaff52ed8ba",
+        "src/sai_agent/cargo_task.py": "b605a14883ef2b028359f478c1799d3ca8f76f7a173fd2a11c045ca1df52ddea",
+        "src/sai_agent/cargo_godot.py": "976925a49404dd060527ead8f08229da1707d90f3d5eda5e76749c3789689d96",
+        "src/sai_agent/legacy_crawl.py": "84c9420a702815a5685acee98d15ac35d88c9f9d103be9f5842697486b07509e",
+        "src/sai_agent/godot_controller.py": "7a1da68409a8b646d281957a82e8bc9c25b54385b2aa147d4fb4a0c011518c23",
+        "src/sai_agent/paths.py": "8064c40303dad119f8fdb84cbbbfed4a2bb7e78ecf7b5b80d3548864d06e9102",
+        "src/sai_agent/manipulation.py": "a8ad83ec5da93ab789da8c3704861b03b4999231dbf800048dc799ab322497ae",
+        "src/sai_agent/terrain.py": "da22fef563212a30f865e6db92423f163abdc8a0b177fb400f3aac50e75b465c",
+        "src/sai_agent/control.py": "b04660ca95af32b560c4384ab57f8692a34ac08b5fd502050a32dee0c6bb4660",
+        "scripts/train.py": "2e154f2bb366be9426c01916fa2646daeaf957d1043600a843ae4761e99a1420"
+      },
+      "resume": "artifacts/stairs-010-crouched-descent/policy.pt"
+    }
+  },
+  "cpu": [
+    {
+      "source": "artifacts/stairs-011-descent-placement/eval-regression-t160-y-80/result.json",
+      "sha256": "b229ba3271f5df91e823a13a6702165dee7ab8c7db4c423341fd5c9224526ce1",
+      "result": {
+        "suite": "continuous-stairs-v1",
+        "cases": [
+          {
+            "riser": 0.02,
+            "tread": 0.16,
+            "count": 4,
+            "start": 0.45,
+            "width": 1.0,
+            "descending": true,
+            "initial_yaw": -0.08,
+            "passed": true,
+            "checks": {
+              "all_wheels_cleared": true,
+              "three_second_stop": true,
+              "upright_on_final_level": true,
+              "remained_in_lane": true,
+              "height_on_final_level": true,
+              "four_wheels_supported": true,
+              "no_fall": true
+            },
+            "simulated_seconds": 14.17999999999758,
+            "cleared_at": 11.159999999999254,
+            "final_xyz": [
+              1.1507086951223586,
+              -0.07052852673578051,
+              0.2014357963704621
+            ],
+            "minimum_wheel_x": 1.0293387980247088,
+            "min_upright": 0.9723301345780287,
+            "max_penetration_m": 0.0011864996660077229
+          },
+          {
+            "riser": 0.04,
+            "tread": 0.16,
+            "count": 4,
+            "start": 0.45,
+            "width": 1.0,
+            "descending": true,
+            "initial_yaw": -0.08,
+            "passed": true,
+            "checks": {
+              "all_wheels_cleared": true,
+              "three_second_stop": true,
+              "upright_on_final_level": true,
+              "remained_in_lane": true,
+              "height_on_final_level": true,
+              "four_wheels_supported": true,
+              "no_fall": true
+            },
+            "simulated_seconds": 15.679999999996749,
+            "cleared_at": 12.659999999998423,
+            "final_xyz": [
+              1.151559194772408,
+              -0.032939718778327416,
+              0.20145120693868687
+            ],
+            "minimum_wheel_x": 1.0371357899471054,
+            "min_upright": 0.9370971765922442,
+            "max_penetration_m": 0.001306932940121046
+          },
+          {
+            "riser": 0.06,
+            "tread": 0.16,
+            "count": 4,
+            "start": 0.45,
+            "width": 1.0,
+            "descending": true,
+            "initial_yaw": -0.08,
+            "passed": true,
+            "checks": {
+              "all_wheels_cleared": true,
+              "three_second_stop": true,
+              "upright_on_final_level": true,
+              "remained_in_lane": true,
+              "height_on_final_level": true,
+              "four_wheels_supported": true,
+              "no_fall": true
+            },
+            "simulated_seconds": 14.939999999997159,
+            "cleared_at": 11.919999999998833,
+            "final_xyz": [
+              1.1585562123901054,
+              -0.06247695808877917,
+              0.2014758676242625
+            ],
+            "minimum_wheel_x": 1.0419506392735565,
+            "min_upright": 0.841518507213854,
+            "max_penetration_m": 0.0016715981626795752
+          }
+        ],
+        "passed": true,
+        "full_robot": true,
+        "actuators": 23,
+        "lift_height": 0.055,
+        "heading_control": true,
+        "commanded_speed": 0.08,
+        "leg_scale": 0.18,
+        "stride": 0.05,
+        "max_simulated_seconds": 45.0,
+        "direction": "down",
+        "crouch": 0.5,
+        "lane_control": true,
+        "yaw_correction_limit": 0.6,
+        "policy_sha256": "821b2cededa8e204a850384b990828d8ac749a07580b6e4ddc563fd437089d57",
+        "runtime_seconds": 3.660057289991528,
+        "mujoco_version": "3.10.0",
+        "sensor": "Exact simulation height map; hardware depth reconstruction is not implemented"
+      }
+    },
+    {
+      "source": "artifacts/stairs-011-descent-placement/eval-regression-t160-y80/result.json",
+      "sha256": "c643a2e3c8759ea44b2c8738be1b72e6c64969a2bb3ad4a9834027abd7d53a67",
+      "result": {
+        "suite": "continuous-stairs-v1",
+        "cases": [
+          {
+            "riser": 0.02,
+            "tread": 0.16,
+            "count": 4,
+            "start": 0.45,
+            "width": 1.0,
+            "descending": true,
+            "initial_yaw": 0.08,
+            "passed": true,
+            "checks": {
+              "all_wheels_cleared": true,
+              "three_second_stop": true,
+              "upright_on_final_level": true,
+              "remained_in_lane": true,
+              "height_on_final_level": true,
+              "four_wheels_supported": true,
+              "no_fall": true
+            },
+            "simulated_seconds": 14.239999999997547,
+            "cleared_at": 11.21999999999922,
+            "final_xyz": [
+              1.1514357806458353,
+              -0.054521294152875946,
+              0.20144608714244436
+            ],
+            "minimum_wheel_x": 1.0253119929123589,
+            "min_upright": 0.9726116511617104,
+            "max_penetration_m": 0.0013541180924700337
+          },
+          {
+            "riser": 0.04,
+            "tread": 0.16,
+            "count": 4,
+            "start": 0.45,
+            "width": 1.0,
+            "descending": true,
+            "initial_yaw": 0.08,
+            "passed": true,
+            "checks": {
+              "all_wheels_cleared": true,
+              "three_second_stop": true,
+              "upright_on_final_level": true,
+              "remained_in_lane": true,
+              "height_on_final_level": true,
+              "four_wheels_supported": true,
+              "no_fall": true
+            },
+            "simulated_seconds": 15.679999999996749,
+            "cleared_at": 12.659999999998423,
+            "final_xyz": [
+              1.137517627823133,
+              -0.011363062487823228,
+              0.20145548590408752
+            ],
+            "minimum_wheel_x": 1.0103107408064418,
+            "min_upright": 0.941272361300777,
+            "max_penetration_m": 0.000991065368128194
+          },
+          {
+            "riser": 0.06,
+            "tread": 0.16,
+            "count": 4,
+            "start": 0.45,
+            "width": 1.0,
+            "descending": true,
+            "initial_yaw": 0.08,
+            "passed": true,
+            "checks": {
+              "all_wheels_cleared": true,
+              "three_second_stop": true,
+              "upright_on_final_level": true,
+              "remained_in_lane": true,
+              "height_on_final_level": true,
+              "four_wheels_supported": true,
+              "no_fall": true
+            },
+            "simulated_seconds": 15.339999999996937,
+            "cleared_at": 12.319999999998611,
+            "final_xyz": [
+              1.1887735512637898,
+              -0.023650080962297485,
+              0.20141066715334122
+            ],
+            "minimum_wheel_x": 1.073046876136713,
+            "min_upright": 0.8122104368498547,
+            "max_penetration_m": 0.0012301389142374951
+          }
+        ],
+        "passed": true,
+        "full_robot": true,
+        "actuators": 23,
+        "lift_height": 0.055,
+        "heading_control": true,
+        "commanded_speed": 0.08,
+        "leg_scale": 0.18,
+        "stride": 0.05,
+        "max_simulated_seconds": 45.0,
+        "direction": "down",
+        "crouch": 0.5,
+        "lane_control": true,
+        "yaw_correction_limit": 0.6,
+        "policy_sha256": "821b2cededa8e204a850384b990828d8ac749a07580b6e4ddc563fd437089d57",
+        "runtime_seconds": 3.697304797009565,
+        "mujoco_version": "3.10.0",
+        "sensor": "Exact simulation height map; hardware depth reconstruction is not implemented"
+      }
+    },
+    {
+      "source": "artifacts/stairs-011-descent-placement/eval-regression-t180-y0/result.json",
+      "sha256": "f7089b878fb001de2b97d75f4f246069ac6e65ae22d3091d5f6957dec4345f3c",
+      "result": {
+        "suite": "continuous-stairs-v1",
+        "cases": [
+          {
+            "riser": 0.02,
+            "tread": 0.18,
+            "count": 4,
+            "start": 0.45,
+            "width": 1.0,
+            "descending": true,
+            "initial_yaw": 0.0,
+            "passed": true,
+            "checks": {
+              "all_wheels_cleared": true,
+              "three_second_stop": true,
+              "upright_on_final_level": true,
+              "remained_in_lane": true,
+              "height_on_final_level": true,
+              "four_wheels_supported": true,
+              "no_fall": true
+            },
+            "simulated_seconds": 14.679999999997303,
+            "cleared_at": 11.659999999998977,
+            "final_xyz": [
+              1.194976832162419,
+              -0.054897224408252183,
+              0.20145336332520872
+            ],
+            "minimum_wheel_x": 1.064607714202363,
+            "min_upright": 0.9726309833531093,
+            "max_penetration_m": 0.0009688865445224908
+          },
+          {
+            "riser": 0.04,
+            "tread": 0.18,
+            "count": 4,
+            "start": 0.45,
+            "width": 1.0,
+            "descending": true,
+            "initial_yaw": 0.0,
+            "passed": true,
+            "checks": {
+              "all_wheels_cleared": true,
+              "three_second_stop": true,
+              "upright_on_final_level": true,
+              "remained_in_lane": true,
+              "height_on_final_level": true,
+              "four_wheels_supported": true,
+              "no_fall": true
+            },
+            "simulated_seconds": 15.999999999996572,
+            "cleared_at": 12.979999999998245,
+            "final_xyz": [
+              1.2086262096348293,
+              -0.017686197418396388,
+              0.2014371189194351
+            ],
+            "minimum_wheel_x": 1.0816417568053722,
+            "min_upright": 0.9465557596540901,
+            "max_penetration_m": 0.0017496035145662862
+          },
+          {
+            "riser": 0.06,
+            "tread": 0.18,
+            "count": 4,
+            "start": 0.45,
+            "width": 1.0,
+            "descending": true,
+            "initial_yaw": 0.0,
+            "passed": true,
+            "checks": {
+              "all_wheels_cleared": true,
+              "three_second_stop": true,
+              "upright_on_final_level": true,
+              "remained_in_lane": true,
+              "height_on_final_level": true,
+              "four_wheels_supported": true,
+              "no_fall": true
+            },
+            "simulated_seconds": 15.699999999996738,
+            "cleared_at": 12.679999999998412,
+            "final_xyz": [
+              1.1976936928000095,
+              -0.044544650633085894,
+              0.2014895684373774
+            ],
+            "minimum_wheel_x": 1.0625300781277245,
+            "min_upright": 0.9136919565037582,
+            "max_penetration_m": 0.0017684880223187147
+          }
+        ],
+        "passed": true,
+        "full_robot": true,
+        "actuators": 23,
+        "lift_height": 0.055,
+        "heading_control": true,
+        "commanded_speed": 0.08,
+        "leg_scale": 0.18,
+        "stride": 0.05,
+        "max_simulated_seconds": 45.0,
+        "direction": "down",
+        "crouch": 0.5,
+        "lane_control": true,
+        "yaw_correction_limit": 0.6,
+        "policy_sha256": "821b2cededa8e204a850384b990828d8ac749a07580b6e4ddc563fd437089d57",
+        "runtime_seconds": 3.790039199986495,
+        "mujoco_version": "3.10.0",
+        "sensor": "Exact simulation height map; hardware depth reconstruction is not implemented"
+      }
+    },
+    {
+      "source": "artifacts/stairs-011-descent-placement/eval-regression-t200-y-80/result.json",
+      "sha256": "323477d2a7b30c38d4896450e4313602273c82df646b354550fc43bcebe3e22f",
+      "result": {
+        "suite": "continuous-stairs-v1",
+        "cases": [
+          {
+            "riser": 0.02,
+            "tread": 0.2,
+            "count": 4,
+            "start": 0.45,
+            "width": 1.0,
+            "descending": true,
+            "initial_yaw": -0.08,
+            "passed": true,
+            "checks": {
+              "all_wheels_cleared": true,
+              "three_second_stop": true,
+              "upright_on_final_level": true,
+              "remained_in_lane": true,
+              "height_on_final_level": true,
+              "four_wheels_supported": true,
+              "no_fall": true
+            },
+            "simulated_seconds": 15.419999999996893,
+            "cleared_at": 12.399999999998567,
+            "final_xyz": [
+              1.2767994240180502,
+              -0.043150775277739896,
+              0.2014029869322843
+            ],
+            "minimum_wheel_x": 1.1583660684330512,
+            "min_upright": 0.9726728403327909,
+            "max_penetration_m": 0.0015365095255881972
+          },
+          {
+            "riser": 0.04,
+            "tread": 0.2,
+            "count": 4,
+            "start": 0.45,
+            "width": 1.0,
+            "descending": true,
+            "initial_yaw": -0.08,
+            "passed": true,
+            "checks": {
+              "all_wheels_cleared": true,
+              "three_second_stop": true,
+              "upright_on_final_level": true,
+              "remained_in_lane": true,
+              "height_on_final_level": true,
+              "four_wheels_supported": true,
+              "no_fall": true
+            },
+            "simulated_seconds": 16.57999999999728,
+            "cleared_at": 13.559999999997924,
+            "final_xyz": [
+              1.258620340517987,
+              -0.04377964479381945,
+              0.2014699057141154
+            ],
+            "minimum_wheel_x": 1.1293557561066394,
+            "min_upright": 0.951401860703405,
+            "max_penetration_m": 0.0012010183239376823
+          },
+          {
+            "riser": 0.06,
+            "tread": 0.2,
+            "count": 4,
+            "start": 0.45,
+            "width": 1.0,
+            "descending": true,
+            "initial_yaw": -0.08,
+            "passed": true,
+            "checks": {
+              "all_wheels_cleared": true,
+              "three_second_stop": true,
+              "upright_on_final_level": true,
+              "remained_in_lane": true,
+              "height_on_final_level": true,
+              "four_wheels_supported": true,
+              "no_fall": true
+            },
+            "simulated_seconds": 17.639999999998576,
+            "cleared_at": 14.639999999997325,
+            "final_xyz": [
+              1.295164824217689,
+              -0.015617440702778321,
+              0.20147952582051717
+            ],
+            "minimum_wheel_x": 1.1693908338643288,
+            "min_upright": 0.9228890035264657,
+            "max_penetration_m": 0.0017163458724979521
+          }
+        ],
+        "passed": true,
+        "full_robot": true,
+        "actuators": 23,
+        "lift_height": 0.055,
+        "heading_control": true,
+        "commanded_speed": 0.08,
+        "leg_scale": 0.18,
+        "stride": 0.05,
+        "max_simulated_seconds": 45.0,
+        "direction": "down",
+        "crouch": 0.5,
+        "lane_control": true,
+        "yaw_correction_limit": 0.6,
+        "policy_sha256": "821b2cededa8e204a850384b990828d8ac749a07580b6e4ddc563fd437089d57",
+        "runtime_seconds": 4.142117801995482,
+        "mujoco_version": "3.10.0",
+        "sensor": "Exact simulation height map; hardware depth reconstruction is not implemented"
+      }
+    },
+    {
+      "source": "artifacts/stairs-011-descent-placement/eval-regression-t200-y80/result.json",
+      "sha256": "0d02fb6731d97ffbadda6d19b0d3cfae3a0aad3e3b9f3b9b524e419ac0cf486e",
+      "result": {
+        "suite": "continuous-stairs-v1",
+        "cases": [
+          {
+            "riser": 0.02,
+            "tread": 0.2,
+            "count": 4,
+            "start": 0.45,
+            "width": 1.0,
+            "descending": true,
+            "initial_yaw": 0.08,
+            "passed": true,
+            "checks": {
+              "all_wheels_cleared": true,
+              "three_second_stop": true,
+              "upright_on_final_level": true,
+              "remained_in_lane": true,
+              "height_on_final_level": true,
+              "four_wheels_supported": true,
+              "no_fall": true
+            },
+            "simulated_seconds": 15.379999999996915,
+            "cleared_at": 12.359999999998589,
+            "final_xyz": [
+              1.266775304408036,
+              -0.021391783709500352,
+              0.2013982801730353
+            ],
+            "minimum_wheel_x": 1.1473282478775881,
+            "min_upright": 0.9723229827279531,
+            "max_penetration_m": 0.0015989518750869746
+          },
+          {
+            "riser": 0.04,
+            "tread": 0.2,
+            "count": 4,
+            "start": 0.45,
+            "width": 1.0,
+            "descending": true,
+            "initial_yaw": 0.08,
+            "passed": true,
+            "checks": {
+              "all_wheels_cleared": true,
+              "three_second_stop": true,
+              "upright_on_final_level": true,
+              "remained_in_lane": true,
+              "height_on_final_level": true,
+              "four_wheels_supported": true,
+              "no_fall": true
+            },
+            "simulated_seconds": 16.779999999997525,
+            "cleared_at": 13.759999999997813,
+            "final_xyz": [
+              1.2841191623037995,
+              -0.011657296410408274,
+              0.20143797471329392
+            ],
+            "minimum_wheel_x": 1.147932302121242,
+            "min_upright": 0.9599607812206921,
+            "max_penetration_m": 0.0013813807302129968
+          },
+          {
+            "riser": 0.06,
+            "tread": 0.2,
+            "count": 4,
+            "start": 0.45,
+            "width": 1.0,
+            "descending": true,
+            "initial_yaw": 0.08,
+            "passed": true,
+            "checks": {
+              "all_wheels_cleared": true,
+              "three_second_stop": true,
+              "upright_on_final_level": true,
+              "remained_in_lane": true,
+              "height_on_final_level": true,
+              "four_wheels_supported": true,
+              "no_fall": true
+            },
+            "simulated_seconds": 17.43999999999833,
+            "cleared_at": 14.439999999997436,
+            "final_xyz": [
+              1.2629630036854826,
+              0.002499685004195666,
+              0.2014417238964683
+            ],
+            "minimum_wheel_x": 1.141224620163934,
+            "min_upright": 0.9260662441322625,
+            "max_penetration_m": 0.002084937928606917
+          }
+        ],
+        "passed": true,
+        "full_robot": true,
+        "actuators": 23,
+        "lift_height": 0.055,
+        "heading_control": true,
+        "commanded_speed": 0.08,
+        "leg_scale": 0.18,
+        "stride": 0.05,
+        "max_simulated_seconds": 45.0,
+        "direction": "down",
+        "crouch": 0.5,
+        "lane_control": true,
+        "yaw_correction_limit": 0.6,
+        "policy_sha256": "821b2cededa8e204a850384b990828d8ac749a07580b6e4ddc563fd437089d57",
+        "runtime_seconds": 4.113905798003543,
+        "mujoco_version": "3.10.0",
+        "sensor": "Exact simulation height map; hardware depth reconstruction is not implemented"
+      }
+    }
+  ],
+  "godot": {
+    "source": "artifacts/trial011-godot-summary.json",
+    "sha256": "74c75666a8a928c086f54f33c3a8e6bb66b1844dfae3d03cc5efbd87b134aa3e",
+    "result": {
+      "suite": "godot-continuous-stairs-v1",
+      "engine": "4.7.2-stable (official)",
+      "physics_hz": 2000,
+      "controller_hz": 50,
+      "sensor": "Ground-only raycasts, not camera-based VLA",
+      "cases": [
+        {
+          "riser": 0.02,
+          "descending": true,
+          "duration": 14.54,
+          "final_xyz": [
+            1.16846919059753,
+            -0.0647723823785782,
+            0.201500415802002
+          ],
+          "min_upright": 0.973002314567566,
+          "stair_profile": "experimental-descent60-trial011",
+          "effective_crouch": 0.5,
+          "tread": 0.16,
+          "initial_yaw": -0.08,
+          "maximum_lateral_m": 0.0727497264742851,
+          "checks": {
+            "all_wheels_cleared": true,
+            "three_second_stop": true,
+            "upright_on_final_level": true,
+            "remained_in_lane": true,
+            "height_on_final_level": true,
+            "four_wheels_supported": true,
+            "no_fall": true,
+            "real_forward_key": true,
+            "terrain_triggered_stair_policy": true,
+            "full_articulation": true
+          },
+          "passed": true
+        },
+        {
+          "riser": 0.02,
+          "descending": true,
+          "duration": 14.56,
+          "final_xyz": [
+            1.17455291748047,
+            -0.0249520689249039,
+            0.20146344602108
+          ],
+          "min_upright": 0.972776234149933,
+          "stair_profile": "experimental-descent60-trial011",
+          "effective_crouch": 0.5,
+          "tread": 0.16,
+          "initial_yaw": 0.08,
+          "maximum_lateral_m": 0.0443288162350655,
+          "checks": {
+            "all_wheels_cleared": true,
+            "three_second_stop": true,
+            "upright_on_final_level": true,
+            "remained_in_lane": true,
+            "height_on_final_level": true,
+            "four_wheels_supported": true,
+            "no_fall": true,
+            "real_forward_key": true,
+            "terrain_triggered_stair_policy": true,
+            "full_articulation": true
+          },
+          "passed": true
+        },
+        {
+          "riser": 0.02,
+          "descending": true,
+          "duration": 15.2,
+          "final_xyz": [
+            1.21250677108765,
+            -0.023012226447463,
+            0.201628804206848
+          ],
+          "min_upright": 0.973260283470154,
+          "stair_profile": "experimental-descent60-trial011",
+          "effective_crouch": 0.5,
+          "tread": 0.18,
+          "initial_yaw": 0.0,
+          "maximum_lateral_m": 0.0510863326489925,
+          "checks": {
+            "all_wheels_cleared": true,
+            "three_second_stop": true,
+            "upright_on_final_level": true,
+            "remained_in_lane": true,
+            "height_on_final_level": true,
+            "four_wheels_supported": true,
+            "no_fall": true,
+            "real_forward_key": true,
+            "terrain_triggered_stair_policy": true,
+            "full_articulation": true
+          },
+          "passed": true
+        },
+        {
+          "riser": 0.02,
+          "descending": true,
+          "duration": 15.88,
+          "final_xyz": [
+            1.29685664176941,
+            -0.0226617455482483,
+            0.201803535223007
+          ],
+          "min_upright": 0.974020838737488,
+          "stair_profile": "experimental-descent60-trial011",
+          "effective_crouch": 0.5,
+          "tread": 0.2,
+          "initial_yaw": -0.08,
+          "maximum_lateral_m": 0.0541973486542702,
+          "checks": {
+            "all_wheels_cleared": true,
+            "three_second_stop": true,
+            "upright_on_final_level": true,
+            "remained_in_lane": true,
+            "height_on_final_level": true,
+            "four_wheels_supported": true,
+            "no_fall": true,
+            "real_forward_key": true,
+            "terrain_triggered_stair_policy": true,
+            "full_articulation": true
+          },
+          "passed": true
+        },
+        {
+          "riser": 0.02,
+          "descending": true,
+          "duration": 15.94,
+          "final_xyz": [
+            1.29190444946289,
+            -0.0169709306210279,
+            0.201848015189171
+          ],
+          "min_upright": 0.972485721111298,
+          "stair_profile": "experimental-descent60-trial011",
+          "effective_crouch": 0.5,
+          "tread": 0.2,
+          "initial_yaw": 0.08,
+          "maximum_lateral_m": 0.0425696186721325,
+          "checks": {
+            "all_wheels_cleared": true,
+            "three_second_stop": true,
+            "upright_on_final_level": true,
+            "remained_in_lane": true,
+            "height_on_final_level": true,
+            "four_wheels_supported": true,
+            "no_fall": true,
+            "real_forward_key": true,
+            "terrain_triggered_stair_policy": true,
+            "full_articulation": true
+          },
+          "passed": true
+        },
+        {
+          "riser": 0.04,
+          "descending": true,
+          "duration": 16.28,
+          "final_xyz": [
+            1.15730094909668,
+            -0.048525083810091,
+            0.201551854610443
+          ],
+          "min_upright": 0.94507372379303,
+          "stair_profile": "experimental-descent60-trial011",
+          "effective_crouch": 0.5,
+          "tread": 0.16,
+          "initial_yaw": -0.08,
+          "maximum_lateral_m": 0.0748387575149536,
+          "checks": {
+            "all_wheels_cleared": true,
+            "three_second_stop": true,
+            "upright_on_final_level": true,
+            "remained_in_lane": true,
+            "height_on_final_level": true,
+            "four_wheels_supported": true,
+            "no_fall": true,
+            "real_forward_key": true,
+            "terrain_triggered_stair_policy": true,
+            "full_articulation": true
+          },
+          "passed": true
+        },
+        {
+          "riser": 0.04,
+          "descending": true,
+          "duration": 16.24,
+          "final_xyz": [
+            1.16231942176819,
+            -0.0464998222887516,
+            0.201519012451172
+          ],
+          "min_upright": 0.94081324338913,
+          "stair_profile": "experimental-descent60-trial011",
+          "effective_crouch": 0.5,
+          "tread": 0.16,
+          "initial_yaw": 0.08,
+          "maximum_lateral_m": 0.061086967587471,
+          "checks": {
+            "all_wheels_cleared": true,
+            "three_second_stop": true,
+            "upright_on_final_level": true,
+            "remained_in_lane": true,
+            "height_on_final_level": true,
+            "four_wheels_supported": true,
+            "no_fall": true,
+            "real_forward_key": true,
+            "terrain_triggered_stair_policy": true,
+            "full_articulation": true
+          },
+          "passed": true
+        },
+        {
+          "riser": 0.04,
+          "descending": true,
+          "duration": 17.1,
+          "final_xyz": [
+            1.21646976470947,
+            0.0151138231158257,
+            0.201595082879066
+          ],
+          "min_upright": 0.965182423591614,
+          "stair_profile": "experimental-descent60-trial011",
+          "effective_crouch": 0.5,
+          "tread": 0.18,
+          "initial_yaw": 0.0,
+          "maximum_lateral_m": 0.0259202308952808,
+          "checks": {
+            "all_wheels_cleared": true,
+            "three_second_stop": true,
+            "upright_on_final_level": true,
+            "remained_in_lane": true,
+            "height_on_final_level": true,
+            "four_wheels_supported": true,
+            "no_fall": true,
+            "real_forward_key": true,
+            "terrain_triggered_stair_policy": true,
+            "full_articulation": true
+          },
+          "passed": true
+        },
+        {
+          "riser": 0.04,
+          "descending": true,
+          "duration": 16.28,
+          "final_xyz": [
+            1.25530540943146,
+            -0.10185668617487,
+            0.201611444354057
+          ],
+          "min_upright": 0.942171633243561,
+          "stair_profile": "experimental-descent60-trial011",
+          "effective_crouch": 0.5,
+          "tread": 0.2,
+          "initial_yaw": -0.08,
+          "maximum_lateral_m": 0.126798316836357,
+          "checks": {
+            "all_wheels_cleared": true,
+            "three_second_stop": true,
+            "upright_on_final_level": true,
+            "remained_in_lane": true,
+            "height_on_final_level": true,
+            "four_wheels_supported": true,
+            "no_fall": true,
+            "real_forward_key": true,
+            "terrain_triggered_stair_policy": true,
+            "full_articulation": true
+          },
+          "passed": true
+        },
+        {
+          "riser": 0.04,
+          "descending": true,
+          "duration": 17.16,
+          "final_xyz": [
+            1.28387022018433,
+            0.0213885977864265,
+            0.201556801795959
+          ],
+          "min_upright": 0.958956003189087,
+          "stair_profile": "experimental-descent60-trial011",
+          "effective_crouch": 0.5,
+          "tread": 0.2,
+          "initial_yaw": 0.08,
+          "maximum_lateral_m": 0.0359828248620033,
+          "checks": {
+            "all_wheels_cleared": true,
+            "three_second_stop": true,
+            "upright_on_final_level": true,
+            "remained_in_lane": true,
+            "height_on_final_level": true,
+            "four_wheels_supported": true,
+            "no_fall": true,
+            "real_forward_key": true,
+            "terrain_triggered_stair_policy": true,
+            "full_articulation": true
+          },
+          "passed": true
+        },
+        {
+          "riser": 0.06,
+          "descending": true,
+          "duration": 16.24,
+          "final_xyz": [
+            1.13299202919006,
+            -0.0376279577612877,
+            0.201598137617111
+          ],
+          "min_upright": 0.824223518371582,
+          "stair_profile": "experimental-descent60-trial011",
+          "effective_crouch": 0.5,
+          "tread": 0.16,
+          "initial_yaw": -0.08,
+          "maximum_lateral_m": 0.0606615319848061,
+          "checks": {
+            "all_wheels_cleared": true,
+            "three_second_stop": true,
+            "upright_on_final_level": true,
+            "remained_in_lane": true,
+            "height_on_final_level": true,
+            "four_wheels_supported": true,
+            "no_fall": true,
+            "real_forward_key": true,
+            "terrain_triggered_stair_policy": true,
+            "full_articulation": true
+          },
+          "passed": true
+        },
+        {
+          "riser": 0.06,
+          "descending": true,
+          "duration": 15.66,
+          "final_xyz": [
+            1.14672577381134,
+            -0.0881438627839088,
+            0.201664224267006
+          ],
+          "min_upright": 0.785453915596008,
+          "stair_profile": "experimental-descent60-trial011",
+          "effective_crouch": 0.5,
+          "tread": 0.16,
+          "initial_yaw": 0.08,
+          "maximum_lateral_m": 0.0932767689228058,
+          "checks": {
+            "all_wheels_cleared": true,
+            "three_second_stop": true,
+            "upright_on_final_level": true,
+            "remained_in_lane": true,
+            "height_on_final_level": true,
+            "four_wheels_supported": true,
+            "no_fall": true,
+            "real_forward_key": true,
+            "terrain_triggered_stair_policy": true,
+            "full_articulation": true
+          },
+          "passed": true
+        },
+        {
+          "riser": 0.06,
+          "descending": true,
+          "duration": 16.48,
+          "final_xyz": [
+            1.20992600917816,
+            0.0252010244876146,
+            0.201555296778679
+          ],
+          "min_upright": 0.901032686233521,
+          "stair_profile": "experimental-descent60-trial011",
+          "effective_crouch": 0.5,
+          "tread": 0.18,
+          "initial_yaw": 0.0,
+          "maximum_lateral_m": 0.0440934561192989,
+          "checks": {
+            "all_wheels_cleared": true,
+            "three_second_stop": true,
+            "upright_on_final_level": true,
+            "remained_in_lane": true,
+            "height_on_final_level": true,
+            "four_wheels_supported": true,
+            "no_fall": true,
+            "real_forward_key": true,
+            "terrain_triggered_stair_policy": true,
+            "full_articulation": true
+          },
+          "passed": true
+        },
+        {
+          "riser": 0.06,
+          "descending": true,
+          "duration": 17.02,
+          "final_xyz": [
+            1.27457296848297,
+            -0.103398665785789,
+            0.201717734336853
+          ],
+          "min_upright": 0.828137159347534,
+          "stair_profile": "experimental-descent60-trial011",
+          "effective_crouch": 0.5,
+          "tread": 0.2,
+          "initial_yaw": -0.08,
+          "maximum_lateral_m": 0.112332671880722,
+          "checks": {
+            "all_wheels_cleared": true,
+            "three_second_stop": true,
+            "upright_on_final_level": true,
+            "remained_in_lane": true,
+            "height_on_final_level": true,
+            "four_wheels_supported": true,
+            "no_fall": true,
+            "real_forward_key": true,
+            "terrain_triggered_stair_policy": true,
+            "full_articulation": true
+          },
+          "passed": true
+        },
+        {
+          "riser": 0.06,
+          "descending": true,
+          "duration": 17.5,
+          "final_xyz": [
+            1.23981785774231,
+            -0.0390479899942875,
+            0.202058717608452
+          ],
+          "min_upright": 0.820796608924866,
+          "stair_profile": "experimental-descent60-trial011",
+          "effective_crouch": 0.5,
+          "tread": 0.2,
+          "initial_yaw": 0.08,
+          "maximum_lateral_m": 0.0558917671442032,
+          "checks": {
+            "all_wheels_cleared": true,
+            "three_second_stop": true,
+            "upright_on_final_level": true,
+            "remained_in_lane": true,
+            "height_on_final_level": true,
+            "four_wheels_supported": true,
+            "no_fall": true,
+            "real_forward_key": true,
+            "terrain_triggered_stair_policy": true,
+            "full_articulation": true
+          },
+          "passed": true
+        }
+      ],
+      "passed": true
+    }
+  },
+  "passed": true,
+  "scope": "No payload; four 20/40/60 mm risers; 180 mm tread/yaw 0 and 160/200 mm treads with yaw +/-0.08 rad. All 15 cases pass in full MuJoCo and Godot. This is a development regression matrix, not untouched terrain or a VLA claim.",
+  "raw_godot_trace_sha256": {
+    "artifacts/godot-trial011-h20-t160-y-80.json": "e0deedf6661ab43e36eca3a3d7714eb70896c6d352ce9f091cf6a7686d04c8c1",
+    "artifacts/godot-trial011-h20-t160-y80.json": "42b83273a1b98bcae53ecb9274e42c9e39e2cf5b51629d44478ce2f972b24b68",
+    "artifacts/godot-trial011-h20-t180-y0.json": "96629c8d0aa14926ed4e56e1dfc4abe7956786619c6fe259cc386d1e68a70fd5",
+    "artifacts/godot-trial011-h20-t200-y-80.json": "0a433781412ff6520713a4806de80b80c0364ed413b62572c0b9a668127c9273",
+    "artifacts/godot-trial011-h20-t200-y80.json": "a2d7a9fb5f1695d1d68b7ddcb7d3fee1bec7d88b00e74370963f35346ecc4a63",
+    "artifacts/godot-trial011-h40-t160-y-80.json": "b94b84a162686e07caa3e400628ee454c9fc36109b3e5111f9422275c2ec8b8e",
+    "artifacts/godot-trial011-h40-t160-y80.json": "00eec8e8f5c4f77a53b49b07fb905d74af5d5addccab3e48eeae9326f98af8d6",
+    "artifacts/godot-trial011-h40-t180-y0.json": "946c427b7d319661ebcca03337750c3d9ad4bd7bc61c838494ae7e708552caf2",
+    "artifacts/godot-trial011-h40-t200-y-80.json": "c8dad6fe4e369a05806268292bf7a373073a8249c34a1a5f43c47fd20fec9a9b",
+    "artifacts/godot-trial011-h40-t200-y80.json": "2c2ffd2ac31cb43e4f613fb26829d518711ae7d571b39a0d244a28f605259a90",
+    "artifacts/godot-trial011-h60-t160-y-80.json": "a3d63acef58b933821fe8a4298973f6b8ba17c2e9864bd878cb2b2cb653484ac",
+    "artifacts/godot-trial011-h60-t160-y80.json": "586d182b5a9355e9eebc3f5403206d3e4d2006442e3f94fe5df071d10a740aeb",
+    "artifacts/godot-trial011-h60-t180-y0.json": "0345db000aeddd3401e492261613df231a18b7dfee3207ada718ca1a6aeffa49",
+    "artifacts/godot-trial011-h60-t200-y-80.json": "493c5074d17ff3714b1a1a8e52f88c16703e89c3daee045ac4d33e2ba585b953",
+    "artifacts/godot-trial011-h60-t200-y80.json": "c798224ea8088b5137891a8b8d9513f9d64324a1dfde21a8edd09175e90d4731"
+  }
+}
