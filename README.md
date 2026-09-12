@@ -7,7 +7,10 @@ model are used across training and game integration.
 **Development preview.** WASD and held-Shift crouch pass eight-case checks in
 CPU MuJoCo (reduced and fully articulated models) and Godot/Jolt. Continuous
 20/40 mm stairs pass the reduced/full MuJoCo and Godot development suites.
-60 mm is not passed. A separate full-model tread/yaw holdout passed 14/16 cases;
+The complete 60 mm suite is not passed. A slower experimental ascent now passes
+full MuJoCo and Godot; descent still fails Godot lane containment. See
+[experimental profiles](experiments/stair_profiles/README.md).
+A separate full-model tread/yaw holdout passed 14/16 cases;
 the two failures exceeded the lateral corridor on descent.
 Hardware has not been built or measured.
 

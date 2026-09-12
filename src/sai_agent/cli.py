@@ -34,6 +34,7 @@ def main(argv=None):
     parser.add_argument('--screenshot-at',type=float,default=.5,help='Simulated time in seconds for the screenshot')
     parser.add_argument('--stairs',type=float,default=0.,help='Experimental four-riser course, height in metres')
     parser.add_argument('--descending',action='store_true')
+    parser.add_argument('--stair-profile',type=Path,help='Explicit experimental stair profile JSON; default remains the accepted 20/40 mm actor')
     parser.add_argument('--duration',type=float,default=12.)
     parser.add_argument('--task',choices=['drive','cargo'],default='drive')
     parser.add_argument('--cargo-obstacle-height',type=float,default=.018)
@@ -50,7 +51,7 @@ def main(argv=None):
         if args.task=='cargo':
             from .cargo_godot import CargoGodotController
             controller=CargoGodotController(no_clamp=args.no_clamp)
-        else:controller=GodotController(root)
+        else:controller=GodotController(root,stair_profile=args.stair_profile)
         with socket.socket() as listener:
             listener.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
             listener.bind(('127.0.0.1',0));listener.listen(1)

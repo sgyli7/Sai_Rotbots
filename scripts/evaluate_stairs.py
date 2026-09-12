@@ -30,7 +30,14 @@ p.add_argument('--heading-control',action='store_true')
 p.add_argument('--speed',type=float,default=.12)
 p.add_argument('--leg-scale',type=float,default=.18)
 p.add_argument('--stride',type=float,default=.05)
+p.add_argument('--max-seconds',type=float,default=30.,help='Declared per-flight time limit; default acceptance remains 30 s')
+p.add_argument('--direction',choices=['both','up','down'],default='both')
+p.add_argument('--crouch',type=float,default=0.,help='Requested normalized crouch, slewed at the deployment rate')
+p.add_argument('--lane-control',action='store_true',help='Diagnostic known-route steering on the staircase center line')
 args=p.parse_args()
+if args.max_seconds<=3: p.error('--max-seconds must exceed the required 3 s final stop')
+if not 0<=args.crouch<=1: p.error('--crouch must be in [0, 1]')
+if args.lane_control and not args.heading_control: p.error('--lane-control requires --heading-control')
 args.out.mkdir(parents=True,exist_ok=True)
 options=ort.SessionOptions();options.intra_op_num_threads=2;options.inter_op_num_threads=1
 policy=ort.InferenceSession(str(args.policy),options,providers=['CPUExecutionProvider'])
@@ -48,7 +55,7 @@ if args.full_robot:
     k=root.find('keyframe')
     if k is not None:root.remove(k)
     source=ET.tostring(root,encoding='unicode')
-for descending in [False,True]:
+for descending in ([False,True] if args.direction=='both' else [args.direction=='down']):
     for riser in args.risers:
         course=Staircase(riser=riser,descending=descending,tread=args.tread)
         xml=scene_xml(source,course)
@@ -60,8 +67,8 @@ for descending in [False,True]:
         wheels=[model.body(n+'_wheel').id for n in ['front_left','front_right','rear_left','rear_right']]
         last_edge=course.start+(course.count-1)*course.tread
         final_ground=float(course.height(last_edge+.1))
-        trace=[];previous=np.zeros(16);cleared_at=None;heading_hold=HeadingHold()
-        for k in range(1500):
+        trace=[];previous=np.zeros(16);cleared_at=None;heading_hold=HeadingHold();crouch=0.
+        for k in range(math.floor(args.max_seconds/.02)):
             command=[args.speed if k>=25 and cleared_at is None else 0.,0.]
             q,v=adapter.state(data)
             qw,qx,qy,qz=q[3:7]
@@ -69,9 +76,14 @@ for descending in [False,True]:
             c,s=math.cos(yaw),math.sin(yaw)
             xy=SCAN_XY@np.array([[c,s],[-s,c]])+q[:2]
             scan=course.height(xy[:,0],xy[:,1])
-            obs=observation_numpy(q,v,command,0.,previous,k*.02*2*math.pi/3.2,scan)
+            crouch+=float(np.clip(args.crouch-crouch,-.04,.04))
+            obs=observation_numpy(q,v,command,crouch,previous,k*.02*2*math.pi/3.2,scan)
             action=filter_action_numpy(policy.run(None,{'obs':obs[None]})[0][0],command)
-            target=targets_stairs_numpy(action,command,0.,k*.02/3.2,scan,args.lift_height,args.leg_scale,args.stride)
+            target=targets_stairs_numpy(action,command,crouch,k*.02/3.2,scan,args.lift_height,args.leg_scale,args.stride)
+            if args.lane_control and command[0]>.015:
+                # Known straight route y=0, using simulated odometry. Supply a
+                # bounded heading reference; HeadingHold changes wheel speeds only.
+                heading_hold.desired=float(np.clip(math.atan2(-q[1],.5),-.4,.4))
             if args.heading_control:target=heading_hold.apply(target,command,yaw,v[5])
             for _ in range(round(.02/model.opt.timestep)):
                 adapter.apply(data,target)
@@ -96,7 +108,7 @@ for descending in [False,True]:
                 'three_second_stop':bool(cleared_at is not None and data.time-cleared_at>=3),
                 'upright_on_final_level':bool(upright>.9),
                 'remained_in_lane':bool(np.max(np.abs(a[:,2]))<.3),
-                'height_on_final_level':bool(abs(data.qpos[2]-(final_ground+STAND_HEIGHT))<.02),
+                'height_on_final_level':bool(abs(data.qpos[2]-(final_ground+STAND_HEIGHT-.035*crouch))<.02),
                 'four_wheels_supported':bool(np.mean(settled[:,6]==4)>.7),
                 'no_fall':bool(a[:,5].min()>.6)}
         name=f'{"down" if descending else "up"}-{round(riser*1000)}'
@@ -113,6 +125,9 @@ result=dict(suite='continuous-stairs-v1',cases=rows,passed=all(r['passed'] for r
             commanded_speed=args.speed,
             leg_scale=args.leg_scale,
             stride=args.stride,
+            max_simulated_seconds=args.max_seconds,
+            direction=args.direction,crouch=args.crouch,
+            lane_control=args.lane_control,
             policy_sha256=hashlib.sha256(args.policy.read_bytes()).hexdigest(),
             runtime_seconds=time.monotonic()-started,mujoco_version=mujoco.__version__,
             sensor='Exact simulation height map; hardware depth reconstruction is not implemented')

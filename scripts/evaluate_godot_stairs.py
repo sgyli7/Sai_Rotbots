@@ -11,11 +11,12 @@ for f in sorted(a.directory.glob(a.prefix+'*.json')):
  final_ground=0 if raw['descending'] else 4*raw['riser']
  checks=dict(all_wheels_cleared=wheel[:,0].min()>1.04,three_second_stop=raw['cleared_at']>=0 and last['time']-raw['cleared_at']>=2.999,
     upright_on_final_level=up[-1]>.9,remained_in_lane=abs(xyz[:,1]).max()<.3,
-    height_on_final_level=abs(xyz[-1,2]-(final_ground+.2192))<.02,
+    height_on_final_level=abs(xyz[-1,2]-(final_ground+.2192-.035*last.get('effective_crouch',0.)))<.02,
     four_wheels_supported=np.mean([s['wheels_supported']==4 for s in settled])>.7,no_fall=up.min()>.6,
     real_forward_key=any(e['key']==87 and e['pressed'] for e in raw['input_events']),
     automatic_stair_selection=any(s['controller_stage']=='stairs' for s in ss))
  rows.append(dict(riser=raw['riser'],descending=raw['descending'],duration=last['time'],final_xyz=xyz[-1].tolist(),min_upright=float(up.min()),
+    stair_profile=last.get('stair_profile','stairs-dev40'),effective_crouch=last.get('effective_crouch',0.),
     maximum_lateral_m=float(abs(xyz[:,1]).max()),checks={k:bool(v) for k,v in checks.items()},passed=bool(all(checks.values()))))
 result=dict(suite='godot-continuous-stairs-v1',engine=raw['engine'],physics_hz=2000,controller_hz=50,
     sensor='Ground-only raycasts, not camera-based VLA',cases=rows,passed=bool(rows) and all(r['passed'] for r in rows))

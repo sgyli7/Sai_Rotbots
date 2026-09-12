@@ -53,12 +53,22 @@ Start with 64 parallel worlds and a short smoke run. Baseline throughput and phy
   policies regressed existing cases and have not replaced trial 004.
   Trial 009 then encountered a new non-finite state at 157 seconds; the earlier
   replay fix is scoped to that captured trigger, not a general stability claim.
+  Later diagnostics retained trial 008 for a slower 60 mm ascent: full MuJoCo
+  finishes in 33.38 s under a declared 45 s budget (the original 30 s failure
+  remains), and Godot finishes in 27.18 s. Trial 006 with half crouch and a
+  known-route wheel steering layer passes full MuJoCo descent in 15.46 s but
+  fails Godot lane containment. Both profiles are explicitly experimental,
+  separate from the unchanged default actor. This is not full 60 mm acceptance.
 - Legal display assets and notices are published. Explicit GLB normals improve
   rendering without changing contact meshes, inertias or joints.
-- Unity draft PR #3 now has the native MJCF/ONNX adapter. Its 82D observation and
-  mixed target formulas match 64 Python fixtures in actual .NET execution, but
-  the Unity editor is not installed on this Linux ARM machine; editor/runtime
-  acceptance is not yet available.
+- Unity draft PR #3 now has flat and 20/40 mm stair scenes, actual terrain rays
+  and a shared native MJCF world. Its 82D observation, mixed target, stair and
+  heading formulas match 224 Python fixtures in actual .NET execution. The
+  same world source passes twelve physical cases on Linux ARM64 and Linux/
+  Windows CI using MuJoCo 3.12.0 + ONNX Runtime. These are not Unity editor runs.
+  A real editor/Barracuda acceptance entry point now reuses the same criteria,
+  but no editor is installed or connected here; editor input/render acceptance
+  remains outstanding. Unity cargo support is also still missing.
 - Godot project profile PR #2 is merged. A fresh GitHub dependency install ran
   the real W input case; the existing 38 MD input tests also passed. The cargo
   extension has also been installed from GitHub commit 6eb18b2 and completed

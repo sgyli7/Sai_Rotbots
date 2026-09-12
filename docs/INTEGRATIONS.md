@@ -29,8 +29,11 @@ separate tests, not claims that every MD scene or user PC has been verified.
 [Integration PR #3](https://github.com/sgyli7/MicroDuck-Unity-Sim2Sim/pull/3)
 contains `scripts/setup-sai-agent.py`, the native-model controller, display
 import and the `SaiAgent001/Build Demo` editor menu.
+Until the draft PR is merged, use its preview branch in a separate checkout:
 
 ```sh
+git clone --branch feat/sai-agent-001 --single-branch https://github.com/sgyli7/MicroDuck-Unity-Sim2Sim.git Sai-Unity-preview
+cd Sai-Unity-preview
 python scripts/setup-sai-agent.py
 ```
 
@@ -40,13 +43,33 @@ directly and the exported ONNX actor. W/S drive, A/D turn, held Shift crouches,
 and R resets the native model. The display wrapper uses the blue shell and
 SO101 meshes while preserving all collision and inertial data.
 
+**SaiAgent001 → Build Stairs** creates separate four-riser 20/40 mm ascent and
+descent scenes. The controller uses 24 terrain-only rays, both frozen actors
+and the same bounded heading control as the Godot adapter.
+
 The setup script fetched and installed the pinned GitHub assets. The C# control
-contract passed 64 randomized Python fixtures under .NET 8, with maximum
-absolute difference below 3.9e-7. **Unity/Tuanjie editor execution has not been
-tested on this Linux ARM workstation, which has no supported editor installed.**
-This PR remains a draft. Barracuda execution, scene rendering, input acceptance,
-stairs and cargo in Unity still need editor-side verification and completion;
-the Godot evidence does not establish them.
+contract passed 64 flat plus 160 stair/heading Python fixtures under .NET 8;
+maximum absolute difference is below 4.2e-7. More importantly, the actual shared
+`SaiNativeWorld` source passes eight movement/crouch/reset cases and four stair
+cases with MuJoCo 3.12.0 and ONNX Runtime 1.24.4. These passed on Linux ARM64 and
+in [Linux/Windows CI](https://github.com/sgyli7/MicroDuck-Unity-Sim2Sim/actions/runs/34680834372).
+The Windows run loads the actual project-bundled DLL with its locked SHA-256.
+The tests advance real native physics, not prescribed robot poses. The compact
+record is [unity-native-physics.json](../evidence/unity-native-physics.json).
+
+**Unity/Tuanjie editor execution has not been tested on this Linux ARM workstation,
+which has no supported editor installed.** The PR remains a draft. A real editor
+entry point is now prepared:
+
+```sh
+python scripts/run-sai-editor-acceptance.py --editor "/absolute/path/to/editor"
+```
+
+It imports the real ONNX assets and runs the same physical acceptance suite via
+the gameplay Barracuda wrapper, writing an explicit editor report. It has not
+yet been executed here. Keyboard input and rendering additionally need Play
+acceptance. Cargo pickup/transport has not yet been ported to this Unity demo;
+the working Godot task does not establish Unity task support.
 
 ## Physics and sensing
 

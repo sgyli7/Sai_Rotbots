@@ -195,6 +195,9 @@ func _physics_process(_delta: float) -> void:
 		state["wheel_positions"]=wheel_positions
 		state["wheels_supported"]=supported
 		state["controller_stage"]=command.stage
+		state["effective_crouch"]=command.get("effective_crouch",0.)
+		state["stair_profile"]=command.get("stair_profile","")
+		state["contract_id"]=command.get("contract_id","")
 		if task=="cargo":
 			var contacts: Array=[]
 			for body in robot.item.get_colliding_bodies():contacts.append(str(body.name))

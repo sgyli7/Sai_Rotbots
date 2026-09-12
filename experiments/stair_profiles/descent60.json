@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "id": "experimental-descent60",
+  "experimental": true,
+  "actor": "descent60.onnx",
+  "onnx_sha256": "8465d9ddce92ac65d2e03ee92ccaf291df68aa89f5b0233a99be1308df9d53cc",
+  "control": {
+    "speed": 0.08,
+    "lift_height": 0.055,
+    "leg_scale": 0.18,
+    "min_crouch": 0.5,
+    "route_center_y": 0.0,
+    "motion_phase_start_seconds": 0.5
+  },
+  "scope": "Known four-riser 60 mm course; diagnostic only, no default policy promotion",
+  "training": {
+    "schema_version": 1,
+    "cfg": {
+      "num_steps_per_env": 32,
+      "obs_groups": {
+        "actor": [
+          "policy"
+        ],
+        "critic": [
+          "policy"
+        ]
+      },
+      "multi_gpu": null,
+      "actor": {
+        "class_name": "MLPModel",
+        "hidden_dims": [
+          128,
+          128
+        ],
+        "activation": "elu",
+        "obs_normalization": true,
+        "distribution_cfg": {
+          "class_name": "GaussianDistribution",
+          "init_std": 0.25,
+          "std_type": "log"
+        }
+      },
+      "critic": {
+        "class_name": "MLPModel",
+        "hidden_dims": [
+          128,
+          128
+        ],
+        "activation": "elu",
+        "obs_normalization": true
+      },
+      "algorithm": {
+        "class_name": "PPO",
+        "num_learning_epochs": 4,
+        "num_mini_batches": 4,
+        "clip_param": 0.2,
+        "gamma": 0.99,
+        "lam": 0.95,
+        "value_loss_coef": 1.0,
+        "entropy_coef": 0.002,
+        "learning_rate": 0.0003,
+        "max_grad_norm": 1.0,
+        "use_clipped_value_loss": true,
+        "schedule": "fixed",
+        "desired_kl": null,
+        "normalize_advantage_per_mini_batch": false
+      }
+    },
+    "seed": 47,
+    "steps": 5619712,
+    "stage": "stairs",
+    "max_riser": 0.06,
+    "reset_std": 0.22,
+    "status": "training-complete-unvalidated",
+    "iterations": 686,
+    "device": "NVIDIA GB10",
+    "cpu_threads": 2,
+    "training_wall_seconds": 300.31676996900933,
+    "process_cpu_seconds": 299.626622528,
+    "model_sha256": "af174c649acca3dfec7e60c896c4a9603d3ed2864862534c81053517e6500f7f",
+    "training_scene_sha256": "074db2c997b0c4128ec31212c8476d1cda7b4f3a3cc0f0b4b0ddac472149cd3e",
+    "observation_size": 82,
+    "action_size": 16,
+    "control_hz": 50,
+    "source_sha256": {
+      "src/sai_agent/stair_env.py": "98da444803bec2da60e7cd333703b63946428163bc87452ae09178af0cd80196",
+      "src/sai_agent/gpu_backend.py": "09f6e3751f3ad1932f6885877f459f4dadecb8dadcbd549dc3c7576b8c70d2d8",
+      "src/sai_agent/env.py": "678aa55f99d0718752bf5cdaa2c458c2ee4bbdf3ebc5f71d07dfa28d60b79ba5",
+      "src/sai_agent/cli.py": "9dd14324f1132360f8b100354e033c9bf43682f56a620b7594954c03599e5d5b",
+      "src/sai_agent/__init__.py": "966bd47e37aa6e36ec9c3d8f2e552365ba84199aeaeb2503eadd8b66c33ad5a9",
+      "src/sai_agent/runtime.py": "9616f1c499faf0ec826b7ce7c635926fcd7abc7324ece3145c9269187cd309a5",
+      "src/sai_agent/godot_controller.py": "304b95fe4949b9df548cefdef1289f1e1592bc530da4b8744b75292d062336a8",
+      "src/sai_agent/paths.py": "8064c40303dad119f8fdb84cbbbfed4a2bb7e78ecf7b5b80d3548864d06e9102",
+      "src/sai_agent/terrain.py": "da22fef563212a30f865e6db92423f163abdc8a0b177fb400f3aac50e75b465c",
+      "src/sai_agent/control.py": "85e737eceed18ed2b89c09e04af2a3206ca888b1e2c313a4fa7ae7eaa125c270",
+      "scripts/train.py": "af90b124c4602b4c945a7a4a8f0918f9ba24e6ff92450d6ce981a8f0754b29d7"
+    },
+    "resume": "artifacts/stairs-004-progress/policy.pt"
+  }
+}
