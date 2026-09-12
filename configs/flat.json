@@ -1,0 +1,21 @@
+{
+  "num_steps_per_env": 32,
+  "obs_groups": {"actor": ["policy"], "critic": ["policy"]},
+  "multi_gpu": null,
+  "actor": {
+    "class_name": "MLPModel", "hidden_dims": [128, 128], "activation": "elu",
+    "obs_normalization": true,
+    "distribution_cfg": {"class_name": "GaussianDistribution", "init_std": 0.25, "std_type": "log"}
+  },
+  "critic": {
+    "class_name": "MLPModel", "hidden_dims": [128, 128], "activation": "elu",
+    "obs_normalization": true
+  },
+  "algorithm": {
+    "class_name": "PPO", "num_learning_epochs": 4, "num_mini_batches": 4,
+    "clip_param": 0.2, "gamma": 0.99, "lam": 0.95, "value_loss_coef": 1.0,
+    "entropy_coef": 0.002, "learning_rate": 0.0003, "max_grad_norm": 1.0,
+    "use_clipped_value_loss": true, "schedule": "fixed", "desired_kl": null,
+    "normalize_advantage_per_mini_batch": false
+  }
+}

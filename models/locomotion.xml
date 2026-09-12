@@ -1,0 +1,160 @@
+<mujoco model="Sai_Agent_001_locomotion">
+  <compiler angle="radian" inertiafromgeom="false" autolimits="true" fusestatic="true" />
+  <option timestep=".002" integrator="implicitfast" iterations="20" cone="pyramidal" ls_iterations="8" />
+  <default>
+    <geom density="0" friction=".8 .002 .0002" condim="4" solref=".006 1" contype="1" conaffinity="6" />
+    <joint damping=".03" armature=".002" />
+  </default>
+  <visual>
+    <global offwidth="1280" offheight="800" fovy="38" />
+    <headlight ambient=".55 .55 .55" diffuse=".65 .65 .65" />
+  </visual>
+  <asset />
+  <worldbody>
+    <light pos="1 -2 4" dir="-.2 .4 -1" />
+    <geom name="ground" type="plane" size="20 20 .1" rgba=".70 .73 .72 1" contype="2" conaffinity="5" />
+    <body name="chassis" pos="0 0 .224">
+      <freejoint name="floating_base" />
+      <inertial pos="-0.00298935184472 0.00147360009768 0.00771891735136" mass="3.6410854990026498" fullinertia="0.0241230792903 0.0187868532614 0.0337982038644 -0.000371696436636 -0.000943447771971 -0.00030462885049" />
+      <geom name="chassis_contact_0" type="box" rgba=".18 .22 .28 1" group="3" pos="0 0 -0.014" size="0.12 0.067 0.041" />
+      <geom name="chassis_contact_1" type="box" rgba=".18 .22 .28 1" group="3" pos="-0.08975 0 0.038" size="0.05175 0.111 0.001" />
+      <body name="front_left_haa" pos="0.08 0.1 0.000812737446806">
+        <joint name="front_left_haa" type="hinge" axis="1 0 0" limited="true" range="-0.45 0.45" />
+        <inertial pos="0.0342709656212 0.00683191650877 -8.01433919229e-12" mass="0.3723587323657154" diaginertia="0.000199865871851 0.000194857044869 0.000203824049134" />
+        <geom name="front_left_haa_contact_0" type="capsule" rgba=".18 .22 .28 1" group="3" size="0.013" fromto="0 0 0 0.035 0.032 0" />
+        <body name="front_left_upper" pos="0.035 0.032 0">
+          <joint name="front_left_hip" type="hinge" axis="0 1 0" limited="true" range="-0.7 0.7" />
+          <inertial pos="0.0463471772177 -0.0187045410886 -0.0693661033796" mass="0.40217792249786893" diaginertia="0.000364553482906 0.000406376960963 0.000294139286778" />
+          <geom name="front_left_upper_contact_0" type="capsule" rgba=".18 .22 .28 1" group="3" size="0.013" fromto="0 0 0 0.05 0.004 -0.0748331477355" />
+          <body name="front_left_lower" pos="0.05 0.004 -0.0748331477355">
+            <joint name="front_left_knee" type="hinge" axis="0 1 0" limited="true" range="-1.2 1.2" />
+            <inertial pos="-0.0440686978618 -0.00981995306591 -0.0863555010871" mass="0.31016661501863596" diaginertia="0.000431227371985 0.000561188911779 0.000227997517647" />
+            <geom name="front_left_lower_contact_0" type="capsule" rgba=".18 .22 .28 1" group="3" size="0.013" fromto="0 0 0 -0.05 0.004 -0.0979795897113" />
+            <body name="front_left_wheel" pos="-0.05 0.004 -0.0979795897113">
+              <joint name="front_left_wheel" type="hinge" axis="0 1 0" limited="false" armature=".0003" />
+              <inertial pos="-6.04722522057e-11 0.00632285226548 5.3058203664e-11" mass="0.17405915776164413" diaginertia="0.000125539159543 0.0002238928282 0.00012553915954" />
+              <geom name="front_left_wheel_contact_0" type="cylinder" rgba=".18 .22 .28 1" group="3" pos="0 0.006 -6.93889390391e-18" size="0.048 0.016" quat="0.7071067812 0.7071067812 0 0" />
+            </body>
+          </body>
+        </body>
+      </body>
+      <body name="front_right_haa" pos="0.08 -0.1 0.000812737446806">
+        <joint name="front_right_haa" type="hinge" axis="1 0 0" limited="true" range="-0.45 0.45" />
+        <inertial pos="0.0342709656212 -0.00683191650877 -8.01433919229e-12" mass="0.3723587323657154" diaginertia="0.000199865871851 0.000194857044869 0.000203824049134" />
+        <geom name="front_right_haa_contact_0" type="capsule" rgba=".18 .22 .28 1" group="3" size="0.013" fromto="0 0 0 0.035 -0.032 0" />
+        <body name="front_right_upper" pos="0.035 -0.032 0">
+          <joint name="front_right_hip" type="hinge" axis="0 -1 0" limited="true" range="-0.7 0.7" />
+          <inertial pos="0.0463471772177 0.0187045410886 -0.0693661033796" mass="0.40217792249786893" diaginertia="0.000364553482906 0.000406376960963 0.000294139286778" />
+          <geom name="front_right_upper_contact_0" type="capsule" rgba=".18 .22 .28 1" group="3" size="0.013" fromto="0 0 0 0.05 -0.004 -0.0748331477355" />
+          <body name="front_right_lower" pos="0.05 -0.004 -0.0748331477355">
+            <joint name="front_right_knee" type="hinge" axis="0 -1 0" limited="true" range="-1.2 1.2" />
+            <inertial pos="-0.0440686978618 0.00981995306591 -0.0863555010871" mass="0.31016661501863596" diaginertia="0.000431227371985 0.000561188911779 0.000227997517647" />
+            <geom name="front_right_lower_contact_0" type="capsule" rgba=".18 .22 .28 1" group="3" size="0.013" fromto="0 0 0 -0.05 -0.004 -0.0979795897113" />
+            <body name="front_right_wheel" pos="-0.05 -0.004 -0.0979795897113">
+              <joint name="front_right_wheel" type="hinge" axis="0 -1 0" limited="false" armature=".0003" />
+              <inertial pos="-6.04722244502e-11 -0.00632285226942 4.76915312797e-11" mass="0.17405915776164413" diaginertia="0.000125539159531 0.000223892828193 0.000125539159534" />
+              <geom name="front_right_wheel_contact_0" type="cylinder" rgba=".18 .22 .28 1" group="3" pos="0 -0.006 0" size="0.048 0.016" quat="0.7071067812 0.7071067812 0 0" />
+            </body>
+          </body>
+        </body>
+      </body>
+      <body name="rear_left_haa" pos="-0.08 0.1 0.000812737446806">
+        <joint name="rear_left_haa" type="hinge" axis="-1 0 0" limited="true" range="-0.45 0.45" />
+        <inertial pos="-0.034264076584 0.00683318988792 -1.32119593044e-11" mass="0.37244752934390074" diaginertia="0.000199905693304 0.000194963114375 0.000203913128607" />
+        <geom name="rear_left_haa_contact_0" type="capsule" rgba=".18 .22 .28 1" group="3" size="0.013" fromto="0 0 0 -0.035 0.032 0" />
+        <body name="rear_left_upper" pos="-0.035 0.032 0">
+          <joint name="rear_left_hip" type="hinge" axis="0 1 0" limited="true" range="-0.7 0.7" />
+          <inertial pos="-0.0463471771951 -0.0187045410886 -0.0693661033709" mass="0.40217792249786904" diaginertia="0.000364553483123 0.000406376961706 0.000294139287305" />
+          <geom name="rear_left_upper_contact_0" type="capsule" rgba=".18 .22 .28 1" group="3" size="0.013" fromto="0 0 0 -0.05 0.004 -0.0748331477355" />
+          <body name="rear_left_lower" pos="-0.05 0.004 -0.0748331477355">
+            <joint name="rear_left_knee" type="hinge" axis="0 1 0" limited="true" range="-1.2 1.2" />
+            <inertial pos="0.0440674458366 -0.0098199291105 -0.0863548839576" mass="0.31016661501863474" diaginertia="0.000431232016121 0.000561198072359 0.000228002320568" />
+            <geom name="rear_left_lower_contact_0" type="capsule" rgba=".18 .22 .28 1" group="3" size="0.013" fromto="0 0 0 0.05 0.004 -0.0979795897113" />
+            <body name="rear_left_wheel" pos="0.05 0.004 -0.0979795897113">
+              <joint name="rear_left_wheel" type="hinge" axis="0 1 0" limited="false" armature=".0003" />
+              <inertial pos="6.04722383279e-11 0.00632285226548 5.3058203664e-11" mass="0.17405915776164413" diaginertia="0.000125539159543 0.0002238928282 0.00012553915954" />
+              <geom name="rear_left_wheel_contact_0" type="cylinder" rgba=".18 .22 .28 1" group="3" pos="0 0.006 -6.93889390391e-18" size="0.048 0.016" quat="0.7071067812 0.7071067812 0 0" />
+            </body>
+          </body>
+        </body>
+      </body>
+      <body name="rear_right_haa" pos="-0.08 -0.1 0.000812737446806">
+        <joint name="rear_right_haa" type="hinge" axis="-1 0 0" limited="true" range="-0.45 0.45" />
+        <inertial pos="-0.034264076584 -0.00683318988792 -1.32119593044e-11" mass="0.37244752934390074" diaginertia="0.000199905693304 0.000194963114375 0.000203913128607" />
+        <geom name="rear_right_haa_contact_0" type="capsule" rgba=".18 .22 .28 1" group="3" size="0.013" fromto="0 0 0 -0.035 -0.032 0" />
+        <body name="rear_right_upper" pos="-0.035 -0.032 0">
+          <joint name="rear_right_hip" type="hinge" axis="0 -1 0" limited="true" range="-0.7 0.7" />
+          <inertial pos="-0.0463471771951 0.0187045410886 -0.0693661033709" mass="0.40217792249786904" diaginertia="0.000364553483123 0.000406376961706 0.000294139287305" />
+          <geom name="rear_right_upper_contact_0" type="capsule" rgba=".18 .22 .28 1" group="3" size="0.013" fromto="0 0 0 -0.05 -0.004 -0.0748331477355" />
+          <body name="rear_right_lower" pos="-0.05 -0.004 -0.0748331477355">
+            <joint name="rear_right_knee" type="hinge" axis="0 -1 0" limited="true" range="-1.2 1.2" />
+            <inertial pos="0.0440674458366 0.0098199291105 -0.0863548839576" mass="0.3101666150186348" diaginertia="0.000431232016121 0.000561198072359 0.000228002320568" />
+            <geom name="rear_right_lower_contact_0" type="capsule" rgba=".18 .22 .28 1" group="3" size="0.013" fromto="0 0 0 0.05 -0.004 -0.0979795897113" />
+            <body name="rear_right_wheel" pos="0.05 -0.004 -0.0979795897113">
+              <joint name="rear_right_wheel" type="hinge" axis="0 -1 0" limited="false" armature=".0003" />
+              <inertial pos="6.04722244502e-11 -0.00632285226942 4.76915174019e-11" mass="0.17405915776164413" diaginertia="0.000125539159531 0.000223892828193 0.000125539159534" />
+              <geom name="rear_right_wheel_contact_0" type="cylinder" rgba=".18 .22 .28 1" group="3" pos="0 -0.006 0" size="0.048 0.016" quat="0.7071067812 0.7071067812 0 0" />
+            </body>
+          </body>
+        </body>
+      </body>
+      <body name="arm_pan_carrier" pos="0.0829005675302 -0.00754322258164 0.0990352254596">
+        <inertial pos="0.0309482904656 -0.000290851973271 0.0286545953193" mass="0.100006" fullinertia="8.37599111071e-05 8.10392497007e-05 2.39784391922e-05 -7.0001726628e-08 -1.13503329235e-06 3.08931523289e-07" />
+        <body name="arm_upper" pos="0.0308154616789 -0.0140569833466 0.0574784730244">
+          <inertial pos="-0.037784432436 0.0148955417296 0.0821331889017" mass="0.103" fullinertia="0.000137817195373 0.000142473996879 5.03140077478e-05 -3.69885111737e-07 3.62337518043e-05 1.11433506196e-06" />
+          <body name="arm_lower" pos="-0.0323374633476 0.00123991543968 0.111456963537">
+            <inertial pos="0.0772031252982 0.0167187637965 -0.0603454254614" mass="0.104" fullinertia="7.55871826708e-05 0.000145256357677 0.000113034259652 -1.98680708213e-06 6.32361086809e-05 1.31818299616e-06" />
+            <body name="arm_wrist" pos="0.10595264946 0.00215761038458 -0.0823815700565">
+              <inertial pos="0.0103744575781 0.0260050537775 -0.0368917279501" mass="0.079" fullinertia="3.60465156126e-05 2.09242655562e-05 2.62465188312e-05 -1.10157277038e-06 2.86890329292e-06 3.42476869992e-06" />
+              <body name="arm_gripper" pos="0.0152535597155 0.0177511593298 -0.0559687873944">
+                <inertial pos="0.0108743027078 0.00934591363135 -0.0273724997083" mass="0.10464642748535534" fullinertia="7.73647478802e-05 5.36430740862e-05 8.50682941137e-05 -1.7645594699e-05 -6.57626876314e-06 6.33001321591e-08" />
+                <body name="arm_moving_jaw" pos="0.0263557971162 0.0160525292818 -0.0204553255103">
+                  <inertial pos="0.015869416688 -0.0165173572708 -0.0256869905565" mass="0.012" fullinertia="5.35818847474e-06 5.28528549974e-06 3.14849602552e-06 -8.39803562572e-08 2.11066781905e-06 1.13284546713e-07" />
+                  <geom name="arm_moving_jaw_locomotion_envelope" type="box" pos="0.015330215305228365 -0.01637567928496928 -0.03197949132083108" size="0.025422385360107116 0.02412154925231786 0.042043621464837116" rgba=".16 .24 .42 1" />
+                </body>
+                <camera name="wrist_camera" pos="0.0376619309362 0.0567115173589 -0.0334055735951" xyaxes="-0.181321129551 -0.727685850774 0.661510355597 0.983103093055 -0.151306287627 0.103027742622" fovy="67" />
+                <site name="tool_center" pos="0.0331204572774 0.000775813237427 -0.0961817421381" size=".002" rgba="1 .2 .2 0" />
+                <geom name="arm_gripper_locomotion_envelope" type="box" pos="0.0004403405614314959 -0.0017859143167887875 -0.05309451076306043" size="0.03226453099138435 0.02685000466904368 0.05435835076640916" rgba=".16 .24 .42 1" />
+              </body>
+              <geom name="arm_wrist_locomotion_envelope" type="box" pos="0.00995450571862938 0.020018309746301075 -0.025472273868885342" size="0.022019795115652774 0.03164156970127313 0.038004794200282244" rgba=".16 .24 .42 1" />
+            </body>
+            <geom name="arm_lower_locomotion_envelope" type="box" pos="0.042688828864808306 0.017767715463818817 -0.0359146997593669" size="0.054727688982462025 0.03235367499107268 0.04837261045961405" rgba=".16 .24 .42 1" />
+          </body>
+          <geom name="arm_upper_locomotion_envelope" type="box" pos="-0.03147918836970833 0.017172096255290745 0.05324513044541146" size="0.04357473624429436 0.03393937572223124 0.06534067988821957" rgba=".16 .24 .42 1" />
+        </body>
+        <geom name="arm_pan_carrier_locomotion_envelope" type="box" pos="0.01790000046166701 -0.00026049947791665154 -0.0007223296705484439" size="0.02990000113904548 0.02307330048163292 0.042247291420137584" rgba=".16 .24 .42 1" />
+      </body>
+      <body name="cargo_slide_-1" pos="-0.0620000005215 -0.089999999851 0.05349999547">
+        <inertial pos="0.021645209106 -0.00522298465111 0.00103383779136" mass="0.03902668286855703" fullinertia="1.11849457607e-05 3.72937526949e-05 4.46616402595e-05 -6.72366389981e-06 2.54149139734e-07 3.72055903478e-07" />
+        <geom name="cargo_slide_-1_contact_0" type="box" rgba=".18 .22 .28 1" group="3" pos="0 0 0" size="0.0209999997169 0.00799999758601 0.0139999985695" />
+      </body>
+      <body name="cargo_slide_1" pos="-0.0620000005215 0.089999999851 0.05349999547">
+        <inertial pos="0.018433011491 0.00517679575002 0.00101425104277" mass="0.03884671441858212" fullinertia="1.10993641058e-05 2.50501370712e-05 3.23561712479e-05 5.04224632683e-06 -3.55081223878e-07 -3.68412062273e-07" />
+        <geom name="cargo_slide_1_contact_0" type="box" rgba=".18 .22 .28 1" group="3" pos="0 0 0" size="0.0209999997169 0.00799999758601 0.0139999985695" />
+      </body>
+      <body name="cargo_rotor" pos="0.003 0.088 0.045">
+        <inertial pos="-6.35388427463e-09 4.28888827231e-10 -0.00137367501445" mass="0.01892" fullinertia="2.14771533962e-06 2.1477157658e-06 3.40043528679e-06 -3.17690997023e-13 1.22099769409e-13 -1.49717085832e-14" />
+      </body>
+      <camera name="main_camera" pos="0.164569427081 0.07 0.0699222662043" xyaxes="0 -1 0 0.707106781187 0 0.707106781187" fovy="67" />
+      <geom name="chassis_locomotion_envelope" type="box" pos="-4.321895183817537e-07 -3.725910304591684e-07 0.054350978675993825" size="0.1516495796821043 0.12164961560273076 0.03679902957750343" rgba=".16 .24 .42 1" />
+    </body>
+  </worldbody>
+  <actuator>
+    <motor name="front_left_haa_motor" joint="front_left_haa" ctrlrange="-8 8" forcerange="-8 8" />
+    <motor name="front_left_hip_motor" joint="front_left_hip" ctrlrange="-8 8" forcerange="-8 8" />
+    <motor name="front_left_knee_motor" joint="front_left_knee" ctrlrange="-8 8" forcerange="-8 8" />
+    <motor name="front_left_wheel_motor" joint="front_left_wheel" ctrlrange="-1.3 1.3" forcerange="-1.3 1.3" />
+    <motor name="front_right_haa_motor" joint="front_right_haa" ctrlrange="-8 8" forcerange="-8 8" />
+    <motor name="front_right_hip_motor" joint="front_right_hip" ctrlrange="-8 8" forcerange="-8 8" />
+    <motor name="front_right_knee_motor" joint="front_right_knee" ctrlrange="-8 8" forcerange="-8 8" />
+    <motor name="front_right_wheel_motor" joint="front_right_wheel" ctrlrange="-1.3 1.3" forcerange="-1.3 1.3" />
+    <motor name="rear_left_haa_motor" joint="rear_left_haa" ctrlrange="-8 8" forcerange="-8 8" />
+    <motor name="rear_left_hip_motor" joint="rear_left_hip" ctrlrange="-8 8" forcerange="-8 8" />
+    <motor name="rear_left_knee_motor" joint="rear_left_knee" ctrlrange="-8 8" forcerange="-8 8" />
+    <motor name="rear_left_wheel_motor" joint="rear_left_wheel" ctrlrange="-1.3 1.3" forcerange="-1.3 1.3" />
+    <motor name="rear_right_haa_motor" joint="rear_right_haa" ctrlrange="-8 8" forcerange="-8 8" />
+    <motor name="rear_right_hip_motor" joint="rear_right_hip" ctrlrange="-8 8" forcerange="-8 8" />
+    <motor name="rear_right_knee_motor" joint="rear_right_knee" ctrlrange="-8 8" forcerange="-8 8" />
+    <motor name="rear_right_wheel_motor" joint="rear_right_wheel" ctrlrange="-1.3 1.3" forcerange="-1.3 1.3" />
+  </actuator>
+</mujoco>
