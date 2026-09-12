@@ -4,7 +4,7 @@ The full user objective is WASD movement, held Shift crouch, ascending and desce
 
 ## Fixed decisions
 
-- Preserve the approved front SO101, open blue rear cargo, four independently actuated wheel-legs, cameras and rear touchscreen. Use existing CAD frames, measured/source inertias and labelled approximations. No morphology search.
+- Preserve the approved front SO101, open blue rear cargo, four independently actuated wheel-legs, cameras and rear touchscreen. Use existing CAD frames, source-derived inertias and labelled approximations. No morphology search.
 - W/S = signed forward velocity; A/D = signed yaw rate; held Shift = lower body-height target, release = return to normal. Train zero input, reverse, turning in place, simultaneous move/turn, crouched movement and transitions.
 - Use the existing local CUDA PyTorch + MuJoCo Warp stack without modifying other projects' environments. Limit PyTorch/BLAS CPU threads to two; benchmark GPU physics and learning, record actual device and timing. Keep compilation distinct from training budgets.
 - Stairs initially use command-conditioned RL and local terrain sensing. A language model is not required to solve low-level stair contacts. Sensor assumptions and deployment mappings must be explicit.
@@ -35,22 +35,24 @@ Start with 64 parallel worlds and a short smoke run. Baseline throughput and phy
 
 ## Current status
 
-The GB10 GPU backend and PPO run with two CPU threads. The final flat candidate
-passes eight command/crouch cases in both the 16-actuator reduced model and the
-23-actuator articulated model. Zero input has an explicit physical braking/IK
-mode. See evidence/flat-reduced.json and evidence/flat-articulated.json.
+- Public development repository: https://github.com/sgyli7/Sai_Agent_001.
+- Flat policy passes eight cases in reduced and articulated CPU MuJoCo; a fresh
+  package environment also passes. Godot/Jolt passes actual W/S/A/D/Shift input
+  events with all 26 robot bodies, 23 hinges and two cargo sliders retained.
+- Godot uses a bounded heading feedback loop to reduce solver-transfer yaw drift.
+  It changes wheel speeds only. Exact results are in evidence/godot-flat.json.
+- Stair trial 004 passes four-riser 20/40 mm ascent and descent in reduced CPU
+  MuJoCo. The same 20/40 mm cases also pass with full MuJoCo articulation and
+  in Godot/Jolt. 60 mm and tread/alignment holdouts remain outstanding. Trial 005 failed with captured non-finite GPU
+  physics; replay isolated the previous acceleration initial guess as the trigger.
+  Clearing that numerical guess is under full-trial regression in trial 006.
+- Legal display assets and notices are published. Explicit GLB normals improve
+  rendering without changing contact meshes, inertias or joints.
+- Unity draft PR #3 now has the native MJCF/ONNX adapter. Its 82D observation and
+  mixed target formulas match 64 Python fixtures in actual .NET execution, but
+  the Unity editor is not installed on this Linux ARM machine; editor/runtime
+  acceptance is not yet available.
+- Godot project profile hookup, fresh remote fetch, manipulation regression,
+  release/tag and the outstanding stair tests still need completion.
 
-Public display assets have been generated with licenses and per-part provenance.
-Unknown vendor CAD is replaced by independent dimensional envelopes; physical
-model invariance passes. Display-only simplification reduces GLB data to about
-31 MB; no contact meshes or inertia values are simplified.
-
-Stair work remains experimental: four 20 mm descending risers passed in one
-development case; ascent and the complete 20/40/60 mm suite have not passed.
-Lane exits now terminate training episodes. A late non-finite state in the
-second stair trial is under reproduction with state capture and checkpoints.
-
-Unity integration has a focused branch and draft PR (#3). Godot integration has
-an isolated branch, preserving another task's ongoing local edits. Their runtime
-adapters, end-to-end acceptance and public Sai_Agent_001 repository/release remain
-outstanding. The full user objective is still active.
+The full user objective remains active; this is not a final release checklist.

@@ -46,3 +46,26 @@ Flat reference and the experimental stair gait are in `src/sai_agent/control.py`
 They have different phase/reference semantics even though their tensor sizes match;
 a stair actor must not be loaded into a flat controller solely because the shapes fit.
 The policy must be selected by its contract identifier and hash.
+
+## Godot steering feedback
+
+The flat ONNX and its 82D observation remain unchanged. Deployment additionally
+integrates the requested yaw rate and uses actual body yaw/gyro to correct wheel
+speed: `clip(1.5 * wrapped_heading_error - .25 * yaw_rate_error, -.4, .4)` rad/s.
+The differential-wheel conversion is the same `.146/.048` geometry as the
+reference. It resets its heading reference while parked; no body pose is forced.
+Godot flat acceptance includes this `heading-v1` layer, not the raw actor alone.
+
+Stair policy `stairs-dev40` uses a 3.2 s phase and the bounded lift/stride reference
+in `targets_stairs_numpy`. Its development evidence is reduced-model CPU MuJoCo
+20/40 mm ascent/descent. The automatic game selector also passes the four 20/40 mm Godot cases;
+untested terrain remains experimental. Ground rays are privileged simulator sensing, not RGB/VLA output.
+
+## Numerical GPU regression
+
+A finite stair state with a previous solver acceleration guess reproduced
+non-finite Warp states in 307/320 worlds. Zeroing that guess before each 50 Hz
+control interval removed the captured failure; states, forces, contact geometry
+and model parameters are unchanged. The diagnostic fixture and script retain
+both failure and corrected modes. This does not assert every numerical failure
+has been eliminated.

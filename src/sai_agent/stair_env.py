@@ -75,6 +75,16 @@ class StairEnv(LocomotionEnv):
                 'course_clear_fraction':(q[:,0]>1.3).float().mean(),
                 'lane_exit_fraction':(q[:,1].abs()>.28).float().mean()}
 
+    def task_reward(self,height_error):
+        q,v=self.backend.q,self.backend.v
+        w,x,y,z=q[:,3:7].unbind(-1)
+        forward_x=1-2*(y*y+z*z)
+        rough=self.terrain_heights().amax(-1)-self.terrain_heights().amin(-1)>.004
+        # Reward progress along the staircase, rather than body-forward motion
+        # in any heading. Permit body height to bridge discrete tread edges.
+        return (4*v[:,0]+1.5*(forward_x-1)-8*q[:,1].square()
+                +rough*1.5*height_error.square()/.0004)
+
     def targets(self,action):
         target=super().targets(action)
         # The reference only acts where the local scan sees a height change.
@@ -84,7 +94,7 @@ class StairEnv(LocomotionEnv):
         phase=(self.episode_length_buf[:,None]*self.dt/self.gait_period-self.phase_offsets)%1
         lift=torch.where(phase<.25,.055*torch.sin(math.pi*phase/.25)**2,0.)*active[:,None]
         dx=torch.where(phase<.25,-.025*torch.cos(math.pi*phase/.25),.05*(.5-(phase-.25)/.75))*active[:,None]
-        down=.172812737-lift
+        down=.172812737-.035*self.crouch[:,None]-lift
         beta=-self.fronts*torch.acos(torch.clamp((down**2+dx**2-.09**2-.11**2)/(2*.09*.11),-1.,1.))
         theta=torch.atan2(dx,down)-torch.atan2(.11*torch.sin(beta),.09+.11*torch.cos(beta))
         theta0=self.fronts*math.atan2(.05,.074833147)

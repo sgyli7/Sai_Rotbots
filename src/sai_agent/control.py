@@ -19,6 +19,27 @@ SCAN_XY = np.array([(x, y) for x in [-.36, -.18, 0., .18, .36, .54, .72, .9]
                     for y in [-.24, 0., .24]])
 
 
+class HeadingHold:
+    """Bounded outer steering loop for deployment across contact solvers.
+
+    Integrates requested yaw rate; observes actual attitude/gyro. It changes
+    only wheel-speed targets, never pose or joint state. Reset while parked.
+    """
+    def __init__(self):
+        self.desired=None
+
+    def apply(self,target,command,yaw,yaw_rate,dt=CONTROL_DT):
+        if self.desired is None or np.linalg.norm(command[:2])<1e-5:
+            self.desired=yaw
+        if np.linalg.norm(command[:2])<1e-5:return target
+        self.desired+=float(command[1])*dt
+        error=math.atan2(math.sin(self.desired-yaw),math.cos(self.desired-yaw))
+        correction=np.clip(1.5*error-.25*(yaw_rate-command[1]),-.4,.4)
+        result=target.copy()
+        result[3::4]-=correction*.146/.048
+        return result
+
+
 def filter_action_numpy(action,command):
     """Zero velocity command explicitly parks wheels and uses the height IK.
 
@@ -49,7 +70,7 @@ def targets_stairs_numpy(action,command,crouch,phase_cycles,scan_heights):
     phase=(phase_cycles-np.array([0.,.5,.75,.25]))%1
     lift=np.where(phase<.25,.055*np.sin(math.pi*phase/.25)**2,0.)*active
     dx=np.where(phase<.25,-.025*np.cos(math.pi*phase/.25),.05*(.5-(phase-.25)/.75))*active
-    down=.172812737-lift
+    down=.172812737-CROUCH_DROP*crouch-lift
     beta=-FRONTS*np.arccos(np.clip((down**2+dx**2-.09**2-.11**2)/(2*.09*.11),-1.,1.))
     theta=np.arctan2(dx,down)-np.arctan2(.11*np.sin(beta),.09+.11*np.cos(beta))
     theta0=FRONTS*math.atan2(.05,.074833147)

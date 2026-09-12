@@ -73,6 +73,9 @@ class LocomotionEnv:
     def task_metrics(self):
         return {}
 
+    def task_reward(self, height_error):
+        return torch.zeros(self.num_envs,device=self.device)
+
     def state(self):
         q, v = self.backend.q, self.backend.v
         up = rotate_inverse(q[:, 3:7], self.up)
@@ -118,6 +121,7 @@ class LocomotionEnv:
             -.1*lin[:, 1].square()-.08*ang[:, :2].square().sum(-1)
             -.15*actions.square().mean(-1)-.10*(actions-self.previous).square().mean(-1)
             -.002*(self.backend.ctrl*self.backend.v[:, 6:]).abs().sum(-1))
+        reward += self.task_reward(height_error)
         fallen = (up[:, 2] < .6) | (self.backend.q[:, 2] < ground+.10)
         failed = fallen | self.task_failures()
         timeouts = self.episode_length_buf >= self.max_episode_length

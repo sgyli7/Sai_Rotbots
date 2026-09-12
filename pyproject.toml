@@ -6,6 +6,9 @@ requires-python = ">=3.12,<3.13"
 license = "Apache-2.0"
 dependencies = ["mujoco==3.10.0", "numpy>=2.0,<3", "scipy>=1.14,<2", "onnxruntime==1.24.4"]
 
+[project.scripts]
+sai-agent = "sai_agent.cli:main"
+
 [project.optional-dependencies]
 train = ["torch==2.9.1", "mujoco-warp==3.8.1", "warp-lang==1.12.0", "rsl-rl-lib==5.0.1", "onnx==1.22.0"]
 assets = ["trimesh==4.11.1", "fast-simplification==0.2.0", "pillow>=12,<13"]
@@ -23,6 +26,7 @@ models = "sai_agent/bundle/models"
 policies = "sai_agent/bundle/policies"
 licenses = "sai_agent/bundle/licenses"
 "THIRD_PARTY_NOTICES.md" = "sai_agent/bundle/THIRD_PARTY_NOTICES.md"
+"integrations/godot" = "sai_agent/bundle/integrations/godot"
 
 [tool.uv.sources]
 torch = [{index = "pytorch-cu129", marker = "sys_platform == 'linux' and platform_machine == 'aarch64'"}]

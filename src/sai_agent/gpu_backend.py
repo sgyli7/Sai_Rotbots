@@ -21,7 +21,8 @@ def apply_pd(qpos: wp.array2d(dtype=float), qvel: wp.array2d(dtype=float),
 
 
 class WarpBackend:
-    def __init__(self, model_path: Path, worlds: int = 64, control_dt: float = .02):
+    def __init__(self, model_path: Path, worlds: int = 64, control_dt: float = .02,
+                 clear_warmstart: bool = True):
         torch.set_num_threads(2)
         if not torch.cuda.is_available():
             raise RuntimeError('GPU training requires CUDA PyTorch; CPU fallback is not automatic')
@@ -29,6 +30,7 @@ class WarpBackend:
         wp.init()
         self.cpu_model = mujoco.MjModel.from_xml_path(str(model_path))
         self.worlds = worlds
+        self.clear_warmstart=clear_warmstart
         self.substeps = round(control_dt / self.cpu_model.opt.timestep)
         assert abs(self.substeps * self.cpu_model.opt.timestep - control_dt) < 1e-8
         with wp.ScopedDevice(self.device):
@@ -77,6 +79,12 @@ class WarpBackend:
 
     def step(self, target):
         self.target.copy_(target)
+        # A captured stair contact transition reproduced non-finite GPU states
+        # with its previous acceleration guess (307/320 worlds). Clearing only
+        # this numerical initial guess removed the failure (0/320). Physical
+        # state, constraints and force limits are unchanged.
+        if self.clear_warmstart:
+            wp.to_torch(self.data.qacc_warmstart).zero_()
         # All PyTorch interop writes must finish before the Warp graph reads.
         with wp.ScopedDevice(self.device), wp.ScopedStream(wp.stream_from_torch(torch.cuda.current_stream())):
             wp.capture_launch(self.graph)

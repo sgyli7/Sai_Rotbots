@@ -6,6 +6,7 @@ import math
 from pathlib import Path
 import sys
 import time
+import xml.etree.ElementTree as ET
 import mujoco
 import numpy as np
 import onnxruntime as ort
@@ -23,16 +24,29 @@ p.add_argument('--risers',type=float,nargs='+',default=[.02,.04,.06])
 p.add_argument('--tread',type=float,default=.18)
 p.add_argument('--initial-yaw',type=float,default=0.)
 p.add_argument('--require-pass',action='store_true')
+p.add_argument('--full-robot',action='store_true')
 args=p.parse_args()
 args.out.mkdir(parents=True,exist_ok=True)
 options=ort.SessionOptions();options.intra_op_num_threads=2;options.inter_op_num_threads=1
 policy=ort.InferenceSession(str(args.policy),options,providers=['CPUExecutionProvider'])
 rows=[]
 started=time.monotonic()
+source=(ROOT/'models/locomotion.xml').read_text()
+if args.full_robot:
+    root=ET.parse(ROOT/'models/full/robot.xml').getroot();world=root.find('worldbody')
+    for body in list(world.findall('body')):
+        if body.get('name')=='item':world.remove(body)
+    for geom in list(world.findall('geom')):
+        if geom.get('name','').startswith('course_'):world.remove(geom)
+    for mesh in root.findall('.//asset/mesh'):
+        mesh.set('file',str(ROOT/'models/full'/mesh.get('file')))
+    k=root.find('keyframe')
+    if k is not None:root.remove(k)
+    source=ET.tostring(root,encoding='unicode')
 for descending in [False,True]:
     for riser in args.risers:
         course=Staircase(riser=riser,descending=descending,tread=args.tread)
-        xml=scene_xml((ROOT/'models/locomotion.xml').read_text(),course)
+        xml=scene_xml(source,course)
         model=mujoco.MjModel.from_xml_string(xml)
         data=mujoco.MjData(model)
         data.qpos[3:7]=[math.cos(args.initial_yaw/2),0,0,math.sin(args.initial_yaw/2)]
@@ -53,7 +67,7 @@ for descending in [False,True]:
             obs=observation_numpy(q,v,command,0.,previous,k*.02*2*math.pi/3.2,scan)
             action=filter_action_numpy(policy.run(None,{'obs':obs[None]})[0][0],command)
             target=targets_stairs_numpy(action,command,0.,k*.02/3.2,scan)
-            for _ in range(10):
+            for _ in range(round(.02/model.opt.timestep)):
                 adapter.apply(data,target)
                 mujoco.mj_step(model,data)
             previous=action
@@ -65,7 +79,7 @@ for descending in [False,True]:
                 contact_wheels.update(bodies.intersection(wheels))
                 penetration=max(penetration,float(-contact.dist))
             wheelx=data.xpos[wheels,0];wheelz=data.xpos[wheels,2]
-            if cleared_at is None and min(wheelx)>last_edge+.05:cleared_at=data.time
+            if cleared_at is None and min(wheelx)>last_edge+.08:cleared_at=data.time
             trace.append([data.time,*data.qpos[:3],yaw,upright,len(contact_wheels),penetration,
                           *wheelx,*wheelz])
             if upright<.6 or not np.isfinite(data.qpos).all():break
@@ -88,6 +102,7 @@ for descending in [False,True]:
                  min_upright=float(a[:,5].min()),max_penetration_m=float(a[:,7].max()))
         rows.append(row);print(json.dumps(row),flush=True)
 result=dict(suite='continuous-stairs-v1',cases=rows,passed=all(r['passed'] for r in rows),
+            full_robot=args.full_robot,actuators=model.nu,
             policy_sha256=hashlib.sha256(args.policy.read_bytes()).hexdigest(),
             runtime_seconds=time.monotonic()-started,mujoco_version=mujoco.__version__,
             sensor='Exact simulation height map; hardware depth reconstruction is not implemented')

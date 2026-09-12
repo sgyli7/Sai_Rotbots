@@ -4,20 +4,50 @@ A four-wheel-leg cargo robot with a front SO101 arm, an open blue cargo bay,
 camera mounts and a rear touchscreen layout. The same named joints and physical
 model are used across training and game integration.
 
-**Development preview.** The eight-case WASD/crouch suite passes in CPU MuJoCo
-with both the reduced training robot and the fully articulated robot. Stair
-training and the Unity/Godot integrations are still in progress. This is not yet
-a tested hardware kit or a completed game integration release.
+**Development preview.** WASD and held-Shift crouch pass eight-case checks in
+CPU MuJoCo (reduced and fully articulated models) and Godot/Jolt. Continuous
+20/40 mm stairs pass the reduced/full MuJoCo and Godot development suites.
+60 mm and held-out terrain are still being checked.
+Hardware has not been built or measured.
 
 | Capability | Current evidence |
 |---|---|
-| Forward/reverse, left/right yaw, combined turning | Passed reduced and full-model MuJoCo checks |
-| Shift crouch, release recovery, crouched driving | Passed; approximately 35–39 mm body lowering |
-| Zero movement input | Explicit bounded-torque braking and height IK |
-| Continuous stairs | Experimental; one four-riser 20 mm descent passed, complete suite not passed |
-| GPU training | MuJoCo Warp + PPO on GB10; PyTorch CPU threads capped at two |
-| Unity / Godot packages | Integration in progress |
+| Forward/reverse, left/right yaw, combined turning | MuJoCo reduced/full + real Godot key events passed |
+| Shift crouch, release recovery, crouched driving | Passed; approximately 35–40 mm lowering |
+| Zero movement input | Bounded-torque braking and height IK |
+| Continuous stairs | Four 20/40 mm risers up/down passed in MuJoCo reduced/full and Godot |
+| GPU training | MuJoCo Warp + PPO on GB10; CPU threads capped at two |
+| Godot | One-command launcher, full articulation, camera views; flat acceptance passed |
+| Unity | Dedicated native-model adapter in draft PR; editor execution unverified |
 | Hardware | Source/envelope and provisional inertia model; not measured validation |
+
+![Actual Godot viewport](docs/images/godot-preview.png)
+
+## 直接启动 Godot / Run Godot
+
+Install Godot 4.7.2 and Python 3.12 with `uv`, then from this checkout:
+
+```sh
+uv sync
+uv run sai-agent godot
+```
+
+W/S 前进后退，A/D 左右转向，按住 Shift 下蹲、松开恢复，Esc 退出。
+The launcher starts the policy service and Godot together. Godot/Jolt owns the
+physics; Python supplies motor targets and uses MuJoCo only for arm bias/FK.
+No separate training process is needed to play. `--godot-bin` selects an executable.
+
+For a recorded headless input test:
+
+```sh
+uv run sai-agent godot --headless --case W --output artifacts/godot-W.json
+```
+
+Experimental stair scene: `uv run sai-agent godot --stairs .02` (add
+`--descending` for descent). A simulated ground raycast selects the stair policy
+and a slower approach speed. The four-riser 20/40 mm development cases pass;
+this is **not** camera-based VLA or validation on arbitrary stairs. Cameras
+render separate observation views.
 
 See [the active plan](docs/PLAN.md), [control contract](docs/CONTROL_CONTRACT.md),
 [evaluation evidence](evidence), and [experiment ledger](experiments/ledger.jsonl).
