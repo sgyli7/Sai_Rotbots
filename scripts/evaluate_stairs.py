@@ -14,7 +14,7 @@ import onnxruntime as ort
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'src'))
 from sai_agent.terrain import Staircase,scene_xml
-from sai_agent.control import SCAN_XY,observation_numpy,targets_stairs_numpy,filter_action_numpy,STAND_HEIGHT
+from sai_agent.control import SCAN_XY,observation_numpy,targets_stairs_numpy,filter_action_numpy,STAND_HEIGHT,HeadingHold
 from sai_agent.runtime import JointAdapter
 
 p=argparse.ArgumentParser()
@@ -25,6 +25,11 @@ p.add_argument('--tread',type=float,default=.18)
 p.add_argument('--initial-yaw',type=float,default=0.)
 p.add_argument('--require-pass',action='store_true')
 p.add_argument('--full-robot',action='store_true')
+p.add_argument('--lift-height',type=float,default=.055)
+p.add_argument('--heading-control',action='store_true')
+p.add_argument('--speed',type=float,default=.12)
+p.add_argument('--leg-scale',type=float,default=.18)
+p.add_argument('--stride',type=float,default=.05)
 args=p.parse_args()
 args.out.mkdir(parents=True,exist_ok=True)
 options=ort.SessionOptions();options.intra_op_num_threads=2;options.inter_op_num_threads=1
@@ -55,9 +60,9 @@ for descending in [False,True]:
         wheels=[model.body(n+'_wheel').id for n in ['front_left','front_right','rear_left','rear_right']]
         last_edge=course.start+(course.count-1)*course.tread
         final_ground=float(course.height(last_edge+.1))
-        trace=[];previous=np.zeros(16);cleared_at=None
+        trace=[];previous=np.zeros(16);cleared_at=None;heading_hold=HeadingHold()
         for k in range(1500):
-            command=[.12 if k>=25 and cleared_at is None else 0.,0.]
+            command=[args.speed if k>=25 and cleared_at is None else 0.,0.]
             q,v=adapter.state(data)
             qw,qx,qy,qz=q[3:7]
             yaw=math.atan2(2*(qw*qz+qx*qy),1-2*(qy*qy+qz*qz))
@@ -66,7 +71,8 @@ for descending in [False,True]:
             scan=course.height(xy[:,0],xy[:,1])
             obs=observation_numpy(q,v,command,0.,previous,k*.02*2*math.pi/3.2,scan)
             action=filter_action_numpy(policy.run(None,{'obs':obs[None]})[0][0],command)
-            target=targets_stairs_numpy(action,command,0.,k*.02/3.2,scan)
+            target=targets_stairs_numpy(action,command,0.,k*.02/3.2,scan,args.lift_height,args.leg_scale,args.stride)
+            if args.heading_control:target=heading_hold.apply(target,command,yaw,v[5])
             for _ in range(round(.02/model.opt.timestep)):
                 adapter.apply(data,target)
                 mujoco.mj_step(model,data)
@@ -103,6 +109,10 @@ for descending in [False,True]:
         rows.append(row);print(json.dumps(row),flush=True)
 result=dict(suite='continuous-stairs-v1',cases=rows,passed=all(r['passed'] for r in rows),
             full_robot=args.full_robot,actuators=model.nu,
+            lift_height=args.lift_height,heading_control=args.heading_control,
+            commanded_speed=args.speed,
+            leg_scale=args.leg_scale,
+            stride=args.stride,
             policy_sha256=hashlib.sha256(args.policy.read_bytes()).hexdigest(),
             runtime_seconds=time.monotonic()-started,mujoco_version=mujoco.__version__,
             sensor='Exact simulation height map; hardware depth reconstruction is not implemented')

@@ -7,7 +7,8 @@ model are used across training and game integration.
 **Development preview.** WASD and held-Shift crouch pass eight-case checks in
 CPU MuJoCo (reduced and fully articulated models) and Godot/Jolt. Continuous
 20/40 mm stairs pass the reduced/full MuJoCo and Godot development suites.
-60 mm and held-out terrain are still being checked.
+60 mm is not passed. A separate full-model tread/yaw holdout passed 14/16 cases;
+the two failures exceeded the lateral corridor on descent.
 Hardware has not been built or measured.
 
 | Capability | Current evidence |
@@ -16,6 +17,7 @@ Hardware has not been built or measured.
 | Shift crouch, release recovery, crouched driving | Passed; approximately 35–40 mm lowering |
 | Zero movement input | Bounded-torque braking and height IK |
 | Continuous stairs | Four 20/40 mm risers up/down passed in MuJoCo reduced/full and Godot |
+| Pickup → secure → transport | 100 g item, 18/25 mm obstacles, MuJoCo + Godot; unsecured cargo prevents departure |
 | GPU training | MuJoCo Warp + PPO on GB10; CPU threads capped at two |
 | Godot | One-command launcher, full articulation, camera views; flat acceptance passed |
 | Unity | Dedicated native-model adapter in draft PR; editor execution unverified |
@@ -32,7 +34,7 @@ uv sync
 uv run sai-agent godot
 ```
 
-W/S 前进后退，A/D 左右转向，按住 Shift 下蹲、松开恢复，Esc 退出。
+W/S 前进后退，A/D 左右转向，按住 Shift 下蹲、松开恢复，R 重新开始，Esc 退出。
 The launcher starts the policy service and Godot together. Godot/Jolt owns the
 physics; Python supplies motor targets and uses MuJoCo only for arm bias/FK.
 No separate training process is needed to play. `--godot-bin` selects an executable.
@@ -49,8 +51,27 @@ and a slower approach speed. The four-riser 20/40 mm development cases pass;
 this is **not** camera-based VLA or validation on arbitrary stairs. Cameras
 render separate observation views.
 
+Run the preserved physical pickup, cargo clamp and loaded transport demo:
+
+```sh
+uv run sai-agent godot --task cargo
+```
+
+The demo uses model-state inverse kinematics for the SO101 and a frozen crawl
+policy after the load is secured. It does not weld the item to the gripper or
+cargo bay. This is a separate regression task, not general object recognition
+or learned visual manipulation. See [task and evidence details](docs/CARGO_TASK.md).
+
+The existing [Godot project integration](https://github.com/sgyli7/MicroDuck-Godot-Simi2Sim/pull/2)
+provides `sim2sim-play --robot Sai_Agent_001` through an optional dependency.
+The [Unity integration PR](https://github.com/sgyli7/MicroDuck-Unity-Sim2Sim/pull/3)
+contains setup and a native-model demo; its editor/runtime acceptance is pending.
+See [integration instructions and limits](docs/INTEGRATIONS.md).
+
 See [the active plan](docs/PLAN.md), [control contract](docs/CONTROL_CONTRACT.md),
 [evaluation evidence](evidence), and [experiment ledger](experiments/ledger.jsonl).
+The [geometry-based appearance study](docs/DESIGN_PRESENTATION.md) is separate
+from the [open-source and hardware maturity record](docs/OPEN_SOURCE_STATUS.md).
 
 ## Current MuJoCo checks
 

@@ -8,9 +8,16 @@ from .terrain import Staircase, scene_xml
 
 
 class StairEnv(LocomotionEnv):
-    def __init__(self, model_path, worlds=256, seed=47, max_riser=.02, output_dir=None):
+    def __init__(self, model_path, worlds=256, seed=47, max_riser=.02, output_dir=None,
+                 lift_height=.055,heading_control=False,ascent_only=False,min_riser=.006,speed=None,leg_scale=.18):
         self.course=Staircase(riser=max_riser)
         self.max_riser=max_riser
+        self.lift_height=lift_height
+        self.heading_control=heading_control
+        self.ascent_only=ascent_only
+        self.min_riser=min_riser
+        self.speed=speed
+        self.leg_scale=leg_scale
         self.terrain_ready=False
         output=Path(output_dir)/'stairs.xml'
         output.write_text(scene_xml(Path(model_path).read_text(),self.course))
@@ -31,9 +38,9 @@ class StairEnv(LocomotionEnv):
         # One fifth of resets remain flat, so the policy must also stop lifting
         # and return to rolling when it reaches level ground.
         samples=torch.rand(self.num_envs,device=self.device)
-        h=torch.where(samples<.2,0.,.006+(self.max_riser-.006)*torch.rand_like(samples))
+        h=torch.where(samples<.2,0.,self.min_riser+(self.max_riser-self.min_riser)*torch.rand_like(samples))
         self.risers[mask]=h[mask]
-        self.descending[mask]=(torch.rand_like(samples)>.5)[mask]
+        self.descending[mask]=(torch.rand_like(samples)>.5)[mask] & (not self.ascent_only)
         for j in range(5):
             top=torch.where(self.descending,4-j,j)*self.risers
             self.mocap[mask,j,2]=top[mask]-.5
@@ -42,7 +49,7 @@ class StairEnv(LocomotionEnv):
     def sample_commands(self,mask):
         n=self.num_envs
         commands=torch.zeros((n,3),device=self.device)
-        commands[:,0]=.08+.06*torch.rand(n,device=self.device)
+        commands[:,0]=.08+.06*torch.rand(n,device=self.device) if self.speed is None else self.speed
         self.command[mask]=commands[mask]
 
     def query(self,local_xy):
@@ -92,15 +99,21 @@ class StairEnv(LocomotionEnv):
         scan=self.terrain_heights()
         active=((scan.max(-1).values-scan.min(-1).values)>.004) & (self.command[:,0]>.015)
         phase=(self.episode_length_buf[:,None]*self.dt/self.gait_period-self.phase_offsets)%1
-        lift=torch.where(phase<.25,.055*torch.sin(math.pi*phase/.25)**2,0.)*active[:,None]
+        lift=torch.where(phase<.25,self.lift_height*torch.sin(math.pi*phase/.25)**2,0.)*active[:,None]
         dx=torch.where(phase<.25,-.025*torch.cos(math.pi*phase/.25),.05*(.5-(phase-.25)/.75))*active[:,None]
         down=.172812737-.035*self.crouch[:,None]-lift
         beta=-self.fronts*torch.acos(torch.clamp((down**2+dx**2-.09**2-.11**2)/(2*.09*.11),-1.,1.))
         theta=torch.atan2(dx,down)-torch.atan2(.11*torch.sin(beta),.09+.11*torch.cos(beta))
         theta0=self.fronts*math.atan2(.05,.074833147)
         beta0=-self.fronts*(math.atan2(.05,.09797959)+math.atan2(.05,.074833147))
-        target[:,1::4]=self.sides*(theta0-theta)+.18*action[:,1::4]
-        target[:,2::4]=self.sides*(beta0-beta)+.18*action[:,2::4]
+        target[:,0::4]=torch.clamp(self.leg_scale*action[:,0::4],-.45,.45)
+        target[:,1::4]=self.sides*(theta0-theta)+self.leg_scale*action[:,1::4]
+        target[:,2::4]=self.sides*(beta0-beta)+self.leg_scale*action[:,2::4]
         target[:,1::4].clamp_(-.7,.7)
         target[:,2::4].clamp_(-1.2,1.2)
+        if self.heading_control:
+            w,x,y,z=self.backend.q[:,3:7].unbind(-1)
+            yaw=torch.atan2(2*(w*z+x*y),1-2*(y*y+z*z))
+            correction=torch.clamp(-1.5*yaw-.25*self.backend.v[:,5],-.4,.4)
+            target[:,3::4]-=correction[:,None]*.146/.048
         return target

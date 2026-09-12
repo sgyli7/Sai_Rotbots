@@ -7,8 +7,17 @@ var port := 19341
 var test_case := ""
 var output := ""
 var screenshot := ""
+var screenshot_at := .5
 var captured := false
 var cleared_at := -1.0
+var task := "drive"
+var cargo_obstacle_height := .018
+var cargo_checks := 0
+var cargo_outside_steps := 0
+var cargo_unclamped_steps := 0
+var max_transport_lateral := 0.0
+var max_height := 0.0
+var course_contacts: Dictionary={}
 var duration := 12.0
 var visuals := true
 var riser := 0.0
@@ -29,8 +38,11 @@ func _ready() -> void:
 		elif arg.begins_with("--case="):test_case=arg.split("=")[1]
 		elif arg.begins_with("--output="):output=arg.substr(9)
 		elif arg.begins_with("--screenshot="):screenshot=arg.substr(13)
+		elif arg.begins_with("--screenshot-at="):screenshot_at=float(arg.split("=")[1])
 		elif arg.begins_with("--duration="):duration=float(arg.split("=")[1])
 		elif arg.begins_with("--stairs="):riser=float(arg.split("=")[1])
+		elif arg.begins_with("--task="):task=arg.split("=")[1]
+		elif arg.begins_with("--cargo-obstacle-height="):cargo_obstacle_height=float(arg.split("=")[1])
 		elif arg=="--descending":descending=true
 		elif arg=="--no-visuals":visuals=false
 	for pair in [["forward",KEY_W],["reverse",KEY_S],["left",KEY_A],["right",KEY_D],["crouch",KEY_SHIFT]]:
@@ -43,6 +55,7 @@ func _ready() -> void:
 	add_child(robot)
 	build_ground()
 	robot.setup(specification,visuals,4*riser if descending else 0.0)
+	if task=="cargo":robot.build_item()
 	if visuals:build_view()
 	peer.connect_to_host("127.0.0.1",port)
 	var deadline := Time.get_ticks_msec()+10000
@@ -82,6 +95,10 @@ func box_surface(name_text: String,left: float,right: float,width: float,top: fl
 
 func build_ground() -> void:
 	box_surface("ground",-10,10,20,-.002 if riser>0 else 0.,.1)
+	if task=="cargo":
+		for i in range(3):
+			var center: float=.55+.35*i
+			box_surface("course_"+str(i),center-.045,center+.045,.9,cargo_obstacle_height,.08)
 	if riser<=0:return
 	var boundaries := [-1.,.45,.63,.81,.99,3.]
 	for i in range(5):
@@ -148,6 +165,16 @@ func exchange(state: Dictionary) -> Dictionary:
 func _physics_process(_delta: float) -> void:
 	if finished or robot==null or peer.get_status()!=StreamPeerTCP.STATUS_CONNECTED:return
 	var state: Dictionary=robot.state()
+	if task=="cargo":
+		max_height=maxf(max_height,robot.item.position.y)
+		if command.get("mode","")=="transport":
+			cargo_checks+=1
+			if not state.cargo_inside:cargo_outside_steps+=1
+			if not state.cargo_bilateral:cargo_unclamped_steps+=1
+			max_transport_lateral=maxf(max_transport_lateral,absf(float(state.base_position[1])))
+		for key in specification.leg_order:
+			for other in robot.bodies[str(key)+"_wheel"].get_colliding_bodies():
+				if str(other.name).begins_with("course_"):course_contacts[str(other.name)]=true
 	if robot.tick%40==0:
 		if test_case!="":inject_test_keys(float(state.time))
 		state["robot_id"]="Sai_Agent_001"
@@ -156,8 +183,8 @@ func _physics_process(_delta: float) -> void:
 		state["physics_owner"]="Godot/Jolt"
 		command=exchange(state)
 		if command.is_empty():return
-		state["policy_action"]=command.policy_action
-		state["policy_observation"]=command.policy_observation
+		state["policy_action"]=command.get("policy_action",[])
+		state["policy_observation"]=command.get("policy_observation",[])
 		state["upright"]=robot.bodies.chassis.global_basis.y.y
 		var wheel_positions: Array=[]
 		var supported := 0
@@ -168,6 +195,22 @@ func _physics_process(_delta: float) -> void:
 		state["wheel_positions"]=wheel_positions
 		state["wheels_supported"]=supported
 		state["controller_stage"]=command.stage
+		if task=="cargo":
+			var contacts: Array=[]
+			for body in robot.item.get_colliding_bodies():contacts.append(str(body.name))
+			var base: RigidBody3D=robot.bodies.chassis
+			var local: Vector3=base.global_transform.affine_inverse()*robot.item.position+robot.gv(specification.bodies.chassis.origin_m)
+			state["object_world_m"]=robot.source(robot.item.position)
+			state["object_chassis_m"]=robot.source(local)
+			state["contacts"]=contacts
+			state["stage"]=command.stage
+			state["FK_tool_error_m"]=command.FK_tool_error_m
+			state["mode"]=command.mode
+			state["belt_error_m"]=[state.q[22]-specification.cargo.drive_metres_per_radian*state.q[24],state.q[23]-specification.cargo.drive_metres_per_radian*state.q[24]]
+			records.append(state)
+			if float(state.time)>=float(command.end) or float(state.upright)<.6:
+				finish_cargo()
+				return
 		if riser>0 and test_case=="W" and cleared_at<0:
 			var cleared := true
 			for position in wheel_positions:
@@ -180,6 +223,9 @@ func _physics_process(_delta: float) -> void:
 	robot.apply_command(state,command)
 
 func finish_run() -> void:
+	if task=="cargo" and not records.is_empty():
+		finish_cargo()
+		return
 	finished=true
 	peer.put_data((JSON.stringify({"finish":true})+"\n").to_utf8_buffer())
 	if output!="":
@@ -242,7 +288,8 @@ func _process(_delta: float) -> void:
 	var base: RigidBody3D=robot.bodies.chassis
 	camera.position=base.position+Vector3(.62,.36,.60)
 	camera.look_at(base.position+Vector3(0,.05,0))
-	hud.text="Sai_Agent_001\nW/S drive · A/D turn · Shift crouch · Esc quit\n"+str(command.get("stage","connecting"))
+	hud.text="Sai_Agent_001\nW/S drive · A/D turn · Shift crouch · R restart · Esc quit\n"+str(command.get("stage","connecting"))
+	if task=="cargo":hud.text="Sai_Agent_001\nPickup · secure cargo · transport · R restart · Esc quit\n"+str(command.get("stage","connecting"))
 	for view in sensor_views:
 		var spec: Dictionary=view.spec
 		var body: RigidBody3D=robot.bodies[spec.body]
@@ -250,7 +297,59 @@ func _process(_delta: float) -> void:
 		view.camera.global_position=position
 		view.camera.look_at(position+body.global_basis*robot.gv(spec.forward),body.global_basis*robot.gv(spec.up))
 	if Input.is_key_pressed(KEY_ESCAPE):finish_run()
-	if screenshot!="" and not captured and robot.tick>1000:
+	if screenshot!="" and not captured and robot.tick*.0005>screenshot_at:
 		captured=true
 		await RenderingServer.frame_post_draw
 		get_viewport().get_texture().get_image().save_png(screenshot)
+
+func finish_cargo() -> void:
+	finished=true
+	peer.put_data((JSON.stringify({"finish":true})+"\n").to_utf8_buffer())
+	var last: Dictionary=records[-1]
+	var p: Array=last.object_chassis_m
+	var placed: bool=last.cargo_supported
+	var bilateral := 0
+	for r in records:
+		if "arm_gripper" in r.contacts and "arm_moving_jaw" in r.contacts:bilateral+=1
+	var result := {"engine":Engine.get_version_info().string,"physics":ProjectSettings.get_setting("physics/3d/physics_engine"),"independent_physics":true,
+		"jolt_penetration_slop_m":ProjectSettings.get_setting("physics/jolt_physics_3d/simulation/penetration_slop"),
+		"jolt_speculative_contact_distance_m":ProjectSettings.get_setting("physics/jolt_physics_3d/simulation/speculative_contact_distance"),
+		"physics_hz":2000,"controller_hz":50,"body_count":robot.bodies.size(),"joint_count":robot.drives.size(),"hinge_count":23,"slider_count":2,
+		"max_object_height_m":max_height,"two_finger_contact_samples":bilateral,"placed_in_cargo":placed,
+		"success":placed and max_height>.20 and bilateral>10 and robot.tick*0.0005>=float(command.end),
+		"final_object_chassis_m":p,"duration_s":robot.tick*0.0005,"samples":records}
+	if command.get("transport_required",false):
+		result["transport_distance_m"]=command.transport_distance_m
+		result["transport_policy_sha256"]=command.policy_sha256
+		result.success=result.success and command.transport_distance_m>.7
+	var wheel_edge := INF
+	for key in specification.leg_order:
+		var b: RigidBody3D=robot.bodies[str(key)+"_wheel"]
+		var axis_x: float=(b.global_basis*robot.gv([0,1,0])).x
+		var extent: float=0.048*sqrt(maxf(0.0,1.0-axis_x*axis_x))+0.016*absf(axis_x)
+		var center: Vector3=b.global_transform*robot.gv(specification.bodies[str(key)+"_wheel"].collision[0].pos)
+		wheel_edge=minf(wheel_edge,center.x-extent)
+	result["cargo_obstacle_height_m"]=cargo_obstacle_height
+	result["actual_wheel_course_contacts"]=course_contacts.keys()
+	result["rearmost_wheel_edge_m"]=wheel_edge
+	result["physics_cargo_checks"]=cargo_checks
+	result["outside_cargo_steps"]=cargo_outside_steps
+	result["unclamped_steps"]=cargo_unclamped_steps
+	result["max_transport_lateral_m"]=max_transport_lateral
+	result["cargo_coupling"]="force-level elastic belt, 20000 N/m and 4 Ns/m per branch; uncalibrated approximation"
+	result["success"]=result.success and cargo_checks>0 and cargo_outside_steps==0 and cargo_unclamped_steps==0 and wheel_edge>1.295 and course_contacts.size()==3 and max_transport_lateral<0.30 and command.mode!="abort"
+	if output!="":
+		var file := FileAccess.open(output,FileAccess.WRITE)
+		file.store_string(JSON.stringify(result))
+		file.close()
+	print("GODOT_TASK_COMPLETE success=",result.success," item=",p," bilateral=",bilateral)
+	get_tree().quit(0 if result.success else 3)
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.physical_keycode==KEY_R and event.pressed and not event.echo:
+		finished=true
+		if peer.get_status()==StreamPeerTCP.STATUS_CONNECTED:
+			peer.put_data((JSON.stringify({"finish":true})+"\n").to_utf8_buffer())
+		# The launcher recreates both processes' state, including recurrent
+		# action history, crouch slew, course, cargo and native Jolt joints.
+		get_tree().quit(75)

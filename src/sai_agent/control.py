@@ -63,20 +63,21 @@ def targets_numpy(action, command, crouch):
     return target
 
 
-def targets_stairs_numpy(action,command,crouch,phase_cycles,scan_heights):
+def targets_stairs_numpy(action,command,crouch,phase_cycles,scan_heights,lift_height=.055,leg_scale=.18,stride=.05):
     action=filter_action_numpy(action,command)
     target=targets_numpy(action,command,crouch)
+    target[0::4]=np.clip(leg_scale*action[0::4],-.45,.45)
     active=np.ptp(scan_heights)>.004 and command[0]>.015
     phase=(phase_cycles-np.array([0.,.5,.75,.25]))%1
-    lift=np.where(phase<.25,.055*np.sin(math.pi*phase/.25)**2,0.)*active
-    dx=np.where(phase<.25,-.025*np.cos(math.pi*phase/.25),.05*(.5-(phase-.25)/.75))*active
+    lift=np.where(phase<.25,lift_height*np.sin(math.pi*phase/.25)**2,0.)*active
+    dx=np.where(phase<.25,-stride/2*np.cos(math.pi*phase/.25),stride*(.5-(phase-.25)/.75))*active
     down=.172812737-CROUCH_DROP*crouch-lift
     beta=-FRONTS*np.arccos(np.clip((down**2+dx**2-.09**2-.11**2)/(2*.09*.11),-1.,1.))
     theta=np.arctan2(dx,down)-np.arctan2(.11*np.sin(beta),.09+.11*np.cos(beta))
     theta0=FRONTS*math.atan2(.05,.074833147)
     beta0=-FRONTS*(math.atan2(.05,.09797959)+math.atan2(.05,.074833147))
-    target[1::4]=np.clip(SIDES*(theta0-theta)+.18*action[1::4],-.7,.7)
-    target[2::4]=np.clip(SIDES*(beta0-beta)+.18*action[2::4],-1.2,1.2)
+    target[1::4]=np.clip(SIDES*(theta0-theta)+leg_scale*action[1::4],-.7,.7)
+    target[2::4]=np.clip(SIDES*(beta0-beta)+leg_scale*action[2::4],-1.2,1.2)
     return target
 
 

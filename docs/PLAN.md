@@ -43,16 +43,30 @@ Start with 64 parallel worlds and a short smoke run. Baseline throughput and phy
   It changes wheel speeds only. Exact results are in evidence/godot-flat.json.
 - Stair trial 004 passes four-riser 20/40 mm ascent and descent in reduced CPU
   MuJoCo. The same 20/40 mm cases also pass with full MuJoCo articulation and
-  in Godot/Jolt. 60 mm and tread/alignment holdouts remain outstanding. Trial 005 failed with captured non-finite GPU
+  in Godot/Jolt. 60 mm remains outstanding. Full-model tread/alignment holdouts
+  passed 14/16; two descending cases exceeded the lateral corridor. These cases
+  retain their original results and are not reclassified as training successes.
+  Trial 005 failed with captured non-finite GPU
   physics; replay isolated the previous acceleration initial guess as the trigger.
-  Clearing that numerical guess is under full-trial regression in trial 006.
+  Clearing that numerical guess passed 1,280 captured-contact replays and three
+  subsequent five-minute GPU trials (006–008) without non-finite states. Their
+  policies regressed existing cases and have not replaced trial 004.
+  Trial 009 then encountered a new non-finite state at 157 seconds; the earlier
+  replay fix is scoped to that captured trigger, not a general stability claim.
 - Legal display assets and notices are published. Explicit GLB normals improve
   rendering without changing contact meshes, inertias or joints.
 - Unity draft PR #3 now has the native MJCF/ONNX adapter. Its 82D observation and
   mixed target formulas match 64 Python fixtures in actual .NET execution, but
   the Unity editor is not installed on this Linux ARM machine; editor/runtime
   acceptance is not yet available.
-- Godot project profile hookup, fresh remote fetch, manipulation regression,
-  release/tag and the outstanding stair tests still need completion.
+- Godot project profile PR #2 is merged. A fresh GitHub dependency install ran
+  the real W input case; the existing 38 MD input tests also passed. The cargo
+  extension will update that dependency to the next published package commit.
+- Public assets now run the preserved 100 g pickup/clamp/crawl task in both
+  MuJoCo and Godot at 18/25 mm obstacles. Each engine's no-clamp negative control
+  placed the item but correctly prevented transport. This remains a separate
+  frozen 57D crawl task, not the new 82D command policy or camera-based VLA.
+- A versioned simulation prerelease is being assembled. Unity editor acceptance,
+  full 60 mm stair acceptance, and hardware/VLA milestones remain explicit gaps.
 
 The full user objective remains active; this is not a final release checklist.

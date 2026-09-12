@@ -9,9 +9,11 @@ p.add_argument('--directory',type=Path,default=Path('artifacts'))
 p.add_argument('--prefix',default='godot-flat-')
 p.add_argument('--out',type=Path,required=True)
 p.add_argument('--require-pass',action='store_true')
+p.add_argument('--cases',nargs='+',choices=['stop','W','S','A','D','WA','shift','W_shift'])
 a=p.parse_args()
 rows=[]
 for name,vx,wz,shift in [('stop',0,0,False),('W',.16,0,False),('S',-.16,0,False),('A',0,.45,False),('D',0,-.45,False),('WA',.14,.3,False),('shift',0,0,True),('W_shift',.14,0,True)]:
+    if a.cases and name not in a.cases:continue
     raw=json.loads((a.directory/f'{a.prefix}{name}.json').read_text())
     samples=raw['samples'];t=np.array([s['time'] for s in samples])
     xyz=np.array([s['base_position'] for s in samples])

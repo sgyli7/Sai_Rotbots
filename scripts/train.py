@@ -26,6 +26,12 @@ p.add_argument('--resume', type=Path)
 p.add_argument('--stage', choices=['flat','stairs'],default='flat')
 p.add_argument('--max-riser',type=float,default=.02)
 p.add_argument('--reset-std',type=float,help='Explicit exploration reset when changing terrain curriculum')
+p.add_argument('--lift-height',type=float,default=.055)
+p.add_argument('--heading-control',action='store_true')
+p.add_argument('--ascent-only',action='store_true')
+p.add_argument('--min-riser',type=float,default=.006)
+p.add_argument('--speed',type=float)
+p.add_argument('--leg-scale',type=float,default=.18)
 args = p.parse_args()
 out = ROOT/'artifacts'/args.name
 out.mkdir(parents=True, exist_ok=False)
@@ -39,7 +45,9 @@ for relative in source_sha256:
     snapshot.write_bytes((ROOT/relative).read_bytes())
 if args.stage=='stairs':
     from sai_agent.stair_env import StairEnv
-    env=StairEnv(ROOT/'models/locomotion.xml',args.worlds,args.seed,args.max_riser,out)
+    env=StairEnv(ROOT/'models/locomotion.xml',args.worlds,args.seed,args.max_riser,out,
+                lift_height=args.lift_height,heading_control=args.heading_control,
+                ascent_only=args.ascent_only,min_riser=args.min_riser,speed=args.speed,leg_scale=args.leg_scale)
 else:
     env = LocomotionEnv(ROOT/'models/locomotion.xml', args.worlds, args.seed)
 obs = env.get_observations()
@@ -68,6 +76,9 @@ last_checkpoint=0.
 def save_checkpoint(iterations,status,filename):
     metadata = dict(schema_version=1,cfg=cfg,seed=args.seed,steps=step_count,
         stage=args.stage,max_riser=args.max_riser if args.stage=='stairs' else None,
+        lift_height=args.lift_height,heading_control=args.heading_control,
+        ascent_only=args.ascent_only,min_riser=args.min_riser,speed=args.speed,
+        leg_scale=args.leg_scale,
         reset_std=args.reset_std,status=status,iterations=iterations,
         device=torch.cuda.get_device_name(),cpu_threads=torch.get_num_threads(),
         training_wall_seconds=time.monotonic()-start,process_cpu_seconds=time.process_time()-cpu_start,
