@@ -3,6 +3,9 @@ import argparse
 import json
 from pathlib import Path
 import numpy as np
+import sys
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"src"))
+from sai_agent.paths import model_root
 
 p=argparse.ArgumentParser()
 p.add_argument('--directory',type=Path,default=Path('artifacts'))
@@ -10,7 +13,11 @@ p.add_argument('--prefix',default='godot-flat-')
 p.add_argument('--out',type=Path,required=True)
 p.add_argument('--require-pass',action='store_true')
 p.add_argument('--cases',nargs='+',choices=['stop','W','S','A','D','WA','shift','W_shift'])
-a=p.parse_args()
+p.add_argument('--robot',choices=['Sai_Agent_001','Sai_Agent_002'],default='Sai_Agent_001');a=p.parse_args()
+spec=json.loads((model_root(a.robot)/'full/robot.json').read_text())
+expected_bodies=len(spec['bodies'])
+expected_sliders=sum(b.get('joint',{}).get('kind')=='cargo_slide' for b in spec['bodies'].values())
+expected_hinges=expected_bodies-1-expected_sliders
 rows=[]
 for name,vx,wz,shift in [('stop',0,0,False),('W',.16,0,False),('S',-.16,0,False),('A',0,.45,False),('D',0,-.45,False),('WA',.14,.3,False),('shift',0,0,True),('W_shift',.14,0,True)]:
     if a.cases and name not in a.cases:continue
@@ -30,7 +37,7 @@ for name,vx,wz,shift in [('stop',0,0,False),('W',.16,0,False),('S',-.16,0,False)
         recovered_height_difference_m=float(abs(xyz[normal,2].mean()-xyz[recovered,2].mean())))
     checks=dict(completed_12s=t[-1]>=11.999,upright=row['min_upright']>.9,
         velocity_tracking=row['velocity_mae']<.06,yaw_tracking=row['yaw_mae']<.22,
-        lateral_tracking=row['lateral_mae']<.04,full_articulation=raw['body_count']==26 and raw['hinges']==23 and raw['sliders']==2,
+        lateral_tracking=row['lateral_mae']<.04,full_articulation=raw.get('robot_id')==a.robot and raw['body_count']==expected_bodies and raw['hinges']==expected_hinges and raw['sliders']==expected_sliders,
         finite_observations=np.isfinite(obs).all())
     if name in ('stop','shift'):checks['stationary_drift']=np.linalg.norm(displacement)<.12
     if name in ('W','S'):
@@ -49,6 +56,6 @@ for name,vx,wz,shift in [('stop',0,0,False),('W',.16,0,False),('S',-.16,0,False)
             checks[f'{char}_key_event']=any(e['key']==code and e['pressed'] for e in raw['input_events'])
     row['checks']={k:bool(v) for k,v in checks.items()};row['passed']=all(checks.values());rows.append(row)
     print(json.dumps(row),flush=True)
-result=dict(suite='godot-real-keyboard-v1',physics='Godot/Jolt',engine=raw['engine'],cases=rows,passed=all(r['passed'] for r in rows))
+result=dict(robot_id=a.robot,suite='godot-real-keyboard-v1',physics='Godot/Jolt',engine=raw['engine'],cases=rows,passed=all(r['passed'] for r in rows))
 a.out.parent.mkdir(parents=True,exist_ok=True);a.out.write_text(json.dumps(result,indent=2)+'\n')
 if a.require_pass and not result['passed']:raise SystemExit('Godot command acceptance failed')

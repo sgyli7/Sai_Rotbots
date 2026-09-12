@@ -9,23 +9,25 @@ import socket
 import subprocess
 import threading
 import time
-from .paths import resource_root
+from .paths import resource_root, model_root, robot_catalog
 
 
-def prepare_godot(root,destination):
+def prepare_godot(root,destination,robot_id=None):
+    models=model_root(robot_id, root)
     destination.mkdir(parents=True,exist_ok=True)
     for path in (root/'integrations/godot').iterdir():
         if path.is_file():shutil.copy2(path,destination/path.name)
     assets=destination/'sai_agent'
     assets.mkdir(exist_ok=True)
-    shutil.copy2(root/'models/full/robot.json',assets/'robot.json')
-    shutil.copytree(root/'models/full/assets',assets/'assets',dirs_exist_ok=True)
+    shutil.copy2(models/'full/robot.json',assets/'robot.json')
+    shutil.copytree(models/'full/assets',assets/'assets',dirs_exist_ok=True)
     return destination
 
 
 def main(argv=None):
     parser=argparse.ArgumentParser()
     parser.add_argument('mode',choices=['godot'])
+    parser.add_argument('--robot',choices=list(robot_catalog()),default='Sai_Agent_001')
     parser.add_argument('--godot-bin',default=shutil.which('godot'))
     parser.add_argument('--headless',action='store_true')
     parser.add_argument('--case',choices=['stop','W','S','A','D','WA','shift','W_shift'])
@@ -47,20 +49,21 @@ def main(argv=None):
     args=parser.parse_args(argv)
     if not .10<=args.stair_tread<=.4:parser.error('--stair-tread must be in [.10, .40] m')
     if not math.isfinite(args.initial_yaw):parser.error('--initial-yaw must be finite')
+    if args.robot=='Sai_Agent_002' and args.no_clamp:parser.error('002 has no clamp; --no-clamp is the 001 negative control')
     if args.task=='cargo' and args.initial_yaw!=0:parser.error('The frozen cargo task requires its original initial pose')
     if not args.godot_bin:parser.error('Godot executable not found; pass --godot-bin')
     from .godot_controller import GodotController
     root=resource_root()
     if args.stair_skill:args.stair_profile=root/'policies/experimental'/f'{args.stair_skill}.json'
-    cache=Path(os.environ.get('XDG_CACHE_HOME',str(Path.home()/'.cache')))/'Sai_Agent_001'
-    destination=prepare_godot(root,args.runtime_dir or cache/'godot')
+    cache=Path(os.environ.get('XDG_CACHE_HOME',str(Path.home()/'.cache')))/args.robot
+    destination=prepare_godot(root,args.runtime_dir or cache/'godot',args.robot)
     # Import local GLB resources before runtime; no manual editor step required.
     subprocess.run([args.godot_bin,'--headless','--editor','--path',str(destination),'--import'],check=True)
     while True:
         if args.task=='cargo':
             from .cargo_godot import CargoGodotController
-            controller=CargoGodotController(no_clamp=args.no_clamp)
-        else:controller=GodotController(root,stair_profile=args.stair_profile)
+            controller=CargoGodotController(no_clamp=args.no_clamp,model_dir=model_root(args.robot)/'full')
+        else:controller=GodotController(root,stair_profile=args.stair_profile,robot_id=args.robot)
         with socket.socket() as listener:
             listener.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
             listener.bind(('127.0.0.1',0));listener.listen(1)

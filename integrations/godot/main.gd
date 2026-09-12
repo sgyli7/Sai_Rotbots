@@ -181,14 +181,14 @@ func _physics_process(_delta: float) -> void:
 		if command.get("mode","")=="transport":
 			cargo_checks+=1
 			if not state.cargo_inside:cargo_outside_steps+=1
-			if not state.cargo_bilateral:cargo_unclamped_steps+=1
+			if specification.cargo.get("active_clamp",true) and not state.cargo_bilateral:cargo_unclamped_steps+=1
 			max_transport_lateral=maxf(max_transport_lateral,absf(float(state.base_position[1])))
 		for key in specification.leg_order:
 			for other in robot.bodies[str(key)+"_wheel"].get_colliding_bodies():
 				if str(other.name).begins_with("course_"):course_contacts[str(other.name)]=true
 	if robot.tick%40==0:
 		if test_case!="":inject_test_keys(float(state.time))
-		state["robot_id"]="Sai_Agent_001"
+		state["robot_id"]=specification.robot_id
 		state["command"]=movement_command()
 		state["terrain_heights"]=height_scan()
 		state["physics_owner"]="Godot/Jolt"
@@ -220,7 +220,8 @@ func _physics_process(_delta: float) -> void:
 			state["stage"]=command.stage
 			state["FK_tool_error_m"]=command.FK_tool_error_m
 			state["mode"]=command.mode
-			state["belt_error_m"]=[state.q[22]-specification.cargo.drive_metres_per_radian*state.q[24],state.q[23]-specification.cargo.drive_metres_per_radian*state.q[24]]
+			state["belt_error_m"]=[]
+			if specification.cargo.get("active_clamp",true):state["belt_error_m"]=[state.q[22]-specification.cargo.drive_metres_per_radian*state.q[24],state.q[23]-specification.cargo.drive_metres_per_radian*state.q[24]]
 			records.append(state)
 			if float(state.time)>=float(command.end) or float(state.upright)<.6:
 				finish_cargo()
@@ -244,12 +245,12 @@ func finish_run() -> void:
 	peer.put_data((JSON.stringify({"finish":true})+"\n").to_utf8_buffer())
 	if output!="":
 		var file := FileAccess.open(output,FileAccess.WRITE)
-		file.store_string(JSON.stringify({"robot_id":"Sai_Agent_001","case":test_case,
+		file.store_string(JSON.stringify({"robot_id":specification.robot_id,"case":test_case,
 			"physics":"Godot/Jolt","engine":Engine.get_version_info().string,
 			"physics_hz":2000,"controller_hz":50,"body_count":robot.bodies.size(),
 			"riser":riser,"descending":descending,"cleared_at":cleared_at,
 			"tread":stair_tread,"initial_yaw":initial_yaw,
-			"hinges":23,"sliders":2,"input_events":input_events,"samples":records}))
+			"hinges":23 if specification.cargo.get("active_clamp",true) else 22,"sliders":2 if specification.cargo.get("active_clamp",true) else 0,"input_events":input_events,"samples":records}))
 		file.close()
 	print("SAI_GODOT_FINISHED seconds=",robot.tick*.0005)
 	get_tree().quit()
@@ -303,8 +304,8 @@ func _process(_delta: float) -> void:
 	var base: RigidBody3D=robot.bodies.chassis
 	camera.position=base.position+Vector3(.62,.36,.60)
 	camera.look_at(base.position+Vector3(0,.05,0))
-	hud.text="Sai_Agent_001\nW/S drive · A/D turn · Shift crouch · R restart · Esc quit\n"+str(command.get("stage","connecting"))
-	if task=="cargo":hud.text="Sai_Agent_001\nPickup · secure cargo · transport · R restart · Esc quit\n"+str(command.get("stage","connecting"))
+	hud.text=specification.robot_id+"\nW/S drive · A/D turn · Shift crouch · R restart · Esc quit\n"+str(command.get("stage","connecting"))
+	if task=="cargo":hud.text=specification.robot_id+"\nPickup · load cargo · transport · R restart · Esc quit\n"+str(command.get("stage","connecting"))
 	for view in sensor_views:
 		var spec: Dictionary=view.spec
 		var body: RigidBody3D=robot.bodies[spec.body]
@@ -326,10 +327,10 @@ func finish_cargo() -> void:
 	var bilateral := 0
 	for r in records:
 		if "arm_gripper" in r.contacts and "arm_moving_jaw" in r.contacts:bilateral+=1
-	var result := {"engine":Engine.get_version_info().string,"physics":ProjectSettings.get_setting("physics/3d/physics_engine"),"independent_physics":true,
+	var result := {"robot_id":specification.robot_id,"active_clamp":specification.cargo.get("active_clamp",true),"engine":Engine.get_version_info().string,"physics":ProjectSettings.get_setting("physics/3d/physics_engine"),"independent_physics":true,
 		"jolt_penetration_slop_m":ProjectSettings.get_setting("physics/jolt_physics_3d/simulation/penetration_slop"),
 		"jolt_speculative_contact_distance_m":ProjectSettings.get_setting("physics/jolt_physics_3d/simulation/speculative_contact_distance"),
-		"physics_hz":2000,"controller_hz":50,"body_count":robot.bodies.size(),"joint_count":robot.drives.size(),"hinge_count":23,"slider_count":2,
+		"physics_hz":2000,"controller_hz":50,"body_count":robot.bodies.size(),"joint_count":robot.drives.size(),"hinge_count":23 if specification.cargo.get("active_clamp",true) else 22,"slider_count":2 if specification.cargo.get("active_clamp",true) else 0,
 		"max_object_height_m":max_height,"two_finger_contact_samples":bilateral,"placed_in_cargo":placed,
 		"success":placed and max_height>.20 and bilateral>10 and robot.tick*0.0005>=float(command.end),
 		"final_object_chassis_m":p,"duration_s":robot.tick*0.0005,"samples":records}
@@ -351,7 +352,7 @@ func finish_cargo() -> void:
 	result["outside_cargo_steps"]=cargo_outside_steps
 	result["unclamped_steps"]=cargo_unclamped_steps
 	result["max_transport_lateral_m"]=max_transport_lateral
-	result["cargo_coupling"]="force-level elastic belt, 20000 N/m and 4 Ns/m per branch; uncalibrated approximation"
+	result["cargo_coupling"]="force-level elastic belt, 20000 N/m and 4 Ns/m per branch; uncalibrated approximation" if specification.cargo.get("active_clamp",true) else "none; passive floor and walls"
 	result["success"]=result.success and cargo_checks>0 and cargo_outside_steps==0 and cargo_unclamped_steps==0 and wheel_edge>1.295 and course_contacts.size()==3 and max_transport_lateral<0.30 and command.mode!="abort"
 	if output!="":
 		var file := FileAccess.open(output,FileAccess.WRITE)

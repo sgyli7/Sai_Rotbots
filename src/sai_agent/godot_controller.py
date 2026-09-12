@@ -8,12 +8,14 @@ import onnxruntime as ort
 from scipy.spatial.transform import Rotation
 from .control import observation_numpy,targets_numpy,targets_stairs_numpy,filter_action_numpy,HeadingHold
 from .runtime import JointAdapter,ARM_NAMES
+from .paths import model_root
 
 
 class GodotController:
-    def __init__(self,root,stair_profile=None):
-        self.spec=json.loads((root/'models/full/robot.json').read_text())
-        self.model=mujoco.MjModel.from_xml_path(str(root/'models/full/robot.xml'))
+    def __init__(self,root,stair_profile=None,robot_id=None):
+        models=model_root(robot_id,root)
+        self.spec=json.loads((models/'full/robot.json').read_text())
+        self.model=mujoco.MjModel.from_xml_path(str(models/'full/robot.xml'))
         self.data=mujoco.MjData(self.model)
         self.adapter=JointAdapter(self.model)
         names=[b['joint']['name'] for b in self.spec['bodies'].values() if b.get('parent') is not None]
@@ -49,10 +51,10 @@ class GodotController:
         self.motion_origin=None
 
     def command(self,state):
-        if state.get('robot_id')!='Sai_Agent_001' or state.get('physics_owner')!='Godot/Jolt':
+        if state.get('robot_id')!=self.spec['robot_id'] or state.get('physics_owner')!='Godot/Jolt':
             raise ValueError('Unexpected robot or physics owner')
         q=np.asarray(state['q']);v=np.asarray(state['v'])
-        if q.shape!=(25,) or v.shape!=(25,) or not np.isfinite(np.r_[q,v]).all():
+        if q.shape!=(len(self.qadr),) or v.shape!=(len(self.vadr),) or not np.isfinite(np.r_[q,v]).all():
             raise ValueError('Invalid articulated joint state')
         rotation=np.asarray(state['base_rotation_columns']).T
         self.data.qpos[:3]=state['base_position']

@@ -1,5 +1,16 @@
 # Game integrations
 
+## Robot family update
+
+The core repository is now [Sai_Rotbots](https://github.com/sgyli7/Sai_Rotbots).
+001 remains the default. With the new family package, select
+`uv run sai-agent godot --robot Sai_Agent_002` or add `--task cargo`.
+The existing external Godot and Unity source pins still identify 001 alpha.3;
+renaming preserves their old GitHub URLs through redirects. Do not infer 002
+support in an old integration checkout merely from the repository rename.
+The 002 bundle provides its own MJCF, JSON physical specification and Y-up GLBs.
+
+
 The model is shared as a version-pinned Python package containing the original
 MJCF articulation, public display/contact assets and policy weights. Neither
 integration replaces the existing MicroDuck default.

@@ -2,7 +2,14 @@
 import argparse,json
 from pathlib import Path
 import numpy as np
-p=argparse.ArgumentParser();p.add_argument('--directory',type=Path,default=Path('artifacts'));p.add_argument('--prefix',default='godot-stairs-');p.add_argument('--out',type=Path,required=True);p.add_argument('--require-pass',action='store_true');a=p.parse_args()
+import sys
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"src"))
+from sai_agent.paths import model_root
+p=argparse.ArgumentParser();p.add_argument('--directory',type=Path,default=Path('artifacts'));p.add_argument('--prefix',default='godot-stairs-');p.add_argument('--out',type=Path,required=True);p.add_argument('--require-pass',action='store_true');p.add_argument('--robot',choices=['Sai_Agent_001','Sai_Agent_002'],default='Sai_Agent_001');a=p.parse_args()
+spec=json.loads((model_root(a.robot)/'full/robot.json').read_text())
+expected_bodies=len(spec['bodies'])
+expected_sliders=sum(b.get('joint',{}).get('kind')=='cargo_slide' for b in spec['bodies'].values())
+expected_hinges=expected_bodies-1-expected_sliders
 rows=[];engines=set()
 for f in sorted(a.directory.glob(a.prefix+'*.json')):
  raw=json.loads(f.read_text())
@@ -17,12 +24,12 @@ for f in sorted(a.directory.glob(a.prefix+'*.json')):
     four_wheels_supported=np.mean([s['wheels_supported']==4 for s in settled])>.7,no_fall=up.min()>.6,
     real_forward_key=any(e['key']==87 and e['pressed'] for e in raw['input_events']),
     terrain_triggered_stair_policy=any(s['controller_stage']=='stairs' for s in ss),
-    full_articulation=raw['body_count']==26 and raw['hinges']==23 and raw['sliders']==2)
+    full_articulation=raw.get('robot_id')==a.robot and raw['body_count']==expected_bodies and raw['hinges']==expected_hinges and raw['sliders']==expected_sliders)
  rows.append(dict(riser=raw['riser'],descending=raw['descending'],duration=last['time'],final_xyz=xyz[-1].tolist(),min_upright=float(up.min()),
     stair_profile=last.get('stair_profile','stairs-dev40'),effective_crouch=last.get('effective_crouch',0.),
     tread=raw.get('tread',.18),initial_yaw=raw.get('initial_yaw',0.),
     maximum_lateral_m=float(abs(xyz[:,1]).max()),checks={k:bool(v) for k,v in checks.items()},passed=bool(all(checks.values()))))
-result=dict(suite='godot-continuous-stairs-v1',engine=next(iter(engines)) if len(engines)==1 else sorted(engines),physics_hz=2000,controller_hz=50,
+result=dict(robot_id=a.robot,suite='godot-continuous-stairs-v1',engine=next(iter(engines)) if len(engines)==1 else sorted(engines),physics_hz=2000,controller_hz=50,
     sensor='Ground-only raycasts, not camera-based VLA',cases=rows,passed=bool(rows) and all(r['passed'] for r in rows))
 a.out.parent.mkdir(parents=True,exist_ok=True);a.out.write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
 if a.require_pass and not result['passed']:raise SystemExit(1)

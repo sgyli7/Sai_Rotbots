@@ -20,7 +20,10 @@ p.add_argument('--policy', type=Path, help='Omit for the zero-residual analytica
 p.add_argument('--out', type=Path, required=True)
 p.add_argument('--require-pass', action='store_true')
 p.add_argument('--full-robot', action='store_true',help='Keep all arm/cargo joints and original contact meshes')
+p.add_argument('--robot',choices=['Sai_Agent_001','Sai_Agent_002'],default='Sai_Agent_001')
 args=p.parse_args()
+from sai_agent.paths import model_root
+MODELS=model_root(args.robot)
 args.out.mkdir(parents=True, exist_ok=True)
 if args.policy:
     import onnxruntime as ort
@@ -31,10 +34,10 @@ else:
 cases = [('stop',0,0,False), ('W',.16,0,False), ('S',-.16,0,False),
          ('A',0,.45,False), ('D',0,-.45,False), ('WA',.14,.3,False),
          ('shift',0,0,True), ('W_shift',.14,0,True)]
-model_path=ROOT/'models/locomotion.xml'
+model_path=MODELS/'locomotion.xml'
 if args.full_robot:
-    model_path=ROOT/'models/full/locomotion-articulated.xml'
-    root=ET.parse(ROOT/'models/full/robot.xml').getroot()
+    model_path=MODELS/'full/locomotion-articulated.xml'
+    root=ET.parse(MODELS/'full/robot.xml').getroot()
     world=root.find('worldbody')
     for body in list(world.findall('body')):
         if body.get('name')=='item':world.remove(body)

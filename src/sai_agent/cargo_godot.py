@@ -8,12 +8,13 @@ from .godot_controller import GodotController
 HERE=resource_root()/'models/full'
 
 class CargoGodotController(GodotController):
-    def __init__(self,no_grip=False,grip_cap=1.4,until=None,no_clamp=False,task_factory=Task):
-        self.task=task_factory(no_grip,model_dir=HERE);self.task.grip_cap=grip_cap
-        self.grasp_end=self.task.end;self.clamp_end=self.grasp_end+8.;self.transport=CrawlTransport()
+    def __init__(self,no_grip=False,grip_cap=1.4,until=None,no_clamp=False,task_factory=Task,model_dir=HERE):
+        self.task=task_factory(no_grip,model_dir=model_dir);self.task.grip_cap=grip_cap
+        self.active_clamp=self.task.spec['cargo'].get('active_clamp',True)
+        self.grasp_end=self.task.end;self.clamp_end=self.grasp_end+(8. if self.active_clamp else 1.);self.transport=CrawlTransport()
         self.end=until if until is not None else self.clamp_end+self.transport.duration
         self.no_clamp=no_clamp;self.last_stage=None;self.target=0.
-        js=[self.task.model.joint(x).id for x in ['cargo_slide_-1','cargo_slide_1','cargo_drive']]
+        js=[self.task.model.joint(x).id for x in (['cargo_slide_-1','cargo_slide_1','cargo_drive'] if self.active_clamp else [])]
         self.cq=[self.task.model.jnt_qposadr[j] for j in js];self.cv=[self.task.model.jnt_dofadr[j] for j in js]
 
     def command(self,state):
@@ -27,9 +28,9 @@ class CargoGodotController(GodotController):
         if d.time+1e-6<self.grasp_end:
             t.control_target();result=dict(mode='manipulation',stage=t.label,target_leg=t.target_leg.tolist(),target_arm=t.target_arm.tolist())
         elif d.time+1e-6<self.clamp_end:
-            self.target=0. if self.no_clamp else min(.067,max(0.,d.time-self.grasp_end)*.01)/t.spec['cargo']['drive_metres_per_radian']
-            result=dict(mode='securing',stage='secure_cargo',target_leg=t.target_leg.tolist(),target_arm=t.target_arm.tolist())
-        elif self.transport.start is None and not (state['cargo_inside'] and state['cargo_bilateral']):
+            self.target=0. if self.no_clamp or not self.active_clamp else min(.067,max(0.,d.time-self.grasp_end)*.01)/t.spec['cargo']['drive_metres_per_radian']
+            result=dict(mode='securing',stage='secure_cargo' if self.active_clamp else 'settle_cargo',target_leg=t.target_leg.tolist(),target_arm=t.target_arm.tolist())
+        elif self.transport.start is None and not (state['cargo_inside'] and (state['cargo_bilateral'] or not self.active_clamp)):
             self.end=d.time
             result=dict(mode='abort',stage='cargo_not_secured',target_leg=t.target_leg.tolist(),target_arm=t.target_arm.tolist())
         else:result=self.transport.command(state)
