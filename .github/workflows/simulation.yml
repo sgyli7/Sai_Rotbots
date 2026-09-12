@@ -24,6 +24,9 @@ jobs:
       - run: uv run python scripts/evaluate_stairs.py --policy policies/experimental/descent60.onnx --out artifacts/ci-descent60 --risers .02 .04 .06 --direction down --speed .08 --crouch .5 --heading-control --lane-control --yaw-correction-limit .6 --max-seconds 45 --full-robot --require-pass
       - run: uv run python scripts/evaluate_cargo.py --out artifacts/ci-cargo --require-pass
       - run: uv run python scripts/evaluate_cargo.py --out artifacts/ci-no-clamp --no-clamp --require-pass
+      - run: uv run python scripts/evaluate_flat.py --robot Sai_Agent_002 --policy policies/flat-v1.onnx --out artifacts/ci-002-flat --full-robot --require-pass
+      - run: uv run python scripts/evaluate_stairs.py --robot Sai_Agent_002 --policy policies/stairs-dev40.onnx --out artifacts/ci-002-stairs --risers .02 .04 --full-robot --require-pass
+      - run: uv run python scripts/evaluate_cargo.py --robot Sai_Agent_002 --out artifacts/ci-002-cargo --require-pass
       - run: uv build --wheel --out-dir artifacts/dist
       - uses: actions/upload-artifact@v4
         if: always()

@@ -17,17 +17,19 @@ def load_course(path,height):
     return mujoco.MjModel.from_xml_string(ET.tostring(tree.getroot(),encoding='unicode'))
 
 class CargoTask(Task):
-    def __init__(self,height=.018,no_clamp=False,until=None):
-        super().__init__(model_dir=HERE)
-        self.model=load_course(HERE/'robot.xml',height);self.data=mujoco.MjData(self.model);self.ik=mujoco.MjData(self.model)
+    def __init__(self,height=.018,no_clamp=False,until=None,model_dir=HERE):
+        super().__init__(model_dir=model_dir)
+        self.active_clamp=self.spec['cargo'].get('active_clamp',True)
+        if no_clamp and not self.active_clamp:raise ValueError('002 has no clamp to disable')
+        self.model=load_course(model_dir/'robot.xml',height);self.data=mujoco.MjData(self.model);self.ik=mujoco.MjData(self.model)
         self.height=height;self.no_clamp=no_clamp;self.grip_cap=1.4
-        self.grasp_end=self.end;self.clamp_end=self.end+8.;self.transport=CrawlTransport();self.end=self.clamp_end+self.transport.duration
+        self.grasp_end=self.end;self.clamp_end=self.end+(8. if self.active_clamp else 1.);self.transport=CrawlTransport();self.end=self.clamp_end+self.transport.duration
         if until is not None:self.end=until
         self.drive_command=None;self.cargo_target=0.;self.transport_started=False;self.abort_reason=None
-        self.cj=[self.model.joint(n).id for n in ['cargo_slide_-1','cargo_slide_1','cargo_drive']]
-        self.cq=np.array([self.model.jnt_qposadr[j] for j in self.cj]);self.cv=np.array([self.model.jnt_dofadr[j] for j in self.cj])
-        self.ca=self.model.actuator('cargo_drive_motor').id;self.ratio=self.spec['cargo']['drive_metres_per_radian']
-        self.pad_geoms=[self.model.geom(f'cargo_slide_{side}_contact_0').id for side in [-1,1]]
+        self.cj=[self.model.joint(n).id for n in (['cargo_slide_-1','cargo_slide_1','cargo_drive'] if self.active_clamp else [])]
+        self.cq=np.array([self.model.jnt_qposadr[j] for j in self.cj],dtype=int);self.cv=np.array([self.model.jnt_dofadr[j] for j in self.cj],dtype=int)
+        self.ca=self.model.actuator('cargo_drive_motor').id if self.active_clamp else None;self.ratio=self.spec['cargo'].get('drive_metres_per_radian',1.)
+        self.pad_geoms=[self.model.geom(f'cargo_slide_{side}_contact_0').id for side in ([-1,1] if self.active_clamp else [])]
         self.wheel_bodies=[self.model.body(k+'_wheel').id for k in self.spec['leg_order']]
         self.course_contacts=set();self.previous_label=None
         self.physics_cargo_checks=0;self.outside_cargo_steps=0;self.unclamped_steps=0;self.max_lateral_m=0.
@@ -48,7 +50,8 @@ class CargoTask(Task):
         corners=np.array([[x,y,z] for x in [-1,1] for y in [-1,1] for z in [-1,1]])*half
         local=(corners@ir.T+self.data.xpos[self.item]-self.data.xpos[b])@r+np.array(self.spec['bodies']['chassis']['origin_m'])
         low,high=local.min(0),local.max(0)
-        inside=low[0]>=-.146 and high[0]<=-.037 and low[1]>=-.112 and high[1]<=.112 and low[2]>.254 and high[2]<.315
+        bounds=np.array(self.spec['cargo'].get('bounds_world_m',[[-.146,-.112,.254],[-.037,.112,.315]]))
+        inside=bool(np.all(low>=bounds[0]) and np.all(high<=bounds[1]))
         return np.array([low,high]),bool(inside)
 
     def observation(self):
@@ -61,13 +64,13 @@ class CargoTask(Task):
         now=self.data.time
         if now+1e-6<self.grasp_end:super().control_target()
         elif now+1e-6<self.clamp_end:
-            self.label='secure_cargo'
+            self.label='secure_cargo' if self.active_clamp else 'settle_cargo'
             # Advance a position-mode servo slowly, then hold with torque cap.
-            self.cargo_target=0. if self.no_clamp else min(.067,max(0.,now-self.grasp_end)*.01)/self.ratio
+            self.cargo_target=0. if self.no_clamp or not self.active_clamp else min(.067,max(0.,now-self.grasp_end)*.01)/self.ratio
         else:
             if not self.transport_started:
-                if not self.cargo_bounds()[1] or min(self.pad_forces())<.25:
-                    self.abort_reason='Cargo not inside bay with bilateral pad contact';self.end=now;return
+                if not self.cargo_bounds()[1] or (self.active_clamp and min(self.pad_forces())<.25):
+                    self.abort_reason='Cargo not inside bay or required clamp contact missing';self.end=now;return
                 self.transport_started=True
             self.drive_command=self.transport.command(self.observation())
             self.label=self.drive_command['stage'];self.target_arm=np.array(self.drive_command['target_arm']);self.target_leg=np.array(self.drive_command['target_leg'])
@@ -83,7 +86,7 @@ class CargoTask(Task):
         limits=np.tile([8,8,8,1.3],4);self.data.ctrl[self.la]=np.clip(leg_u,-limits,limits)
         arm_u=998.22*(self.target_arm-q[self.aq])-2.731*v[self.av]+self.data.qfrc_bias[self.av]
         self.data.ctrl[self.aa]=np.clip(arm_u,-2.94,2.94);self.data.ctrl[self.aa[-1]]=np.clip(self.data.ctrl[self.aa[-1]],-self.grip_cap,self.grip_cap)
-        self.data.ctrl[self.ca]=np.clip(4*(self.cargo_target-q[self.cq[-1]])-.06*v[self.cv[-1]],-.12,.12)
+        if self.active_clamp:self.data.ctrl[self.ca]=np.clip(4*(self.cargo_target-q[self.cq[-1]])-.06*v[self.cv[-1]],-.12,.12)
         mujoco.mj_step(self.model,self.data)
         for ct in self.data.contact:
             names=[self.model.geom(int(g)).name for g in ct.geom]
@@ -93,15 +96,15 @@ class CargoTask(Task):
         if self.transport_started:
             self.physics_cargo_checks+=1
             self.outside_cargo_steps+=not self.cargo_bounds()[1]
-            self.unclamped_steps+=int(min(self.pad_forces())<=.25)
+            self.unclamped_steps+=int(self.active_clamp and min(self.pad_forces())<=.25)
             self.max_lateral_m=max(self.max_lateral_m,abs(self.data.qpos[1]))
         if tick%2==0 and (not self.samples or self.data.time-self.samples[-1]['time']>.039):self.record()
 
     def record(self):
         super().record();s=self.samples[-1];bounds,inside=self.cargo_bounds()
-        s.update(cargo_q=self.data.qpos[self.cq].tolist(),cargo_torque_Nm=float(self.data.actuator_force[self.ca]),
+        s.update(cargo_q=self.data.qpos[self.cq].tolist(),cargo_torque_Nm=float(self.data.actuator_force[self.ca]) if self.active_clamp else 0.,
             pad_forces_N=self.pad_forces().tolist(),cargo_bounds_m=bounds.tolist(),cargo_inside=inside,
-            belt_error_m=(self.data.qpos[self.cq[:2]]-self.ratio*self.data.qpos[self.cq[2]]).tolist(),
+            belt_error_m=(self.data.qpos[self.cq[:2]]-self.ratio*self.data.qpos[self.cq[2]]).tolist() if self.active_clamp else [],
             wheel_min_x_m=self.wheel_min_x())
         if self.drive_command:s['transport']=self.drive_command
 
@@ -118,14 +121,14 @@ class CargoTask(Task):
         retained=self.physics_cargo_checks>0 and self.outside_cargo_steps==0
         cleared=bool(rows) and rows[-1]['wheel_min_x_m']>1.295
         bilateral=self.physics_cargo_checks>0 and self.unclamped_steps==0
-        report.update(status='Physical grasp, active belt clamp and frozen r21 PPO crawl',terrain_height_m=self.height,
+        report.update(robot_id=self.spec['robot_id'],active_clamp=self.active_clamp,status='Physical grasp, '+('active belt clamp' if self.active_clamp else 'passive flat cargo bay')+' and frozen r21 PPO crawl',terrain_height_m=self.height,
             no_clamp_control=self.no_clamp,abort_reason=self.abort_reason,transport_started=self.transport_started,
-            cargo_retained_throughout_transport=retained,bilateral_pad_contact_throughout_transport=bilateral,
+            cargo_retained_throughout_transport=retained,bilateral_pad_contact_throughout_transport=bilateral if self.active_clamp else None,
             all_wheels_cleared_course=cleared,actual_course_contacts=sorted(self.course_contacts),
             transport_distance_m=self.drive_command['transport_distance_m'] if self.drive_command else 0,
-            transport_policy_sha256=self.transport.sha256,max_abs_belt_error_m=float(np.max(np.abs([s['belt_error_m'] for s in self.samples]))),
-            equality_constraints=['belt_to_pad_-1','belt_to_pad_1'],object_constraints=0,
+            transport_policy_sha256=self.transport.sha256,max_abs_belt_error_m=float(np.max(np.abs([s['belt_error_m'] for s in self.samples]))) if self.active_clamp else None,
+            equality_constraints=['belt_to_pad_-1','belt_to_pad_1'] if self.active_clamp else [],object_constraints=0,
             physics_cargo_checks=self.physics_cargo_checks,outside_cargo_steps=self.outside_cargo_steps,unclamped_steps=self.unclamped_steps,
             max_transport_lateral_m=self.max_lateral_m,
-            success=bool(report['success'] and retained and bilateral and cleared and len(self.course_contacts)==3 and self.abort_reason is None and self.max_lateral_m<.30))
+            success=bool(report['success'] and retained and (bilateral or not self.active_clamp) and cleared and len(self.course_contacts)==3 and self.abort_reason is None and self.max_lateral_m<.30))
         return report

@@ -237,7 +237,8 @@ func cargo_state() -> Dictionary:
 		if str(b.name)=="cargo_slide_-1":left=true
 		if str(b.name)=="cargo_slide_1":right=true
 		if str(b.name).begins_with("arm_"):supported=false;break
-	var inside := low.x>=-0.146 and high.x<=-0.037 and low.y>=-0.112 and high.y<=0.112 and low.z>.254 and high.z<.315
+	var bounds: Array=specification.cargo.get("bounds_world_m",[[-.146,-.112,.254],[-.037,.112,.315]])
+	var inside: bool = low.x>=bounds[0][0] and high.x<=bounds[1][0] and low.y>=bounds[0][1] and high.y<=bounds[1][1] and low.z>bounds[0][2] and high.z<bounds[1][2]
 	supported=supported and inside
 	return {"supported":supported,"inside":inside,"bilateral":left and right,"bounds":[[low.x,low.y,low.z],[high.x,high.y,high.z]]}
 
@@ -281,5 +282,5 @@ func apply_command(s: Dictionary, next_command: Dictionary) -> void:
 		var torque: Vector3=(d.parent.global_basis*d.axis)*u
 		d.child.apply_torque(torque)
 		d.parent.apply_torque(-torque)
-	apply_cargo(s)
+	if specification.cargo.get("active_clamp",true):apply_cargo(s)
 	tick+=1

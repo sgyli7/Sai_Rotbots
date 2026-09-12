@@ -39,7 +39,10 @@ p.add_argument('--lane-control',action='store_true')
 p.add_argument('--tread',type=float,default=.18)
 p.add_argument('--initial-yaw-range',type=float,default=0.)
 p.add_argument('--start-x-range',type=float,default=0.)
+p.add_argument('--robot',choices=['Sai_Agent_001','Sai_Agent_002'],default='Sai_Agent_001')
 args = p.parse_args()
+from sai_agent.paths import model_root
+MODELS=model_root(args.robot)
 if args.ascent_only and args.descent_only:p.error('Choose only one stair direction')
 if not 0<=args.crouch<=1:p.error('--crouch must be in [0, 1]')
 if not 0<args.yaw_correction_limit<=1.2:p.error('--yaw-correction-limit must be in (0, 1.2] rad/s')
@@ -59,14 +62,14 @@ for relative in source_sha256:
     snapshot.write_bytes((ROOT/relative).read_bytes())
 if args.stage=='stairs':
     from sai_agent.stair_env import StairEnv
-    env=StairEnv(ROOT/'models/locomotion.xml',args.worlds,args.seed,args.max_riser,out,
+    env=StairEnv(MODELS/'locomotion.xml',args.worlds,args.seed,args.max_riser,out,
                 lift_height=args.lift_height,heading_control=args.heading_control,
                 ascent_only=args.ascent_only,min_riser=args.min_riser,speed=args.speed,leg_scale=args.leg_scale,
                 descent_only=args.descent_only,crouch_command=args.crouch,
                 yaw_correction_limit=args.yaw_correction_limit,lane_control=args.lane_control,
                 tread=args.tread,initial_yaw_range=args.initial_yaw_range,start_x_range=args.start_x_range)
 else:
-    env = LocomotionEnv(ROOT/'models/locomotion.xml', args.worlds, args.seed)
+    env = LocomotionEnv(MODELS/'locomotion.xml', args.worlds, args.seed)
 obs = env.get_observations()
 alg = PPO.construct_algorithm(obs, env, copy.deepcopy(cfg), env.device)
 if args.resume:
@@ -91,7 +94,7 @@ last_checkpoint=0.
 
 
 def save_checkpoint(iterations,status,filename):
-    metadata = dict(schema_version=1,cfg=cfg,seed=args.seed,steps=step_count,
+    metadata = dict(robot_id=args.robot,schema_version=1,cfg=cfg,seed=args.seed,steps=step_count,
         stage=args.stage,max_riser=args.max_riser if args.stage=='stairs' else None,
         lift_height=args.lift_height,heading_control=args.heading_control,
         ascent_only=args.ascent_only,min_riser=args.min_riser,speed=args.speed,
@@ -101,7 +104,7 @@ def save_checkpoint(iterations,status,filename):
         reset_std=args.reset_std,status=status,iterations=iterations,
         device=torch.cuda.get_device_name(),cpu_threads=torch.get_num_threads(),
         training_wall_seconds=time.monotonic()-start,process_cpu_seconds=time.process_time()-cpu_start,
-        model_sha256=hashlib.sha256((ROOT/'models/locomotion.xml').read_bytes()).hexdigest(),
+        model_sha256=hashlib.sha256((MODELS/'locomotion.xml').read_bytes()).hexdigest(),
         training_scene_sha256=hashlib.sha256((out/'stairs.xml').read_bytes()).hexdigest() if args.stage=='stairs' else None,
         observation_size=82,action_size=16,control_hz=50,source_sha256=source_sha256,
         resume=str(args.resume) if args.resume else None)

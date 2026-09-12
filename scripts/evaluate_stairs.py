@@ -35,7 +35,10 @@ p.add_argument('--direction',choices=['both','up','down'],default='both')
 p.add_argument('--crouch',type=float,default=0.,help='Requested normalized crouch, slewed at the deployment rate')
 p.add_argument('--lane-control',action='store_true',help='Diagnostic known-route steering on the staircase center line')
 p.add_argument('--yaw-correction-limit',type=float,default=.4,help='Outer heading correction bound in rad/s; motor torque limits remain fixed')
+p.add_argument('--robot',choices=['Sai_Agent_001','Sai_Agent_002'],default='Sai_Agent_001')
 args=p.parse_args()
+from sai_agent.paths import model_root
+MODELS=model_root(args.robot)
 if args.max_seconds<=3: p.error('--max-seconds must exceed the required 3 s final stop')
 if not 0<=args.crouch<=1: p.error('--crouch must be in [0, 1]')
 if args.lane_control and not args.heading_control: p.error('--lane-control requires --heading-control')
@@ -44,15 +47,15 @@ options=ort.SessionOptions();options.intra_op_num_threads=2;options.inter_op_num
 policy=ort.InferenceSession(str(args.policy),options,providers=['CPUExecutionProvider'])
 rows=[]
 started=time.monotonic()
-source=(ROOT/'models/locomotion.xml').read_text()
+source=(MODELS/'locomotion.xml').read_text()
 if args.full_robot:
-    root=ET.parse(ROOT/'models/full/robot.xml').getroot();world=root.find('worldbody')
+    root=ET.parse(MODELS/'full/robot.xml').getroot();world=root.find('worldbody')
     for body in list(world.findall('body')):
         if body.get('name')=='item':world.remove(body)
     for geom in list(world.findall('geom')):
         if geom.get('name','').startswith('course_'):world.remove(geom)
     for mesh in root.findall('.//asset/mesh'):
-        mesh.set('file',str(ROOT/'models/full'/mesh.get('file')))
+        mesh.set('file',str(MODELS/'full'/mesh.get('file')))
     k=root.find('keyframe')
     if k is not None:root.remove(k)
     source=ET.tostring(root,encoding='unicode')

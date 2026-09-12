@@ -30,7 +30,7 @@ class Task:
         self.la=np.array([self.model.actuator(k+'_'+j+'_motor').id for k in self.spec['leg_order'] for j in ['haa','hip','knee','wheel']])
         self.gripper=self.model.body('arm_gripper').id;self.item=self.model.body('item').id
         self.site=self.model.site('tool_center').id;self.item_geom=self.model.geom('item_box').id
-        self.frames=json.loads((ROOT/'models/tasks/pick-place.json').read_text())
+        self.frames=json.loads((model_dir.parent/'tasks/pick-place.json').read_text())
         self.no_grip=no_grip
         self.end=1.5+(len(self.frames)-1)*.22+2
         self.target_arm=np.zeros(6);self.target_leg=np.zeros(16)

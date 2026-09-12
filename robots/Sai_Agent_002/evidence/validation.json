@@ -1,0 +1,88 @@
+{
+  "robot_id": "Sai_Agent_002",
+  "checks": {
+    "mujoco-flat.json": {
+      "passed": true,
+      "source": "artifacts/002-flat/result.json"
+    },
+    "mujoco-stairs.json": {
+      "passed": true,
+      "source": "artifacts/002-stairs/result.json"
+    },
+    "mujoco-ascent60.json": {
+      "passed": true,
+      "source": "artifacts/002-ascent60/result.json"
+    },
+    "mujoco-descent60.json": {
+      "passed": true,
+      "source": "artifacts/002-descent60/result.json"
+    },
+    "mujoco-cargo18.json": {
+      "passed": true,
+      "source": "artifacts/002-cargo/result.json"
+    },
+    "mujoco-cargo25.json": {
+      "passed": true,
+      "source": "artifacts/002-cargo25/result.json"
+    },
+    "godot-flat.json": {
+      "passed": true,
+      "source": "artifacts/002-godot-flat-result.json"
+    },
+    "godot-stairs.json": {
+      "passed": true,
+      "source": "artifacts/002-godot-stairs-result.json"
+    },
+    "godot-60mm.json": {
+      "passed": true,
+      "source": "artifacts/002-godot-60-result.json"
+    },
+    "godot-cargo18.json": {
+      "passed": true,
+      "source": "artifacts/002-godot-cargo.json"
+    },
+    "godot-cargo25.json": {
+      "passed": true,
+      "source": "artifacts/002-godot-cargo25.json"
+    },
+    "preserved-001-cargo.json": {
+      "passed": true,
+      "source": "artifacts/002-regression-001-cargo/result.json"
+    },
+    "preserved-001-no-clamp.json": {
+      "passed": true,
+      "source": "artifacts/002-regression-001-no-clamp/result.json"
+    },
+    "preserved-001-godot.json": {
+      "passed": true,
+      "source": "artifacts/002-regression-001-godot-result.json"
+    },
+    "gpu-training-smoke.json": {
+      "passed": true,
+      "iterations": 2,
+      "steps": 2048,
+      "device": "NVIDIA GB10"
+    }
+  },
+  "model_files_sha256": {
+    "robots/Sai_Agent_002/models/full/robot.xml": "09a4d67d194bb6b1dc9cb135306a3044801bbe22505a8760b55abbe3a6af51aa",
+    "robots/Sai_Agent_002/models/full/robot.json": "6ea7308a9ca5b58f0f7919ce93ae702a661c83a1ba18199f156dbcd8c4442990",
+    "robots/Sai_Agent_002/models/locomotion.xml": "fd2409aba24e573bef46c8ab0b7a554d5625c2924bb2adcbe0ee6c8a615f598e"
+  },
+  "policy_reuse": "Unchanged 001 trained actors; evaluated on the 002 model",
+  "policy_sha256": {
+    "policies/stairs-dev40.onnx": "0eca6930e7ccd3201023ce9dd0ce4b9cb0476a9490020da89802cac598b2e38d",
+    "policies/flat-v1.onnx": "1f9df39d6a034de77764df065cb7208e29143f569c882e84d7bded3caf5656f0",
+    "policies/experimental/ascent60.onnx": "501ad1f8e9b6131bc83b9e35012e6f1ad7bcaf7e5869352eefb636440f1e44f4",
+    "policies/experimental/descent60.onnx": "821b2cededa8e204a850384b990828d8ac749a07580b6e4ddc563fd437089d57"
+  },
+  "geometry_review": [
+    "Actual front/rear/top MJCF renders inspected",
+    "Actual Godot viewport inspected; flat bay, no cross-bay mechanism"
+  ],
+  "limitations": [
+    "Nominal 60 mm tests only; 001 multi-parameter 60 mm coverage not inherited",
+    "Hardware parameters remain estimates",
+    "Unity editor and camera-based VLA remain unverified"
+  ]
+}

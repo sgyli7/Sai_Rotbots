@@ -1,7 +1,7 @@
 [project]
 name = "sai-agent-001"
-version = "0.1.0a3"
-description = "SO101 four-wheel-leg cargo robot: model, policies and Sim2Sim adapters"
+version = "0.2.0a1"
+description = "Sai_Rotbots: SO101 wheel-leg robot family, models, policies and Sim2Sim adapters"
 requires-python = ">=3.12,<3.13"
 license = "Apache-2.0"
 dependencies = ["mujoco==3.10.0", "numpy>=2.0,<3", "scipy>=1.14,<2", "onnxruntime==1.24.4"]
@@ -23,6 +23,7 @@ packages = ["src/sai_agent"]
 
 [tool.hatch.build.targets.wheel.force-include]
 models = "sai_agent/bundle/models"
+robots = "sai_agent/bundle/robots"
 policies = "sai_agent/bundle/policies"
 licenses = "sai_agent/bundle/licenses"
 "THIRD_PARTY_NOTICES.md" = "sai_agent/bundle/THIRD_PARTY_NOTICES.md"
@@ -35,3 +36,6 @@ torch = [{index = "pytorch-cu129", marker = "sys_platform == 'linux' and platfor
 name = "pytorch-cu129"
 url = "https://download.pytorch.org/whl/cu129"
 explicit = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
