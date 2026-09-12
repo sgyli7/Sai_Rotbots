@@ -62,7 +62,7 @@ policy after the load is secured. It does not weld the item to the gripper or
 cargo bay. This is a separate regression task, not general object recognition
 or learned visual manipulation. See [task and evidence details](docs/CARGO_TASK.md).
 
-The existing [Godot project integration](https://github.com/sgyli7/MicroDuck-Godot-Simi2Sim/pull/2)
+The existing [Godot project integration](https://github.com/sgyli7/MicroDuck-Godot-Simi2Sim/pull/3)
 provides `sim2sim-play --robot Sai_Agent_001` through an optional dependency.
 The [Unity integration PR](https://github.com/sgyli7/MicroDuck-Unity-Sim2Sim/pull/3)
 contains setup and a native-model demo; its editor/runtime acceptance is pending.

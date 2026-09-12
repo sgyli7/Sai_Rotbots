@@ -10,7 +10,7 @@ In [MicroDuck-Godot-Simi2Sim](https://github.com/sgyli7/MicroDuck-Godot-Simi2Sim
 
 ```sh
 uv sync --extra sai
-uv run sim2sim-play --robot Sai_Agent_001
+uv run --extra sai sim2sim-play --robot Sai_Agent_001
 ```
 
 Use Python 3.12 and Godot 4.7.2. The optional dependency pins an exact Sai source

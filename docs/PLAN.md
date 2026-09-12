@@ -61,12 +61,18 @@ Start with 64 parallel worlds and a short smoke run. Baseline throughput and phy
   acceptance is not yet available.
 - Godot project profile PR #2 is merged. A fresh GitHub dependency install ran
   the real W input case; the existing 38 MD input tests also passed. The cargo
-  extension will update that dependency to the next published package commit.
+  extension has also been installed from GitHub commit 6eb18b2 and completed
+  the same cargo task through the existing project entry point (merged PR #3).
 - Public assets now run the preserved 100 g pickup/clamp/crawl task in both
   MuJoCo and Godot at 18/25 mm obstacles. Each engine's no-clamp negative control
   placed the item but correctly prevented transport. This remains a separate
   frozen 57D crawl task, not the new 82D command policy or camera-based VLA.
-- A versioned simulation prerelease is being assembled. Unity editor acceptance,
+- R restart resets both the physics scene and controller; real Godot key-event
+  regression passed. Visible VSync throttling was isolated and removed while
+  keeping the physics configuration unchanged. Visible W also passed.
+- GitHub Actions on Ubuntu x86 passed package installation, contract tests,
+  full-articulated flat/20–40 mm stair/cargo tests and the no-clamp control.
+- The 0.1.0a2 simulation prerelease packages the verified subset. Unity editor acceptance,
   full 60 mm stair acceptance, and hardware/VLA milestones remain explicit gaps.
 
 The full user objective remains active; this is not a final release checklist.

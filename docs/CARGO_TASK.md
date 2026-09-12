@@ -43,6 +43,11 @@ All four runs physically contacted all three obstacles and cleared them with
 all wheels. Both no-clamp runs stopped before transport. Machine-readable
 summaries are in [cargo-regression.json](../evidence/cargo-regression.json).
 
+![Actual Godot loaded cargo frame](images/godot-loaded-cargo.png)
+
+The small view on the lower right is the wrist camera rendering the carried
+item and clamp. It is a rendered observation, not a VLA acceptance result.
+
 ## Controller boundary
 
 SO101 follows the frozen source-axis path in `models/tasks/pick-place.json` with
