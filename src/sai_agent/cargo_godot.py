@@ -1,11 +1,11 @@
 """Current Godot state -> manipulation targets and cargo/load interlock."""
 import numpy as np,mujoco
 from scipy.spatial.transform import Rotation
-from .paths import resource_root
+from .paths import model_root
 from .manipulation import Task
 from .legacy_crawl import CrawlTransport
 from .godot_controller import GodotController
-HERE=resource_root()/'models/full'
+HERE=model_root('Sai_Agent_001')/'full'
 
 class CargoGodotController(GodotController):
     def __init__(self,no_grip=False,grip_cap=1.4,until=None,no_clamp=False,task_factory=Task,model_dir=HERE):

@@ -1,5 +1,10 @@
 # Contributing
 
+Read [sai_robots_engineering_rules.md](sai_robots_engineering_rules.md) for the
+single directory and naming standard. Use each robot's README to find its
+design, source assets, models and evidence. Move files and update their live
+references in the same focused commit.
+
 Keep the approved robot geometry and named physical contract stable. Changes
 to masses, contacts, axes, limits, motor semantics or observation order need a
 new contract/version and the affected engine regressions. Visual-only changes

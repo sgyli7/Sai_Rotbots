@@ -18,20 +18,20 @@ jobs:
       - run: python -m pip install uv
       - run: uv sync --locked --extra test
       - run: uv run pytest -q
-      - run: uv run python scripts/evaluate_flat.py --policy policies/flat-v1.onnx --out artifacts/ci-flat --full-robot --require-pass
-      - run: uv run python scripts/evaluate_stairs.py --policy policies/stairs-dev40.onnx --out artifacts/ci-stairs --risers .02 .04 --full-robot --require-pass
-      - run: uv run python scripts/evaluate_stairs.py --policy policies/experimental/ascent60.onnx --out artifacts/ci-ascent60 --risers .06 --direction up --speed .08 --lift-height .07 --leg-scale .45 --heading-control --max-seconds 45 --full-robot --require-pass
-      - run: uv run python scripts/evaluate_stairs.py --policy policies/experimental/descent60.onnx --out artifacts/ci-descent60 --risers .02 .04 .06 --direction down --speed .08 --crouch .5 --heading-control --lane-control --yaw-correction-limit .6 --max-seconds 45 --full-robot --require-pass
-      - run: uv run python scripts/evaluate_cargo.py --out artifacts/ci-cargo --require-pass
-      - run: uv run python scripts/evaluate_cargo.py --out artifacts/ci-no-clamp --no-clamp --require-pass
-      - run: uv run python scripts/evaluate_flat.py --robot Sai_Agent_002 --policy policies/flat-v1.onnx --out artifacts/ci-002-flat --full-robot --require-pass
-      - run: uv run python scripts/evaluate_stairs.py --robot Sai_Agent_002 --policy policies/stairs-dev40.onnx --out artifacts/ci-002-stairs --risers .02 .04 --full-robot --require-pass
-      - run: uv run python scripts/evaluate_cargo.py --robot Sai_Agent_002 --out artifacts/ci-002-cargo --require-pass
+      - run: uv run python scripts/evaluation/evaluate_flat.py --policy shared/policies/flat-v1.onnx --out artifacts/Sai_Agent_001/ci_flat --full-robot --require-pass
+      - run: uv run python scripts/evaluation/evaluate_stairs.py --policy shared/policies/stairs-dev40.onnx --out artifacts/Sai_Agent_001/ci_stairs --risers .02 .04 --full-robot --require-pass
+      - run: uv run python scripts/evaluation/evaluate_stairs.py --policy shared/policies/experimental/ascent60.onnx --out artifacts/Sai_Agent_001/ci_ascent60 --risers .06 --direction up --speed .08 --lift-height .07 --leg-scale .45 --heading-control --max-seconds 45 --full-robot --require-pass
+      - run: uv run python scripts/evaluation/evaluate_stairs.py --policy shared/policies/experimental/descent60.onnx --out artifacts/Sai_Agent_001/ci_descent60 --risers .02 .04 .06 --direction down --speed .08 --crouch .5 --heading-control --lane-control --yaw-correction-limit .6 --max-seconds 45 --full-robot --require-pass
+      - run: uv run python scripts/evaluation/evaluate_cargo.py --out artifacts/Sai_Agent_001/ci_cargo --require-pass
+      - run: uv run python scripts/evaluation/evaluate_cargo.py --out artifacts/Sai_Agent_001/ci_no_clamp --no-clamp --require-pass
+      - run: uv run python scripts/evaluation/evaluate_flat.py --robot Sai_Agent_002 --policy shared/policies/flat-v1.onnx --out artifacts/Sai_Agent_002/ci_flat --full-robot --require-pass
+      - run: uv run python scripts/evaluation/evaluate_stairs.py --robot Sai_Agent_002 --policy shared/policies/stairs-dev40.onnx --out artifacts/Sai_Agent_002/ci_stairs --risers .02 .04 --full-robot --require-pass
+      - run: uv run python scripts/evaluation/evaluate_cargo.py --robot Sai_Agent_002 --out artifacts/Sai_Agent_002/ci_cargo --require-pass
       - run: uv build --wheel --out-dir artifacts/dist
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: cpu-evidence-and-wheel
           path: |
-            artifacts/ci-*/result.json
+            artifacts/Sai_Agent_*/ci_*/result.json
             artifacts/dist/*.whl

@@ -1,10 +1,10 @@
 """Physical pickup -> place -> belt-driven clamp -> original PPO loaded crawl."""
 import xml.etree.ElementTree as ET
 import numpy as np,mujoco
-from .paths import resource_root
+from .paths import model_root
 from .manipulation import Task
 from .legacy_crawl import CrawlTransport
-HERE=resource_root()/'models/full'
+HERE=model_root('Sai_Agent_001')/'full'
 
 def load_course(path,height):
     tree=ET.parse(path)

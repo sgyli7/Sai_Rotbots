@@ -34,7 +34,7 @@ These envelopes are installation/display approximations, not manufacturing
 models or a claim of vendor authorization. The original collision model,
 actuator frames and provisional inertia estimates are preserved separately.
 
-The part-by-part record is [asset_provenance.json](models/asset_provenance.json).
+The part-by-part record is [asset_provenance.json](robots/Sai_Agent_001/models/asset_provenance.json).
 
 ## Runtime and training dependencies
 

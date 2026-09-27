@@ -8,7 +8,7 @@ class CrawlTransport:
     def __init__(self,duration=22.):
         self.previous=np.zeros(16);self.duration=duration;self.start=None;self.arm_hold=None;self.start_base=None
         self.wheel=np.array([3,7,11,15]);self.leg=np.array([i for i in range(16) if i%4!=3]);self.sides=np.array([1,-1,1,-1])
-        path=ROOT/'policies/legacy-crawl57.json';self.actor=json.loads(path.read_text());self.sha256=hashlib.sha256(path.read_bytes()).hexdigest()
+        path=ROOT/'shared/policies/legacy-crawl57.json';self.actor=json.loads(path.read_text());self.sha256=hashlib.sha256(path.read_bytes()).hexdigest()
         self.layers=[None if x['kind']=='tanh' else (np.array(x['weight']),np.array(x['bias'])) for x in self.actor['layers']]
 
     def reference(self,t,speed):
