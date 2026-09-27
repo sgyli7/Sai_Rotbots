@@ -54,7 +54,7 @@ def main(argv=None):
     if not args.godot_bin:parser.error('Godot executable not found; pass --godot-bin')
     from .godot_controller import GodotController
     root=resource_root()
-    if args.stair_skill:args.stair_profile=root/'policies/experimental'/f'{args.stair_skill}.json'
+    if args.stair_skill:args.stair_profile=root/'shared/policies/experimental'/f'{args.stair_skill}.json'
     cache=Path(os.environ.get('XDG_CACHE_HOME',str(Path.home()/'.cache')))/args.robot
     destination=prepare_godot(root,args.runtime_dir or cache/'godot',args.robot)
     # Import local GLB resources before runtime; no manual editor step required.

@@ -23,8 +23,8 @@ class GodotController:
         self.vadr=np.array([self.model.jnt_dofadr[self.model.joint(name).id] for name in names])
         self.armv=np.array([self.model.jnt_dofadr[self.model.joint(name).id] for name in ARM_NAMES])
         options=ort.SessionOptions();options.intra_op_num_threads=2;options.inter_op_num_threads=1
-        self.policy=ort.InferenceSession(str(root/'policies/flat-v1.onnx'),options,providers=['CPUExecutionProvider'])
-        stair_path=root/'policies/stairs-dev40.onnx'
+        self.policy=ort.InferenceSession(str(root/'shared/policies/flat-v1.onnx'),options,providers=['CPUExecutionProvider'])
+        stair_path=root/'shared/policies/stairs-dev40.onnx'
         self.stair_settings=dict(speed=.12,lift_height=.055,leg_scale=.18,min_crouch=0.,route_center_y=None,motion_phase_start_seconds=None,yaw_correction_limit=.4)
         self.stair_profile_id='stairs-dev40'
         self.experimental_profile=stair_profile is not None

@@ -39,19 +39,19 @@ def test_stop_uses_physical_brake_and_crouch_reference():
 
 
 def test_full_model_retains_articulation_and_policy_uses_named_joints():
-    model=mujoco.MjModel.from_xml_path(str(ROOT/'models/full/robot.xml'))
+    model=mujoco.MjModel.from_xml_path(str(ROOT/'robots/Sai_Agent_001/models/full/robot.xml'))
     adapter=JointAdapter(model)
     assert model.nu==23 and model.neq==2
     assert len(set(adapter.aids))==16 and len(adapter.held)==7
     robot_mass=model.body_mass.sum()-model.body_mass[model.body('item').id]
-    manifest=json.loads((ROOT/'models/robot_manifest.json').read_text())
+    manifest=json.loads((ROOT/'robots/Sai_Agent_001/models/robot_manifest.json').read_text())
     assert abs(robot_mass-manifest['model_total_mass_kg'])<1e-10
     assert model.joint('cargo_slide_-1').type==mujoco.mjtJoint.mjJNT_SLIDE
     assert model.joint('cargo_slide_1').type==mujoco.mjtJoint.mjJNT_SLIDE
 
 
 def test_public_actor_hash_matches_its_contract():
-    metadata=json.loads((ROOT/'policies/flat-v1.json').read_text())
+    metadata=json.loads((ROOT/'shared/policies/flat-v1.json').read_text())
     assert metadata['contract_id']=='sai-flat-v1'
     assert metadata['normalization_included']
-    assert hashlib.sha256((ROOT/'policies/flat-v1.onnx').read_bytes()).hexdigest()==metadata['onnx_sha256']
+    assert hashlib.sha256((ROOT/'shared/policies/flat-v1.onnx').read_bytes()).hexdigest()==metadata['onnx_sha256']

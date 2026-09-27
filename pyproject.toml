@@ -22,9 +22,11 @@ build-backend = "hatchling.build"
 packages = ["src/sai_agent"]
 
 [tool.hatch.build.targets.wheel.force-include]
-models = "sai_agent/bundle/models"
-robots = "sai_agent/bundle/robots"
-policies = "sai_agent/bundle/policies"
+"robots/catalog.json" = "sai_agent/bundle/robots/catalog.json"
+"robots/Sai_Agent_001/models" = "sai_agent/bundle/robots/Sai_Agent_001/models"
+"robots/Sai_Agent_002/models" = "sai_agent/bundle/robots/Sai_Agent_002/models"
+"shared/policies" = "sai_agent/bundle/shared/policies"
+"shared/configs" = "sai_agent/bundle/shared/configs"
 licenses = "sai_agent/bundle/licenses"
 "THIRD_PARTY_NOTICES.md" = "sai_agent/bundle/THIRD_PARTY_NOTICES.md"
 "integrations/godot" = "sai_agent/bundle/integrations/godot"

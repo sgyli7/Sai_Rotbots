@@ -2,7 +2,7 @@
 import json
 import numpy as np
 from scipy.spatial.transform import Rotation
-from .paths import resource_root
+from .paths import model_root
 GROUPS=["base","pan_carrier","upper","lower","wrist","gripper","moving_jaw"]
 
 def metre(h):
@@ -10,7 +10,7 @@ def metre(h):
 
 class Arm:
     def __init__(self):
-        self.axes=json.loads((resource_root()/"models/tasks/so101-axes.json").read_text())
+        self.axes=json.loads((model_root("Sai_Agent_001")/"tasks/so101-axes.json").read_text())
         self.root = np.eye(4)
         # Clock the original base 90 degrees from layout_r0. The front pose
         # then uses pan delta +90, leaving travel to the rear at about -90.

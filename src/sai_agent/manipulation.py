@@ -9,9 +9,8 @@ import numpy as np
 import mujoco
 from scipy.spatial.transform import Rotation
 from .so101_fk import Arm,metre
-from .paths import resource_root
-ROOT=resource_root()
-HERE=ROOT/"models/full"
+from .paths import model_root
+HERE=model_root("Sai_Agent_001")/"full"
 
 class Task:
     def __init__(self,no_grip=False,model_dir=HERE):

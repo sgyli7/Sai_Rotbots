@@ -7,6 +7,17 @@
 | Sai_Agent_001 | Original powered opposed pads and belt mechanism | [001](robots/Sai_Agent_001/README.md) |
 | Sai_Agent_002 | Continuous flat floor, no moving clamp mechanism | [002](robots/Sai_Agent_002/README.md) |
 
+## Project organization
+
+Robot-specific design, models and evidence live under `robots/<robot_id>/`.
+Shared policies and configurations live under `shared/`; common software lives
+under `src/sai_agent/`, with categorized command entrypoints in `scripts/`.
+Local generated runs belong in `artifacts/<robot_id>/<run_id>/` and are not committed.
+
+Read the [engineering rules](sai_robots_engineering_rules.md) before adding or
+moving files. The [migration record](docs/guides/directory_migration.md) maps old
+paths to their new locations without rewriting historical experiment records.
+
 Both variants retain the front SO101 arm, four wheel-legs, camera mounts and
 rear touchscreen layout. Hardware has not been built or calibrated.
 
@@ -48,8 +59,8 @@ The repository name is `Sai_Rotbots` as requested, including that spelling.
 ```sh
 uv sync --extra test
 uv run pytest -q
-uv run python scripts/evaluate_flat.py --robot Sai_Agent_002 --policy policies/flat-v1.onnx --full-robot --out artifacts/002-flat --require-pass
-uv run --extra train python scripts/train.py --robot Sai_Agent_002 --worlds 256 --seconds 300 --name my-002-trial
+uv run python scripts/evaluation/evaluate_flat.py --robot Sai_Agent_002 --policy shared/policies/flat-v1.onnx --full-robot --out artifacts/002-flat --require-pass
+uv run --extra train python scripts/training/train.py --robot Sai_Agent_002 --worlds 256 --seconds 300 --name my-002-trial
 ```
 
 The variant reuses existing trained actors and is checked on its changed
@@ -57,9 +68,9 @@ mass/contact model. It is not presented as a newly trained policy. GPU training
 accepts `--robot`; each run records the selected model hash and robot ID.
 
 See [002 scope and evidence](robots/Sai_Agent_002/README.md),
-[game integration notes](docs/INTEGRATIONS.md),
-[001 historical acceptance](docs/SAI_AGENT_001.md),
-[variant plan](docs/AGENT_002_PLAN.md), and [third-party notices](THIRD_PARTY_NOTICES.md).
+[game integration notes](docs/guides/integrations.md),
+[001 historical acceptance](robots/Sai_Agent_001/design/simulation_guide.md),
+[variant plan](robots/Sai_Agent_002/design/agent_002_plan.md), and [third-party notices](THIRD_PARTY_NOTICES.md).
 Old alpha.3 results describe 001, not 002. Unity editor validation remains pending.
 
 SO101 and Raspberry Pi derivatives retain their upstream licenses. Supplier

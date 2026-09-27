@@ -3,6 +3,16 @@
 The simple open-bay variant: same SO101, four wheel-legs, outer blue shell,
 camera placements and rear touchscreen as 001; no powered cargo clamp.
 
+| Material | Entry |
+|---|---|
+| Design plan and changes | [Plan](design/agent_002_plan.md), [change record](design/changes.json) |
+| CAD input and exports | [Source](cad/source), [exports](cad/exports) |
+| Model generation inputs | [Source assets](source) |
+| Simulation models and provenance | [Models](models) |
+| Actual model and simulation views | [Images](images) |
+| Robot-specific validation | [Evidence](evidence/validation.json) |
+| Shared deployed policies | [Shared policies](../../shared/policies) |
+
 ![Actual model, front](images/front.png)
 ![Actual model, cargo bay](images/cargo-top.png)
 ![Actual model, rear touchscreen](images/rear.png)
@@ -32,7 +42,7 @@ cover, rail, moving pads or separate inner storage box remains.
   Unassigned hardware remains covered by the original 600 g allowance; the
   removed unassigned electronics are not given fabricated precise masses.
 
-Detailed [removed-parts/change record](changes.json),
+Detailed [removed-parts/change record](design/changes.json),
 [physical manifest](models/robot_manifest.json) and
 [part-level provenance](models/asset_provenance.json).
 
@@ -78,8 +88,8 @@ not the quality of a new policy; deployment still uses the tested shared actors.
 ## Reproduce geometry
 
 ```sh
-uv run --extra assets python scripts/build_agent002.py
-uv run --extra assets python scripts/render_model.py --robot Sai_Agent_002 --out artifacts/002-review
+uv run --extra assets python scripts/models/build_agent002.py
+uv run --extra assets python scripts/models/render_model.py --robot Sai_Agent_002 --out artifacts/002-review
 ```
 
 The builder uses the preserved 001 model and checked-in, licensed per-part
@@ -87,11 +97,11 @@ chassis meshes. It removes mechanisms from the geometry **and** physical model,
 recalculates chassis inertia and regenerates the training model and game GLB.
 All non-chassis retained bodies are required to match 001 exactly.
 
-The changed shell and mat have actual STEP geometry in [`cad/`](cad).
+The changed shell and mat have actual STEP geometry in [`cad/exports/`](cad/exports).
 With build123d 0.11.1 and trimesh installed, the nominal floor edit is reproduced by:
 
 ```sh
-python robots/Sai_Agent_002/cad/restore_floor.py robots/Sai_Agent_002/cad/source-001-shell.brep robots/Sai_Agent_002/cad
+python scripts/cad/restore_floor.py robots/Sai_Agent_002/cad/source/source_001_shell.brep robots/Sai_Agent_002/cad/exports
 ```
 
 Those STEP files cover the changed project shell/mat, not a falsely certified
