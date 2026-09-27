@@ -4,6 +4,7 @@ import hashlib
 import json
 import math
 from pathlib import Path
+import shutil
 import sys
 import time
 import xml.etree.ElementTree as ET
@@ -36,7 +37,7 @@ cases = [('stop',0,0,False), ('W',.16,0,False), ('S',-.16,0,False),
          ('shift',0,0,True), ('W_shift',.14,0,True)]
 model_path=MODELS/'locomotion.xml'
 if args.full_robot:
-    model_path=MODELS/'full/locomotion-articulated.xml'
+    model_path=args.out/'locomotion_articulated.xml'
     root=ET.parse(MODELS/'full/robot.xml').getroot()
     world=root.find('worldbody')
     for body in list(world.findall('body')):
@@ -45,6 +46,13 @@ if args.full_robot:
         if g.get('name','').startswith('course_'):world.remove(g)
     keyframe=root.find('keyframe')
     if keyframe is not None:root.remove(keyframe)
+    # Keep the saved scene independently loadable without writing into delivery assets.
+    for mesh in root.findall('asset/mesh'):
+        if mesh.get('file'):
+            relative=Path(mesh.get('file'))
+            destination=args.out/relative
+            destination.parent.mkdir(parents=True,exist_ok=True)
+            shutil.copyfile(MODELS/'full'/relative,destination)
     ET.ElementTree(root).write(model_path,encoding='unicode')
 model=mujoco.MjModel.from_xml_path(str(model_path))
 adapter=JointAdapter(model)

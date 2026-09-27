@@ -28,6 +28,11 @@ jobs:
       - run: uv run python scripts/evaluation/evaluate_stairs.py --robot Sai_Agent_002 --policy shared/policies/stairs-dev40.onnx --out artifacts/Sai_Agent_002/ci_stairs --risers .02 .04 --full-robot --require-pass
       - run: uv run python scripts/evaluation/evaluate_cargo.py --robot Sai_Agent_002 --out artifacts/Sai_Agent_002/ci_cargo --require-pass
       - run: uv build --wheel --out-dir artifacts/dist
+      - name: Verify freshly installed distribution
+        run: |
+          uv venv --python 3.12 artifacts/project/package_check/venv
+          uv pip install --python artifacts/project/package_check/venv/bin/python artifacts/dist/*.whl
+          artifacts/project/package_check/venv/bin/python scripts/diagnostics/check_distribution.py --wheel artifacts/dist/*.whl
       - uses: actions/upload-artifact@v4
         if: always()
         with:
