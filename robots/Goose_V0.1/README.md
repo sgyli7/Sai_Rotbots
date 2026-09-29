@@ -1,5 +1,7 @@
 # Goose_V0.1 — 工程与原始资料入口
 
+硬件主线：[已确认外观到完整硬件交付](design/accepted_hardware_execution.md)，包含交付证明要求和同版质量／颈部负载初筛。
+
 当前已确认外观入口：[饱满机身／大眼／流线鹅掌候选](design/fuller_exterior_review.md)。按最新三条反馈扩大机身并检查八组模块预留，恢复大眼表达、调整脚掌；**用户已确认这一阶段外观并授权上传 GitHub**；进入同版硬件落地，物理和制造仍未通过。
 
 [上一版铰接嘴候选](design/hinged_beak_exterior_review.md)保留对照；约 50 N 仍为待验证目标。
