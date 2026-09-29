@@ -1,0 +1,118 @@
+{
+  "status": "necessary_foot_only_static_balance_screen_not_dynamic_or_thermal_validation",
+  "source_script_sha256": "c75a45541d77c1cfff6cd312fc21b18e49194604989d2a3e679e82a4b6b4729f",
+  "trial_xml_sha256": "77ebe28af5ba19010a75099b6bbb1ab30f9ba3bc7bdd6e4ff5745acd785d8e17",
+  "appearance_manifest_sha256": "c833b175c7b6b7fa8ee618099914a53900cc83595b6cc7c09c10c9ea889a94b7",
+  "model_mass_kg": 4.0376,
+  "contact_hypothesis": "Eight normal/tangential forces at two flat rectangular sole corners, near mirror-symmetric; no beak/body support.",
+  "friction_coefficient": 0.8,
+  "mirror_force_slack_N_per_corner_axis": 2.0,
+  "beak_tip_external_force_N": [
+    0.0,
+    0.0,
+    -0.4905
+  ],
+  "pose": {
+    "sit_drop_mm": 90.0,
+    "torso_pitch_down_deg": 20.0,
+    "head_global_pitch_down_deg": 60.0,
+    "target_tip_z_mm": 10.0
+  },
+  "cases_by_target_tip_x_mm": {
+    "280.0": {
+      "solver_status": "Optimization terminated successfully. (HiGHS Status 7: Optimal)",
+      "static_equilibrium_found": true,
+      "minimum_normalized_torque_scale": 0.9512,
+      "within_trial_torque_caps": true,
+      "root_force_balance_residual_N": 0.0,
+      "normal_force_by_foot_N": {
+        "left": 20.099,
+        "right": 20.001
+      },
+      "normal_force_total_N": 40.099,
+      "corner_normal_forces_N": [
+        0.078,
+        9.361,
+        1.494,
+        9.166,
+        7.361,
+        1.523,
+        11.117,
+        0.0
+      ],
+      "highest_joint_demands": [
+        {
+          "joint": "right_knee_pitch",
+          "torque_Nm": 2.0165,
+          "trial_limit_Nm": 2.12,
+          "fraction_of_trial_limit": 0.9512
+        },
+        {
+          "joint": "right_ankle_roll",
+          "torque_Nm": 0.78,
+          "trial_limit_Nm": 0.82,
+          "fraction_of_trial_limit": 0.9512
+        },
+        {
+          "joint": "left_knee_pitch",
+          "torque_Nm": 2.0165,
+          "trial_limit_Nm": 2.12,
+          "fraction_of_trial_limit": 0.9512
+        },
+        {
+          "joint": "left_ankle_roll",
+          "torque_Nm": -0.78,
+          "trial_limit_Nm": 0.82,
+          "fraction_of_trial_limit": 0.9512
+        },
+        {
+          "joint": "right_hip_roll",
+          "torque_Nm": 0.7513,
+          "trial_limit_Nm": 0.82,
+          "fraction_of_trial_limit": 0.9162
+        },
+        {
+          "joint": "left_hip_roll",
+          "torque_Nm": -0.7157,
+          "trial_limit_Nm": 0.82,
+          "fraction_of_trial_limit": 0.8727
+        },
+        {
+          "joint": "right_ankle_pitch",
+          "torque_Nm": 0.6728,
+          "trial_limit_Nm": 0.82,
+          "fraction_of_trial_limit": 0.8205
+        },
+        {
+          "joint": "left_ankle_pitch",
+          "torque_Nm": 0.64,
+          "trial_limit_Nm": 0.82,
+          "fraction_of_trial_limit": 0.7804
+        }
+      ],
+      "foot_only_equilibrium_torque_Nm_by_joint": {
+        "right_hip_yaw": 0.24445688,
+        "right_hip_roll": 0.75130891,
+        "right_hip_pitch": 0.94407021,
+        "right_knee_pitch": 2.01646989,
+        "right_ankle_pitch": 0.67281105,
+        "right_ankle_roll": 0.77995534,
+        "left_hip_yaw": -0.3424243,
+        "left_hip_roll": -0.71565111,
+        "left_hip_pitch": 1.01645003,
+        "left_knee_pitch": 2.01646989,
+        "left_ankle_pitch": 0.63995501,
+        "left_ankle_roll": -0.77995534,
+        "neck_lower_pitch": -0.74234871,
+        "neck_upper_pitch": -0.1640854,
+        "head_pitch": -0.08892417
+      }
+    }
+  },
+  "limitations": [
+    "Each case is a prescribed zero-velocity pose, not a sit-down, stand-up, walking or grasp trajectory.",
+    "Actuator caps are initial short-duration trial limits, not continuous thermal torque ratings.",
+    "The program does not verify whole-body self-collision, contact pressure distribution, slip margins, beak/object forces or controller tracking.",
+    "A scale below one is only necessary static feasibility; it is not physical delivery approval."
+  ]
+}

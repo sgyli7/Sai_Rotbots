@@ -1,0 +1,170 @@
+{
+  "status": "provisional_mujoco_contact_and_torque_trial_not_release",
+  "source_script_sha256": "d39876a2c6474d489bd6f76d417a28701967097f895ab9c712c05b43edebd9ff",
+  "model_sha256": "565329ececd54577825c463887aac96dee70efa4b43a84618dbe25d8454e728f",
+  "appearance_manifest_sha256": "9bde074f7cd4f8984c6e6c57742c2df47cea698b5dd2549c884ffdaaa2d86996",
+  "source_bill_tip_visual_datum_mm": [
+    339.8,
+    0.0,
+    510.081
+  ],
+  "visual_pivots_mm": {
+    "hip": [
+      -10.0,
+      0.0,
+      229.0
+    ],
+    "knee": [
+      -65.0,
+      0.0,
+      131.289
+    ],
+    "ankle": [
+      0.0,
+      0.0,
+      51.0
+    ],
+    "root": [
+      59.0,
+      0.0,
+      412.74
+    ],
+    "elbow": [
+      0.0,
+      0.0,
+      512.715
+    ],
+    "yoke": [
+      86.0,
+      0.0,
+      585.0
+    ],
+    "body_center": [
+      -10.0,
+      0.0,
+      290.0
+    ],
+    "ankle_roll": [
+      65.0,
+      0.0,
+      32.0
+    ]
+  },
+  "wall_mm": 1.6,
+  "mass_kg": 4.473,
+  "torque_scale": 1.0,
+  "kp": 24.0,
+  "kd": 1.1,
+  "knee_servo": "xm540",
+  "hip_pitch_servo": "xm540",
+  "hip_roll_servo": "xm430",
+  "ankle_pitch_servo": "xm540",
+  "ground_reach_command_deg": {
+    "torso": 40.0,
+    "head_global": 80.0
+  },
+  "seated_reach_command": {
+    "drop_mm": 90.0,
+    "torso_deg": 20.0,
+    "head_global_deg": 60.0
+  },
+  "ankle_roll_servo": "xm430",
+  "ankle_roll_trial_pivot_mm": [
+    65.0,
+    0.0,
+    32.0
+  ],
+  "contact_friction": ".9 .005 .0001",
+  "controller": "joint PD with stated gains and torque scale, no free-root support",
+  "trials": [
+    {
+      "pose": "seated_ground_reach",
+      "duration_s": 2.0,
+      "time_to_fall_s": null,
+      "final_root_position_m": [
+        0.0578,
+        0.0,
+        0.134
+      ],
+      "minimum_root_height_m": 0.1317,
+      "maximum_absolute_root_pitch_deg": 51.16,
+      "actuator_saturation_fraction": 0.127,
+      "saturation_fraction_by_joint": {
+        "right_hip_yaw": 0.0,
+        "right_hip_roll": 0.0,
+        "right_hip_pitch": 0.0,
+        "right_knee_pitch": 0.947,
+        "right_ankle_pitch": 0.0,
+        "right_ankle_roll": 0.0,
+        "left_hip_yaw": 0.0,
+        "left_hip_roll": 0.0,
+        "left_hip_pitch": 0.0,
+        "left_knee_pitch": 0.947,
+        "left_ankle_pitch": 0.0,
+        "left_ankle_roll": 0.0,
+        "neck_lower_pitch": 0.012,
+        "neck_upper_pitch": 0.0,
+        "head_pitch": 0.002
+      },
+      "peak_unclipped_pd_demand_Nm_by_joint": {
+        "right_hip_yaw": 0.11,
+        "right_hip_roll": 0.14,
+        "right_hip_pitch": 1.69,
+        "right_knee_pitch": 13.1,
+        "right_ankle_pitch": 1.67,
+        "right_ankle_roll": 0.08,
+        "left_hip_yaw": 0.11,
+        "left_hip_roll": 0.14,
+        "left_hip_pitch": 1.68,
+        "left_knee_pitch": 13.1,
+        "left_ankle_pitch": 1.67,
+        "left_ankle_roll": 0.07,
+        "neck_lower_pitch": 3.45,
+        "neck_upper_pitch": 1.5,
+        "head_pitch": 0.88
+      },
+      "final_joint_target_error_deg": {
+        "right_hip_yaw": 0.01,
+        "right_hip_roll": -0.0,
+        "right_hip_pitch": 2.28,
+        "right_knee_pitch": 24.68,
+        "right_ankle_pitch": 2.02,
+        "right_ankle_roll": -0.02,
+        "left_hip_yaw": -0.02,
+        "left_hip_roll": -0.0,
+        "left_hip_pitch": 2.27,
+        "left_knee_pitch": 24.7,
+        "left_ankle_pitch": 2.01,
+        "left_ankle_roll": 0.01,
+        "neck_lower_pitch": -1.3,
+        "neck_upper_pitch": 0.3,
+        "head_pitch": 0.22
+      },
+      "initial_beak_tip_visual_datum_m": [
+        0.3,
+        0.0,
+        0.02
+      ],
+      "final_beak_tip_visual_datum_m": [
+        0.2209,
+        -0.0,
+        -0.1617
+      ],
+      "final_com_m": [
+        0.0663,
+        0.0002,
+        0.094
+      ],
+      "final_contacts": 9
+    }
+  ],
+  "lateral_shift_trials": [],
+  "single_support_trials": [],
+  "limitations": [
+    "Thin-shell printed mass, center and inertia are approximate; motor placements are trial reservations.",
+    "No thermal/current/voltage derating, cable or hardware joint package has been verified.",
+    "Single-support trial is open-loop and uses a simplified rectangular sole; it is not a gait or ZMP validation.",
+    "No continuous self-collision, gait, grip, drag or cross-engine training result.",
+    "A failed PD stand can reflect controller tuning as well as hardware; a passed stand is not walking validation."
+  ]
+}

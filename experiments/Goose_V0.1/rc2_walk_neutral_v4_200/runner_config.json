@@ -1,0 +1,46 @@
+{
+  "num_steps_per_env": 32,
+  "save_interval": 10,
+  "obs_groups": {
+    "actor": [
+      "policy"
+    ],
+    "critic": [
+      "policy"
+    ]
+  },
+  "actor": {
+    "class_name": "rsl_rl.models:MLPModel",
+    "hidden_dims": [
+      128,
+      128
+    ],
+    "activation": "tanh",
+    "obs_normalization": false,
+    "distribution_cfg": {
+      "class_name": "rsl_rl.modules.distribution:GaussianDistribution",
+      "init_std": 0.22,
+      "std_type": "log"
+    }
+  },
+  "critic": {
+    "class_name": "rsl_rl.models:MLPModel",
+    "hidden_dims": [
+      128,
+      128
+    ],
+    "activation": "tanh",
+    "obs_normalization": false
+  },
+  "algorithm": {
+    "class_name": "rsl_rl.algorithms:PPO",
+    "num_learning_epochs": 4,
+    "num_mini_batches": 4,
+    "learning_rate": 0.0003,
+    "schedule": "fixed",
+    "entropy_coef": 0.003,
+    "gamma": 0.99,
+    "lam": 0.95,
+    "clip_param": 0.2
+  }
+}

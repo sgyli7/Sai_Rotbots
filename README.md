@@ -6,6 +6,13 @@
 |---|---|---|
 | Sai_Agent_001 | Original powered opposed pads and belt mechanism | [001](robots/Sai_Agent_001/README.md) |
 | Sai_Agent_002 | Continuous flat floor, no moving clamp mechanism | [002](robots/Sai_Agent_002/README.md) |
+| Goose_V0.1 | Two-legged contact beak, pickup and drag engineering candidate | [Goose](robots/Goose_V0.1/README.md) |
+
+Goose_V0.1 已确认[饱满机身／大眼／铰接嘴外观基线](robots/Goose_V0.1/design/fuller_exterior_review.md)，正在把同版方案推进到可装配、可采购、可运行的硬件交付。
+原交接资料与旧 RC2 CAD／仿真／采购工作表完整保留；旧 RC2 的局部叼取和牵引记录不代表新外观已通过物理验证。全机制造、带物行走和跨引擎验证尚未放行。
+从 [Goose 资料入口](robots/Goose_V0.1/README.md)、
+[离线图片库](robots/Goose_V0.1/design/concepts/index.html) 或
+[本地导入记录](robots/Goose_V0.1/source/workspace_import.md)继续；[Sai_Lab 接入入口](docs/guides/goose_sai_lab_handoff.md)注明训练和跨引擎验证边界。
 
 ## Project organization
 

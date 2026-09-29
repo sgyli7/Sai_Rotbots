@@ -1,0 +1,1174 @@
+<mujoco model="goose_v01_rc2">
+  <compiler angle="radian" autolimits="true" />
+  <option timestep=".001" gravity="0 0 -9.81" iterations="100" tolerance="1e-10" integrator="implicitfast" />
+  <default>
+    <joint damping=".03" armature="0" frictionloss=".001" />
+    <geom friction=".8 .005 .0001" condim="4" solref=".006 1" solimp=".95 .99 .001" />
+  </default>
+  <worldbody>
+    <light pos="0 -1 2" dir="0 0 -1" />
+    <geom name="floor" type="plane" size="3 3 .1" rgba=".64 .69 .59 1" friction=".8 .005 .0001" />
+    <body name="torso" pos="0 0 0.258">
+      <freejoint name="root" />
+      <geom name="body_shell" mass="0" type="ellipsoid" size="0.11 0.0975 0.0825" rgba="0 0 0 0" contype="0" conaffinity="0" />
+      <geom name="battery_3s" mass="0" type="box" size="0.044 0.0245 0.0145" pos="-0.04 0 -0.002" rgba=".075 .08 .085 1" contype="0" conaffinity="0" />
+      <geom name="radxa_zero_3w" mass="0" type="box" size="0.035 0.017 0.0075" pos="-0.045 0 0.0255" rgba=".075 .08 .085 1" contype="0" conaffinity="0" />
+      <geom name="usb_hub" mass="0" type="box" size="0.0328 0.01535 0.0074" pos="-0.045 0 0.0465" rgba=".075 .08 .085 1" contype="0" conaffinity="0" />
+      <geom name="u2d2_12v" mass="0" type="box" size="0.024 0.009 0.0075" pos="-0.046 0.045 0.024" rgba=".075 .08 .085 1" contype="0" conaffinity="0" />
+      <geom name="u2d2_5v" mass="0" type="box" size="0.024 0.009 0.0075" pos="-0.046 -0.045 0.024" rgba=".075 .08 .085 1" contype="0" conaffinity="0" />
+      <geom name="imu" mass="0" type="box" size="0.027 0.0195 0.009" pos="-0.012 -0.042 0.041" rgba=".075 .08 .085 1" contype="0" conaffinity="0" />
+      <geom name="imu_usb_ttl" mass="0" type="box" size="0.0125 0.006 0.005" pos="0.035 -0.052 0.044" rgba=".075 .08 .085 1" contype="0" conaffinity="0" />
+      <geom name="servo_buck" mass="0" type="box" size="0.022 0.012 0.007" pos="0.045 0.045 0.025" rgba=".075 .08 .085 1" contype="0" conaffinity="0" />
+      <geom name="logic_buck" mass="0" type="box" size="0.022 0.012 0.007" pos="0.045 -0.045 0.025" rgba=".075 .08 .085 1" contype="0" conaffinity="0" />
+      <geom name="motor_relay" mass="0" type="box" size="0.013 0.011 0.0125" pos="-0.002 0.048 0.029" rgba=".075 .08 .085 1" contype="0" conaffinity="0" />
+      <geom name="audio_player" mass="0" type="box" size="0.014 0.013 0.007" pos="-0.049 0.035 0.04" rgba=".075 .08 .085 1" contype="0" conaffinity="0" />
+      <geom name="audio_buck" mass="0" type="box" size="0.01 0.007 0.0045" pos="-0.027 0.028 0.056" rgba=".075 .08 .085 1" contype="0" conaffinity="0" />
+      <geom name="speaker" mass="0" type="box" size="0.003 0.0155 0.0155" pos="-0.098 0 -0.005" rgba=".075 .08 .085 1" contype="0" conaffinity="0" />
+      <geom name="fused_harness_switches" mass="0" type="box" size="0.015 0.025 0.0175" pos="-0.015 0 0.01" rgba=".075 .08 .085 1" contype="0" conaffinity="0" />
+      <geom name="left_hip_yaw_motor" mass="0" type="box" pos="-0.012 0.046 -0.03" size="0.01425 0.017 0.02325" quat="0.5 0.5 0.5 0.5" rgba=".075 .08 .085 1" />
+      <body name="left_hip_yaw" pos="0 0.046 -0.03">
+        <joint name="left_hip_yaw" axis="0 0 1" range="-0.45 0.45" />
+        <geom name="left_hip_roll_motor" mass="0" type="box" pos="0 0 -0.077" size="0.01425 0.017 0.02325" quat="0.707106781187 0 0 -0.707106781187" rgba=".075 .08 .085 1" />
+        <body name="left_hip_roll" pos="0 0 -0.065">
+          <joint name="left_hip_roll" axis="1 0 0" range="-0.35 0.35" />
+          <geom name="left_hip_pitch_motor" mass="0" type="box" pos="0.056 0.02 0.012" size="0.01425 0.017 0.02325" quat="6.12323399574e-17 0 1 0" rgba=".075 .08 .085 1" />
+          <body name="left_hip_pitch" pos="0.056 0.02 0">
+            <joint name="left_hip_pitch" axis="0 1 0" range="-1 0.7" />
+            <geom name="left_knee_pitch_motor" mass="0" type="box" pos="-1.46957615898e-18 0 -0.063" size="0.01425 0.017 0.02325" quat="6.12323399574e-17 0 1 0" rgba=".075 .08 .085 1" />
+            <body name="left_knee_pitch" pos="0 0 -0.075">
+              <joint name="left_knee_pitch" axis="0 1 0" range="0 1.65" />
+              <geom name="left_ankle_pitch_motor" mass="0" type="box" pos="-1.46957615898e-18 0 -0.078" size="0.01425 0.017 0.02325" quat="6.12323399574e-17 0 1 0" rgba=".075 .08 .085 1" />
+              <body name="left_ankle_pitch" pos="0 0 -0.09">
+                <joint name="left_ankle_pitch" axis="0 1 0" range="-0.9 0.65" />
+                <geom name="left_ankle_pitch_foot" mass="0" type="box" size="0.06 0.035 0.015" pos="0.015 0 -0.019" rgba="0 0 0 0" />
+                <site name="left_foot" pos=".015 0 -.034" size=".004" />
+                <inertial mass="0.1314413447156572" pos="0.0124748419422 -4.77839626251e-15 -0.021808463529" fullinertia="9.37888961386e-05 0.000191930995529 0.00025528409205 -7.83295371402e-18 3.0060992669e-06 -3.24380251609e-18" />
+                <geom name="left_ankle_pitch_output_front_cad" type="mesh" mesh="left_ankle_pitch_output_front_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+                <geom name="left_ankle_pitch_output_rear_cad" type="mesh" mesh="left_ankle_pitch_output_rear_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+                <geom name="left_ankle_pitch_output_bridge_cad" type="mesh" mesh="left_ankle_pitch_output_bridge_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+                <geom name="left_ankle_pitch_horn_spacer_front_cad" type="mesh" mesh="left_ankle_pitch_horn_spacer_front_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+                <geom name="left_ankle_pitch_horn_spacer_rear_cad" type="mesh" mesh="left_ankle_pitch_horn_spacer_rear_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+                <geom name="left_foot_shell_cad" type="mesh" mesh="left_foot_shell_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .43 .06 1" />
+                <geom name="left_foot_tread_cad" type="mesh" mesh="left_foot_tread_mesh" mass="0" contype="0" conaffinity="0" rgba=".075 .08 .085 1" />
+              </body>
+              <inertial mass="0.13978463327920568" pos="-1.42684752648e-18 1.35351399857e-19 -0.0639096774977" fullinertia="0.00012715997856 0.000111780894736 4.17731361509e-05 -1.1348447515e-22 -4.07507848569e-21 5.89285270935e-23" />
+              <geom name="left_knee_pitch_output_front_cad" type="mesh" mesh="left_knee_pitch_output_front_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+              <geom name="left_knee_pitch_output_rear_cad" type="mesh" mesh="left_knee_pitch_output_rear_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+              <geom name="left_knee_pitch_output_bridge_cad" type="mesh" mesh="left_knee_pitch_output_bridge_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+              <geom name="left_knee_pitch_horn_spacer_front_cad" type="mesh" mesh="left_knee_pitch_horn_spacer_front_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+              <geom name="left_knee_pitch_horn_spacer_rear_cad" type="mesh" mesh="left_knee_pitch_horn_spacer_rear_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+              <geom name="left_ankle_pitch_static_cradle_cad" type="mesh" mesh="left_ankle_pitch_static_cradle_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+            </body>
+            <inertial mass="0.13551743327920568" pos="-1.47536397451e-18 1.10644799578e-19 -0.0514779815778" fullinertia="9.65885480701e-05 8.4281848246e-05 3.81431713509e-05 -8.25866663945e-23 -1.66170281841e-21 -1.17457174695e-22" />
+            <geom name="left_hip_pitch_output_front_cad" type="mesh" mesh="left_hip_pitch_output_front_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+            <geom name="left_hip_pitch_output_rear_cad" type="mesh" mesh="left_hip_pitch_output_rear_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+            <geom name="left_hip_pitch_output_bridge_cad" type="mesh" mesh="left_hip_pitch_output_bridge_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+            <geom name="left_hip_pitch_horn_spacer_front_cad" type="mesh" mesh="left_hip_pitch_horn_spacer_front_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+            <geom name="left_hip_pitch_horn_spacer_rear_cad" type="mesh" mesh="left_hip_pitch_horn_spacer_rear_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+            <geom name="left_knee_pitch_static_cradle_cad" type="mesh" mesh="left_knee_pitch_static_cradle_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+          </body>
+          <inertial mass="0.19081484267946924" pos="0.0406643713712 0.00843983398952 -0.00518519086302" fullinertia="0.00032407283942 0.000398374680626 0.000207608019511 -3.5857371371e-05 -0.000112131493242 -7.41683573175e-05" />
+          <geom name="left_hip_roll_output_front_cad" type="mesh" mesh="left_hip_roll_output_front_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+          <geom name="left_hip_roll_output_rear_cad" type="mesh" mesh="left_hip_roll_output_rear_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+          <geom name="left_hip_roll_output_bridge_cad" type="mesh" mesh="left_hip_roll_output_bridge_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+          <geom name="left_hip_roll_horn_spacer_front_cad" type="mesh" mesh="left_hip_roll_horn_spacer_front_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+          <geom name="left_hip_roll_horn_spacer_rear_cad" type="mesh" mesh="left_hip_roll_horn_spacer_rear_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+          <geom name="left_hip_pitch_static_cradle_cad" type="mesh" mesh="left_hip_pitch_static_cradle_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+        </body>
+        <inertial mass="0.16246006420729237" pos="0.000784445968209 -1.5299916657e-18 -0.0633858332183" fullinertia="0.000233933723469 0.000235080369325 4.73288167642e-05 -1.94821795916e-21 -1.84744666339e-05 3.63300741717e-21" />
+        <geom name="left_hip_yaw_output_front_cad" type="mesh" mesh="left_hip_yaw_output_front_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+        <geom name="left_hip_yaw_output_rear_cad" type="mesh" mesh="left_hip_yaw_output_rear_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+        <geom name="left_hip_yaw_output_bridge_cad" type="mesh" mesh="left_hip_yaw_output_bridge_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+        <geom name="left_hip_yaw_horn_spacer_front_cad" type="mesh" mesh="left_hip_yaw_horn_spacer_front_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+        <geom name="left_hip_yaw_horn_spacer_rear_cad" type="mesh" mesh="left_hip_yaw_horn_spacer_rear_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+        <geom name="left_hip_roll_static_cradle_cad" type="mesh" mesh="left_hip_roll_static_cradle_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+      </body>
+      <geom name="right_hip_yaw_motor" mass="0" type="box" pos="-0.012 -0.046 -0.03" size="0.01425 0.017 0.02325" quat="0.5 0.5 0.5 0.5" rgba=".075 .08 .085 1" />
+      <body name="right_hip_yaw" pos="0 -0.046 -0.03">
+        <joint name="right_hip_yaw" axis="0 0 1" range="-0.45 0.45" />
+        <geom name="right_hip_roll_motor" mass="0" type="box" pos="0 0 -0.077" size="0.01425 0.017 0.02325" quat="0.707106781187 0 0 -0.707106781187" rgba=".075 .08 .085 1" />
+        <body name="right_hip_roll" pos="0 0 -0.065">
+          <joint name="right_hip_roll" axis="1 0 0" range="-0.35 0.35" />
+          <geom name="right_hip_pitch_motor" mass="0" type="box" pos="0.056 -0.02 0.012" size="0.01425 0.017 0.02325" quat="6.12323399574e-17 0 1 0" rgba=".075 .08 .085 1" />
+          <body name="right_hip_pitch" pos="0.056 -0.02 0">
+            <joint name="right_hip_pitch" axis="0 1 0" range="-1 0.7" />
+            <geom name="right_knee_pitch_motor" mass="0" type="box" pos="-1.46957615898e-18 0 -0.063" size="0.01425 0.017 0.02325" quat="6.12323399574e-17 0 1 0" rgba=".075 .08 .085 1" />
+            <body name="right_knee_pitch" pos="0 0 -0.075">
+              <joint name="right_knee_pitch" axis="0 1 0" range="0 1.65" />
+              <geom name="right_ankle_pitch_motor" mass="0" type="box" pos="-1.46957615898e-18 0 -0.078" size="0.01425 0.017 0.02325" quat="6.12323399574e-17 0 1 0" rgba=".075 .08 .085 1" />
+              <body name="right_ankle_pitch" pos="0 0 -0.09">
+                <joint name="right_ankle_pitch" axis="0 1 0" range="-0.9 0.65" />
+                <geom name="right_ankle_pitch_foot" mass="0" type="box" size="0.06 0.035 0.015" pos="0.015 0 -0.019" rgba="0 0 0 0" />
+                <site name="right_foot" pos=".015 0 -.034" size=".004" />
+                <inertial mass="0.1314413447156572" pos="0.0124748419422 -4.77839626251e-15 -0.021808463529" fullinertia="9.37888961386e-05 0.000191930995529 0.00025528409205 -7.83295371402e-18 3.0060992669e-06 -3.24380251609e-18" />
+                <geom name="right_ankle_pitch_output_front_cad" type="mesh" mesh="right_ankle_pitch_output_front_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+                <geom name="right_ankle_pitch_output_rear_cad" type="mesh" mesh="right_ankle_pitch_output_rear_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+                <geom name="right_ankle_pitch_output_bridge_cad" type="mesh" mesh="right_ankle_pitch_output_bridge_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+                <geom name="right_ankle_pitch_horn_spacer_front_cad" type="mesh" mesh="right_ankle_pitch_horn_spacer_front_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+                <geom name="right_ankle_pitch_horn_spacer_rear_cad" type="mesh" mesh="right_ankle_pitch_horn_spacer_rear_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+                <geom name="right_foot_shell_cad" type="mesh" mesh="right_foot_shell_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .43 .06 1" />
+                <geom name="right_foot_tread_cad" type="mesh" mesh="right_foot_tread_mesh" mass="0" contype="0" conaffinity="0" rgba=".075 .08 .085 1" />
+              </body>
+              <inertial mass="0.13978463327920568" pos="-1.42684752648e-18 1.35351399857e-19 -0.0639096774977" fullinertia="0.00012715997856 0.000111780894736 4.17731361509e-05 -1.1348447515e-22 -4.07507848569e-21 5.89285270935e-23" />
+              <geom name="right_knee_pitch_output_front_cad" type="mesh" mesh="right_knee_pitch_output_front_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+              <geom name="right_knee_pitch_output_rear_cad" type="mesh" mesh="right_knee_pitch_output_rear_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+              <geom name="right_knee_pitch_output_bridge_cad" type="mesh" mesh="right_knee_pitch_output_bridge_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+              <geom name="right_knee_pitch_horn_spacer_front_cad" type="mesh" mesh="right_knee_pitch_horn_spacer_front_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+              <geom name="right_knee_pitch_horn_spacer_rear_cad" type="mesh" mesh="right_knee_pitch_horn_spacer_rear_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+              <geom name="right_ankle_pitch_static_cradle_cad" type="mesh" mesh="right_ankle_pitch_static_cradle_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+            </body>
+            <inertial mass="0.13551743327920568" pos="-1.47536397451e-18 1.10644799578e-19 -0.0514779815778" fullinertia="9.65885480701e-05 8.4281848246e-05 3.81431713509e-05 -8.25866663945e-23 -1.66170281841e-21 -1.17457174695e-22" />
+            <geom name="right_hip_pitch_output_front_cad" type="mesh" mesh="right_hip_pitch_output_front_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+            <geom name="right_hip_pitch_output_rear_cad" type="mesh" mesh="right_hip_pitch_output_rear_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+            <geom name="right_hip_pitch_output_bridge_cad" type="mesh" mesh="right_hip_pitch_output_bridge_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+            <geom name="right_hip_pitch_horn_spacer_front_cad" type="mesh" mesh="right_hip_pitch_horn_spacer_front_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+            <geom name="right_hip_pitch_horn_spacer_rear_cad" type="mesh" mesh="right_hip_pitch_horn_spacer_rear_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+            <geom name="right_knee_pitch_static_cradle_cad" type="mesh" mesh="right_knee_pitch_static_cradle_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+          </body>
+          <inertial mass="0.19081484267946922" pos="0.0406643713712 -0.00843983398952 -0.00518519086302" fullinertia="0.00032407283942 0.000398374680626 0.000207608019511 3.5857371371e-05 -0.000112131493242 7.41683573175e-05" />
+          <geom name="right_hip_roll_output_front_cad" type="mesh" mesh="right_hip_roll_output_front_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+          <geom name="right_hip_roll_output_rear_cad" type="mesh" mesh="right_hip_roll_output_rear_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+          <geom name="right_hip_roll_output_bridge_cad" type="mesh" mesh="right_hip_roll_output_bridge_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+          <geom name="right_hip_roll_horn_spacer_front_cad" type="mesh" mesh="right_hip_roll_horn_spacer_front_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+          <geom name="right_hip_roll_horn_spacer_rear_cad" type="mesh" mesh="right_hip_roll_horn_spacer_rear_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+          <geom name="right_hip_pitch_static_cradle_cad" type="mesh" mesh="right_hip_pitch_static_cradle_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+        </body>
+        <inertial mass="0.16246006420729237" pos="0.000784445968209 -1.5299916657e-18 -0.0633858332183" fullinertia="0.000233933723469 0.000235080369325 4.73288167642e-05 -1.94821795916e-21 -1.84744666339e-05 3.63300741717e-21" />
+        <geom name="right_hip_yaw_output_front_cad" type="mesh" mesh="right_hip_yaw_output_front_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+        <geom name="right_hip_yaw_output_rear_cad" type="mesh" mesh="right_hip_yaw_output_rear_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+        <geom name="right_hip_yaw_output_bridge_cad" type="mesh" mesh="right_hip_yaw_output_bridge_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+        <geom name="right_hip_yaw_horn_spacer_front_cad" type="mesh" mesh="right_hip_yaw_horn_spacer_front_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+        <geom name="right_hip_yaw_horn_spacer_rear_cad" type="mesh" mesh="right_hip_yaw_horn_spacer_rear_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+        <geom name="right_hip_roll_static_cradle_cad" type="mesh" mesh="right_hip_roll_static_cradle_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+      </body>
+      <geom name="neck_yaw_motor" mass="0" type="box" pos="0.043 2.6645352591e-18 0.0675" size="0.01425 0.017 0.02325" quat="0.5 0.5 0.5 0.5" rgba=".075 .08 .085 1" />
+      <body name="neck_yaw" pos="0.055 0 0.0675">
+        <joint name="neck_yaw" axis="0 0 1" range="-1.35 1.35" />
+        <geom name="neck_pitch_motor" mass="0" type="box" pos="0.064 0 0.0045" size="0.01675 0.022 0.02925" quat="1 0 0 0" rgba=".075 .08 .085 1" />
+        <body name="neck_pitch" pos="0.064 0 0.02">
+          <joint name="neck_pitch" axis="0 1 0" range="-0.7 2.8" />
+          <geom name="neck_mid_pitch_motor" mass="0" type="box" pos="0 0 0.1195" size="0.01675 0.022 0.02925" quat="1 0 0 0" rgba=".075 .08 .085 1" />
+          <body name="neck_mid_pitch" pos="0 0 0.135">
+            <joint name="neck_mid_pitch" axis="0 1 0" range="-1.7 2.25" />
+            <geom name="head_pitch_motor" mass="0" type="box" pos="0 0 0.208" size="0.01425 0.017 0.02325" quat="1 0 0 0" rgba=".075 .08 .085 1" />
+            <body name="head_pitch" pos="0 0 0.22">
+              <joint name="head_pitch" axis="0 1 0" range="-2.85 -0.5" />
+              <geom name="head_roll_motor" mass="0" type="box" pos="0.05 0 -0.1235" size="0.01 0.0115 0.017" quat="0.707106781187 0 0 -0.707106781187" rgba=".075 .08 .085 1" />
+              <body name="head_roll" pos="0.05 0 -0.116">
+                <joint name="head_roll" axis="1 0 0" range="-0.1 1.65" />
+                <geom name="beak_drive_motor" mass="0" type="box" pos="0.044 0 0.0365" size="0.01 0.0115 0.017" quat="6.12323399574e-17 0 0 1" rgba=".075 .08 .085 1" />
+                <body name="beak_drive" pos="0.044 0 0.044">
+                  <joint name="beak_drive" axis="0 -1 0" range="-0.591024934508 0.698131700798" />
+                  <body name="lower_jaw" pos="0.025 0 0">
+                    <joint name="passive_jaw_pin" axis="0 -1 0" damping=".000001" />
+                    <site name="jaw_loop" pos="0 0 0.018" size=".001" />
+                    <body name="lower_pad_slide" pos="0.025 0 -0.03">
+                      <joint name="passive_pad_compression" type="slide" axis="0 0 -1" range="0 .0015" stiffness="2500" damping="1" />
+                      <geom name="pad_retainer" mass="0" type="box" size="0.005 0.005 0.0005" rgba=".075 .08 .085 1" contype="0" conaffinity="0" />
+                      <body name="lower_pad">
+                        <joint name="passive_pad_pitch" axis="0 1 0" range="-0.0698131700798 0.0698131700798" stiffness=".015" damping=".001" />
+                        <geom name="lower_pad_contact" mass="0" type="box" size="0.0175 0.011 0.001" pos="0.0075 0 0" rgba="0 0 0 0" />
+                        <site name="grasp_center" pos=".0075 0 .001" size=".003" />
+                        <inertial mass="0.0015" pos="0 0 0" fullinertia="1e-08 1e-08 1e-08 0 0 0" />
+                      </body>
+                      <inertial mass="0.003" pos="0 0 0" fullinertia="2.2625e-08 2.2625e-08 3.5e-08 0 0 0" />
+                    </body>
+                    <inertial mass="0.02745703358959836" pos="0.0129911132014 6.8013765667e-19 -0.0205109059973" fullinertia="1.10038612614e-05 1.74309033502e-05 9.64369271587e-06 2.24753632003e-23 5.20563122136e-06 -2.35930126727e-22" />
+                    <geom name="lower_jaw_cad" type="mesh" mesh="lower_jaw_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .43 .06 1" />
+                    <geom name="lower_compliant_grip_cartridge_cad" type="mesh" mesh="lower_compliant_grip_cartridge_mesh" mass="0" contype="0" conaffinity="0" rgba=".075 .08 .085 1" />
+                  </body>
+                  <inertial mass="0.004327128672227137" pos="0.00661717602395 7.82997697934e-19 -8.51922251116e-20" fullinertia="8.18020727409e-07 4.95828298768e-07 1.23471814318e-06 -3.97046694025e-23 -7.5036105337e-24 -4.69251435953e-24" />
+                  <geom name="lower_drive_crank_front_cad" type="mesh" mesh="lower_drive_crank_front_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .43 .06 1" />
+                  <geom name="lower_drive_crank_rear_cad" type="mesh" mesh="lower_drive_crank_rear_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .43 .06 1" />
+                </body>
+                <geom name="camera_board" mass="0" type="box" size="0.001 0.009 0.02" pos="0.0348298245315 0 0.0791171168084" quat="0.953716950748 0 0.300705799504 0" rgba=".075 .08 .085 1" contype="0" conaffinity="0" />
+                <geom name="camera_lens" mass="0" type="cylinder" size="0.009 0.009845" pos="0.0428943764075 0 0.0734702567926" quat="0.461748613235 0 0.887010833178 0" rgba=".075 .08 .085 1" contype="0" conaffinity="0" />
+                <camera name="head_camera" pos="0.0509589282835 0 0.0678233967767" xyaxes="0 -1 0 0.573576436351 0 0.819152044289" fovy="70" />
+                <site name="head_imu" pos="0 0 .02" size=".003" />
+                <geom name="upper_pad" mass="0" type="box" size="0.015 0.011 0.001" pos="0.095 0 0.0320696902422" rgba="0 0 0 0" />
+                <site name="task_center" pos="0.095 0 0.0190696902422" size=".003" />
+                <body name="upper_crank" pos="0.044 0 0.062">
+                  <joint name="passive_follower" axis="0 -1 0" damping=".000001" />
+                  <site name="follower_loop" pos="0.025 0 0" size=".001" />
+                  <inertial mass="0.004939965434348205" pos="0.00579626972758 6.85861436491e-19 9.45089797819e-20" fullinertia="9.91048650269e-07 5.30065611592e-07 1.43125138148e-06 1.32348898008e-23 6.47039098391e-24 -1.59677661055e-24" />
+                  <geom name="upper_follower_crank_front_cad" type="mesh" mesh="upper_follower_crank_front_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .43 .06 1" />
+                  <geom name="upper_follower_crank_rear_cad" type="mesh" mesh="upper_follower_crank_rear_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .43 .06 1" />
+                </body>
+                <inertial mass="0.15407130033449978" pos="0.0298329801876 -0.000328963076349 0.0284704580379" fullinertia="0.000265073960772 0.000367073562155 0.00017226729618 -1.96929231333e-06 -3.92011531425e-05 8.95692157609e-07" />
+                <geom name="head_roll_output_front_cad" type="mesh" mesh="head_roll_output_front_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+                <geom name="head_roll_output_rear_cad" type="mesh" mesh="head_roll_output_rear_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+                <geom name="head_roll_output_bridge_cad" type="mesh" mesh="head_roll_output_bridge_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+                <geom name="head_roll_horn_spacer_front_cad" type="mesh" mesh="head_roll_horn_spacer_front_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+                <geom name="head_roll_horn_spacer_rear_cad" type="mesh" mesh="head_roll_horn_spacer_rear_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+                <geom name="beak_drive_static_cradle_cad" type="mesh" mesh="beak_drive_static_cradle_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+                <geom name="head_cover_cad" type="mesh" mesh="head_cover_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+                <geom name="head_structural_carrier_cad" type="mesh" mesh="head_structural_carrier_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+                <geom name="camera_edge_clip_0_cad" type="mesh" mesh="camera_edge_clip_0_mesh" mass="0" contype="0" conaffinity="0" rgba=".075 .08 .085 1" />
+                <geom name="camera_edge_clip_1_cad" type="mesh" mesh="camera_edge_clip_1_mesh" mass="0" contype="0" conaffinity="0" rgba=".075 .08 .085 1" />
+                <geom name="camera_edge_clip_2_cad" type="mesh" mesh="camera_edge_clip_2_mesh" mass="0" contype="0" conaffinity="0" rgba=".075 .08 .085 1" />
+                <geom name="upper_beak_cad" type="mesh" mesh="upper_beak_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .43 .06 1" />
+                <geom name="upper_grip_pad_cad" type="mesh" mesh="upper_grip_pad_mesh" mass="0" contype="0" conaffinity="0" rgba=".075 .08 .085 1" />
+              </body>
+              <inertial mass="0.09151843161708216" pos="0.0273172074749 -0.00040898253323 -0.0832050669236" fullinertia="0.000243200424258 0.000277061736987 8.45896944804e-05 8.49004221852e-07 9.61082038742e-05 -4.95019669887e-07" />
+              <geom name="head_pitch_output_front_cad" type="mesh" mesh="head_pitch_output_front_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+              <geom name="head_pitch_output_rear_cad" type="mesh" mesh="head_pitch_output_rear_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+              <geom name="head_pitch_output_bridge_cad" type="mesh" mesh="head_pitch_output_bridge_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+              <geom name="head_pitch_horn_spacer_front_cad" type="mesh" mesh="head_pitch_horn_spacer_front_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+              <geom name="head_pitch_horn_spacer_rear_cad" type="mesh" mesh="head_pitch_horn_spacer_rear_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+              <geom name="head_roll_static_cradle_cad" type="mesh" mesh="head_roll_static_cradle_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+            </body>
+            <inertial mass="0.20557651631509147" pos="8.42983412405e-19 1.1559288686e-05 0.142603158637" fullinertia="0.00132168457722 0.00129241526259 6.8662074849e-05 1.44913176737e-22 -1.24131173478e-20 2.74315821574e-07" />
+            <geom name="neck_mid_pitch_output_front_cad" type="mesh" mesh="neck_mid_pitch_output_front_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+            <geom name="neck_mid_pitch_output_rear_cad" type="mesh" mesh="neck_mid_pitch_output_rear_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+            <geom name="neck_mid_pitch_output_bridge_cad" type="mesh" mesh="neck_mid_pitch_output_bridge_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+            <geom name="neck_mid_pitch_horn_spacer_front_cad" type="mesh" mesh="neck_mid_pitch_horn_spacer_front_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+            <geom name="neck_mid_pitch_horn_spacer_rear_cad" type="mesh" mesh="neck_mid_pitch_horn_spacer_rear_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+            <geom name="head_pitch_static_cradle_cad" type="mesh" mesh="head_pitch_static_cradle_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+            <geom name="neck_mid_pitch_tube_cad" type="mesh" mesh="neck_mid_pitch_tube_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+            <geom name="neck_mid_lower_clamp_cad" type="mesh" mesh="neck_mid_lower_clamp_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+            <geom name="neck_mid_upper_clamp_cad" type="mesh" mesh="neck_mid_upper_clamp_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+          </body>
+          <inertial mass="0.28537589380531025" pos="1.44642310803e-18 9.29535520248e-06 0.0975995712252" fullinertia="0.000487936349569 0.000444203916983 0.000118391467353 -5.57313285084e-22 -4.85133245808e-21 1.62002821829e-07" />
+          <geom name="neck_pitch_output_front_cad" type="mesh" mesh="neck_pitch_output_front_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+          <geom name="neck_pitch_output_rear_cad" type="mesh" mesh="neck_pitch_output_rear_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+          <geom name="neck_pitch_output_bridge_cad" type="mesh" mesh="neck_pitch_output_bridge_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+          <geom name="neck_pitch_horn_spacer_front_cad" type="mesh" mesh="neck_pitch_horn_spacer_front_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+          <geom name="neck_pitch_horn_spacer_rear_cad" type="mesh" mesh="neck_pitch_horn_spacer_rear_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+          <geom name="neck_mid_pitch_static_cradle_cad" type="mesh" mesh="neck_mid_pitch_static_cradle_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+          <geom name="neck_pitch_bridge_adapter_cad" type="mesh" mesh="neck_pitch_bridge_adapter_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+        </body>
+        <inertial mass="0.2515853976794692" pos="0.0573246207396 -4.67283661764e-19 -9.71023454911e-05" fullinertia="0.000136541791866 0.000194446346308 0.000138656064655 -4.8291188843e-21 -4.18214764487e-06 -3.99586228549e-22" />
+        <geom name="neck_yaw_output_front_cad" type="mesh" mesh="neck_yaw_output_front_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+        <geom name="neck_yaw_output_rear_cad" type="mesh" mesh="neck_yaw_output_rear_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+        <geom name="neck_yaw_output_bridge_cad" type="mesh" mesh="neck_yaw_output_bridge_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+        <geom name="neck_yaw_horn_spacer_front_cad" type="mesh" mesh="neck_yaw_horn_spacer_front_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+        <geom name="neck_yaw_horn_spacer_rear_cad" type="mesh" mesh="neck_yaw_horn_spacer_rear_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+        <geom name="neck_pitch_static_cradle_cad" type="mesh" mesh="neck_pitch_static_cradle_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+      </body>
+      <site name="torso_imu" pos="0 0 .035" size=".003" />
+      <inertial mass="1.1344607704719099" pos="-0.0112685433473 0.000777475570211 0.0065031489331" fullinertia="0.0034362064209 0.00375217518724 0.00423234356204 2.30343692863e-05 -0.000370294389909 -1.03484720324e-05" />
+      <geom name="right_service_door_cad" type="mesh" mesh="right_service_door_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+      <geom name="left_service_door_cad" type="mesh" mesh="left_service_door_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+      <geom name="body_shell_front_cad" type="mesh" mesh="body_shell_front_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+      <geom name="body_shell_rear_cad" type="mesh" mesh="body_shell_rear_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+      <geom name="right_door_hinge_strap_0_cad" type="mesh" mesh="right_door_hinge_strap_0_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+      <geom name="right_door_hinge_strap_1_cad" type="mesh" mesh="right_door_hinge_strap_1_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+      <geom name="left_door_hinge_strap_0_cad" type="mesh" mesh="left_door_hinge_strap_0_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+      <geom name="left_door_hinge_strap_1_cad" type="mesh" mesh="left_door_hinge_strap_1_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+      <geom name="torso_base_plate_cad" type="mesh" mesh="torso_base_plate_mesh" mass="0" contype="0" conaffinity="0" rgba=".075 .08 .085 1" />
+      <geom name="left_hip_yaw_static_cradle_cad" type="mesh" mesh="left_hip_yaw_static_cradle_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+      <geom name="right_hip_yaw_static_cradle_cad" type="mesh" mesh="right_hip_yaw_static_cradle_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+      <geom name="neck_yaw_static_cradle_cad" type="mesh" mesh="neck_yaw_static_cradle_mesh" mass="0" contype="0" conaffinity="0" rgba=".94 .94 .91 1" />
+      <geom name="collision_right_service_door_0" type="mesh" mesh="collision_right_service_door_0" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_1" type="mesh" mesh="collision_right_service_door_1" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_2" type="mesh" mesh="collision_right_service_door_2" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_3" type="mesh" mesh="collision_right_service_door_3" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_4" type="mesh" mesh="collision_right_service_door_4" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_5" type="mesh" mesh="collision_right_service_door_5" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_6" type="mesh" mesh="collision_right_service_door_6" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_7" type="mesh" mesh="collision_right_service_door_7" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_8" type="mesh" mesh="collision_right_service_door_8" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_9" type="mesh" mesh="collision_right_service_door_9" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_10" type="mesh" mesh="collision_right_service_door_10" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_11" type="mesh" mesh="collision_right_service_door_11" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_12" type="mesh" mesh="collision_right_service_door_12" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_13" type="mesh" mesh="collision_right_service_door_13" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_14" type="mesh" mesh="collision_right_service_door_14" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_15" type="mesh" mesh="collision_right_service_door_15" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_16" type="mesh" mesh="collision_right_service_door_16" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_17" type="mesh" mesh="collision_right_service_door_17" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_18" type="mesh" mesh="collision_right_service_door_18" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_19" type="mesh" mesh="collision_right_service_door_19" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_20" type="mesh" mesh="collision_right_service_door_20" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_21" type="mesh" mesh="collision_right_service_door_21" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_22" type="mesh" mesh="collision_right_service_door_22" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_23" type="mesh" mesh="collision_right_service_door_23" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_24" type="mesh" mesh="collision_right_service_door_24" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_25" type="mesh" mesh="collision_right_service_door_25" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_26" type="mesh" mesh="collision_right_service_door_26" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_27" type="mesh" mesh="collision_right_service_door_27" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_28" type="mesh" mesh="collision_right_service_door_28" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_29" type="mesh" mesh="collision_right_service_door_29" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_30" type="mesh" mesh="collision_right_service_door_30" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_31" type="mesh" mesh="collision_right_service_door_31" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_32" type="mesh" mesh="collision_right_service_door_32" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_33" type="mesh" mesh="collision_right_service_door_33" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_34" type="mesh" mesh="collision_right_service_door_34" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_35" type="mesh" mesh="collision_right_service_door_35" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_36" type="mesh" mesh="collision_right_service_door_36" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_37" type="mesh" mesh="collision_right_service_door_37" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_38" type="mesh" mesh="collision_right_service_door_38" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_39" type="mesh" mesh="collision_right_service_door_39" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_right_service_door_40" type="mesh" mesh="collision_right_service_door_40" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_0" type="mesh" mesh="collision_left_service_door_0" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_1" type="mesh" mesh="collision_left_service_door_1" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_2" type="mesh" mesh="collision_left_service_door_2" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_3" type="mesh" mesh="collision_left_service_door_3" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_4" type="mesh" mesh="collision_left_service_door_4" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_5" type="mesh" mesh="collision_left_service_door_5" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_6" type="mesh" mesh="collision_left_service_door_6" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_7" type="mesh" mesh="collision_left_service_door_7" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_8" type="mesh" mesh="collision_left_service_door_8" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_9" type="mesh" mesh="collision_left_service_door_9" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_10" type="mesh" mesh="collision_left_service_door_10" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_11" type="mesh" mesh="collision_left_service_door_11" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_12" type="mesh" mesh="collision_left_service_door_12" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_13" type="mesh" mesh="collision_left_service_door_13" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_14" type="mesh" mesh="collision_left_service_door_14" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_15" type="mesh" mesh="collision_left_service_door_15" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_16" type="mesh" mesh="collision_left_service_door_16" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_17" type="mesh" mesh="collision_left_service_door_17" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_18" type="mesh" mesh="collision_left_service_door_18" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_19" type="mesh" mesh="collision_left_service_door_19" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_20" type="mesh" mesh="collision_left_service_door_20" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_21" type="mesh" mesh="collision_left_service_door_21" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_22" type="mesh" mesh="collision_left_service_door_22" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_23" type="mesh" mesh="collision_left_service_door_23" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_24" type="mesh" mesh="collision_left_service_door_24" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_25" type="mesh" mesh="collision_left_service_door_25" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_26" type="mesh" mesh="collision_left_service_door_26" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_27" type="mesh" mesh="collision_left_service_door_27" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_28" type="mesh" mesh="collision_left_service_door_28" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_29" type="mesh" mesh="collision_left_service_door_29" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_30" type="mesh" mesh="collision_left_service_door_30" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_31" type="mesh" mesh="collision_left_service_door_31" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_32" type="mesh" mesh="collision_left_service_door_32" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_33" type="mesh" mesh="collision_left_service_door_33" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_34" type="mesh" mesh="collision_left_service_door_34" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_35" type="mesh" mesh="collision_left_service_door_35" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_36" type="mesh" mesh="collision_left_service_door_36" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_37" type="mesh" mesh="collision_left_service_door_37" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_38" type="mesh" mesh="collision_left_service_door_38" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_39" type="mesh" mesh="collision_left_service_door_39" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_left_service_door_40" type="mesh" mesh="collision_left_service_door_40" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_0" type="mesh" mesh="collision_body_shell_front_0" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_1" type="mesh" mesh="collision_body_shell_front_1" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_2" type="mesh" mesh="collision_body_shell_front_2" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_3" type="mesh" mesh="collision_body_shell_front_3" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_4" type="mesh" mesh="collision_body_shell_front_4" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_5" type="mesh" mesh="collision_body_shell_front_5" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_6" type="mesh" mesh="collision_body_shell_front_6" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_7" type="mesh" mesh="collision_body_shell_front_7" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_8" type="mesh" mesh="collision_body_shell_front_8" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_9" type="mesh" mesh="collision_body_shell_front_9" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_10" type="mesh" mesh="collision_body_shell_front_10" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_11" type="mesh" mesh="collision_body_shell_front_11" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_12" type="mesh" mesh="collision_body_shell_front_12" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_13" type="mesh" mesh="collision_body_shell_front_13" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_14" type="mesh" mesh="collision_body_shell_front_14" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_15" type="mesh" mesh="collision_body_shell_front_15" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_16" type="mesh" mesh="collision_body_shell_front_16" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_17" type="mesh" mesh="collision_body_shell_front_17" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_18" type="mesh" mesh="collision_body_shell_front_18" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_19" type="mesh" mesh="collision_body_shell_front_19" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_20" type="mesh" mesh="collision_body_shell_front_20" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_21" type="mesh" mesh="collision_body_shell_front_21" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_22" type="mesh" mesh="collision_body_shell_front_22" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_23" type="mesh" mesh="collision_body_shell_front_23" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_24" type="mesh" mesh="collision_body_shell_front_24" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_25" type="mesh" mesh="collision_body_shell_front_25" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_26" type="mesh" mesh="collision_body_shell_front_26" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_27" type="mesh" mesh="collision_body_shell_front_27" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_28" type="mesh" mesh="collision_body_shell_front_28" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_29" type="mesh" mesh="collision_body_shell_front_29" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_30" type="mesh" mesh="collision_body_shell_front_30" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_31" type="mesh" mesh="collision_body_shell_front_31" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_32" type="mesh" mesh="collision_body_shell_front_32" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_33" type="mesh" mesh="collision_body_shell_front_33" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_34" type="mesh" mesh="collision_body_shell_front_34" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_35" type="mesh" mesh="collision_body_shell_front_35" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_36" type="mesh" mesh="collision_body_shell_front_36" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_37" type="mesh" mesh="collision_body_shell_front_37" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_38" type="mesh" mesh="collision_body_shell_front_38" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_39" type="mesh" mesh="collision_body_shell_front_39" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_40" type="mesh" mesh="collision_body_shell_front_40" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_41" type="mesh" mesh="collision_body_shell_front_41" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_42" type="mesh" mesh="collision_body_shell_front_42" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_43" type="mesh" mesh="collision_body_shell_front_43" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_44" type="mesh" mesh="collision_body_shell_front_44" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_45" type="mesh" mesh="collision_body_shell_front_45" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_46" type="mesh" mesh="collision_body_shell_front_46" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_47" type="mesh" mesh="collision_body_shell_front_47" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_48" type="mesh" mesh="collision_body_shell_front_48" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_49" type="mesh" mesh="collision_body_shell_front_49" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_50" type="mesh" mesh="collision_body_shell_front_50" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_51" type="mesh" mesh="collision_body_shell_front_51" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_52" type="mesh" mesh="collision_body_shell_front_52" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_53" type="mesh" mesh="collision_body_shell_front_53" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_54" type="mesh" mesh="collision_body_shell_front_54" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_55" type="mesh" mesh="collision_body_shell_front_55" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_56" type="mesh" mesh="collision_body_shell_front_56" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_57" type="mesh" mesh="collision_body_shell_front_57" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_58" type="mesh" mesh="collision_body_shell_front_58" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_59" type="mesh" mesh="collision_body_shell_front_59" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_60" type="mesh" mesh="collision_body_shell_front_60" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_61" type="mesh" mesh="collision_body_shell_front_61" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_62" type="mesh" mesh="collision_body_shell_front_62" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_63" type="mesh" mesh="collision_body_shell_front_63" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_64" type="mesh" mesh="collision_body_shell_front_64" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_65" type="mesh" mesh="collision_body_shell_front_65" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_66" type="mesh" mesh="collision_body_shell_front_66" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_67" type="mesh" mesh="collision_body_shell_front_67" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_68" type="mesh" mesh="collision_body_shell_front_68" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_69" type="mesh" mesh="collision_body_shell_front_69" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_70" type="mesh" mesh="collision_body_shell_front_70" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_71" type="mesh" mesh="collision_body_shell_front_71" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_72" type="mesh" mesh="collision_body_shell_front_72" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_73" type="mesh" mesh="collision_body_shell_front_73" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_74" type="mesh" mesh="collision_body_shell_front_74" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_75" type="mesh" mesh="collision_body_shell_front_75" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_76" type="mesh" mesh="collision_body_shell_front_76" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_77" type="mesh" mesh="collision_body_shell_front_77" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_78" type="mesh" mesh="collision_body_shell_front_78" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_79" type="mesh" mesh="collision_body_shell_front_79" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_80" type="mesh" mesh="collision_body_shell_front_80" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_81" type="mesh" mesh="collision_body_shell_front_81" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_82" type="mesh" mesh="collision_body_shell_front_82" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_83" type="mesh" mesh="collision_body_shell_front_83" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_84" type="mesh" mesh="collision_body_shell_front_84" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_85" type="mesh" mesh="collision_body_shell_front_85" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_86" type="mesh" mesh="collision_body_shell_front_86" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_87" type="mesh" mesh="collision_body_shell_front_87" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_88" type="mesh" mesh="collision_body_shell_front_88" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_89" type="mesh" mesh="collision_body_shell_front_89" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_90" type="mesh" mesh="collision_body_shell_front_90" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_91" type="mesh" mesh="collision_body_shell_front_91" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_92" type="mesh" mesh="collision_body_shell_front_92" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_93" type="mesh" mesh="collision_body_shell_front_93" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_94" type="mesh" mesh="collision_body_shell_front_94" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_95" type="mesh" mesh="collision_body_shell_front_95" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_96" type="mesh" mesh="collision_body_shell_front_96" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_97" type="mesh" mesh="collision_body_shell_front_97" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_98" type="mesh" mesh="collision_body_shell_front_98" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_99" type="mesh" mesh="collision_body_shell_front_99" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_100" type="mesh" mesh="collision_body_shell_front_100" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_101" type="mesh" mesh="collision_body_shell_front_101" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_102" type="mesh" mesh="collision_body_shell_front_102" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_103" type="mesh" mesh="collision_body_shell_front_103" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_104" type="mesh" mesh="collision_body_shell_front_104" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_105" type="mesh" mesh="collision_body_shell_front_105" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_106" type="mesh" mesh="collision_body_shell_front_106" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_107" type="mesh" mesh="collision_body_shell_front_107" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_108" type="mesh" mesh="collision_body_shell_front_108" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_109" type="mesh" mesh="collision_body_shell_front_109" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_110" type="mesh" mesh="collision_body_shell_front_110" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_111" type="mesh" mesh="collision_body_shell_front_111" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_112" type="mesh" mesh="collision_body_shell_front_112" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_113" type="mesh" mesh="collision_body_shell_front_113" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_114" type="mesh" mesh="collision_body_shell_front_114" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_115" type="mesh" mesh="collision_body_shell_front_115" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_116" type="mesh" mesh="collision_body_shell_front_116" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_117" type="mesh" mesh="collision_body_shell_front_117" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_118" type="mesh" mesh="collision_body_shell_front_118" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_119" type="mesh" mesh="collision_body_shell_front_119" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_120" type="mesh" mesh="collision_body_shell_front_120" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_121" type="mesh" mesh="collision_body_shell_front_121" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_122" type="mesh" mesh="collision_body_shell_front_122" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_123" type="mesh" mesh="collision_body_shell_front_123" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_124" type="mesh" mesh="collision_body_shell_front_124" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_125" type="mesh" mesh="collision_body_shell_front_125" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_126" type="mesh" mesh="collision_body_shell_front_126" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_127" type="mesh" mesh="collision_body_shell_front_127" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_128" type="mesh" mesh="collision_body_shell_front_128" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_129" type="mesh" mesh="collision_body_shell_front_129" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_130" type="mesh" mesh="collision_body_shell_front_130" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_131" type="mesh" mesh="collision_body_shell_front_131" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_132" type="mesh" mesh="collision_body_shell_front_132" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_133" type="mesh" mesh="collision_body_shell_front_133" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_134" type="mesh" mesh="collision_body_shell_front_134" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_135" type="mesh" mesh="collision_body_shell_front_135" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_136" type="mesh" mesh="collision_body_shell_front_136" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_137" type="mesh" mesh="collision_body_shell_front_137" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_front_138" type="mesh" mesh="collision_body_shell_front_138" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_0" type="mesh" mesh="collision_body_shell_rear_0" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_1" type="mesh" mesh="collision_body_shell_rear_1" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_2" type="mesh" mesh="collision_body_shell_rear_2" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_3" type="mesh" mesh="collision_body_shell_rear_3" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_4" type="mesh" mesh="collision_body_shell_rear_4" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_5" type="mesh" mesh="collision_body_shell_rear_5" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_6" type="mesh" mesh="collision_body_shell_rear_6" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_7" type="mesh" mesh="collision_body_shell_rear_7" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_8" type="mesh" mesh="collision_body_shell_rear_8" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_9" type="mesh" mesh="collision_body_shell_rear_9" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_10" type="mesh" mesh="collision_body_shell_rear_10" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_11" type="mesh" mesh="collision_body_shell_rear_11" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_12" type="mesh" mesh="collision_body_shell_rear_12" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_13" type="mesh" mesh="collision_body_shell_rear_13" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_14" type="mesh" mesh="collision_body_shell_rear_14" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_15" type="mesh" mesh="collision_body_shell_rear_15" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_16" type="mesh" mesh="collision_body_shell_rear_16" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_17" type="mesh" mesh="collision_body_shell_rear_17" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_18" type="mesh" mesh="collision_body_shell_rear_18" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_19" type="mesh" mesh="collision_body_shell_rear_19" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_20" type="mesh" mesh="collision_body_shell_rear_20" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_21" type="mesh" mesh="collision_body_shell_rear_21" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_22" type="mesh" mesh="collision_body_shell_rear_22" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_23" type="mesh" mesh="collision_body_shell_rear_23" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_24" type="mesh" mesh="collision_body_shell_rear_24" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_25" type="mesh" mesh="collision_body_shell_rear_25" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_26" type="mesh" mesh="collision_body_shell_rear_26" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_27" type="mesh" mesh="collision_body_shell_rear_27" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_28" type="mesh" mesh="collision_body_shell_rear_28" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_29" type="mesh" mesh="collision_body_shell_rear_29" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_30" type="mesh" mesh="collision_body_shell_rear_30" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_31" type="mesh" mesh="collision_body_shell_rear_31" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_32" type="mesh" mesh="collision_body_shell_rear_32" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_33" type="mesh" mesh="collision_body_shell_rear_33" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_34" type="mesh" mesh="collision_body_shell_rear_34" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_35" type="mesh" mesh="collision_body_shell_rear_35" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_36" type="mesh" mesh="collision_body_shell_rear_36" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_37" type="mesh" mesh="collision_body_shell_rear_37" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_38" type="mesh" mesh="collision_body_shell_rear_38" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_39" type="mesh" mesh="collision_body_shell_rear_39" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_40" type="mesh" mesh="collision_body_shell_rear_40" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_41" type="mesh" mesh="collision_body_shell_rear_41" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_42" type="mesh" mesh="collision_body_shell_rear_42" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_43" type="mesh" mesh="collision_body_shell_rear_43" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_44" type="mesh" mesh="collision_body_shell_rear_44" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_45" type="mesh" mesh="collision_body_shell_rear_45" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_46" type="mesh" mesh="collision_body_shell_rear_46" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_47" type="mesh" mesh="collision_body_shell_rear_47" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_48" type="mesh" mesh="collision_body_shell_rear_48" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_49" type="mesh" mesh="collision_body_shell_rear_49" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_50" type="mesh" mesh="collision_body_shell_rear_50" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_51" type="mesh" mesh="collision_body_shell_rear_51" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_52" type="mesh" mesh="collision_body_shell_rear_52" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_53" type="mesh" mesh="collision_body_shell_rear_53" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_54" type="mesh" mesh="collision_body_shell_rear_54" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_55" type="mesh" mesh="collision_body_shell_rear_55" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_56" type="mesh" mesh="collision_body_shell_rear_56" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_57" type="mesh" mesh="collision_body_shell_rear_57" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_58" type="mesh" mesh="collision_body_shell_rear_58" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_59" type="mesh" mesh="collision_body_shell_rear_59" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_60" type="mesh" mesh="collision_body_shell_rear_60" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_61" type="mesh" mesh="collision_body_shell_rear_61" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_62" type="mesh" mesh="collision_body_shell_rear_62" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_63" type="mesh" mesh="collision_body_shell_rear_63" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_64" type="mesh" mesh="collision_body_shell_rear_64" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_65" type="mesh" mesh="collision_body_shell_rear_65" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_66" type="mesh" mesh="collision_body_shell_rear_66" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_67" type="mesh" mesh="collision_body_shell_rear_67" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_68" type="mesh" mesh="collision_body_shell_rear_68" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_69" type="mesh" mesh="collision_body_shell_rear_69" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_70" type="mesh" mesh="collision_body_shell_rear_70" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_71" type="mesh" mesh="collision_body_shell_rear_71" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_72" type="mesh" mesh="collision_body_shell_rear_72" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_73" type="mesh" mesh="collision_body_shell_rear_73" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_74" type="mesh" mesh="collision_body_shell_rear_74" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_75" type="mesh" mesh="collision_body_shell_rear_75" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_76" type="mesh" mesh="collision_body_shell_rear_76" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_77" type="mesh" mesh="collision_body_shell_rear_77" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_78" type="mesh" mesh="collision_body_shell_rear_78" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_79" type="mesh" mesh="collision_body_shell_rear_79" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_80" type="mesh" mesh="collision_body_shell_rear_80" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_81" type="mesh" mesh="collision_body_shell_rear_81" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_82" type="mesh" mesh="collision_body_shell_rear_82" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_83" type="mesh" mesh="collision_body_shell_rear_83" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_84" type="mesh" mesh="collision_body_shell_rear_84" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_85" type="mesh" mesh="collision_body_shell_rear_85" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_86" type="mesh" mesh="collision_body_shell_rear_86" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_87" type="mesh" mesh="collision_body_shell_rear_87" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_88" type="mesh" mesh="collision_body_shell_rear_88" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_89" type="mesh" mesh="collision_body_shell_rear_89" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_90" type="mesh" mesh="collision_body_shell_rear_90" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_91" type="mesh" mesh="collision_body_shell_rear_91" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_92" type="mesh" mesh="collision_body_shell_rear_92" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_93" type="mesh" mesh="collision_body_shell_rear_93" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_94" type="mesh" mesh="collision_body_shell_rear_94" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_95" type="mesh" mesh="collision_body_shell_rear_95" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_96" type="mesh" mesh="collision_body_shell_rear_96" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_97" type="mesh" mesh="collision_body_shell_rear_97" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_98" type="mesh" mesh="collision_body_shell_rear_98" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_99" type="mesh" mesh="collision_body_shell_rear_99" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_100" type="mesh" mesh="collision_body_shell_rear_100" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_101" type="mesh" mesh="collision_body_shell_rear_101" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_102" type="mesh" mesh="collision_body_shell_rear_102" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_103" type="mesh" mesh="collision_body_shell_rear_103" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_104" type="mesh" mesh="collision_body_shell_rear_104" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_105" type="mesh" mesh="collision_body_shell_rear_105" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_106" type="mesh" mesh="collision_body_shell_rear_106" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_107" type="mesh" mesh="collision_body_shell_rear_107" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_108" type="mesh" mesh="collision_body_shell_rear_108" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_109" type="mesh" mesh="collision_body_shell_rear_109" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_110" type="mesh" mesh="collision_body_shell_rear_110" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_111" type="mesh" mesh="collision_body_shell_rear_111" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_112" type="mesh" mesh="collision_body_shell_rear_112" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_113" type="mesh" mesh="collision_body_shell_rear_113" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_114" type="mesh" mesh="collision_body_shell_rear_114" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_115" type="mesh" mesh="collision_body_shell_rear_115" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_116" type="mesh" mesh="collision_body_shell_rear_116" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_117" type="mesh" mesh="collision_body_shell_rear_117" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_118" type="mesh" mesh="collision_body_shell_rear_118" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_119" type="mesh" mesh="collision_body_shell_rear_119" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_120" type="mesh" mesh="collision_body_shell_rear_120" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_121" type="mesh" mesh="collision_body_shell_rear_121" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_122" type="mesh" mesh="collision_body_shell_rear_122" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_123" type="mesh" mesh="collision_body_shell_rear_123" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_124" type="mesh" mesh="collision_body_shell_rear_124" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_125" type="mesh" mesh="collision_body_shell_rear_125" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_126" type="mesh" mesh="collision_body_shell_rear_126" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_127" type="mesh" mesh="collision_body_shell_rear_127" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_128" type="mesh" mesh="collision_body_shell_rear_128" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_129" type="mesh" mesh="collision_body_shell_rear_129" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_130" type="mesh" mesh="collision_body_shell_rear_130" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_131" type="mesh" mesh="collision_body_shell_rear_131" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_132" type="mesh" mesh="collision_body_shell_rear_132" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_133" type="mesh" mesh="collision_body_shell_rear_133" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_134" type="mesh" mesh="collision_body_shell_rear_134" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_135" type="mesh" mesh="collision_body_shell_rear_135" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_136" type="mesh" mesh="collision_body_shell_rear_136" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_137" type="mesh" mesh="collision_body_shell_rear_137" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_138" type="mesh" mesh="collision_body_shell_rear_138" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_139" type="mesh" mesh="collision_body_shell_rear_139" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_140" type="mesh" mesh="collision_body_shell_rear_140" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_141" type="mesh" mesh="collision_body_shell_rear_141" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_142" type="mesh" mesh="collision_body_shell_rear_142" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_143" type="mesh" mesh="collision_body_shell_rear_143" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_144" type="mesh" mesh="collision_body_shell_rear_144" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_145" type="mesh" mesh="collision_body_shell_rear_145" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_146" type="mesh" mesh="collision_body_shell_rear_146" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_147" type="mesh" mesh="collision_body_shell_rear_147" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_148" type="mesh" mesh="collision_body_shell_rear_148" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_149" type="mesh" mesh="collision_body_shell_rear_149" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_150" type="mesh" mesh="collision_body_shell_rear_150" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_151" type="mesh" mesh="collision_body_shell_rear_151" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_152" type="mesh" mesh="collision_body_shell_rear_152" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_153" type="mesh" mesh="collision_body_shell_rear_153" mass="0" rgba="0 0 0 0" />
+      <geom name="collision_body_shell_rear_154" type="mesh" mesh="collision_body_shell_rear_154" mass="0" rgba="0 0 0 0" />
+    </body>
+  </worldbody>
+  <equality>
+    <connect name="beak_loop" site1="jaw_loop" site2="follower_loop" solref=".002 1" solimp=".999 .999 .001" />
+  </equality>
+  <contact>
+    <exclude body1="upper_crank" body2="head_roll" />
+    <exclude body1="lower_jaw" body2="head_roll" />
+    <exclude body1="lower_pad" body2="lower_jaw" />
+    <exclude body1="upper_crank" body2="lower_jaw" />
+    <exclude body1="lower_pad" body2="head_roll" />
+    <exclude body1="beak_drive" body2="upper_crank" />
+  </contact>
+  <actuator>
+    <motor name="left_hip_yaw_actuator" joint="left_hip_yaw" ctrlrange="-0.82 0.82" />
+    <motor name="left_hip_roll_actuator" joint="left_hip_roll" ctrlrange="-0.82 0.82" />
+    <motor name="left_hip_pitch_actuator" joint="left_hip_pitch" ctrlrange="-0.82 0.82" />
+    <motor name="left_knee_pitch_actuator" joint="left_knee_pitch" ctrlrange="-0.82 0.82" />
+    <motor name="left_ankle_pitch_actuator" joint="left_ankle_pitch" ctrlrange="-0.82 0.82" />
+    <motor name="right_hip_yaw_actuator" joint="right_hip_yaw" ctrlrange="-0.82 0.82" />
+    <motor name="right_hip_roll_actuator" joint="right_hip_roll" ctrlrange="-0.82 0.82" />
+    <motor name="right_hip_pitch_actuator" joint="right_hip_pitch" ctrlrange="-0.82 0.82" />
+    <motor name="right_knee_pitch_actuator" joint="right_knee_pitch" ctrlrange="-0.82 0.82" />
+    <motor name="right_ankle_pitch_actuator" joint="right_ankle_pitch" ctrlrange="-0.82 0.82" />
+    <motor name="neck_yaw_actuator" joint="neck_yaw" ctrlrange="-0.82 0.82" />
+    <motor name="neck_pitch_actuator" joint="neck_pitch" ctrlrange="-2.12 2.12" />
+    <motor name="neck_mid_pitch_actuator" joint="neck_mid_pitch" ctrlrange="-2.12 2.12" />
+    <motor name="head_pitch_actuator" joint="head_pitch" ctrlrange="-0.82 0.82" />
+    <motor name="head_roll_actuator" joint="head_roll" ctrlrange="-0.186 0.186" />
+    <motor name="beak_drive_actuator" joint="beak_drive" ctrlrange="-0.186 0.186" />
+  </actuator>
+  <sensor>
+    <gyro name="imu_gyro" site="torso_imu" />
+  </sensor>
+  <keyframe>
+    <key name="home" qpos="0 0 0.292813424916 1 0 0 0 0 0 -0.12 0.24 -0.12 0 0 -0.12 0.24 -0.12 0 -0.35 1.05 -0.7 0 0.698131700798 -0.698131700798 0 0 0.698131700798" />
+  </keyframe>
+  <asset>
+    <mesh name="right_service_door_mesh" file="visuals/right_service_door.stl" scale=".001 .001 .001" />
+    <mesh name="left_service_door_mesh" file="visuals/left_service_door.stl" scale=".001 .001 .001" />
+    <mesh name="body_shell_front_mesh" file="visuals/body_shell_front.stl" scale=".001 .001 .001" />
+    <mesh name="body_shell_rear_mesh" file="visuals/body_shell_rear.stl" scale=".001 .001 .001" />
+    <mesh name="right_door_hinge_strap_0_mesh" file="visuals/right_door_hinge_strap_0.stl" scale=".001 .001 .001" />
+    <mesh name="right_door_hinge_strap_1_mesh" file="visuals/right_door_hinge_strap_1.stl" scale=".001 .001 .001" />
+    <mesh name="left_door_hinge_strap_0_mesh" file="visuals/left_door_hinge_strap_0.stl" scale=".001 .001 .001" />
+    <mesh name="left_door_hinge_strap_1_mesh" file="visuals/left_door_hinge_strap_1.stl" scale=".001 .001 .001" />
+    <mesh name="torso_base_plate_mesh" file="visuals/torso_base_plate.stl" scale=".001 .001 .001" />
+    <mesh name="left_hip_yaw_static_cradle_mesh" file="visuals/left_hip_yaw_static_cradle.stl" scale=".001 .001 .001" />
+    <mesh name="left_hip_yaw_output_front_mesh" file="visuals/left_hip_yaw_output_front.stl" scale=".001 .001 .001" />
+    <mesh name="left_hip_yaw_output_rear_mesh" file="visuals/left_hip_yaw_output_rear.stl" scale=".001 .001 .001" />
+    <mesh name="left_hip_yaw_output_bridge_mesh" file="visuals/left_hip_yaw_output_bridge.stl" scale=".001 .001 .001" />
+    <mesh name="left_hip_yaw_horn_spacer_front_mesh" file="visuals/left_hip_yaw_horn_spacer_front.stl" scale=".001 .001 .001" />
+    <mesh name="left_hip_yaw_horn_spacer_rear_mesh" file="visuals/left_hip_yaw_horn_spacer_rear.stl" scale=".001 .001 .001" />
+    <mesh name="left_hip_roll_static_cradle_mesh" file="visuals/left_hip_roll_static_cradle.stl" scale=".001 .001 .001" />
+    <mesh name="left_hip_roll_output_front_mesh" file="visuals/left_hip_roll_output_front.stl" scale=".001 .001 .001" />
+    <mesh name="left_hip_roll_output_rear_mesh" file="visuals/left_hip_roll_output_rear.stl" scale=".001 .001 .001" />
+    <mesh name="left_hip_roll_output_bridge_mesh" file="visuals/left_hip_roll_output_bridge.stl" scale=".001 .001 .001" />
+    <mesh name="left_hip_roll_horn_spacer_front_mesh" file="visuals/left_hip_roll_horn_spacer_front.stl" scale=".001 .001 .001" />
+    <mesh name="left_hip_roll_horn_spacer_rear_mesh" file="visuals/left_hip_roll_horn_spacer_rear.stl" scale=".001 .001 .001" />
+    <mesh name="left_hip_pitch_static_cradle_mesh" file="visuals/left_hip_pitch_static_cradle.stl" scale=".001 .001 .001" />
+    <mesh name="left_hip_pitch_output_front_mesh" file="visuals/left_hip_pitch_output_front.stl" scale=".001 .001 .001" />
+    <mesh name="left_hip_pitch_output_rear_mesh" file="visuals/left_hip_pitch_output_rear.stl" scale=".001 .001 .001" />
+    <mesh name="left_hip_pitch_output_bridge_mesh" file="visuals/left_hip_pitch_output_bridge.stl" scale=".001 .001 .001" />
+    <mesh name="left_hip_pitch_horn_spacer_front_mesh" file="visuals/left_hip_pitch_horn_spacer_front.stl" scale=".001 .001 .001" />
+    <mesh name="left_hip_pitch_horn_spacer_rear_mesh" file="visuals/left_hip_pitch_horn_spacer_rear.stl" scale=".001 .001 .001" />
+    <mesh name="left_knee_pitch_static_cradle_mesh" file="visuals/left_knee_pitch_static_cradle.stl" scale=".001 .001 .001" />
+    <mesh name="left_knee_pitch_output_front_mesh" file="visuals/left_knee_pitch_output_front.stl" scale=".001 .001 .001" />
+    <mesh name="left_knee_pitch_output_rear_mesh" file="visuals/left_knee_pitch_output_rear.stl" scale=".001 .001 .001" />
+    <mesh name="left_knee_pitch_output_bridge_mesh" file="visuals/left_knee_pitch_output_bridge.stl" scale=".001 .001 .001" />
+    <mesh name="left_knee_pitch_horn_spacer_front_mesh" file="visuals/left_knee_pitch_horn_spacer_front.stl" scale=".001 .001 .001" />
+    <mesh name="left_knee_pitch_horn_spacer_rear_mesh" file="visuals/left_knee_pitch_horn_spacer_rear.stl" scale=".001 .001 .001" />
+    <mesh name="left_ankle_pitch_static_cradle_mesh" file="visuals/left_ankle_pitch_static_cradle.stl" scale=".001 .001 .001" />
+    <mesh name="left_ankle_pitch_output_front_mesh" file="visuals/left_ankle_pitch_output_front.stl" scale=".001 .001 .001" />
+    <mesh name="left_ankle_pitch_output_rear_mesh" file="visuals/left_ankle_pitch_output_rear.stl" scale=".001 .001 .001" />
+    <mesh name="left_ankle_pitch_output_bridge_mesh" file="visuals/left_ankle_pitch_output_bridge.stl" scale=".001 .001 .001" />
+    <mesh name="left_ankle_pitch_horn_spacer_front_mesh" file="visuals/left_ankle_pitch_horn_spacer_front.stl" scale=".001 .001 .001" />
+    <mesh name="left_ankle_pitch_horn_spacer_rear_mesh" file="visuals/left_ankle_pitch_horn_spacer_rear.stl" scale=".001 .001 .001" />
+    <mesh name="left_foot_shell_mesh" file="visuals/left_foot_shell.stl" scale=".001 .001 .001" />
+    <mesh name="left_foot_tread_mesh" file="visuals/left_foot_tread.stl" scale=".001 .001 .001" />
+    <mesh name="right_hip_yaw_static_cradle_mesh" file="visuals/right_hip_yaw_static_cradle.stl" scale=".001 .001 .001" />
+    <mesh name="right_hip_yaw_output_front_mesh" file="visuals/right_hip_yaw_output_front.stl" scale=".001 .001 .001" />
+    <mesh name="right_hip_yaw_output_rear_mesh" file="visuals/right_hip_yaw_output_rear.stl" scale=".001 .001 .001" />
+    <mesh name="right_hip_yaw_output_bridge_mesh" file="visuals/right_hip_yaw_output_bridge.stl" scale=".001 .001 .001" />
+    <mesh name="right_hip_yaw_horn_spacer_front_mesh" file="visuals/right_hip_yaw_horn_spacer_front.stl" scale=".001 .001 .001" />
+    <mesh name="right_hip_yaw_horn_spacer_rear_mesh" file="visuals/right_hip_yaw_horn_spacer_rear.stl" scale=".001 .001 .001" />
+    <mesh name="right_hip_roll_static_cradle_mesh" file="visuals/right_hip_roll_static_cradle.stl" scale=".001 .001 .001" />
+    <mesh name="right_hip_roll_output_front_mesh" file="visuals/right_hip_roll_output_front.stl" scale=".001 .001 .001" />
+    <mesh name="right_hip_roll_output_rear_mesh" file="visuals/right_hip_roll_output_rear.stl" scale=".001 .001 .001" />
+    <mesh name="right_hip_roll_output_bridge_mesh" file="visuals/right_hip_roll_output_bridge.stl" scale=".001 .001 .001" />
+    <mesh name="right_hip_roll_horn_spacer_front_mesh" file="visuals/right_hip_roll_horn_spacer_front.stl" scale=".001 .001 .001" />
+    <mesh name="right_hip_roll_horn_spacer_rear_mesh" file="visuals/right_hip_roll_horn_spacer_rear.stl" scale=".001 .001 .001" />
+    <mesh name="right_hip_pitch_static_cradle_mesh" file="visuals/right_hip_pitch_static_cradle.stl" scale=".001 .001 .001" />
+    <mesh name="right_hip_pitch_output_front_mesh" file="visuals/right_hip_pitch_output_front.stl" scale=".001 .001 .001" />
+    <mesh name="right_hip_pitch_output_rear_mesh" file="visuals/right_hip_pitch_output_rear.stl" scale=".001 .001 .001" />
+    <mesh name="right_hip_pitch_output_bridge_mesh" file="visuals/right_hip_pitch_output_bridge.stl" scale=".001 .001 .001" />
+    <mesh name="right_hip_pitch_horn_spacer_front_mesh" file="visuals/right_hip_pitch_horn_spacer_front.stl" scale=".001 .001 .001" />
+    <mesh name="right_hip_pitch_horn_spacer_rear_mesh" file="visuals/right_hip_pitch_horn_spacer_rear.stl" scale=".001 .001 .001" />
+    <mesh name="right_knee_pitch_static_cradle_mesh" file="visuals/right_knee_pitch_static_cradle.stl" scale=".001 .001 .001" />
+    <mesh name="right_knee_pitch_output_front_mesh" file="visuals/right_knee_pitch_output_front.stl" scale=".001 .001 .001" />
+    <mesh name="right_knee_pitch_output_rear_mesh" file="visuals/right_knee_pitch_output_rear.stl" scale=".001 .001 .001" />
+    <mesh name="right_knee_pitch_output_bridge_mesh" file="visuals/right_knee_pitch_output_bridge.stl" scale=".001 .001 .001" />
+    <mesh name="right_knee_pitch_horn_spacer_front_mesh" file="visuals/right_knee_pitch_horn_spacer_front.stl" scale=".001 .001 .001" />
+    <mesh name="right_knee_pitch_horn_spacer_rear_mesh" file="visuals/right_knee_pitch_horn_spacer_rear.stl" scale=".001 .001 .001" />
+    <mesh name="right_ankle_pitch_static_cradle_mesh" file="visuals/right_ankle_pitch_static_cradle.stl" scale=".001 .001 .001" />
+    <mesh name="right_ankle_pitch_output_front_mesh" file="visuals/right_ankle_pitch_output_front.stl" scale=".001 .001 .001" />
+    <mesh name="right_ankle_pitch_output_rear_mesh" file="visuals/right_ankle_pitch_output_rear.stl" scale=".001 .001 .001" />
+    <mesh name="right_ankle_pitch_output_bridge_mesh" file="visuals/right_ankle_pitch_output_bridge.stl" scale=".001 .001 .001" />
+    <mesh name="right_ankle_pitch_horn_spacer_front_mesh" file="visuals/right_ankle_pitch_horn_spacer_front.stl" scale=".001 .001 .001" />
+    <mesh name="right_ankle_pitch_horn_spacer_rear_mesh" file="visuals/right_ankle_pitch_horn_spacer_rear.stl" scale=".001 .001 .001" />
+    <mesh name="right_foot_shell_mesh" file="visuals/right_foot_shell.stl" scale=".001 .001 .001" />
+    <mesh name="right_foot_tread_mesh" file="visuals/right_foot_tread.stl" scale=".001 .001 .001" />
+    <mesh name="neck_yaw_static_cradle_mesh" file="visuals/neck_yaw_static_cradle.stl" scale=".001 .001 .001" />
+    <mesh name="neck_yaw_output_front_mesh" file="visuals/neck_yaw_output_front.stl" scale=".001 .001 .001" />
+    <mesh name="neck_yaw_output_rear_mesh" file="visuals/neck_yaw_output_rear.stl" scale=".001 .001 .001" />
+    <mesh name="neck_yaw_output_bridge_mesh" file="visuals/neck_yaw_output_bridge.stl" scale=".001 .001 .001" />
+    <mesh name="neck_yaw_horn_spacer_front_mesh" file="visuals/neck_yaw_horn_spacer_front.stl" scale=".001 .001 .001" />
+    <mesh name="neck_yaw_horn_spacer_rear_mesh" file="visuals/neck_yaw_horn_spacer_rear.stl" scale=".001 .001 .001" />
+    <mesh name="neck_pitch_static_cradle_mesh" file="visuals/neck_pitch_static_cradle.stl" scale=".001 .001 .001" />
+    <mesh name="neck_pitch_output_front_mesh" file="visuals/neck_pitch_output_front.stl" scale=".001 .001 .001" />
+    <mesh name="neck_pitch_output_rear_mesh" file="visuals/neck_pitch_output_rear.stl" scale=".001 .001 .001" />
+    <mesh name="neck_pitch_output_bridge_mesh" file="visuals/neck_pitch_output_bridge.stl" scale=".001 .001 .001" />
+    <mesh name="neck_pitch_horn_spacer_front_mesh" file="visuals/neck_pitch_horn_spacer_front.stl" scale=".001 .001 .001" />
+    <mesh name="neck_pitch_horn_spacer_rear_mesh" file="visuals/neck_pitch_horn_spacer_rear.stl" scale=".001 .001 .001" />
+    <mesh name="neck_mid_pitch_static_cradle_mesh" file="visuals/neck_mid_pitch_static_cradle.stl" scale=".001 .001 .001" />
+    <mesh name="neck_mid_pitch_output_front_mesh" file="visuals/neck_mid_pitch_output_front.stl" scale=".001 .001 .001" />
+    <mesh name="neck_mid_pitch_output_rear_mesh" file="visuals/neck_mid_pitch_output_rear.stl" scale=".001 .001 .001" />
+    <mesh name="neck_mid_pitch_output_bridge_mesh" file="visuals/neck_mid_pitch_output_bridge.stl" scale=".001 .001 .001" />
+    <mesh name="neck_mid_pitch_horn_spacer_front_mesh" file="visuals/neck_mid_pitch_horn_spacer_front.stl" scale=".001 .001 .001" />
+    <mesh name="neck_mid_pitch_horn_spacer_rear_mesh" file="visuals/neck_mid_pitch_horn_spacer_rear.stl" scale=".001 .001 .001" />
+    <mesh name="head_pitch_static_cradle_mesh" file="visuals/head_pitch_static_cradle.stl" scale=".001 .001 .001" />
+    <mesh name="head_pitch_output_front_mesh" file="visuals/head_pitch_output_front.stl" scale=".001 .001 .001" />
+    <mesh name="head_pitch_output_rear_mesh" file="visuals/head_pitch_output_rear.stl" scale=".001 .001 .001" />
+    <mesh name="head_pitch_output_bridge_mesh" file="visuals/head_pitch_output_bridge.stl" scale=".001 .001 .001" />
+    <mesh name="head_pitch_horn_spacer_front_mesh" file="visuals/head_pitch_horn_spacer_front.stl" scale=".001 .001 .001" />
+    <mesh name="head_pitch_horn_spacer_rear_mesh" file="visuals/head_pitch_horn_spacer_rear.stl" scale=".001 .001 .001" />
+    <mesh name="head_roll_static_cradle_mesh" file="visuals/head_roll_static_cradle.stl" scale=".001 .001 .001" />
+    <mesh name="head_roll_output_front_mesh" file="visuals/head_roll_output_front.stl" scale=".001 .001 .001" />
+    <mesh name="head_roll_output_rear_mesh" file="visuals/head_roll_output_rear.stl" scale=".001 .001 .001" />
+    <mesh name="head_roll_output_bridge_mesh" file="visuals/head_roll_output_bridge.stl" scale=".001 .001 .001" />
+    <mesh name="head_roll_horn_spacer_front_mesh" file="visuals/head_roll_horn_spacer_front.stl" scale=".001 .001 .001" />
+    <mesh name="head_roll_horn_spacer_rear_mesh" file="visuals/head_roll_horn_spacer_rear.stl" scale=".001 .001 .001" />
+    <mesh name="beak_drive_static_cradle_mesh" file="visuals/beak_drive_static_cradle.stl" scale=".001 .001 .001" />
+    <mesh name="neck_pitch_bridge_adapter_mesh" file="visuals/neck_pitch_bridge_adapter.stl" scale=".001 .001 .001" />
+    <mesh name="neck_mid_pitch_tube_mesh" file="visuals/neck_mid_pitch_tube.stl" scale=".001 .001 .001" />
+    <mesh name="neck_mid_lower_clamp_mesh" file="visuals/neck_mid_lower_clamp.stl" scale=".001 .001 .001" />
+    <mesh name="neck_mid_upper_clamp_mesh" file="visuals/neck_mid_upper_clamp.stl" scale=".001 .001 .001" />
+    <mesh name="head_cover_mesh" file="visuals/head_cover.stl" scale=".001 .001 .001" />
+    <mesh name="head_structural_carrier_mesh" file="visuals/head_structural_carrier.stl" scale=".001 .001 .001" />
+    <mesh name="camera_edge_clip_0_mesh" file="visuals/camera_edge_clip_0.stl" scale=".001 .001 .001" />
+    <mesh name="camera_edge_clip_1_mesh" file="visuals/camera_edge_clip_1.stl" scale=".001 .001 .001" />
+    <mesh name="camera_edge_clip_2_mesh" file="visuals/camera_edge_clip_2.stl" scale=".001 .001 .001" />
+    <mesh name="upper_beak_mesh" file="visuals/upper_beak.stl" scale=".001 .001 .001" />
+    <mesh name="lower_drive_crank_front_mesh" file="visuals/lower_drive_crank_front.stl" scale=".001 .001 .001" />
+    <mesh name="lower_drive_crank_rear_mesh" file="visuals/lower_drive_crank_rear.stl" scale=".001 .001 .001" />
+    <mesh name="upper_follower_crank_front_mesh" file="visuals/upper_follower_crank_front.stl" scale=".001 .001 .001" />
+    <mesh name="upper_follower_crank_rear_mesh" file="visuals/upper_follower_crank_rear.stl" scale=".001 .001 .001" />
+    <mesh name="lower_jaw_mesh" file="visuals/lower_jaw.stl" scale=".001 .001 .001" />
+    <mesh name="upper_grip_pad_mesh" file="visuals/upper_grip_pad.stl" scale=".001 .001 .001" />
+    <mesh name="lower_compliant_grip_cartridge_mesh" file="visuals/lower_compliant_grip_cartridge.stl" scale=".001 .001 .001" />
+    <mesh name="collision_right_service_door_0" file="contacts/collision_right_service_door_0.obj" />
+    <mesh name="collision_right_service_door_1" file="contacts/collision_right_service_door_1.obj" />
+    <mesh name="collision_right_service_door_2" file="contacts/collision_right_service_door_2.obj" />
+    <mesh name="collision_right_service_door_3" file="contacts/collision_right_service_door_3.obj" />
+    <mesh name="collision_right_service_door_4" file="contacts/collision_right_service_door_4.obj" />
+    <mesh name="collision_right_service_door_5" file="contacts/collision_right_service_door_5.obj" />
+    <mesh name="collision_right_service_door_6" file="contacts/collision_right_service_door_6.obj" />
+    <mesh name="collision_right_service_door_7" file="contacts/collision_right_service_door_7.obj" />
+    <mesh name="collision_right_service_door_8" file="contacts/collision_right_service_door_8.obj" />
+    <mesh name="collision_right_service_door_9" file="contacts/collision_right_service_door_9.obj" />
+    <mesh name="collision_right_service_door_10" file="contacts/collision_right_service_door_10.obj" />
+    <mesh name="collision_right_service_door_11" file="contacts/collision_right_service_door_11.obj" />
+    <mesh name="collision_right_service_door_12" file="contacts/collision_right_service_door_12.obj" />
+    <mesh name="collision_right_service_door_13" file="contacts/collision_right_service_door_13.obj" />
+    <mesh name="collision_right_service_door_14" file="contacts/collision_right_service_door_14.obj" />
+    <mesh name="collision_right_service_door_15" file="contacts/collision_right_service_door_15.obj" />
+    <mesh name="collision_right_service_door_16" file="contacts/collision_right_service_door_16.obj" />
+    <mesh name="collision_right_service_door_17" file="contacts/collision_right_service_door_17.obj" />
+    <mesh name="collision_right_service_door_18" file="contacts/collision_right_service_door_18.obj" />
+    <mesh name="collision_right_service_door_19" file="contacts/collision_right_service_door_19.obj" />
+    <mesh name="collision_right_service_door_20" file="contacts/collision_right_service_door_20.obj" />
+    <mesh name="collision_right_service_door_21" file="contacts/collision_right_service_door_21.obj" />
+    <mesh name="collision_right_service_door_22" file="contacts/collision_right_service_door_22.obj" />
+    <mesh name="collision_right_service_door_23" file="contacts/collision_right_service_door_23.obj" />
+    <mesh name="collision_right_service_door_24" file="contacts/collision_right_service_door_24.obj" />
+    <mesh name="collision_right_service_door_25" file="contacts/collision_right_service_door_25.obj" />
+    <mesh name="collision_right_service_door_26" file="contacts/collision_right_service_door_26.obj" />
+    <mesh name="collision_right_service_door_27" file="contacts/collision_right_service_door_27.obj" />
+    <mesh name="collision_right_service_door_28" file="contacts/collision_right_service_door_28.obj" />
+    <mesh name="collision_right_service_door_29" file="contacts/collision_right_service_door_29.obj" />
+    <mesh name="collision_right_service_door_30" file="contacts/collision_right_service_door_30.obj" />
+    <mesh name="collision_right_service_door_31" file="contacts/collision_right_service_door_31.obj" />
+    <mesh name="collision_right_service_door_32" file="contacts/collision_right_service_door_32.obj" />
+    <mesh name="collision_right_service_door_33" file="contacts/collision_right_service_door_33.obj" />
+    <mesh name="collision_right_service_door_34" file="contacts/collision_right_service_door_34.obj" />
+    <mesh name="collision_right_service_door_35" file="contacts/collision_right_service_door_35.obj" />
+    <mesh name="collision_right_service_door_36" file="contacts/collision_right_service_door_36.obj" />
+    <mesh name="collision_right_service_door_37" file="contacts/collision_right_service_door_37.obj" />
+    <mesh name="collision_right_service_door_38" file="contacts/collision_right_service_door_38.obj" />
+    <mesh name="collision_right_service_door_39" file="contacts/collision_right_service_door_39.obj" />
+    <mesh name="collision_right_service_door_40" file="contacts/collision_right_service_door_40.obj" />
+    <mesh name="collision_left_service_door_0" file="contacts/collision_left_service_door_0.obj" />
+    <mesh name="collision_left_service_door_1" file="contacts/collision_left_service_door_1.obj" />
+    <mesh name="collision_left_service_door_2" file="contacts/collision_left_service_door_2.obj" />
+    <mesh name="collision_left_service_door_3" file="contacts/collision_left_service_door_3.obj" />
+    <mesh name="collision_left_service_door_4" file="contacts/collision_left_service_door_4.obj" />
+    <mesh name="collision_left_service_door_5" file="contacts/collision_left_service_door_5.obj" />
+    <mesh name="collision_left_service_door_6" file="contacts/collision_left_service_door_6.obj" />
+    <mesh name="collision_left_service_door_7" file="contacts/collision_left_service_door_7.obj" />
+    <mesh name="collision_left_service_door_8" file="contacts/collision_left_service_door_8.obj" />
+    <mesh name="collision_left_service_door_9" file="contacts/collision_left_service_door_9.obj" />
+    <mesh name="collision_left_service_door_10" file="contacts/collision_left_service_door_10.obj" />
+    <mesh name="collision_left_service_door_11" file="contacts/collision_left_service_door_11.obj" />
+    <mesh name="collision_left_service_door_12" file="contacts/collision_left_service_door_12.obj" />
+    <mesh name="collision_left_service_door_13" file="contacts/collision_left_service_door_13.obj" />
+    <mesh name="collision_left_service_door_14" file="contacts/collision_left_service_door_14.obj" />
+    <mesh name="collision_left_service_door_15" file="contacts/collision_left_service_door_15.obj" />
+    <mesh name="collision_left_service_door_16" file="contacts/collision_left_service_door_16.obj" />
+    <mesh name="collision_left_service_door_17" file="contacts/collision_left_service_door_17.obj" />
+    <mesh name="collision_left_service_door_18" file="contacts/collision_left_service_door_18.obj" />
+    <mesh name="collision_left_service_door_19" file="contacts/collision_left_service_door_19.obj" />
+    <mesh name="collision_left_service_door_20" file="contacts/collision_left_service_door_20.obj" />
+    <mesh name="collision_left_service_door_21" file="contacts/collision_left_service_door_21.obj" />
+    <mesh name="collision_left_service_door_22" file="contacts/collision_left_service_door_22.obj" />
+    <mesh name="collision_left_service_door_23" file="contacts/collision_left_service_door_23.obj" />
+    <mesh name="collision_left_service_door_24" file="contacts/collision_left_service_door_24.obj" />
+    <mesh name="collision_left_service_door_25" file="contacts/collision_left_service_door_25.obj" />
+    <mesh name="collision_left_service_door_26" file="contacts/collision_left_service_door_26.obj" />
+    <mesh name="collision_left_service_door_27" file="contacts/collision_left_service_door_27.obj" />
+    <mesh name="collision_left_service_door_28" file="contacts/collision_left_service_door_28.obj" />
+    <mesh name="collision_left_service_door_29" file="contacts/collision_left_service_door_29.obj" />
+    <mesh name="collision_left_service_door_30" file="contacts/collision_left_service_door_30.obj" />
+    <mesh name="collision_left_service_door_31" file="contacts/collision_left_service_door_31.obj" />
+    <mesh name="collision_left_service_door_32" file="contacts/collision_left_service_door_32.obj" />
+    <mesh name="collision_left_service_door_33" file="contacts/collision_left_service_door_33.obj" />
+    <mesh name="collision_left_service_door_34" file="contacts/collision_left_service_door_34.obj" />
+    <mesh name="collision_left_service_door_35" file="contacts/collision_left_service_door_35.obj" />
+    <mesh name="collision_left_service_door_36" file="contacts/collision_left_service_door_36.obj" />
+    <mesh name="collision_left_service_door_37" file="contacts/collision_left_service_door_37.obj" />
+    <mesh name="collision_left_service_door_38" file="contacts/collision_left_service_door_38.obj" />
+    <mesh name="collision_left_service_door_39" file="contacts/collision_left_service_door_39.obj" />
+    <mesh name="collision_left_service_door_40" file="contacts/collision_left_service_door_40.obj" />
+    <mesh name="collision_body_shell_front_0" file="contacts/collision_body_shell_front_0.obj" />
+    <mesh name="collision_body_shell_front_1" file="contacts/collision_body_shell_front_1.obj" />
+    <mesh name="collision_body_shell_front_2" file="contacts/collision_body_shell_front_2.obj" />
+    <mesh name="collision_body_shell_front_3" file="contacts/collision_body_shell_front_3.obj" />
+    <mesh name="collision_body_shell_front_4" file="contacts/collision_body_shell_front_4.obj" />
+    <mesh name="collision_body_shell_front_5" file="contacts/collision_body_shell_front_5.obj" />
+    <mesh name="collision_body_shell_front_6" file="contacts/collision_body_shell_front_6.obj" />
+    <mesh name="collision_body_shell_front_7" file="contacts/collision_body_shell_front_7.obj" />
+    <mesh name="collision_body_shell_front_8" file="contacts/collision_body_shell_front_8.obj" />
+    <mesh name="collision_body_shell_front_9" file="contacts/collision_body_shell_front_9.obj" />
+    <mesh name="collision_body_shell_front_10" file="contacts/collision_body_shell_front_10.obj" />
+    <mesh name="collision_body_shell_front_11" file="contacts/collision_body_shell_front_11.obj" />
+    <mesh name="collision_body_shell_front_12" file="contacts/collision_body_shell_front_12.obj" />
+    <mesh name="collision_body_shell_front_13" file="contacts/collision_body_shell_front_13.obj" />
+    <mesh name="collision_body_shell_front_14" file="contacts/collision_body_shell_front_14.obj" />
+    <mesh name="collision_body_shell_front_15" file="contacts/collision_body_shell_front_15.obj" />
+    <mesh name="collision_body_shell_front_16" file="contacts/collision_body_shell_front_16.obj" />
+    <mesh name="collision_body_shell_front_17" file="contacts/collision_body_shell_front_17.obj" />
+    <mesh name="collision_body_shell_front_18" file="contacts/collision_body_shell_front_18.obj" />
+    <mesh name="collision_body_shell_front_19" file="contacts/collision_body_shell_front_19.obj" />
+    <mesh name="collision_body_shell_front_20" file="contacts/collision_body_shell_front_20.obj" />
+    <mesh name="collision_body_shell_front_21" file="contacts/collision_body_shell_front_21.obj" />
+    <mesh name="collision_body_shell_front_22" file="contacts/collision_body_shell_front_22.obj" />
+    <mesh name="collision_body_shell_front_23" file="contacts/collision_body_shell_front_23.obj" />
+    <mesh name="collision_body_shell_front_24" file="contacts/collision_body_shell_front_24.obj" />
+    <mesh name="collision_body_shell_front_25" file="contacts/collision_body_shell_front_25.obj" />
+    <mesh name="collision_body_shell_front_26" file="contacts/collision_body_shell_front_26.obj" />
+    <mesh name="collision_body_shell_front_27" file="contacts/collision_body_shell_front_27.obj" />
+    <mesh name="collision_body_shell_front_28" file="contacts/collision_body_shell_front_28.obj" />
+    <mesh name="collision_body_shell_front_29" file="contacts/collision_body_shell_front_29.obj" />
+    <mesh name="collision_body_shell_front_30" file="contacts/collision_body_shell_front_30.obj" />
+    <mesh name="collision_body_shell_front_31" file="contacts/collision_body_shell_front_31.obj" />
+    <mesh name="collision_body_shell_front_32" file="contacts/collision_body_shell_front_32.obj" />
+    <mesh name="collision_body_shell_front_33" file="contacts/collision_body_shell_front_33.obj" />
+    <mesh name="collision_body_shell_front_34" file="contacts/collision_body_shell_front_34.obj" />
+    <mesh name="collision_body_shell_front_35" file="contacts/collision_body_shell_front_35.obj" />
+    <mesh name="collision_body_shell_front_36" file="contacts/collision_body_shell_front_36.obj" />
+    <mesh name="collision_body_shell_front_37" file="contacts/collision_body_shell_front_37.obj" />
+    <mesh name="collision_body_shell_front_38" file="contacts/collision_body_shell_front_38.obj" />
+    <mesh name="collision_body_shell_front_39" file="contacts/collision_body_shell_front_39.obj" />
+    <mesh name="collision_body_shell_front_40" file="contacts/collision_body_shell_front_40.obj" />
+    <mesh name="collision_body_shell_front_41" file="contacts/collision_body_shell_front_41.obj" />
+    <mesh name="collision_body_shell_front_42" file="contacts/collision_body_shell_front_42.obj" />
+    <mesh name="collision_body_shell_front_43" file="contacts/collision_body_shell_front_43.obj" />
+    <mesh name="collision_body_shell_front_44" file="contacts/collision_body_shell_front_44.obj" />
+    <mesh name="collision_body_shell_front_45" file="contacts/collision_body_shell_front_45.obj" />
+    <mesh name="collision_body_shell_front_46" file="contacts/collision_body_shell_front_46.obj" />
+    <mesh name="collision_body_shell_front_47" file="contacts/collision_body_shell_front_47.obj" />
+    <mesh name="collision_body_shell_front_48" file="contacts/collision_body_shell_front_48.obj" />
+    <mesh name="collision_body_shell_front_49" file="contacts/collision_body_shell_front_49.obj" />
+    <mesh name="collision_body_shell_front_50" file="contacts/collision_body_shell_front_50.obj" />
+    <mesh name="collision_body_shell_front_51" file="contacts/collision_body_shell_front_51.obj" />
+    <mesh name="collision_body_shell_front_52" file="contacts/collision_body_shell_front_52.obj" />
+    <mesh name="collision_body_shell_front_53" file="contacts/collision_body_shell_front_53.obj" />
+    <mesh name="collision_body_shell_front_54" file="contacts/collision_body_shell_front_54.obj" />
+    <mesh name="collision_body_shell_front_55" file="contacts/collision_body_shell_front_55.obj" />
+    <mesh name="collision_body_shell_front_56" file="contacts/collision_body_shell_front_56.obj" />
+    <mesh name="collision_body_shell_front_57" file="contacts/collision_body_shell_front_57.obj" />
+    <mesh name="collision_body_shell_front_58" file="contacts/collision_body_shell_front_58.obj" />
+    <mesh name="collision_body_shell_front_59" file="contacts/collision_body_shell_front_59.obj" />
+    <mesh name="collision_body_shell_front_60" file="contacts/collision_body_shell_front_60.obj" />
+    <mesh name="collision_body_shell_front_61" file="contacts/collision_body_shell_front_61.obj" />
+    <mesh name="collision_body_shell_front_62" file="contacts/collision_body_shell_front_62.obj" />
+    <mesh name="collision_body_shell_front_63" file="contacts/collision_body_shell_front_63.obj" />
+    <mesh name="collision_body_shell_front_64" file="contacts/collision_body_shell_front_64.obj" />
+    <mesh name="collision_body_shell_front_65" file="contacts/collision_body_shell_front_65.obj" />
+    <mesh name="collision_body_shell_front_66" file="contacts/collision_body_shell_front_66.obj" />
+    <mesh name="collision_body_shell_front_67" file="contacts/collision_body_shell_front_67.obj" />
+    <mesh name="collision_body_shell_front_68" file="contacts/collision_body_shell_front_68.obj" />
+    <mesh name="collision_body_shell_front_69" file="contacts/collision_body_shell_front_69.obj" />
+    <mesh name="collision_body_shell_front_70" file="contacts/collision_body_shell_front_70.obj" />
+    <mesh name="collision_body_shell_front_71" file="contacts/collision_body_shell_front_71.obj" />
+    <mesh name="collision_body_shell_front_72" file="contacts/collision_body_shell_front_72.obj" />
+    <mesh name="collision_body_shell_front_73" file="contacts/collision_body_shell_front_73.obj" />
+    <mesh name="collision_body_shell_front_74" file="contacts/collision_body_shell_front_74.obj" />
+    <mesh name="collision_body_shell_front_75" file="contacts/collision_body_shell_front_75.obj" />
+    <mesh name="collision_body_shell_front_76" file="contacts/collision_body_shell_front_76.obj" />
+    <mesh name="collision_body_shell_front_77" file="contacts/collision_body_shell_front_77.obj" />
+    <mesh name="collision_body_shell_front_78" file="contacts/collision_body_shell_front_78.obj" />
+    <mesh name="collision_body_shell_front_79" file="contacts/collision_body_shell_front_79.obj" />
+    <mesh name="collision_body_shell_front_80" file="contacts/collision_body_shell_front_80.obj" />
+    <mesh name="collision_body_shell_front_81" file="contacts/collision_body_shell_front_81.obj" />
+    <mesh name="collision_body_shell_front_82" file="contacts/collision_body_shell_front_82.obj" />
+    <mesh name="collision_body_shell_front_83" file="contacts/collision_body_shell_front_83.obj" />
+    <mesh name="collision_body_shell_front_84" file="contacts/collision_body_shell_front_84.obj" />
+    <mesh name="collision_body_shell_front_85" file="contacts/collision_body_shell_front_85.obj" />
+    <mesh name="collision_body_shell_front_86" file="contacts/collision_body_shell_front_86.obj" />
+    <mesh name="collision_body_shell_front_87" file="contacts/collision_body_shell_front_87.obj" />
+    <mesh name="collision_body_shell_front_88" file="contacts/collision_body_shell_front_88.obj" />
+    <mesh name="collision_body_shell_front_89" file="contacts/collision_body_shell_front_89.obj" />
+    <mesh name="collision_body_shell_front_90" file="contacts/collision_body_shell_front_90.obj" />
+    <mesh name="collision_body_shell_front_91" file="contacts/collision_body_shell_front_91.obj" />
+    <mesh name="collision_body_shell_front_92" file="contacts/collision_body_shell_front_92.obj" />
+    <mesh name="collision_body_shell_front_93" file="contacts/collision_body_shell_front_93.obj" />
+    <mesh name="collision_body_shell_front_94" file="contacts/collision_body_shell_front_94.obj" />
+    <mesh name="collision_body_shell_front_95" file="contacts/collision_body_shell_front_95.obj" />
+    <mesh name="collision_body_shell_front_96" file="contacts/collision_body_shell_front_96.obj" />
+    <mesh name="collision_body_shell_front_97" file="contacts/collision_body_shell_front_97.obj" />
+    <mesh name="collision_body_shell_front_98" file="contacts/collision_body_shell_front_98.obj" />
+    <mesh name="collision_body_shell_front_99" file="contacts/collision_body_shell_front_99.obj" />
+    <mesh name="collision_body_shell_front_100" file="contacts/collision_body_shell_front_100.obj" />
+    <mesh name="collision_body_shell_front_101" file="contacts/collision_body_shell_front_101.obj" />
+    <mesh name="collision_body_shell_front_102" file="contacts/collision_body_shell_front_102.obj" />
+    <mesh name="collision_body_shell_front_103" file="contacts/collision_body_shell_front_103.obj" />
+    <mesh name="collision_body_shell_front_104" file="contacts/collision_body_shell_front_104.obj" />
+    <mesh name="collision_body_shell_front_105" file="contacts/collision_body_shell_front_105.obj" />
+    <mesh name="collision_body_shell_front_106" file="contacts/collision_body_shell_front_106.obj" />
+    <mesh name="collision_body_shell_front_107" file="contacts/collision_body_shell_front_107.obj" />
+    <mesh name="collision_body_shell_front_108" file="contacts/collision_body_shell_front_108.obj" />
+    <mesh name="collision_body_shell_front_109" file="contacts/collision_body_shell_front_109.obj" />
+    <mesh name="collision_body_shell_front_110" file="contacts/collision_body_shell_front_110.obj" />
+    <mesh name="collision_body_shell_front_111" file="contacts/collision_body_shell_front_111.obj" />
+    <mesh name="collision_body_shell_front_112" file="contacts/collision_body_shell_front_112.obj" />
+    <mesh name="collision_body_shell_front_113" file="contacts/collision_body_shell_front_113.obj" />
+    <mesh name="collision_body_shell_front_114" file="contacts/collision_body_shell_front_114.obj" />
+    <mesh name="collision_body_shell_front_115" file="contacts/collision_body_shell_front_115.obj" />
+    <mesh name="collision_body_shell_front_116" file="contacts/collision_body_shell_front_116.obj" />
+    <mesh name="collision_body_shell_front_117" file="contacts/collision_body_shell_front_117.obj" />
+    <mesh name="collision_body_shell_front_118" file="contacts/collision_body_shell_front_118.obj" />
+    <mesh name="collision_body_shell_front_119" file="contacts/collision_body_shell_front_119.obj" />
+    <mesh name="collision_body_shell_front_120" file="contacts/collision_body_shell_front_120.obj" />
+    <mesh name="collision_body_shell_front_121" file="contacts/collision_body_shell_front_121.obj" />
+    <mesh name="collision_body_shell_front_122" file="contacts/collision_body_shell_front_122.obj" />
+    <mesh name="collision_body_shell_front_123" file="contacts/collision_body_shell_front_123.obj" />
+    <mesh name="collision_body_shell_front_124" file="contacts/collision_body_shell_front_124.obj" />
+    <mesh name="collision_body_shell_front_125" file="contacts/collision_body_shell_front_125.obj" />
+    <mesh name="collision_body_shell_front_126" file="contacts/collision_body_shell_front_126.obj" />
+    <mesh name="collision_body_shell_front_127" file="contacts/collision_body_shell_front_127.obj" />
+    <mesh name="collision_body_shell_front_128" file="contacts/collision_body_shell_front_128.obj" />
+    <mesh name="collision_body_shell_front_129" file="contacts/collision_body_shell_front_129.obj" />
+    <mesh name="collision_body_shell_front_130" file="contacts/collision_body_shell_front_130.obj" />
+    <mesh name="collision_body_shell_front_131" file="contacts/collision_body_shell_front_131.obj" />
+    <mesh name="collision_body_shell_front_132" file="contacts/collision_body_shell_front_132.obj" />
+    <mesh name="collision_body_shell_front_133" file="contacts/collision_body_shell_front_133.obj" />
+    <mesh name="collision_body_shell_front_134" file="contacts/collision_body_shell_front_134.obj" />
+    <mesh name="collision_body_shell_front_135" file="contacts/collision_body_shell_front_135.obj" />
+    <mesh name="collision_body_shell_front_136" file="contacts/collision_body_shell_front_136.obj" />
+    <mesh name="collision_body_shell_front_137" file="contacts/collision_body_shell_front_137.obj" />
+    <mesh name="collision_body_shell_front_138" file="contacts/collision_body_shell_front_138.obj" />
+    <mesh name="collision_body_shell_rear_0" file="contacts/collision_body_shell_rear_0.obj" />
+    <mesh name="collision_body_shell_rear_1" file="contacts/collision_body_shell_rear_1.obj" />
+    <mesh name="collision_body_shell_rear_2" file="contacts/collision_body_shell_rear_2.obj" />
+    <mesh name="collision_body_shell_rear_3" file="contacts/collision_body_shell_rear_3.obj" />
+    <mesh name="collision_body_shell_rear_4" file="contacts/collision_body_shell_rear_4.obj" />
+    <mesh name="collision_body_shell_rear_5" file="contacts/collision_body_shell_rear_5.obj" />
+    <mesh name="collision_body_shell_rear_6" file="contacts/collision_body_shell_rear_6.obj" />
+    <mesh name="collision_body_shell_rear_7" file="contacts/collision_body_shell_rear_7.obj" />
+    <mesh name="collision_body_shell_rear_8" file="contacts/collision_body_shell_rear_8.obj" />
+    <mesh name="collision_body_shell_rear_9" file="contacts/collision_body_shell_rear_9.obj" />
+    <mesh name="collision_body_shell_rear_10" file="contacts/collision_body_shell_rear_10.obj" />
+    <mesh name="collision_body_shell_rear_11" file="contacts/collision_body_shell_rear_11.obj" />
+    <mesh name="collision_body_shell_rear_12" file="contacts/collision_body_shell_rear_12.obj" />
+    <mesh name="collision_body_shell_rear_13" file="contacts/collision_body_shell_rear_13.obj" />
+    <mesh name="collision_body_shell_rear_14" file="contacts/collision_body_shell_rear_14.obj" />
+    <mesh name="collision_body_shell_rear_15" file="contacts/collision_body_shell_rear_15.obj" />
+    <mesh name="collision_body_shell_rear_16" file="contacts/collision_body_shell_rear_16.obj" />
+    <mesh name="collision_body_shell_rear_17" file="contacts/collision_body_shell_rear_17.obj" />
+    <mesh name="collision_body_shell_rear_18" file="contacts/collision_body_shell_rear_18.obj" />
+    <mesh name="collision_body_shell_rear_19" file="contacts/collision_body_shell_rear_19.obj" />
+    <mesh name="collision_body_shell_rear_20" file="contacts/collision_body_shell_rear_20.obj" />
+    <mesh name="collision_body_shell_rear_21" file="contacts/collision_body_shell_rear_21.obj" />
+    <mesh name="collision_body_shell_rear_22" file="contacts/collision_body_shell_rear_22.obj" />
+    <mesh name="collision_body_shell_rear_23" file="contacts/collision_body_shell_rear_23.obj" />
+    <mesh name="collision_body_shell_rear_24" file="contacts/collision_body_shell_rear_24.obj" />
+    <mesh name="collision_body_shell_rear_25" file="contacts/collision_body_shell_rear_25.obj" />
+    <mesh name="collision_body_shell_rear_26" file="contacts/collision_body_shell_rear_26.obj" />
+    <mesh name="collision_body_shell_rear_27" file="contacts/collision_body_shell_rear_27.obj" />
+    <mesh name="collision_body_shell_rear_28" file="contacts/collision_body_shell_rear_28.obj" />
+    <mesh name="collision_body_shell_rear_29" file="contacts/collision_body_shell_rear_29.obj" />
+    <mesh name="collision_body_shell_rear_30" file="contacts/collision_body_shell_rear_30.obj" />
+    <mesh name="collision_body_shell_rear_31" file="contacts/collision_body_shell_rear_31.obj" />
+    <mesh name="collision_body_shell_rear_32" file="contacts/collision_body_shell_rear_32.obj" />
+    <mesh name="collision_body_shell_rear_33" file="contacts/collision_body_shell_rear_33.obj" />
+    <mesh name="collision_body_shell_rear_34" file="contacts/collision_body_shell_rear_34.obj" />
+    <mesh name="collision_body_shell_rear_35" file="contacts/collision_body_shell_rear_35.obj" />
+    <mesh name="collision_body_shell_rear_36" file="contacts/collision_body_shell_rear_36.obj" />
+    <mesh name="collision_body_shell_rear_37" file="contacts/collision_body_shell_rear_37.obj" />
+    <mesh name="collision_body_shell_rear_38" file="contacts/collision_body_shell_rear_38.obj" />
+    <mesh name="collision_body_shell_rear_39" file="contacts/collision_body_shell_rear_39.obj" />
+    <mesh name="collision_body_shell_rear_40" file="contacts/collision_body_shell_rear_40.obj" />
+    <mesh name="collision_body_shell_rear_41" file="contacts/collision_body_shell_rear_41.obj" />
+    <mesh name="collision_body_shell_rear_42" file="contacts/collision_body_shell_rear_42.obj" />
+    <mesh name="collision_body_shell_rear_43" file="contacts/collision_body_shell_rear_43.obj" />
+    <mesh name="collision_body_shell_rear_44" file="contacts/collision_body_shell_rear_44.obj" />
+    <mesh name="collision_body_shell_rear_45" file="contacts/collision_body_shell_rear_45.obj" />
+    <mesh name="collision_body_shell_rear_46" file="contacts/collision_body_shell_rear_46.obj" />
+    <mesh name="collision_body_shell_rear_47" file="contacts/collision_body_shell_rear_47.obj" />
+    <mesh name="collision_body_shell_rear_48" file="contacts/collision_body_shell_rear_48.obj" />
+    <mesh name="collision_body_shell_rear_49" file="contacts/collision_body_shell_rear_49.obj" />
+    <mesh name="collision_body_shell_rear_50" file="contacts/collision_body_shell_rear_50.obj" />
+    <mesh name="collision_body_shell_rear_51" file="contacts/collision_body_shell_rear_51.obj" />
+    <mesh name="collision_body_shell_rear_52" file="contacts/collision_body_shell_rear_52.obj" />
+    <mesh name="collision_body_shell_rear_53" file="contacts/collision_body_shell_rear_53.obj" />
+    <mesh name="collision_body_shell_rear_54" file="contacts/collision_body_shell_rear_54.obj" />
+    <mesh name="collision_body_shell_rear_55" file="contacts/collision_body_shell_rear_55.obj" />
+    <mesh name="collision_body_shell_rear_56" file="contacts/collision_body_shell_rear_56.obj" />
+    <mesh name="collision_body_shell_rear_57" file="contacts/collision_body_shell_rear_57.obj" />
+    <mesh name="collision_body_shell_rear_58" file="contacts/collision_body_shell_rear_58.obj" />
+    <mesh name="collision_body_shell_rear_59" file="contacts/collision_body_shell_rear_59.obj" />
+    <mesh name="collision_body_shell_rear_60" file="contacts/collision_body_shell_rear_60.obj" />
+    <mesh name="collision_body_shell_rear_61" file="contacts/collision_body_shell_rear_61.obj" />
+    <mesh name="collision_body_shell_rear_62" file="contacts/collision_body_shell_rear_62.obj" />
+    <mesh name="collision_body_shell_rear_63" file="contacts/collision_body_shell_rear_63.obj" />
+    <mesh name="collision_body_shell_rear_64" file="contacts/collision_body_shell_rear_64.obj" />
+    <mesh name="collision_body_shell_rear_65" file="contacts/collision_body_shell_rear_65.obj" />
+    <mesh name="collision_body_shell_rear_66" file="contacts/collision_body_shell_rear_66.obj" />
+    <mesh name="collision_body_shell_rear_67" file="contacts/collision_body_shell_rear_67.obj" />
+    <mesh name="collision_body_shell_rear_68" file="contacts/collision_body_shell_rear_68.obj" />
+    <mesh name="collision_body_shell_rear_69" file="contacts/collision_body_shell_rear_69.obj" />
+    <mesh name="collision_body_shell_rear_70" file="contacts/collision_body_shell_rear_70.obj" />
+    <mesh name="collision_body_shell_rear_71" file="contacts/collision_body_shell_rear_71.obj" />
+    <mesh name="collision_body_shell_rear_72" file="contacts/collision_body_shell_rear_72.obj" />
+    <mesh name="collision_body_shell_rear_73" file="contacts/collision_body_shell_rear_73.obj" />
+    <mesh name="collision_body_shell_rear_74" file="contacts/collision_body_shell_rear_74.obj" />
+    <mesh name="collision_body_shell_rear_75" file="contacts/collision_body_shell_rear_75.obj" />
+    <mesh name="collision_body_shell_rear_76" file="contacts/collision_body_shell_rear_76.obj" />
+    <mesh name="collision_body_shell_rear_77" file="contacts/collision_body_shell_rear_77.obj" />
+    <mesh name="collision_body_shell_rear_78" file="contacts/collision_body_shell_rear_78.obj" />
+    <mesh name="collision_body_shell_rear_79" file="contacts/collision_body_shell_rear_79.obj" />
+    <mesh name="collision_body_shell_rear_80" file="contacts/collision_body_shell_rear_80.obj" />
+    <mesh name="collision_body_shell_rear_81" file="contacts/collision_body_shell_rear_81.obj" />
+    <mesh name="collision_body_shell_rear_82" file="contacts/collision_body_shell_rear_82.obj" />
+    <mesh name="collision_body_shell_rear_83" file="contacts/collision_body_shell_rear_83.obj" />
+    <mesh name="collision_body_shell_rear_84" file="contacts/collision_body_shell_rear_84.obj" />
+    <mesh name="collision_body_shell_rear_85" file="contacts/collision_body_shell_rear_85.obj" />
+    <mesh name="collision_body_shell_rear_86" file="contacts/collision_body_shell_rear_86.obj" />
+    <mesh name="collision_body_shell_rear_87" file="contacts/collision_body_shell_rear_87.obj" />
+    <mesh name="collision_body_shell_rear_88" file="contacts/collision_body_shell_rear_88.obj" />
+    <mesh name="collision_body_shell_rear_89" file="contacts/collision_body_shell_rear_89.obj" />
+    <mesh name="collision_body_shell_rear_90" file="contacts/collision_body_shell_rear_90.obj" />
+    <mesh name="collision_body_shell_rear_91" file="contacts/collision_body_shell_rear_91.obj" />
+    <mesh name="collision_body_shell_rear_92" file="contacts/collision_body_shell_rear_92.obj" />
+    <mesh name="collision_body_shell_rear_93" file="contacts/collision_body_shell_rear_93.obj" />
+    <mesh name="collision_body_shell_rear_94" file="contacts/collision_body_shell_rear_94.obj" />
+    <mesh name="collision_body_shell_rear_95" file="contacts/collision_body_shell_rear_95.obj" />
+    <mesh name="collision_body_shell_rear_96" file="contacts/collision_body_shell_rear_96.obj" />
+    <mesh name="collision_body_shell_rear_97" file="contacts/collision_body_shell_rear_97.obj" />
+    <mesh name="collision_body_shell_rear_98" file="contacts/collision_body_shell_rear_98.obj" />
+    <mesh name="collision_body_shell_rear_99" file="contacts/collision_body_shell_rear_99.obj" />
+    <mesh name="collision_body_shell_rear_100" file="contacts/collision_body_shell_rear_100.obj" />
+    <mesh name="collision_body_shell_rear_101" file="contacts/collision_body_shell_rear_101.obj" />
+    <mesh name="collision_body_shell_rear_102" file="contacts/collision_body_shell_rear_102.obj" />
+    <mesh name="collision_body_shell_rear_103" file="contacts/collision_body_shell_rear_103.obj" />
+    <mesh name="collision_body_shell_rear_104" file="contacts/collision_body_shell_rear_104.obj" />
+    <mesh name="collision_body_shell_rear_105" file="contacts/collision_body_shell_rear_105.obj" />
+    <mesh name="collision_body_shell_rear_106" file="contacts/collision_body_shell_rear_106.obj" />
+    <mesh name="collision_body_shell_rear_107" file="contacts/collision_body_shell_rear_107.obj" />
+    <mesh name="collision_body_shell_rear_108" file="contacts/collision_body_shell_rear_108.obj" />
+    <mesh name="collision_body_shell_rear_109" file="contacts/collision_body_shell_rear_109.obj" />
+    <mesh name="collision_body_shell_rear_110" file="contacts/collision_body_shell_rear_110.obj" />
+    <mesh name="collision_body_shell_rear_111" file="contacts/collision_body_shell_rear_111.obj" />
+    <mesh name="collision_body_shell_rear_112" file="contacts/collision_body_shell_rear_112.obj" />
+    <mesh name="collision_body_shell_rear_113" file="contacts/collision_body_shell_rear_113.obj" />
+    <mesh name="collision_body_shell_rear_114" file="contacts/collision_body_shell_rear_114.obj" />
+    <mesh name="collision_body_shell_rear_115" file="contacts/collision_body_shell_rear_115.obj" />
+    <mesh name="collision_body_shell_rear_116" file="contacts/collision_body_shell_rear_116.obj" />
+    <mesh name="collision_body_shell_rear_117" file="contacts/collision_body_shell_rear_117.obj" />
+    <mesh name="collision_body_shell_rear_118" file="contacts/collision_body_shell_rear_118.obj" />
+    <mesh name="collision_body_shell_rear_119" file="contacts/collision_body_shell_rear_119.obj" />
+    <mesh name="collision_body_shell_rear_120" file="contacts/collision_body_shell_rear_120.obj" />
+    <mesh name="collision_body_shell_rear_121" file="contacts/collision_body_shell_rear_121.obj" />
+    <mesh name="collision_body_shell_rear_122" file="contacts/collision_body_shell_rear_122.obj" />
+    <mesh name="collision_body_shell_rear_123" file="contacts/collision_body_shell_rear_123.obj" />
+    <mesh name="collision_body_shell_rear_124" file="contacts/collision_body_shell_rear_124.obj" />
+    <mesh name="collision_body_shell_rear_125" file="contacts/collision_body_shell_rear_125.obj" />
+    <mesh name="collision_body_shell_rear_126" file="contacts/collision_body_shell_rear_126.obj" />
+    <mesh name="collision_body_shell_rear_127" file="contacts/collision_body_shell_rear_127.obj" />
+    <mesh name="collision_body_shell_rear_128" file="contacts/collision_body_shell_rear_128.obj" />
+    <mesh name="collision_body_shell_rear_129" file="contacts/collision_body_shell_rear_129.obj" />
+    <mesh name="collision_body_shell_rear_130" file="contacts/collision_body_shell_rear_130.obj" />
+    <mesh name="collision_body_shell_rear_131" file="contacts/collision_body_shell_rear_131.obj" />
+    <mesh name="collision_body_shell_rear_132" file="contacts/collision_body_shell_rear_132.obj" />
+    <mesh name="collision_body_shell_rear_133" file="contacts/collision_body_shell_rear_133.obj" />
+    <mesh name="collision_body_shell_rear_134" file="contacts/collision_body_shell_rear_134.obj" />
+    <mesh name="collision_body_shell_rear_135" file="contacts/collision_body_shell_rear_135.obj" />
+    <mesh name="collision_body_shell_rear_136" file="contacts/collision_body_shell_rear_136.obj" />
+    <mesh name="collision_body_shell_rear_137" file="contacts/collision_body_shell_rear_137.obj" />
+    <mesh name="collision_body_shell_rear_138" file="contacts/collision_body_shell_rear_138.obj" />
+    <mesh name="collision_body_shell_rear_139" file="contacts/collision_body_shell_rear_139.obj" />
+    <mesh name="collision_body_shell_rear_140" file="contacts/collision_body_shell_rear_140.obj" />
+    <mesh name="collision_body_shell_rear_141" file="contacts/collision_body_shell_rear_141.obj" />
+    <mesh name="collision_body_shell_rear_142" file="contacts/collision_body_shell_rear_142.obj" />
+    <mesh name="collision_body_shell_rear_143" file="contacts/collision_body_shell_rear_143.obj" />
+    <mesh name="collision_body_shell_rear_144" file="contacts/collision_body_shell_rear_144.obj" />
+    <mesh name="collision_body_shell_rear_145" file="contacts/collision_body_shell_rear_145.obj" />
+    <mesh name="collision_body_shell_rear_146" file="contacts/collision_body_shell_rear_146.obj" />
+    <mesh name="collision_body_shell_rear_147" file="contacts/collision_body_shell_rear_147.obj" />
+    <mesh name="collision_body_shell_rear_148" file="contacts/collision_body_shell_rear_148.obj" />
+    <mesh name="collision_body_shell_rear_149" file="contacts/collision_body_shell_rear_149.obj" />
+    <mesh name="collision_body_shell_rear_150" file="contacts/collision_body_shell_rear_150.obj" />
+    <mesh name="collision_body_shell_rear_151" file="contacts/collision_body_shell_rear_151.obj" />
+    <mesh name="collision_body_shell_rear_152" file="contacts/collision_body_shell_rear_152.obj" />
+    <mesh name="collision_body_shell_rear_153" file="contacts/collision_body_shell_rear_153.obj" />
+    <mesh name="collision_body_shell_rear_154" file="contacts/collision_body_shell_rear_154.obj" />
+  </asset>
+</mujoco>

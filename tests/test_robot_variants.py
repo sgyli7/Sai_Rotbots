@@ -11,7 +11,7 @@ ROOT=Path(__file__).resolve().parents[1]
 
 
 def test_preserved_001_and_removed_002_mechanism():
-    assert set(robot_catalog())=={'Sai_Agent_001','Sai_Agent_002'}
+    assert {'Sai_Agent_001','Sai_Agent_002'} <= set(robot_catalog())
     a=json.loads((model_root('Sai_Agent_001')/'full/robot.json').read_text())
     b=json.loads((model_root('Sai_Agent_002')/'full/robot.json').read_text())
     assert a['robot_id']=='Sai_Agent_001' and a['cargo']['slider_stroke_m']==.067

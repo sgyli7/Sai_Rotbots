@@ -1,0 +1,115 @@
+{
+  "version": "goose_rc2_v2",
+  "units": "SI",
+  "frame": "x_forward_y_left_z_up",
+  "quaternion_order": "wxyz",
+  "control_dt_s": 0.02,
+  "torque_update_dt_s": 0.005,
+  "observation_size": 53,
+  "action_size": 10,
+  "action_reference_pose": "standing",
+  "action_position_scale_rad": 0.3,
+  "action_joint_names": [
+    "left_hip_yaw",
+    "left_hip_roll",
+    "left_hip_pitch",
+    "left_knee_pitch",
+    "left_ankle_pitch",
+    "right_hip_yaw",
+    "right_hip_roll",
+    "right_hip_pitch",
+    "right_knee_pitch",
+    "right_ankle_pitch"
+  ],
+  "encoder_joint_names": [
+    "left_hip_yaw",
+    "left_hip_roll",
+    "left_hip_pitch",
+    "left_knee_pitch",
+    "left_ankle_pitch",
+    "right_hip_yaw",
+    "right_hip_roll",
+    "right_hip_pitch",
+    "right_knee_pitch",
+    "right_ankle_pitch",
+    "neck_yaw",
+    "neck_pitch",
+    "neck_mid_pitch",
+    "head_pitch",
+    "head_roll",
+    "beak_drive"
+  ],
+  "observation_fields": [
+    {
+      "name": "gyro_body_scaled",
+      "size": 3,
+      "scale": 0.25
+    },
+    {
+      "name": "gravity_body_unit",
+      "size": 3
+    },
+    {
+      "name": "vx_vy_yawrate_command",
+      "size": 3
+    },
+    {
+      "name": "encoder_position_minus_home",
+      "size": 16
+    },
+    {
+      "name": "encoder_velocity_scaled",
+      "size": 16,
+      "scale": 0.05
+    },
+    {
+      "name": "previous_leg_action",
+      "size": 10
+    },
+    {
+      "name": "sin_cos_gait_phase",
+      "size": 2
+    }
+  ],
+  "separate_neck_beak_control": true,
+  "privileged_observations": false,
+  "policy_status": "experimental_no_walking_acceptance",
+  "algorithm": "RSL PPO",
+  "rsl_version": "5.0.1",
+  "seed": 20260928,
+  "iterations": 2,
+  "envs": 2,
+  "horizon": 16,
+  "device": "cpu",
+  "elapsed_s": 2.8307171009946615,
+  "environment_steps": 64,
+  "failures_during_training": 0,
+  "mean_training_reward": 2.258658654987812,
+  "model_sha256": "07d4209a5a7b9322a04b9cdb62694a69cf35c97716c262909d21f039599c4cb0",
+  "spec_sha256": "c3b9f885ebbe854c47a3f0dbecdbef190b7fcb39f3b412c980561e3c838be62e",
+  "policy_sha256": "8156da765d89b084cd0d38b9a457e25fcc9d4a610971589a2338bf0557594f12",
+  "source_hashes": {
+    "scripts/training/train_goose_rsl.py": "0f98fbcf01e6334c48aa96e442fa8713904e30fc78c4cb00ab9ae2229ad26806",
+    "src/sai_agent/goose/audio.py": "e2b3502a48e857489cf23d00447dc75240cd52afbe2fe19a562199e0c740e416",
+    "src/sai_agent/goose/behavior.py": "4b2222d2a130e932d9a95b73bea341bb13e85559fd80be69f29a7da05445c574",
+    "src/sai_agent/goose/__init__.py": "6b0408c4679b16918c34e6724c4320cd6562f9b650dc8220e889e4cd12d2d7a1",
+    "src/sai_agent/goose/runtime.py": "2c9357d7a3b3f91f90e8aded139e0bbc08442d3d7592e3d7d9d7f08d2b3e3a97",
+    "src/sai_agent/goose/locomotion.py": "753e9ed44f092a51639c6822246852603120aeb84ab75ba64a6883965fcedafe",
+    "src/sai_agent/goose/imu.py": "6d1d52b8b6fe8a9d80be33dfd75c5747a0e862994253be356d6429075d78a151",
+    "src/sai_agent/goose/vision.py": "e135a41ecb817b6af705848b7afb8c1ac18434b52e43c063e8b74800f1d3777c",
+    "src/sai_agent/goose/rigid.py": "ae19f1888ea501735e1ec726e0347f094341671b1f7939776e66ac5a21ffbaab",
+    "src/sai_agent/goose/spec.py": "b3e5a2cf3e08737d52807c719c403b574992342030cfa6429e3a12ff57952617",
+    "src/sai_agent/goose/hardware.py": "2604845b5469cee83fabf520d107e2b39eabc0e8fd8b081b918e2eac3ec3189a",
+    "src/sai_agent/goose/collision.py": "be8444e78552526c201de90145028e300a9001d07e507ebe358da51f8d7a9f9b",
+    "src/sai_agent/goose/rsl.py": "1d3fa6a6d5446323c8a053ebfee67df904e9856ed71d9d0e242bf6d803dc64c7",
+    "src/sai_agent/goose/protocol.py": "288269b39cd64d32c9da6f56caeb048fd722c7cbf33207f5f85ce528e804b299",
+    "src/sai_agent/goose/control.py": "e144c51c0cc94be64f1e15ad355cb14c280a31fb603cc1b505a56427b431de0a"
+  },
+  "onnx_parity_max_absolute_error": 1.6391277313232422e-07,
+  "finite_training_and_export_pass": true,
+  "full_engineering_acceptance": false,
+  "root_free": true,
+  "external_root_support": false,
+  "policy_privileged_state": false,
+  "reward_privileged_state": true
+}
