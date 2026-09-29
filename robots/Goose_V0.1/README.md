@@ -1,6 +1,10 @@
 # Goose_V0.1 — 工程与原始资料入口
 
+执行节奏：[整机里程碑与 Sai_Lab 交接门槛](design/hardware_milestones.md)。当前先收敛大结构，再交付训练基线，制造细节随后完善。
+
 硬件主线：[已确认外观到完整硬件交付](design/accepted_hardware_execution.md)，包含交付证明要求和同版质量／颈部负载初筛。
+
+最新硬件增量：[脚底分层候选与嘴部传动筛查](design/foot_support_and_beak_transmission.md)；保留接地轮廓、增加金属板毛坯，条件减重约 280 g，固定接口尚未完成。
 
 当前已确认外观入口：[饱满机身／大眼／流线鹅掌候选](design/fuller_exterior_review.md)。按最新三条反馈扩大机身并检查八组模块预留，恢复大眼表达、调整脚掌；**用户已确认这一阶段外观并授权上传 GitHub**；进入同版硬件落地，物理和制造仍未通过。
 
