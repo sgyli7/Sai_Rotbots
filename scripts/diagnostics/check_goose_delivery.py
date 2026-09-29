@@ -4,6 +4,7 @@ This checks packaging integrity only; it cannot approve manufacturing or behavio
 """
 from __future__ import annotations
 
+import argparse
 import csv
 import hashlib
 import json
@@ -30,6 +31,9 @@ def local_target(source: Path, raw: str) -> Path | None:
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--output', type=Path, help='Write a new audit without overwriting the historical RC2 record')
+    args = parser.parse_args()
     root = resource_root(); robot = root / 'robots/Goose_V0.1'
     archive = root / 'robots/Goose/goose_v0_1_workspace_handoff.zip'
     imported = robot / 'evidence/workspace_import_check.json'
@@ -120,7 +124,7 @@ def main():
         'bom_purchase_rows': len(bom_csv), 'bom_workbook_rows': workbook_rows,
         'checks': checks, 'pass': all(checks.values()),
     }
-    output = robot / 'evidence/delivery_integrity_rc2.json'
+    output = args.output or robot / 'evidence/delivery_integrity_rc2.json'
     output.write_text(json.dumps(result, indent=2, ensure_ascii=False) + '\n')
     print(json.dumps(result, indent=2, ensure_ascii=False))
     return 0 if result['pass'] else 2

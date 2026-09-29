@@ -1,5 +1,7 @@
 # Goose_V0.1 — 工程与原始资料入口
 
+第一阶段交接：[18 轴结构与物理参数包](design/stage_one_parameter_handoff.md)。**约 8.62 kg、MJCF + URDF + 逐体惯量 + 统一 SI 契约 + PPO 入口已提供，可启动初训；硬件硬冻结尚未通过。** 嘴持续输出、电源配套和低位拾取控制的未决项与修改边界均在交接页列明。旧 16 轴 RC2 资料不能作为本版训练输入。
+
 执行节奏：[整机里程碑与 Sai_Lab 交接门槛](design/hardware_milestones.md)。当前先收敛大结构，再交付训练基线，制造细节随后完善。
 
 硬件主线：[已确认外观到完整硬件交付](design/accepted_hardware_execution.md)，包含交付证明要求和同版质量／颈部负载初筛。
@@ -16,11 +18,11 @@
 
 本目录保留了交接包中的图片、文档、工作簿和 CSV；包内旧方案仍可完整查阅。**当前工程候选**按用户后来确认的目标推进：室内平地双足鹅、游戏般的好奇和捣蛋感、叼起与拖拽同等重要、简约手动翼形检修门、鹅叫和头颈动作。所有设计须同时满足外观方向与可制造、可运行。概念图不是尺寸或性能依据。
 
-**当前状态：fuller 外观已获用户确认；旧 RC2 外观曾被否决，其物理结果不适用于新版。制造和采购均未放行。** 原交接包的 [B 步行鹅](design/concepts/history/walker_b_selected_reference.png) 及用户再次指定的 [R2 闭嘴尖嘴](design/concepts/r2_pointed_beak_closed_reference.jpg)、[R2 平行张嘴](design/concepts/r2_pointed_beak_parallel_open_reference.jpg) 是历史外观基线；用户随后允许按反馈与审美重新设计，最新铰接嘴候选优先。旧 RC2 虽已有可编辑 CAD 源、STEP/STL、MuJoCo 模型、统一 SI 控制/训练接口和 Godot/Jolt 接收器，但[实际外形](design/exterior_review.md)严重偏离原图；旧几何和对应的静态试验不能作为新版放行证据。初版缩壳试验曾让嘴代替双脚撑地；[短鞋与前移膝轴候选](design/forward_knee_trade_study.md)找到无物体的双脚低位保持。[小机箱与前颈够地候选](design/r2_compact_front_reach_review.md)把视觉机箱收至 `280×190×180 mm`；随后[同版尖嘴修正](design/r2_pointed_bill_mechanism_gate.md)消除了原视觉上下喙壳的实体穿插，并按 R2 四连杆的前移轨迹张嘴。修正后的简化模型通过指定坐姿 50 g 等效力保持；它仍未复刻原图、夹住物体、单脚行走或完成可装配结构。[MicroDuck Max Pro 对照](design/microduck_max_pro_baseline.md)明确了可沿用的双足方法和 Goose 必须新增的腿脚机动、真实夹取与拖拽能力；18 主动轴目前只是下一版候选，旧 RC2 规格仍是 16 轴历史模型。UnitySim2Sim、BevySim2Sim 仍应从引擎无关的 SI 契约适配，尚未实现或验证。
+**当前状态：fuller 外观已获用户确认；旧 RC2 外观曾被否决，其物理结果不适用于新版。制造和采购均未放行。** 原交接包的 [B 步行鹅](design/concepts/history/walker_b_selected_reference.png) 及用户再次指定的 [R2 闭嘴尖嘴](design/concepts/r2_pointed_beak_closed_reference.jpg)、[R2 平行张嘴](design/concepts/r2_pointed_beak_parallel_open_reference.jpg) 是历史外观基线；用户随后允许按反馈与审美重新设计，最新铰接嘴候选优先。旧 RC2 虽已有可编辑 CAD 源、STEP/STL、MuJoCo 模型、统一 SI 控制/训练接口和 Godot/Jolt 接收器，但[实际外形](design/exterior_review.md)严重偏离原图；旧几何和对应的静态试验不能作为新版放行证据。初版缩壳试验曾让嘴代替双脚撑地；[短鞋与前移膝轴候选](design/forward_knee_trade_study.md)找到无物体的双脚低位保持。[小机箱与前颈够地候选](design/r2_compact_front_reach_review.md)把视觉机箱收至 `280×190×180 mm`；随后[同版尖嘴修正](design/r2_pointed_bill_mechanism_gate.md)消除了原视觉上下喙壳的实体穿插，并按 R2 四连杆的前移轨迹张嘴。修正后的简化模型通过指定坐姿 50 g 等效力保持；它仍未复刻原图、夹住物体、单脚行走或完成可装配结构。[MicroDuck Max Pro 对照](design/microduck_max_pro_baseline.md)明确了可沿用的双足方法和 Goose 必须新增的腿脚机动、真实夹取与拖拽能力；18 主动轴已有独立第一阶段训练候选，旧 RC2 规格仍是 16 轴历史模型。UnitySim2Sim、BevySim2Sim 仍应从引擎无关的 SI 契约适配，尚未实现或验证。
 
-| 当前入口 | 内容 |
+| 历史 RC2 与过渡资料入口（18 轴请使用上方交接包） | 内容 |
 |---|---|
-| [工程规格](configs/robot_spec.json) | 机体、16 主动轴候选、尺寸、器件、动作边界与单位 |
+| [RC2 历史规格](configs/robot_spec.json) | 机体、16 主动轴候选、尺寸、器件、动作边界与单位 |
 | [交付完整性核查](evidence/delivery_integrity_rc2.json) | 59 个交接文件、本地链接、363 个 CAD 文件哈希及现行 BOM 数量核对；仅证明资料完整 |
 | [CAD 清单](cad/exports/cad_manifest.json) / [整机 STEP](cad/exports/goose_rc2_assembly.step) | 打印件、材料/质量、各 STEP/STL；清单标示制造验收状态 |
 | [RC2 候选 BOM](hardware/goose_rc2_bom.xlsx) / [CSV](hardware/goose_rc2_bom.csv) / [接线装配稿](hardware/goose_rc2_wiring_and_assembly.md) | 与 CAD/规格同步的工作清单；中国报价、线束、螺钉和额定核查未放行 |

@@ -1,3 +1,5 @@
+> 新版 18 轴初训请使用 [第一阶段结构与物理参数交接](../../robots/Goose_V0.1/design/stage_one_parameter_handoff.md)。本页以下保留旧 RC2 的历史接入说明；旧 16 轴模型/策略不适用于新版。
+
 # Goose_V0.1 → Sai_Lab 接入入口（RC2 工程候选）
 
 本页说明怎样从 Sai_Rotbots 工作区接入 Goose 的模型和训练接口。**当前只有站立和若干预设接触单项通过，尚无可交付的行走/拖拽自主策略，不能将它设为 Sai_Lab 默认机器人。** 完整门槛见[机器人放行判定](../../robots/Goose_V0.1/design/release_readiness.md)。
