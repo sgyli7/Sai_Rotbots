@@ -150,9 +150,11 @@ def make_contract(s):
   compatibility=dict(mujoco='implemented',godot_jolt='neutral SI data only; adapter validation pending',unity='neutral SI data only; adapter validation pending',bevy='neutral SI data only; adapter validation pending'),
   source_hashes={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in (SCENE,BASIS,FOOT)},items=s.items)
 
-def build():
- s=candidate();c=make_contract(s);OUT.mkdir(parents=True,exist_ok=True);(OUT/'assets').mkdir(exist_ok=True)
- mj=ET.Element('mujoco',model='goose_stage_one_18axis');ET.SubElement(mj,'compiler',angle='radian',inertiafromgeom='false',meshdir='assets')
+def build(s=None,c=None,output_dir=OUT,config_path=CONFIG):
+ s=candidate() if s is None else s;c=make_contract(s) if c is None else c
+ OUT=Path(output_dir);CONFIG=Path(config_path)
+ OUT.mkdir(parents=True,exist_ok=True);(OUT/'assets').mkdir(exist_ok=True)
+ mj=ET.Element('mujoco',model='goose_stage_one_18axis' if c['schema']=='goose_stage_one_si_v1' else c['schema']);ET.SubElement(mj,'compiler',angle='radian',inertiafromgeom='false',meshdir='assets')
  ET.SubElement(mj,'option',timestep='.001',gravity='0 0 -9.81',integrator='implicitfast',iterations='50',cone='elliptic')
  default=ET.SubElement(mj,'default');ET.SubElement(default,'geom',friction='.65 .01 .002',solref='.008 1',solimp='.95 .99 .001')
  ET.SubElement(mj,'visual');assets=ET.SubElement(mj,'asset');world=ET.SubElement(mj,'worldbody')
@@ -203,6 +205,8 @@ def build():
   body=side+'_ankle_roll';h=s.contact_hulls[side];xy=h.points[h.vertices];v=np.vstack([np.c_[xy,np.full(len(xy),z)] for z in (.0005,.014)])-s.pivots[body]
   mm=trimesh.convex.convex_hull(v);name=side+'_foot_contact';mm.export(OUT/'assets'/f'{name}.obj');ET.SubElement(assets,'mesh',name=name,file=f'{name}.obj')
   geom(body,name,'mesh',mesh=name,rgba='.3 .5 .2 .3',contype='2',conaffinity='3',condim='6',group='3')
+ for extra in getattr(s,'extra_collision_geometries',[]):
+  geom(**extra)
  # The body is hollow around the in-body serial hip joints and neck yaw mount.
  # These exclusions are intentional internal assembly relationships, listed in SI.
  excludes=set()

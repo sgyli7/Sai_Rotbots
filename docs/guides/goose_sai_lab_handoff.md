@@ -1,4 +1,6 @@
-> 新版 18 轴初训请使用 [第一阶段结构与物理参数交接](../../robots/Goose_V0.1/design/stage_one_parameter_handoff.md)。本页以下保留旧 RC2 的历史接入说明；旧 16 轴模型/策略不适用于新版。
+> 最新候选请使用 [第二阶段 18 轴参数交接](../../robots/Goose_V0.1/design/stage_two_parameter_handoff.md)，`--stage stage_two`；质量 8.854kg，旧第一阶段策略需要重新评估。本页下文保留历史接入说明。
+
+> 上一阶段历史基线见 [第一阶段结构与物理参数交接](../../robots/Goose_V0.1/design/stage_one_parameter_handoff.md)。本页以下保留旧 RC2 的历史接入说明；旧 16 轴模型/策略不适用于新版。
 
 # Goose_V0.1 → Sai_Lab 接入入口（RC2 工程候选）
 

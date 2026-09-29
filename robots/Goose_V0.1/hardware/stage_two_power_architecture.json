@@ -1,0 +1,147 @@
+{
+  "schema": "goose_stage_two_power_design_v1",
+  "status": "DESIGN_BUDGET_NOT_WIRING_RELEASE",
+  "model_contract": "../configs/stage_two_contract.json",
+  "architecture": {
+    "compute": "Radxa ZERO3W + Waveshare20317 USB hub, retained54g combined reservation",
+    "can_axes": 17,
+    "can_buses": 2,
+    "axis_allocation": [
+      9,
+      8
+    ],
+    "ttl_axes": 1,
+    "motor_bus_nominal_v": 24,
+    "battery_candidate": "CNHL220406BK 6S2200mAh",
+    "battery_nominal_v": 22.2,
+    "battery_full_v": 25.2,
+    "battery_direct_connection_released": false,
+    "driver_model": "AK48-2405-2D-A2",
+    "driver_operating_window_v": null,
+    "continuous_driver_current_semantics": "phase/q-axis vs bus current must be confirmed; do not sum catalog phase currents as battery current",
+    "motor_stop_topology": "hardware latched disable / switched motor branch; logic stays powered; controlled stop before hard cutoff when possible; switch/regeneration circuit still unselected",
+    "main_harness_current_design_a": 40,
+    "main_current_limit_requires_actual_sensor": true
+  },
+  "branches": [
+    {
+      "name": "logic_5v",
+      "sku": "Pololu D24V90F5 #2866",
+      "voltage_v": 5,
+      "supplier_input_v": [
+        5,
+        38
+      ],
+      "supplier_size_mm": [
+        40.6,
+        20.3,
+        7.6
+      ],
+      "supplier_mass_g": 4.8,
+      "allocated_mass_g": 25,
+      "allocated_size_mm": [
+        49,
+        29,
+        22
+      ],
+      "design_load_a": 3.5,
+      "supply_basis": "product description4-8A typical maximum across operating conditions, thermally limited; label9A is not a guaranteed installed current",
+      "source": "https://www.pololu.com/product/2866"
+    },
+    {
+      "name": "head_roll_5v",
+      "sku": "Pololu D24V22F5 #2858",
+      "voltage_v": 5,
+      "supplier_input_v": [
+        5.3,
+        36
+      ],
+      "supplier_size_mm": [
+        17.78,
+        17.78,
+        7.874
+      ],
+      "supplier_mass_g": 2.3,
+      "allocated_mass_g": 40,
+      "allocated_size_mm": [
+        49,
+        29,
+        22
+      ],
+      "design_load_a": 2.0,
+      "supply_basis": "spec table2.2A typical at24V; XC3305V stall1.8A is branch peak sizing only, not motor continuous torque",
+      "source": "https://www.pololu.com/product/2858/specs"
+    }
+  ],
+  "logic_load_allocation_a": {
+    "radxa_zero3w": 2.0,
+    "usb_camera_and_hub": 0.8,
+    "can_usb_interfaces_and_imu": 0.3,
+    "audio_and_misc": 0.4
+  },
+  "system_power_assumptions": {
+    "positive_mechanical_limit_w": 350,
+    "electrical_conversion_efficiency_assumed": [
+      0.6,
+      0.8
+    ],
+    "electronics_and_5v_input_allowance_w": 35,
+    "planned_battery_low_loaded_v": 20.0,
+    "usable_battery_energy_fraction_assumed": 0.8,
+    "battery_voltage_floor_is_not_driver_release": true,
+    "average_electrical_power_scenarios_w": [
+      60,
+      100,
+      150,
+      250
+    ],
+    "main_capacitance_example_f": 0.0022,
+    "illustrative_regen_initial_v": 24.0,
+    "illustrative_regen_max_v": 25.2,
+    "illustrative_voltage_is_not_confirmed_driver_limit": true,
+    "crouch_height_m": 0.08,
+    "pulse_absorption_design_j": 12,
+    "pulse_dissipation_component_selected": false,
+    "regeneration_logic": "Battery accepts only when charge/SOC/temperature permits; full battery or disconnected pack needs hardware bus clamp and rated dump load. Do not rely on bulk capacitor, fuse, or ordinary buck converter to absorb braking energy.",
+    "power_estimate_scope": "Illustrative moving-load estimate only. Mechanical-power limiting does not bound zero-speed winding losses or driver/buck transients. Actual bus-current sensing, calibrated winding-loss model and thermal tests are required;40A is a proposed harness requirement, not a validated worst-case current."
+  },
+  "pcb_design_requirements": {
+    "power_devices_voltage_class_v": 60,
+    "main_path_current_a": 40,
+    "isolation": "USB VBUS backfeed prevention; common signal reference on motor/CAN side; CAN isolation candidate in existing interface allocation",
+    "motor_connector_branching": "No daisy-chained small connector carries the entire17-axis bus; fuse/limit branches after main disconnect",
+    "power_thermal_mass_reservation_g": 133,
+    "reservation_definition": "main_protection93g + servo_buck40g; includes5Vservo converter; not a confirmed fit for a final resistor/contactor design",
+    "can_bitrate_bps": 1000000,
+    "update_hz": 200,
+    "worst_case_frame_bits_budget": 160,
+    "frames_per_axis_per_update": 2,
+    "transient_diagnostics_frames_per_s": 100
+  },
+  "unresolved": [
+    {
+      "id": "ak48_supply_window",
+      "blocking": "battery_operation_and_hardware_freeze",
+      "question": "Confirm minimum/maximum continuous bus voltage and UV/OV trip limits for AK48-2405-2D-A2 paired with AK45-36/45-10/40-10 V3.0; is full6S25.2V supported?",
+      "public_evidence": "The current V3.2.0 manual table lists AK54/AK60/AK80 at18-52V; AK48 is absent. Its download-page installation-manual href was empty on2026-09-30."
+    },
+    {
+      "id": "regenerative_energy",
+      "blocking": "battery_operation_and_hardware_freeze",
+      "question": "Confirm permitted regeneration, reverse-current path and behavior after BMS/connector disconnect. Select and verify clamp/dump hardware against the actual voltage window."
+    },
+    {
+      "id": "stationary_motor_heat",
+      "blocking": "continuous_grasp_and_duty_release",
+      "question": "Validate enclosed-head50N hold and neck static duty using actual cooling, winding temperature and output-current calibration; rated moving operating point is not a stationary thermal test."
+    }
+  ],
+  "sources": [
+    "https://www.cubemars.com/product/driver-board.html",
+    "https://www.cubemars.com/technical-support-and-software-download.html",
+    "https://www.cubemars.com/data/cms/202602/ak-series-prodcut-manual-v3-2-0-for-ak-3-0-robotic-actuator.pdf",
+    "https://docs.radxa.com/en/zero/zero3/getting-started/preparation",
+    "https://emanual.robotis.com/docs/en/dxl/x/xc330-m288/",
+    "https://chinahobbyline.com/products/cnhl-black-series-2200mah-6s-22-2v-40c-lipo-battery-with-xt60-plug"
+  ]
+}

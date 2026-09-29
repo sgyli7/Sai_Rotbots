@@ -8,9 +8,9 @@ from sai_agent.goose.stage_one import StageOneEnv,rsl_environment
 from sai_agent.goose.rsl import runner_config
 ROOT=Path(__file__).resolve().parents[2]
 def main():
- p=argparse.ArgumentParser();p.add_argument('--output',type=Path,required=True);p.add_argument('--iterations',type=int,default=100);p.add_argument('--envs',type=int,default=8);p.add_argument('--horizon',type=int,default=32);p.add_argument('--device',default='cpu');p.add_argument('--seed',type=int,default=29);p.add_argument('--standing',action='store_true');p.add_argument('--nominal',action='store_true');a=p.parse_args()
+ p=argparse.ArgumentParser();p.add_argument('--stage',choices=('stage_one','stage_two'),default='stage_one');p.add_argument('--output',type=Path,required=True);p.add_argument('--iterations',type=int,default=100);p.add_argument('--envs',type=int,default=8);p.add_argument('--horizon',type=int,default=32);p.add_argument('--device',default='cpu');p.add_argument('--seed',type=int,default=29);p.add_argument('--standing',action='store_true');p.add_argument('--nominal',action='store_true');a=p.parse_args()
  if min(a.iterations,a.envs,a.horizon)<1:raise ValueError('positive budgets required')
- a.output.mkdir(parents=True,exist_ok=False);inputs=a.output/'inputs';shutil.copytree(ROOT/'robots/Goose_V0.1/models/stage_one',inputs/'model');shutil.copy2(ROOT/'robots/Goose_V0.1/configs/stage_one_contract.json',inputs/'contract.json')
+ a.output.mkdir(parents=True,exist_ok=False);inputs=a.output/'inputs';shutil.copytree(ROOT/'robots/Goose_V0.1/models'/a.stage,inputs/'model');shutil.copy2(ROOT/'robots/Goose_V0.1/configs'/f'{a.stage}_contract.json',inputs/'contract.json')
  torch.set_num_threads(2);torch.manual_seed(a.seed);np.random.seed(a.seed)
  base=StageOneEnv(inputs/'model/robot.xml',inputs/'contract.json',a.envs,a.seed,not a.nominal,not a.standing);env=rsl_environment(base);cfg=runner_config(a.horizon,.045);cfg['algorithm']['num_learning_epochs']=3
  runner=OnPolicyRunner(env,copy.deepcopy(cfg),log_dir=None,device=a.device);head=runner.alg.actor.mlp[-1];torch.nn.init.zeros_(head.weight);torch.nn.init.zeros_(head.bias)
