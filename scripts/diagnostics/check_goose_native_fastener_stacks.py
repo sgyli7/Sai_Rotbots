@@ -59,7 +59,7 @@ def main():
     (R/'hardware/native_pitch_fastener_stacks.json').write_text(json.dumps(report,indent=2)+'\n')
     fields=['assembly','role','thread','length_mm','count','effective_engagement_mm','minimum_engagement_mm','maximum_insertion_mm','length_pass','shared_case_bolt','released']
     with (R/'hardware/native_pitch_fastener_bom.csv').open('w',newline='') as f:
-        w=csv.DictWriter(f,fieldnames=fields,extrasaction='ignore');w.writeheader();w.writerows(rows)
+        w=csv.DictWriter(f,fieldnames=fields,extrasaction='ignore',lineterminator='\n');w.writeheader();w.writerows(rows)
     print({k:report[k] for k in ['total_screws','mass_upper_estimate_kg','length_pass']})
     return 0 if report['length_pass'] else 1
 
