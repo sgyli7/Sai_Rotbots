@@ -17,6 +17,13 @@ def safe_file(root,path):
 
 def sha(file):return hashlib.sha256(file.read_bytes()).hexdigest()
 
+def assembly_identity(manifest,source_sha256):
+    # Bind display geometry/material/placement AND every native part record.
+    # Native file hashes are independently checked above, so a CAD revision
+    # also invalidates old receipts even if display scene bytes stay equal.
+    payload={'source_sha256':source_sha256,'parts':sorted(manifest.get('parts',[]),key=lambda p:p.get('name',''))}
+    return hashlib.sha256(json.dumps(payload,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+
 def inspect(root,manifest_file,source_file):
     root=Path(root);manifest_file=Path(manifest_file);source_file=Path(source_file)
     errors=[];release=[];parts=[]
@@ -90,8 +97,10 @@ def inspect(root,manifest_file,source_file):
     inventory=manifest.get('assembly_inventory')
     if inventory!=sorted(cad_names):release.append('full assembly inventory not bound to source parts')
     assembly_sha=manifest.get('assembly_sha256')
+    actual_assembly_sha=assembly_identity(manifest,sha(source_file))
     receipts=manifest.get('release_receipts',{})
     if not assembly_sha:release.append('assembly geometry identity absent')
+    elif assembly_sha!=actual_assembly_sha:release.append('assembly identity does not bind actual source scene and native parts')
     for gate in REQUIRED_RELEASE_GATES:
         try:
             entry=receipts[gate];file=safe_file(root,entry['path'])
@@ -99,7 +108,7 @@ def inspect(root,manifest_file,source_file):
             receipt=json.loads(file.read_text())
             if receipt.get('pass') is not True or not assembly_sha or receipt.get('assembly_sha256')!=assembly_sha:raise ValueError('gate not passed on this assembly')
         except (KeyError,OSError,ValueError) as e:release.append(f'{gate}: {e}')
-    return {'schema':'goose_manufacturing_appearance_gate_v1','integrity_pass':not errors,'final_appearance_pass':not errors and not release,'manifest_sha256':sha(manifest_file),'source_sha256':sha(source_file),'errors':errors,'release_blockers':release,'parts':parts,'scope':'Hash, identity, quad topology and SI scale checks; no unperformed physical or full assembly proof.'}
+    return {'schema':'goose_manufacturing_appearance_gate_v1','integrity_pass':not errors,'final_appearance_pass':not errors and not release,'computed_assembly_sha256':actual_assembly_sha,'manifest_sha256':sha(manifest_file),'source_sha256':sha(source_file),'errors':errors,'release_blockers':release,'parts':parts,'scope':'Hash, identity, quad topology and SI scale checks; no unperformed physical or full assembly proof.'}
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--robot-root',type=Path,default=ROBOT)

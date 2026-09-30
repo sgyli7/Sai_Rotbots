@@ -80,3 +80,33 @@ def test_same_volume_at_wrong_world_position_refused(assembly):
     part['source_sha256']=hashlib.sha256(json.dumps({'vertices':part['vertices'],'faces':part['faces']},sort_keys=True,separators=(',',':')).encode()).hexdigest()
     r=run();assert not r['integrity_pass']
     assert any('placement mismatch' in e for e in r['errors'])
+
+def test_previous_assembly_receipts_cannot_release_current_scene(assembly):
+    root,manifest,_,run=assembly
+    manifest.update(scope='FULL_ASSEMBLY',assembly_inventory=['cube'],manufacturing_pass=True,assembly_sha256='previous_assembly')
+    manifest['parts'][0].update(manufacturing_released=True,remaining_gates=[])
+    receipts={}
+    for gate in audit.REQUIRED_RELEASE_GATES:
+        file=root/(gate+'.json');file.write_text(json.dumps({'pass':True,'assembly_sha256':'previous_assembly'}))
+        receipts[gate]={'path':file.name,'sha256':hashlib.sha256(file.read_bytes()).hexdigest()}
+    manifest['release_receipts']=receipts
+    result=run()
+    assert result['integrity_pass']
+    assert not result['final_appearance_pass']
+    assert any('actual source scene' in item for item in result['release_blockers'])
+
+def test_native_revision_invalidates_receipts_without_scene_change(assembly):
+    root,manifest,scene,run=assembly
+    manifest.update(scope='FULL_ASSEMBLY',assembly_inventory=['cube'],manufacturing_pass=True)
+    manifest['parts'][0].update(manufacturing_released=True,remaining_gates=[])
+    identity=audit.assembly_identity(manifest,hashlib.sha256(json.dumps(scene).encode()).hexdigest())
+    manifest['assembly_sha256']=identity;manifest['release_receipts']={}
+    for gate in audit.REQUIRED_RELEASE_GATES:
+        file=root/(gate+'.json');file.write_text(json.dumps({'pass':True,'assembly_sha256':identity}))
+        manifest['release_receipts'][gate]={'path':file.name,'sha256':hashlib.sha256(file.read_bytes()).hexdigest()}
+    assert run()['final_appearance_pass']  # file/receipt binding only, generic fixture
+    # Equal native volume/COM, different proportions, same display scene.
+    export_step(Box(8,10,12.5),root/'part.step')
+    manifest['parts'][0]['files']['step']['sha256']=hashlib.sha256((root/'part.step').read_bytes()).hexdigest()
+    result=run();assert result['integrity_pass'] and not result['final_appearance_pass']
+    assert any('native parts' in item for item in result['release_blockers'])

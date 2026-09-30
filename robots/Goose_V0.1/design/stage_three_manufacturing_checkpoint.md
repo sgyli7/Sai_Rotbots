@@ -14,7 +14,7 @@
 - [制造基础清单](../cad/exports/manufacturing_skins/manifest.json)关联源、单位、材质、体积、质量、惯量与文件哈希。薄曲面采用原生几何的自适应体积分计算质量、重心与惯量，避免默认非自适应积分造成偏差。调整头部安装口后，全密度 PETG 壳体合计约 **0.597kg**，未加紧固件/加强筋；不能直接在 8.854kg 整机上再加此数，必须替换原有壳体估算后回算。
 - 848,260 个闭合四边面保存在八份压缩 NPZ 中（`vertices` 为 m，`faces` 为整数四元组）。源场景记录每份身份和哈希；STL 使用同一原生曲面直接采样形成的共享四边面三角化，单位 mm。五点/格的采样中，源网格与原生曲面偏差最大约 **0.096mm**；这是采样结果，不是连续曲面的严格 Hausdorff 证明。
 - [STEP/STL 回读](../evidence/manufacturing_skin_stl_gate.json)八件通过有效单实体、闭合、一致绕向、正体积、零退化面和体积比较。原生 OCCT 高细分设置曾出现退化三角形/小开口，保留[失败记录](../evidence/manufacturing_skin_stl_raw_gate.json)。未通过填洞或法线修补冒充成功；改变网格生成路径后重新检查实际交付文件。
-- [外观一致性检查](../evidence/manufacturing_appearance_gate.json)核验部件身份、文件哈希、四边面拓扑、mm/m 尺度及世界重心位置；当前完整性通过，最终外观放行失败。9 个独立回归测试覆盖篡改 STEP/NPZ、单位混淆、重复/缺件、路径越界、保持体积却平移的错误位姿，以及虚假的全机放行标记。
+- [外观一致性检查](../evidence/manufacturing_appearance_gate.json)核验部件身份、文件哈希、四边面拓扑、mm/m 尺度及世界重心位置；当前完整性通过，最终外观放行失败。11 个独立回归测试覆盖篡改 STEP/NPZ、单位混淆、重复/缺件、路径越界、保持体积却平移的错误位姿，以及虚假的全机放行标记。另有测试证明旧装配审核不能用于当前场景，且制造 CAD 变化即使没有改显示场景，也必须重新取得同版审核；装配标识绑定实际场景字节与全部原生部件记录。
 - [电机安装事实](../hardware/stage_three_actuator_mounts.json)来自三份官方 2D 图和 STEP 的圆柱面位置；区分各型号的孔数、螺纹、插入深度、前后安装面、文件原点和输出方向。AK45-36 突出定位销端不等同其输出安装面；AK45-10/AK40-10 文件输出端方向相反，不能直接按包络中心套同一变换。
 
 ## 已发现、必须处理的装配问题
@@ -32,7 +32,7 @@
 
 三种电机共六件[带孔原生接口原型](../cad/exports/actuator_interfaces/manifest.json)已按实际孔图生成：输出转接盘与静止前环分开，避免把转动端锁死；AK45-36 的定位销、18mm 定位插口和螺钉深度均纳入。回读实际 STEP 后逐孔用实体探针检查，并核螺钉/垫片/有效插入长度，六件均通过[部件检查](../evidence/manufacturing_actuator_interfaces.json)。这些接口仍未完成与叉板、后侧独立支承、线缆及预紧的整体装配，因此不是完整关节。
 
-新增[安装候选三分之四图](../images/manufacturing_skin_candidate/three_quarter.png)、[头部图](../images/manufacturing_skin_candidate/head_detail.png)、[侧视图](../images/manufacturing_skin_candidate/side.png)直接使用本次八件原生曲面的四边面与一致的光学位姿；其余部分仍为第二阶段候选结构，图中明确标候选。可编辑 Blender 文件为 [quad_assembly.blend](../cad/source/manufacturing_preview/quad_assembly.blend)，绝不是最终全机制造外观。[实际 Blender 回读](../evidence/manufacturing_preview_quad_gate.json)确认 101 个部件、902,084 个四边面，均闭合、零退化面、正体积；这不证明部件之间没有碰撞。当前全仓库回归共 **73 项通过**，其中 Goose 相关为 58 项。
+新增[安装候选三分之四图](../images/manufacturing_skin_candidate/three_quarter.png)、[头部图](../images/manufacturing_skin_candidate/head_detail.png)、[侧视图](../images/manufacturing_skin_candidate/side.png)直接使用本次八件原生曲面的四边面与一致的光学位姿；其余部分仍为第二阶段候选结构，图中明确标候选。可编辑 Blender 文件为 [quad_assembly.blend](../cad/source/manufacturing_preview/quad_assembly.blend)，绝不是最终全机制造外观。[实际 Blender 回读](../evidence/manufacturing_preview_quad_gate.json)确认 101 个部件、902,084 个四边面，均闭合、零退化面、正体积；这不证明部件之间没有碰撞。当前全仓库回归共 **75 项通过**，其中 Goose 相关为 60 项。
 
 [壳体物理参数增量](../evidence/manufacturing_skin_parameter_delta.json)用原生实体的质量、世界重心与惯量替换旧七项外壳估算，并一致移动相机质量点，逐体采用平行轴定理回算。仅此增量的整机名义值为 **8.825363kg**，比第二阶段低 **28.264g**；逐体质量、重心位移和广义惯量比例均落在原训练参数范围内。新接口、框架、紧固件、散热和电源仍未冻结，因此此数不是最终称重，也不能据此宣告硬件收敛或策略可迁移。旧第二阶段模型与契约保持原哈希。
 
