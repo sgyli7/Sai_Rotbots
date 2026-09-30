@@ -1,0 +1,35 @@
+{
+  "schema": "goose_can_installation_candidate_v1",
+  "status": "COMMUNICATION_SELECTION_AND_BUDGET_NOT_WIRING_RELEASE",
+  "adapter_candidate": {
+    "manufacturer": "Waveshare",
+    "sku": "23635",
+    "model": "USB-CAN-A",
+    "quantity": 2,
+    "listed_weight_each_kg": 0.008,
+    "weight_scope": "supplier product-page weight field, not measured assembly mass",
+    "can_bitrate_bps": 1000000,
+    "host_serial_baud": 2000000,
+    "host_interface": "USB serial with manufacturer framing; do not assume native SocketCAN",
+    "electrical_isolation_claim": false,
+    "installed_dimensions_mm": null,
+    "primary_sources": ["https://www.waveshare.com/product/usb-can-a.htm", "https://www.waveshare.com/wiki/USB-CAN-A"],
+    "remaining_gates": ["actual connector/terminal mechanical envelope", "protocol mode and ARM64 sustained latency/loss verification", "USB power draw and ground/noise verification"]
+  },
+  "motor_buses": [
+    {"name":"can_a", "axes":["neck_yaw","neck_pitch","neck_mid_pitch","head_pitch","beak_hinge","right_hip_yaw","right_hip_roll","left_hip_yaw","left_hip_roll"], "proposed_node_ids":[1,2,3,4,5,6,7,8,9]},
+    {"name":"can_b", "axes":["right_hip_pitch","right_knee_pitch","right_ankle_pitch","right_ankle_roll","left_hip_pitch","left_knee_pitch","left_ankle_pitch","left_ankle_roll"], "proposed_node_ids":[1,2,3,4,5,6,7,8]}
+  ],
+  "ttl_branch": {"axis":"head_roll", "voltage_v":5, "data":"DYNAMIXEL half-duplex TTL, separate interface and power branch; not CAN"},
+  "budget": {"control_update_hz":200, "frames_per_axis_per_update":2, "worst_case_can_frame_bits":160, "diagnostic_frames_per_s":100, "fixed_host_frame_bytes":20, "serial_bits_per_byte_8n1":10, "host_framing_mode_status":"20-byte mode supported by supplier; actual command/response protocol mode not commissioned"},
+  "wiring_rules": [
+    "Each CAN bus is a line with exactly two 120ohm terminations at its physical ends; enable adapter termination only when it is at one end.",
+    "Use twisted H/L signal pairs with a defined motor-side signal reference; adapter A has no established isolation claim. USB/hub ground does not substitute for a reviewed motor power-return path.",
+    "Power distribution branches independently from the protected motor rail; the CAN signal chain is not a high-current power daisy chain.",
+    "Motor connector pin numbering/polarity must use the correct A2 mating-cable drawing and continuity test; connector name alone does not establish pin order.",
+    "Commission motors one at a time; record physical bus plus node ID and serialized device identity. Do not identify by ttyUSB enumeration alone.",
+    "Loss or fault of either motor bus triggers coordinated stopping of the whole robot; emergency-stop hardware cannot depend on USB or the application loop."
+  ],
+  "hardware_freeze": false,
+  "unresolved_power_dependency": "AK48 supply/regeneration window and actual motor power disconnect/clamp hardware remain unconfirmed; this file does not approve battery operation."
+}

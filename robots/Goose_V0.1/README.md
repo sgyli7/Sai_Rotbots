@@ -1,5 +1,9 @@
 # Goose_V0.1 — 工程与原始资料入口
 
+新增最终交付要求：[实体与电子版外观一致](design/manufacturing_appearance_acceptance.md)。最终图片必须直接来自同版制造装配；现有第二阶段图片不是最终制造外观。[原生曲面壳体增量](cad/exports/manufacturing_skins/manifest.json)仅包含八件外壳基础实体，[一致性检查](evidence/manufacturing_appearance_gate.json)通过不等同整机或最终外观放行。
+
+[第三、第四阶段中途检查点](design/stage_three_manufacturing_checkpoint.md)：八件原生壳体与六件带孔电机接口已验证；头部安装口与统一光学位姿修正通过限定包络检查，实际全机连接与供电尚未放行。[安装候选预览](images/manufacturing_skin_candidate/three_quarter.png)及其 [Blender 源](cad/source/manufacturing_preview/quad_assembly.blend)仍包含第二阶段未制造结构，不能当作最终外观。[壳体物理参数增量](evidence/manufacturing_skin_parameter_delta.json)为名义 8.825kg，仅替换壳体与相机位置；未发布新冻结模型。
+
 第二阶段交接：[嘴部传动、低位接近与供电架构](design/stage_two_parameter_handoff.md)。**当前候选为 `goose_stage_two_si_v2`，18 轴、8.854 kg；嘴部和中颈驱动升级，名义及 4 个扰动低位往返通过。** 供电窗口/回馈保护与封闭头壳热能力仍阻止硬件硬冻结。Sai_Lab 新实验请显式选择第二阶段；下方第一阶段保持历史记录。
 
 第一阶段交接：[18 轴结构与物理参数包](design/stage_one_parameter_handoff.md)。**约 8.62 kg、MJCF + URDF + 逐体惯量 + 统一 SI 契约 + PPO 入口已提供，可启动初训；硬件硬冻结尚未通过。** 嘴持续输出、电源配套和低位拾取控制的未决项与修改边界均在交接页列明。旧 16 轴 RC2 资料不能作为本版训练输入。
