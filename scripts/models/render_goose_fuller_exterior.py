@@ -73,7 +73,10 @@ for part in payload['parts']:
  center=Vector(tuple((min(v[i] for v in points)+max(v[i] for v in points))/2 for i in range(3)))
  vertices=[tuple(v[i]-center[i] for i in range(3)) for v in points]
  mesh=bpy.data.meshes.new(part['name']); mesh.from_pydata(vertices,[],faces); mesh.update()
- obj=bpy.data.objects.new(part['name'],mesh); groups[part['group']].objects.link(obj); obj.location=center
+ obj=bpy.data.objects.new(part['name'],mesh); groups[part['group']].objects.link(obj)
+ offset=payload.get('assembly_translation_m',[0,0,0])
+ if len(offset)!=3 or not all(math.isfinite(float(x)) for x in offset): raise ValueError('Invalid assembly translation')
+ obj.location=center+Vector(offset); obj['assembly_translation_m']=offset
  obj.data.materials.append(materials[part['material']]); obj['assembly_group']=part['group']
  obj['source_sha256']=part.get('source_sha256',hashlib.sha256(json.dumps(part,sort_keys=True).encode()).hexdigest()); obj['manufacturing_status']=payload.get('status','unapproved exterior geometry'); obj['part_role']=part.get('role','custom_visual_candidate')
  for face in mesh.polygons: face.use_smooth=True
@@ -123,10 +126,10 @@ for name in filter(None,args.views.split(',')):
   obj.hide_render = name=='mechanism' and (obj.name.startswith(('torso_shell_','wing_access_cover_','goose_head_shell')) or '_foot_upper' in obj.name or obj.name.endswith('_ankle_service_hood'))
  camera_data.ortho_scale=.34 if name=='foot_detail' else .31 if name=='head_detail' else .46 if name=='door_detail' else .78
  scene.render.filepath=str(directory/(name+'.png'))
- bpy.ops.wm.save_as_mainfile(filepath=str(blend_output))
+ bpy.ops.wm.save_as_mainfile(filepath=str(blend_output),compress=True)
  bpy.ops.render.render(write_still=True)
 for obj in collection.all_objects: obj.hide_render=False
 position,target=views['three_quarter']; camera.location=position; point_at(camera,target); camera_data.ortho_scale=.78
-bpy.ops.wm.save_as_mainfile(filepath=str(blend_output))
+bpy.ops.wm.save_as_mainfile(filepath=str(blend_output),compress=True)
 # The deliverable is the editable .blend and quad OBJ. Preview GLB is not required.
 print('REBUILD_RENDER_COMPLETE',flush=True)

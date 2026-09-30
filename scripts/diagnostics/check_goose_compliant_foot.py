@@ -14,9 +14,15 @@ sys.path.insert(0,str(ROOT/'scripts/cad'))
 from build_goose_cad import cylinder
 
 
-def fixture(centers,k,normal_n,heights):
+def fixture(centers,k,normal_n,heights,*,guided=True,cop_xy=(0.,0.),timestep=.0001):
     half=.00075; mass_per_pad=.001
     xs=''.join(f'<geom type="box" pos="{x} {y} {h/2-.01}" size=".015 .016 {h/2+.01}" friction=".65 .01 .002"/>' for (x,y),h in zip(centers,heights))
+    if not guided:
+        # Unlike a vertical press, a free foot can leave a pad's initial tile.
+        # Provide real continuous ground, not gaps falsely labeled flat floor.
+        base=float(min(heights))
+        xs=f'<geom type="plane" pos="0 0 {base}" size="1 1 .01" friction=".65 .01 .002"/>'
+        xs+=''.join(f'<geom type="box" pos="{x} {y} {base+(h-base)/2}" size=".015 .016 {(h-base)/2}" friction=".65 .01 .002"/>' for (x,y),h in zip(centers,heights) if h>base+1e-9)
     pads=''.join(f'''<body name="pad{i}" pos="{x} {y} -.00245">
       <joint name="leaf{i}" type="slide" axis="0 0 1" range="0 .0015" stiffness="{k}" damping="2" springref="0" solreflimit=".003 1"/>
       <inertial mass="{mass_per_pad}" pos="0 0 0" diaginertia="1e-8 1e-8 1e-8"/>
@@ -24,27 +30,33 @@ def fixture(centers,k,normal_n,heights):
       </body>''' for i,(x,y) in enumerate(centers))
     # Only vertical root motion is allowed: all fixture moments are reacted by
     # the guide. This deliberately cannot be counted as free-foot balance.
+    root_joint='<joint name="guide" type="slide" axis="0 0 1" limited="false" damping="4"/>' if guided else '<freejoint name="free_foot"/>'
     xml=f'''<mujoco><compiler angle="radian" inertiafromgeom="false"/>
-      <option timestep=".0001" gravity="0 0 -9.81" integrator="implicitfast" iterations="100"/>
+      <option timestep="{timestep}" gravity="0 0 -9.81" integrator="implicitfast" iterations="100"/>
       <default><geom solref=".003 1" solimp=".95 .99 .001"/></default>
       <worldbody>{xs}<body name="press" pos="0 0 .0082">
-      <joint name="guide" type="slide" axis="0 0 1" limited="false" damping="4"/>
-      <inertial mass="{normal_n/9.81-len(centers)*mass_per_pad}" pos="0 0 .06" diaginertia=".03 .03 .03"/>
+      {root_joint}
+      <inertial mass="{normal_n/9.81-len(centers)*mass_per_pad}" pos="{cop_xy[0]} {cop_xy[1]} .06" diaginertia=".03 .03 .03"/>
       {pads}</body></worldbody></mujoco>'''
     model=mujoco.MjModel.from_xml_string(xml);data=mujoco.MjData(model)
-    for _ in range(60000):mujoco.mj_step(model,data)
+    maximum_speed=0.
+    for _ in range(round(6/timestep)):
+        mujoco.mj_step(model,data)
+        maximum_speed=max(maximum_speed,float(abs(data.qvel).max()))
     compressions=np.array([data.qpos[model.joint('leaf'+str(i)).qposadr[0]] for i in range(len(centers))])
     contact_normal=0.
     for i in range(data.ncon):
         f=np.zeros(6);mujoco.mj_contactForce(model,data,i,f);contact_normal+=f[0]
     finite=bool(np.isfinite(data.qpos).all() and np.isfinite(data.qvel).all())
     warnings=[int(x.number) for x in data.warning]
-    return dict(applied_normal_n=normal_n,terrain_heights_mm=(np.array(heights)*1000).tolist(),
+    tilt=0. if guided else float(np.arccos(np.clip(data.xmat[model.body('press').id].reshape(3,3)[2,2],-1,1)))
+    return dict(applied_normal_n=normal_n,guided=guided,imposed_mass_com_xy_m=list(cop_xy),final_tilt_rad=tilt,terrain_heights_mm=(np.array(heights)*1000).tolist(),
         stiffness_n_per_m=k,compression_mm=(compressions*1000).tolist(),
-        peak_speed_m_s=float(abs(data.qvel).max()),summed_contact_normal_n=float(contact_normal),
+        timestep_s=timestep,final_max_generalized_speed=float(abs(data.qvel).max()),max_generalized_speed_over_run=maximum_speed,
+        generalized_speed_units='m/s for slides/translation,rad/s for free rotation; mixed maximum is a diagnostic, not a linear speed',summed_contact_normal_n=float(contact_normal),
         normal_balance_relative_error=abs(contact_normal-normal_n)/normal_n,
         bottom_out_count=int((compressions>=.00149).sum()),finite=finite,warning_counts=warnings,simulated_seconds=float(data.time),
-        fixture_pass=bool(finite and not any(warnings) and data.time>5.999 and abs(data.qvel).max()<1e-4 and abs(contact_normal-normal_n)<normal_n*.02))
+        fixture_pass=bool(finite and not any(warnings) and data.time>5.999 and abs(data.qvel).max()<1e-4 and abs(contact_normal-normal_n)<normal_n*.02 and (guided or tilt<np.deg2rad(5))))
 
 
 def main():
@@ -79,7 +91,7 @@ def main():
     # Existing completely solid thin-sole claim would deform very little under
     # broad uniform contact. This is a deliberately unconfined small-strain bound.
     full_area=13600.;old_thickness=3.;old_compression=125*old_thickness/(E*full_area)
-    report=dict(schema='goose_soft_foot_gate_v1',manifest_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
+    report=dict(schema='goose_soft_foot_gate_v1',manifest_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),checker_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         native_fit=native,partial_native_fit_pass=all(x['pass_fit'] for x in native),
         elementary_nominal_leaf_stiffness_n_mm=k,elementary_total_foot_stiffness_n_mm=6*k,
         broad_dense_3mm_sole_125n_compression_mm=old_compression,

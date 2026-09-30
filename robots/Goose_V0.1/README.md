@@ -1,5 +1,7 @@
 # Goose_V0.1 — 工程与原始资料入口
 
+最新制造候选：[追加两小时检查点](design/stage_three_four_extension.md)。六组带孔叉架、独立后支承、弹性脚底、转向筛查及同版质量台账已保存。保守条件质量9.608kg，63组静力通过，自由脚夹具23/24通过。**第三、第四阶段及最终外观仍未通过**，不能直接采购装机或作为新冻结训练版本。[实际候选图](images/pitch_foot_candidate/three_quarter.png)保留未制造部分状态。
+
 新增最终交付要求：[实体与电子版外观一致](design/manufacturing_appearance_acceptance.md)。最终图片必须直接来自同版制造装配；现有第二阶段图片不是最终制造外观。[原生曲面壳体增量](cad/exports/manufacturing_skins/manifest.json)仅包含八件外壳基础实体，[一致性检查](evidence/manufacturing_appearance_gate.json)通过不等同整机或最终外观放行。
 
 [第三、第四阶段中途检查点](design/stage_three_manufacturing_checkpoint.md)：八件原生壳体与六件带孔电机接口已验证；头部安装口与统一光学位姿修正通过限定包络检查，实际全机连接与供电尚未放行。[安装候选预览](images/manufacturing_skin_candidate/three_quarter.png)及其 [Blender 源](cad/source/manufacturing_preview/quad_assembly.blend)仍包含第二阶段未制造结构，不能当作最终外观。[壳体物理参数增量](evidence/manufacturing_skin_parameter_delta.json)为名义 8.825kg，仅替换壳体与相机位置；未发布新冻结模型。

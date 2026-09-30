@@ -19,8 +19,8 @@ from compare_goose_native_skin_parameters import aggregate
 def main():
     files=[R/'configs/stage_two_contract.json',R/'cad/exports/manufacturing_skins/manifest.json',
         R/'cad/exports/pitch_fork_assembly/manifest.json',R/'cad/exports/compliant_foot/manifest.json',
-        R/'configs/manufacturing_head_layout.json']
-    old,skins,forks,feet,head=[json.loads(p.read_text()) for p in files]
+        R/'configs/manufacturing_head_layout.json',R/'hardware/native_pitch_fastener_stacks.json']
+    old,skins,forks,feet,head,fasteners=[json.loads(p.read_text()) for p in files]
     s=candidate();original_items=copy.deepcopy(s.items);removed=[]
     old_skin_names={p['name'] for p in skins['parts'] if not p['name'].startswith('goose_head_shell_')}|{'goose_head_shell'}
     fork_names={i['name'] for i in s.items if i['name'] in s.parts and '_fork_' in i['name']}
@@ -46,6 +46,14 @@ def main():
             s.items.append(dict(name=p['name'],body=p['body'],mass_kg=p['mass_kg'],center_m=p['center_of_mass_world_m'],
                 inertia_at_com_kg_m2=p['inertia_at_com_world_kg_m2'],relative_uncertainty=.1,
                 basis='native CAD volume/material density, or explicitly labeled SKF bearing catalog mass; remaining allowances retained'))
+    # Conservative selected-stack envelope is added in full. Existing lead,
+    # bracket and small-hardware allocations remain: some overlap is intentional
+    # until the whole machine is complete, instead of hiding a mass shortfall.
+    for row in fasteners['rows']:
+        mass=row['mass_upper_estimate_kg']
+        s.items.append(dict(name=row['assembly']+'_'+row['role']+'_fastener_mass_bound',body=row['body'],
+            mass_kg=mass,center_m=row['center_world_m'],inertia_at_com_kg_m2=(np.eye(3)*mass*.03**2/3).tolist(),
+            relative_uncertainty=.1,basis='conservative full-cylinder screw/head/washer envelope at steel7850kg/m3; anchored to actual CAD part COM,30mm isotropic inertia approximation; not catalog weighing'))
     raise_m=feet['robot_rigid_parts_must_be_raised_mm']/1000
     for i in s.items:i['center_m']=(np.array(i['center_m'])+[0,0,raise_m]).tolist()
     for name in s.pivots:s.pivots[name]=s.pivots[name]+[0,0,raise_m]
@@ -91,6 +99,8 @@ def main():
             case=worst['name'],mass_variant=worst['mass_variant'],drag_n=worst['drag_x_n'],within_old_limit=torque<=limit))
     report=dict(schema='goose_native_component_parameters_v1',hardware_freeze=False,new_training_release=False,old_model_modified=False,
         nominal_conditional_mass_kg=mass,parent_mass_kg=old['nominal_robot_mass_kg'],change_kg=mass-old['nominal_robot_mass_kg'],
+        mass_basis='conditional native/catalog sum with conservative fastener bounds and retained unclosed hardware allocations; not a finalized nominal hardware mass',
+        fastener_mass_upper_estimate_kg=fasteners['mass_upper_estimate_kg'],retained_allowance_overlap_possible=True,
         removed_old_estimates_kg=sum(x['mass_kg'] for x in removed),removed_item_names=[x['name'] for x in removed],
         consumed_allocations=consumed,remaining_allowance_items=[x for x in s.items if 'reserve' in x['name'] or 'allocation' in x['name']],
         rigid_coordinate_lift_m=raise_m,bodies=parameters,items=s.items,contact_hulls={side:s.contact_hulls[side].points[s.contact_hulls[side].vertices].tolist() for side in ['right','left']},

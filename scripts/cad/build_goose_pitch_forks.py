@@ -34,7 +34,7 @@ def bar(a, b, width, thickness, y):
 
 
 def fork_profile(a, b, y, rear=False):
-    shape = bar(a,b,18,3.5,y)
+    shape = bar(a,b,24,5.5,y)
     direction=(b-a)/np.linalg.norm(b-a);middle=(a+b)/2
     shape += bar(middle-direction*9,middle+direction*9,18,5.5,y)
     shape += cylinder(20 if not rear else 16,5.5,a+[0,y,0],'y')
@@ -206,6 +206,7 @@ def main():
             near_plate_center_local_y_mm=front_y,far_plate_center_local_y_mm=rear_y,
             plate_center_spacing_mm=front_y-rear_y,front_spacer_mm=spacer_t,rear_spacer_mm=caserear-rear_inner,
             axial_level=level,neighbor_fork_separation_mm=1.,output_adapter_thickness_mm=adapter_t,
+            plate_stem_width_mm=24.,plate_stem_thickness_mm=5.5,conservative_net_beam_width_mm=20.8,
             bearing=dict(sku='SKF61800',dimensions_mm=[10,19,5],dynamic_load_n=1720,static_load_n=830,catalog_mass_kg=.0053),
             static_rear_support_owner=s.parents[upper],moving_bearing_outer_owner=upper,
             output_fork_thread=dict(pcd_mm=32,thread='M3',count=3,effective_engagement_mm=3.5),

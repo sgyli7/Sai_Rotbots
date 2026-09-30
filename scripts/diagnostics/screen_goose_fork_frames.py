@@ -54,7 +54,7 @@ def main():
         K=np.zeros((36,36));elements=[]
         for i,j,kind in connections:
             if kind=='plate':
-                b=3.5;h=14.8;A=b*h;Iy=b*h**3/12;Iz=h*b**3/12
+                b=a['plate_stem_thickness_mm'];h=a['conservative_net_beam_width_mm'];A=b*h;Iy=b*h**3/12;Iz=h*b**3/12
                 J=h*b**3/3*(1-.63*b/h+.052*(b/h)**5);up=[0,1,0]
             else:
                 b=14.;h=18.;A=4*h;Iy=4*h**3/12;Iz=2*(2*h*(6**2+2**2/12));J=2*h*2**3/3;up=direction
@@ -109,11 +109,12 @@ def main():
     report=dict(schema='goose_fork_frame_screen_v1',scope='beam idealization of six manufactured link candidates under63whole-system static wrenches',
         cantilever_regression=cantilever_check(),case_count=len(results),results=results,worst_case=worst,
         screen_below_200mpa_with_2x_notch=all(x['stress_with_2x_notch_multiplier_mpa']<=200 for x in results),
+        screen_below_120mpa_with_2x_notch=all(x['stress_with_2x_notch_multiplier_mpa']<=120 for x in results),
         frame_stress_release=False,manufacturing_pass=False,
         source_hashes={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in [path,pfile,Path(__file__)]},
         limitations=['Fixed motor output assumes infinite gearbox/shaft stiffness; actual bearing/shaft contact not represented',
             'Rear bearing reacts radial translation only; no preload or axial bearing load modeled',
-            'Plate uses3.5x14.8mm section, conservatively ignoring5.5mm local lands; bridge uses two2mm rails',
+            'Plate section uses same native manifest thickness and conservative net width; bridge uses two2mm rails',
             '2x notch factor is a sensitivity screen, not a measured stress concentration or fatigue proof',
             'Machined attachment holes, thin bearing shoulder, idler steel spider and long standoff screws require local/contact validation',
             '200MPa is an assumed6061-T6 material floor; it is not a safety-factor-adjusted allowable or a material certificate'])
