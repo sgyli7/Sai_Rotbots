@@ -4,7 +4,7 @@ import hashlib,json
 ROOT=Path(__file__).resolve().parents[2];ROBOT=ROOT/'robots/Goose_V0.1'
 
 def main():
-    path=ROBOT/'hardware/stage_three_can_layout.json';contract_path=ROBOT/'configs/stage_two_contract.json'
+    path=ROBOT/'hardware/stage_three_can_layout.json';contract_path=ROBOT/'configs/mechanical_physics_contract.json'
     layout=json.loads(path.read_text());contract=json.loads(contract_path.read_text());budget=layout['budget'];adapter=layout['adapter_candidate']
     expected={j['name'] for j in contract['joints'] if j['name']!='head_roll'};actual=[n for b in layout['motor_buses'] for n in b['axes']];rows=[]
     axis_pass=set(actual)==expected and len(actual)==len(set(actual))==17 and layout['ttl_branch']['axis']=='head_roll'

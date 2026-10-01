@@ -82,7 +82,7 @@ for part in payload['parts']:
  for face in mesh.polygons: face.use_smooth=True
  mesh.use_auto_smooth=True; mesh.auto_smooth_angle=math.radians(80)
  # Shading normals only; the editable source remains untriangulated quad faces.
- if part.get('role') not in ('hollow_shell_candidate','removable_cover_candidate','shell_outer_surface_candidate','native_nurbs_skin_attachment_pending'):
+ if part.get('role') not in ('hollow_shell_candidate','removable_cover_candidate','shell_outer_surface_candidate','native_nurbs_skin_attachment_pending','native_body_bay_candidate'):
   modifier=obj.modifiers.new('Area weighted shading normals','WEIGHTED_NORMAL'); modifier.keep_sharp=True; modifier.weight=30
 
 floor_mat=bpy.data.materials.new('Studio warm grey'); floor_mat.diffuse_color=(.62,.62,.60,1); floor_mat.use_nodes=True

@@ -1,0 +1,67 @@
+{
+  "schema": "goose_current_hybrid_primary_protocol_sources_v1",
+  "checked_utc": "2026-10-01 06:34:00 UTC",
+  "status": "PRIMARY_WIRE_FORMAT_IMPLEMENTED_SELECTED_DRIVE_PROFILES_UNRELEASED",
+  "sources": [
+    {
+      "url": "https://files.waveshare.com/wiki/USB-CAN-A/Demo/USB%20(Serial%20port)%20to%20CAN%20protocol%20defines.pdf",
+      "local_private_path": "artifacts/Goose_V0.1/transport_docs/waveshare_can_protocol.pdf",
+      "sha256": "7308b870c5c6a7534b788948e1738a074369de4d48146a1827433bd84248ba58",
+      "scope": "fixed 20-byte data frame, pages 7-9; worked vectors establish little-endian CAN ID"
+    },
+    {
+      "url": "https://files.waveshare.com/wiki/USB-CAN-A/Demo/python/USB-CAN-A-py.zip",
+      "local_private_path": "artifacts/Goose_V0.1/transport_docs/waveshare_can_python.zip",
+      "sha256": "15b8005b9cfbad993ba12832435fbed63e6f80d8a610fb36499f4b92e00623f4",
+      "scope": "send.py config byte layout: 0x02 fixed20, 1Mbps=0x01, extended=0x02, silent=0x01; read only, not executed"
+    },
+    {
+      "url": "https://www.cubemars.com/data/cms/202602/ak-series-prodcut-manual-v3-2-0-for-ak-3-0-robotic-actuator.pdf",
+      "local_private_path": "artifacts/Goose_V0.1/vendor_interface_docs/ak_series_v3_2_0.pdf",
+      "sha256": "ab1b62b94c3c00693259a6acc00df5a44040d748a702918f4562986d420ea225",
+      "scope": "generic V3 extended function1 current, function8 MIT, function15 disable, function0x29 feedback; A2-specific ranges not established"
+    },
+    {
+      "url": "https://www.cubemars.com/data/cms/202603/arduino-demo-for-ak-3-0-series-motor.zip",
+      "sha256": "795e49e79f6cb52619e57feb721a40597566c6f3da7eaaf12432428db7100c09",
+      "scope": "generic V3 MIT field order and endpoint quantization crosscheck; no selected-model ranges inferred"
+    },
+    {
+      "url": "https://github.com/Darrell-Song/CubeMars",
+      "tree_commit": "0be97c45aae8026c3250a4ff3cc1af5379268976",
+      "scope": "official linked repository checked; legacy AK40-2410 guide found, not a current AK48-2405-2D-A2 profile"
+    },
+    {
+      "url": "https://www.cubemars.com/cn/product/driver-board.html",
+      "scope": "current selected AK40/45 V3 map to AK48-2405-2D-A2; generic variants/prices do not identify the selected SKU"
+    }
+  ],
+  "ambiguities": [
+    {
+      "item": "Waveshare CAN-ID byte order",
+      "resolution": "worked standard/extended vectors and official Python agree little endian; prose high-byte-front wording conflicts"
+    },
+    {
+      "item": "AK MIT float_to_uint upper endpoint",
+      "resolution": "manual expression uses 2**bits and overflows upper endpoint; official demo uses 2**bits-1. Codec follows bounded demo, physical firmware verification remains required"
+    },
+    {
+      "item": "AK MIT feedforward physical unit",
+      "resolution": "manual current/torque wording differs and selected models omitted. Codec takes explicit ranges only; hardware torque session uses separately commissioned current mode instead"
+    },
+    {
+      "item": "AK telemetry conversion",
+      "resolution": "preserve electrical RPM and driver-board temperature; selected pole pairs, reduction and position shaft semantics require per-device commissioning"
+    },
+    {
+      "item": "A2 supply/regen/current/timeout limits",
+      "resolution": "not established by nominal 24V product rating, legacy AK40 guide or 18-52V table for other boards"
+    }
+  ],
+  "firmware_config_ack_established": false,
+  "firmware_config_persistence_established": false,
+  "selected_motor_profile_release": false,
+  "physical_can_link_verified": false,
+  "hardware_control_release": false,
+  "vendor_code_or_pdfs_redistributed": false
+}

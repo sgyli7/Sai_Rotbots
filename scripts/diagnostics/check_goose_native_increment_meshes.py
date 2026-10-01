@@ -1,13 +1,17 @@
 """Independently check installed quad meshes against native SI mass properties."""
 from pathlib import Path
-import json, hashlib
+import argparse, json, hashlib
 import numpy as np
 import trimesh
 
 ROOT=Path(__file__).resolve().parents[2];R=ROOT/'robots/Goose_V0.1'
 
 def main():
-    paths=[R/'cad/exports/pitch_fork_assembly/manifest.json',R/'cad/exports/compliant_foot/manifest.json']
+    parser=argparse.ArgumentParser()
+    parser.add_argument('--manifest',type=Path,action='append')
+    parser.add_argument('--output',type=Path,default=R/'evidence/manufacturing_increment_quad_gate.json')
+    args=parser.parse_args()
+    paths=[p.resolve() for p in args.manifest] if args.manifest else [R/'cad/exports/pitch_fork_assembly/manifest.json',R/'cad/exports/compliant_foot/manifest.json']
     results=[]
     for path in paths:
         manifest=json.loads(path.read_text())
@@ -24,7 +28,7 @@ def main():
             results.append(dict(part=p['name'],quad_faces=len(q),closed=bool(m.is_watertight),consistent=bool(m.is_winding_consistent),volume_relative_error=float(volume_error),world_com_error_mm=float(com_error),pass_mesh=valid))
     result=dict(schema='goose_native_increment_quad_gate_v1',parts=len(results),quad_faces=sum(p['quad_faces'] for p in results),mesh_identity_and_geometry_pass=all(p['pass_mesh'] for p in results),results=results,
         manufacturing_pass=False,full_assembly_pass=False,source_hashes={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in paths+[Path(__file__)]})
-    (R/'evidence/manufacturing_increment_quad_gate.json').write_text(json.dumps(result,indent=2)+'\n')
+    args.output.write_text(json.dumps(result,indent=2)+'\n')
     print({k:result[k] for k in ['parts','quad_faces','mesh_identity_and_geometry_pass']})
     print([p for p in results if not p['pass_mesh']])
     return 0 if result['mesh_identity_and_geometry_pass'] else 1

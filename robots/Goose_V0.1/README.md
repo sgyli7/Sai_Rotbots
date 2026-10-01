@@ -1,5 +1,39 @@
 # Goose_V0.1 — 工程与原始资料入口
 
+最新局部修正：[头壳后缘与相机闭合检查点](design/camera_head_closure_checkpoint.md)。原生 CAD 已去除头壳后缘台阶，并补上相机面与头壳之间的连续空心鼻罩；独立候选为446个显示对象、18轴、10.4046964kg条件质量，比419件版增加2.29248g。十个有限头部姿态与同源静力筛查通过；完整装配、制造、审美和训练放行仍未通过。新版[头部近景](images/microduck_color_blocking_446_parts/cream_head_detail.png)及[四色实际渲染](design/microduck_color_blocking_446_parts.md)与原生装配同源。
+
+整机增量汇总：[419件装配与静力参数候选](design/integrated_hardware_candidate.md)。前端夹持、相机架、电源和计算板固定件汇入同一份源与19体闭合姿态惯量，条件质量10.4024039kg，比默认版增加44.548g；嘴尖20N／中部50N各63个静力工况通过，嘴尖50N的63个超载失败保留。右膝静力余量约0.09Nm，最终装配质量与动态余量仍需收敛。此候选尚无同版新碰撞/动力学模型，不是新训练或制造放行，默认344件版保持不变。
+
+**现行默认模型入口：[整机机械与物理检查点](design/mechanical_integration_checkpoint.md)。** 当前344件、18主动轴、10.3578562kg条件质量；真实可更换夹持组件和四组上喙固定紧固已合入源几何、完整惯量、MJCF/URDF与碰撞模型。63个静力工况、限定短时站立和实际两垫对预置50g物体的保持/受拉通过。真实垫面使旧低位参考从24mm变为43.5mm；15mm目标的36组有限姿态筛查没有可用组合，尚未地面拾取。**第三、第四阶段、训练硬冻结与最终制造外观仍未完成。** 完整装配/承力、供电保护、实际硬件控制和整机任务仍待闭合。
+
+独立主线试验：[前端夹取与连续动作检查点](design/tip_grip_checkpoint.md)。六件替换候选仅增重1.673g，保留18轴；补入双脚承重前馈并修正路径后，19.9秒完成自由根站立→地面50g样件夹取→抬升保持→放回→回站，保持段最低间隙约73.7mm、最大机身倾角约2.12°。无超过0.2mm的非脚部碰撞候选、速度越限或求解器警告，但颈根6次控制请求被连续力矩上限截断，严格完整门槛仍为false。候选源和参数独立保存，未覆盖默认装配，未训练硬冻结；早期碰地及掉落失败保留。
+
+电气软件增量：[当前18轴硬件通信检查点](hardware/current_hybrid_control_checkpoint.md)。选定USB-CAN-A串口协议、AK V3与17CAN+独立TTL调度、有限被动采集和故障处理已实现；65项软件/PTY检查通过。当前电机／固件档案、供电保护、独立急停和实物通信仍未验证，不能直接通电或宣布整机完成。
+
+整机安装增量：[两块电源板的框架固定](design/power_module_mount_checkpoint.md)。按厂商真实安装孔补齐两件载板和完整紧固叠层，36件原生CAD、STEP/STL及84,192个闭合quad源已保存；与现行框架、机壳和活动髋部的34个有限姿态筛查通过。保留现有电源/散热/线束质量预留后保守新增10.122g，机身与关节包络未改变。增量采购表和装配图已交付；接线、散热、机壳支承及同版整机集成仍待完成，未覆盖默认344件装配。
+
+整机安装增量：[计算板与集线器的框架固定](design/compute_module_mount_checkpoint.md)。按两套真实孔位生成42件原生固定/替换件和完整紧固叠层，净增28.991g；有效源的34个有限姿态筛查通过，Radxa无效厂商主实体对应13组接触未确认。完整安装仍未通过；USB-CAN-A官方78.52×18.36mm尺寸也揭示旧预留不足。保留失败源，不宣称制造或整机完成。
+
+配色重新验收：[446件 MicroDuck 色块分区候选](design/microduck_color_blocking_446_parts.md)，四张同版实际渲染：[Cream](images/microduck_color_blocking_446_parts/cream.png)、[Graphite](images/microduck_color_blocking_446_parts/graphite.png)、[Lavender](images/microduck_color_blocking_446_parts/lavender.png)、[Sky](images/microduck_color_blocking_446_parts/sky.png)。主壳、中性检修门/脸板、深色骨架和嘴脚点缀分别配色；头部闭合与后缘修正已进入这一版源，仍等待用户审美验收。存在前部过渡空隙的[419件图](design/microduck_color_blocking_419_parts.md)、[344件图](design/microduck_color_blocking_344_parts.md)、[314件图](design/microduck_color_blocking_314_parts.md)与[292件图](design/microduck_color_blocking.md)保留为历史，不能混称本版。
+
+整机装配增量：[真实相机承力架与视野检查点](design/camera_installation_checkpoint.md)。完整原厂三层PCB包络筛查及三个自研原生件已保存；相对现有头架和展示光学件净增约3.762g，保留夹嘴轴承固定结构。现有夹取动作中样件被上嘴遮挡，需要先观察定位；一组低头观察姿态通过有限几何/名义静力检查。相机候选尚未并入默认装配，插头、固定五金、线束、标定及同版整机回归仍未闭合，没有追加PPO。
+
+[36件真实夹持/框架安装](evidence/mechanical_grip_installation.json)核对六个旧对应件替换、净增15.51g及80g预留不抵扣；[组件说明](design/grip_cassette_candidate.md)列出名义几何及未放行的材料、强度、工具路径。现有成功不代表可直接打印装机或下单。
+
+## 历史检查点与原始资料
+
+[314件安装前检查点](design/mechanical_checkpoint_pre_grip_installation.md)及[安装前参数预估](evidence/grip_cassette_parameter_delta_pre_install.json)保留当时的未合入状态；完整原运行资产可由基线记录的Git提交恢复。旧参考、质量和任务结果不得沿用当前验证结论。
+
+以下数字和模型保留其当时版本，不能作为最新参数。
+
+本轮新增：[当前装配的同版参数与运动学参考](design/body_bay_reference_handoff.md)。19个刚体、18轴及10.0525kg条件质量已导出同版MJCF/URDF和CSV，保留262件实际装配显示件；仅用于坐标、惯量和装配核对，碰撞模型未完成，不能用于行走/夹拖训练。第三、第四阶段及最终外观仍未通过。
+
+最新检查点：[机箱容纳与高髋原生装配](design/body_bay_native_checkpoint.md)。134件新建/重建原生实件已与新轴位、条件质量10.0525kg及逐体惯量合并；63组静力和13组限定任务姿态的下半身碰撞筛查通过，262件实际Blender源全部quad拓扑通过。**第三、第四阶段、新训练版本及最终外观仍未冻结**；完整载荷链、供电回馈、连续运动和一项原生体内分类分歧尚未关闭。颈腿护罩研究完成，优先白色薄分段开放罩，尚未加入实际装配。
+
+最新工作：[训练前整机髋部布局比较](design/hip_architecture_optimization.md)与[颈腿护罩研究](design/neck_leg_cover_trade_study.md)。用户尚未开始Sai_Lab训练，现按整机可落地与外观共同优化，旧参数不限制新布局。五组髋部候选完成静力和有限包络比较，**没有整体容纳放行候选**；不把大开口试验或未通过面积阈值的Blender皮壳当成最终外观。优先试白色分段、内侧开放的连杆护罩，局部TPU遮线作为比较；尚未制作护罩CAD。
+
+新增[髋侧倾至俯仰连接件及两组开口诊断](design/hip_carrier_candidate.md)保留原生CAD、29组限定碰撞检查和9.643kg条件台账；静力及局部无交集不等于全机可制造。下一轮训练交付仍待整体布置、承力框架、真实模块容纳与新同版质量/惯量闭合。
+
 最新制造候选：[追加两小时检查点](design/stage_three_four_extension.md)。六组带孔叉架、独立后支承、弹性脚底、转向筛查及同版质量台账已保存。保守条件质量9.608kg，63组静力通过，自由脚夹具23/24通过。**第三、第四阶段及最终外观仍未通过**，不能直接采购装机或作为新冻结训练版本。[实际候选图](images/pitch_foot_candidate/three_quarter.png)保留未制造部分状态。
 
 新增最终交付要求：[实体与电子版外观一致](design/manufacturing_appearance_acceptance.md)。最终图片必须直接来自同版制造装配；现有第二阶段图片不是最终制造外观。[原生曲面壳体增量](cad/exports/manufacturing_skins/manifest.json)仅包含八件外壳基础实体，[一致性检查](evidence/manufacturing_appearance_gate.json)通过不等同整机或最终外观放行。

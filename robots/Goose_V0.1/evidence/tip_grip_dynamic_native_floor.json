@@ -1,0 +1,67 @@
+{
+  "schema": "goose_tip_grip_dynamic_native_floor_v1",
+  "status": "NATIVE_FLOOR_REJECTION_CONFIRMED",
+  "captured_contact_sample_count": 1,
+  "tested_native_cases": 1,
+  "cases": [
+    {
+      "part": "upper_grip_shell",
+      "captured_state_time_s": 0.06000000000000069,
+      "convex_penetration_m": 0.0003935726257078445,
+      "native_body_pose": {
+        "position_world_m": [
+          0.20598589741038045,
+          -5.584121524947438e-06,
+          0.18302131143043857
+        ],
+        "rotation_world": [
+          [
+            0.2665409836020525,
+            6.070897217209505e-06,
+            0.9638235855298388
+          ],
+          [
+            0.00014302647739766587,
+            0.9999999887205067,
+            -4.5852078927026055e-05
+          ],
+          [
+            -0.9638235749367604,
+            0.00015007375048852923,
+            0.26654097972730617
+          ]
+        ]
+      },
+      "native_common": {
+        "volume_mm3": 2.450326927677685,
+        "wall_seconds": 0.5936076080033672
+      },
+      "genuine_floor_intrusion_confirmed": true
+    }
+  ],
+  "unsupported_samples": [],
+  "unresolved_native_queries": 0,
+  "genuine_dynamic_floor_intrusion_confirmed": true,
+  "all_captured_convex_candidates_native_clear": false,
+  "wall_seconds": 0.6343944840045879,
+  "total_wall_bound_s": 60.0,
+  "pair_timeout_s": 3.0,
+  "native_coordinate_unit": "mm",
+  "installed": false,
+  "whole_pickup_release": false,
+  "source_hashes": {
+    "robots/Goose_V0.1/evidence/tip_grip_floor_pickup_80mm_contact_probe.json": "d0f330bf4cad8f6c5954502f1565e0c3a73a19ecf4713109ac9bdb6a554796b4",
+    "robots/Goose_V0.1/cad/exports/tip_grip_candidate/manifest.json": "4c36c4caf7b55e4142fc4b5e9a98e05559eef03908c25df93d3025b97199d276",
+    "robots/Goose_V0.1/evidence/body_bay_mechanical_parameters.json": "68b0c181b5f5f552f5dc849b20529c76c9e46310da82eb14c6cc326d5bef2410",
+    "scripts/cad/build_goose_cad.py": "227fec57fa33afff9a25aba47d80662549f9a50898d515db5b77f81df8c3ca13",
+    "scripts/diagnostics/check_goose_grip_cassettes.py": "0be8337fa098958734bea4491ced88d77c6bc0c3d9d8702a1b9d9d3ab456258f",
+    "robots/Goose_V0.1/cad/source/tip_grip_candidate/upper_grip_shell.brep": "a1972474eccb58eba1add60c1a2ef0fb47c3a52d96518639205131be3c57e8b7",
+    "scripts/diagnostics/check_goose_tip_grip_dynamic_floor.py": "61219e789dd8ca57b015ef5452fe2278a56fc4b57f89161f32c3e59d759b5a6d"
+  },
+  "limitations": [
+    "Checks observed10ms-sampled contact poses; not a certified continuous swept-volume bound.",
+    "One positive exact native solid volume belowfloor rejects this trial; remaining samples are unnecessary for that rejection.",
+    "Zero or timeout at one sample cannot prove all poses clear. Unknown queries stay unresolved.",
+    "Does not change geometry, hulls, controller, joint limits, collision filters or physical gate."
+  ]
+}

@@ -5,7 +5,7 @@ It does not release the cross-axis joints, torso, head, wires or whole robot.
 CAD holes marked TAP are tap-drill geometry; threads are manufacturing notes.
 """
 from pathlib import Path
-import hashlib, json, sys
+import argparse, hashlib, json, sys
 import numpy as np
 import trimesh
 from scipy.spatial.transform import Rotation
@@ -18,6 +18,7 @@ from build_goose_stage_two import candidate
 from build_goose_cad import cylinder, box, holes, transform
 from build_goose_actuator_interfaces import quad_sampling
 from goose_nurbs_skin import native_properties
+from sai_agent.goose.morphology import apply_leg_layout
 
 
 def radial(pcd, angles, y, offset=np.zeros(3)):
@@ -43,11 +44,14 @@ def fork_profile(a, b, y, rear=False):
 
 
 def main():
+    parser = argparse.ArgumentParser(); parser.add_argument('--layout', type=Path); args = parser.parse_args()
     s = candidate()
+    if args.layout: apply_leg_layout(s, json.loads(args.layout.read_text()))
     facts_file = ROBOT/'hardware/stage_three_actuator_mounts.json'
     facts = json.loads(facts_file.read_text())['catalog']
-    source = ROBOT/'cad/source/pitch_fork_assembly'
-    exports = ROBOT/'cad/exports/pitch_fork_assembly'
+    folder = 'body_bay_pitch_forks' if args.layout else 'pitch_fork_assembly'
+    source = ROBOT/'cad/source'/folder
+    exports = ROBOT/'cad/exports'/folder
     source.mkdir(parents=True,exist_ok=True); exports.mkdir(parents=True,exist_ok=True)
     records=[]; scene=[]; assemblies=[]
 
@@ -80,7 +84,7 @@ def main():
             role='dimensioned_attachment_unreleased_full_assembly',geometry_npz=str(npz.relative_to(ROBOT)),source_sha256=hashlib.sha256(npz.read_bytes()).hexdigest()))
         return shape
 
-    pairs=[('lower_neck','neck_pitch','neck_mid_pitch'),('upper_neck','neck_mid_pitch','head_pitch')]
+    pairs=[] if args.layout else [('lower_neck','neck_pitch','neck_mid_pitch'),('upper_neck','neck_mid_pitch','head_pitch')]
     for side in ['right','left']:
         pairs += [(side+'_thigh',side+'_hip_pitch',side+'_knee_pitch'),(side+'_shin',side+'_knee_pitch',side+'_ankle_pitch')]
     for label,upper,lower in pairs:
@@ -213,9 +217,12 @@ def main():
             load_path='motor output -> tapped adapter -> near fork -> bridge -> far fork; opposite-side radial support through bearing onto stationary rear spider; distal motor case belongs to this moving link',
             release=False,remaining=['purchased bearing abutment limits','distal fastener stacks','motor cable installation','assembled sweep and stress concentrations']))
         print(label,'native parts done',flush=True)
-    manifest=dict(schema='goose_native_pitch_assembly_v1',scope='six parallel-axis links only',
+    manifest=dict(schema='goose_native_pitch_assembly_v1',scope='four new-layout leg links only' if args.layout else 'six parallel-axis links only',
         manufacturing_pass=False,assembly_pass=False,source_hashes={str(facts_file.relative_to(ROOT)):hashlib.sha256(facts_file.read_bytes()).hexdigest(),str(Path(__file__).relative_to(ROOT)):hashlib.sha256(Path(__file__).read_bytes()).hexdigest()},
         parts=records,assemblies=assemblies)
+    if args.layout:
+        manifest['source_hashes'][str(args.layout.resolve().relative_to(ROOT))] = hashlib.sha256(args.layout.read_bytes()).hexdigest()
+        manifest['source_hashes']['src/sai_agent/goose/morphology.py'] = hashlib.sha256((ROOT/'src/sai_agent/goose/morphology.py').read_bytes()).hexdigest()
     (exports/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
     (source/'quad_scene.json').write_text(json.dumps(dict(unit='m',status='NATIVE_PARALLEL_PITCH_ATTACHMENTS_NOT_FULL_ASSEMBLY',parts=scene),separators=(',',':'))+'\n')
 

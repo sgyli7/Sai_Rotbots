@@ -166,9 +166,11 @@ class System:
         normal=poses['head_roll'][1]@np.array([0.,0.,50.])
         forces.extend([('head_roll',grip,normal,np.zeros(3)),('beak_hinge',grip,-normal,np.zeros(3))])
         contacts=[]
+        support_y = getattr(self, 'contact_center_y_m', {'right': -.089, 'left': .089})
         for side in supports:
-            y=-.089 if side=='right' else .089
-            fraction=1. if len(supports)==1 else ((.089-com[1])/.178 if side=='right' else (com[1]+.089)/.178)
+            y = support_y[side]
+            span = support_y['left']-support_y['right']
+            fraction=1. if len(supports)==1 else ((support_y['left']-com[1])/span if side=='right' else (com[1]-support_y['right'])/span)
             # Single support uses CoP at COM lateral coordinate, within that foot.
             cp=np.array([cop_x,com[1] if len(supports)==1 else y,zcontact])
             force=np.array([-drag*fraction,0.,fz*fraction])

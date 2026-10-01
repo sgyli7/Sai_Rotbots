@@ -1,6 +1,6 @@
 """Bounded planted-foot turn feasibility; no learned gait or hardware release."""
 from pathlib import Path
-import json,sys,hashlib,copy
+import argparse,json,sys,hashlib,copy
 import numpy as np
 from scipy.optimize import least_squares
 from scipy.spatial import ConvexHull
@@ -11,10 +11,15 @@ sys.path.insert(0,str(ROOT/'scripts/models'))
 from build_goose_stage_two import candidate
 
 def main():
-    paths=[R/'configs/stage_two_contract.json',R/'evidence/manufacturing_component_parameters.json']
+    parser=argparse.ArgumentParser()
+    parser.add_argument('--parameters',type=Path,default=R/'evidence/manufacturing_component_parameters.json')
+    parser.add_argument('--output',type=Path,default=R/'evidence/manufacturing_turning_screen.json')
+    args=parser.parse_args()
+    paths=[R/'configs/stage_two_contract.json',args.parameters.resolve()]
     contract,data=[json.loads(p.read_text()) for p in paths];s=candidate()
     lift=data['rigid_coordinate_lift_m']
-    for n in s.pivots:s.pivots[n]+=[0,0,lift]
+    for n in s.pivots:
+        s.pivots[n]=np.array(data['pivots_world_at_zero_m'][n]) if 'pivots_world_at_zero_m' in data else s.pivots[n]+[0,0,lift]
     s.pivots['torso']=np.zeros(3);s.items=copy.deepcopy(data['items']);s.grip+=[0,0,lift];s.tip+=[0,0,lift]
     for side in ['right','left']:s.contact_hulls[side]=ConvexHull(data['contact_hulls'][side])
     limits={j['name']:j['range_rad'] for j in contract['joints']};model,_=s.model(0)
@@ -43,7 +48,7 @@ def main():
             'Other foot is not lifted here and is excluded from contacts: swing-foot clearance/trajectory and full collision still required',
             'Native cross-axis mounts, cable sweep, actual yaw speed/torque and repeated90/180degree step turns are unreleased',
             'Hip yaw range is joint range, not an upper bound or measured radius/rate of whole-body turning'])
-    (R/'evidence/manufacturing_turning_screen.json').write_text(json.dumps(result,indent=2)+'\n')
+    args.output.write_text(json.dumps(result,indent=2)+'\n')
     print({k:result[k] for k in ['planted_foot_kinematic_pass','static_screen_pass','turning_gait_pass']})
     print([{k:p[k] for k in ['side','torso_yaw_change_deg','position_error_m','orientation_error_rad','static_contact_feasible','continuous_torque_violations']} for p in cases])
     return 0 if result['planted_foot_kinematic_pass'] and result['static_screen_pass'] else 1

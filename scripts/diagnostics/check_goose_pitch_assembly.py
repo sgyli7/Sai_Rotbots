@@ -13,13 +13,7 @@ ROOT=Path(__file__).resolve().parents[2];R=ROOT/'robots/Goose_V0.1'
 sys.path[:0]=[str(ROOT/'scripts/models'),str(ROOT/'scripts/cad')]
 from build_goose_stage_two import candidate
 from build_goose_cad import transform
-
-
-def overlap(a,b):
-    aa=a.bounding_box();bb=b.bounding_box()
-    if not np.all(np.minimum(tuple(aa.max),tuple(bb.max))-np.maximum(tuple(aa.min),tuple(bb.min))>1e-6):return 0.
-    q=a&b
-    return sum(x.volume for x in q.solids()) if q is not None else 0.
+from sai_agent.native_cad import common_solid_volume_mm3 as overlap
 
 
 def main():
@@ -30,7 +24,7 @@ def main():
             f=R/meta['path'];assert hashlib.sha256(f.read_bytes()).hexdigest()==meta['sha256'],f
         t=p['world_from_local_mm'];shape=import_step(R/p['files']['step']['path'])
         if not shape.is_valid or len(shape.solids())!=1:raise ValueError(p['name'])
-        originals[p['name']]=transform(shape,np.array(t['rotation']),np.array(t['translation']))
+        originals[p['name']]=transform(shape.solids()[0],np.array(t['rotation']),np.array(t['translation']))
         records[p['name']]=p
     for source,sha in m['source_hashes'].items():assert hashlib.sha256((ROOT/source).read_bytes()).hexdigest()==sha,source
     cases=[('zero',{})]
@@ -64,6 +58,7 @@ def main():
                 v=overlap(shape,probe);hole_tests.append(dict(part=p['name'],center_mm=center,overlap_mm3=v,pass_clear=v<.01))
     report=dict(schema='goose_native_pitch_assembly_gate_v1',manifest_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
         parts=len(records),case_count=len(reports),cases=reports,tap_drill_probes=hole_tests,
+        source_hashes={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in [path,Path(__file__),ROOT/'src/sai_agent/native_cad.py']},
         partial_interference_pass=all(x['pass_no_interference'] for x in reports) and all(x['pass_clear'] for x in hole_tests),
         full_assembly_pass=False,manufacturing_pass=False,
         scope='six native parallel-axis links only; no vendor motor solids, cross-axis brackets, cables, torso, head shell, feet or fastener solids',

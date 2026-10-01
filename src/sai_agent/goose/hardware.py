@@ -78,7 +78,8 @@ class DynamixelRobot:
             if self._read(j,11,1)!=0 or self._read(j,38,2)!=limit:raise OSError('Commissioning readback failed')
         return self.inspect()
 
-    def arm(self):
+    def validate_ready(self):
+        """Read-only preflight, also used before energizing hybrid CAN peers."""
         if not self.calibration or self.calibration.get('commissioning_passed') is not True:
             raise ValueError('Physical joint sign/zero, current/torque and IMU commissioning required')
         names=[j['name'] for j in self.joints]
@@ -88,16 +89,23 @@ class DynamixelRobot:
             if values.shape!=(len(names),) or not np.isfinite(values).all():raise ValueError('Incomplete calibration '+key)
         if any(v not in (-1,1) for v in self.calibration['sign']) or min(self.calibration['Nm_per_A'])<=0:
             raise ValueError('Invalid motor calibration')
+        statuses=self.inspect()
+        if len(statuses)!=len(self.joints):raise ValueError('Incomplete motor inspection')
+        for j,status in zip(self.joints,statuses):
+            cap=math.floor(self.spec['servos'][j['servo']]['current_limit_initial_A']/CURRENT_UNIT_A[j['servo']])
+            if status['operating_mode']!=0 or not 0<status['current_limit_ticks']<=cap:
+                raise ValueError('Hardware current limit/mode not commissioned: '+j['name'])
+            if status['hardware_error'] or status['torque_enabled']:raise ValueError('Motor not in healthy torque-off state')
+            voltage=status['voltage_tenths']/10
+            if not ((10.6<=voltage<=14.0) if j['bus']=='12v' else (4.75<=voltage<=5.25)):
+                raise ValueError('Voltage outside commissioning envelope')
+            if status['temperature_C']>=60:raise ValueError('Motor above initial commissioning temperature gate')
+        return [dict(status,output_Nm_per_A=float(self.calibration['Nm_per_A'][i]))
+                for i,status in enumerate(statuses)]
+
+    def arm(self):
         try:
-            for j,status in zip(self.joints,self.inspect()):
-                cap=math.floor(self.spec['servos'][j['servo']]['current_limit_initial_A']/CURRENT_UNIT_A[j['servo']])
-                if status['operating_mode']!=0 or not 0<status['current_limit_ticks']<=cap:
-                    raise ValueError('Hardware current limit/mode not commissioned: '+j['name'])
-                if status['hardware_error'] or status['torque_enabled']:raise ValueError('Motor not in healthy torque-off state')
-                voltage=status['voltage_tenths']/10
-                if not ((10.6<=voltage<=14.0) if j['bus']=='12v' else (4.75<=voltage<=5.25)):
-                    raise ValueError('Voltage outside commissioning envelope')
-                if status['temperature_C']>=60:raise ValueError('Motor above initial commissioning temperature gate')
+            self.validate_ready()
             # Validate every bus and motor before enabling any actuator.
             for j in self.joints:
                 self._write(j,98,1,0);self._write(j,102,2,0);self._write(j,98,1,5)

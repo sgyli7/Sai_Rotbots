@@ -1,0 +1,80 @@
+{
+  "schema": "goose_supported_manipulation_checkpoint_v1",
+  "checked_utc": "2026-10-01T04:46:27.505018+00:00",
+  "status": "NOMINAL_FUNCTION_PROGRESS_CONTROL_MARGIN_AND_ENGINEERING_RELEASE_OPEN",
+  "robot": "Goose_V0.1",
+  "default_assembly_changed": false,
+  "detached_conditional_mass_kg": 10.359529368004694,
+  "active_axis_count": 18,
+  "source_part_count": 344,
+  "strict_cycle_pass": false,
+  "nominal_lift_hold_pass": true,
+  "nominal_place_release_return_pass": true,
+  "hold_minimum_clearance_m": 0.07373798111673809,
+  "hold_nonpad_support_forces_n": {},
+  "maximum_root_tilt_rad": 0.03692512144502374,
+  "continuous_clipped_control_ticks": {
+    "neck_pitch": 6
+  },
+  "speed_violations": {},
+  "nonobject_contact_candidate_count": 0,
+  "contact_candidate_penetration_threshold_m": 0.0002,
+  "ideal_encoders_imu": true,
+  "tests": [
+    {
+      "command": "PYTHONPATH=src python -m pytest -q tests/test_goose_double_support.py tests/test_goose_native_linkage.py",
+      "observed_passed": 8,
+      "wall_seconds": 59.06,
+      "collected_before_independent_reference_test_added": true,
+      "four_static_support_tests_unchanged_from_git": "728e1627"
+    },
+    {
+      "command": "PYTHONPATH=src python -m pytest -q tests/test_goose_double_support.py::test_finite_reference_matches_independent_mujoco_fk",
+      "observed_passed": 1,
+      "wall_seconds": 24.72
+    }
+  ],
+  "historical_trials": [
+    {
+      "evidence": "evidence/supported_manipulation_cycle.json",
+      "reproduction_git": "d671ed29",
+      "place_field_is_not_place_success": true
+    },
+    {
+      "evidence": "evidence/supported_manipulation_cycle_contract.json",
+      "reproduction_git": "728e1627",
+      "place_field_is_not_place_success": true
+    }
+  ],
+  "original_goal_deadline_utc": "2026-09-30T17:55:02+00:00",
+  "original_timebox_met": false,
+  "third_stage_complete": false,
+  "fourth_stage_complete": false,
+  "training_hardware_freeze": false,
+  "final_manufacturing_appearance_pass": false,
+  "open_whole_robot_gates": [
+    "Full native assembly/load path/skin and wing-door mounting, tool access and manufacturing details.",
+    "Exact camera/PCB/connector selection and mounting, power and cable integration.",
+    "AK48 voltage/regen window and model-firmware command profiles; physical protection and thermal limits.",
+    "Actual hardware control, calibration, safety/timeout integration and measured latency/backlash/force parameters.",
+    "Same-version Godot/Jolt adaptation of passive linkage, sole contacts and armature; keep neutral SI for Unity/Bevy.",
+    "Gait/turn/loaded drag/terrain and specified-object visual task validation.",
+    "SKU procurement/cost closure and four same-version final manufacturing renders."
+  ],
+  "next_system_step": "Return to whole-robot assembly and power/drive closure; preserve this bounded functional result and do not expand PPO or chase individual clipping samples indefinitely.",
+  "source_hashes": {
+    "robots/Goose_V0.1/evidence/low_pose_support_feedforward.json": "0b036679b2b568ada5495b8159f78cb02cfd8d972ad04fa4e794053732d3c0df",
+    "robots/Goose_V0.1/evidence/supported_manipulation_cycle_contract_constant_pitch.json": "7c50ebb8d96196b066e13040816a467ce864d65868ed17b68de1fbe18e22319a",
+    "robots/Goose_V0.1/configs/tip_grip_physics_contract.json": "bfbda7bbf3fb84e1dfbe1e681c9377517c9f964b0aa41897a45aa47105e560c7",
+    "robots/Goose_V0.1/cad/exports/tip_grip_candidate/manifest.json": "4c36c4caf7b55e4142fc4b5e9a98e05559eef03908c25df93d3025b97199d276",
+    "tests/test_goose_double_support.py": "4f3a69185183c7060a2e5fc035d0f075ad587db77230016b84fa463e75541cfc",
+    "tests/test_goose_native_linkage.py": "4c01cb0201f481ce364feb5d88846917b511b7ab28afdfa8fe7054fe6a9612e9",
+    "robots/Goose_V0.1/README.md": "a9cb7ed3de7d6a275c7246e77fd3adf7bfe32c8c39f19dc8cd146cdd1e5a338c",
+    "robots/Goose_V0.1/design/tip_grip_checkpoint.md": "29d824544224e7be0cd67fe6893d8f59ac307019c5042492a689efeec2e8796e",
+    "robots/Goose_V0.1/design/hardware_milestones.md": "edf735afa9442aa85c130aa582f8eb0792edab087a6ee4f24206e4002ea7b8c2",
+    "robots/Goose_V0.1/design/mechanical_integration_checkpoint.md": "c0ea6017cf869223e7ee6600415cf43f8872f8c627270c5a78d8352f709cabc7",
+    "robots/Goose_V0.1/images/supported_manipulation_cycle.png": "dff28c3c66fe60cc9a43bedaebe7e86ca76a1829e743146acbe16490480650f2",
+    "robots/Goose_V0.1/evidence/supported_manipulation_render.json": "02fe12b18175b29b3838bd680fa9f162e54339400d27264fe788446d63f2d420",
+    "scripts/models/render_goose_manipulation_cycle.py": "ae82b0fc87a43a777968ad17d605cf0e2d92d26d5f3179109e46ce3637da134b"
+  }
+}
