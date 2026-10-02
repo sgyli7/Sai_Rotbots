@@ -1,0 +1,400 @@
+#!/usr/bin/env python3
+"""Render source-bound Gorilla Internal B native geometry over frozen C15.
+
+CPU images are layout evidence only. No OEM meshes, smoothing bevels, physical
+acceptance, or source-model edits are performed. --validate-only never renders.
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import importlib.util
+import json
+import math
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+ROOT = Path(__file__).resolve().parents[2]
+ROBOT = ROOT / "robots/gorilla_v0_1"
+SCRIPT = Path(__file__).resolve()
+HELPER = SCRIPT.with_name("render_gorilla_internal_architecture.py")
+BASE_BLEND = ROOT / "experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c.blend"
+BASE_BLEND_SHA = "3edc1ca35064750b60f94c4a2e5c62864d6072b7955280d266ef9c36aa3a15bb"
+BLENDER_ROOT = Path("/home/ethan/Softwares/blender-local/root")
+TAG = "internal_structure_b"
+EXPORTS = ROBOT / "cad/exports" / TAG
+VIEWS = {
+    "front": ((8, 0, 1.325), (0, 0, 1.325), 3.04),
+    "left": ((0, 8, 1.325), (0, 0, 1.325), 3.04),
+    "rear": ((-8, 0, 1.325), (0, 0, 1.325), 3.04),
+    "cutaway_front": ((8, 0, 1.325), (0, 0, 1.325), 3.04),
+    "cutaway_left": ((0, 8, 1.325), (0, 0, 1.325), 3.04),
+    "cutaway_threequarter": ((4, -6, 3.7), (0, 0, 1.325), 3.04),
+    "knee_support_detail": None,
+    "foot_mechanism_detail": None,
+}
+LEG_PREFIXES = tuple(f"{side}_{joint}_" for side in ("left", "right")
+                     for joint in ("hip", "knee", "fold", "ankle"))
+
+
+def sha(path):
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def resolved(path):
+    path = Path(path)
+    return (path if path.is_absolute() else ROOT / path).resolve()
+
+
+def record(path):
+    path = resolved(path)
+    return str(path.relative_to(ROOT)) if path.is_relative_to(ROOT) else str(path)
+
+
+def write_json(path, value):
+    Path(path).write_text(json.dumps(value, indent=2, allow_nan=False) + "\n")
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--scene", type=Path, default=ROBOT / "cad/source/internal_structure_b_scene.json")
+    parser.add_argument("--resolution", type=int, default=600)
+    parser.add_argument("--samples", type=int, default=16)
+    parser.add_argument("--views", default=",".join(VIEWS))
+    parser.add_argument("--validate-only", action="store_true", help="Read and validate sources; no Blender or outputs")
+    argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else None
+    args = parser.parse_args(argv)
+    args.scene = resolved(args.scene)
+    names = args.views.split(",")
+    if args.resolution < 64 or args.samples < 1:
+        parser.error("resolution must be >=64 and samples >=1")
+    if not names or len(set(names)) != len(names) or any(name not in VIEWS for name in names):
+        parser.error("views must be distinct names from: " + ",".join(VIEWS))
+    return args
+
+
+def part_map(scene):
+    parts = scene["parts"]
+    by_name = {part["name"]: part for part in parts}
+    if len(by_name) != len(parts):
+        raise ValueError("Duplicate source part names")
+    for part in parts:
+        vertices, faces = part["vertices_world_m"], part["faces"]
+        if not vertices or not faces or any(len(v) != 3 or not all(math.isfinite(x) for x in v) for v in vertices):
+            raise ValueError("Invalid source vertices: " + part["name"])
+        if any(len(f) < 3 or any(not isinstance(i, int) or isinstance(i, bool) or i < 0 or i >= len(vertices) for i in f) for f in faces):
+            raise ValueError("Invalid source faces: " + part["name"])
+        color = part.get("color_rgba", part.get("rgba"))
+        if color is None or len(color) != 4 or not all(math.isfinite(x) and 0 <= x <= 1 for x in color):
+            raise ValueError("Invalid source color: " + part["name"])
+    return by_name
+
+
+def service_part(part):
+    source_module = part.get("internal_structure_b", {}).get("A_module", {})
+    return part.get("role") == "service_space" or source_module.get("role") == "service_space"
+
+
+def load_inputs(args):
+    hashes = {record(args.scene): sha(args.scene), record(SCRIPT): sha(SCRIPT),
+              record(HELPER): sha(HELPER), record(BASE_BLEND): sha(BASE_BLEND)}
+    if hashes[record(BASE_BLEND)] != BASE_BLEND_SHA:
+        raise ValueError("Frozen C15 Blend changed")
+    scene = json.loads(args.scene.read_text())
+    if scene.get("robot_id") != "gorilla_v0_1" or scene.get("schema") != "gorilla_internal_structure_candidate_v1":
+        raise ValueError("Expected Gorilla Internal B native scene")
+    for field, path in (("base_scene", resolved(scene["base_scene"])),
+                        ("spec", resolved(scene["spec_path"])),
+                        ("builder", resolved(scene.get("builder_path", "scripts/models/build_gorilla_internal_structure.py")))):
+        value = sha(path)
+        if value != scene[field + "_sha256"]:
+            raise ValueError("Stale B source: " + record(path))
+        hashes[record(path)] = value
+    spec = json.loads(resolved(scene["spec_path"]).read_text())
+    if scene.get("budget_layout_sha256"):
+        layout_path = resolved(spec["budget_layout"])
+        value = sha(layout_path)
+        if value != scene["budget_layout_sha256"]:
+            raise ValueError("Stale B module layout source")
+        hashes[record(layout_path)] = value
+    base = json.loads(resolved(scene["base_scene"]).read_text())
+    original, candidate = part_map(base), part_map(scene)
+    retained = sorted(original.keys() & candidate.keys())
+    for name in retained:
+        if original[name] != candidate[name]:
+            raise ValueError("Retained C15 source row changed: " + name)
+    armor = {name for name, part in original.items() if part["role"] in ("armor_surface", "armor_cover")}
+    if not armor.issubset(retained):
+        raise ValueError("B removes original armor")
+    legacy = sorted(name for name in retained if original[name]["role"] == "visible_mechanism" and name.startswith(LEG_PREFIXES))
+    added, removed = sorted(candidate.keys() - original.keys()), sorted(original.keys() - candidate.keys())
+    for name in added:
+        if candidate[name].get("edge_bevel_m", 0) != 0:
+            raise ValueError("B native part requests a bevel: " + name)
+    check_inputs(hashes)
+    return scene, original, candidate, retained, added, removed, legacy, hashes
+
+
+def check_inputs(hashes):
+    for path, expected in hashes.items():
+        if sha(resolved(path)) != expected:
+            raise ValueError("Source changed during execution: " + path)
+
+
+def camera_views(scene, parts):
+    views = dict(VIEWS)
+    knee = next((joint for joint in scene["joint_supports"] if joint["id"] == "left_knee"), None)
+    if knee is None:
+        raise ValueError("Missing left knee support for detail camera")
+    target = tuple(knee["center_world_m"])
+    views["knee_support_detail"] = (tuple(target[i] + (3, 4, 1)[i] for i in range(3)), target, .60)
+    vertices = [vertex for part in parts.values() if part.get("body") == "left_foot" and not service_part(part)
+                for vertex in part["vertices_world_m"]]
+    if not vertices:
+        raise ValueError("Missing left foot geometry for detail camera")
+    lo = [min(v[i] for v in vertices) for i in range(3)]
+    hi = [max(v[i] for v in vertices) for i in range(3)]
+    target = tuple((lo[i] + hi[i]) / 2 for i in range(3))
+    scale = max(.55, math.sqrt(sum((hi[i] - lo[i]) ** 2 for i in range(3))) * 1.2)
+    views["foot_mechanism_detail"] = (tuple(target[i] + (3, 4, 1.8)[i] for i in range(3)), target, scale)
+    return views
+
+
+def wrapper(args, inputs):
+    hashes = inputs[-1]
+    env = os.environ.copy()
+    env["LD_LIBRARY_PATH"] = ":".join(str(BLENDER_ROOT / path) for path in (
+        "usr/lib", "usr/lib/aarch64-linux-gnu", "usr/lib/aarch64-linux-gnu/lapack", "usr/lib/aarch64-linux-gnu/blas"))
+    env["BLENDER_SYSTEM_SCRIPTS"] = str(BLENDER_ROOT / "usr/share/blender/scripts")
+    env["BLENDER_SYSTEM_DATAFILES"] = str(BLENDER_ROOT / "usr/share/blender/datafiles")
+    env["PYTHONHOME"], env["PYTHONNOUSERSITE"] = "/usr", "1"
+    env["PYTHONPATH"] = str(ROOT / ".venv/lib/python3.12/site-packages")
+    log_dir = ROOT / "artifacts/gorilla_v0_1/internal_structure_b_render"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_path = log_dir / (TAG + ".log")
+    command = [str(BLENDER_ROOT / "usr/bin/blender"), "-b", "--threads", "12", "--python-exit-code", "1",
+               "--python", str(SCRIPT), "--", "--scene", str(args.scene), "--resolution", str(args.resolution),
+               "--samples", str(args.samples), "--views", args.views]
+    check_inputs(hashes)
+    print("Gorilla Internal B Cycles CPU: " + str(log_path), flush=True)
+    with log_path.open("w") as log:
+        result = subprocess.run(command, env=env, stdout=log, stderr=subprocess.STDOUT)
+    if result.returncode:
+        print(log_path.read_text()[-7000:])
+        raise RuntimeError("Internal B render failed; see " + str(log_path))
+    check_inputs(hashes)
+    manifest = json.loads((EXPORTS / (TAG + "_render_manifest.json")).read_text())
+    if manifest["input_hashes"] != hashes:
+        raise ValueError("Blender child did not render the wrapper source version")
+
+
+def blender_render(args, inputs):
+    import bpy
+    from mathutils import Vector
+
+    scene_source, original, parts, retained, added, removed, legacy, hashes = inputs
+    helper_spec = importlib.util.spec_from_file_location("gorilla_internal_render_helpers", HELPER)
+    helper = importlib.util.module_from_spec(helper_spec)
+    helper_spec.loader.exec_module(helper)
+
+    def plain(value):
+        if isinstance(value, (str, int, float, bool)) or value is None:
+            return value
+        try:
+            return list(value)
+        except TypeError:
+            return str(value)
+
+    def identity(obj):
+        result = helper.mesh_identity(obj)
+        materials = []
+        for material in obj.data.materials:
+            if material is None:
+                materials.append(None)
+                continue
+            row = {"name": material.name, "diffuse_color": list(material.diffuse_color),
+                   "metallic": material.metallic, "roughness": material.roughness, "use_nodes": material.use_nodes}
+            if material.use_nodes:
+                row["nodes"] = [{"name": node.name, "type": node.bl_idname,
+                                 "inputs": [(socket.name, plain(socket.default_value)) for socket in node.inputs if hasattr(socket, "default_value")]}
+                                for node in material.node_tree.nodes]
+                row["links"] = [(link.from_node.name, link.from_socket.name, link.to_node.name, link.to_socket.name)
+                                for link in material.node_tree.links]
+            materials.append(row)
+        result["material_sha256"] = hashlib.sha256(json.dumps(materials, sort_keys=True, allow_nan=False).encode()).hexdigest()
+        result["polygon_material_indices_sha256"] = hashlib.sha256(json.dumps([p.material_index for p in obj.data.polygons]).encode()).hexdigest()
+        return result
+
+    bpy.ops.wm.open_mainfile(filepath=str(BASE_BLEND))
+    for name in original:
+        obj = bpy.data.objects.get(name)
+        if obj is None or obj.type != "MESH":
+            raise ValueError("Missing frozen C15 mesh: " + name)
+    before = [identity(bpy.data.objects[name]) for name in retained]
+    for name in removed:
+        bpy.data.objects.remove(bpy.data.objects[name], do_unlink=True)
+    collection = bpy.data.collections.new(TAG + "_native_parts")
+    bpy.context.scene.collection.children.link(collection)
+    native_records = []
+    for name in added:
+        part = parts[name]
+        if bpy.data.objects.get(name):
+            raise ValueError("New native name collides with frozen non-part object: " + name)
+        mesh = bpy.data.meshes.new(name + "_mesh")
+        mesh.from_pydata(part["vertices_world_m"], [], part["faces"])
+        mesh.update()
+        obj = bpy.data.objects.new(name, mesh)
+        collection.objects.link(obj)
+        color = part.get("color_rgba", part.get("rgba"))
+        linear = lambda c: c / 12.92 if c <= .04045 else ((c + .055) / 1.055) ** 2.4
+        rgba = tuple(linear(c) for c in color[:3]) + (color[3],)
+        material = bpy.data.materials.new(name + "_source_material")
+        material.use_nodes = True
+        material.diffuse_color = rgba
+        material.blend_method = "BLEND" if color[3] < 1 else "OPAQUE"
+        bsdf = material.node_tree.nodes.get("Principled BSDF")
+        bsdf.inputs["Base Color"].default_value = rgba
+        bsdf.inputs["Alpha"].default_value = color[3]
+        bsdf.inputs["Metallic"].default_value = .05
+        bsdf.inputs["Roughness"].default_value = .42
+        mesh.materials.append(material)
+        obj["robot_id"], obj["body"], obj["role"] = "gorilla_v0_1", part["body"], part["role"]
+        obj["geometry_accepted"], obj["physics_accepted"] = False, False
+        obj["source_scene_sha256"] = hashes[record(args.scene)]
+        native_records.append({"name": name, "identity": identity(obj),
+                               "source_metadata": {k: v for k, v in part.items() if k not in ("vertices_world_m", "faces")},
+                               "import_scope": "Native world-meter vertices/faces, identity transform, no bevel/modifier/OEM import"})
+    objects = {name: bpy.data.objects[name] for name in parts}
+    initial_hidden = {name: obj.hide_render for name, obj in objects.items()}
+    service_names = {name for name, part in parts.items() if service_part(part)}
+    for name in service_names:
+        objects[name].hide_render = True
+    render_scene = bpy.context.scene
+    render_scene.render.engine = "CYCLES"
+    render_scene.cycles.device = "CPU"
+    render_scene.cycles.samples = args.samples
+    render_scene.cycles.use_denoising = False
+    render_scene.render.resolution_x = render_scene.render.resolution_y = args.resolution
+    render_scene.render.resolution_percentage = 100
+    render_scene.render.image_settings.file_format = "PNG"
+    render_scene.render.image_settings.color_mode = "RGBA"
+    render_scene.render.film_transparent = True
+    render_scene["internal_structure_b_scene_sha256"] = hashes[record(args.scene)]
+    render_scene["geometry_accepted"], render_scene["physics_accepted"] = False, False
+    bpy.context.preferences.filepaths.save_version = 0
+    camera_data = bpy.data.cameras.new(TAG + "_camera")
+    camera = bpy.data.objects.new(TAG + "_camera", camera_data)
+    render_scene.collection.objects.link(camera)
+    render_scene.camera, camera_data.type = camera, "ORTHO"
+    views = camera_views(scene_source, parts)
+
+    def set_camera(view):
+        position, target, scale = views[view]
+        camera.location = position
+        camera.rotation_euler = (Vector(target) - camera.location).to_track_quat("-Z", "Y").to_euler()
+        camera_data.ortho_scale = scale
+
+    for directory in (EXPORTS, ROBOT / "images"):
+        directory.mkdir(parents=True, exist_ok=True)
+    blend_path = ROBOT / "cad/source/internal_structure_b.blend"
+    glb_path = EXPORTS / "internal_structure_b.glb"
+    if blend_path.resolve() in {resolved(path) for path in hashes}:
+        raise ValueError("Refusing source overwrite")
+    set_camera("cutaway_threequarter")
+    bpy.ops.object.select_all(action="DESELECT")
+    for obj in objects.values():
+        obj.select_set(True)
+    bpy.context.view_layer.objects.active = next(iter(objects.values()))
+    bpy.ops.export_scene.gltf(filepath=str(glb_path), export_format="GLB", use_selection=True,
+                             export_yup=True, export_extras=True)
+    bpy.ops.object.select_all(action="DESELECT")
+    bpy.ops.wm.save_as_mainfile(filepath=str(blend_path))
+    cameras, images = [], []
+    for view in args.views.split(","):
+        set_camera(view)
+        cutaway = view.startswith("cutaway_") or view.endswith("_detail")
+        hidden = []
+        for name, obj in objects.items():
+            reason = None
+            if initial_hidden[name]:
+                reason = "frozen_source_hide_render"
+            if name in service_names:
+                reason = "explicit_external_service_space_not_hardware"
+            if cutaway and name in retained and parts[name]["role"] in ("armor_surface", "armor_cover"):
+                reason = "cutaway_original_armor"
+            if cutaway and name in legacy:
+                reason = "cutaway_explicit_old_leg_joint_drive_proxy"
+            obj.hide_render = reason is not None
+            if reason:
+                hidden.append({"name": name, "role": parts[name]["role"], "reason": reason})
+        image_path = ROBOT / "images" / (TAG + "_" + view + ".png")
+        render_scene.render.filepath = str(image_path)
+        bpy.ops.render.render(write_still=True)
+        position, target, scale = views[view]
+        cameras.append({"view": view, "projection": "ORTHO", "position_world_m": list(position), "target_world_m": list(target),
+                        "rotation_euler_rad": list(camera.rotation_euler), "ortho_scale_m": scale,
+                        "resolution_px": [args.resolution] * 2, "hidden_mesh_names": [row["name"] for row in hidden],
+                        "hidden_mesh_reasons": hidden, "new_physical_internals_hidden": False})
+        images.append({"view": view, "path": record(image_path), "sha256": sha(image_path)})
+        for name, obj in objects.items():
+            obj.hide_render = initial_hidden[name] or name in service_names
+    after = [identity(objects[name]) for name in retained]
+    if before != after:
+        raise ValueError("Retained C15 mesh/transform/material fingerprints changed")
+    check_inputs(hashes)
+    shared = {"robot_id": "gorilla_v0_1", "candidate": TAG, "scene_path": record(args.scene), "scene_sha256": hashes[record(args.scene)],
+              "input_hashes": hashes, "geometry_accepted": False, "physics_accepted": False, "stable_physical_contract": False}
+    manifests = {
+        "source": {**shared, "schema": "gorilla_internal_structure_source_v1", "retained_mesh_identity_before": before,
+                   "retained_mesh_identity_after": after, "retained_geometry_transform_material_preserved": before == after,
+                   "removed_original_part_names": removed, "added_native_part_names": added,
+                   "legacy_cutaway_allowlist": legacy, "external_service_names": sorted(service_names),
+                   "source_metadata": {k: v for k, v in scene_source.items() if k != "parts"},
+                   "oem_loaded": False, "coordinate_frame": scene_source["coordinate_frame"],
+                   "glb_axis_scope": "Blender Z-up SI source; standard glTF Y-up exporter conversion"},
+        "native_parts": {**shared, "schema": "gorilla_internal_structure_native_parts_v1", "parts": native_records},
+        "camera": {**shared, "schema": "gorilla_internal_structure_cameras_v1", "cameras": cameras,
+                   "visibility_scope": "Only explicit original armor/leg-joint proxies and external service space hidden; new physical modules and foot mechanisms retained"},
+    }
+    references = {}
+    for kind, value in manifests.items():
+        path = EXPORTS / (TAG + "_" + kind + "_manifest.json")
+        write_json(path, value)
+        references[kind] = {"path": record(path), "sha256": sha(path)}
+    render_manifest = {**shared, "schema": "gorilla_internal_structure_render_v1", "renderer": "Blender " + bpy.app.version_string + " Cycles CPU",
+                       "device": "CPU", "samples": args.samples, "resolution_px": [args.resolution] * 2,
+                       "images": images, "manifests": references,
+                       "exports": [{"path": record(path), "sha256": sha(path)} for path in (blend_path, glb_path)],
+                       "post_processing": "None", "acceptance_scope": "Visual layout evidence only; no fit, interference, drive, contact, thermal or strength approval"}
+    check_inputs(hashes)
+    manifest_path = EXPORTS / (TAG + "_render_manifest.json")
+    write_json(manifest_path, render_manifest)
+    print(json.dumps({"render_manifest": record(manifest_path), "retained": len(retained), "imported": len(added), "removed": len(removed)}))
+
+
+def main():
+    args = parse_args()
+    inputs = load_inputs(args)
+    if args.validate_only:
+        scene, original, parts, retained, added, removed, legacy, hashes = inputs
+        print(json.dumps({"validation": "sources_only_no_blender_no_outputs", "input_hashes": hashes,
+                          "retained": len(retained), "imported": len(added), "removed": len(removed),
+                          "legacy_cutaway_allowlist": legacy, "external_service_names": [name for name, part in parts.items() if service_part(part)],
+                          "cameras": camera_views(scene, parts), "geometry_accepted": False, "physics_accepted": False}, indent=2))
+        return
+    try:
+        import bpy  # noqa: F401
+    except ImportError:
+        wrapper(args, inputs)
+    else:
+        blender_render(args, inputs)
+
+
+if __name__ == "__main__":
+    main()

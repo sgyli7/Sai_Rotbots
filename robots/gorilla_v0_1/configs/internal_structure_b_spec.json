@@ -1,0 +1,173 @@
+{
+  "schema": "gorilla_internal_structure_spec_v1",
+  "robot_id": "gorilla_v0_1",
+  "base_scene": "experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_scene.json",
+  "base_scene_sha256": "7a1e49f45838303ca5fd86265dc9980c10cde85ed7626424136afd3863aa5886",
+  "geometry_spec": "robots/gorilla_v0_1/configs/appearance_c_spec.json",
+  "budget_spec": "robots/gorilla_v0_1/configs/internal_architecture_a_spec.json",
+  "budget_layout": "robots/gorilla_v0_1/configs/internal_architecture_a_layout.json",
+  "material": {
+    "id": "s355j2h_conditional",
+    "density_kg_m3": 7850,
+    "young_modulus_Pa": 210000000000,
+    "poisson_ratio": 0.3,
+    "minimum_yield_Pa": 355000000,
+    "candidate_wall_range_m": [
+      0.006,
+      0.01
+    ],
+    "properties_basis": "SSAB 355J2H material product, 3-12.5 mm wall; ambient elastic coefficients and density from SSAB handbook section 1.6.3. Custom bent/welded members still require material certificates and joint/HAZ qualification.",
+    "sources": [
+      "https://www.ssab.com/en/brands-and-products/ssab-domex/product-offer/tube-355-j2h",
+      "https://www.ssab.com/-/media/files/en/infra/news-and-articles/ssab-domex-tube-structural-hollow-sections-en-1993-handbook.pdf",
+      "https://steelconstruction.info/topics/design/steel-material-properties/"
+    ]
+  },
+  "reflect_left_upper_arm_frame": true,
+  "original_frame_joint_keepout_radius_m": 0.111,
+  "fork_radial_station_m": 0.135,
+  "bearing": {
+    "reference": "Schaeffler 32020-X-XL",
+    "inner_radius_m": 0.05,
+    "outer_radius_m": 0.075,
+    "width_m": 0.032,
+    "mass_kg": 1.94,
+    "center_half_span_m": 0.099,
+    "conditional_O_pressure_center_half_span_m": 0.116,
+    "catalog_a_from_T_reference_end_m": 0.033,
+    "dynamic_radial_Cr_N": 205000,
+    "static_radial_C0r_N": 285000,
+    "e": 0.46,
+    "Y": 1.31,
+    "Y0": 0.72,
+    "induced_axial_coefficient": 0.47,
+    "pressure_center_scope": "Conditional O orientation only; assembly shoulders, cage, preload and fit are not qualified.",
+    "sources": [
+      "https://www.schaeffler.es/remotemedien/media/_shared_media/08_media_library/01_publications/schaeffler_2/tpi/downloads_8/tpi_241_de_en.pdf",
+      "https://www.schaeffler.es/remotemedien/media/_shared_media/08_media_library/01_publications/schaeffler_2/tpi/downloads_8/tpi_245_de_en.pdf",
+      "https://www.schaeffler.es/remotemedien/media/_shared_media/08_media_library/01_publications/schaeffler_2/tpi/downloads_8/tpi_205_de_en.pdf"
+    ]
+  },
+  "shaft": {
+    "outer_radius_m": 0.05,
+    "bore_radius_m": 0.03,
+    "length_m": 0.264,
+    "collar_outer_radius_m": 0.08,
+    "collar_width_m": 0.06,
+    "scope": "Nominal custom finite-material hollow output shaft; material certificate, shoulder/key/weld concentration and bearing journal tolerance remain open."
+  },
+  "housing": {
+    "outer_radius_m": 0.085,
+    "lip_bore_radius_m": 0.072,
+    "length_m": 0.048,
+    "seat_radial_clearance_m": 0.0001,
+    "scope": "10 mm radial steel seat wall and retaining lip envelope, not a manufactured clamped bearing housing. Joint/preload/seal/bolt details remain open."
+  },
+  "candidate_pose_angles_deg": {
+    "neutral": {
+      "hip": 0,
+      "knee": 0,
+      "fold": 0,
+      "ankle": 0,
+      "torso": 0,
+      "shoulder": 0,
+      "elbow": 0
+    },
+    "crouch": {
+      "hip": -15,
+      "knee": 30,
+      "fold": -10,
+      "ankle": -5,
+      "torso": 0,
+      "shoulder": 0,
+      "elbow": 0
+    },
+    "forward_manipulation": {
+      "hip": -10,
+      "knee": 20,
+      "fold": -5,
+      "ankle": -5,
+      "torso": 10,
+      "shoulder": -60,
+      "elbow": 35
+    },
+    "deep_crouch_rejection_probe": {
+      "hip": -30,
+      "knee": 60,
+      "fold": -20,
+      "ankle": -10,
+      "torso": 10,
+      "shoulder": -45,
+      "elbow": 25
+    }
+  },
+  "pose_scope": "Provisional actual rigid-body transforms about unchanged C15 sagittal points. Not a complete joint topology or feasible motion path.",
+  "foot_candidate": "robots/gorilla_v0_1/source/internal_structure_b_foot_candidate.json",
+  "physics_accepted": false,
+  "geometry_accepted": false,
+  "scope": "Independent paired output-support/net-stock candidate. Armor stays exact; actuation route, full assembly, motion, energy and thermal gates remain open.",
+  "compact_cylinder_probe": {
+    "reference_scope": "Manufacturer CHD steel T/4M/S100 dimensions; custom swing eyes and ports unqualified.",
+    "manufacturer_source": "https://www.parker.com/content/dam/Parker-com/Literature/Miller-Fluidpower/miller/cat/HY08-M1137-7NA-CHE-CHD.pdf",
+    "stroke_m": 0.1,
+    "mount_eye_allowance_m": 0.05,
+    "link_loss_sensitivity_efficiency": 0.85,
+    "nominal_pressure_Pa": 16000000,
+    "return_pressure_sensitivity_Pa": 1000000,
+    "mount_mass_range_kg": [
+      6,
+      10,
+      16
+    ],
+    "fold": {
+      "base_body": "middle_shank",
+      "output_body": "distal_shank",
+      "base_relative_to_fold_m": [
+        -0.05,
+        -0.065,
+        0.25
+      ],
+      "output_relative_to_fold_m": [
+        0.14,
+        -0.065,
+        -0.03
+      ],
+      "bore_m": 0.08,
+      "rod_m": 0.045,
+      "body_width_m": 0.114,
+      "body_length_m": 0.178,
+      "bare_retracted_to_thread_tip_m": 0.24,
+      "bare_mass_kg": 13.89
+    },
+    "ankle": {
+      "base_body": "middle_shank",
+      "output_body": "foot",
+      "base_relative_to_fold_m": [
+        -0.035,
+        0.065,
+        0.13
+      ],
+      "output_relative_to_ankle_m": [
+        0.13,
+        0.035,
+        0.085
+      ],
+      "bore_m": 0.08,
+      "rod_m": 0.045,
+      "body_width_m": 0.114,
+      "body_length_m": 0.178,
+      "bare_retracted_to_thread_tip_m": 0.24,
+      "bare_mass_kg": 13.89
+    },
+    "pressure_scope": "Finite task statics with ideal endpoints. 0.85 force-loss sensitivity and 1MPa return pressure are explicit hypotheses, not continuous or transient capability evidence.",
+    "remaining_sagittal_drives": "Hip and knee still retain A complete module bounds and geometry; not selected or accepted.",
+    "discarded_63mm_ankle_probe_reason": "Actual finite normal-contact extremes exceeded the 63/36 return-direction pressure/loss hypothesis even empty in neutral and crouch. 80/45 is an explicitly larger new probe; neither whole architecture is accepted."
+  },
+  "foot_candidate_sha256": "064b2e178343a49ed80e64351c054e5e319c5fa03919824759b649bb816351bd",
+  "segment_tray_thickness_m": 0.006,
+  "pad_density_range_kg_m3_hypothesis": [
+    1100,
+    1250,
+    1500
+  ]
+}

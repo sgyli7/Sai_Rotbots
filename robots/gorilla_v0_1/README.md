@@ -1,6 +1,6 @@
 # Gorilla V0.1
 
-当前工作：**C15 已提交并合入主干，内部架构 A 已形成宏观预算与空间冲突候选。** 先收敛净框架、完整高载总成与复合脚承力，再根据冲突微调原壳。原稿形状仍是约束；最终目标是双足、双手和自主复杂 Bevy 任务。
+当前工作：**C15 已先提交并合入主干，内部 B 已保存真实支承/复合脚候选、同源渲染和拒绝证据；整机匹配仍失败。** 下一轮参考 Tesla、Figure 03 的共同设计方法，在原形体内重新分配完整载荷壳、支承、传动、驱动与热模块。原稿形状仍是约束；最终目标是双足、双手和自主复杂 Bevy 任务。
 
 唯一当前状态入口：[当前决定与门禁](design/current_decisions.md)。
 
@@ -11,7 +11,11 @@
 | C 工作输入（迭代中） | [appearance_c_spec.json](configs/appearance_c_spec.json)；[原稿轮廓与分区点](source/appearance_c_reference_landmarks.json)；[可见护甲区域约束](source/appearance_c_front_shape_constraints.json) |
 | C15 阶段基底 | [提交说明与缺口](design/appearance_c15_stage.md)；[冻结映射](../../experiments/gorilla_v0_1/appearance_c_round_fifteen/snapshot_manifest.json)；[Blender](../../experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c.blend)、[GLB](../../experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c.glb) |
 | C15 实际复合脚 | [中立](../../experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_foot_left.png)、[卸载折叠](../../experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_foot_folded_left.png)、[机制拆壳](../../experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_foot_mechanism_left.png)；[原生几何检查](../../experiments/gorilla_v0_1/appearance_c_round_fifteen/composite_foot_c15_screen.json) |
-| 内部架构 A 当前交付 | [粗算、装配与红黄线评审](design/internal_architecture_a_review.md)；[两路线同尺度实图](images/internal_architecture_a_route_comparison.png)；四路线仍未通过 |
+| 内部 B 当前候选 | [改变、粗算与拒绝评审](design/internal_structure_b_review.md)；[原生源](cad/source/internal_structure_b_scene.json)、[Blender](cad/source/internal_structure_b.blend)、[GLB](cad/exports/internal_structure_b/internal_structure_b.glb)；原护甲保留但匹配未通过 |
+| 内部 B 同源图 | [整机正](images/internal_structure_b_front.png)、[左](images/internal_structure_b_left.png)、[后](images/internal_structure_b_rear.png)、[拆壳斜视](images/internal_structure_b_cutaway_threequarter.png)、[脚近景](images/internal_structure_b_foot_mechanism_detail.png)；新模块与冲突没有隐藏 |
+| 内部 B 参数/证据 | [参数](configs/internal_structure_b_spec.json)、[真实姿态/静力](evidence/internal_structure_b_statics.json)、[正体积冲突](evidence/internal_structure_b_space.json)、[独立脚复核](evidence/internal_structure_b_foot_review.json)、[资源/端点力矩检查](evidence/internal_structure_b_resource_check.json) |
+| Tesla / Figure / GD01 参照 | [一手共同设计研究](hardware/internal_co_design_references.md)；区分代际、公开事实与推断，不继承联合额定或未公开 CAD |
+| 内部架构 A 前一候选 | [粗算、装配与红黄线评审](design/internal_architecture_a_review.md)；[两路线同尺度实图](images/internal_architecture_a_route_comparison.png)；四路线仍未通过 |
 | 内部架构 A 参数与证据 | [预算配置](configs/internal_architecture_a_spec.json)、[布局配置](configs/internal_architecture_a_layout.json)；[宏观预算](evidence/internal_architecture_a_budget.json)、[空间/重心/接地筛查](evidence/internal_architecture_a_space.json) |
 | 内部研究输入与真实 CAD | [真实驱动/能源/热/感知模块依据](hardware/internal_module_research.md)；原厂参考网格仅本地忽略保存，受控模型为自有模块包络 |
 | 历史 C14 可编辑模型 | [Blender 源](../../experiments/gorilla_v0_1/appearance_c_round_fourteen/appearance_c.blend)、[GLB](../../experiments/gorilla_v0_1/appearance_c_round_fourteen/appearance_c.glb)、[参数化几何源](../../experiments/gorilla_v0_1/appearance_c_round_fourteen/appearance_c_scene.json)；外观/物理仍未通过 |
@@ -31,7 +35,7 @@
 | 任务与接口边界 | [任务和仿真交接](design/task_and_simulation_handoff.md) |
 | 器件依据 | [驱动和供电参照](hardware/component_basis.md) |
 
-首版核心为双足移动、双手操作、自主感知/规划/执行，最终在 Bevy 等游戏引擎的原生物理世界中完成搬运和环境操作。GD01 用于大型机器人方向参考；Goose 用于流程经验。两者的轴数、质量、尺寸、执行器和策略不继承。
+首版核心为双足移动、双手操作、自主感知/规划/执行，最终在 Bevy 等游戏引擎的原生物理世界中完成搬运和环境操作。用户将功能目标定位为 Figure / Tesla Bot 的 MAX PRO，GD01 用于大型体量参考；Goose 用于流程经验。各参照的轴数、质量、尺寸、执行器和策略不继承。
 
 C15 将前掌、足弓与后跟分开，取消跨段连续底板；卸载端姿态有界几何检查通过，固定侧止挡安装和锁止承力仍开放。尚未建立新脚 SI 合同，C14 整板脚的质量/接触/受力结果不适用于 C15。
 
