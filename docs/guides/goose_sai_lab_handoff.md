@@ -1,8 +1,34 @@
-> 最新候选请使用 [第二阶段 18 轴参数交接](../../robots/Goose_V0.1/design/stage_two_parameter_handoff.md)，`--stage stage_two`；质量 8.854kg，旧第一阶段策略需要重新评估。本页下文保留历史接入说明。
+# Goose V0.1 → Sai_Lab 接入入口
+
+当前交接使用 [460 件一体头壳训练检查点](../../robots/Goose_V0.1/design/training_checkpoint_handoff.md)：`goose_one_piece_head_training_checkpoint_si_v1`、18 主动轴、条件质量 10.430762603 kg、65 项观测和 18 项动作。`models/full/` 仍是历史 RC2，不能把默认目录当成当前机器人，也不能沿用旧策略的验收结论。
+
+## 从主干源码开始
+
+完整克隆后先按 [LFS 说明](large_asset_checkout.md)获取大型资产。在仓库根目录使用 Python 3.12：
+
+```sh
+uv sync --locked
+uv run --no-sync python scripts/diagnostics/check_goose_training_checkpoint.py --steps 10 --output artifacts/Goose_V0.1/checkpoint_entry.json
+```
+
+检查源身份、接口、质量和短时名义物理；结果不能当作步行或硬件验收。已有交付证据允许初始训练探索，完整制造、电气、动态任务及跨引擎门槛仍未闭合。Sai_Lab 应显式读取 `models/training_checkpoint/robot.xml` 与 `configs/training_checkpoint_contract.json`，保持轴序、完整惯量、软垫、被动嘴部约束和三层时序。
+
+需要运行小规模入口试验时，另选全新的输出目录：
+
+```sh
+uv sync --locked --extra goose-train
+uv run --no-sync python scripts/training/train_goose_checkpoint.py --output artifacts/Goose_V0.1/checkpoint_trial --iterations 2 --envs 1 --horizon 4 --device cpu
+```
+
+这只示范如何消费当前模型，不是已训练成功的策略。MuJoCo 负责 CPU 物理，`--device cuda` 仅改变网络设备。其他后端按同一中立 SI 契约适配，不能借用历史 Jolt 单项记录宣布当前版本通过。
+
+## 历史接入说明
+
+> 第二阶段历史候选见 [第二阶段 18 轴参数交接](../../robots/Goose_V0.1/design/stage_two_parameter_handoff.md)，`--stage stage_two`；质量 8.854kg。它与当前一体头壳检查点不同版。
 
 > 上一阶段历史基线见 [第一阶段结构与物理参数交接](../../robots/Goose_V0.1/design/stage_one_parameter_handoff.md)。本页以下保留旧 RC2 的历史接入说明；旧 16 轴模型/策略不适用于新版。
 
-# Goose_V0.1 → Sai_Lab 接入入口（RC2 工程候选）
+### RC2 工程候选
 
 本页说明怎样从 Sai_Rotbots 工作区接入 Goose 的模型和训练接口。**当前只有站立和若干预设接触单项通过，尚无可交付的行走/拖拽自主策略，不能将它设为 Sai_Lab 默认机器人。** 完整门槛见[机器人放行判定](../../robots/Goose_V0.1/design/release_readiness.md)。
 

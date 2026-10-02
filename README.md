@@ -42,7 +42,7 @@ Goose 的初衷来自 [Untitled Goose Game](https://goose.game/)：把鹅的好�
 
 完整安装与线束、翼门固定、供电保护和独立急停、真实电机额定及热／载荷检查仍未闭合，**不能直接按候选 BOM 下单装机；第三、第四阶段和硬件冻结尚未完成**。原交接图片、文档、采购表以及成功／失败记录均保留，历史模型的结果不替代当前版本验证。
 
-从[Goose 资料入口](robots/Goose_V0.1/README.md)、[460 件训练交接](robots/Goose_V0.1/design/training_checkpoint_handoff.md)、[单件头壳结构](robots/Goose_V0.1/design/one_piece_head_checkpoint.md)、[行为要求](robots/Goose_V0.1/design/behavior_requirements.md)继续；[原始资料图片库](robots/Goose_V0.1/design/concepts/index.html)与[导入记录](robots/Goose_V0.1/source/workspace_import.md)保留溯源。大型 Blender／OBJ 资产须按 [Git LFS 拉取说明](docs/guides/large_asset_checkout.md)获取完整内容。
+从[Goose 资料入口](robots/Goose_V0.1/README.md)、[460 件训练交接](robots/Goose_V0.1/design/training_checkpoint_handoff.md)、[Sai_Lab 源码接入](docs/guides/goose_sai_lab_handoff.md)、[单件头壳结构](robots/Goose_V0.1/design/one_piece_head_checkpoint.md)、[行为要求](robots/Goose_V0.1/design/behavior_requirements.md)继续；[原始资料图片库](robots/Goose_V0.1/design/concepts/index.html)与[导入记录](robots/Goose_V0.1/source/workspace_import.md)保留溯源。大型 Blender／OBJ 资产须按 [Git LFS 拉取说明](docs/guides/large_asset_checkout.md)获取完整内容。
 
 ## Project organization
 

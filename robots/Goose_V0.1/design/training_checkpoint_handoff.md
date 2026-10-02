@@ -4,6 +4,8 @@
 
 ## 开始使用
 
+从主干源码运行请先读[源码接入入口](../../../docs/guides/goose_sai_lab_handoff.md)。下面的 `requirements.txt` 命令用于此前交付的独立 ZIP；源码仓库使用 `uv sync`，明确选择本版 `training_checkpoint`，不能默认读取历史 RC2。
+
 解压交付ZIP，进入包根目录，Python3.12：
 
 ```bash
