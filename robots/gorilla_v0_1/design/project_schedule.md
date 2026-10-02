@@ -145,6 +145,8 @@ PM只读Git核实HEAD为`16b3813fcc286c3662134399b4ff10bc18ffb690`，提交时�
 
 10-03用户随后明确允许在审美品位不下降的前提下调整外壳包装：核实内部/物理红线后，委派子Agent带具体约束重写包装，并展示AA3式同尺度新四视效果图；用户接受再成为新外观基准，变丑继续改。主线程已实际派出15分钟包装冲突分诊/改稿约束任务，区分不合适的工业布局、可保持外形的内皮/接口修正及确实需外形变化的约束；未证明最后一类时不制造改壳理由。该支只写忽略草稿，不覆盖B/原图，也不提前画无物理约束概念。后续排期增加真实包装提案及用户审美接受节点；原稿权威和物理红线分别保持，已有授权不重复确认。
 
+10-03 00:32 主线程交接补记：B真实源、图、拒绝证据及复现脚本已提交/推送`dfc4ca6f`，PR #5继续草稿。20分钟组件研究和约8.5分钟包装分诊已结束，两份报告经根线程通读；分别保存为[紧凑电驱原厂参照](../hardware/compact_electric_component_references.md)与[内部C共同设计/包装任务](internal_co_design_c_brief.md)。没有C新装配/四视，资料交接不计为00:51整机匹配通过。下一周期要求实际完整总成与布局变化、同版质量/工作点回算和有限几何拒绝检查；真实约束确需改外轮廓时，再委派包装改稿与同源四视，并由用户判断审美。当前不预造必须外鼓尺寸，也不延长局部脚锁微细。CI一项既有PTY反馈测试未通过；同SHA另次pytest通过，已仅重跑失败job，结果未到前不报CI全绿。
+
 ## C14 封存后 M1S 候选 PM 审计
 
 本次实际读取[46副本清单](../../../experiments/gorilla_v0_1/appearance_c_round_fourteen/snapshot_manifest.json)、结构配置/依据/筛查/门禁和包装恢复，实际打开唯一原稿、[完整四视](../../../experiments/gorilla_v0_1/appearance_c_round_fourteen/appearance_c_four_view.png)、等高[正](../images/appearance_c_round_fourteen_front_comparison.png)/[侧](../images/appearance_c_round_fourteen_left_comparison.png)/[后](../images/appearance_c_round_fourteen_rear_comparison.png)，以及明示拆壳[正](../../../experiments/gorilla_v0_1/appearance_c_round_fourteen/appearance_c_structure_front.png)/[侧](../../../experiments/gorilla_v0_1/appearance_c_round_fourteen/appearance_c_structure_left.png)/[斜](../../../experiments/gorilla_v0_1/appearance_c_round_fourteen/appearance_c_structure_threequarter.png)。PM未重渲、未重复计算或跑测试；材料参数为冻结配置中的条件候选，未核验真实料证或制造性能。

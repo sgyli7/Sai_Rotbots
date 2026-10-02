@@ -1,6 +1,6 @@
 # Gorilla V0.1
 
-当前工作：**C15 已先提交并合入主干，内部 B 已保存真实支承/复合脚候选、同源渲染和拒绝证据；整机匹配仍失败。** 下一轮参考 Tesla、Figure 03 的共同设计方法，在原形体内重新分配完整载荷壳、支承、传动、驱动与热模块。原稿形状仍是约束；最终目标是双足、双手和自主复杂 Bevy 任务。
+当前工作：**C15 已先提交并合入主干，内部 B 已保存真实支承/复合脚候选、同源渲染和拒绝证据；整机匹配仍失败。** 下一轮参考 Tesla、Figure 03 的共同设计方法，重新分配完整载荷壳、支承、传动、驱动与热模块。用户允许有工程依据且审美不下降的包装调整；改稿需同源四视，经用户认可后才成为新外观基准。最终目标是双足、双手和自主复杂 Bevy 任务。
 
 唯一当前状态入口：[当前决定与门禁](design/current_decisions.md)。
 
@@ -15,6 +15,8 @@
 | 内部 B 同源图 | [整机正](images/internal_structure_b_front.png)、[左](images/internal_structure_b_left.png)、[后](images/internal_structure_b_rear.png)、[拆壳斜视](images/internal_structure_b_cutaway_threequarter.png)、[脚近景](images/internal_structure_b_foot_mechanism_detail.png)；新模块与冲突没有隐藏 |
 | 内部 B 参数/证据 | [参数](configs/internal_structure_b_spec.json)、[真实姿态/静力](evidence/internal_structure_b_statics.json)、[正体积冲突](evidence/internal_structure_b_space.json)、[独立脚复核](evidence/internal_structure_b_foot_review.json)、[资源/端点力矩检查](evidence/internal_structure_b_resource_check.json) |
 | Tesla / Figure / GD01 参照 | [一手共同设计研究](hardware/internal_co_design_references.md)；区分代际、公开事实与推断，不继承联合额定或未公开 CAD |
+| 内部 C 下一候选 | [共同设计与包装任务](design/internal_co_design_c_brief.md)；已完成包装分诊，尚未生成 C 装配或四视 |
+| 紧凑电驱部件参照 | [原厂组件事实与条件](hardware/compact_electric_component_references.md)；包含支承的齿轮组件和精确绕组电机仍需整套匹配 |
 | 内部架构 A 前一候选 | [粗算、装配与红黄线评审](design/internal_architecture_a_review.md)；[两路线同尺度实图](images/internal_architecture_a_route_comparison.png)；四路线仍未通过 |
 | 内部架构 A 参数与证据 | [预算配置](configs/internal_architecture_a_spec.json)、[布局配置](configs/internal_architecture_a_layout.json)；[宏观预算](evidence/internal_architecture_a_budget.json)、[空间/重心/接地筛查](evidence/internal_architecture_a_space.json) |
 | 内部研究输入与真实 CAD | [真实驱动/能源/热/感知模块依据](hardware/internal_module_research.md)；原厂参考网格仅本地忽略保存，受控模型为自有模块包络 |
