@@ -1,0 +1,4011 @@
+{
+  "schema": "gorilla_internal_architecture_layout_v1",
+  "robot_id": "gorilla_v0_1",
+  "base_stage_commit": "94e0e074",
+  "base_scene": "experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_scene.json",
+  "base_scene_sha256": "7a1e49f45838303ca5fd86265dc9980c10cde85ed7626424136afd3863aa5886",
+  "base_blend": "experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c.blend",
+  "base_blend_sha256": "3edc1ca35064750b60f94c4a2e5c62864d6072b7955280d266ef9c36aa3a15bb",
+  "geometry_spec_sha256": "019bb6feee1d89432b6926bf2804c51f07dd74e87009a04169ce3bb16d7e279e",
+  "budget_spec": "robots/gorilla_v0_1/configs/internal_architecture_a_spec.json",
+  "budget_spec_sha256": "646c76f6fada136768ed3ec89fa2c09bd06db04b594e109a5ec56ca608edc5f0",
+  "builder_script": "scripts/models/build_gorilla_internal_architecture.py",
+  "builder_script_sha256": "362bf6773e29d93e8ee1938eb2d523b8af1dc15b5ef5ee80427d88331103abb1",
+  "coordinate_frame": "SI metres; +X front, +Y robot left, +Z up",
+  "modules": [
+    {
+      "id": "ia_left_lower_battery_volume",
+      "label": "left lower battery volume",
+      "family": "energy_system",
+      "category": "energy",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 0.225,
+      "mass_range_kg": [
+        15.75,
+        19.125,
+        27.0
+      ],
+      "center_world_m": [
+        -0.29,
+        0.16,
+        1.965
+      ],
+      "rgba": [
+        0.2,
+        0.57,
+        0.34,
+        1
+      ],
+      "basis": "Generic HV energy-volume allocation, benchmarked against Victron NG CAD. Its SKU, 25.6 V wiring and mass are not selected. Four benchmark units cannot be wired in four-series.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "box",
+      "dimensions_m": [
+        0.16026079406,
+        0.235795325916,
+        0.341202481542
+      ],
+      "source_geometry_local_path": "artifacts/gorilla_v0_1/internal_module_sources/imported_geometry/victron_ng_25_6v100ah_local_m.obj",
+      "source_geometry_sha256": "0c0c599e9de3330ef3a469c4133f09538eec595513e8f4bbfa2c7d1f30ccaebe",
+      "source_geometry_rotation_euler_rad": [
+        -1.5707963267948966,
+        -1.5707963267948966,
+        0
+      ]
+    },
+    {
+      "id": "ia_left_upper_battery_volume",
+      "label": "left upper battery volume",
+      "family": "energy_system",
+      "category": "energy",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 0.225,
+      "mass_range_kg": [
+        15.75,
+        19.125,
+        27.0
+      ],
+      "center_world_m": [
+        -0.29,
+        0.16,
+        2.325
+      ],
+      "rgba": [
+        0.2,
+        0.57,
+        0.34,
+        1
+      ],
+      "basis": "Generic HV energy-volume allocation, benchmarked against Victron NG CAD. Its SKU, 25.6 V wiring and mass are not selected. Four benchmark units cannot be wired in four-series.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "box",
+      "dimensions_m": [
+        0.16026079406,
+        0.235795325916,
+        0.341202481542
+      ],
+      "source_geometry_local_path": "artifacts/gorilla_v0_1/internal_module_sources/imported_geometry/victron_ng_25_6v100ah_local_m.obj",
+      "source_geometry_sha256": "0c0c599e9de3330ef3a469c4133f09538eec595513e8f4bbfa2c7d1f30ccaebe",
+      "source_geometry_rotation_euler_rad": [
+        -1.5707963267948966,
+        -1.5707963267948966,
+        0
+      ]
+    },
+    {
+      "id": "ia_left_battery_removal_space",
+      "label": "left battery removal space",
+      "family": null,
+      "category": "service",
+      "route": "common",
+      "role": "service_space",
+      "budget_units": 0,
+      "mass_range_kg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "center_world_m": [
+        -0.59,
+        0.16,
+        2.145
+      ],
+      "rgba": [
+        0.85,
+        0.6,
+        0.25,
+        0.3
+      ],
+      "basis": "Rear removal workspace only. Door aperture and the full extraction path are not proven.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "box",
+      "dimensions_m": [
+        0.3,
+        0.255,
+        0.72
+      ]
+    },
+    {
+      "id": "ia_left_heat_exchanger",
+      "label": "left heat exchanger",
+      "family": "thermal_system",
+      "category": "thermal",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 0.25,
+      "mass_range_kg": [
+        7.5,
+        13.75,
+        21.25
+      ],
+      "center_world_m": [
+        0.13,
+        0.32,
+        2.17
+      ],
+      "rgba": [
+        0.18,
+        0.56,
+        0.68,
+        1
+      ],
+      "basis": "Liquid-to-air core volume behind the AA3 intake; heat rejection and pressure drop unqualified.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "box",
+      "dimensions_m": [
+        0.12,
+        0.14,
+        0.27
+      ]
+    },
+    {
+      "id": "ia_left_radiator_fan",
+      "label": "left radiator fan",
+      "family": "thermal_system",
+      "category": "thermal",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 0.08,
+      "mass_range_kg": [
+        2.4,
+        4.4,
+        6.8
+      ],
+      "center_world_m": [
+        0.025,
+        0.32,
+        2.17
+      ],
+      "rgba": [
+        0.18,
+        0.56,
+        0.68,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "box",
+      "dimensions_m": [
+        0.07,
+        0.14,
+        0.14
+      ]
+    },
+    {
+      "id": "ia_left_rear_exhaust_duct",
+      "label": "left rear exhaust duct",
+      "family": "thermal_system",
+      "category": "thermal",
+      "route": "common",
+      "role": "connection_route",
+      "budget_units": 0.06,
+      "mass_range_kg": [
+        1.7999999999999998,
+        3.3,
+        5.1
+      ],
+      "center_world_m": [
+        -0.195,
+        0.345,
+        2.17
+      ],
+      "rgba": [
+        0.18,
+        0.56,
+        0.68,
+        1
+      ],
+      "basis": "Air-path reservation from fan to rear-side outlet; not an actual sealed duct or CFD solution.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "box",
+      "dimensions_m": [
+        0.37,
+        0.09,
+        0.14
+      ],
+      "path_world_m": [
+        [
+          0.32,
+          0.32,
+          2.17
+        ],
+        [
+          0.13,
+          0.32,
+          2.17
+        ],
+        [
+          0.025,
+          0.32,
+          2.17
+        ],
+        [
+          -0.38,
+          0.345,
+          2.17
+        ]
+      ]
+    },
+    {
+      "id": "ia_right_lower_battery_volume",
+      "label": "right lower battery volume",
+      "family": "energy_system",
+      "category": "energy",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 0.225,
+      "mass_range_kg": [
+        15.75,
+        19.125,
+        27.0
+      ],
+      "center_world_m": [
+        -0.29,
+        -0.16,
+        1.965
+      ],
+      "rgba": [
+        0.2,
+        0.57,
+        0.34,
+        1
+      ],
+      "basis": "Generic HV energy-volume allocation, benchmarked against Victron NG CAD. Its SKU, 25.6 V wiring and mass are not selected. Four benchmark units cannot be wired in four-series.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "box",
+      "dimensions_m": [
+        0.16026079406,
+        0.235795325916,
+        0.341202481542
+      ],
+      "source_geometry_local_path": "artifacts/gorilla_v0_1/internal_module_sources/imported_geometry/victron_ng_25_6v100ah_local_m.obj",
+      "source_geometry_sha256": "0c0c599e9de3330ef3a469c4133f09538eec595513e8f4bbfa2c7d1f30ccaebe",
+      "source_geometry_rotation_euler_rad": [
+        -1.5707963267948966,
+        -1.5707963267948966,
+        0
+      ]
+    },
+    {
+      "id": "ia_right_upper_battery_volume",
+      "label": "right upper battery volume",
+      "family": "energy_system",
+      "category": "energy",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 0.225,
+      "mass_range_kg": [
+        15.75,
+        19.125,
+        27.0
+      ],
+      "center_world_m": [
+        -0.29,
+        -0.16,
+        2.325
+      ],
+      "rgba": [
+        0.2,
+        0.57,
+        0.34,
+        1
+      ],
+      "basis": "Generic HV energy-volume allocation, benchmarked against Victron NG CAD. Its SKU, 25.6 V wiring and mass are not selected. Four benchmark units cannot be wired in four-series.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "box",
+      "dimensions_m": [
+        0.16026079406,
+        0.235795325916,
+        0.341202481542
+      ],
+      "source_geometry_local_path": "artifacts/gorilla_v0_1/internal_module_sources/imported_geometry/victron_ng_25_6v100ah_local_m.obj",
+      "source_geometry_sha256": "0c0c599e9de3330ef3a469c4133f09538eec595513e8f4bbfa2c7d1f30ccaebe",
+      "source_geometry_rotation_euler_rad": [
+        -1.5707963267948966,
+        -1.5707963267948966,
+        0
+      ]
+    },
+    {
+      "id": "ia_right_battery_removal_space",
+      "label": "right battery removal space",
+      "family": null,
+      "category": "service",
+      "route": "common",
+      "role": "service_space",
+      "budget_units": 0,
+      "mass_range_kg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "center_world_m": [
+        -0.59,
+        -0.16,
+        2.145
+      ],
+      "rgba": [
+        0.85,
+        0.6,
+        0.25,
+        0.3
+      ],
+      "basis": "Rear removal workspace only. Door aperture and the full extraction path are not proven.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "box",
+      "dimensions_m": [
+        0.3,
+        0.255,
+        0.72
+      ]
+    },
+    {
+      "id": "ia_right_heat_exchanger",
+      "label": "right heat exchanger",
+      "family": "thermal_system",
+      "category": "thermal",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 0.25,
+      "mass_range_kg": [
+        7.5,
+        13.75,
+        21.25
+      ],
+      "center_world_m": [
+        0.13,
+        -0.32,
+        2.17
+      ],
+      "rgba": [
+        0.18,
+        0.56,
+        0.68,
+        1
+      ],
+      "basis": "Liquid-to-air core volume behind the AA3 intake; heat rejection and pressure drop unqualified.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "box",
+      "dimensions_m": [
+        0.12,
+        0.14,
+        0.27
+      ]
+    },
+    {
+      "id": "ia_right_radiator_fan",
+      "label": "right radiator fan",
+      "family": "thermal_system",
+      "category": "thermal",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 0.08,
+      "mass_range_kg": [
+        2.4,
+        4.4,
+        6.8
+      ],
+      "center_world_m": [
+        0.025,
+        -0.32,
+        2.17
+      ],
+      "rgba": [
+        0.18,
+        0.56,
+        0.68,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "box",
+      "dimensions_m": [
+        0.07,
+        0.14,
+        0.14
+      ]
+    },
+    {
+      "id": "ia_right_rear_exhaust_duct",
+      "label": "right rear exhaust duct",
+      "family": "thermal_system",
+      "category": "thermal",
+      "route": "common",
+      "role": "connection_route",
+      "budget_units": 0.06,
+      "mass_range_kg": [
+        1.7999999999999998,
+        3.3,
+        5.1
+      ],
+      "center_world_m": [
+        -0.195,
+        -0.345,
+        2.17
+      ],
+      "rgba": [
+        0.18,
+        0.56,
+        0.68,
+        1
+      ],
+      "basis": "Air-path reservation from fan to rear-side outlet; not an actual sealed duct or CFD solution.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "box",
+      "dimensions_m": [
+        0.37,
+        0.09,
+        0.14
+      ],
+      "path_world_m": [
+        [
+          0.32,
+          -0.32,
+          2.17
+        ],
+        [
+          0.13,
+          -0.32,
+          2.17
+        ],
+        [
+          0.025,
+          -0.32,
+          2.17
+        ],
+        [
+          -0.38,
+          -0.345,
+          2.17
+        ]
+      ]
+    },
+    {
+      "id": "ia_power_protection_precharge_regeneration",
+      "label": "power protection precharge regeneration",
+      "family": "energy_system",
+      "category": "energy",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 0.1,
+      "mass_range_kg": [
+        7.0,
+        8.5,
+        12.0
+      ],
+      "center_world_m": [
+        0.02,
+        0,
+        1.89
+      ],
+      "rgba": [
+        0.2,
+        0.57,
+        0.34,
+        1
+      ],
+      "basis": "HV protection, BMS, contactors/precharge and braking-energy interface included in energy mass budget; not a circuit or selected voltage.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "box",
+      "dimensions_m": [
+        0.18,
+        0.23,
+        0.15
+      ]
+    },
+    {
+      "id": "ia_coolant_pump",
+      "label": "coolant pump",
+      "family": "thermal_system",
+      "category": "thermal",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 0.12,
+      "mass_range_kg": [
+        3.5999999999999996,
+        6.6,
+        10.2
+      ],
+      "center_world_m": [
+        0.055,
+        -0.12,
+        2.435
+      ],
+      "rgba": [
+        0.18,
+        0.56,
+        0.68,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "box",
+      "dimensions_m": [
+        0.13,
+        0.13,
+        0.1
+      ]
+    },
+    {
+      "id": "ia_coolant_reservoir_and_manifold",
+      "label": "coolant reservoir and manifold",
+      "family": "thermal_system",
+      "category": "thermal",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 0.1,
+      "mass_range_kg": [
+        3.0,
+        5.5,
+        8.5
+      ],
+      "center_world_m": [
+        0.06,
+        0.13,
+        2.435
+      ],
+      "rgba": [
+        0.18,
+        0.56,
+        0.68,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "box",
+      "dimensions_m": [
+        0.12,
+        0.12,
+        0.1
+      ]
+    },
+    {
+      "id": "ia_task_compute_and_storage",
+      "label": "task compute and storage",
+      "family": "compute_sensing",
+      "category": "compute",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 0.4,
+      "mass_range_kg": [
+        3.2,
+        4.800000000000001,
+        7.2
+      ],
+      "center_world_m": [
+        -0.27,
+        0,
+        2.545
+      ],
+      "rgba": [
+        0.48,
+        0.35,
+        0.62,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "box",
+      "dimensions_m": [
+        0.18,
+        0.23,
+        0.07
+      ]
+    },
+    {
+      "id": "ia_real_time_network_and_dc_conversion",
+      "label": "real time network and dc conversion",
+      "family": "compute_sensing",
+      "category": "compute",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 0.1,
+      "mass_range_kg": [
+        0.8,
+        1.2000000000000002,
+        1.8
+      ],
+      "center_world_m": [
+        0.065,
+        0,
+        2.13
+      ],
+      "rgba": [
+        0.48,
+        0.35,
+        0.62,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "box",
+      "dimensions_m": [
+        0.13,
+        0.16,
+        0.1
+      ]
+    },
+    {
+      "id": "ia_back_control_screen_electronics",
+      "label": "back control screen electronics",
+      "family": "compute_sensing",
+      "category": "compute",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 0.04,
+      "mass_range_kg": [
+        0.32,
+        0.48,
+        0.72
+      ],
+      "center_world_m": [
+        -0.429,
+        0,
+        2.19
+      ],
+      "rgba": [
+        0.48,
+        0.35,
+        0.62,
+        1
+      ],
+      "basis": "Screen electronics behind the existing AA3 blue panel. No functional UI/control or environmental qualification.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "box",
+      "dimensions_m": [
+        0.025,
+        0.135,
+        0.2
+      ]
+    },
+    {
+      "id": "ia_trunk_imu",
+      "label": "trunk imu",
+      "family": "compute_sensing",
+      "category": "compute",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 0.02,
+      "mass_range_kg": [
+        0.16,
+        0.24,
+        0.36
+      ],
+      "center_world_m": [
+        -0.025,
+        0,
+        2.27
+      ],
+      "rgba": [
+        0.48,
+        0.35,
+        0.62,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "box",
+      "dimensions_m": [
+        0.045,
+        0.045,
+        0.025
+      ]
+    },
+    {
+      "id": "ia_front_depth_camera",
+      "label": "front depth camera",
+      "family": "compute_sensing",
+      "category": "compute",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 0.04,
+      "mass_range_kg": [
+        0.32,
+        0.48,
+        0.72
+      ],
+      "center_world_m": [
+        0.408,
+        0,
+        2.43
+      ],
+      "rgba": [
+        0.48,
+        0.35,
+        0.62,
+        1
+      ],
+      "basis": "D455 dimensional benchmark 124 x 29 x 26 mm, 116 g. Lens window, optical axis, occlusion and range not closed.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "box",
+      "dimensions_m": [
+        0.026,
+        0.124,
+        0.029
+      ]
+    },
+    {
+      "id": "ia_hand_depth_camera_pair_reserve",
+      "label": "hand depth camera pair reserve",
+      "family": "compute_sensing",
+      "category": "compute",
+      "route": "common",
+      "role": "route_reserve",
+      "budget_units": 0.08,
+      "mass_range_kg": [
+        0.64,
+        0.96,
+        1.44
+      ],
+      "center_world_m": [
+        0.07,
+        0,
+        2.03
+      ],
+      "rgba": [
+        0.48,
+        0.35,
+        0.62,
+        1
+      ],
+      "basis": "Two camera volumes reserved centrally pending actual wrist optics and wiring design.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "box",
+      "dimensions_m": [
+        0.026,
+        0.124,
+        0.058
+      ]
+    },
+    {
+      "id": "ia_joint_and_contact_feedback_reserve",
+      "label": "joint and contact feedback reserve",
+      "family": "compute_sensing",
+      "category": "compute",
+      "route": "common",
+      "role": "route_reserve",
+      "budget_units": 0.32,
+      "mass_range_kg": [
+        2.56,
+        3.84,
+        5.76
+      ],
+      "center_world_m": [
+        0.05,
+        0,
+        2.33
+      ],
+      "rgba": [
+        0.48,
+        0.35,
+        0.62,
+        1
+      ],
+      "basis": "Distributed encoders, load/contact feedback and interfaces reserved in aggregate; placement and mass distribution unresolved.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "box",
+      "dimensions_m": [
+        0.13,
+        0.15,
+        0.06
+      ]
+    },
+    {
+      "id": "ia_power_data_harness_trunk",
+      "label": "power data harness trunk",
+      "family": "harness_and_mounts",
+      "category": "connections",
+      "route": "common",
+      "role": "connection_route",
+      "budget_units": 1,
+      "mass_range_kg": [
+        30,
+        50,
+        80
+      ],
+      "center_world_m": [
+        -0.02,
+        0,
+        2.05
+      ],
+      "rgba": [
+        0.4,
+        0.42,
+        0.46,
+        1
+      ],
+      "basis": "Aggregate harness/mount allowance. This central route does not establish every joint loop, bend radius or port.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "box",
+      "dimensions_m": [
+        0.07,
+        0.1,
+        0.48
+      ]
+    },
+    {
+      "id": "ia_fasteners_guards_mount_reserve",
+      "label": "fasteners guards mount reserve",
+      "family": "assembly_fasteners_and_covers",
+      "category": "connections",
+      "route": "common",
+      "role": "route_reserve",
+      "budget_units": 1,
+      "mass_range_kg": [
+        20,
+        35,
+        60
+      ],
+      "center_world_m": [
+        0.06,
+        0,
+        1.79
+      ],
+      "rgba": [
+        0.4,
+        0.42,
+        0.46,
+        1
+      ],
+      "basis": "Aggregate mass/volume reserve to be replaced with actual nonduplicated part rows.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "box",
+      "dimensions_m": [
+        0.18,
+        0.46,
+        0.07
+      ]
+    },
+    {
+      "id": "ia_waist_yaw",
+      "label": "waist yaw",
+      "family": "waist_rotary",
+      "category": "drive",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        30,
+        40,
+        60
+      ],
+      "center_world_m": [
+        0,
+        0,
+        1.77
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.26,
+      "length_m": 0.24,
+      "axis_world": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "id": "ia_waist_roll",
+      "label": "waist roll",
+      "family": "waist_rotary",
+      "category": "drive",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        30,
+        40,
+        60
+      ],
+      "center_world_m": [
+        -0.055,
+        0,
+        1.86
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.26,
+      "length_m": 0.24,
+      "axis_world": [
+        1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": "ia_waist_pitch",
+      "label": "waist pitch",
+      "family": "waist_rotary",
+      "category": "drive",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        30,
+        40,
+        60
+      ],
+      "center_world_m": [
+        0.055,
+        0,
+        1.99
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.26,
+      "length_m": 0.24,
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    {
+      "id": "ia_left_shoulder_pitch",
+      "label": "left shoulder pitch",
+      "family": "upper_arm_rotary",
+      "category": "drive",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        30,
+        38,
+        52
+      ],
+      "center_world_m": [
+        -0.13,
+        0.56,
+        2.29
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "CSG65 260 x 115 mm reducer plus provisional motor/brake/drive/support stack; interface geometry remains unverified.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.26,
+      "length_m": 0.245,
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    {
+      "id": "ia_left_shoulder_roll",
+      "label": "left shoulder roll",
+      "family": "upper_arm_rotary",
+      "category": "drive",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        30,
+        38,
+        52
+      ],
+      "center_world_m": [
+        -0.020000000000000004,
+        0.5900000000000001,
+        2.25
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "CSG65 260 x 115 mm reducer plus provisional motor/brake/drive/support stack; interface geometry remains unverified.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.26,
+      "length_m": 0.245,
+      "axis_world": [
+        1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": "ia_left_upper_arm_yaw",
+      "label": "left upper arm yaw",
+      "family": "upper_arm_rotary",
+      "category": "drive",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        30,
+        38,
+        52
+      ],
+      "center_world_m": [
+        -0.16375,
+        0.6725000000000001,
+        2.06815
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "CSG65 260 x 115 mm reducer plus provisional motor/brake/drive/support stack; interface geometry remains unverified.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.26,
+      "length_m": 0.245,
+      "axis_world": [
+        -0.1344496302205832,
+        0.44816543406861076,
+        -0.8837822359833005
+      ]
+    },
+    {
+      "id": "ia_left_elbow",
+      "label": "left elbow",
+      "family": "elbow_rotary",
+      "category": "drive",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        18,
+        26,
+        38
+      ],
+      "center_world_m": [
+        -0.205,
+        0.81,
+        1.797
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.22,
+      "length_m": 0.25,
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    {
+      "id": "ia_left_wrist_pitch",
+      "label": "left wrist pitch",
+      "family": "wrist_rotary",
+      "category": "drive",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        3,
+        6,
+        10
+      ],
+      "center_world_m": [
+        -0.107,
+        0.815,
+        1.25
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "AK80-64 exact size calibrator only; 48 Nm nominal/120 Nm peak is not a selected load or thermal rating for this wrist.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.098,
+      "length_m": 0.0619,
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "source_geometry_local_path": "artifacts/gorilla_v0_1/internal_module_sources/imported_geometry/cubemars_ak80_64_local_m.obj",
+      "source_geometry_sha256": "20558642a5536e6ec8c70320ba406fe3d97190557c1efec5c8e8a4ec9caae50a",
+      "source_geometry_rotation_euler_rad": [
+        0,
+        -1.5707963267948966,
+        0
+      ]
+    },
+    {
+      "id": "ia_left_wrist_roll",
+      "label": "left wrist roll",
+      "family": "wrist_rotary",
+      "category": "drive",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        3,
+        6,
+        10
+      ],
+      "center_world_m": [
+        -0.047,
+        0.815,
+        1.195
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "AK80-64 exact size calibrator only; 48 Nm nominal/120 Nm peak is not a selected load or thermal rating for this wrist.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.098,
+      "length_m": 0.0619,
+      "axis_world": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "source_geometry_local_path": "artifacts/gorilla_v0_1/internal_module_sources/imported_geometry/cubemars_ak80_64_local_m.obj",
+      "source_geometry_sha256": "20558642a5536e6ec8c70320ba406fe3d97190557c1efec5c8e8a4ec9caae50a",
+      "source_geometry_rotation_euler_rad": [
+        0,
+        -1.5707963267948966,
+        0
+      ]
+    },
+    {
+      "id": "ia_left_wrist_yaw",
+      "label": "left wrist yaw",
+      "family": "wrist_rotary",
+      "category": "drive",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        3,
+        6,
+        10
+      ],
+      "center_world_m": [
+        -0.077,
+        0.815,
+        1.1300000000000001
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "AK80-64 exact size calibrator only; 48 Nm nominal/120 Nm peak is not a selected load or thermal rating for this wrist.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.098,
+      "length_m": 0.0619,
+      "axis_world": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_geometry_local_path": "artifacts/gorilla_v0_1/internal_module_sources/imported_geometry/cubemars_ak80_64_local_m.obj",
+      "source_geometry_sha256": "20558642a5536e6ec8c70320ba406fe3d97190557c1efec5c8e8a4ec9caae50a",
+      "source_geometry_rotation_euler_rad": [
+        0,
+        -1.5707963267948966,
+        0
+      ]
+    },
+    {
+      "id": "ia_left_hand_mechanisms",
+      "label": "left hand mechanisms",
+      "family": "hand_assembly",
+      "category": "drive",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        12,
+        20,
+        30
+      ],
+      "center_world_m": [
+        -0.02,
+        0.84,
+        1.105
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Mechanism/drive/feedback/support allocation in palm; full fingers/thumb and force distribution not represented by this box.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "box",
+      "dimensions_m": [
+        0.13,
+        0.17,
+        0.19
+      ]
+    },
+    {
+      "id": "ia_left_forefoot_lock_and_feedback",
+      "label": "left forefoot lock and feedback",
+      "family": "foot_lock",
+      "category": "drive",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        2,
+        3,
+        5
+      ],
+      "center_world_m": [
+        -0.077,
+        0.5,
+        0.155
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Lock-actuation/feedback allowance. C15 fixed-side support gap remains open; lock holding load and fail-safe behavior unproved.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "box",
+      "dimensions_m": [
+        0.045,
+        0.08,
+        0.05
+      ]
+    },
+    {
+      "id": "ia_left_heel_lock_and_feedback",
+      "label": "left heel lock and feedback",
+      "family": "foot_lock",
+      "category": "drive",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        2,
+        3,
+        5
+      ],
+      "center_world_m": [
+        -0.131,
+        0.5,
+        0.155
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Lock-actuation/feedback allowance. C15 fixed-side support gap remains open; lock holding load and fail-safe behavior unproved.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "box",
+      "dimensions_m": [
+        0.045,
+        0.08,
+        0.05
+      ]
+    },
+    {
+      "id": "ia_rotary_electric_left_hip_yaw",
+      "label": "rotary electric left hip yaw",
+      "family": "secondary_rotary",
+      "category": "drive",
+      "route": "rotary_electric",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        32,
+        44,
+        60
+      ],
+      "center_world_m": [
+        -0.045,
+        0.31,
+        1.8199999999999998
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.26,
+      "length_m": 0.245,
+      "axis_world": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "id": "ia_rotary_electric_left_hip_roll",
+      "label": "rotary electric left hip roll",
+      "family": "secondary_rotary",
+      "category": "drive",
+      "route": "rotary_electric",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        32,
+        44,
+        60
+      ],
+      "center_world_m": [
+        -0.14500000000000002,
+        0.31,
+        1.73
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.26,
+      "length_m": 0.245,
+      "axis_world": [
+        1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": "ia_rotary_electric_left_ankle_roll",
+      "label": "rotary electric left ankle roll",
+      "family": "secondary_rotary",
+      "category": "drive",
+      "route": "rotary_electric",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        32,
+        44,
+        60
+      ],
+      "center_world_m": [
+        -0.095,
+        0.5,
+        0.3
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.26,
+      "length_m": 0.245,
+      "axis_world": [
+        1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": "ia_rotary_electric_left_hip_pitch",
+      "label": "rotary electric left hip pitch",
+      "family": "high_load_rotary",
+      "category": "drive",
+      "route": "rotary_electric",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        62,
+        80,
+        110
+      ],
+      "center_world_m": [
+        -0.045,
+        0.31,
+        1.66
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "RV320E 325 x 125 mm/44.3 kg reducer plus assumed motor, brake, drive and support stack. Its 3136 Nm catalogue rating does not meet all coarse demands.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.325,
+      "length_m": 0.285,
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    {
+      "id": "ia_rotary_electric_left_knee_pitch",
+      "label": "rotary electric left knee pitch",
+      "family": "high_load_rotary",
+      "category": "drive",
+      "route": "rotary_electric",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        62,
+        80,
+        110
+      ],
+      "center_world_m": [
+        -0.08,
+        0.398,
+        0.97
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "RV320E 325 x 125 mm/44.3 kg reducer plus assumed motor, brake, drive and support stack. Its 3136 Nm catalogue rating does not meet all coarse demands.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.325,
+      "length_m": 0.285,
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    {
+      "id": "ia_rotary_electric_left_fold_pitch",
+      "label": "rotary electric left fold pitch",
+      "family": "high_load_rotary",
+      "category": "drive",
+      "route": "rotary_electric",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        62,
+        80,
+        110
+      ],
+      "center_world_m": [
+        -0.12,
+        0.47,
+        0.53
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "RV320E 325 x 125 mm/44.3 kg reducer plus assumed motor, brake, drive and support stack. Its 3136 Nm catalogue rating does not meet all coarse demands.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.325,
+      "length_m": 0.285,
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    {
+      "id": "ia_rotary_electric_left_ankle_pitch",
+      "label": "rotary electric left ankle pitch",
+      "family": "high_load_rotary",
+      "category": "drive",
+      "route": "rotary_electric",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        62,
+        80,
+        110
+      ],
+      "center_world_m": [
+        -0.075,
+        0.5,
+        0.285
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "RV320E 325 x 125 mm/44.3 kg reducer plus assumed motor, brake, drive and support stack. Its 3136 Nm catalogue rating does not meet all coarse demands.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.325,
+      "length_m": 0.285,
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    {
+      "id": "ia_linear_electric_left_hip_yaw",
+      "label": "linear electric left hip yaw",
+      "family": "secondary_rotary",
+      "category": "drive",
+      "route": "linear_electric",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        32,
+        44,
+        60
+      ],
+      "center_world_m": [
+        -0.045,
+        0.31,
+        1.8199999999999998
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.26,
+      "length_m": 0.245,
+      "axis_world": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "id": "ia_linear_electric_left_hip_roll",
+      "label": "linear electric left hip roll",
+      "family": "secondary_rotary",
+      "category": "drive",
+      "route": "linear_electric",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        32,
+        44,
+        60
+      ],
+      "center_world_m": [
+        -0.14500000000000002,
+        0.31,
+        1.73
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.26,
+      "length_m": 0.245,
+      "axis_world": [
+        1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": "ia_linear_electric_left_ankle_roll",
+      "label": "linear electric left ankle roll",
+      "family": "secondary_rotary",
+      "category": "drive",
+      "route": "linear_electric",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        32,
+        44,
+        60
+      ],
+      "center_world_m": [
+        -0.095,
+        0.5,
+        0.3
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.26,
+      "length_m": 0.245,
+      "axis_world": [
+        1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": "ia_linear_electric_left_hip_pitch",
+      "label": "linear electric left hip pitch",
+      "family": "high_force_electric_linear",
+      "category": "drive",
+      "route": "linear_electric",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        34,
+        48,
+        70
+      ],
+      "center_world_m": [
+        -0.2225,
+        0.354,
+        1.375
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Rejected until mounts/linkage, effective moment arm throughout sweep, retracted length and complete continuous capacity are closed. Linear/EHA dimensions are assumptions; hydraulic uses HMI80/36/200 493mm bare budget plus 110mm mounting allowance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.15,
+      "length_m": 0.58,
+      "axis_world": [
+        -0.05025349649711923,
+        0.12635164833561408,
+        -0.9907117880860646
+      ],
+      "stroke_m_assumption": 0.2
+    },
+    {
+      "id": "ia_linear_electric_left_knee_pitch",
+      "label": "linear electric left knee pitch",
+      "family": "high_force_electric_linear",
+      "category": "drive",
+      "route": "linear_electric",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        34,
+        48,
+        70
+      ],
+      "center_world_m": [
+        0.10750000000000001,
+        0.354,
+        1.2149999999999999
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Rejected until mounts/linkage, effective moment arm throughout sweep, retracted length and complete continuous capacity are closed. Linear/EHA dimensions are assumptions; hydraulic uses HMI80/36/200 493mm bare budget plus 110mm mounting allowance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.15,
+      "length_m": 0.58,
+      "axis_world": [
+        -0.05025349649711923,
+        0.12635164833561408,
+        -0.9907117880860646
+      ],
+      "stroke_m_assumption": 0.2
+    },
+    {
+      "id": "ia_linear_electric_left_fold_pitch",
+      "label": "linear electric left fold pitch",
+      "family": "high_force_electric_linear",
+      "category": "drive",
+      "route": "linear_electric",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        34,
+        48,
+        70
+      ],
+      "center_world_m": [
+        0.01999999999999999,
+        0.434,
+        0.75
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Rejected until mounts/linkage, effective moment arm throughout sweep, retracted length and complete continuous capacity are closed. Linear/EHA dimensions are assumptions; hydraulic uses HMI80/36/200 493mm bare budget plus 110mm mounting allowance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.15,
+      "length_m": 0.58,
+      "axis_world": [
+        -0.08935697753776928,
+        0.16084255956798463,
+        -0.9829267529154622
+      ],
+      "stroke_m_assumption": 0.2
+    },
+    {
+      "id": "ia_linear_electric_left_ankle_pitch",
+      "label": "linear electric left ankle pitch",
+      "family": "high_force_electric_linear",
+      "category": "drive",
+      "route": "linear_electric",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        34,
+        48,
+        70
+      ],
+      "center_world_m": [
+        -0.2175,
+        0.485,
+        0.4075
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Rejected until mounts/linkage, effective moment arm throughout sweep, retracted length and complete continuous capacity are closed. Linear/EHA dimensions are assumptions; hydraulic uses HMI80/36/200 493mm bare budget plus 110mm mounting allowance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.15,
+      "length_m": 0.58,
+      "axis_world": [
+        0.17935547833621826,
+        0.11957031889081228,
+        -0.9764909376082996
+      ],
+      "stroke_m_assumption": 0.2
+    },
+    {
+      "id": "ia_central_hydraulic_left_hip_yaw",
+      "label": "central hydraulic left hip yaw",
+      "family": "secondary_rotary",
+      "category": "drive",
+      "route": "central_hydraulic",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        32,
+        44,
+        60
+      ],
+      "center_world_m": [
+        -0.045,
+        0.31,
+        1.8199999999999998
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.26,
+      "length_m": 0.245,
+      "axis_world": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "id": "ia_central_hydraulic_left_hip_roll",
+      "label": "central hydraulic left hip roll",
+      "family": "secondary_rotary",
+      "category": "drive",
+      "route": "central_hydraulic",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        32,
+        44,
+        60
+      ],
+      "center_world_m": [
+        -0.14500000000000002,
+        0.31,
+        1.73
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.26,
+      "length_m": 0.245,
+      "axis_world": [
+        1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": "ia_central_hydraulic_left_ankle_roll",
+      "label": "central hydraulic left ankle roll",
+      "family": "secondary_rotary",
+      "category": "drive",
+      "route": "central_hydraulic",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        32,
+        44,
+        60
+      ],
+      "center_world_m": [
+        -0.095,
+        0.5,
+        0.3
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.26,
+      "length_m": 0.245,
+      "axis_world": [
+        1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": "ia_central_hydraulic_left_hip_pitch",
+      "label": "central hydraulic left hip pitch",
+      "family": "hydraulic_cylinder_assembly",
+      "category": "drive",
+      "route": "central_hydraulic",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        22,
+        34,
+        48
+      ],
+      "center_world_m": [
+        -0.2225,
+        0.354,
+        1.375
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Rejected until mounts/linkage, effective moment arm throughout sweep, retracted length and complete continuous capacity are closed. Linear/EHA dimensions are assumptions; hydraulic uses HMI80/36/200 493mm bare budget plus 110mm mounting allowance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.16263455967290594,
+      "length_m": 0.603,
+      "axis_world": [
+        -0.05025349649711923,
+        0.12635164833561408,
+        -0.9907117880860646
+      ],
+      "stroke_m_assumption": 0.2,
+      "manufacturer_bare_body_width_m": 0.115,
+      "manufacturer_bare_retracted_budget_m": 0.493,
+      "mount_length_allowance_m": 0.11,
+      "manufacturer_rectangle_corner_scope": "Round envelope circumscribes the 115 mm square body: diameter = 115 mm * sqrt(2). It is conservative corner space, not the OEM cylinder mesh."
+    },
+    {
+      "id": "ia_central_hydraulic_left_knee_pitch",
+      "label": "central hydraulic left knee pitch",
+      "family": "hydraulic_cylinder_assembly",
+      "category": "drive",
+      "route": "central_hydraulic",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        22,
+        34,
+        48
+      ],
+      "center_world_m": [
+        0.10750000000000001,
+        0.354,
+        1.2149999999999999
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Rejected until mounts/linkage, effective moment arm throughout sweep, retracted length and complete continuous capacity are closed. Linear/EHA dimensions are assumptions; hydraulic uses HMI80/36/200 493mm bare budget plus 110mm mounting allowance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.16263455967290594,
+      "length_m": 0.603,
+      "axis_world": [
+        -0.05025349649711923,
+        0.12635164833561408,
+        -0.9907117880860646
+      ],
+      "stroke_m_assumption": 0.2,
+      "manufacturer_bare_body_width_m": 0.115,
+      "manufacturer_bare_retracted_budget_m": 0.493,
+      "mount_length_allowance_m": 0.11,
+      "manufacturer_rectangle_corner_scope": "Round envelope circumscribes the 115 mm square body: diameter = 115 mm * sqrt(2). It is conservative corner space, not the OEM cylinder mesh."
+    },
+    {
+      "id": "ia_central_hydraulic_left_fold_pitch",
+      "label": "central hydraulic left fold pitch",
+      "family": "hydraulic_cylinder_assembly",
+      "category": "drive",
+      "route": "central_hydraulic",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        22,
+        34,
+        48
+      ],
+      "center_world_m": [
+        0.01999999999999999,
+        0.434,
+        0.75
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Rejected until mounts/linkage, effective moment arm throughout sweep, retracted length and complete continuous capacity are closed. Linear/EHA dimensions are assumptions; hydraulic uses HMI80/36/200 493mm bare budget plus 110mm mounting allowance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.16263455967290594,
+      "length_m": 0.603,
+      "axis_world": [
+        -0.08935697753776928,
+        0.16084255956798463,
+        -0.9829267529154622
+      ],
+      "stroke_m_assumption": 0.2,
+      "manufacturer_bare_body_width_m": 0.115,
+      "manufacturer_bare_retracted_budget_m": 0.493,
+      "mount_length_allowance_m": 0.11,
+      "manufacturer_rectangle_corner_scope": "Round envelope circumscribes the 115 mm square body: diameter = 115 mm * sqrt(2). It is conservative corner space, not the OEM cylinder mesh."
+    },
+    {
+      "id": "ia_central_hydraulic_left_ankle_pitch",
+      "label": "central hydraulic left ankle pitch",
+      "family": "hydraulic_cylinder_assembly",
+      "category": "drive",
+      "route": "central_hydraulic",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        22,
+        34,
+        48
+      ],
+      "center_world_m": [
+        -0.2175,
+        0.485,
+        0.4075
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Rejected until mounts/linkage, effective moment arm throughout sweep, retracted length and complete continuous capacity are closed. Linear/EHA dimensions are assumptions; hydraulic uses HMI80/36/200 493mm bare budget plus 110mm mounting allowance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.16263455967290594,
+      "length_m": 0.603,
+      "axis_world": [
+        0.17935547833621826,
+        0.11957031889081228,
+        -0.9764909376082996
+      ],
+      "stroke_m_assumption": 0.2,
+      "manufacturer_bare_body_width_m": 0.115,
+      "manufacturer_bare_retracted_budget_m": 0.493,
+      "mount_length_allowance_m": 0.11,
+      "manufacturer_rectangle_corner_scope": "Round envelope circumscribes the 115 mm square body: diameter = 115 mm * sqrt(2). It is conservative corner space, not the OEM cylinder mesh."
+    },
+    {
+      "id": "ia_distributed_eha_left_hip_yaw",
+      "label": "distributed eha left hip yaw",
+      "family": "secondary_rotary",
+      "category": "drive",
+      "route": "distributed_eha",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        32,
+        44,
+        60
+      ],
+      "center_world_m": [
+        -0.045,
+        0.31,
+        1.8199999999999998
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.26,
+      "length_m": 0.245,
+      "axis_world": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "id": "ia_distributed_eha_left_hip_roll",
+      "label": "distributed eha left hip roll",
+      "family": "secondary_rotary",
+      "category": "drive",
+      "route": "distributed_eha",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        32,
+        44,
+        60
+      ],
+      "center_world_m": [
+        -0.14500000000000002,
+        0.31,
+        1.73
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.26,
+      "length_m": 0.245,
+      "axis_world": [
+        1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": "ia_distributed_eha_left_ankle_roll",
+      "label": "distributed eha left ankle roll",
+      "family": "secondary_rotary",
+      "category": "drive",
+      "route": "distributed_eha",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        32,
+        44,
+        60
+      ],
+      "center_world_m": [
+        -0.095,
+        0.5,
+        0.3
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.26,
+      "length_m": 0.245,
+      "axis_world": [
+        1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": "ia_distributed_eha_left_hip_pitch",
+      "label": "distributed eha left hip pitch",
+      "family": "eha_complete",
+      "category": "drive",
+      "route": "distributed_eha",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        34,
+        52,
+        82
+      ],
+      "center_world_m": [
+        -0.2225,
+        0.354,
+        1.375
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Rejected until mounts/linkage, effective moment arm throughout sweep, retracted length and complete continuous capacity are closed. Linear/EHA dimensions are assumptions; hydraulic uses HMI80/36/200 493mm bare budget plus 110mm mounting allowance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.19,
+      "length_m": 0.68,
+      "axis_world": [
+        -0.05025349649711923,
+        0.12635164833561408,
+        -0.9907117880860646
+      ],
+      "stroke_m_assumption": 0.2
+    },
+    {
+      "id": "ia_distributed_eha_left_knee_pitch",
+      "label": "distributed eha left knee pitch",
+      "family": "eha_complete",
+      "category": "drive",
+      "route": "distributed_eha",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        34,
+        52,
+        82
+      ],
+      "center_world_m": [
+        0.10750000000000001,
+        0.354,
+        1.2149999999999999
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Rejected until mounts/linkage, effective moment arm throughout sweep, retracted length and complete continuous capacity are closed. Linear/EHA dimensions are assumptions; hydraulic uses HMI80/36/200 493mm bare budget plus 110mm mounting allowance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.19,
+      "length_m": 0.68,
+      "axis_world": [
+        -0.05025349649711923,
+        0.12635164833561408,
+        -0.9907117880860646
+      ],
+      "stroke_m_assumption": 0.2
+    },
+    {
+      "id": "ia_distributed_eha_left_fold_pitch",
+      "label": "distributed eha left fold pitch",
+      "family": "eha_complete",
+      "category": "drive",
+      "route": "distributed_eha",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        34,
+        52,
+        82
+      ],
+      "center_world_m": [
+        0.01999999999999999,
+        0.434,
+        0.75
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Rejected until mounts/linkage, effective moment arm throughout sweep, retracted length and complete continuous capacity are closed. Linear/EHA dimensions are assumptions; hydraulic uses HMI80/36/200 493mm bare budget plus 110mm mounting allowance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.19,
+      "length_m": 0.68,
+      "axis_world": [
+        -0.08935697753776928,
+        0.16084255956798463,
+        -0.9829267529154622
+      ],
+      "stroke_m_assumption": 0.2
+    },
+    {
+      "id": "ia_distributed_eha_left_ankle_pitch",
+      "label": "distributed eha left ankle pitch",
+      "family": "eha_complete",
+      "category": "drive",
+      "route": "distributed_eha",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        34,
+        52,
+        82
+      ],
+      "center_world_m": [
+        -0.2175,
+        0.485,
+        0.4075
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Rejected until mounts/linkage, effective moment arm throughout sweep, retracted length and complete continuous capacity are closed. Linear/EHA dimensions are assumptions; hydraulic uses HMI80/36/200 493mm bare budget plus 110mm mounting allowance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.19,
+      "length_m": 0.68,
+      "axis_world": [
+        0.17935547833621826,
+        0.11957031889081228,
+        -0.9764909376082996
+      ],
+      "stroke_m_assumption": 0.2
+    },
+    {
+      "id": "ia_right_shoulder_pitch",
+      "label": "right shoulder pitch",
+      "family": "upper_arm_rotary",
+      "category": "drive",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        30,
+        38,
+        52
+      ],
+      "center_world_m": [
+        -0.13,
+        -0.56,
+        2.29
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "CSG65 260 x 115 mm reducer plus provisional motor/brake/drive/support stack; interface geometry remains unverified.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.26,
+      "length_m": 0.245,
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    {
+      "id": "ia_right_shoulder_roll",
+      "label": "right shoulder roll",
+      "family": "upper_arm_rotary",
+      "category": "drive",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        30,
+        38,
+        52
+      ],
+      "center_world_m": [
+        -0.020000000000000004,
+        -0.5900000000000001,
+        2.25
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "CSG65 260 x 115 mm reducer plus provisional motor/brake/drive/support stack; interface geometry remains unverified.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.26,
+      "length_m": 0.245,
+      "axis_world": [
+        1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": "ia_right_upper_arm_yaw",
+      "label": "right upper arm yaw",
+      "family": "upper_arm_rotary",
+      "category": "drive",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        30,
+        38,
+        52
+      ],
+      "center_world_m": [
+        -0.16375,
+        -0.6725000000000001,
+        2.06815
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "CSG65 260 x 115 mm reducer plus provisional motor/brake/drive/support stack; interface geometry remains unverified.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.26,
+      "length_m": 0.245,
+      "axis_world": [
+        -0.1344496302205832,
+        -0.44816543406861076,
+        -0.8837822359833005
+      ]
+    },
+    {
+      "id": "ia_right_elbow",
+      "label": "right elbow",
+      "family": "elbow_rotary",
+      "category": "drive",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        18,
+        26,
+        38
+      ],
+      "center_world_m": [
+        -0.205,
+        -0.81,
+        1.797
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.22,
+      "length_m": 0.25,
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    {
+      "id": "ia_right_wrist_pitch",
+      "label": "right wrist pitch",
+      "family": "wrist_rotary",
+      "category": "drive",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        3,
+        6,
+        10
+      ],
+      "center_world_m": [
+        -0.107,
+        -0.815,
+        1.25
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "AK80-64 exact size calibrator only; 48 Nm nominal/120 Nm peak is not a selected load or thermal rating for this wrist.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.098,
+      "length_m": 0.0619,
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "source_geometry_local_path": "artifacts/gorilla_v0_1/internal_module_sources/imported_geometry/cubemars_ak80_64_local_m.obj",
+      "source_geometry_sha256": "20558642a5536e6ec8c70320ba406fe3d97190557c1efec5c8e8a4ec9caae50a",
+      "source_geometry_rotation_euler_rad": [
+        0,
+        -1.5707963267948966,
+        0
+      ]
+    },
+    {
+      "id": "ia_right_wrist_roll",
+      "label": "right wrist roll",
+      "family": "wrist_rotary",
+      "category": "drive",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        3,
+        6,
+        10
+      ],
+      "center_world_m": [
+        -0.047,
+        -0.815,
+        1.195
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "AK80-64 exact size calibrator only; 48 Nm nominal/120 Nm peak is not a selected load or thermal rating for this wrist.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.098,
+      "length_m": 0.0619,
+      "axis_world": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "source_geometry_local_path": "artifacts/gorilla_v0_1/internal_module_sources/imported_geometry/cubemars_ak80_64_local_m.obj",
+      "source_geometry_sha256": "20558642a5536e6ec8c70320ba406fe3d97190557c1efec5c8e8a4ec9caae50a",
+      "source_geometry_rotation_euler_rad": [
+        0,
+        -1.5707963267948966,
+        0
+      ]
+    },
+    {
+      "id": "ia_right_wrist_yaw",
+      "label": "right wrist yaw",
+      "family": "wrist_rotary",
+      "category": "drive",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        3,
+        6,
+        10
+      ],
+      "center_world_m": [
+        -0.077,
+        -0.815,
+        1.1300000000000001
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "AK80-64 exact size calibrator only; 48 Nm nominal/120 Nm peak is not a selected load or thermal rating for this wrist.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.098,
+      "length_m": 0.0619,
+      "axis_world": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_geometry_local_path": "artifacts/gorilla_v0_1/internal_module_sources/imported_geometry/cubemars_ak80_64_local_m.obj",
+      "source_geometry_sha256": "20558642a5536e6ec8c70320ba406fe3d97190557c1efec5c8e8a4ec9caae50a",
+      "source_geometry_rotation_euler_rad": [
+        0,
+        -1.5707963267948966,
+        0
+      ]
+    },
+    {
+      "id": "ia_right_hand_mechanisms",
+      "label": "right hand mechanisms",
+      "family": "hand_assembly",
+      "category": "drive",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        12,
+        20,
+        30
+      ],
+      "center_world_m": [
+        -0.02,
+        -0.84,
+        1.105
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Mechanism/drive/feedback/support allocation in palm; full fingers/thumb and force distribution not represented by this box.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "box",
+      "dimensions_m": [
+        0.13,
+        0.17,
+        0.19
+      ]
+    },
+    {
+      "id": "ia_right_forefoot_lock_and_feedback",
+      "label": "right forefoot lock and feedback",
+      "family": "foot_lock",
+      "category": "drive",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        2,
+        3,
+        5
+      ],
+      "center_world_m": [
+        -0.077,
+        -0.5,
+        0.155
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Lock-actuation/feedback allowance. C15 fixed-side support gap remains open; lock holding load and fail-safe behavior unproved.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "box",
+      "dimensions_m": [
+        0.045,
+        0.08,
+        0.05
+      ]
+    },
+    {
+      "id": "ia_right_heel_lock_and_feedback",
+      "label": "right heel lock and feedback",
+      "family": "foot_lock",
+      "category": "drive",
+      "route": "common",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        2,
+        3,
+        5
+      ],
+      "center_world_m": [
+        -0.131,
+        -0.5,
+        0.155
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Lock-actuation/feedback allowance. C15 fixed-side support gap remains open; lock holding load and fail-safe behavior unproved.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "box",
+      "dimensions_m": [
+        0.045,
+        0.08,
+        0.05
+      ]
+    },
+    {
+      "id": "ia_rotary_electric_right_hip_yaw",
+      "label": "rotary electric right hip yaw",
+      "family": "secondary_rotary",
+      "category": "drive",
+      "route": "rotary_electric",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        32,
+        44,
+        60
+      ],
+      "center_world_m": [
+        -0.045,
+        -0.31,
+        1.8199999999999998
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.26,
+      "length_m": 0.245,
+      "axis_world": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "id": "ia_rotary_electric_right_hip_roll",
+      "label": "rotary electric right hip roll",
+      "family": "secondary_rotary",
+      "category": "drive",
+      "route": "rotary_electric",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        32,
+        44,
+        60
+      ],
+      "center_world_m": [
+        -0.14500000000000002,
+        -0.31,
+        1.73
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.26,
+      "length_m": 0.245,
+      "axis_world": [
+        1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": "ia_rotary_electric_right_ankle_roll",
+      "label": "rotary electric right ankle roll",
+      "family": "secondary_rotary",
+      "category": "drive",
+      "route": "rotary_electric",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        32,
+        44,
+        60
+      ],
+      "center_world_m": [
+        -0.095,
+        -0.5,
+        0.3
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.26,
+      "length_m": 0.245,
+      "axis_world": [
+        1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": "ia_rotary_electric_right_hip_pitch",
+      "label": "rotary electric right hip pitch",
+      "family": "high_load_rotary",
+      "category": "drive",
+      "route": "rotary_electric",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        62,
+        80,
+        110
+      ],
+      "center_world_m": [
+        -0.045,
+        -0.31,
+        1.66
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "RV320E 325 x 125 mm/44.3 kg reducer plus assumed motor, brake, drive and support stack. Its 3136 Nm catalogue rating does not meet all coarse demands.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.325,
+      "length_m": 0.285,
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    {
+      "id": "ia_rotary_electric_right_knee_pitch",
+      "label": "rotary electric right knee pitch",
+      "family": "high_load_rotary",
+      "category": "drive",
+      "route": "rotary_electric",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        62,
+        80,
+        110
+      ],
+      "center_world_m": [
+        -0.08,
+        -0.398,
+        0.97
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "RV320E 325 x 125 mm/44.3 kg reducer plus assumed motor, brake, drive and support stack. Its 3136 Nm catalogue rating does not meet all coarse demands.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.325,
+      "length_m": 0.285,
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    {
+      "id": "ia_rotary_electric_right_fold_pitch",
+      "label": "rotary electric right fold pitch",
+      "family": "high_load_rotary",
+      "category": "drive",
+      "route": "rotary_electric",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        62,
+        80,
+        110
+      ],
+      "center_world_m": [
+        -0.12,
+        -0.47,
+        0.53
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "RV320E 325 x 125 mm/44.3 kg reducer plus assumed motor, brake, drive and support stack. Its 3136 Nm catalogue rating does not meet all coarse demands.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.325,
+      "length_m": 0.285,
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    {
+      "id": "ia_rotary_electric_right_ankle_pitch",
+      "label": "rotary electric right ankle pitch",
+      "family": "high_load_rotary",
+      "category": "drive",
+      "route": "rotary_electric",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        62,
+        80,
+        110
+      ],
+      "center_world_m": [
+        -0.075,
+        -0.5,
+        0.285
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "RV320E 325 x 125 mm/44.3 kg reducer plus assumed motor, brake, drive and support stack. Its 3136 Nm catalogue rating does not meet all coarse demands.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.325,
+      "length_m": 0.285,
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    {
+      "id": "ia_linear_electric_right_hip_yaw",
+      "label": "linear electric right hip yaw",
+      "family": "secondary_rotary",
+      "category": "drive",
+      "route": "linear_electric",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        32,
+        44,
+        60
+      ],
+      "center_world_m": [
+        -0.045,
+        -0.31,
+        1.8199999999999998
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.26,
+      "length_m": 0.245,
+      "axis_world": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "id": "ia_linear_electric_right_hip_roll",
+      "label": "linear electric right hip roll",
+      "family": "secondary_rotary",
+      "category": "drive",
+      "route": "linear_electric",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        32,
+        44,
+        60
+      ],
+      "center_world_m": [
+        -0.14500000000000002,
+        -0.31,
+        1.73
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.26,
+      "length_m": 0.245,
+      "axis_world": [
+        1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": "ia_linear_electric_right_ankle_roll",
+      "label": "linear electric right ankle roll",
+      "family": "secondary_rotary",
+      "category": "drive",
+      "route": "linear_electric",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        32,
+        44,
+        60
+      ],
+      "center_world_m": [
+        -0.095,
+        -0.5,
+        0.3
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.26,
+      "length_m": 0.245,
+      "axis_world": [
+        1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": "ia_linear_electric_right_hip_pitch",
+      "label": "linear electric right hip pitch",
+      "family": "high_force_electric_linear",
+      "category": "drive",
+      "route": "linear_electric",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        34,
+        48,
+        70
+      ],
+      "center_world_m": [
+        -0.2225,
+        -0.354,
+        1.375
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Rejected until mounts/linkage, effective moment arm throughout sweep, retracted length and complete continuous capacity are closed. Linear/EHA dimensions are assumptions; hydraulic uses HMI80/36/200 493mm bare budget plus 110mm mounting allowance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.15,
+      "length_m": 0.58,
+      "axis_world": [
+        -0.05025349649711923,
+        -0.12635164833561408,
+        -0.9907117880860646
+      ],
+      "stroke_m_assumption": 0.2
+    },
+    {
+      "id": "ia_linear_electric_right_knee_pitch",
+      "label": "linear electric right knee pitch",
+      "family": "high_force_electric_linear",
+      "category": "drive",
+      "route": "linear_electric",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        34,
+        48,
+        70
+      ],
+      "center_world_m": [
+        0.10750000000000001,
+        -0.354,
+        1.2149999999999999
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Rejected until mounts/linkage, effective moment arm throughout sweep, retracted length and complete continuous capacity are closed. Linear/EHA dimensions are assumptions; hydraulic uses HMI80/36/200 493mm bare budget plus 110mm mounting allowance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.15,
+      "length_m": 0.58,
+      "axis_world": [
+        -0.05025349649711923,
+        -0.12635164833561408,
+        -0.9907117880860646
+      ],
+      "stroke_m_assumption": 0.2
+    },
+    {
+      "id": "ia_linear_electric_right_fold_pitch",
+      "label": "linear electric right fold pitch",
+      "family": "high_force_electric_linear",
+      "category": "drive",
+      "route": "linear_electric",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        34,
+        48,
+        70
+      ],
+      "center_world_m": [
+        0.01999999999999999,
+        -0.434,
+        0.75
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Rejected until mounts/linkage, effective moment arm throughout sweep, retracted length and complete continuous capacity are closed. Linear/EHA dimensions are assumptions; hydraulic uses HMI80/36/200 493mm bare budget plus 110mm mounting allowance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.15,
+      "length_m": 0.58,
+      "axis_world": [
+        -0.08935697753776928,
+        -0.16084255956798463,
+        -0.9829267529154622
+      ],
+      "stroke_m_assumption": 0.2
+    },
+    {
+      "id": "ia_linear_electric_right_ankle_pitch",
+      "label": "linear electric right ankle pitch",
+      "family": "high_force_electric_linear",
+      "category": "drive",
+      "route": "linear_electric",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        34,
+        48,
+        70
+      ],
+      "center_world_m": [
+        -0.2175,
+        -0.485,
+        0.4075
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Rejected until mounts/linkage, effective moment arm throughout sweep, retracted length and complete continuous capacity are closed. Linear/EHA dimensions are assumptions; hydraulic uses HMI80/36/200 493mm bare budget plus 110mm mounting allowance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.15,
+      "length_m": 0.58,
+      "axis_world": [
+        0.17935547833621826,
+        -0.11957031889081228,
+        -0.9764909376082996
+      ],
+      "stroke_m_assumption": 0.2
+    },
+    {
+      "id": "ia_central_hydraulic_right_hip_yaw",
+      "label": "central hydraulic right hip yaw",
+      "family": "secondary_rotary",
+      "category": "drive",
+      "route": "central_hydraulic",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        32,
+        44,
+        60
+      ],
+      "center_world_m": [
+        -0.045,
+        -0.31,
+        1.8199999999999998
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.26,
+      "length_m": 0.245,
+      "axis_world": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "id": "ia_central_hydraulic_right_hip_roll",
+      "label": "central hydraulic right hip roll",
+      "family": "secondary_rotary",
+      "category": "drive",
+      "route": "central_hydraulic",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        32,
+        44,
+        60
+      ],
+      "center_world_m": [
+        -0.14500000000000002,
+        -0.31,
+        1.73
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.26,
+      "length_m": 0.245,
+      "axis_world": [
+        1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": "ia_central_hydraulic_right_ankle_roll",
+      "label": "central hydraulic right ankle roll",
+      "family": "secondary_rotary",
+      "category": "drive",
+      "route": "central_hydraulic",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        32,
+        44,
+        60
+      ],
+      "center_world_m": [
+        -0.095,
+        -0.5,
+        0.3
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.26,
+      "length_m": 0.245,
+      "axis_world": [
+        1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": "ia_central_hydraulic_right_hip_pitch",
+      "label": "central hydraulic right hip pitch",
+      "family": "hydraulic_cylinder_assembly",
+      "category": "drive",
+      "route": "central_hydraulic",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        22,
+        34,
+        48
+      ],
+      "center_world_m": [
+        -0.2225,
+        -0.354,
+        1.375
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Rejected until mounts/linkage, effective moment arm throughout sweep, retracted length and complete continuous capacity are closed. Linear/EHA dimensions are assumptions; hydraulic uses HMI80/36/200 493mm bare budget plus 110mm mounting allowance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.16263455967290594,
+      "length_m": 0.603,
+      "axis_world": [
+        -0.05025349649711923,
+        -0.12635164833561408,
+        -0.9907117880860646
+      ],
+      "stroke_m_assumption": 0.2,
+      "manufacturer_bare_body_width_m": 0.115,
+      "manufacturer_bare_retracted_budget_m": 0.493,
+      "mount_length_allowance_m": 0.11,
+      "manufacturer_rectangle_corner_scope": "Round envelope circumscribes the 115 mm square body: diameter = 115 mm * sqrt(2). It is conservative corner space, not the OEM cylinder mesh."
+    },
+    {
+      "id": "ia_central_hydraulic_right_knee_pitch",
+      "label": "central hydraulic right knee pitch",
+      "family": "hydraulic_cylinder_assembly",
+      "category": "drive",
+      "route": "central_hydraulic",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        22,
+        34,
+        48
+      ],
+      "center_world_m": [
+        0.10750000000000001,
+        -0.354,
+        1.2149999999999999
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Rejected until mounts/linkage, effective moment arm throughout sweep, retracted length and complete continuous capacity are closed. Linear/EHA dimensions are assumptions; hydraulic uses HMI80/36/200 493mm bare budget plus 110mm mounting allowance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.16263455967290594,
+      "length_m": 0.603,
+      "axis_world": [
+        -0.05025349649711923,
+        -0.12635164833561408,
+        -0.9907117880860646
+      ],
+      "stroke_m_assumption": 0.2,
+      "manufacturer_bare_body_width_m": 0.115,
+      "manufacturer_bare_retracted_budget_m": 0.493,
+      "mount_length_allowance_m": 0.11,
+      "manufacturer_rectangle_corner_scope": "Round envelope circumscribes the 115 mm square body: diameter = 115 mm * sqrt(2). It is conservative corner space, not the OEM cylinder mesh."
+    },
+    {
+      "id": "ia_central_hydraulic_right_fold_pitch",
+      "label": "central hydraulic right fold pitch",
+      "family": "hydraulic_cylinder_assembly",
+      "category": "drive",
+      "route": "central_hydraulic",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        22,
+        34,
+        48
+      ],
+      "center_world_m": [
+        0.01999999999999999,
+        -0.434,
+        0.75
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Rejected until mounts/linkage, effective moment arm throughout sweep, retracted length and complete continuous capacity are closed. Linear/EHA dimensions are assumptions; hydraulic uses HMI80/36/200 493mm bare budget plus 110mm mounting allowance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.16263455967290594,
+      "length_m": 0.603,
+      "axis_world": [
+        -0.08935697753776928,
+        -0.16084255956798463,
+        -0.9829267529154622
+      ],
+      "stroke_m_assumption": 0.2,
+      "manufacturer_bare_body_width_m": 0.115,
+      "manufacturer_bare_retracted_budget_m": 0.493,
+      "mount_length_allowance_m": 0.11,
+      "manufacturer_rectangle_corner_scope": "Round envelope circumscribes the 115 mm square body: diameter = 115 mm * sqrt(2). It is conservative corner space, not the OEM cylinder mesh."
+    },
+    {
+      "id": "ia_central_hydraulic_right_ankle_pitch",
+      "label": "central hydraulic right ankle pitch",
+      "family": "hydraulic_cylinder_assembly",
+      "category": "drive",
+      "route": "central_hydraulic",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        22,
+        34,
+        48
+      ],
+      "center_world_m": [
+        -0.2175,
+        -0.485,
+        0.4075
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Rejected until mounts/linkage, effective moment arm throughout sweep, retracted length and complete continuous capacity are closed. Linear/EHA dimensions are assumptions; hydraulic uses HMI80/36/200 493mm bare budget plus 110mm mounting allowance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.16263455967290594,
+      "length_m": 0.603,
+      "axis_world": [
+        0.17935547833621826,
+        -0.11957031889081228,
+        -0.9764909376082996
+      ],
+      "stroke_m_assumption": 0.2,
+      "manufacturer_bare_body_width_m": 0.115,
+      "manufacturer_bare_retracted_budget_m": 0.493,
+      "mount_length_allowance_m": 0.11,
+      "manufacturer_rectangle_corner_scope": "Round envelope circumscribes the 115 mm square body: diameter = 115 mm * sqrt(2). It is conservative corner space, not the OEM cylinder mesh."
+    },
+    {
+      "id": "ia_distributed_eha_right_hip_yaw",
+      "label": "distributed eha right hip yaw",
+      "family": "secondary_rotary",
+      "category": "drive",
+      "route": "distributed_eha",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        32,
+        44,
+        60
+      ],
+      "center_world_m": [
+        -0.045,
+        -0.31,
+        1.8199999999999998
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.26,
+      "length_m": 0.245,
+      "axis_world": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "id": "ia_distributed_eha_right_hip_roll",
+      "label": "distributed eha right hip roll",
+      "family": "secondary_rotary",
+      "category": "drive",
+      "route": "distributed_eha",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        32,
+        44,
+        60
+      ],
+      "center_world_m": [
+        -0.14500000000000002,
+        -0.31,
+        1.73
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.26,
+      "length_m": 0.245,
+      "axis_world": [
+        1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": "ia_distributed_eha_right_ankle_roll",
+      "label": "distributed eha right ankle roll",
+      "family": "secondary_rotary",
+      "category": "drive",
+      "route": "distributed_eha",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        32,
+        44,
+        60
+      ],
+      "center_world_m": [
+        -0.095,
+        -0.5,
+        0.3
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.26,
+      "length_m": 0.245,
+      "axis_world": [
+        1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": "ia_distributed_eha_right_hip_pitch",
+      "label": "distributed eha right hip pitch",
+      "family": "eha_complete",
+      "category": "drive",
+      "route": "distributed_eha",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        34,
+        52,
+        82
+      ],
+      "center_world_m": [
+        -0.2225,
+        -0.354,
+        1.375
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Rejected until mounts/linkage, effective moment arm throughout sweep, retracted length and complete continuous capacity are closed. Linear/EHA dimensions are assumptions; hydraulic uses HMI80/36/200 493mm bare budget plus 110mm mounting allowance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.19,
+      "length_m": 0.68,
+      "axis_world": [
+        -0.05025349649711923,
+        -0.12635164833561408,
+        -0.9907117880860646
+      ],
+      "stroke_m_assumption": 0.2
+    },
+    {
+      "id": "ia_distributed_eha_right_knee_pitch",
+      "label": "distributed eha right knee pitch",
+      "family": "eha_complete",
+      "category": "drive",
+      "route": "distributed_eha",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        34,
+        52,
+        82
+      ],
+      "center_world_m": [
+        0.10750000000000001,
+        -0.354,
+        1.2149999999999999
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Rejected until mounts/linkage, effective moment arm throughout sweep, retracted length and complete continuous capacity are closed. Linear/EHA dimensions are assumptions; hydraulic uses HMI80/36/200 493mm bare budget plus 110mm mounting allowance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.19,
+      "length_m": 0.68,
+      "axis_world": [
+        -0.05025349649711923,
+        -0.12635164833561408,
+        -0.9907117880860646
+      ],
+      "stroke_m_assumption": 0.2
+    },
+    {
+      "id": "ia_distributed_eha_right_fold_pitch",
+      "label": "distributed eha right fold pitch",
+      "family": "eha_complete",
+      "category": "drive",
+      "route": "distributed_eha",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        34,
+        52,
+        82
+      ],
+      "center_world_m": [
+        0.01999999999999999,
+        -0.434,
+        0.75
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Rejected until mounts/linkage, effective moment arm throughout sweep, retracted length and complete continuous capacity are closed. Linear/EHA dimensions are assumptions; hydraulic uses HMI80/36/200 493mm bare budget plus 110mm mounting allowance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.19,
+      "length_m": 0.68,
+      "axis_world": [
+        -0.08935697753776928,
+        -0.16084255956798463,
+        -0.9829267529154622
+      ],
+      "stroke_m_assumption": 0.2
+    },
+    {
+      "id": "ia_distributed_eha_right_ankle_pitch",
+      "label": "distributed eha right ankle pitch",
+      "family": "eha_complete",
+      "category": "drive",
+      "route": "distributed_eha",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        34,
+        52,
+        82
+      ],
+      "center_world_m": [
+        -0.2175,
+        -0.485,
+        0.4075
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Rejected until mounts/linkage, effective moment arm throughout sweep, retracted length and complete continuous capacity are closed. Linear/EHA dimensions are assumptions; hydraulic uses HMI80/36/200 493mm bare budget plus 110mm mounting allowance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "cylinder",
+      "diameter_m": 0.19,
+      "length_m": 0.68,
+      "axis_world": [
+        0.17935547833621826,
+        -0.11957031889081228,
+        -0.9764909376082996
+      ],
+      "stroke_m_assumption": 0.2
+    },
+    {
+      "id": "ia_hydraulic_motor_pump_and_drive",
+      "label": "hydraulic motor pump and drive",
+      "family": "central_motor_pump",
+      "category": "drive",
+      "route": "central_hydraulic",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        35,
+        55,
+        85
+      ],
+      "center_world_m": [
+        0.025,
+        0,
+        2.385
+      ],
+      "rgba": [
+        0.67,
+        0.4,
+        0.14,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "box",
+      "dimensions_m": [
+        0.28,
+        0.3,
+        0.24
+      ]
+    },
+    {
+      "id": "ia_hydraulic_valves_protection_filter",
+      "label": "hydraulic valves protection filter",
+      "family": "central_valves",
+      "category": "connections",
+      "route": "central_hydraulic",
+      "role": "complete_module_envelope",
+      "budget_units": 1,
+      "mass_range_kg": [
+        12,
+        24,
+        40
+      ],
+      "center_world_m": [
+        0.035,
+        0,
+        2.065
+      ],
+      "rgba": [
+        0.4,
+        0.42,
+        0.46,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "box",
+      "dimensions_m": [
+        0.19,
+        0.27,
+        0.15
+      ]
+    },
+    {
+      "id": "ia_hydraulic_fluid_compensation_hoses",
+      "label": "hydraulic fluid compensation hoses",
+      "family": "central_wet_system",
+      "category": "connections",
+      "route": "central_hydraulic",
+      "role": "route_reserve",
+      "budget_units": 1,
+      "mass_range_kg": [
+        15,
+        25,
+        45
+      ],
+      "center_world_m": [
+        -0.12,
+        0,
+        1.815
+      ],
+      "rgba": [
+        0.4,
+        0.42,
+        0.46,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "box",
+      "dimensions_m": [
+        0.25,
+        0.3,
+        0.2
+      ]
+    },
+    {
+      "id": "ia_eha_fill_service_connections",
+      "label": "eha fill service connections",
+      "family": "distributed_wet_connections",
+      "category": "connections",
+      "route": "distributed_eha",
+      "role": "route_reserve",
+      "budget_units": 1,
+      "mass_range_kg": [
+        5,
+        8,
+        16
+      ],
+      "center_world_m": [
+        0.06,
+        0,
+        2.02
+      ],
+      "rgba": [
+        0.4,
+        0.42,
+        0.46,
+        1
+      ],
+      "basis": "Sizing assumption; no complete product, fit or continuous capability acceptance.",
+      "physical_mass_assigned": false,
+      "inside_shell_verified": false,
+      "geometry": "box",
+      "dimensions_m": [
+        0.1,
+        0.18,
+        0.12
+      ]
+    }
+  ],
+  "budget_units_by_route": {
+    "common": {
+      "energy_system": 1.0,
+      "thermal_system": 1.0,
+      "compute_sensing": 1.0,
+      "harness_and_mounts": 1,
+      "assembly_fasteners_and_covers": 1,
+      "waist_rotary": 3,
+      "upper_arm_rotary": 6,
+      "elbow_rotary": 2,
+      "wrist_rotary": 6,
+      "hand_assembly": 2,
+      "foot_lock": 4
+    },
+    "rotary_electric": {
+      "secondary_rotary": 6,
+      "high_load_rotary": 8
+    },
+    "linear_electric": {
+      "secondary_rotary": 6,
+      "high_force_electric_linear": 8
+    },
+    "central_hydraulic": {
+      "secondary_rotary": 6,
+      "hydraulic_cylinder_assembly": 8,
+      "central_motor_pump": 1,
+      "central_valves": 1,
+      "central_wet_system": 1
+    },
+    "distributed_eha": {
+      "secondary_rotary": 6,
+      "eha_complete": 8,
+      "distributed_wet_connections": 1
+    }
+  },
+  "scope": "Full-route neutral packaging probes, with gross stock retained. Collisions and capability conflicts deliberately remain visible. Aggregate reserves are not local mechanisms. Not a selected actuation architecture, net assembly, service proof or stable SI contract.",
+  "selected_route": null,
+  "geometry_accepted": false,
+  "physics_accepted": false,
+  "OEM_scope": "Local optional source CAD used as dimensional calibration, not selected wiring/capacity/mass. Raw and derived OEM polygons stay in ignored artifacts until redistribution permission is resolved."
+}

@@ -1,0 +1,397 @@
+{
+  "schema": "gorilla_internal_architecture_budget_v1",
+  "robot_id": "gorilla_v0_1",
+  "maturity": "macro_budget_and_packaging_hypotheses_not_physical_release",
+  "base_stage_commit": "94e0e074",
+  "base_scene": "experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_scene.json",
+  "base_scene_sha256": "7a1e49f45838303ca5fd86265dc9980c10cde85ed7626424136afd3863aa5886",
+  "base_geometry_spec": "experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_spec.json",
+  "research": "robots/gorilla_v0_1/hardware/internal_module_research.md",
+  "gravity_m_s2": 9.80665,
+  "stock_density_kg_m3": 7850,
+  "armor_density_range_kg_m3": [
+    1300,
+    2000,
+    2800
+  ],
+  "stock_scope": "Untrimmed C15 finite-wall members and frame-side socket stock. Overlaps have not been subtracted; no completed assembly net-mass claim. Old visible drive proxies are excluded and replaced by complete module budgets. C14 component reserves are not added again.",
+  "module_classes": {
+    "high_load_rotary": {
+      "mass_range_kg": [
+        62,
+        80,
+        110
+      ],
+      "basis": "RV-320E reducer alone is 44.3 kg. Motor, brake, drive, housing, mounts and thermal interfaces are explicit unverified additions. Gearbox rated 3136 Nm is not upgraded by mass allowance."
+    },
+    "secondary_rotary": {
+      "mass_range_kg": [
+        32,
+        44,
+        60
+      ],
+      "basis": "CSG65 alone 20.9 kg, plus motor/brake/drive/mounts. Which axes need a larger unit remains open."
+    },
+    "upper_arm_rotary": {
+      "mass_range_kg": [
+        30,
+        38,
+        52
+      ],
+      "basis": "CSG65 scale; complete drive is not selected or thermally qualified."
+    },
+    "elbow_rotary": {
+      "mass_range_kg": [
+        18,
+        26,
+        38
+      ],
+      "basis": "Provisional complete intermediate joint, requires its own continuous torque/source."
+    },
+    "wrist_rotary": {
+      "mass_range_kg": [
+        3,
+        6,
+        10
+      ],
+      "basis": "AK80-64 is a size calibration, not a demonstrated wrist selection for the load cases."
+    },
+    "hand_assembly": {
+      "mass_range_kg": [
+        12,
+        20,
+        30
+      ],
+      "basis": "Complete hand mechanisms, drives, local supports, feedback and contact surfaces; finger topology not frozen."
+    },
+    "waist_rotary": {
+      "mass_range_kg": [
+        30,
+        40,
+        60
+      ],
+      "basis": "Three-axis envelope allocation, not an assigned SI joint order or actual SKU."
+    },
+    "foot_lock": {
+      "mass_range_kg": [
+        2,
+        3,
+        5
+      ],
+      "basis": "Four independent segment-lock/withdrawal mechanisms and feedback, capacity unverified."
+    },
+    "high_force_electric_linear": {
+      "mass_range_kg": [
+        34,
+        48,
+        70
+      ],
+      "basis": "Motor/reduction/roller screw/rod/guides/end mounts/brake/drive. Force, fatigue, retracted length and thermal capability remain red-line unknown."
+    },
+    "hydraulic_cylinder_assembly": {
+      "mass_range_kg": [
+        22,
+        34,
+        48
+      ],
+      "basis": "HMI63/28 dry 13.9 kg or HMI80/36 dry 24.9 kg at 200mm stroke. Rod-end, two mounts, feedback and local fittings included as unverified additions; wet central system separate."
+    },
+    "eha_complete": {
+      "mass_range_kg": [
+        34,
+        52,
+        82
+      ],
+      "basis": "Cylinder plus local motor/pump/drive/valve/compensation/fluid/mounts. No equivalent compact complete product verified; cannot release it as a yellow-only custom module."
+    },
+    "central_motor_pump": {
+      "mass_range_kg": [
+        35,
+        55,
+        85
+      ],
+      "basis": "Motor/pump/drive/support assembly sized later from simultaneous flow and pressure, no SKU selected."
+    },
+    "central_valves": {
+      "mass_range_kg": [
+        12,
+        24,
+        40
+      ],
+      "basis": "Control/holding/pressure protection/filtering/manifold, unverified aggregate."
+    },
+    "central_wet_system": {
+      "mass_range_kg": [
+        15,
+        25,
+        45
+      ],
+      "basis": "Fluid/tank or compensation/hoses/fittings, no dry-cylinder shortcut."
+    },
+    "distributed_wet_connections": {
+      "mass_range_kg": [
+        5,
+        8,
+        16
+      ],
+      "basis": "EHA local fluid is counted within each complete unit; only external fill/service connections here."
+    },
+    "energy_system": {
+      "mass_range_kg": [
+        70,
+        85,
+        120
+      ],
+      "basis": "8-12kWh packaging target. Victron 2.56kWh/19kg calibrates energy density; HV cells, BMS, contactors/precharge/protection/regeneration enclosure not selected. No forbidden series connection is proposed."
+    },
+    "thermal_system": {
+      "mass_range_kg": [
+        30,
+        55,
+        85
+      ],
+      "basis": "Heat exchangers/pumps/fans/ducts/coolant/mounts, not grille decoration or demonstrated heat removal."
+    },
+    "compute_sensing": {
+      "mass_range_kg": [
+        8,
+        12,
+        18
+      ],
+      "basis": "Compute/storage/network/cameras/IMU/force feedback/DC conversion, no compute board selected."
+    },
+    "harness_and_mounts": {
+      "mass_range_kg": [
+        30,
+        50,
+        80
+      ],
+      "basis": "Power/data harnesses/connectors/clamps and service slack; hydraulic fluid/hoses counted elsewhere."
+    },
+    "assembly_fasteners_and_covers": {
+      "mass_range_kg": [
+        20,
+        35,
+        60
+      ],
+      "basis": "Unmodelled fastening/mount/guard reserve, replace with actual rows without duplication."
+    }
+  },
+  "common_modules": {
+    "upper_arm_rotary": 6,
+    "elbow_rotary": 2,
+    "wrist_rotary": 6,
+    "hand_assembly": 2,
+    "waist_rotary": 3,
+    "foot_lock": 4,
+    "energy_system": 1,
+    "thermal_system": 1,
+    "compute_sensing": 1,
+    "harness_and_mounts": 1,
+    "assembly_fasteners_and_covers": 1
+  },
+  "routes": {
+    "rotary_electric": {
+      "modules": {
+        "high_load_rotary": 8,
+        "secondary_rotary": 6
+      },
+      "shaft_to_bus_efficiency_range": [
+        0.6,
+        0.72,
+        0.82
+      ],
+      "holding_and_aux_power_range_W": [
+        500,
+        1000,
+        2000
+      ]
+    },
+    "linear_electric": {
+      "modules": {
+        "high_force_electric_linear": 8,
+        "secondary_rotary": 6
+      },
+      "shaft_to_bus_efficiency_range": [
+        0.5195497499999999,
+        0.561816,
+        0.6117552
+      ],
+      "efficiency_scope": "Derived from assumed link 0.85, screw 0.85, reduction 0.90, motor 0.85/0.90/0.96 and inverter 0.94/0.96/0.98. A shaft-to-bus efficiency exceeding the component product is forbidden. These are sizing assumptions, not continuous hardware qualifications.",
+      "holding_and_aux_power_range_W": [
+        500,
+        1000,
+        2000
+      ]
+    },
+    "central_hydraulic": {
+      "modules": {
+        "hydraulic_cylinder_assembly": 8,
+        "secondary_rotary": 6,
+        "central_motor_pump": 1,
+        "central_valves": 1,
+        "central_wet_system": 1
+      },
+      "shaft_to_bus_efficiency_range": [
+        0.4,
+        0.55,
+        0.7
+      ],
+      "holding_and_aux_power_range_W": [
+        800,
+        1600,
+        3000
+      ]
+    },
+    "distributed_eha": {
+      "modules": {
+        "eha_complete": 8,
+        "secondary_rotary": 6,
+        "distributed_wet_connections": 1
+      },
+      "shaft_to_bus_efficiency_range": [
+        0.5,
+        0.65,
+        0.78
+      ],
+      "holding_and_aux_power_range_W": [
+        600,
+        1200,
+        2400
+      ]
+    }
+  },
+  "load_cases": [
+    {
+      "id": "gentle_transfer",
+      "payload_kg": 50,
+      "vertical_force_factor": 1.0,
+      "effective_leg_pitch_lever_m": 0.12,
+      "shaft_speed_rad_s": 0.25,
+      "simultaneous_high_load_axes": 2,
+      "motion_duty_fraction": 0.15,
+      "upper_body_mechanical_average_W": 300,
+      "upper_body_mechanical_peak_W": 2000
+    },
+    {
+      "id": "carry_design_point",
+      "payload_kg": 100,
+      "vertical_force_factor": 1.25,
+      "effective_leg_pitch_lever_m": 0.2,
+      "shaft_speed_rad_s": 0.5,
+      "simultaneous_high_load_axes": 3,
+      "motion_duty_fraction": 0.25,
+      "upper_body_mechanical_average_W": 750,
+      "upper_body_mechanical_peak_W": 6000
+    },
+    {
+      "id": "adverse_posture_bound",
+      "payload_kg": 100,
+      "vertical_force_factor": 1.5,
+      "effective_leg_pitch_lever_m": 0.35,
+      "shaft_speed_rad_s": 0.8,
+      "simultaneous_high_load_axes": 4,
+      "motion_duty_fraction": 0.4,
+      "upper_body_mechanical_average_W": 1200,
+      "upper_body_mechanical_peak_W": 10000
+    }
+  ],
+  "load_case_scope": "Leg lever/dynamic factor/shaft speed/concurrence are explicit sensitivity assumptions, not FK-derived or validated postures. Gravity/support pitch sizing only, not total joint torque: add axis-specific articulated inertia, horizontal acceleration, disturbance, off-axis loads, contact feasibility and actual lever sweeps before release. Mass index low/nominal/high is evaluated separately for every case.",
+  "linear_drive": {
+    "effective_actuator_lever_range_m": [
+      0.08,
+      0.12,
+      0.16
+    ],
+    "link_efficiency": 0.85,
+    "screw_lead_m_rev": 0.02,
+    "screw_efficiency": 0.85,
+    "motor_to_screw_ratio": 10,
+    "reduction_efficiency": 0.9,
+    "motor_efficiency_range": [
+      0.85,
+      0.9,
+      0.96
+    ],
+    "inverter_efficiency_range": [
+      0.94,
+      0.96,
+      0.98
+    ]
+  },
+  "hydraulic": {
+    "pressure_range_Pa": [
+      14000000,
+      16000000,
+      21000000
+    ],
+    "cylinders": [
+      {
+        "id": "hmi_63_28_200",
+        "bore_m": 0.063,
+        "rod_m": 0.028,
+        "stroke_m": 0.2,
+        "dry_mass_kg": 13.9,
+        "bare_retracted_budget_m": 0.448,
+        "body_width_m": 0.09
+      },
+      {
+        "id": "hmi_80_36_200",
+        "bore_m": 0.08,
+        "rod_m": 0.036,
+        "stroke_m": 0.2,
+        "dry_mass_kg": 24.9,
+        "bare_retracted_budget_m": 0.493,
+        "body_width_m": 0.115
+      }
+    ]
+  },
+  "energy": {
+    "nominal_kWh_range": [
+      8,
+      10.24,
+      12
+    ],
+    "usable_fraction": 0.75,
+    "candidate_bus_voltage_V": [
+      96,
+      200,
+      400
+    ],
+    "voltage_scope": "Comparison only. Full-charge/minimum voltage, drive windows and complete HV pack are not selected.",
+    "battery_benchmark": {
+      "nominal_voltage_V": 25.6,
+      "energy_kWh": 2.56,
+      "mass_kg": 19,
+      "dimensions_m": [
+        0.3412,
+        0.1603,
+        0.2347
+      ],
+      "continuous_current_A": 100,
+      "pulse_10s_current_A": 200,
+      "maximum_series_count": 2
+    },
+    "lowering_COM_m": 0.3,
+    "recovery_efficiency": 0.7,
+    "regeneration_event_duration_s": 0.5
+  },
+  "thermal": {
+    "air_density_kg_m3": 1.2,
+    "air_cp_J_kgK": 1005,
+    "air_temperature_rise_K": 25,
+    "liquid_cp_J_kgK": 4180,
+    "liquid_temperature_rise_K": 8,
+    "intake_free_area_m2_assumption": 0.0266,
+    "intake_scope": "Provisional area estimate from previous slot sampling; not certified net aperture, fan/core pressure-drop capability or CFD."
+  },
+  "rated_benchmarks": {
+    "RV320E_torque_Nm": 3136,
+    "CSG65_torque_Nm": 1236
+  },
+  "physics_accepted": false,
+  "stable_physical_contract": false,
+  "selected_route": null,
+  "separate_structural_pressure_case_kg": 3000,
+  "separate_structural_pressure_case_scope": "User-requested upper-body pressure test demand, not payload rating. No force-transfer or new-foot strength approval from this budget."
+}

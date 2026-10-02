@@ -30,7 +30,7 @@
 
 分布电液是与集中阀控液压不同的系统选择。Moog 官方说明 EPU 可以直接接作动器，并以四象限运行实现泵控；这说明“局部电机泵＋液压缸”的路线真实存在，但不证明任何 Atlas 版本采用该方案，也不代表现成模块适合 Gorilla。[E2]
 
-## 3. 只取三个公开尺寸标尺
+## 3. 公开尺寸标尺
 
 这些是建立真实模块边界的标尺，**不是采购表或候选架构定案**。没有证据表明 Tesla、Figure 或 Atlas 使用以下具体器件。下载状态以本轮核查为准；未提交任何注册或下载表单。
 
@@ -46,7 +46,49 @@
 - QTR160 [参数/二维尺寸 PDF][C3]：Brochure 2.5，打印 p20–21，订货表 p35；[三维 CAD 页面][C4]公开入口存在，但要表单，未提交。后续只按可核对的尺寸图重建包络，并保留源版本。
 - D455 [官方 CAD ZIP 直链][C7]：HTTP 200，15,041,868 bytes，内存读取清单确认包含 `D455_Solid.SLDPRT`；不是凭第三方模型命名判断。[参数 PDF][C5]版号 337029-013，p66 表3-52、p101 表7-9。三维文件并非整台机器人或光学标定模型。
 
-本轮只核实文件可下载和包内类型，没有将第三方 CAD 拷入模型或仓库。将来作为建模输入落盘时，应按仓库规范进入 `cad/source/` 并记录来源、版本/哈希与许可；不可放到显示模型中假装已经装配。
+上述三项是上一轮在内存核查的结果，没有将第三方 CAD 拷入受控模型或 Git。作为受控建模输入前须确认许可并记录版本/哈希；未确认再分发许可的原始 CAD 只保存在忽略的 `artifacts/` 中。空间摆放不等于装配、碰撞、驱动或承力放行。
+
+### 3.1 C15 内部设计补充：大驱动、缸与电池
+
+下表只给宏观预算标尺。工业目录器件的重量与空间是真实参照，不表示 Gorilla 必须采用相同结构。减速器、干缸和电池本身均不是完整的关节或能源系统。
+
+| 标尺及固定条件 | 已核实的器件尺度 | 额定或压力条件与未包含内容 |
+|---|---|---|
+| Nabtesco RV-320E，取比值 101、螺栓夹持输出类型作比较 | 减速器主体 Ø325×125 mm；安装配合径 Ø245h7；44.3 kg。内置主支承。[M1][M2] | 额定 3136 N·m、15 rpm、额定寿命 6000 h；100% duty 的 35 rpm 是目录参考转速，不能自动与额定力矩同时使用。输出允许弯矩 7056 N·m、推力 19,600 N 对应该输出类型，不能把两者当作同时全额的六维承载证明。输入齿轮突出、外壳密封/润滑、电机、驱动、制动、安装及散热另计。[M1] |
+| Parker HMI 63/28，BB 固定尾叉 / ISO MP1；200 mm 行程、1号杆、标准外螺纹端 | 缸径63、杆径28 mm；主体横向 E=90 mm。回缩目录参考尺寸 `XC+S=400 mm`、`ZC+S=420 mm`；杆端螺纹 A=28 mm。干重 `10.1+0.19×20=13.9 kg`。[M3] | HMI 系列名义工作压力最高21 MPa，实际还取决于杆端及疲劳工况。BB 尾叉销径20 mm；杆端球铰、两端支架、油液、接头/管线、位移/力反馈、阀与保持保护不在干重内。标准1组密封为−20～80°C，不能用可选150°C密封上限替代。[M3] |
+| Parker HMI 80/36，同一目录与安装条件 | 缸径80、杆径36 mm；E=115 mm。回缩 `XC+S=429 mm`、`ZC+S=457 mm`；A=36 mm。干重 `19.5+0.27×20=24.9 kg`；BB 尾叉销径28 mm。[M3] | 与上一项相同的外围和工况缺口。行程200 mm不能当成缸体全长；改为100 mm行程时，两参考长度均减少100 mm、干重分别减少1.9/2.7 kg。这不是短缸定制后的质量承诺。 |
+| Victron Lithium NG BAT524110620，25.6 V / 100 Ah | 名义2.56 kWh（25°C、放电≤1C）；厂家估计质量19 kg。[M4] 图纸列示341.2×160.3×234.7 mm，手册为宽341×深160×高235 mm；实际导入完整STEP的AABB为 **341.202481542×160.260794060×235.795325916 mm**，约12.89 L，后续占位保留其凸出包络，见§3.2。[M5][M6] | 最大连续充/放100 A，10 s放电脉冲200 A；放电−20～50°C、充电5～50°C。M8电源端、通讯线和拆盖/工具空间另加；外置 Lynx Smart BMS NG 不包含在电池重量/包络内。手册最多两只25.6 V模块串联，**不能四串用作102.4 V系统的现成依据**。连续充电电流不是已验证的机器人回馈接收方案。[M4] |
+
+液压缸总长的参考必须保留：`XC` 是到尾部销轴中心的安装基准，`ZC` 是尾叉外端的目录基准，不是两个球铰中心距。当前可按 `ZC+S+A` 暂留 **448 / 493 mm** 裸缸轴向保守占位，再加杆端接头与两端铰座；这是由目录基准重建的预算包络，尚未用精确配置 CAD 核对杆端起止及全部突出物，不能称完整装配尺寸已闭合。端口接头、软管弯曲和缸体扫掠另计。[M3]
+
+用于整体功率筛查的**本项目推导**：假定1–3 kN·m、0.5–0.8 rad/s及有效力臂0.08–0.15 m，则轴上机械功率0.5–2.4 kW、缸力约6.7–37.5 kN、缸速0.04–0.12 m/s。按 `F=pA`，14–21 MPa下63/28缸理想推/拉力43.6–65.5 / 35.0–52.5 kN，80/36为70.4–105.6 / 56.1–84.2 kN；这是未扣摩擦、背压和姿态变化的面积计算。按 `Q=Av`，伸出侧每缸流量分别约7.5–22.4、12.1–36.2 L/min。多缸同时动作必须汇总；不能把几千瓦轴上功率当作电机泵输入，也不能省略阀损、油液与冷却。
+
+电池同样只支持比例粗算：N个相同模块是约 `2.56N kWh / 19N kg / 12.89N L`（空间改用完整STEP的AABB），名义电压×连续电流为每模块2.56 kW；实际接法、电压、BMS/配电、温升及可用能量须另闭合。这里没有提出N或母线电压。
+
+资料落盘与 CAD 状态（2026-10-02）：
+
+- 原始资料、下载失败记录及清单位于忽略的 `artifacts/gorilla_v0_1/internal_module_sources/source_manifest.json`。成功文件均校验以下 SHA-256；第三方原始 STEP 未入 Git，未提交任何注册表单。
+- RV-320E [官方 CAD 下载页][M2]列出 DXF/STEP；对应公开下载端点本轮返回503，**未取得其 CAD**。尺寸只能重建并注明“厂商目录主体包络”。[M1]是已落盘的 Rev.003.1-D 产品目录，打印p20（PDF第11页）。
+- HMI [官方 EU 目录][M3]能通过网页读取，核查p3、12、25、27、30；本机直链下载返回403，**未保存原PDF、无原文件哈希，未取得精确配置 CAD**。本表统一使用这一目录，不与其他地区图纸拼接。
+- 电池[外形图直链][M5]与[STEP直链][M6]均HTTP200；图纸Rev02，STEP文件头为`ISO-10303-21`。下载核查阶段尚未导入Gorilla；随后已导入忽略目录中的OEM空间候选，现状见§3.2。手册§3.1 / §4.5.3与§8给串联及能力边界。[M4]
+
+| 下载文件 | SHA-256 |
+|---|---|
+| `nabtesco_product_guide_current.pdf` | `3aa9260789878a552daedd35abb4d6a23c126783fb679d37c8a406389d22201f` |
+| `victron_lithium_ng_25_6_manual.pdf` | `364b88de54dc130a6bb8614af419d9dd8a43e043ca9c088d4c60e2fe1110cad9` |
+| `victron_ng_25_6v100ah_drawing.pdf` | `40242b5c34597b55921ab2328c45ad028c1a3ec53ebbf28b164532bdff9bab78` |
+| `victron_ng_25_6v100ah.step` | `ae0fc44a4acdb6d0369787c3aca0436ff68e880ba4e80f2d8b531a6ca3da7f35` |
+
+### 3.2 本地 OEM CAD 导入现状
+
+依据忽略目录内 `imported_geometry/import_manifest.json`、`cubemars_ak80_64_import_manifest.json` 与 `victron_ng_25_6v100ah_import_manifest.json` 核对。两份原STEP导入后哈希未变；原文件长度单位均为毫米，线性比例 **0.001** 转成米，保持源XYZ轴、旋转为单位矩阵，再以AABB中心平移到局部原点：`q_local_m = 0.001 × (q_source_mm − c_source_mm)`。这不是Gorilla关节坐标变换或安装基准确认。
+
+| 本地资产 | 原文件与来源追溯 | SI外形与拓扑边界 |
+|---|---|---|
+| CubeMars AK80-64 | [官方CAD ZIP直链][M7]内的 `ak80-64.stp`，入口归属[官方技术下载页][M10]；STEP SHA-256 `dabe73fd22a27ed922bea0971b39ea8fd74de31cf45c495bee96945c63fc68ea`，原ZIP SHA-256 `8679c522af66c1870b5dfd67fd2e470a86af4d27f3faba45f09b45f957ab6776`。单件manifest的`source_manifest_entry=null`，原总来源清单未登记此项；此处记录已实际下载来源与本地哈希，不伪称该字段完整。 | 源中心`(-30.95,0,0)` mm；导入局部AABB尺寸`(0.0619,0.098,0.098)` m，即61.9×98×98 mm。1个有效CAD solid；OBJ闭合、流形、绕序一致。厂商48 N·m nominal /120 N·m peak仅作尺寸/能力标尺，不代表该腕部负载或持续热能力已经匹配；控制指令范围不替代额定。[M8][M9] |
+| Victron BAT524110620 | 原STEP来源[M6]，哈希见上表。 | 源中心`(1911.7919203815748,585.4776895892188,-110.49766295752009)` mm；导入AABB尺寸`(0.341202481542,0.160260794060,0.235795325916)` m。BRep有效、2737个CAD面均已三角化，但15个solid以外还含非solid显示面；显示面有1156条边界边/64条非流形边，solid 1的三角网格另有36条缝边。完整OBJ**不能当作闭合碰撞体**，未删面或补盖伪造闭合。 |
+
+当前忽略的OEM候选已摆入 **4个电池＋6个AK80-64实例**，用于同源局部空间观察；默认受控模型仍采用项目自有参数包络。源CAD、派生OEM mesh/Blend/GLB均留在ignored artifacts，未确认再分发许可、未选型。闭合AK网格也不授权碰撞契约；两类器件均不从CAD体积猜质量或惯量。此次导入不构成几何、驱动或承力放行。
 
 ## 4. 宏观预算与模块装配的下一份输入
 
@@ -82,3 +124,13 @@
 [C5]: https://www.realsenseai.com/wp-content/uploads/2022/04/Intel-RealSense-D400-Series-Datasheet-April-2022-v2.pdf "RealSense D400 datasheet 337029-013，p66 / p101"
 [C6]: https://www.harmonicdrive.net/_hd/content/caddownloads/dxf/csg-2uh_gearheads/csg-65-xxx-2uh.pdf "Harmonic Drive 同源尺寸 PDF"
 [C7]: https://dev.realsenseai.com/download/41950 "RealSense 官方 D400 相机机械 CAD ZIP，含 D455_Solid.SLDPRT"
+[M1]: https://precision.nabtesco.com/img/area/leaflet_pdf/en/en_cat_product-guide.pdf "Nabtesco Product Guide Rev.003.1-D，打印p20 / PDF第11页"
+[M2]: https://www.nabtescoprecision.com/product/rv-e/ "Nabtesco RV-E 官方产品与CAD下载页；本轮具体CAD端点503"
+[M3]: https://www.parker.com/content/dam/Parker-com/Literature/Accumulator---Cooler-Division---Europe/catalogues/cylinder/hmi/HMI_1150-9-uk.pdf "Parker HY07-1150/UK HMI，p3 / p12 / p25 / p27 / p30；网页已读取，本机PDF下载403"
+[M4]: https://www.victronenergy.com/upload/documents/Lithium_NG_battery_25%2C6_V/173204-Lithium_NG_battery_manual-pdf-en.pdf "Victron Lithium NG 25.6V手册，§3.1 / §4.5.3 / §8"
+[M5]: https://www.victronenergy.com/upload/documents/LiFePO4-Battery-25.6V100Ah-NG.pdf "Victron BAT524110620外形图Rev02，公开PDF直链"
+[M6]: https://www.victronenergy.com/upload/documents/LiFePO4-Battery-25.6V100Ah-NG-(stp-).STEP "Victron BAT524110620官方STEP直链，已HTTP200取得，原CAD仅存ignored artifacts"
+[M7]: https://www.cubemars.com/data/cms/202602/ak80-64-robotic-actuator-3d-drawing.zip "CubeMars AK80-64官方CAD ZIP已实际下载来源，包内ak80-64.stp"
+[M8]: https://store.cubemars.com/products/ak80-64 "CubeMars官方AK80-64店页，Rated Torque 48 N·m；仅标尺"
+[M9]: https://www.cubemars.com/categorys/knee-joint-motor "CubeMars官方分类页，AK80-64 Peak Torque 120 N·m；仅标尺"
+[M10]: https://www.cubemars.com/technical-support-and-software-download.html "CubeMars官方Technical Support & Download入口"

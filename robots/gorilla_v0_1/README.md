@@ -1,6 +1,6 @@
 # Gorilla V0.1
 
-当前工作：**C15 复合脚阶段提交 → 内部完整模块预算与装配。** 先保存当前 Gorilla 外壳和分段脚候选，再闭合真实内部占位、宏观物理及载荷分摊。原稿形状仍是约束；最终目标是双足、双手和自主复杂 Bevy 任务。
+当前工作：**C15 已提交并合入主干，内部架构 A 已形成宏观预算与空间冲突候选。** 先收敛净框架、完整高载总成与复合脚承力，再根据冲突微调原壳。原稿形状仍是约束；最终目标是双足、双手和自主复杂 Bevy 任务。
 
 唯一当前状态入口：[当前决定与门禁](design/current_decisions.md)。
 
@@ -11,13 +11,15 @@
 | C 工作输入（迭代中） | [appearance_c_spec.json](configs/appearance_c_spec.json)；[原稿轮廓与分区点](source/appearance_c_reference_landmarks.json)；[可见护甲区域约束](source/appearance_c_front_shape_constraints.json) |
 | C15 阶段基底 | [提交说明与缺口](design/appearance_c15_stage.md)；[冻结映射](../../experiments/gorilla_v0_1/appearance_c_round_fifteen/snapshot_manifest.json)；[Blender](../../experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c.blend)、[GLB](../../experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c.glb) |
 | C15 实际复合脚 | [中立](../../experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_foot_left.png)、[卸载折叠](../../experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_foot_folded_left.png)、[机制拆壳](../../experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_foot_mechanism_left.png)；[原生几何检查](../../experiments/gorilla_v0_1/appearance_c_round_fifteen/composite_foot_c15_screen.json) |
-| 内部研究输入 | [真实驱动/能源/热/感知模块依据](hardware/internal_module_research.md)；尚未完成整机模块布局 |
+| 内部架构 A 当前交付 | [粗算、装配与红黄线评审](design/internal_architecture_a_review.md)；[两路线同尺度实图](images/internal_architecture_a_route_comparison.png)；四路线仍未通过 |
+| 内部架构 A 参数与证据 | [预算配置](configs/internal_architecture_a_spec.json)、[布局配置](configs/internal_architecture_a_layout.json)；[宏观预算](evidence/internal_architecture_a_budget.json)、[空间/重心/接地筛查](evidence/internal_architecture_a_space.json) |
+| 内部研究输入与真实 CAD | [真实驱动/能源/热/感知模块依据](hardware/internal_module_research.md)；原厂参考网格仅本地忽略保存，受控模型为自有模块包络 |
 | 历史 C14 可编辑模型 | [Blender 源](../../experiments/gorilla_v0_1/appearance_c_round_fourteen/appearance_c.blend)、[GLB](../../experiments/gorilla_v0_1/appearance_c_round_fourteen/appearance_c.glb)、[参数化几何源](../../experiments/gorilla_v0_1/appearance_c_round_fourteen/appearance_c_scene.json)；外观/物理仍未通过 |
 | 历史 C14 实际对照 | [同源四视](../../experiments/gorilla_v0_1/appearance_c_round_fourteen/appearance_c_four_view.png)；[阶段实渲审查](design/appearance_c_checkpoint_review.md)；[渲染身份](../../experiments/gorilla_v0_1/appearance_c_round_fourteen/appearance_c_render_manifest.json) |
 | 内部主结构实渲 | [拆壳斜视](../../experiments/gorilla_v0_1/appearance_c_round_fourteen/appearance_c_structure_threequarter.png)、[正面](../../experiments/gorilla_v0_1/appearance_c_round_fourteen/appearance_c_structure_front.png)、[侧面](../../experiments/gorilla_v0_1/appearance_c_round_fourteen/appearance_c_structure_left.png)；同一实际几何，隐藏的护盖逐项记录 |
 | 主体受力入口与结果 | [计算依据](design/structure_c14_basis.md)；[同版受力记录](../../experiments/gorilla_v0_1/appearance_c_round_fourteen/structure_c14_screen.json)、[红黄线](../../experiments/gorilla_v0_1/appearance_c_round_fourteen/structure_c14_gates.json)；有限准静力筛查，不是稳定动力学合同或吨级认证 |
 | 当前工作树几何 | [可编辑控制网格](cad/source/appearance_c_scene.json)；后续增量须完成实渲/导出检查后才成为冻结候选 |
-| C 外观增量与复现（历史） | [历轮冻结评审](design/appearance_c_checkpoint_review.md)；[当前 C14 冻结映射](../../experiments/gorilla_v0_1/appearance_c_round_fourteen/snapshot_manifest.json)（46 副本）；网格/文件身份通过，外观仍未通过 |
+| C 外观增量与复现（历史） | [历轮冻结评审](design/appearance_c_checkpoint_review.md)；[历史 C14 冻结映射](../../experiments/gorilla_v0_1/appearance_c_round_fourteen/snapshot_manifest.json)（46 副本）；网格/文件身份通过，外观仍未通过 |
 | 历史 C14 等高整机对照 | [正面](images/appearance_c_round_fourteen_front_comparison.png)、[侧面](images/appearance_c_round_fourteen_left_comparison.png)、[后面](images/appearance_c_round_fourteen_rear_comparison.png)；原图相机未校准，图像不能证明物理能力 |
 | 用户新增背部控制屏 | [同版背屏近景](../../experiments/gorilla_v0_1/appearance_c_round_fourteen/appearance_c_rear_panel_detail.png)；原蓝板外框/固定点保留，状态/任务/本地控制为静态界面候选 |
 | 散热入口原生几何复核 | [同版入口检查](../../experiments/gorilla_v0_1/appearance_c_round_fourteen/appearance_c_intake_clearance.json)；每侧 2008 个当前格栅间隙样本无蓝白甲遮挡，仅验证采样入口，不代表完整排风或热能力 |
