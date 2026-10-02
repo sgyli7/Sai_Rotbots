@@ -85,6 +85,9 @@ def main():
         path = robot / field['path']
         check(sha256(path) == field['sha256'] and names[name]['source_sha256'] == field['geometry_sha256'], 'Display normal binding changed')
         check(sha256(args.snapshot_root / field['path']) == field['sha256'], 'Frozen display normal differs')
+        if 'profile_path' in field:
+            check(sha256(robot / field['profile_path']) == field['profile_sha256'], 'Body profile changed after display-normal generation')
+            check(sha256(args.snapshot_root / field['profile_path']) == field['profile_sha256'], 'Frozen body profile differs')
         normal_bindings.append({'name': name, 'geometry_sha256': field['geometry_sha256'], 'field_sha256': field['sha256']})
     check({r['scheme'] for r in manifest['renders']} == {'cream', 'graphite', 'lavender', 'sky'} and len(manifest['renders']) == 4, 'Four whole views required')
     records = manifest['renders'] + manifest.get('review_details', [])
@@ -108,14 +111,23 @@ def main():
         (292, 'microduck_color_blocking', 'microduck_color_blocking_render_manifest.json', 'render_goose_color_blocking.py'),
         ('first_rejected', 'microduck_color_schemes', 'microduck_color_scheme_render_manifest.json', 'render_goose_color_schemes.py'),
     ]
+    known_versions = {row[0] for row in histories}
+    for path in sorted((robot / 'evidence').glob('microduck_color_blocking_*_parts_render_manifest.json')):
+        version = int(re.fullmatch(r'microduck_color_blocking_(\d+)_parts_render_manifest\.json', path.name).group(1))
+        if path.resolve() != args.manifest.resolve() and version not in known_versions:
+            name = f'microduck_color_blocking_{version}_parts'
+            histories.append((version, name, path.name, f'render_goose_color_blocking_{version}_parts.py'))
+    integral_history = robot / 'evidence/microduck_color_blocking_integral_head_render_manifest.json'
+    if integral_history.exists() and integral_history.resolve() != args.manifest.resolve():
+        histories.append(('first_failed_integral', 'microduck_color_blocking_integral_head', integral_history.name, 'render_goose_color_blocking_integral_head.py'))
     for version, image_dir, evidence_file, script in histories:
         historic = load(robot / 'evidence' / evidence_file)
         config_name = 'color_schemes.json' if version == 'first_rejected' else image_dir + '.json'
         check(sha256(robot / 'configs' / config_name) == historic['config_sha256'], f'Historical configuration changed: {version}')
         check(sha256(robot.parent.parent / 'scripts/models' / script) == historic['renderer_sha256'], f'Historical renderer changed: {version}')
-        for row in historic['renders']:
+        for row in historic['renders'] + historic.get('review_details', []):
             check(sha256(robot / 'images' / image_dir / row['file']) == row['sha256'], f'Historical image changed: {version}')
-        historical_integrity.append({'version': version, 'config_script_four_png_hashes_preserved': True})
+        historical_integrity.append({'version': version, 'config_script_four_png_hashes_preserved': True, 'head_detail_png_hashes_preserved': True})
     local_links = []
     for target in re.findall(r'\]\(([^)]+)\)', args.document.read_text()):
         if '://' in target or target.startswith('#'):

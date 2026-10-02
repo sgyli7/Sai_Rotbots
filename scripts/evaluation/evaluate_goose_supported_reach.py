@@ -16,6 +16,7 @@ def evaluate(stage='stage_two',seeds=(901,902,903,904),steps=1400,save_trajector
     for seed in [None,*seeds]:
         e=StageOneEnv(model,contract,1,seed=seed or 900,randomize=seed is not None,commands=False,auto_reset=False);e.max_episode_length=steps+1
         m,d=e.models[0],e.data[0];controller=SupportedReach(c,qc);hold=[];records=[];trajectory=[];bad=[];self_hits=[];torques=[];residuals=[];root_errors=[];contact_steps=0
+        foot_ids=set().union(*e.foot_sets)
         for k in range(steps):
             target,info=controller.reference(k*.02,d.qpos[e.qidx],d.qpos[3:7])
             _,_,_,rows=e.step((target/e.scale)[None,:]);row=rows[0]
@@ -26,7 +27,7 @@ def evaluate(stage='stage_two',seeds=(901,902,903,904),steps=1400,save_trajector
             if save_trajectory is not None and seed is None and k%5==0:trajectory.append(dict(time_s=float(d.time),qpos=d.qpos.tolist(),grip_m=actual.tolist(),phase=info['phase']))
             for contact in d.contact:
                 pair={int(contact.geom1),int(contact.geom2)}
-                if e.floor_id in pair and not pair.intersection(e.foot_ids):bad.append(dict(step=k,pair=[m.geom(int(contact.geom1)).name,m.geom(int(contact.geom2)).name],dist_m=float(contact.dist)))
+                if e.floor_id in pair and not pair.intersection(foot_ids):bad.append(dict(step=k,pair=[m.geom(int(contact.geom1)).name,m.geom(int(contact.geom2)).name],dist_m=float(contact.dist)))
                 elif e.floor_id not in pair and contact.dist<-.0005:self_hits.append(dict(step=k,pair=[m.geom(int(contact.geom1)).name,m.geom(int(contact.geom2)).name],dist_m=float(contact.dist)))
             if row['failure'] or bad or self_hits:break
         hold=np.array(hold);tau=np.array(torques)

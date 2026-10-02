@@ -79,6 +79,18 @@ def main():
         CargoGodotController(model_dir=models / 'full')
         print(f'{robot_id}: installed models, default/experimental policies and cargo passed')
     CrawlTransport()
+    goose = model_root('Goose_V0.1')
+    historical = mujoco.MjModel.from_xml_path(str(goose / 'full/robot.xml'))
+    assert historical.nu == 16, 'Preserved RC2 actuator count changed'
+    from sai_agent.goose.stage_one import StageOneEnv
+    checkpoint = StageOneEnv(
+        goose / 'training_checkpoint/robot.xml',
+        root / 'robots/Goose_V0.1/configs/training_checkpoint_contract.json',
+        num_envs=1, randomize=False, commands=False, auto_reset=False,
+    )
+    assert checkpoint.models[0].nu == 18
+    assert checkpoint.observations().shape == (1, 65)
+    print('Goose_V0.1: installed historical model and current 65/18 checkpoint passed (loading only)')
     print('Installed distribution checks passed')
 
 
