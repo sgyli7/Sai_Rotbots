@@ -15,12 +15,13 @@
 | 内部 D 当前实际候选 | [同版评审/复现](design/internal_structure_d_review.md)；[整机native源](cad/source/internal_structure_d_scene.json)、[Blender](cad/source/internal_structure_d.blend)、[GLB](cad/exports/internal_structure_d/internal_structure_d.glb)；[冻结清单](../../experiments/gorilla_v0_1/internal_structure_d/snapshot_manifest.json) |
 | 内部 D 同源图 | [四视](images/internal_structure_d_four_view.png)、[拆壳斜视](images/internal_structure_d_cutaway_threequarter.png)、[侧拆壳](images/internal_structure_d_cutaway_left.png)；原111甲壳不改，冲突没有隐藏 |
 | 内部 D 参数/证据 | [统一参数](configs/internal_structure_d_spec.json)、[全机模块](configs/internal_structure_d_system_spec.json)；[质量/接触/空间](evidence/internal_structure_d_screen.json)、[功率/流量](evidence/internal_structure_d_power.json)、[红黄线](evidence/internal_structure_d_gates.json) |
+| 内部 E 开局诊断 | [完整轴参考](../../experiments/gorilla_v0_1/internal_structure_e_constraints/README.md)；[串联腿、全关节热路与独立复核](../../experiments/gorilla_v0_1/internal_structure_e_probes/README.md)；实际失败分支，未组成整机或换审美基准 |
 | 分置线性/泵阀一手依据 | [型号事实/有限几何/电热条件](hardware/distributed_internal_component_references.md)；参照、假设与联合资格分别报告 |
 | 内部 C 历史拒绝探针 | [同版评审/复现](design/internal_structure_c_review.md)；[净材料/组件源](cad/source/internal_structure_c_scene.json)；[联合接触/驱动](evidence/internal_structure_c_screen.json)、[空间拒绝](evidence/internal_structure_c_space.json)、[门禁](evidence/internal_structure_c_gates.json)；[冻结清单](../../experiments/gorilla_v0_1/internal_structure_c/snapshot_manifest.json) |
 | 内部 B 同源图 | [整机正](images/internal_structure_b_front.png)、[左](images/internal_structure_b_left.png)、[后](images/internal_structure_b_rear.png)、[拆壳斜视](images/internal_structure_b_cutaway_threequarter.png)、[脚近景](images/internal_structure_b_foot_mechanism_detail.png)；新模块与冲突没有隐藏 |
 | 内部 B 参数/证据 | [参数](configs/internal_structure_b_spec.json)、[真实姿态/静力](evidence/internal_structure_b_statics.json)、[正体积冲突](evidence/internal_structure_b_space.json)、[独立脚复核](evidence/internal_structure_b_foot_review.json)、[资源/端点力矩检查](evidence/internal_structure_b_resource_check.json) |
 | Tesla / Figure / GD01 参照 | [一手共同设计研究](hardware/internal_co_design_references.md)；区分代际、公开事实与推断，不继承联合额定或未公开 CAD |
-| 内部 C 下一候选 | [共同设计与包装任务](design/internal_co_design_c_brief.md)；已完成包装分诊，尚未生成 C 装配或四视 |
+| 包装授权与共同设计方法 | [历史 C 任务依据](design/internal_co_design_c_brief.md)；C/D 已有实际候选与拒绝图，下一方案以当前决定为准 |
 | 紧凑电驱部件参照 | [原厂组件事实与条件](hardware/compact_electric_component_references.md)；包含支承的齿轮组件和精确绕组电机仍需整套匹配 |
 | 内部架构 A 前一候选 | [粗算、装配与红黄线评审](design/internal_architecture_a_review.md)；[两路线同尺度实图](images/internal_architecture_a_route_comparison.png)；四路线仍未通过 |
 | 内部架构 A 参数与证据 | [预算配置](configs/internal_architecture_a_spec.json)、[布局配置](configs/internal_architecture_a_layout.json)；[宏观预算](evidence/internal_architecture_a_budget.json)、[空间/重心/接地筛查](evidence/internal_architecture_a_space.json) |

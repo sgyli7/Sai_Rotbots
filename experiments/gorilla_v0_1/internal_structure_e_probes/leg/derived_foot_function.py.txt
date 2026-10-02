@@ -1,0 +1,109 @@
+def sha(p):
+    return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+
+def emit(name, body, m, role, **meta):
+    assert m.is_watertight and m.is_winding_consistent and (m.volume > 0), name
+    return {'name': 'isd_' + name, 'body': body, 'role': role, 'vertices_world_m': m.vertices.tolist(), 'faces': m.faces.tolist(), 'color_rgba': MOVING if 'moving' in role else STEEL, 'edge_bevel_m': 0, 'hardware': True, 'D_metadata': meta}
+
+def spin(J, q, p):
+    a = math.radians(q)
+    R = np.array([[math.cos(a), 0, math.sin(a)], [0, 1, 0], [-math.sin(a), 0, math.cos(a)]])
+    return np.array(J) + R @ (np.array(p) - J)
+
+def tube(a, b, w, d, t):
+    return h.box_tube(np.array(a), np.array(b), w, d, t)
+
+def solid(a, b, w, d):
+    return h.solid_along(np.array(a), np.array(b), w, d)
+
+def left_foot(qf=0, qh=0):
+    parts = []
+    frames = []
+    arch_clearances = []
+    arch = [tube([-0.060, 0.5, 0.220], [-0.150, 0.5, 0.205], 0.050, 0.090, 0.008), tube([-0.150, 0.34, 0.205], [-0.150, 0.78, 0.205], 0.060, 0.060, 0.006)]
+    joints = []
+    for kind, x, q in [('forefoot', -0.077, qf), ('heel', -0.131, qh)]:
+        J = np.array([x, 0.5, 0.124])
+        body = 'left_' + ('forefoot_display' if kind == 'forefoot' else 'heel_display')
+        for sy in (0.37, 0.67):
+            c = np.array([x, sy, 0.124])
+            arch.append(h.annulus(c, 0.047, 0.026, 0.026))
+            arch.append(solid([-0.150, sy, 0.205], c + [0, 0, 0.032], 0.05, 0.018))
+            parts.append(emit(kind + '_support_bearing_' + str(sy), 'left_foot', h.annulus(c, 0.0255, 0.02, 0.024), 'bearing_design_envelope', mass_range_kg=[0.35, 0.5, 0.8], source='Custom 40mm-ID bearing space; rolling rating/fits/preload unknown'))
+        moving = [h.annulus(J, 0.0198, 0.01, 0.56 if kind == 'forefoot' else 0.368)]
+        end = 0.43 if kind == 'forefoot' else -0.36
+        yvals = (0.59, 0.75) if kind == 'forefoot' else (0.4, 0.6)
+        for sy in yvals:
+            A = np.array([x, sy, 0.124])
+            B = np.array([end, sy, 0.063])
+            start = 0.06 if kind == 'forefoot' else -0.215
+            moving.extend([tube(A, B if kind == 'heel' else [start, sy, 0.063], 0.05, 0.045, 0.006), tube([start, sy, 0.063], B, 0.06, 0.045, 0.006)])
+            attach = np.array([0.365 if kind == 'forefoot' else -0.345, sy, 0.078])
+            for sg in (-1, 1):
+                cheek = attach + [0, sg * 0.026, 0]
+                moving.extend([h.annulus(cheek, 0.035, 0.0125, 0.012), solid(cheek + [0, 0, -0.025], [cheek[0], cheek[1], 0.063], 0.038, 0.012)])
+        crossx = 0.28 if kind == 'forefoot' else -0.31
+        moving.append(tube([crossx, 0.565 if kind == 'forefoot' else 0.335, 0.06], [crossx, 0.78 if kind == 'forefoot' else 0.64, 0.06], 0.054, 0.044, 0.006))
+        tray = h.united(moving)
+        for sy in yvals:
+            attach = np.array([0.365 if kind == 'forefoot' else -0.345, sy, 0.078])
+            tray = trimesh.boolean.difference([tray, h.cylinder(attach, 0.03, 0.038), h.cylinder(attach, 0.0125, 0.09)], engine='manifold')
+        T = np.eye(4)
+        a = math.radians(q)
+        T[:3, :3] = [[math.cos(a), 0, math.sin(a)], [0, 1, 0], [-math.sin(a), 0, math.cos(a)]]
+        T[:3, 3] = J - T[:3, :3] @ J
+        tray.apply_transform(T)
+        parts.append(emit(kind + '_continuous_tray', body, tray, 'moving_load_tray', density_kg_m3=7850.0, independent_hinge={'pivot_world_m': J.tolist(), 'axis': [0, 1, 0], 'unloaded_q_deg': q}, connection_qualified=False))
+        joints.append({'id': 'left_' + kind, 'parent': 'left_foot', 'child': body, 'pivot_world_m': J.tolist(), 'axis': [0, 1, 0], 'q_deg': q, 'support_range_m': [-0.163, 0.163], 'shaft_and_bearing_rating_known': False})
+        for index, sy in enumerate(yvals):
+            a0 = np.array([-0.150, sy, 0.205])
+            b0 = np.array([0.365 if kind == 'forefoot' else -0.345, sy, 0.078])
+            b = spin(J, q, b0)
+            u = (b - a0) / np.linalg.norm(b - a0)
+            L = float(np.linalg.norm(b - a0))
+            L0 = float(np.linalg.norm(b0 - a0))
+            Lbar = 0.325 if kind == 'forefoot' else 0.135
+            axis = np.array([0.0, 1.0, 0.0])
+            pinr = 0.012
+            eyew = 0.03
+            fixed_eye = h.annulus(a0, 0.028, pinr + 0.0005, eyew)
+            root = solid(a0 + u * 0.019, a0 + u * 0.037, 0.046, 0.034)
+            cap = solid(a0 + u * 0.025, a0 + u * 0.041, 0.064, 0.06)
+            barrel = tube(a0 + u * 0.035, a0 + u * (0.035 + Lbar), 0.064, 0.06, 0.006)
+            fixed = h.united([fixed_eye, root, cap, barrel])
+            rodstart = a0 + u * (L - 0.035 - (0.350 if kind == 'forefoot' else 0.135))
+            moving_neck = solid(b - u * 0.035, b - u * 0.019, 0.046, 0.034)
+            rod = tube(rodstart, b - u * 0.035, 0.05, 0.044, 0.008)
+            moving_eye = h.annulus(b, 0.028, pinr + 0.0005, eyew)
+            plunger = h.united([rod, moving_neck, moving_eye])
+            stations = (0.245, 0.295) if kind == 'forefoot' else (0.105, 0.145)
+            fixed_holes = [h.cylinder(a0 + u * s, 0.0085, 0.084) for s in stations]
+            moving_holes = [h.cylinder(a0 + u * (s + L - L0), 0.0085, 0.084) for s in stations]
+            fixed = trimesh.boolean.difference([fixed, *fixed_holes], engine='manifold')
+            plunger = trimesh.boolean.difference([plunger, *moving_holes], engine='manifold')
+            overlap_interval = [max(0.035, float((rodstart - a0) @ u)), min(0.035 + Lbar, L - 0.035)]
+            if q == 0:
+                assert all((overlap_interval[0] + 0.0085 < s < overlap_interval[1] - 0.0085 for s in stations))
+            assert (rodstart - a0) @ u >= 0.035 - 1e-08, 'plunger penetrates fixed rear end'
+            parts.append(emit(f'{kind}_brace{index}_fixed', 'left_foot', fixed, 'endpoint_driven_brace_fixed', density_kg_m3=7850.0, endpoint_A=a0.tolist(), endpoint_B=b.tolist(), mechanism='Pivoted telescoping box brace, does not follow one rigid body transform', motion_rule='Rebuild from transformed A/B endpoints', supplier_known=False, actual_lock_holes=True, overlap_interval_m=overlap_interval))
+            parts.append(emit(f'{kind}_brace{index}_plunger', body, plunger, 'endpoint_driven_brace_moving', density_kg_m3=7850.0, endpoint_A=a0.tolist(), endpoint_B=b.tolist(), mechanism='Plunger endpoint at independent tray', motion_rule='Rebuild from transformed A/B endpoints', supplier_known=False, actual_lock_holes=True, overlap_interval_m=overlap_interval))
+            for target, owner in [(a0, 'left_foot'), (b, body)]:
+                if owner == 'left_foot':
+                    for sg in (-1, 1):
+                        cheek = target + [0, sg * 0.026, 0]
+                        arch.extend([h.annulus(cheek, 0.035, 0.0125, 0.012), solid([-0.150, cheek[1], 0.205], cheek + [0, 0, -0.02], 0.038, 0.012)])
+                    arch_clearances.extend([h.cylinder(target, 0.03, 0.038), h.cylinder(target, 0.0125, 0.09)])
+                parts.append(emit(f"{kind}_brace{index}_{('fixed' if owner == 'left_foot' else 'moving')}_pin", owner, h.cylinder(target, 0.012, 0.08), 'steel_pin_design', density_kg_m3=7850.0, interface_qualified=False))
+            locks = []
+            for station in stations:
+                c = a0 + u * station
+                if q == 0:
+                    parts.append(emit(f'{kind}_brace{index}_lock_{station}', 'left_foot', h.cylinder(c, 0.008, 0.082), 'lock_pin_design', density_kg_m3=7850.0, diameter_m=0.016, shear_planes=2, locks_per_brace=2, lock_rating_known=False, hole_and_bearing_strength_unqualified=True))
+                locks.append({'center_world_m': c.tolist(), 'diameter_m': 0.016, 'withdrawn_for_fold': q != 0})
+            cap = math.pi * (0.016 / 2) ** 2 * 2 * 2 * (355000000.0 / math.sqrt(3)) / 2
+            direction = b - a0
+            joints[-1].setdefault('brace_load_paths', []).append({'brace': index, 'A_world_m': a0.tolist(), 'B_world_m': b.tolist(), 'eye_length_m': L, 'vertical_direction_fraction': abs(direction[2]) / L, 'moment_arm_about_hinge_m': float(np.cross(b - J, direction / L)[1]), 'locks': locks, 'ideal_two_pin_double_shear_force_at_yield_FS2_N': cap, 'bearing_hole_ligament_and_connections_not_qualified': True})
+    archmesh = h.united(arch)
+    archmesh = trimesh.boolean.difference([archmesh, *arch_clearances], engine='manifold')
+    parts.append(emit('continuous_main_arch', 'left_foot', archmesh, 'fixed_load_arch', density_kg_m3=7850.0, connection_qualified=False, no_continuous_sole=True))
+    return (parts, joints)

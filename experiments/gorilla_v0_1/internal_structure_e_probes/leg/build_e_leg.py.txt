@@ -1,0 +1,266 @@
+"""Gorilla E first serial complete-module leg branch; finite CAD rejection probe."""
+from pathlib import Path
+import sys,json,hashlib,importlib.util,ast,copy,math,types
+import numpy as np,trimesh as tr
+from PIL import Image,ImageDraw
+ROOT=Path(__file__).resolve().parents[2];OUT=Path(__file__).resolve().parent
+sys.path.insert(0,str(ROOT/'src'))
+DIR=ROOT/'robots/gorilla_v0_1';DLEG=DIR/'cad/source/internal_structure_d_leg_scene.json';DFOOT=DIR/'cad/source/internal_structure_d_foot_scene.json';DSYS=DIR/'configs/internal_structure_d_system_spec.json';MASTER=DIR/'cad/source/internal_structure_d_scene.json';BASE=ROOT/'experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_scene.json';GEOMETRY=DIR/'configs/appearance_c_spec.json'
+
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+def read(p):return json.loads(p.read_text())
+def write(n,d):(OUT/n).write_text(json.dumps(d,indent=2,allow_nan=False)+'\n')
+def tm(p):
+ ff=[[f[0],f[i],f[i+1]] for f in p['faces'] for i in range(1,len(f)-1)]
+ return tr.Trimesh(p['vertices_world_m'],ff,process=False)
+def transformed(T,p):return (np.asarray(T)@np.r_[p,1])[:3]
+def rotate(J,axis,q):return tr.transformations.rotation_matrix(math.radians(q),axis,J)
+def rot_y(J,q):return rotate(J,[0,1,0],q)
+
+# Pure helpers are imported, its main is guarded; no file-generation entry called.
+spec=importlib.util.spec_from_file_location('finite_primitive_helpers',ROOT/'scripts/models/build_gorilla_internal_structure.py');h=importlib.util.module_from_spec(spec);spec.loader.exec_module(h)
+h.transformed=transformed;h.rotation=rot_y
+parts=[]
+def native(name,body,m,role='finite_load_material',**meta):
+ m.fix_normals();p=dict(name=name,body=body,role=role,vertices_world_m=m.vertices.tolist(),faces=m.faces.tolist(),rgba=[.17,.21,.24,1],edge_bevel_m=0,E_metadata=meta)
+ if role=='finite_load_material':p['density_kg_m3']=7850
+ parts.append(p);return p
+
+def tube(name,body,path,w=.040,d=.040,t=.006):
+ for i,(a,b) in enumerate(zip(path[:-1],path[1:])):native(name+('_'+str(i) if len(path)>2 else ''),body,h.box_tube(a,b,w,d,t),centerline_world_m=[list(a),list(b)],wall_m=t,connection_qualified=False)
+def ring(c,rout,rin,L,axis=(0,1,0)):
+ m=tr.creation.annulus(rin,rout,L,sections=48);m.apply_transform(tr.geometry.align_vectors([0,0,1],axis));m.apply_translation(c);return m
+
+def mirror(p):
+ q=copy.deepcopy(p);q['name']=q['name'].replace('left_','right_');q['body']=q['body'].replace('left_','right_');m=tm(q);m.apply_transform(np.diag([1,-1,1,1]));q['vertices_world_m']=m.vertices.tolist();q['faces']=m.faces.tolist();return q
+
+old=read(DLEG);base=read(BASE);sysmod=read(DSYS);P={k:np.asarray(v,float) for k,v in read(GEOMETRY)['points_world_m'].items()}
+H=P['left_hip'];K=P['left_knee'];F=P['left_fold'];A=P['left_ankle']+[0,0,.080]
+YAW=np.array([-.250,H[1],1.860]);ROLL=np.array([H[0],H[1],1.705]);FR=np.array([-.045,A[1],.220])
+bodytree={'pelvis':{'parent':None}}
+for side,s in [('left',1),('right',-1)]:
+ def refl(p):q=np.array(p);q[1]*=s;return q.tolist()
+ for label,parent,j,axis in [('hip_yaw_carrier','pelvis',YAW,[0,0,1]),('hip_roll_carrier',side+'_hip_yaw_carrier',ROLL,[1,0,0]),('thigh',side+'_hip_roll_carrier',H,[0,1,0]),('middle_shank',side+'_thigh',K,[0,1,0]),('distal_shank',side+'_middle_shank',F,[0,1,0]),('ankle_pitch_carrier',side+'_distal_shank',A,[0,1,0]),('foot_roll_arch',side+'_ankle_pitch_carrier',FR,[1,0,0]),('forefoot_display',side+'_foot_roll_arch',[-.077,.5,.124],[0,1,0]),('heel_display',side+'_foot_roll_arch',[-.131,.5,.124],[0,1,0])]:
+  bodytree[side+'_'+label]={'parent':parent,'pivot_world_m':refl(j),'axis_world':axis,'joint_id':side+'_'+({'thigh':'hip_pitch','middle_shank':'knee','distal_shank':'fold','ankle_pitch_carrier':'ankle_pitch','foot_roll_arch':'foot_roll','hip_yaw_carrier':'hip_yaw','hip_roll_carrier':'hip_roll'}.get(label,label)),'scope':'actual serial candidate body; bearing/connection/complete drive qualification remains unknown'}
+
+# Keep real D thigh/middle and fold output materials, independently remap parent.
+for p in old['parts']:
+ if not p['name'].startswith('left_') or p.get('endpoint_driven_geometry'):continue
+ b=p['body'];name=p['name']
+ if b in ['left_thigh','left_middle_shank'] or (b=='left_distal_shank' and name.startswith('left_fold_')) or (b=='pelvis' and name.startswith('left_hip_')):
+  q=copy.deepcopy(p);q['name']='e_'+name
+  if b=='pelvis':q['body']='left_hip_roll_carrier'
+  q['E_metadata']={'source_D_part':name,'source_sha256':sha(DLEG),'rigid_material_connection_qualified':False}
+  parts.append(q)
+
+# Complete rotary kits from D: gear+motor+case+adapter+brake+encoder+controller+
+# connectors retained at their full dimensions, not bare shaft substitutes.
+module_rows=[]
+def serial_module(kind,j,axis,parent,output):
+ group=[r for r in sysmod['modules'] if r['id'].startswith('ds_left_'+kind+'_')]
+ adapter=next(r for r in group if r['id'].endswith('hollow_output_adapter'));oldaxis=np.asarray(adapter['geometry']['axis_world']);T=tr.geometry.align_vectors(oldaxis,axis);T[:3,3]=j-T[:3,:3]@np.asarray(adapter['center_world_m'])
+ for row in group:
+  if '_carrier_lower' in row['id'] or '_carrier_upper' in row['id']:continue # replaced by actual linked nested load frame below, not deleted budget by proportion
+  geo=row['geometry'];shape=geo['kind'];c=np.asarray(row['center_world_m']);sourcegeom=copy.deepcopy(geo)
+  if shape=='cylinder':m=tr.creation.cylinder(geo['radius_m'],geo['length_m'],sections=48)
+  elif shape=='annulus':
+   rout=geo['outer_radius_m'];rin=geo['inner_radius_m']
+   if row['id'].endswith('gear_load_shell'):rout=rin+.008 # grows custom load wall to8mm; OEM gear/motor stays unchanged
+   m=tr.creation.annulus(rin,rout,geo['length_m'],sections=48)
+  else:m=tr.creation.box(geo['dimensions_xyz_m'])
+  if shape!='box':m.apply_transform(tr.geometry.align_vectors([0,0,1],geo['axis_world']))
+  m.apply_translation(c);m.apply_transform(T)
+  isoutput=row['id'].endswith('hollow_output_adapter');owner=output if isoutput else parent
+  ismetal=shape=='annulus' and row['category']=='housing';role='finite_load_material' if ismetal else 'complete_component_reference_envelope'
+  p=native('e_'+row['id'],owner,m,role,component_family=kind,scope='complete D reference constituent; not OEM detailed CAD or installed rating',source=row.get('exact_source'),source_D_module_id=row['id'],source_geometry_unscaled=sourcegeom,OEM_geometry_scaled=False,connection_qualified=False)
+  if not ismetal:p['mass_range_kg']=row['mass_range_kg']
+  if '_hollow_output_adapter' in row['id']:p['E_metadata']['output_moving_housing']=True
+  module_rows.append({'id':p['name'],'parent_body':parent,'output_body':output,'actual_owner':owner,'source_D_module_id':row['id'],'source':row.get('exact_source'),'mass_range_kg':p.get('mass_range_kg'),'actual_material_density_kg_m3':p.get('density_kg_m3'),'envelope_bounds_world_m':m.bounds.tolist(),'unqualified':True})
+ return group,T
+serial_module('hip_yaw',YAW,[0,0,-1],'pelvis','left_hip_yaw_carrier')
+serial_module('hip_roll',ROLL,[1,0,0],'left_hip_yaw_carrier','left_hip_roll_carrier')
+serial_module('foot_roll',FR,[1,0,0],'left_ankle_pitch_carrier','left_foot_roll_arch')
+# Nested outer load paths with actual finite walls; no solid filled hip walls.
+rollgear=ROLL+[.070,0,0];rollshellR=.105
+for i,sg in enumerate([-1,1]):
+ start=YAW+[0,sg*.066,0];end=rollgear+[0,sg*.101,0]
+ mid=np.array([-.160,.190 if sg<0 else .415,1.810])
+ tube('e_left_yaw_to_roll_load_bridge_'+str(i),'left_hip_yaw_carrier',[start,mid,end],.040,.044,.006)
+ tube('e_left_roll_to_pitch_load_bridge_'+str(i),'left_hip_roll_carrier',[ROLL+[0,sg*.065,-.010],H+[0,-.125 if sg<0 else .080,.072]],.040,.036,.006)
+# Fixed rear pelvic transverse support physically reaches yaw load shells.
+tube('e_pelvis_yaw_support_transverse','pelvis',[[-.250,-.173,1.94675],[-.250,.173,1.94675]],.060,.060,.008)
+
+# New fixed ankle bearing supports clear the old foot crossbar geometrically.
+for i,sy in enumerate([-.170,.170]):
+ native('e_left_ankle_fixed_bearing_housing_'+str(i),'left_distal_shank',ring(A+[0,sy,0],.080,.060,.018),scope='finite fixed bearing housing, rating/fit unknown')
+ q=native('e_left_ankle_bearing_reserve_'+str(i),'left_distal_shank',ring(A+[0,sy,0],.0595,.0505,.016),'bearing_reference_envelope',scope='separate bearing allowance, no material/connection certificate');q['mass_range_kg']=[.30,.42]
+ # continuous side bridge from fold moving collar to new ankle fixed housing
+ tube('e_left_fold_to_ankle_carrier_'+str(i),'left_distal_shank',[F+[0,-.160 if sy<0 else .110,-.062],F+[0,sy,-.100],A+[0,sy,.072]],.035,.040,.006)
+# Child shaft and wide side cradle enclose foot-roll kit without cross-body wall.
+native('e_left_ankle_moving_output_shaft','left_ankle_pitch_carrier',ring(A,.050,.042,.380),scope='custom hollow output shaft; strength/fits unknown')
+for i,sy in enumerate([-.115,.115]):
+ native('e_left_ankle_moving_collar_'+str(i),'left_ankle_pitch_carrier',ring(A+[0,sy,0],.067,.042,.014))
+ tube('e_left_ankle_to_roll_outer_cradle_'+str(i),'left_ankle_pitch_carrier',[A+[0,sy,-.062],[.011,.5+sy,.220],[.011,.5+(-.077 if sy<0 else .077),.220]],.035,.032,.006)
+
+# Modified foot function evaluated without its global file-writing bottom half.
+footsource=(ROOT/'scripts/models/build_gorilla_distributed_foot.py').read_text();tree=ast.parse(footsource);defs=[n for n in tree.body if isinstance(n,ast.FunctionDef)]
+text=ast.unparse(ast.Module(body=defs,type_ignores=[]))
+text=text.replace("arch = [tube([-0.075, 0.5, 0.285], [-0.075, 0.5, 0.22], 0.09, 0.12, 0.008), tube([-0.055, 0.34, 0.23], [-0.055, 0.78, 0.23], 0.06, 0.06, 0.006)]","arch = [tube([-0.060, 0.5, 0.220], [-0.150, 0.5, 0.205], 0.050, 0.090, 0.008), tube([-0.150, 0.34, 0.205], [-0.150, 0.78, 0.205], 0.060, 0.060, 0.006)]")
+text=text.replace("[-0.055, sy, 0.23]","[-0.150, sy, 0.205]")
+text=text.replace("np.array([-0.055 if kind == 'forefoot' else -0.11, sy, 0.255 if kind == 'forefoot' else 0.23])","np.array([-0.150, sy, 0.205])")
+text=text.replace("0.26 if kind == 'forefoot' else 0.145","0.325 if kind == 'forefoot' else 0.135")
+text=text.replace("0.3 if kind == 'forefoot' else 0.16","0.350 if kind == 'forefoot' else 0.135")
+text=text.replace("(0.21, 0.26) if kind == 'forefoot' else (0.105, 0.155)","(0.245, 0.295) if kind == 'forefoot' else (0.105, 0.145)")
+text=text.replace("[-0.055, cheek[1], 0.215]","[-0.150, cheek[1], 0.205]")
+ns={'np':np,'trimesh':tr,'math':math,'h':h,'STEEL':[.2,.24,.27,1],'MOVING':[.36,.40,.43,1]};exec(compile(text,'E_modified_foot_functions','exec'),ns)
+(OUT/'derived_foot_function.py').write_text(text+'\n')
+
+# Recompute actual eye range / zero length / stroke. No reuse of D lengths or loads.
+olddefs=read(DIR/'configs/internal_structure_d_spec.json')['actuator_definitions'][:4];actdefs=[]
+for q in olddefs:
+ fam=q['id'].replace('left_','');j={'hip':H,'knee':K,'fold':F,'ankle':A}[fam];aa=np.array(q['A_neutral_world_m']);bb=np.array(q['B_neutral_world_m'])
+ if fam=='ankle':
+  up=(F-A)/np.linalg.norm(F-A);aa=A+up*.180;bb=A+[.140,0,0];aa[1]-=.065;bb[1]-=.065
+ parent={'hip':'left_hip_roll_carrier','knee':'left_thigh','fold':'left_middle_shank','ankle':'left_distal_shank'}[fam];output={'hip':'left_thigh','knee':'left_middle_shank','fold':'left_distal_shank','ankle':'left_ankle_pitch_carrier'}[fam]
+ vals=[]
+ for angle in np.linspace({'hip':-30,'knee':0,'fold':-20,'ankle':-10}[fam],{'hip':0,'knee':60,'fold':0,'ankle':0}[fam],121):
+  b=transformed(rot_y(j,angle),bb);L=np.linalg.norm(b-aa);arm=((b-aa)/L)@np.cross([0,1,0],b-j);vals.append({'q_deg':float(angle),'eye_length_m':float(L),'signed_effective_arm_m':float(arm)})
+ low=min(v['eye_length_m'] for v in vals);high=max(v['eye_length_m'] for v in vals);stroke=high-low+.020;minzero=stroke+.140;tail=max(0,low-.010-minzero);zero=minzero+tail
+ actdefs.append({'family':fam,'neutral_A_world_m':aa.tolist(),'neutral_B_world_m':bb.tolist(),'pivot_world_m':j.tolist(),'base_body':parent,'output_body':output,'actual_stroke_design_m':stroke,'complete_minimum_zero_extension_eye_length_m':minzero,'allocated_custom_zero_extension_eye_length_m':zero,'additional_fixed_tail_sleeve_m':tail,'sampled_pin_length_range_m':[low,high],'samples':vals,'params':{'bore':q['bore_m'],'rod':q['rod_m'],'wall':.006 if fam=='knee' else .005,'pin':.025 if fam=='knee' else .018 if fam=='hip' else .022},'minimum_working_eye_deficit_m':max(0,zero+.010-low),'maximum_working_eye_deficit_m':max(0,high-(zero+stroke-.010)),'OEM_zero_length_known':False})
+# Pure finite actuator functions reused with no original driver/top-level writes.
+atsource=(ROOT/'.scratch/gorilla_internal_d_geometry/probe_finite_actuators.py').read_text();atree=ast.parse(atsource);af=[n for n in atree.body if isinstance(n,ast.FunctionDef) and n.name in ['shape_cylinder','assembly']]
+ans={'np':np,'trimesh':tr,'math':math,'h':h,'points':dict(P),'c2':{'same_LP_witness_cases':[]},'P':21e6,'ear':.020,'rearcap':.020,'frontcap':.020,'seal':.020,'pistonw':.020,'rod_min':.020,'margin':.010};ans['points']['left_ankle']=A
+exec(compile(ast.Module(body=af,type_ignores=[]),'reused_D_finite_material','exec'),ans)
+# Real ankle eye forks and crank, using newly computed endpoints.
+ad=next(q for q in actdefs if q['family']=='ankle');AA=np.asarray(ad['neutral_A_world_m']);BB=np.asarray(ad['neutral_B_world_m'])
+for label,eye,owner in [('fixed',AA,'left_distal_shank'),('moving',BB,'left_ankle_pitch_carrier')]:
+ for sg in [-1,1]:native('e_left_ankle_'+label+'_eye_cheek_'+str(sg),owner,ring(eye+[0,sg*.021,0],.028,.0115,.008))
+ back=eye+[-.045,0,0]
+ for sg in [-1,1]:tube('e_left_ankle_'+label+'_fork_tail_'+str(sg),owner,[eye+[-.020,sg*.021,0],back+[0,sg*.021,0]],.016,.008,.003)
+ native('e_left_ankle_'+label+'_eye_pin',owner,h.cylinder(eye,.011,.063),scope='separate eye pin, not welded')
+ if label=='fixed':
+  for sy in [-.170,.170]:tube('e_left_ankle_fixed_eye_mount_'+str(sy),owner,[A+[0,sy,.072],back+[0,-.021 if sy<0 else .021,0]],.032,.032,.006)
+ else:
+  tube('e_left_ankle_output_crank',owner,[A+[.047,-.065,0],back],.008,.045,.003)
+
+# Reflect only left contributions; shared pelvis transverse stays single.
+left=list(parts)
+for p in left:
+ if p['name'].startswith('e_pelvis_'):continue
+ parts.append(mirror(p))
+neutralframes=parts.copy()
+pose_defs=[('neutral',{'hip':0,'knee':0,'fold':0,'ankle':0},0,0,0,0,0),('crouch',{'hip':-15,'knee':30,'fold':-10,'ankle':-5},0,0,0,0,0),('serial_lateral_probe',{'hip':-15,'knee':30,'fold':-10,'ankle':-5},10,8,-5,0,0),('deep_crouch_rejection_probe',{'hip':-30,'knee':60,'fold':-20,'ankle':-10},0,5,-5,0,0),('unloaded_independent_fold',{'hip':0,'knee':0,'fold':0,'ankle':0},0,0,0,-15,10)]
+pose_scenes=[];actreports=[]
+for pid,pitches,yaw,roll,footroll,qf,qh in pose_defs:
+ Ts={'pelvis':np.eye(4)}
+ for body,node in bodytree.items():
+  if body=='pelvis':continue
+  jid=node['joint_id'];s=1 if body.startswith('left_') else -1
+  q=(yaw*s if jid.endswith('hip_yaw') else roll*s if jid.endswith('hip_roll') else footroll*s if jid.endswith('foot_roll') else qf if jid.endswith('forefoot_display') else qh if jid.endswith('heel_display') else pitches['hip'] if jid.endswith('hip_pitch') else pitches['knee'] if jid.endswith('knee') else pitches['fold'] if jid.endswith('fold') else pitches['ankle'])
+  Ts[body]=Ts[node['parent']]@rotate(node['pivot_world_m'],node['axis_world'],q)
+ # Align using actual retained independent ground pads, only translation.
+ padvertices=[]
+ for p in base['parts']:
+  b=p['body'];b=b.replace('_foot','_foot_roll_arch') if b.endswith('_foot') else b
+  if p.get('role') in ('ground_pad','contact_surface_candidate') and b in Ts:
+   vv=np.column_stack([p['vertices_world_m'],np.ones(len(p['vertices_world_m']))]);padvertices.extend((Ts[b]@vv.T).T[:,:3])
+ shift=-min(v[2] for v in padvertices) if padvertices else 0
+ for b in Ts:Ts[b][2,3]+=shift
+ posed=[]
+ for p in neutralframes:
+  q=copy.deepcopy(p);m=tm(p);m.apply_transform(Ts[p['body']]);q['vertices_world_m']=m.vertices.tolist();posed.append(q)
+ localfoot,joints=ns['left_foot'](qf,qh);footboth=[]
+ for p in localfoot:
+  q=copy.deepcopy(p);q['name']=q['name'].replace('isd_','e_left_',1);q['body']=q['body'].replace('left_foot','left_foot_roll_arch');q['density_kg_m3']=q.get('D_metadata',{}).get('density_kg_m3') if q['role']!='bearing_design_envelope' else None
+  if q['density_kg_m3'] is None:q.pop('density_kg_m3')
+  q['E_metadata']={'scope':'actual neutral/independent-fold foot geometry; endpoints rebuilt, not owner-body rotations','derived_D_function_sha256':sha(OUT/'derived_foot_function.py')};footboth.append(q);footboth.append(mirror(q))
+ for p in footboth:
+  m=tm(p);m.apply_transform(Ts['left_foot_roll_arch' if p['body'].startswith('left_') else 'right_foot_roll_arch']);p['vertices_world_m']=m.vertices.tolist();posed.append(p)
+ pp={'id':pid,'body_transforms':{b:T.tolist() for b,T in Ts.items()}}
+ ar=[]
+ for side in ['left','right']:
+  for d in actdefs:
+   aa,mm,rr=ans['assembly'](d,side,pp)
+   for p in aa:p['name']='e_'+p['name'];p['density_kg_m3']=7850;p['endpoint_driven_geometry']=True;p['kinematic_owner_is_not_rigid_body']=True;posed.append(p)
+   rr.pop('same_LP_force_cases',None);ar.append(rr)
+ pose_scenes.append({'id':pid,'parts':posed,'body_transforms':pp['body_transforms'],'root_translation_z_m':float(shift),'already_world_posed':True,'foot_q_deg':[qf,qh],'foot_local_joints_and_brace_Jacobians_left':joints});actreports.append({'id':pid,'actuator_geometry_and_Jacobian':ar})
+ print('built pose',pid,'parts',len(posed),flush=True)
+inputs={str(p.relative_to(ROOT)):sha(p) for p in [MASTER,DLEG,DFOOT,DSYS,BASE,GEOMETRY,ROOT/'scripts/models/build_gorilla_distributed_foot.py',ROOT/'scripts/models/build_gorilla_internal_structure.py',ROOT/'.scratch/gorilla_internal_d_geometry/probe_finite_actuators.py']}
+scene={'robot_id':'gorilla_v0_1','candidate':'internal_e_leg_first_serial_branch','input_hashes':inputs,'builder_sha256':sha(Path(__file__)),'body_tree':bodytree,'parts':pose_scenes[0]['parts'],'pose_scenes':pose_scenes,'joint_supports':[dict(id=node['joint_id'],parent_body=node['parent'],output_body=b,center_world_m=node['pivot_world_m'],axis_world=node['axis_world']) for b,node in bodytree.items() if b!='pelvis'],'module_rows':module_rows,'actuator_definitions':actdefs,'actuator_pose_reports':actreports,'original_armor_scene':str(BASE.relative_to(ROOT)),'original_armor_sha256':sha(BASE),'geometry_accepted':False,'physics_accepted':False,'contract_stable':False,'remaining_17_upper_rotary_modules_owned_by_root':True,'AA3_required_outer_change_proved':False}
+write('e_leg_scene.json',scene)
+print('NATIVE READY',len(scene['parts']),flush=True)
+
+# Finite native material checks, no acceptance inferred from body names.
+checks={'source_scene_sha256':sha(OUT/'e_leg_scene.json'),'input_hashes':inputs,'volume_threshold_m3':1e-10,'material_body_unions':[],'poses':[],'topology':[],'unresolved':[],'geometry_accepted':False,'physics_accepted':False}
+def material(p):return p.get('density_kg_m3')==7850
+
+def intersect(m,n):
+ if np.any(m.bounds[1]<=n.bounds[0]+1e-9) or np.any(n.bounds[1]<=m.bounds[0]+1e-9):return None
+ z=tr.boolean.intersection([m,n],engine='manifold');return z if z is not None and z.volume>1e-10 else None
+for p in scene['parts']:
+ m=tm(p);checks['topology'].append({'name':p['name'],'WT':bool(m.is_watertight),'winding':bool(m.is_winding_consistent),'positive':bool(m.volume>0),'volume_m3':float(m.volume),'scope':p['role']})
+for ps in pose_scenes:
+ bybody={};reference=[]
+ for p in ps['parts']:
+  if material(p):bybody.setdefault(p['body'],[]).append(p)
+  else:reference.append(p)
+ unions={}
+ for b,pp in bybody.items():
+  # Aggregate collision volume only. Moving cylinder / brace owners are not rigid joins.
+  try:
+   u=tr.boolean.union([tm(p) for p in pp],engine='manifold');unions[b]=u
+   if ps['id']=='neutral':checks['material_body_unions'].append({'body':b,'net_volume_m3':float(u.volume),'mass_kg_at7850':float(u.volume*7850),'positive_material_components':len([c for c in u.split(only_watertight=False) if c.volume>1e-10]),'union_not_rigid_connection_proof':True})
+  except Exception as e:checks['unresolved'].append({'pose':ps['id'],'body':b,'error':str(e)})
+ hits=[];armorhits=[];modulehits=[];pairs=list(unions)
+ for i,b in enumerate(pairs):
+  for c in pairs[i+1:]:
+   z=intersect(unions[b],unions[c])
+   if z is not None:hits.append({'bodies':[b,c],'volume_m3':float(z.volume),'bounds_world_m':z.bounds.tolist()})
+ # Original armor actual triangles, posed by E body tree. Other regions not tested.
+ Ts={b:np.asarray(T) for b,T in ps['body_transforms'].items()}
+ arm=[]
+ for p in base['parts']:
+  if p.get('role') not in ('armor_cover','armor_surface'):continue
+  body=p['body'];body=body.replace('_foot','_foot_roll_arch') if body.endswith('_foot') else body
+  if body not in Ts:continue
+  m=tm(p);m.apply_transform(Ts[body]);arm.append((p,m))
+ for b,u in unions.items():
+  for p,m in arm:
+   z=intersect(u,m)
+   if z is not None:armorhits.append({'material_body':b,'armor_part':p['name'],'volume_m3':float(z.volume),'bounds_world_m':z.bounds.tolist()})
+ for p in reference:
+  if p['role'] not in ('complete_component_reference_envelope',):continue
+  m=tm(p)
+  for b,u in unions.items():
+   z=intersect(u,m)
+   if z is not None:modulehits.append({'material_body':b,'component_envelope':p['name'],'component_owner_body':p['body'],'same_owner_interface_possible':b==p['body'],'volume_m3':float(z.volume),'bounds_world_m':z.bounds.tolist()})
+ # Explicit closure targets, native actual pieces not whole-body constraints.
+ targeted=[]
+ for side in ['left','right']:
+  psmap={p['name']:p for p in ps['parts']}
+  hk=[p for p in ps['parts'] if p['name'].startswith('e_'+side+'_ankle_fixed_bearing_housing')]
+  fp=[p for p in ps['parts'] if p['name'].startswith('e_'+side+'_') and p['role'] in ('fixed_load_arch','moving_load_tray','endpoint_driven_brace_fixed','endpoint_driven_brace_moving','steel_pin_design','lock_pin_design')]
+  for p in hk:
+   for q in fp:
+    z=intersect(tm(p),tm(q))
+    if z is not None:targeted.append({'a':p['name'],'b':q['name'],'volume_m3':float(z.volume),'bounds_world_m':z.bounds.tolist()})
+  seal=psmap['e_'+side+'_ankle_seal_housing'];shaft=psmap['e_'+side+'_ankle_moving_output_shaft'];z=intersect(tm(seal),tm(shaft))
+  if z is not None:targeted.append({'a':seal['name'],'b':shaft['name'],'volume_m3':float(z.volume),'bounds_world_m':z.bounds.tolist()})
+ row={'id':ps['id'],'different_body_material_intersections':hits,'original_armor_intersections':armorhits,'reference_component_vs_material_intersections':modulehits,'D_75cm3_foot_and_seal_targets_remaining':targeted,'accepted':False};checks['poses'].append(row);print('checked',ps['id'],'body',len(hits),'armor',len(armorhits),'module',len(modulehits),'old-target',len(targeted),flush=True);write('e_leg_checks.json',checks)
+write('e_leg_checks.json',checks)
+
+# Same candidate, actual orthographic native triangles, not concept art.
+image=Image.new('RGB',(1800,1100),'white');draw=ImageDraw.Draw(image)
+for panel,view in enumerate(['front','left','rear']):
+ triangles=[]
+ for p in scene['parts']:
+  if view=='left' and p['body'].startswith('right_'):continue
+  m=tm(p);color=(65,75,82) if material(p) else (150,177,190) if p['role']=='complete_component_reference_envelope' else (185,118,74)
+  for f in m.faces:
+   v=m.vertices[f];triangles.append((float(v[:,1].mean()) if view=='left' else float(v[:,0].mean()),v,color))
+ for depth,v,col in sorted(triangles,key=lambda x:x[0],reverse=view=='rear'):
+  pts=[(panel*600+300-float(q[0])*440,1060-float(q[2])*450) if view=='left' else (panel*600+300+float(q[1])*(-370 if view=='front' else 370),1060-float(q[2])*450) for q in v];draw.polygon(pts,fill=col)
+ draw.text((panel*600+10,10),'Gorilla E / '+view+' / actual material and full module envelopes',fill='black')
+image.save(OUT/'e_leg_neutral_three_view.png')
+write('manifest.json',{'input_hashes':inputs,'builder_sha256':sha(Path(__file__)),'outputs':{p.name:sha(p) for p in OUT.iterdir() if p.is_file() and p.name!='manifest.json'},'geometry_accepted':False,'physics_accepted':False})
+print('COMPLETE',flush=True)

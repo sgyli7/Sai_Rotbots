@@ -1,0 +1,45 @@
+from pathlib import Path
+import json,hashlib,sys
+import numpy,trimesh,PIL,importlib.metadata
+ROOT=Path('/home/ethan/Projects/Sai_Rotbots');O=ROOT/'.scratch/gorilla_internal_e_system'
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+s=json.loads((O/'thermal_route_spec.json').read_text());h=json.loads((O/'heat_balance_assumptions.json').read_text());c=json.loads((O/'reproduction_checks.json').read_text());projection=json.loads((O/'native_projection_manifest.json').read_text())
+commands=[f'.venv/bin/python .scratch/gorilla_internal_e_system/{name}' for name in ['build_thermal_route_probe.py','write_inventory_report.py','render_native_projection.py','check_reproduction_inputs.py','write_final_manifest.py']]
+pdfs=[]
+for x in h['sources']:
+ p=ROOT/x['file'];assert sha(p)==x['sha256'];pdfs.append({'path':str(p),'repository_relative_path':x['file'],'sha256':sha(p),'original_URL':x['url'],'PDF_page_1based':x['PDF_page'],'printed_page':x['printed_page'],'not_copied_or_redistributed_by_this_closeout':True})
+zp=ROOT/'.scratch/gorilla_internal_d_sources/hawe_z_pumps_d6820_en.pdf'
+pdfs.append({'path':str(zp),'repository_relative_path':str(zp.relative_to(ROOT)),'sha256':sha(zp),'original_URL':'https://productfinder.hawe.com/downloads/D6820-en.pdf','PDF_pages_1based':[5,7,10,13,14],'scope':'Upstream D Z16 displacement/speed/pressure/geometry fact reference; no new search','not_copied_or_redistributed_by_this_closeout':True})
+for size in [50,32]:
+ p=ROOT/f'.scratch/gorilla_internal_d_root_sources/csg{size}.pdf';pdfs.append({'path':str(p),'repository_relative_path':str(p.relative_to(ROOT)),'sha256':sha(p),'original_URL':'Not recorded in this branch; root-verified original vendor dimensional PDF and D embedded hash are preserved, no URL invented.','PDF_page_1based':1,'scope':f'Upstream CSG{size} dimensions only; rated output facts from controlled D system reference','not_copied_or_redistributed_by_this_closeout':True})
+inputs={**s['input_hashes'],**h['D_hashes']}
+inputs.update({p['repository_relative_path']:p['sha256'] for p in pdfs})
+ref=ROOT/'.scratch/gorilla_internal_e_constraints/reference_axes.json'
+if ref.exists():inputs[str(ref.relative_to(ROOT))]=sha(ref)
+inputs[projection['font_file']]=projection['font_file_sha256']
+inputs[str((O/'heat_balance_assumptions.json').relative_to(ROOT))]=sha(O/'heat_balance_assumptions.json');inputs[str((O/'heat_balance_assumptions.md').relative_to(ROOT))]=sha(O/'heat_balance_assumptions.md')
+for p,v in inputs.items():assert sha(Path(p) if p.startswith('/') else ROOT/p)==v,p
+scope=f'''# Gorilla E reproducible native thermal-route closeout
+
+Run from `/home/ethan/Projects/Sai_Rotbots` with the recorded `.venv`. The original PDF files stay in their existing ignored paths; **none was copied, redownloaded or included in Git** by closeout. The heat notes/JSON are preserved source-reading snapshots and inputs, not a new automated manufacturer extraction or capability claim. `check_reproduction_inputs.py` independently rechecks their hashes and existing gear-conditioned copper algebra.
+
+Commands in order:
+
+```bash
+{chr(10).join(commands)}
+```
+
+These are future replay commands; closeout **did not repeat native collision geometry**. Area field normalization only renamed the old ambiguous0.203 field into `rear_heat_exchanger_core_frontal_area_m2=.203`, and separately records `rear_exhaust_opening_gross_area_m2=.216` and `supplement_side_intake_opening_gross_area_m2=.210`. The correction chain records old/new spec and scene hashes and unchanged189-part geometry content hash. The scene's `source_spec_sha256` was synchronized.
+
+`native_thermal_path_orthographic.png` is a2920×1260 CPU polygon rasterization of **all189 exact E native meshes**,111 unchanged C15 armor meshes and22 actual original louver meshes. Front/left/rear use the same{projection['same_pixels_per_metre']:.6f}px/m scale and explicit SI view matrices. Armor transparency is an inspection overlay, **no physical cut or aesthetic redesign**. Colored faces are projected native geometry, not a drawn substitute structure. Font and rendering-input hashes are in `native_projection_manifest.json`.
+
+The34 positive overlaps are narrowly scoped: **17 selected modules** in `radiator_native_material`, `fan_complete_reserve`, `coolant_reservoir`, `sealed_duct` versus **111 original armor parts**, neutral pose only. All1887 candidate pairs were AABB-filtered; **91** pairs had native Boolean intersection calls;34 exceeded1e-9m³. The full module/armor name lists and actual recorded intersections are in `reproduction_checks.json`. No conclusion follows for the other172 E modules, whole liquid-route/module pairs, new-new pairs, motion/bend sweeps, OEM material or thermal/pressure capacity.
+
+Final input/output SHA256 values, runtimes, PDF local paths/pages and correction chain are in `final_manifest.json`. Its own hash is detached in `final_manifest.sha256` to avoid a self-hash cycle. Python cache files are not final artifacts. No D controlled/frozen or new design/performance source was edited during this closeout.
+'''
+(O/'reproduction.md').write_text(scope)
+paths=[p for p in O.iterdir() if p.is_file() and p.name not in ['final_manifest.json','final_manifest.sha256']]
+outputs={str(p.relative_to(ROOT)):sha(p) for p in sorted(paths)}
+manifest={'schema':'gorilla_internal_e_thermal_closeout_manifest_v1','working_directory':str(ROOT),'replay_commands_in_order':commands,'runtime':{'python':sys.version,'numpy':numpy.__version__,'trimesh':trimesh.__version__,'Pillow':PIL.__version__,'manifold3d':importlib.metadata.version('manifold3d')},'inputs_sha256':inputs,'all_final_outputs_sha256_excluding_self':outputs,'local_primary_PDF_references':pdfs,'CSG65_source_reference':{'original_URL':'https://www.harmonicdrive.net/products/gear-units/gear-units/csg-2uh/csg-65-100-2uh','local_PDF':None,'scope':'Upstream controlled D system fact; no absent PDF invented.'},'fixed_research_snapshot_inputs':['heat_balance_assumptions.md','heat_balance_assumptions.json'],'geometry_semantic_correction_chain':json.loads((O/'area_field_correction_chain.json').read_text()),'intersection_screen_scope':s['selected_armor_intersection_scope'],'sample_module_ids':c['sample_module_ids'],'armor_ids':c['all_unchanged_armor_ids'],'candidate_pairs':c['candidate_cartesian_pair_count'],'native_boolean_pairs_after_AABB':c['native_boolean_pair_count_after_AABB'],'positive_overlap_count':34,'projection_manifest_sha256':sha(O/'native_projection_manifest.json'),'self_hash_policy':'Final manifest excludes its own content hash; final_manifest.sha256 stores detached SHA256. Alllisted payload outputs and inputs are exact.','no_OEM_PDF_copy_or_licence_assumption':True,'native_geometry_repeated_during_closeout':False,'original_armor_modified':False,'no_D_controlled_edits':True,'not_aesthetic_revision':True,'geometry_or_physics_accepted':False}
+(O/'final_manifest.json').write_text(json.dumps(manifest,indent=2)+'\n');digest=sha(O/'final_manifest.json');(O/'final_manifest.sha256').write_text(digest+'  final_manifest.json\n')
+print(json.dumps({'manifest_sha256':digest,'outputs':len(outputs),'inputs':len(inputs),'PDF_references':len(pdfs),'image_sha256':outputs[str((O/'native_thermal_path_orthographic.png').relative_to(ROOT))]},indent=2))

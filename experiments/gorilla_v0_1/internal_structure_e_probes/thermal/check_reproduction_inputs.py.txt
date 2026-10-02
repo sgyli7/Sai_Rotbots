@@ -1,0 +1,27 @@
+from pathlib import Path
+import json,hashlib,collections
+import numpy as np
+ROOT=Path('/home/ethan/Projects/Sai_Rotbots');O=ROOT/'.scratch/gorilla_internal_e_system'
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+s=json.loads((O/'thermal_route_spec.json').read_text());scene=json.loads((O/'thermal_route_scene.json').read_text());h=json.loads((O/'heat_balance_assumptions.json').read_text());base=json.loads((ROOT/'robots/gorilla_v0_1/cad/source/appearance_c_scene.json').read_text())
+assert scene['source_spec_sha256']==sha(O/'thermal_route_spec.json')
+assert len(s['modules'])==len(scene['parts'])==189
+for path,hsh in s['input_hashes'].items():assert sha(ROOT/path)==hsh,path
+for path,hsh in h['D_hashes'].items():assert sha(ROOT/path)==hsh,path
+for src in h['sources']:assert sha(ROOT/src['file'])==src['sha256'],src['file']
+calcs=collections.defaultdict(float)
+for g in h['gear_conditioned_terms']:
+ ti=g['gear_catalog_rated_Nm']/(g['ratio']*g['eta_rotation_only_own']);cu=g['Pc_W']*(ti/g['Tc_Nm'])**2
+ assert abs(ti-g['Ti_Nm'])<1e-10 and abs(cu-g['conditional_copper_W'])<1e-8
+ calcs[str(g['eta_rotation_only_own'])]+=cu
+for k,v in h['conditional_copper_sum_by_eta_W'].items():assert abs(calcs[k]-v)<1e-7
+categories={'radiator_native_material','fan_complete_reserve','coolant_reservoir','sealed_duct'};sample=[x['id'] for x in s['modules'] if x['category'] in categories];lookup={x['name']:x for x in scene['parts']};armor=[x for x in base['parts'] if x['role'] in {'armor_cover','armor_surface'}]
+def bounds(p):v=np.array(p['vertices_world_m']);return v.min(0),v.max(0)
+tested=[]
+for n in sample:
+ a0,a1=bounds(lookup[n])
+ for a in armor:
+  b0,b1=bounds(a)
+  if np.all(np.minimum(a1,b1)-np.maximum(a0,b0)>1e-6):tested.append([n,a['name']])
+r={'scope':'Hash and preserved-algebra checks only; no repeat of Boolean collision/heat or physics research.','source_spec_sha256':sha(O/'thermal_route_spec.json'),'source_scene_sha256':sha(O/'thermal_route_scene.json'),'source_projection_manifest_sha256':sha(O/'native_projection_manifest.json'),'native_part_count':189,'sample_module_ids':sample,'all_unchanged_armor_ids':[x['name'] for x in armor],'candidate_cartesian_pair_count':len(sample)*len(armor),'AABB_positive_pairs_dispatched_by_builder':tested,'native_boolean_pair_count_after_AABB':len(tested),'recorded_positive_overlap_count':len(s['selected_neutral_native_armor_positive_intersections']),'recorded_positive_overlaps':s['selected_neutral_native_armor_positive_intersections'],'screen_excludes':'Other172 E parts, coolant liquid/material routes/new-new pairs/whole integration/poses/bends/OEM CAD and all thermal/pressure capacity.','core_vs_opening_area_m2':{'rear_core':s['rear_heat_exchanger_core_frontal_area_m2'],'rear_exhaust_gross':s['rear_exhaust_opening_gross_area_m2'],'side_intake_gross':s['supplement_side_intake_opening_gross_area_m2']},'copper_formula_recomputed_sum_W':dict(calcs),'source_mount_and_speed_limits_still_unclosed':True,'geometry_and_physics_accepted':False}
+(O/'reproduction_checks.json').write_text(json.dumps(r,indent=2)+'\n');print(json.dumps({'sample':len(sample),'armor':len(armor),'pairs':len(tested),'positive':r['recorded_positive_overlap_count'],'hash_algebra_check':'pass'},indent=2))
