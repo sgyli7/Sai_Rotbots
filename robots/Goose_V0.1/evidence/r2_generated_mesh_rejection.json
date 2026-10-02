@@ -1,0 +1,46 @@
+{
+  "robot_id": "Goose_V0.1",
+  "date": "2026-09-29",
+  "status": "rejected_reference_only",
+  "reference_image": "robots/Goose_V0.1/design/concepts/beak_r2_design.png",
+  "reference_image_sha256": "690408c61191ce33c45e75709b6916a68b878f617d3b9c3055b844ba3115bf95",
+  "generated_mesh_local_path": "artifacts/Goose_V0.1/ai3d_reference/outputs/145a316d-3467-4903-bbf6-4f0ffb028e3a/goose_r2_reference_00002_.glb",
+  "generated_mesh_sha256": "9186ab226364328583922b03882c9022898a47e299c453975a7e2818e2980dab",
+  "inspection": {
+    "library": "trimesh 4.11.1",
+    "load": "trimesh.load(path, force='mesh', process=False)",
+    "split": "mesh.split(only_watertight=False)",
+    "vertices": 93458,
+    "triangle_faces": 119542,
+    "indexed_connected_components": 2534,
+    "indexed_largest_component_faces": 843,
+    "indexed_watertight_components": 1,
+    "indexed_mesh_is_watertight": false,
+    "indexed_mesh_has_consistent_winding": false,
+    "position_weld": "mesh.merge_vertices(merge_tex=True, merge_norm=True, digits_vertex=7), then split",
+    "vertices_after_position_weld": 58617,
+    "connected_components_after_position_weld": 20,
+    "largest_component_faces_after_position_weld": 116516,
+    "watertight_components_after_position_weld": 17,
+    "mesh_is_watertight_after_position_weld": false,
+    "mesh_has_consistent_winding_after_position_weld": true,
+    "interpretation": "Most of the 2534 index components arise from UV/normal seam vertex splits, so they must not be described as 2534 separate physical pieces. Even after position welding, the mesh has 20 components and is not a closed whole-robot shell.",
+    "editable_all_quad_source_delivered": false
+  },
+  "preview_artifact": {
+    "local_path": "artifacts/Goose_V0.1/ai3d_reference/generated_color_90.png",
+    "method": "Each triangle was given one of five flat material colors by sampling the UV texture at that triangle's centroid.",
+    "effect": "Discrete per-triangle color assignment creates visible serrated orange/black boundaries, especially on the neck and feet. This preview is not a faithful quality render of the textured GLB."
+  },
+  "decision": {
+    "do_not_use_for": [
+      "manufacturing CAD",
+      "print STL",
+      "simulation visual or collision geometry",
+      "appearance acceptance"
+    ],
+    "may_use_for": ["informal silhouette and palette reference"],
+    "release_pass": false,
+    "required_next_geometry": "Redraw articulated parts as editable, closed, consistently oriented all-quad polygon shells where polygon modelling is used; keep engineering STEP/BREP as solid CAD, then verify independently triangulated STL/GLB exports."
+  }
+}

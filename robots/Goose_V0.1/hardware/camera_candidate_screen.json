@@ -1,0 +1,50 @@
+{
+  "schema": "goose_camera_candidate_source_screen_v1",
+  "selected_sku": null,
+  "current_mass_kg": 0.025,
+  "mass_basis": "unchanged assumed complete camera, not weighed SKU",
+  "current_pcb_envelope_m": [
+    0.0016,
+    0.018,
+    0.04
+  ],
+  "candidates": [
+    {
+      "sku": "B0431",
+      "sensor": "IMX219",
+      "interface": "USB2 UVC",
+      "focus_source_disagreement": {
+        "selection_guide_min_m": 0.05,
+        "product_page_min_m": 0.8
+      },
+      "decision": "not selected; confirm batch focus and actual drawing before mounting",
+      "sources": [
+        "https://docs.arducam.com/UVC-Camera/USB2-UVC-Camera-Kit/Specs-and-Selection-Guide/",
+        "https://www.arducam.com/8mp-imx219-3280hx2464v30fps-usb-camera-module-with-sigle-microphone-for-linux-windows-and-mac-os.html"
+      ]
+    },
+    {
+      "sku": "B0471-1",
+      "sensor": "IMX519",
+      "interface": "USB3 UVC",
+      "pcb_size_mm": [
+        34,
+        34
+      ],
+      "power_max_w": 1.48,
+      "focus_default_min_m": 3.0,
+      "product_programmable_focus_min_m": 0.1,
+      "decision": "not selected; exceeds current 18mm PCB width proxy, connector and optical close-task placement require redesign",
+      "sources": [
+        "https://www.arducam.com/arducam-16mp-imx519-fast-auto-focus-usb-3-0-camera-module-without-enclosure.html",
+        "https://blog.arducam.com/downloads/datasheet/B0471_16MP_IMX519_USB3.0_Camera_Datasheet.pdf"
+      ]
+    }
+  ],
+  "limitations": [
+    "No mounting CAD derived from an unspecified camera PCB.",
+    "Current focus ranges are supplier claims; no device tested.",
+    "Eye decoration diameter does not determine real lens FOV or close-grasp visibility."
+  ],
+  "manufacturing_release": false
+}

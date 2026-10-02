@@ -1,0 +1,128 @@
+{
+  "status": "conditional_mass_and_gravity_screen_not_dynamic_validation",
+  "source_manifest_sha256": "fc6866117bb31337fa2db93f03a1b3fb4275fb47992054b200ec60b7df412163",
+  "support_evidence_sha256": "4b3c75eb540186d2a99e10a0c4d3f51938694f6b8c98e0b342d88e578b41cefa",
+  "source_script_sha256": "46680fc29967b06ee3a3d7c88559d949dceb62c1eaf79a93c282f371c9a06dc0",
+  "visual_pivots_mm": {
+    "hip": [
+      -10.0,
+      0.0,
+      229.0
+    ],
+    "knee": [
+      -35.0,
+      0.0,
+      131.289
+    ],
+    "ankle": [
+      0.0,
+      0.0,
+      51.0
+    ],
+    "root": [
+      59.0,
+      0.0,
+      402.74
+    ],
+    "elbow": [
+      0.0,
+      0.0,
+      502.715
+    ],
+    "yoke": [
+      61.0,
+      0.0,
+      575.0
+    ],
+    "body_center": [
+      -10.0,
+      0.0,
+      290.0
+    ]
+  },
+  "ground_reach_pose_deg": null,
+  "beak_motor_basis": "XL330-M288-T 18 g at the visual internal-belt input axis",
+  "mass_basis": "Vendor motor mass assumptions; electronics reserves from component_envelopes.json; visual print surfaces × uniform wall × 1250 kg/m3, capped at solid volume; 85g torso frame reserve.",
+  "cases_by_assumed_uniform_wall_mm": {
+    "1.2": {
+      "standing": {
+        "mass_kg": 3.102,
+        "upper_body_mass_kg": 1.783,
+        "projected_com_mm": [
+          9.21,
+          0.28,
+          271.85
+        ],
+        "double_support_x_margin_to_nearest_end_mm": 72.94,
+        "signed_upper_body_gravity_moment_about_hip_Nm": 0.495,
+        "equal_share_per_hip_Nm": 0.247,
+        "per_hip_XM430_screening_limit_Nm": 0.82,
+        "per_hip_screening_pass": true,
+        "single_foot_lateral_shift_needed_mm": 42.77
+      },
+      "printed_proxy_mass_kg": 1.25
+    },
+    "1.6": {
+      "standing": {
+        "mass_kg": 3.487,
+        "upper_body_mass_kg": 2.01,
+        "projected_com_mm": [
+          10.81,
+          0.25,
+          267.88
+        ],
+        "double_support_x_margin_to_nearest_end_mm": 74.54,
+        "signed_upper_body_gravity_moment_about_hip_Nm": 0.589,
+        "equal_share_per_hip_Nm": 0.295,
+        "per_hip_XM430_screening_limit_Nm": 0.82,
+        "per_hip_screening_pass": true,
+        "single_foot_lateral_shift_needed_mm": 42.77
+      },
+      "printed_proxy_mass_kg": 1.635
+    },
+    "2.0": {
+      "standing": {
+        "mass_kg": 3.853,
+        "upper_body_mass_kg": 2.219,
+        "projected_com_mm": [
+          12.18,
+          0.23,
+          264.6
+        ],
+        "double_support_x_margin_to_nearest_end_mm": 75.91,
+        "signed_upper_body_gravity_moment_about_hip_Nm": 0.683,
+        "equal_share_per_hip_Nm": 0.342,
+        "per_hip_XM430_screening_limit_Nm": 0.82,
+        "per_hip_screening_pass": true,
+        "single_foot_lateral_shift_needed_mm": 42.77
+      },
+      "printed_proxy_mass_kg": 2.0
+    },
+    "2.4": {
+      "standing": {
+        "mass_kg": 4.21,
+        "upper_body_mass_kg": 2.422,
+        "projected_com_mm": [
+          13.39,
+          0.21,
+          261.8
+        ],
+        "double_support_x_margin_to_nearest_end_mm": 77.12,
+        "signed_upper_body_gravity_moment_about_hip_Nm": 0.779,
+        "equal_share_per_hip_Nm": 0.389,
+        "per_hip_XM430_screening_limit_Nm": 0.82,
+        "per_hip_screening_pass": true,
+        "single_foot_lateral_shift_needed_mm": 42.77
+      },
+      "printed_proxy_mass_kg": 2.358
+    }
+  },
+  "limitations": [
+    "Visual STL surfaces overlap, and no real print wall/infill/fastener/structural mass has been measured.",
+    "Motor and electronics SKUs/placements are inherited as a trial, not mechanically installed in this exterior.",
+    "The trial includes five leg motors per side; a possible sixth ankle axis per side and its brackets are absent from this mass estimate.",
+    "Equal left/right hip moment sharing is only a screening assumption and 0.82 Nm is a vendor estimate, not continuous thermal certification.",
+    "Static projected COM and hip moment omit acceleration, contact force distribution, friction, drag, and all gait control.",
+    "The ground-reach pose is visual kinematics and has no verified collision-free actuator envelope."
+  ]
+}

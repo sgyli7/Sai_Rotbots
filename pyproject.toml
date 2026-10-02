@@ -1,7 +1,7 @@
 [project]
 name = "sai-agent-001"
 version = "0.2.0a1"
-description = "Sai_Rotbots: SO101 wheel-leg robot family, models, policies and Sim2Sim adapters"
+description = "Sai_Rotbots robot models, control and Sim2Sim adapters"
 requires-python = ">=3.12,<3.13"
 license = "Apache-2.0"
 dependencies = ["mujoco==3.10.0", "numpy>=2.0,<3", "scipy>=1.14,<2", "onnxruntime==1.24.4"]
@@ -13,6 +13,10 @@ sai-agent = "sai_agent.cli:main"
 train = ["torch==2.9.1", "mujoco-warp==3.8.1", "warp-lang==1.12.0", "rsl-rl-lib==5.0.1", "onnx==1.22.0"]
 assets = ["trimesh==4.11.1", "fast-simplification==0.2.0", "pillow>=12,<13"]
 test = ["pytest>=8,<10"]
+cad = ["build123d==0.11.1", "shapely==2.1.2", "rtree==1.4.1", "manifold3d==3.5.4"]
+goose-train = ["torch==2.9.1", "rsl-rl-lib==5.0.1", "onnx==1.22.0"]
+goose-vision = ["opencv-python-headless==4.13.0.92"]
+hardware = ["dynamixel-sdk==3.8.4", "pyserial==3.5", "openpyxl==3.1.5"]
 
 [build-system]
 requires = ["hatchling"]
@@ -26,6 +30,8 @@ packages = ["src/sai_agent"]
 "robots/Sai_Agent_001/models" = "sai_agent/bundle/robots/Sai_Agent_001/models"
 "robots/Sai_Agent_002/models" = "sai_agent/bundle/robots/Sai_Agent_002/models"
 "robots/gorilla_v0_1/models" = "sai_agent/bundle/robots/gorilla_v0_1/models"
+"robots/Goose_V0.1/models" = "sai_agent/bundle/robots/Goose_V0.1/models"
+"robots/Goose_V0.1/configs" = "sai_agent/bundle/robots/Goose_V0.1/configs"
 "shared/policies" = "sai_agent/bundle/shared/policies"
 "shared/configs" = "sai_agent/bundle/shared/configs"
 licenses = "sai_agent/bundle/licenses"

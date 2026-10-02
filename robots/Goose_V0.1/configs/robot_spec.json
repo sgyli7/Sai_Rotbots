@@ -1,0 +1,629 @@
+{
+  "schema_version": 1,
+  "robot_id": "Goose_V0.1",
+  "engineering_revision": "rc2",
+  "units": {
+    "length": "m",
+    "mass": "kg",
+    "time": "s",
+    "angle": "rad",
+    "torque": "N*m"
+  },
+  "frame": "x_forward_y_left_z_up",
+  "quaternion_order": "wxyz",
+  "root_home_position_m": [
+    0,
+    0,
+    0.258
+  ],
+  "body_dimensions_m": [
+    0.22,
+    0.195,
+    0.165
+  ],
+  "neck_link_lengths_m": [
+    0.135,
+    0.22
+  ],
+  "foot_dimensions_m": [
+    0.12,
+    0.07,
+    0.028
+  ],
+  "task_design_envelope": {
+    "pickup_mass_kg": 0.05,
+    "drag_continuous_target_N": 2.0,
+    "drag_stop_threshold_target_N": 4.0,
+    "drag_force_status": "design target; sample resistance and thermal performance require physical gate",
+    "terrain": "indoor flat hard floor",
+    "specified_objects": [
+      "ring",
+      "rod",
+      "block",
+      "accessible_cloth_edge",
+      "empty_slipper",
+      "light_basket_or_box",
+      "wheeled_trolley"
+    ]
+  },
+  "servos": {
+    "xm430": {
+      "model": "XM430-W350-T",
+      "mass_kg": 0.082,
+      "body_whd_m": [
+        0.0285,
+        0.0465,
+        0.034
+      ],
+      "shaft_from_top_m": 0.01125,
+      "front_horn_plane_m": 0.002,
+      "rear_idler_plane_m": -0.036,
+      "horn_pcd_m": 0.016,
+      "horn_hole_count": 8,
+      "horn_clearance_m": 0.0024,
+      "horn_max_screw_insertion_m": 0.002,
+      "torque_screening_Nm": 0.82,
+      "voltage_V": 12,
+      "stall_current_A": 2.3,
+      "current_limit_initial_A": 0.46,
+      "speed_limit_rad_s": 2.5,
+      "source": "https://emanual.robotis.com/docs/en/dxl/x/xm430-w350/"
+    },
+    "xm540": {
+      "model": "XM540-W270-T",
+      "mass_kg": 0.165,
+      "body_whd_m": [
+        0.0335,
+        0.0585,
+        0.044
+      ],
+      "shaft_from_top_m": 0.01375,
+      "front_horn_plane_m": 0.0026,
+      "rear_idler_plane_m": -0.0465,
+      "horn_pcd_m": 0.022,
+      "horn_hole_count": 8,
+      "horn_clearance_m": 0.0029,
+      "horn_max_screw_insertion_m": 0.0025,
+      "torque_screening_Nm": 2.12,
+      "voltage_V": 12,
+      "stall_current_A": 4.4,
+      "current_limit_initial_A": 0.88,
+      "speed_limit_rad_s": 1.5,
+      "source": "https://emanual.robotis.com/docs/en/dxl/x/xm540-w270/"
+    },
+    "xc330": {
+      "model": "XC330-M288-T",
+      "mass_kg": 0.023,
+      "body_whd_m": [
+        0.02,
+        0.034,
+        0.023
+      ],
+      "shaft_from_top_m": 0.0095,
+      "front_horn_plane_m": 0.003,
+      "rear_idler_plane_m": -0.026,
+      "horn_pcd_m": 0.012,
+      "horn_hole_count": 4,
+      "horn_clearance_m": 0.0024,
+      "horn_max_screw_insertion_m": 0.003,
+      "torque_screening_Nm": 0.186,
+      "voltage_V": 5,
+      "stall_current_A": 1.8,
+      "current_limit_initial_A": 0.36,
+      "speed_limit_rad_s": 3,
+      "source": "https://emanual.robotis.com/docs/en/dxl/x/xc330-m288/"
+    }
+  },
+  "motor_inertia_basis": "uniform vendor body envelope with vendor mass; approximate internal mass distribution, not a measured tensor",
+  "torque_basis": "20% stall screening estimates, not real continuous rating",
+  "joints": [
+    {
+      "name": "left_hip_yaw",
+      "parent": "torso",
+      "position_m": [
+        0,
+        0.046,
+        -0.03
+      ],
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "range_rad": [
+        -0.45,
+        0.45
+      ],
+      "home_rad": 0,
+      "servo": "xm430",
+      "bus": "12v",
+      "motor_id": 1,
+      "motor_sign": 1,
+      "motor_zero_ticks": 2048,
+      "mount_orientation": "normal",
+      "control_group": "locomotion"
+    },
+    {
+      "name": "left_hip_roll",
+      "parent": "left_hip_yaw",
+      "position_m": [
+        0,
+        0,
+        -0.065
+      ],
+      "axis": [
+        1,
+        0,
+        0
+      ],
+      "range_rad": [
+        -0.35,
+        0.35
+      ],
+      "home_rad": 0,
+      "servo": "xm430",
+      "bus": "12v",
+      "motor_id": 2,
+      "motor_sign": 1,
+      "motor_zero_ticks": 2048,
+      "mount_orientation": "normal",
+      "control_group": "locomotion"
+    },
+    {
+      "name": "left_hip_pitch",
+      "parent": "left_hip_roll",
+      "position_m": [
+        0.056,
+        0.02,
+        0
+      ],
+      "axis": [
+        0,
+        1,
+        0
+      ],
+      "range_rad": [
+        -1.0,
+        0.7
+      ],
+      "home_rad": -0.12,
+      "servo": "xm430",
+      "bus": "12v",
+      "motor_id": 3,
+      "motor_sign": 1,
+      "motor_zero_ticks": 2048,
+      "mount_orientation": "inverted",
+      "control_group": "locomotion"
+    },
+    {
+      "name": "left_knee_pitch",
+      "parent": "left_hip_pitch",
+      "position_m": [
+        0,
+        0,
+        -0.075
+      ],
+      "axis": [
+        0,
+        1,
+        0
+      ],
+      "range_rad": [
+        0,
+        1.65
+      ],
+      "home_rad": 0.24,
+      "servo": "xm430",
+      "bus": "12v",
+      "motor_id": 4,
+      "motor_sign": 1,
+      "motor_zero_ticks": 2048,
+      "mount_orientation": "inverted",
+      "control_group": "locomotion"
+    },
+    {
+      "name": "left_ankle_pitch",
+      "parent": "left_knee_pitch",
+      "position_m": [
+        0,
+        0,
+        -0.09
+      ],
+      "axis": [
+        0,
+        1,
+        0
+      ],
+      "range_rad": [
+        -0.9,
+        0.65
+      ],
+      "home_rad": -0.12,
+      "servo": "xm430",
+      "bus": "12v",
+      "motor_id": 5,
+      "motor_sign": 1,
+      "motor_zero_ticks": 2048,
+      "mount_orientation": "inverted",
+      "control_group": "locomotion"
+    },
+    {
+      "name": "right_hip_yaw",
+      "parent": "torso",
+      "position_m": [
+        0,
+        -0.046,
+        -0.03
+      ],
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "range_rad": [
+        -0.45,
+        0.45
+      ],
+      "home_rad": 0,
+      "servo": "xm430",
+      "bus": "12v",
+      "motor_id": 6,
+      "motor_sign": 1,
+      "motor_zero_ticks": 2048,
+      "mount_orientation": "normal",
+      "control_group": "locomotion"
+    },
+    {
+      "name": "right_hip_roll",
+      "parent": "right_hip_yaw",
+      "position_m": [
+        0,
+        0,
+        -0.065
+      ],
+      "axis": [
+        1,
+        0,
+        0
+      ],
+      "range_rad": [
+        -0.35,
+        0.35
+      ],
+      "home_rad": 0,
+      "servo": "xm430",
+      "bus": "12v",
+      "motor_id": 7,
+      "motor_sign": 1,
+      "motor_zero_ticks": 2048,
+      "mount_orientation": "normal",
+      "control_group": "locomotion"
+    },
+    {
+      "name": "right_hip_pitch",
+      "parent": "right_hip_roll",
+      "position_m": [
+        0.056,
+        -0.02,
+        0
+      ],
+      "axis": [
+        0,
+        1,
+        0
+      ],
+      "range_rad": [
+        -1.0,
+        0.7
+      ],
+      "home_rad": -0.12,
+      "servo": "xm430",
+      "bus": "12v",
+      "motor_id": 8,
+      "motor_sign": 1,
+      "motor_zero_ticks": 2048,
+      "mount_orientation": "inverted",
+      "control_group": "locomotion"
+    },
+    {
+      "name": "right_knee_pitch",
+      "parent": "right_hip_pitch",
+      "position_m": [
+        0,
+        0,
+        -0.075
+      ],
+      "axis": [
+        0,
+        1,
+        0
+      ],
+      "range_rad": [
+        0,
+        1.65
+      ],
+      "home_rad": 0.24,
+      "servo": "xm430",
+      "bus": "12v",
+      "motor_id": 9,
+      "motor_sign": 1,
+      "motor_zero_ticks": 2048,
+      "mount_orientation": "inverted",
+      "control_group": "locomotion"
+    },
+    {
+      "name": "right_ankle_pitch",
+      "parent": "right_knee_pitch",
+      "position_m": [
+        0,
+        0,
+        -0.09
+      ],
+      "axis": [
+        0,
+        1,
+        0
+      ],
+      "range_rad": [
+        -0.9,
+        0.65
+      ],
+      "home_rad": -0.12,
+      "servo": "xm430",
+      "bus": "12v",
+      "motor_id": 10,
+      "motor_sign": 1,
+      "motor_zero_ticks": 2048,
+      "mount_orientation": "inverted",
+      "control_group": "locomotion"
+    },
+    {
+      "name": "neck_yaw",
+      "parent": "torso",
+      "position_m": [
+        0.055,
+        0,
+        0.0675
+      ],
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "range_rad": [
+        -1.35,
+        1.35
+      ],
+      "home_rad": 0,
+      "servo": "xm430",
+      "bus": "12v",
+      "motor_id": 11,
+      "motor_sign": 1,
+      "motor_zero_ticks": 2048,
+      "mount_orientation": "normal",
+      "control_group": "neck"
+    },
+    {
+      "name": "neck_pitch",
+      "parent": "neck_yaw",
+      "position_m": [
+        0.064,
+        0,
+        0.02
+      ],
+      "axis": [
+        0,
+        1,
+        0
+      ],
+      "range_rad": [
+        -0.7,
+        2.8
+      ],
+      "home_rad": -0.35,
+      "servo": "xm540",
+      "bus": "12v",
+      "motor_id": 12,
+      "motor_sign": 1,
+      "motor_zero_ticks": 2048,
+      "mount_orientation": "normal",
+      "control_group": "neck"
+    },
+    {
+      "name": "neck_mid_pitch",
+      "parent": "neck_pitch",
+      "position_m": [
+        0,
+        0,
+        0.135
+      ],
+      "axis": [
+        0,
+        1,
+        0
+      ],
+      "range_rad": [
+        -1.7,
+        2.25
+      ],
+      "home_rad": 1.05,
+      "servo": "xm540",
+      "bus": "12v",
+      "motor_id": 13,
+      "motor_sign": 1,
+      "motor_zero_ticks": 2048,
+      "mount_orientation": "normal",
+      "control_group": "neck"
+    },
+    {
+      "name": "head_pitch",
+      "parent": "neck_mid_pitch",
+      "position_m": [
+        0,
+        0,
+        0.22
+      ],
+      "axis": [
+        0,
+        1,
+        0
+      ],
+      "range_rad": [
+        -2.85,
+        -0.5
+      ],
+      "home_rad": -0.7,
+      "servo": "xm430",
+      "bus": "12v",
+      "motor_id": 14,
+      "motor_sign": 1,
+      "motor_zero_ticks": 2048,
+      "mount_orientation": "normal",
+      "control_group": "neck"
+    },
+    {
+      "name": "head_roll",
+      "parent": "head_pitch",
+      "position_m": [
+        0.05,
+        0,
+        -0.116
+      ],
+      "axis": [
+        1,
+        0,
+        0
+      ],
+      "range_rad": [
+        -0.1,
+        1.65
+      ],
+      "home_rad": 0,
+      "servo": "xc330",
+      "bus": "5v",
+      "motor_id": 2,
+      "motor_sign": 1,
+      "motor_zero_ticks": 2048,
+      "mount_orientation": "normal",
+      "control_group": "neck"
+    },
+    {
+      "name": "beak_drive",
+      "parent": "head_roll",
+      "position_m": [
+        0.044,
+        0,
+        0.044
+      ],
+      "axis": [
+        0,
+        -1,
+        0
+      ],
+      "range_rad": [
+        -0.5910249345076433,
+        0.6981317007977318
+      ],
+      "home_rad": 0.6981317007977318,
+      "servo": "xc330",
+      "bus": "5v",
+      "motor_id": 3,
+      "motor_sign": 1,
+      "motor_zero_ticks": 2048,
+      "mount_orientation": "normal",
+      "control_group": "beak"
+    }
+  ],
+  "beak": {
+    "crank_length_m": 0.025,
+    "anchor_spacing_m": 0.018,
+    "closed_rad": 0.6981317007977318,
+    "open_rad": -0.5910249345076433,
+    "transmission_ratio": 1,
+    "pad_size_m": [
+      0.03,
+      0.022,
+      0.002
+    ],
+    "pad_pitch_limit_rad": 0.06981317007977318,
+    "pad_compression_travel_m": 0.0015,
+    "pad_spring_N_per_m": 2500,
+    "pad_friction_assumption": 0.8,
+    "force_control_target_N": 4.0,
+    "mouth_module_mass_target_kg": 0.065,
+    "pad_mount_z_relative_jaw_m": -0.03
+  },
+  "backend_adapters": {
+    "mujoco": {
+      "mass_unit_scale": 1
+    },
+    "godot_jolt": {
+      "mass_unit_scale": 100,
+      "basis": "x_forward_y_up_z_right; source(x,y,z)->(x,z,-y)"
+    },
+    "bevy": {
+      "status": "contract_reserved_not_implemented"
+    },
+    "unity": {
+      "status": "contract_reserved_not_implemented"
+    }
+  },
+  "deferred": [
+    "solder_pad_optimization",
+    "decorative_seam_refinement",
+    "lightweight_topology_optimization",
+    "custom_pcb",
+    "battery_duration_claims"
+  ],
+  "motor_bus": {
+    "12v": {
+      "protocol": 2.0,
+      "interface": "ttl",
+      "baud": 1000000,
+      "port": "user_selected_u2d2_12v"
+    },
+    "5v": {
+      "protocol": 2.0,
+      "interface": "ttl",
+      "baud": 1000000,
+      "port": "user_selected_u2d2_5v"
+    }
+  },
+  "motor_mount_datum": "joint shaft origin is at mid body depth; vendor front case y=+D/2, rear=-D/2",
+  "leg_link_lengths_m": [
+    0.075,
+    0.09
+  ],
+  "simplification_basis": "5R neck; root yaw provides heading; wrist yaw not required by agreed Q7. Removes repeated wrist axis and packing conflicts.",
+  "camera": {
+    "sku": "Waveshare 24710 OV5693 USB Camera A",
+    "board_center_head_m": [
+      0.0348298245314679,
+      0,
+      0.0791171168084465
+    ],
+    "board_width_height_m": [
+      0.018,
+      0.04
+    ],
+    "board_pitch_down_rad": 0.6108652381980153,
+    "lens_depth_m": 0.01969,
+    "lens_outer_width_height_m": [
+      0.018,
+      0.018
+    ],
+    "position_head_m": [
+      0.0509589282835182,
+      0.0,
+      0.0678233967766944
+    ],
+    "orientation_head_from_cv_wxyz": [
+      -0.32650557562197696,
+      0.62721137512625,
+      -0.62721137512625,
+      0.32650557562197696
+    ],
+    "optical_extrinsics_status": "design datum at lens front; physical hand-eye calibration required",
+    "vertical_fov_deg": 70
+  }
+}
