@@ -1,0 +1,141 @@
+"""Single local-origin editable native template build; no robot placement or CAD claim."""
+from pathlib import Path
+import json, hashlib, datetime, math
+import numpy as np
+import trimesh as tm
+
+OUT=Path(__file__).resolve().parent
+ROOT=OUT.parents[2]
+SOURCE=ROOT/'.scratch/gorilla_internal_f_holding_sources/sources.json'
+SRC=json.loads(SOURCE.read_text())
+DENSITY={'steel':7850.,'aluminum':2700.,'polymer':1200.,'copper':8960.}
+
+def sha(p): return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def dump(p,d): Path(p).write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n')
+def box(d,c):
+    m=tm.creation.box(extents=d); m.apply_translation(c); return m
+
+def cyl(r,l,c,axis=(0,0,1)):
+    m=tm.creation.cylinder(radius=r,height=l,sections=32)
+    m.apply_transform(tm.geometry.align_vectors([0,0,1],axis)); m.apply_translation(c); return m
+
+def boolean_diff(a,bs): return tm.boolean.difference([a]+bs,engine='manifold')
+def boolean_union(ms): return tm.boolean.union(ms,engine='manifold')
+def hollow(od,id_,l,start,axis):
+    a=np.asarray(axis,float); c=np.asarray(start,float)+a*l/2
+    return boolean_diff(cyl(od/2,l,c,a),[cyl(id_/2,l+.002,c,a)])
+def finite_base(d,c,holes):
+    return boolean_diff(box(d,c),holes)
+
+def build(kind,level):
+    # Bounds below are independently constructed manufacturing assumptions, not OEM tolerance.
+    t=[.003,.004,.005][level]; ft=[.004,.005,.006][level]
+    parts=[]; rows=[]; fluids=[]; notes=[]
+    def add(name,mesh,category,material=None,mass=None,source='own finite installation assumption',more=None):
+        mesh.remove_unreferenced_vertices() # Boolean winding includes cavity signs; do not flip inner void shells.
+        if not mesh.is_watertight or mesh.volume<=0: raise ValueError((name,mesh.is_watertight,mesh.volume))
+        vol=float(mesh.volume); kg=vol*DENSITY[material] if mass is None else mass
+        p={'name':name,'body':'template_mount_owner','role':'component_reference_envelope' if mass is not None else 'finite_installation_material','category':category,'vertices_world_m':np.asarray(mesh.vertices).round(12).tolist(),'faces':np.asarray(mesh.faces).tolist(),'rgba':[.34,.38,.43,1] if mass is None else [.42,.44,.46,1],'edge_bevel_m':0,'surface_shading':'flat','template_coordinates_are_local_m':True,'geometry_scope':'dimensioned OEM envelope, NOT OEM material' if mass is not None else 'actual finite native material; manufacturing and strength unqualified','source':source}
+        row={'id':name,'part_name':name,'body':'template_mount_owner','category':category,'mass_kg':kg,'mass_range_kg':[kg,kg,kg],'mass_scope':'OEM complete component measured/catalogue mass; envelope volume NOT density material' if mass is not None else 'finite geometry volume times stated material density','material':material,'density_kg_m3':DENSITY.get(material),'material_volume_m3':None if mass is not None else vol,'envelope_volume_m3':vol,'COM_local_m':mesh.center_mass.tolist(),'source':source,'physics_unknown':['installation/mount owner not assigned','pressure/thread/bracket/temperature qualification unknown'],'tensor_accepted':False}
+        if more: p.update(more); row.update(more)
+        parts.append(p); rows.append(row)
+        return mesh
+    if kind=='holding':
+        tag='lhdv33_21'
+        core=add(tag+'_core_reference',box([.175,.088,.080],[0,0,.040]),'holding_complete_oem_core',mass=3.5,source='HAWE D7770 08-2024/1.0 pp16,27; baseline -21; not WD',more={'exact_OEM_CAD':False,'exact_complete_AABB_known':False,'main_drawing_dimensions_m':[.175,.088,.070],'top_fastener_projection_m':.010,'un_dimensioned_left_adjustment_not_in_core_reference':True})
+        # Four chosen interface centers are our installation proposal. Actual OEM port centers MUST be mapped.
+        portdata=[('P','F1',[.0875,-.018,.035],[1,0,0],'directional_work_line_1'),('T','F2',[.0875,.018,.035],[1,0,0],'directional_work_line_2_NOT_fixed_tank'),('A','V1',[-.0625,-.044,.035],[0,-1,0],'cylinder_chamber_1'),('B','V2',[-.0205,-.044,.035],[0,-1,0],'cylinder_chamber_2')]
+        od=[.030,.032,.034][level]; id_=[.010,.011,.012][level]; l=[.030,.035,.040][level]
+        reserve=[.020,.035,.050][level]
+        bd=[.190,.100,ft]; bc=[0,0,-ft/2]
+        holes=[cyl(.0045,ft+.004,[x,y,-ft/2]) for x in [-.072,.072] for y in [-.035,.035]]
+        add(tag+'_mount_bracket',finite_base(bd,bc,holes),'mount_bracket','steel',more={'mount_pattern_not_OEM_exact':True})
+        for k,(lab,olabel,c,a,meaning) in enumerate(portdata):
+            fitting=hollow(od,id_,l,c,a)
+            fitting=boolean_diff(fitting,[hollow(.023,.021,.0016,np.asarray(c)-np.asarray(a)*.0001,a)])
+            add(tag+'_fitting_'+lab,fitting,'hollow_g_half_fitting','steel',more={'thread':'G1/2 BSPP source ports; proposed shell not thread-qualified','thread_profile_not_modelled':True,'bore_diameter_m':id_,'outer_diameter_m':od,'length_m':l,'port_label_OEM':olabel})
+            a=np.asarray(a); cc=np.asarray(c)+a*l/2
+            fluids.append({'id':tag+'_fluid_'+lab,'location':{'center_local_m':cc.tolist(),'axis_local':a.tolist(),'length_m':l,'diameter_m':id_},'volume_m3':math.pi*id_**2*l/4,'inventory_scope':'withdraw from caller global oil stock; do NOT add to existing 30L again'})
+        # U cover plus end wall; inner fit includes uncertainty reserve and actual fitting stock.
+        xmin=-.0875-reserve-.006; xmax=.0875+l+.006
+        ymin=-.044-l-.006; ymax=.054
+        gz=.095
+        cover=boolean_union([box([xmax-xmin,t,gz],[.5*(xmin+xmax),ymax+t/2,gz/2]),box([xmax-xmin,t,gz],[.5*(xmin+xmax),ymin-t/2,gz/2]),box([xmax-xmin,ymax-ymin+2*t,t],[.5*(xmin+xmax),.5*(ymin+ymax),gz+t/2])])
+        add(tag+'_guard',cover,'finite_guard','aluminum',more={'guard_strength_unknown':True,'no_OEM_case_modification':True})
+        for i,(x,y) in enumerate([(-.072,-.035),(-.072,.035),(.072,-.035),(.072,.035)]):
+            bolt=boolean_union([cyl(.004,.010+ft,[x,y,(.010-ft)/2]),cyl(.0065,.005,[x,y,-ft-.0025])])
+            add(tag+f'_mount_fastener_{i}',bolt,'finite_fastener','steel',more={'nominal_M8_envelope_only':True,'thread_engagement_or_OEM_mount_pattern_verified':False})
+        # Four finite annular seal envelopes. Dimensions/polymer density are own assumptions.
+        for lab,olabel,c,a,meaning in portdata:
+            c=np.asarray(c)
+            add(tag+'_seal_'+lab,hollow(.023,.021,.0015,c,a),'finite_seal','polymer',more={'material_temperature_pressure_unknown':True})
+        services=[{'id':'left_adjustment_unknown_projection','role':'un_dimensioned_OEM_projection_reserve','bounds_local_m':[[-.0875-reserve,-.044,0],[-.0875,.044,.08]],'mass_scope':'space only; OEM projection mass already in 3.5kg source scope','reserve_m':reserve,'reserve_is_own_sensitivity_not_OEM_exact':True},{'id':'adjustment_tool_access','role':'service_clearance','bounds_local_m':[[xmin-.040,ymin,.01],[xmin,ymax,.10]],'physical_part':False},{'id':'cover_removal','role':'service_clearance','bounds_local_m':[[xmin,ymin,gz+t],[xmax,ymax,gz+t+.060]],'physical_part':False}]
+        physics={'pressure_setting_max_bar':420,'family_load_pressure_max_bar':350,'source_return_pressure_max_bar':10,'example_flow_code_D_max_L_min':25,'example_flow_code_E_max_L_min':16,'setting_minimum_over_true_max_load_factor':1.2,'worst_open_flow_pressure_drop_reference_bar':50,'actual_pressure_flow_preset_damping_unknown':True,'WD_not_this_template':{'mass_kg':3.6,'top_projection_m':.0313,'main_top_height_if70mm_body_m':.1013,'left_adjustment_still_unknown':True}}
+    else:
+        tag='d1fb_c_obe'
+        add(tag+'_core_reference',box([.222,.046,.125],[0,0,.0625]),'directional_complete_oem_valve',mass=2.9,source='Parker MSG11-3500/UK D1FB25.03.2024 pp3-4,3-5,3-12/13; complete C 4/3 both coils + OBE',more={'exact_OEM_CAD':False,'source_core_mass_includes_two_coils_and_OBE':True})
+        # Plate external manifold contains four independent bent drill bores, blind on +Y.
+        ph=[.020,.025,.030][level]; pw=[.070,.080,.090][level]; px=[.085,.095,.105][level]
+        pc=[0,0,-ph/2]; ports_x=[-.030,-.010,.010,.030]; bid=[.007,.008,.009][level]
+        holes=[]; pvoids=[]
+        for x in ports_x:
+            # vertical channel from valve underside to midplate; lateral bore to -Y face.
+            vh=cyl(bid/2,ph/2+.002,[x,0,-ph/4+.001])
+            hh=cyl(bid/2,pw/2+.001,[x,-pw/4-.0005,-ph/2],[0,1,0])
+            holes.extend([vh,hh,hollow(.013,.010,.0016,[x,0,-.0015],[0,0,1])]); pvoids.append(boolean_union([vh,hh]))
+        for x in [-.037,.037]:
+            for y in [-.022,.022]: holes.append(cyl(.00275,ph+.004,[x,y,-ph/2]))
+        base=finite_base([px,pw,ph],pc,holes)
+        add(tag+'_four_channel_baseplate',base,'finite_4_port_baseplate','steel',more={'channels_non_crossing':True,'source_NG6_exact_port_pattern_not_reconstructed':True,'source_OEM_interface_requires_mapping':True,'channel_diameter_m':bid})
+        for x,lab in zip(ports_x,['P','T','A','B']):
+            add(tag+'_mount_seal_'+lab,hollow(.013,.010,.0015,[x,0,-.0015],[0,0,1]),'finite_mount_seal','polymer',more={'OEM_supplied_seal_scope_unknown':True,'own_provisional_seal_dimensions_not_OEM':True})
+        portdata=[(lab,lab,[x,-pw/2,-ph/2],[0,-1,0],meaning) for lab,x,meaning in zip(['P','T','A','B'],ports_x,['pump_supply','tank_return','cylinder_chamber_1','cylinder_chamber_2'])]
+        od=[.016,.018,.019][level]; il=[.007,.008,.009][level]; fl=[.022,.026,.030][level]
+        for i,(lab,olabel,c,a,meaning) in enumerate(portdata):
+            add(tag+'_fitting_'+lab,hollow(od,il,fl,c,a),'finite_port_fitting','steel',more={'thread_type_and_rating_unknown':True,'bore_diameter_m':il,'length_m':fl})
+            # Own drilled-channel + fitting inventory, clipped manifold channel volume.
+            internal=tm.boolean.intersection([pvoids[i],box([px,pw,ph],pc)],engine='manifold')
+            vol=float(internal.volume)+math.pi*il**2*fl/4
+            fluids.append({'id':tag+'_fluid_'+lab,'volume_m3':vol,'inventory_scope':'withdraw from caller global oil stock; do NOT add to 30L again','physical_port_channels_closed_in_steel':True})
+        for i,(x,y) in enumerate([(x,y) for x in [-.037,.037] for y in [-.022,.022]]):
+            bolt=boolean_union([cyl(.0025,.030,[x,y,-ph+.015]),cyl(.00425,.005,[x,y,-ph-.0025])])
+            add(tag+f'_M5_fastener_{i}',bolt,'finite_fastener','steel',more={'M5x30_source_bolts_reference':True,'install_pattern_unverified':True})
+        # Proposed mating connector/strain relief: finite wall, not empty unknown mass deleted.
+        plug=boolean_diff(box([.036,.025,.035],[.070,0,.1425]),[box([.030,.019,.032],[.070,0,.141])])
+        add(tag+'_mating_plug_shell',plug,'mating_connector_shell','polymer',more={'source_separately_ordered_mass_unknown':True,'custom_shell_shape_not_source_exact':True})
+        # Finite copper pin proxy mass explicitly not current-qualified connector.
+        for i in range(4): add(tag+f'_connector_pin_{i}',cyl(.0015,.020,[.062+i*.005,0,.145]),'connector_contact','copper',more={'own_material_density_assumption_kg_m3':8960,'pin_rating_and_actual_mating_contact_unknown':True})
+        heat_th=[.002,.003,.004][level]
+        heat=finite_base([.095,.080,heat_th],[0,0,-ph-heat_th/2],[cyl(.00475,heat_th+.010,[x,y,-ph-heat_th/2]) for x in [-.037,.037] for y in [-.022,.022]])
+        add(tag+'_heat_spreader',heat,'finite_thermal_path_plate','aluminum',more={'thermal_contact_resistance_convection_unknown':True})
+        gx=.120; gy=.052; gz=.170
+        guard=boolean_union([box([2*gx,t,gz+ph],[0,gy+t/2,(gz-ph)/2]),box([2*gx,t,gz+ph],[0,-gy-t/2,(gz-ph)/2]),box([2*gx,2*gy+2*t,t],[0,0,gz+t/2])])
+        guard=boolean_diff(guard,[cyl(od/2+.002,t+.010,[x,-gy-t/2,-ph/2],[0,1,0]) for x in ports_x])
+        add(tag+'_guard',guard,'finite_guard','aluminum',more={'open_ends_for_ports_and_heat':True,'coil_150C_touch_and_thermal_protection_unqualified':True})
+        services=[{'id':'mating_plug_service','role':'service_clearance','bounds_local_m':[[.045,-.030,.16],[.095,.030,.20]],'source_connector_clearance15mm_included_but_route_unknown':True,'physical_part':False},{'id':'coil_and_valve_removal','role':'service_clearance','bounds_local_m':[[-.145,-.070,0],[.145,.070,.225]],'physical_part':False}]
+        physics={'source_P_A_B_pressure_max_bar':350,'source_T_pressure_max_bar':210,'source_OBE_supply_V':[18,30],'source_max_input_A':2,'source_coil_ED_percent':100,'source_coil_possible_temperature_C':150,'source_flow_reference_L_min':20,'source_pressure_drop_each_metering_edge_bar':5,'symmetric_spool_example_only':True,'spool_hold_or_fault_stop_not_qualified':True,'source_spool_leak_at100bar_ml_min_less_than':50}
+    ports=[{'label':lab,'OEM_label':olabel,'component_interface_local_m':c,'outward_axis_local':a,'hydraulic_meaning':meaning,'coordinates_scope':'own installation routing proposal; NOT verified OEM port-center coordinates','connection_end_local_m':(np.asarray(c)+np.asarray(a)*(l if kind=='holding' else fl)).tolist()} for lab,olabel,c,a,meaning in portdata]
+    bounds=np.array([tm.Trimesh(vertices=p['vertices_world_m'],faces=p['faces'],process=False).bounds for p in parts]); lo=bounds[:,0].min(0); hi=bounds[:,1].max(0)
+    return {'schema':'gorilla_local_native_installation_template_v1','robot_id':'gorilla_v0_1','template_id':tag,'sensitivity':['lower','nominal','upper'][level],'coordinate_frame':'SI meters; origin at OEM reference mounting-plane center; +Z is core up; vertices_world_m field is TEMPLATE-LOCAL until caller explicitly transforms','parts':parts,'mass_rows':rows,'ports':ports,'service_spaces':services,'fluid_void_inventory':fluids,'physical_AABB_local_m':[lo.tolist(),hi.tolist()],'physical_dimensions_m':(hi-lo).tolist(),'listed_mass_kg':sum(r['mass_kg'] for r in rows),'oil_void_known_volume_L':sum(v['volume_m3'] for v in fluids)*1000,'oil_density_reference_kg_m3':[820,850,880],'OEM_internal_oil_volume_unknown':True,'oil_not_added_to_module_mass':True,'source_facts':physics,'source_input_sha256':sha(SOURCE),'geometry_accepted':False,'physics_accepted':False,'stable_physical_contract':False,'mass_row_interface_key':'mass_rows','unknowns':['not assigned to any actual robot body or barrel','full port/thread/seat/pressure-pilot geometry not OEM exact','same hydraulic operating point/preset/return pressure/vibration/failure response unknown','bracket strength and fitting sealing unknown','service clearance and actual routing must be checked at poses','guard temperatures/thermal path not qualified','OEM cores are occupied envelope plus catalogue mass, not solid steel','mass COM/inertia for OEM core are envelope proxies, not qualified SI tensors']}
+
+outputs=[]; ranges={}
+for kind in ['holding','directional']:
+    scenes=[build(kind,k) for k in range(3)]
+    ids=[r['id'] for r in scenes[0]['mass_rows']]
+    if any([r['id'] for r in s['mass_rows']]!=ids for s in scenes): raise ValueError('ids unstable')
+    rowranges={id_:[s['mass_rows'][i]['mass_kg'] for s in scenes] for i,id_ in enumerate(ids)}
+    for s in scenes:
+        for r in s['mass_rows']: r['mass_range_kg']=rowranges[r['id']]; r['range_scope']='same part from independently built lower/nominal/upper own dimensional variants; OEM catalogue core mass constant'
+        p=OUT/(kind+'_template_'+s['sensitivity']+'.json'); dump(p,s); outputs.append(p)
+    nominal=scenes[1]
+    p=OUT/(kind+'_template_scene.json'); dump(p,nominal); outputs.append(p)
+    ranges[kind]={'listed_mass_range_kg':[s['listed_mass_kg'] for s in scenes],'physical_dimensions_range_m':[s['physical_dimensions_m'] for s in scenes],'OEM_core_mass_kg':3.5 if kind=='holding' else 2.9,'known_external_fluid_void_L':[s['oil_void_known_volume_L'] for s in scenes],'part_count':len(nominal['parts']),'complete_installed_rating_accepted':False}
+    meshes=[tm.Trimesh(vertices=p['vertices_world_m'],faces=p['faces'],process=False) for p in nominal['parts']]
+    tm.Scene({p['name']:m for p,m in zip(nominal['parts'],meshes)}).export(str(OUT/(kind+'_template.glb')))
+    outputs.append(OUT/(kind+'_template.glb'))
+
+spec={'schema':'gorilla_f1_module_template_spec_v1','generated_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'source_input':{'path':str(SOURCE),'sha256':sha(SOURCE)},'templates':ranges,'allowed_use':'macro occupied-space/material inventory and editable candidate placement only','forbidden_inference':'OEM CAD, chosen product, complete pressure/flow/thermal/damping/fault-stop accepted module; body inertia qualification','holding_adjustment_reserve_m':[.020,.035,.050],'holding_reserve_scope':'own non-OEM dimensional sensitivity; OEM drawing does not bound left adjustment protrusion','holding_21_vs_WD':'actual template -21 3.5kg; WD3.6kg +31.3mm top projection separate scope, not geometry adopted','single_oil_stock_rule':'known voids draw from parent hydraulic stock once; OEM internal oil unknown; no additional fluid mass included in dry mass ranges','no_robot_placement':True,'no_new_vendor_search_or_raw_OEM_asset':True,'sources':SRC['sources'],'mount_and_port_interface_unknown':True}
+dump(OUT/'module_templates_spec.json',spec); outputs.append(OUT/'module_templates_spec.json')
+manifest={'schema':'gorilla_f1_template_manifest_v1','inputs':[{'path':str(SOURCE),'sha256':sha(SOURCE)},{'path':str(Path(__file__)),'sha256':sha(__file__)}],'outputs':[{'path':str(p),'sha256':sha(p),'bytes':p.stat().st_size} for p in outputs],'command':'.venv/bin/python .scratch/gorilla_internal_f1_system/module_templates/build_templates.py','raw_OEM_CAD_downloaded':False,'frozen_other_inputs_modified':False}
+dump(OUT/'manifest.json',manifest)
+print(json.dumps(ranges,indent=2))

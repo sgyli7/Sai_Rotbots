@@ -1,0 +1,22 @@
+"""Bind the rejected F1 layout to native render metadata without changing a vertex."""
+from pathlib import Path
+import hashlib,json,copy
+ROOT=Path(__file__).resolve().parents[1];OUT=ROOT/'.scratch/gorilla_internal_f1_integrated'
+SRC=ROOT/'.scratch/gorilla_internal_f1_system/layout_1_scene.json';BASE=ROOT/'experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_scene.json'
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+def main():
+ s=json.loads(SRC.read_text());base=json.loads(BASE.read_text());bm={p['name']:p for p in base['parts']};parts=s['parts'];lookup={p['name']:p for p in parts}
+ assert len(parts)==len(lookup)==1794
+ retained=sorted(bm.keys()&lookup.keys());assert len(retained)==192 and all(bm[k]==lookup[k] for k in retained)
+ armor=[p['name'] for p in base['parts'] if p['role'] in ('armor_surface','armor_cover')];assert len(armor)==111 and set(armor).issubset(retained)
+ for p,h in s['input_hashes'].items():assert sha(ROOT/p)==h,(p,h)
+ ownership={p['name']:p.get('mass_owner_body',p['body']) for p in parts}
+ for r in s['mass_rows_system_and_retained_context_only']:
+  n=r.get('part_name',r['id'])
+  if n in ownership:ownership[n]=r.get('gravity_mass_owner',r.get('body',ownership[n]))
+ d=copy.deepcopy(s);d.update({'schema':'gorilla_internal_structure_candidate_v1','candidate':'internal_structure_f1_rejected_diagnostic_layout_1','base_scene':str(BASE.relative_to(ROOT)),'base_scene_sha256':sha(BASE),'physical_body_ownership':ownership,'original_retained_ids':retained,'display_ownership_only_no_stable_SI':True,'missing_physical_cylinders':4,'whole_robot_mass_or_capability_rating':None,'geometry_accepted':False,'physics_accepted':False,'stable_physical_contract':False,'aesthetic_baseline_approved':False})
+ d['input_hashes'][str(SRC.relative_to(ROOT))]=sha(SRC);d['input_hashes'][str(Path(__file__).relative_to(ROOT))]=sha(Path(__file__))
+ OUT.mkdir(parents=True,exist_ok=True);p=OUT/'scene.json';p.write_text(json.dumps(d,indent=2,allow_nan=False)+'\n')
+ audit={'original_scene_sha256':sha(SRC),'render_scene_sha256':sha(p),'native_parts':len(parts),'original_retained_exact_rows':len(retained),'original_armor_exact_rows':len(armor),'parts_fullrow_equal_to_F1_system':d['parts']==s['parts'],'root_geometry_mutations':0,'whole_robot_mass_or_capability_rating':None,'missing_physical_cylinders':4,'native_fourview_is_diagnostic_not_new_aesthetic':True,'geometry_accepted':False,'physics_accepted':False}
+ (OUT/'root_source_binding.json').write_text(json.dumps(audit,indent=2)+'\n');print(json.dumps(audit))
+if __name__=='__main__':main()

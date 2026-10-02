@@ -1,0 +1,62 @@
+"""Gorilla F2 closed boundary containment audit. Analysis copies only, original A/B untouched.
+
+Manifold.decompose is a boundary partition, not sufficient as a material-connectivity
+count when nested closed cavities have been flipped by fix_normals(). Normalization
+below applies nesting-parity boundary orientation, with exact containment volumes.
+No repaired copy is an accepted candidate or third layout.
+"""
+from pathlib import Path
+import json,hashlib,copy
+import numpy as np,trimesh as tr,manifold3d as mf
+O=Path(__file__).resolve().parent;TH=1e-10
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def M(p):return mf.Manifold(mf.Mesh64(np.asarray(p['vertices_world_m'],np.float64),np.array([[f[0],f[i],f[i+1]] for f in p['faces'] for i in range(1,len(f)-1)],np.uint64)))
+def positive(c):
+ q=c.to_mesh64();v=np.asarray(q.vert_properties[:,:3],np.float64);f=np.asarray(q.tri_verts,np.uint64)
+ if c.volume()<0:f=f[:,::-1].copy()
+ return mf.Manifold(mf.Mesh64(np.array(v,dtype=np.float64,order="C",copy=True),np.array(f,dtype=np.uint64,order="C",copy=True)))
+def normalize(p):
+ raw=M(p);cs=[c for c in raw.decompose() if abs(c.volume())>TH];ss=[positive(c) for c in cs];vs=[c.volume() for c in ss];parents=[];tests=[]
+ for i,c in enumerate(ss):
+  boxes=[x.bounding_box() for x in ss];a=np.array(boxes[i]);choices=[]
+  for j,d in enumerate(ss):
+   if i==j or vs[j]<=vs[i]+TH:continue
+   b=np.array(boxes[j])
+   if not(np.all(a[:3]>=b[:3]-1e-8) and np.all(a[3:]<=b[3:]+1e-8)):continue
+   iv=(c^d).volume();contains=abs(iv-vs[i])<=max(TH,vs[i]*1e-6);tests.append({'inner':i,'outer':j,'inner_volume_m3':vs[i],'intersection_volume_m3':iv,'fully_contained':contains})
+   if contains:choices.append(j)
+  parents.append(min(choices,key=lambda j:vs[j]) if choices else None)
+ depths=[]
+ for i in range(len(ss)):
+  dep=0;j=parents[i]
+  while j is not None:dep+=1;j=parents[j]
+  depths.append(dep)
+ result=mf.Manifold()
+ for i in sorted(range(len(ss)),key=lambda k:depths[k]):result=(result+ss[i]) if depths[i]%2==0 else (result-ss[i])
+ q=result.to_mesh64();cp=copy.deepcopy(p);cp['vertices_world_m']=np.asarray(q.vert_properties[:,:3]).tolist();cp['faces']=np.asarray(q.tri_verts).tolist();cp['analysis_only_boundary_orientation_copy']=True
+ row={'id':p['name'],'original_net_volume_m3':raw.volume(),'normalized_net_volume_m3':result.volume(),'volume_delta_m3':result.volume()-raw.volume(),'meaningful_boundary_components':len(cs),'containment_parents':parents,'depths':depths,'original_boundary_signed_volumes_m3':[c.volume() for c in cs],'orientation_conflict_boundary_indices':[i for i,c in enumerate(cs) if (c.volume()>0)!=(depths[i]%2==0)],'containment_tests':tests,'normalized_material_root_components':sum(d==0 for d in depths),'nested_even_material_islands':sum(d>0 and d%2==0 for d in depths),'not_material_connectivity_qualification':True}
+ return cp,result,row
+def main():
+ repro=mf.Manifold.cube([.1]*3,center=True)-mf.Manifold.cube([.05]*3,center=True);q=repro.to_mesh64();tm=tr.Trimesh(q.vert_properties[:,:3],q.tri_verts,process=False);before=tm.volume;tm.fix_normals();after=tm.volume
+ cube_copy,cube_solid,cube_row=normalize({'name':'cube_regression','vertices_world_m':tm.vertices.tolist(),'faces':tm.faces.tolist()})
+ assert abs(before-.000875)<1e-12 and abs(after-.001125)<1e-12 and abs(cube_solid.volume()-.000875)<1e-12
+ out={'robot_id':'gorilla_v0_1','audit_script_sha256':sha(__file__),'threshold_m3':TH,'fix_normals_closed_void_reproduction':{'outer_side_m':.1,'inner_side_m':.05,'correct_net_volume_m3':before,'after_fix_normals_m3':after,'actual_normalize_corrected_volume_m3':cube_solid.volume(),'regression_assertion_pass':True,'reassembly_method':'Positive root minus positive odd-depth void Boolean; never Manifold.compose'},'method':'Manifold Mesh64 boundary decomposition + exact nested-volume containment and parity reorientation, not raw positive count. Analysis copies only.','layouts':{},'geometry_accepted':False,'physics_accepted':False}
+ for which in ['a','b']:
+  path=O/which/'module_scene.json';s=json.loads(path.read_text());cp=[];rows=[];norm={};raw={}
+  for p in s['parts']:
+   if 'density_kg_m3' in p:q,solid,row=normalize(p);rows.append(row);norm[p['name']]=solid;raw[p['name']]=M(p)
+   else:q=copy.deepcopy(p)
+   cp.append(q)
+  corrected=O/which/'boundary_orientation_analysis_scene.json';corrected.write_text(json.dumps({'robot_id':'gorilla_v0_1','source_sha256':sha(path),'parts':cp,'scope':'Analysis-only neutral boundary normalization of identical geometric surfaces; not a third layout, accepted source, complete contact/strength or CAD repair.','original_armor_delta_mm':0,'physics_accepted':False},indent=2)+'\n')
+  pairs=[]
+  if which=='a':selected=[('left_distal_shank_net_frame','left_ankle_barrel'),('left_distal_shank_net_frame','left_ankle_pitch_carrier_net_frame')]
+  else:selected=[('left_ankle_pitch_carrier_net_frame','left_foot_roll_pair_1_barrel'),('left_distal_shank_net_frame','left_ankle_pitch_carrier_net_frame')]
+  for aa,bb in selected:
+   a='f2_'+which+'_'+aa;b='f2_'+which+'_'+bb;old=raw[a]^raw[b];new=norm[a]^norm[b];pa=next(p for p in s['parts'] if p['name']==a);pb=next(p for p in s['parts'] if p['name']==b)
+   pairs.append({'a':a,'b':b,'source_body_a':pa['body'],'source_body_b':pb['body'],'a_endpoint_driven':bool(pa.get('motion_kind')),'b_endpoint_driven':bool(pb.get('motion_kind')),'original_intersection_volume_cm3':old.volume()*1e6,'normalized_intersection_volume_cm3':new.volume()*1e6,'delta_cm3':(new.volume()-old.volume())*1e6,'normalized_bounds_world_m':list(new.bounding_box()),'normalized_positive_material_intersection':new.volume()>TH,'method':'Independent Mesh64 material intersection after boundary containment normalization'})
+  oldmass=sum(row['original_net_volume_m3']*7850 for row in rows);newmass=sum(row['normalized_net_volume_m3']*7850 for row in rows)
+  out['layouts'][which]={'source_sha256':sha(path),'analysis_copy_sha256':sha(corrected),'analysis_copy_path':str(corrected),'original_source_was_not_modified':True,'affected_parts':[row['id'] for row in rows if row['orientation_conflict_boundary_indices']],'boundary_rows':rows,'serialized_density_mass_kg':oldmass,'boundary_normalized_density_mass_kg':newmass,'delta_kg':newmass-oldmass,'both_mass_figures_not_qualified':True,'independent_selected_material_pairs':pairs,'not_AA3_must_change_proof':True}
+  print(which,'affected',len(out['layouts'][which]['affected_parts']),'mass',oldmass,newmass,'pairs',[(p['original_intersection_volume_cm3'],p['normalized_intersection_volume_cm3']) for p in pairs],flush=True)
+ (O/'closed_cavity_receipt.json').write_text(json.dumps(out,indent=2)+'\n')
+
+if __name__=="__main__":main()

@@ -1,0 +1,23 @@
+"""Freeze F1 rejected finite structure and distributed system diagnostic."""
+from pathlib import Path
+import json,hashlib,gzip
+ROOT=Path(__file__).resolve().parents[1];OUT=ROOT/'experiments/gorilla_v0_1/internal_structure_f1'
+SOURCES={'structure':ROOT/'.scratch/gorilla_internal_f1_structure','system':ROOT/'.scratch/gorilla_internal_f1_system','display':ROOT/'.scratch/gorilla_internal_f1_integrated','audit':ROOT/'.scratch/gorilla_internal_f1_audit'}
+def sha(b):return hashlib.sha256(b).hexdigest()
+def main():
+ OUT.mkdir(parents=True,exist_ok=True);rows=[]
+ for section,folder in SOURCES.items():
+  for p in sorted(folder.rglob('*')):
+   if not p.is_file() or '__pycache__' in p.parts or 'cache' in p.parts:continue
+   raw=p.read_bytes();suffix='.txt' if p.suffix=='.py' else '.gz' if len(raw)>1_000_000 and p.suffix in ('.json','.glb','.blend') else ''
+   q=OUT/section/(str(p.relative_to(folder))+suffix);q.parent.mkdir(parents=True,exist_ok=True)
+   stored=gzip.compress(raw,compresslevel=6,mtime=0) if suffix=='.gz' else raw
+   if q.exists() and q.read_bytes()!=stored:raise RuntimeError('Refuse overwrite '+str(q))
+   q.write_bytes(stored);rows.append({'original_path':str(p.relative_to(ROOT)),'stored_path':str(q.relative_to(OUT)),'original_sha256':sha(raw),'stored_sha256':sha(stored),'original_bytes':len(raw),'stored_bytes':len(stored),'encoding':'gzip' if suffix=='.gz' else 'identity','executable_source_as_text':suffix=='.txt'})
+ for p in sorted((ROOT/'.scratch').glob('gorilla_f1*.py')):
+  raw=p.read_bytes();q=OUT/'root_inputs'/(p.name+'.txt');q.parent.mkdir(exist_ok=True)
+  if q.exists() and q.read_bytes()!=raw:raise RuntimeError('Refuse changed root input '+str(q))
+  q.write_bytes(raw);rows.append({'original_path':str(p.relative_to(ROOT)),'stored_path':str(q.relative_to(OUT)),'original_sha256':sha(raw),'stored_sha256':sha(raw),'original_bytes':len(raw),'stored_bytes':len(raw),'encoding':'identity','executable_source_as_text':True})
+ data={'schema':'gorilla_rejected_macro_snapshot_v1','robot_id':'gorilla_v0_1','candidate':'F1 compact finite frame and two distributed full-function hydraulic-reference layouts','files':rows,'oem_download_cache_excluded':True,'geometry_accepted':False,'physics_accepted':False,'aesthetic_baseline_approved':False,'missing_physical_cylinders':4,'no_whole_robot_mass_or_capability_rating':True}
+ (OUT/'snapshot_manifest.json').write_text(json.dumps(data,indent=2)+'\n');print('FILES',len(rows),'STORED',sum(r['stored_bytes'] for r in rows),'MANIFEST',sha((OUT/'snapshot_manifest.json').read_bytes()))
+if __name__=='__main__':main()

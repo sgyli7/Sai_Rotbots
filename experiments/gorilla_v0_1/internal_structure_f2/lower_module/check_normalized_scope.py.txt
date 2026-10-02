@@ -1,0 +1,27 @@
+"""Gorilla F2 analysis-only corrected-boundary material sweep. No frozen source edit."""
+from pathlib import Path
+import json,hashlib,copy
+import numpy as np,trimesh as tr,manifold3d as mf
+from audit_closed_cavities import M
+O=Path(__file__).resolve().parent;ROOT=O.parents[1];TH=1e-10
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def hit(a,b):
+ aa=np.array(a.bounding_box());bb=np.array(b.bounding_box())
+ if not(np.all(aa[3:]>bb[:3]) and np.all(bb[3:]>aa[:3])):return None
+ x=a^b
+ if x.volume()>TH:return {'volume_cm3':x.volume()*1e6,'bounds_world_m':list(x.bounding_box())}
+basep=ROOT/'experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_scene.json';bs=json.loads(basep.read_text());armor=[p for p in bs['parts'] if p['role'] in ('armor_surface','armor_cover')];am={p['name']:M(p) for p in armor};out={'robot_id':'gorilla_v0_1','scope':'All intersections below use analysis-only nesting-parity-normalized material copies, not original accepted source. Original source geometry rejected.','script_sha256':sha(__file__),'normalization_helper_sha256':sha(O/'audit_closed_cavities.py'),'original_C15_sha256':sha(basep),'threshold_m3':TH,'layouts':{},'geometry_accepted':False,'physics_accepted':False}
+for label in ['a','b']:
+ sp=O/label/'module_scene.json';cp=O/label/'boundary_orientation_analysis_scene.json';s=json.loads(sp.read_text());c=json.loads(cp.read_text());parts=[p for p in c['parts'] if 'density_kg_m3' in p];ms={p['name']:M(p) for p in parts};rows=[]
+ for pose in s['pose_scenes']:
+  pd={p['name']:p for p in pose['parts']};tm={k:v.transform(np.array(pd[k]['applied_transform_world'])[:3,:4].copy()) for k,v in ms.items()};new=[];orig=[];dv=max(abs(tm[k].volume()-v.volume()) for k,v in ms.items());Ts=pose['body_transforms']
+  for i,p in enumerate(parts):
+   for q in parts[i+1:]:
+    x=hit(tm[p['name']],tm[q['name']])
+    if x:new.append({'a':p['name'],'b':q['name'],'body_a':p['body'],'body_b':q['body'],**x})
+   for ap in armor:
+    T=np.array(Ts.get(ap['body'],Ts['left_foot_roll_arch'] if ap['body']=='left_foot' else np.eye(4)));m=am[ap['name']].transform(T[:3,:4].copy());x=hit(tm[p['name']],m)
+    if x:orig.append({'part':p['name'],'armor':ap['name'],**x})
+  rows.append({'id':pose['id'],'new_material_positive_pairs':new,'original_armor_positive_pairs':orig,'max_normalized_material_volume_change_m3':dv,'immutable_material_no_recut':True});print(label,pose['id'],len(new),len(orig),flush=True)
+ out['layouts'][label]={'source_sha256':sha(sp),'analysis_copy_sha256':sha(cp),'poses':rows,'normalization_does_not_repair_fit_or_contact':True}
+(O/'normalized_scope_checks.json').write_text(json.dumps(out,indent=2)+'\n')

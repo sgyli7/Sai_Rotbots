@@ -1,0 +1,33 @@
+from pathlib import Path
+import json,hashlib,datetime
+from collections import Counter
+import numpy as np
+P=Path(__file__).resolve().parent;R=P.parents[1];S=R/'.scratch/gorilla_internal_f1_system';ST=R/'.scratch/gorilla_internal_f1_structure'
+def rd(p):return json.loads(p.read_text())
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+ml=rd(S/'mass_ledger.json');st=rd(ST/'mass_ledger.json');outs=[]
+for n in [1,2]:
+ path=S/f'layout_{n}_scene.json';s=rd(path);parts={p['name']:p for p in s['parts']};rows=s['mass_rows_system_and_retained_context_only'];cat=[];phantom=[];present=[];metadata=[];mixed=[]
+ for r in rows:
+  ids=r.get('member_ids') or [r.get('part_name',r['id'])];pr=[x for x in ids if x in parts];absent=[x for x in ids if x not in parts];c='all_members_present' if not absent else 'all_members_absent' if not pr else 'mixed_members';inventory=r['id']=='f1_global_oil_stock_once';retain=not absent or inventory
+  if not retain and pr:mixed.append(r)
+  elif not retain:phantom.append(r)
+  elif inventory:metadata.append(r)
+  else:present.append(r)
+  cat.append({'id':r['id'],'source':r.get('source'),'range_kg':r['mass_range_kg'],'member_ids':ids,'present_member_ids':pr,'absent_member_ids':absent,'presence_class':c,'intentional_global_fluid_metadata':inventory,'retain_in_present_inventory':retain,'retained_context_challenge':r.get('retained_context_challenge',False),'body':r['body']})
+ def summ(rs):return np.sum([r['mass_range_kg'] for r in rs],axis=0) if rs else np.zeros(3)
+ ghostmass=summ(phantom);allold=summ(rows);correctedsystem=summ(present+metadata);new=[r for r in present if r.get('catalogue_plus_own_finite_installation_scope')];correctedcontext=summ([r for r in present if not r.get('catalogue_plus_own_finite_installation_scope')]);sr=np.array(ml['layouts'][n-1]['intrinsic_f1_structure_fragment_scope_range_kg']);combined=correctedsystem+sr
+ waters=[r for r in present if r['id'].startswith('e_coolant_inventory_')];oilmeta=metadata[0];fluid=s['fluid_inventory'];water_rows_range=summ(waters);water_ref_range=np.sum([x['mass_range_kg'] for x in fluid['water_source_net_inventory']],axis=0)
+ # Diagnostic weighted COM of listed present inventory only; OEM locations/ranges proxy, oil point placement provisional.
+ com=[]
+ for k in range(3):
+  mass=0.;moment=np.zeros(3)
+  for r in present+metadata:
+   if r.get('COM_world_m') is None:continue
+   m=r['mass_range_kg'][k];moment+=m*np.asarray(r['COM_world_m']);mass+=m
+  com.append((moment/mass).tolist())
+ out={'layout':n,'scene_sha256':sha(path),'row_presence_counts':dict(Counter(x['presence_class'] for x in cat)),'all1485row_classifications':cat,'removed_phantom_historical_row_ids':[r['id'] for r in phantom],'removed_phantom_historical_mass_range_kg':ghostmass.tolist(),'removed_phantom_source_counts':dict(Counter(r.get('source') for r in phantom)),'mixed_member_ids_require_reunion_not_full_subtraction':[r['id'] for r in mixed],'global_fluid_metadata_retained_count':len(metadata),'present_native_system_context_rows_count':len(present),'original_all_system_rows_range_kg':allold.tolist(),'corrected_present_system_plus_new_templates_and_oil_range_kg':correctedsystem.tolist(),'corrected_present_retained_context_excluding_new36templates_oil_range_kg':correctedcontext.tolist(),'present_new36template_range_kg':summ(new).tolist(),'external_f1_structure_fragment_range_kg':sr.tolist(),'combined_listed_present_candidate_inventory_range_kg':combined.tolist(),'combined_is_not_complete_or_compatible_robot':True,'four_missing_cylinder_hardware_not_deemed_zero_mass':True,'retained_old_upper_torso_range_kg':next(r['mass_range_kg'] for r in present if r['id']=='e2_upper_net_torso'),'system_only_weighted_COM_diagnostic_by_range_m':com,'system_only_COM_is_not_installed_robot_COM':True,'COM_omitted_unknown_placement_row_ids':[r['id'] for r in present+metadata if r.get('COM_world_m') is None],'water_inventory_rows_once_count':len(waters),'water_inventory_row_range_kg':water_rows_range.tolist(),'water_inventory_source_range_kg':water_ref_range.tolist(),'water_inventory_row_source_delta_kg':(water_rows_range-water_ref_range).tolist(),'water_known_stock_L':fluid['water_source_net_drawn_L'],'oil_stock_30L_range_kg':oilmeta['mass_range_kg'],'oil_stock_internal_allocation_unknown':True,'member_presence_test_not_connection_or_collision_qualification':True}
+ outs.append(out)
+report={'schema':'gorilla_f1_present_mass_correction_independent_v1','computed_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'inputs':{str(p):sha(p) for p in [S/'mass_ledger.json',S/'layout_1_scene.json',S/'layout_2_scene.json',ST/'mass_ledger.json']},'method':'Each row classified by actual part_name/id or every union member_id in final native part-name set. All absent historical solid unions excluded only from corrected audit inventory, mixed would require reunion. Explicit global30L oil inventory retained without drawable isolated fluid blob. Source frozen ledger unchanged.','layouts':outs,'upstream_modified':False}
+(P/'present_mass_receipt.json').write_text(json.dumps(report,indent=2)+'\n')
+for x in outs:print(json.dumps({k:x[k] for k in ['layout','row_presence_counts','removed_phantom_historical_mass_range_kg','corrected_present_retained_context_excluding_new36templates_oil_range_kg','corrected_present_system_plus_new_templates_and_oil_range_kg','combined_listed_present_candidate_inventory_range_kg','water_inventory_rows_once_count','water_inventory_row_source_delta_kg']},indent=2))

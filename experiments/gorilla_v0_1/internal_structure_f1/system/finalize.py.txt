@@ -1,0 +1,51 @@
+from pathlib import Path
+import json,hashlib,collections,datetime
+import numpy as np
+R=Path('/home/ethan/Projects/Sai_Rotbots');O=R/'.scratch/gorilla_internal_f1_system';sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();load=lambda p:json.loads(Path(p).read_text());write=lambda p,d:Path(p).write_text(json.dumps(d,indent=2)+'\n');M=load(R/'.scratch/gorilla_internal_e2a_integrated/scene.json');F=load(R/'.scratch/gorilla_internal_f1_structure/structure_scene.json');FM=load(R/'.scratch/gorilla_internal_f1_structure/mass_ledger.json');S=load(O/'system_spec.json');oldpm={p['name']:p for p in M['parts']};oldmass={r['id']:r for r in M['mass_rows']};original=[p for p in M['parts'] if p['role'] in ['armor_cover','armor_surface']];assert len(original)==111
+receipts=[];massledgers=[]
+for k in [1,2]:
+ sp=O/f'layout_{k}_scene.json';d=load(sp);sc=load(O/f'layout_{k}_screen.json');assert sc['scene_sha256']==sha(sp);pm={p['name']:p for p in d['parts']};assert all(pm[p['name']]==p for p in original);new=[r for r in d['mass_rows_system_and_retained_context_only'] if r['id'].startswith('f1_') and r['id']!='f1_global_oil_stock_once'];ctx=[r for r in d['mass_rows_system_and_retained_context_only'] if not r['id'].startswith('f1_')];newranges=np.sum([r['mass_range_kg'] for r in new],axis=0).tolist();ctxranges=np.sum([r['mass_range_kg'] for r in ctx],axis=0).tolist();removed=d['replacement_removed_ids'];present={p['name'] for p in d['parts']};removedmissing=[n for n in removed if n not in oldpm];# Upstream replacement lists also refer to source stock IDs already absent from E2a; keep receipt instead of asserting material deleted twice.
+ # No master part silently deleted: each old row either explicit removed list or identical geometry / documented complete move.
+ omitted=[n for n in oldpm if n not in present];assert set(omitted)==set(removed)&set(oldpm);groups={g['id']:g for g in d['new_complete_group_records']};moveids={n for g in groups.values() if 'matrix4x4' in g and 'mass_preserved_kg_range' in g for n in g['part_ids']};unchangedold=[n for n in oldpm if n in present and n not in moveids];assert all(oldpm[n]==pm[n] for n in unchangedold)
+ receipts.append({'layout':k,'scene_sha256':sha(sp),'1794_complete_candidate_parts':len(pm),'original_111armor_unchanged':True,'unchanged_original_stock_ids':unchangedold,'complete_moved_stock_ids':sorted(moveids),'explicit_replacement_ids_actually_in_master':[n for n in removed if n in oldpm],'upstream_requested_replacement_ids_already_absent_in_master':removedmissing,'omission_without_replacement_record':[],'added_f1_structure_exact_ids':[p['name'] for p in F['parts']],'added_18_valve_and18hold_template_exact_ids':[n for g in groups.values() if g.get('function') in ['holding','directional'] for n in g['part_ids']],'old_four_case_native_ids_counted_in_structure_only':d['counted_elsewhere']['four_motor_cooling_cases_counted_in_structure_only'],'true_same_stock_right_hip_yaw_aliases_removed':d['counted_elsewhere']['right_hip_yaw_complete_stock_aliases_replaced'],'retained_incompatible_torso_challenge':['e2_upper_net_torso'],'old_36cylinderfittings_and8coolcase_port_shells_are_uninstalled_challenges':True,'all_acceptance':False})
+ massledgers.append({'layout':k,'scene_sha256':sha(sp),'intrinsic_new_reference_module_dry_range_kg':newranges,'intrinsic_f1_structure_fragment_scope_range_kg':FM['candidate_scope_mass_range_kg'],'retained_context_inventory_range_kg_not_compatible_whole_robot':ctxranges,'retained_torso_challenge_kg':oldmass['e2_upper_net_torso']['mass_range_kg'],'oil_stock_once_kg':d['fluid_inventory']['oil_global_mass_range_kg'],'new_module_and_retained_rows':d['mass_rows_system_and_retained_context_only'],'counted_elsewhere':d['counted_elsewhere'],'known_unbuilt_functions':[{'function':'119 proposed oil route edges including8 unresolved chamber ends','removed_old_native_material_range_kg':np.sum([oldmass[n]['mass_range_kg'] for n in S['replacements']['oldoilroute_material_ids']],axis=0).tolist(),'installed_replacement_hose_mass_kg':None,'do_not_claim_removed_mass_as_operational_credit':True},{'function':'18 OBE 24V DC/DC, protections, supply wiring, heat rejection','installed_package_mass_kg':None,'upper_reference_input_W':1080},{'function':'4 complete fold/ankle cylinders and localholding mounting owners','actual_installed_new_holding_mass_credit_for_all18':False}],'whole_robot_net_mass_COM_and_full_inertia_accepted':False,'fluid_spatial_gravity_owner_unknown':True})
+write(O/'source_binding_audit.json',{'schema':'gorilla_f1_system_source_binding_audit_v1','receipts':receipts,'producer_sha256':sha(__file__),'all_acceptance':False});write(O/'mass_ledger.json',{'schema':'gorilla_f1_candidate_vs_retained_context_inventory_v1','scope':'Candidate intrinsic and incompatible retained context kept separately. Full original tensor proxies are not accepted and no synthetic output inertia created. New module rows have explicit gravity owner / unsupported owner. Original oil30L countedonce; routes/DC-DC/4cyl unbuilt prevents installed mass closure.','layouts':massledgers,'producer_sha256':sha(__file__)})
+reports=[load(O/f'layout_{k}_screen.json') for k in [1,2]];f=load(O/'flow_and_power.json');rr=S['layouts'][0];m=rr['complete_template_dry_mass_range_kg'];hold=rr['new_18_holding_mass_not_installation_credit'];val=(np.array(m)-np.array(hold)).tolist();knownoil=rr['known_fluid_allocations'];water=knownoil['water_source_net_drawn_L']
+report=f'''# Gorilla F1 系统共同设计：有界参考包装候选
+
+22:15 UTC 交接范围。只写本 scratch 目录；两套整体分布，未继续局部找缝。AA3/C15 的 111 原甲逐值不变，外改 0 mm。全部 geometry/physics/SI/installed/aesthetic/flow acceptance 为 false。原生四视图用于诊断，没有成为新审美权威。
+
+## 实际交付
+
+18 个独立 D1FB C/OBE 主阀候选和18个 LHDV33-21 局部保持候选，分别21/15实际 native 件；包含参考完整本体、四个有限空心接头、底板/支架、螺栓、密封/保护/热路径占位以及非硬件服务空间。OEM complete core 2.9/3.5kg 只计一次，CAD 不是OEM真实材质。端口中心是自建安装方案，非原厂校核位置。holding 的 T 标签对应 F2 工作口，绝不是固定回油箱。
+
+所有候选按模块完整刚变换生成；两套各1794条native，包括375条最终F1结构和全部其它保留硬件。结构来源90b62e…、接口f95096a…；系统 sources 包来自已冻结的官方证据与finite模板。右髋 yaw 6个 E2 renamed stock alias及4个原system cooling case严格去一次，exact IDs见spec/audit；F1四壳已计入结构。旧e2_upper_net_torso的77.937kg保留为不相容context挑战。新660mm宽躯干尚无肩轴±560mm完整固定反力桥，不能把旧组静默删除。
+
+第一布局：2中央上胸＋8大腿＋4中段腿＋4躯干侧部，四电池保持竖置；第二布局：同样18阀完整分布，但大腿改为横向模块/前后两排、躯干改横向、四电池完整旋转。两种都联合移动泵组、HX、compute、背屏；没有缩放/删OEM/外置安装求过。实际装配仍拒绝，图上露出的设备是失败候选。
+
+## 拒绝与空间约束
+
+布局1：{reports[0]['positive_pair_count']}占位正体积对，其中有限安装材料对其它材料{reports[0]['finite_installation_material_vs_other_material_pairs']}、原甲{reports[0]['original_armor_pairs']}。
+布局2：{reports[1]['positive_pair_count']}占位正体积对，其中有限安装材料对其它材料{reports[1]['finite_installation_material_vs_other_material_pairs']}、原甲{reports[1]['original_armor_pairs']}。
+
+新模块与全部保留原生硬件/375结构、模块之间做 actual manifold Boolean，没有报错。参考包络相交和真实有限材料相交逐条分开；同模板预期螺栓 engagement 不当外部冲突，未重查不动context的所有原有碰撞，未宣称整机或5姿态清零。原有结构自身拒绝另见结构报告。
+
+这两种规定朝向下，完整主阀240×122×204mm进200×350×250mm窗时X超4mm，不能说已放入；整体模板AABB约5.973L/个只是安装包络，并非真实材料体积。保持完整nominal257×147×109mm，相比旧180×100×110安装窗口按真实轴向仍有77/9/37mm溢出；原来125×65×80空占位不是完整器件。本轮结论是这些架构排列失败，不能据此断言AA3必须改形。
+
+14个缸有实体。4个fold/ankle缸缺有限实体及实际mountbay/port，相关保持件仅数学候选位置，无安装owner；pose绑定显式标absent_hardware_endpoint_frame_only。14个保持件按真实中立A-B barrel frame安置，并保存5姿态实际 barrel_link delta，绝不用base_body T冒充。未做新5pose holding碰撞通过判定。
+
+## 质量、流体、电热
+
+18保持候选干质量范围 {hold[0]:.3f}/{hold[1]:.3f}/{hold[2]:.3f}kg；18完整电子阀候选 {val[0]:.3f}/{val[1]:.3f}/{val[2]:.3f}kg；合计 {m[0]:.3f}/{m[1]:.3f}/{m[2]:.3f}kg。旧113.209kg保持并非物理下限，但本次完整参考约107.768kg也没有巨大减重；未安装完18group不能按轻OEM core全量credit。新module intrinsic、F1结构intrinsic、保留context及缺项分账；没有给合格整机净重、COM或输出惯量。
+
+119条必需油路线已重建端点账本，108条新模块边＋11泵/油箱/unload/HX骨干；所有 flow_connected=false。8条终端因4缺缸缺实际端点。旧119条管路实体被明示替换，安装新hose/sweep/slack/跨体运动及压力接头未完成，旧17.837kg管路不能作为有效减重。36旧缸口接头和8旧冷却壳口仍作为未安装context挑战，原位不是F1真实安装；供电/compute/背屏/BMS/HX移动需电气重新终接。
+
+油30L、24.6/25.5/26.4kg总库存一次，模板已知外部void {knownoil['new_known_template_void_L']:.6f}L从全局库存分配，不加库存；108连接中100已知端点的直线最小hose腔 {knownoil['new_108_hose_straight_minimum_void_L']:.6f}L只是下界，OEM内部腔、4缺缸/所有缸净腔和真实软管未闭合，不能给新tank fill。水保留来源净画出{water:.6f}L/库存账本及其未知腔范围，但移动后的空间容纳/连接无效待重建。液体排除固材碰撞，并不代表其容纳已通过。
+
+新版F1几何的单关节全角样本Jacobian粗算：qdot0.1/0.3rad/s最大单口 {f['whole_max_single_port_Q_Lmin_by_qdot']['0.1']:.6f}/{f['whole_max_single_port_Q_Lmin_by_qdot']['0.3']:.6f}L/min。仅本地切线参考，不能当多轴同时泵需求或高难任务速度。压力功p_bar Q/600kW，热损只按实际每段Δp Q/600计算；LHDV preset≥1.2真实最大load、回油≤10bar及动态抑振/shock仍未知。18 OBE 30V×2A上界1080W为输入上界，非测得热，完整24VDC/DC/保护/配线及对应散热未安装。所有驱动/泵/油水HX/电池持续能力保持原有可信条件范围，未给额定性能。
+
+## 下一宏观入口
+
+先完成4下部短缸/明确固定输出堆栈与连续连接、肩部反力桥，再联合利用躯干/骨盆/大腿内真正可安装空间。官方完整阀模块参考很占体积，可讨论同18电子控制＋18局部保持功能的定制集成块，但必须有完整流路/压力/流量/热/端口/安装证据；不能仅去旧lever/删护罩/缩OEM。任何壳体修改仍走用户授权的物理冲突＋最小变化＋同源四视图审美接受流程。本轮没有提出随意新外壳，没有新能力评级。
+'''
+(O/'report.md').write_text(report);files={str(p.relative_to(O)):{'sha256':sha(p),'bytes':p.stat().st_size} for p in sorted(O.rglob('*')) if p.is_file() and p.name!='manifest.json'};write(O/'manifest.json',{'schema':'gorilla_f1_system_bounded_handoff_v1','generated_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'file_receipts':files,'final_structure_sha256':sha(R/'.scratch/gorilla_internal_f1_structure/structure_scene.json'),'final_interface_sha256':sha(R/'.scratch/gorilla_internal_f1_structure/interface.json'),'same_111armor_external_change_mm':0,'two_full_layouts_only':True,'all_geometry_physics_installation_flow_SI_and_aesthetic_acceptance':False,'not_gpu_not_git_not_final_architecture':True});print('manifest',sha(O/'manifest.json'));print('report',sha(O/'report.md'));print('scenes',[(k,sha(O/f'layout_{k}_scene.json')) for k in [1,2]])

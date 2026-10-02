@@ -1,0 +1,138 @@
+"""Gorilla F1 bounded rejected candidate handoff and conditional geometry/load context."""
+from pathlib import Path
+from collections import defaultdict
+import json,math,hashlib
+import numpy as np,trimesh as tr
+import axes_and_modules as a
+O=Path(__file__).resolve().parent;ROOT=a.ROOT;read=a.read;sha=a.sha;mesh=a.mesh
+S=read(O/'structure_scene.json');C=read(O/'checks.json');I=read(O/'interface.json');L=read(O/'mass_ledger.json');R=read(O/'window_inner_skin_rays.json');OLDLOAD=read(ROOT/'.scratch/gorilla_internal_f_architecture/conditional_witness_loads.json');E2A=read(ROOT/'.scratch/gorilla_internal_e2a_integrated/scene.json')
+def write(n,d):(O/n).write_text(json.dumps(d,indent=2,allow_nan=False)+'\n')
+def intersect(m,n):
+ if not(np.all(m.bounds[1]>n.bounds[0]) and np.all(n.bounds[1]>m.bounds[0])):return None
+ x=tr.boolean.intersection([m,n],engine='manifold');return x if x.volume>1e-10 else None
+# Stock stage frame ownership does not establish the hydraulic/pin/gravity contract. Make eachdisplaylink andloop explicit.
+frame_owners=[]
+for b,node in S['body_tree'].items():
+ ids=[p['name'] for p in S['parts'] if p['body']==b];parentsupport=next((j for j in S['all_joint_axes'] if j['output_body']==b),None);frame_owners.append({'body':b,'parent':node['parent'],'incoming_joint_candidate':parentsupport,'ordinary_rigid_part_ids':ids,'not_proof_of_connected_material':True,'actual_positive_material_components':next((x['positive_connected_components'] for x in L['material_groups'] if x['group']==b),0)})
+linkowners=[]
+for act in I['actuators']:
+ linkowners.append({'id':act['id'],'barrel_link':act['id']+'_barrel_link','rod_link':act['id']+'_rod_link','mass_owner_parent':act['base_body'],'mass_owner_output':act['output_body'],'axis/pivots':'Actual perpose parentanchorA/outputanchorB andbarrel/rod matrices inpose_scene, not body-name T','mechanical_loop_required':['revolute_parenteye','prismatic_barrelrod','revolute_outputeye'],'SI_constraint_resolution_full_inertia_and_stiffness':'UNKNOWN / BLOCKED','geometry_present':act['short_working_deficit_m']==0})
+write('owners_and_replacements.json',{'scene_sha256':sha(O/'structure_scene.json'),'frame_owners':frame_owners,'actuator_displaylinks':linkowners,'removed_E2_structure_part_names':S['removed_E2_structure_part_names'],'removed_D_system_module_ids':S['removed_D_system_module_ids'],'retained_converted_hyd_electronics':S['retained_hydraulic_converted_electronics'],'not_removed_old113kg_holdingmass_bylight_vendorcore':True,'replaced_stock_parts_actually_present':[p['source_D_module_id'] for p in S['parts'] if p.get('source_D_module_id')],'generic_old_stock_carrierboxes_replaced_by_actual_unqualified_shellparts':[r['id'] for r in a.D['modules'] if r['id'] in S['removed_D_system_module_ids'] and r['category']=='housing' and r['id'] not in [p.get('source_D_module_id') for p in S['parts']]]})
+# Material classifications exactactualnative union, no arbitrary density/functional credit.
+masscat=defaultdict(float)
+for g in L['material_groups']:
+ n=g['group'];key='independent_fore_heel_carriers' if n.endswith(('forefoot_display','heel_display')) else 'immutable_foot_braces_pins_locks' if '_brace_' in n else 'finite_hydraulic_material' if any(n==a['id']+'_'+k for a in I['actuators'] for k in ['barrel','rod']) else 'eye_pins' if n.endswith('_pin') else 'serial_load_shells_shafts_bosses_full_stockhousing';masscat[key]+=g['mass_kg']
+# Keepfinite original E2a common modules as retained-context collision probe, not proposednewplacement or mass deduction.
+context=[p for p in E2A['parts'] if p.get('category') in ['energy','cooling','hydraulic_power','hydraulic','fluid','compute','sensing'] and p['name'] not in S['removed_D_system_module_ids']]
+gms={}
+for g in L['material_groups']:
+ rows=[p for p in S['parts'] if p['name'] in g['member_ids']];ms=[mesh(p) for p in rows];gms[g['group']]=tr.boolean.union(ms,engine='manifold') if len(ms)>1 else ms[0]
+ch=[];win=a.ring([0,0,0],.1,0,.1,[0,0,1]) # overwritten by box, used noacceptance
+win=tr.creation.box(I['reserved_window']['dimensions_xyz_m']);win.apply_translation(I['reserved_window']['center_world_m']);window_context=[];window_frame=[]
+for p in context:
+ n=mesh(p);x=intersect(win,n)
+ if x is not None:window_context.append({'context_id':p['name'],'category':p.get('category'),'volume_cm3':float(x.volume*1e6)})
+ for g,m in gms.items():
+  x=intersect(m,n)
+  if x is not None:ch.append({'material_group':g,'retained_E2a_context':p['name'],'category':p['category'],'volume_cm3':float(x.volume*1e6),'bounds_world_m':x.bounds.tolist()})
+for g,m in gms.items():
+ x=intersect(m,win)
+ if x is not None:window_frame.append({'material_group':g,'volume_cm3':float(x.volume*1e6),'bounds_world_m':x.bounds.tolist()})
+write('retained_context_probe.json',{'input_E2a_sha256':sha(ROOT/'.scratch/gorilla_internal_e2a_integrated/scene.json'),'F1_scene_sha256':sha(O/'structure_scene.json'),'categories':sorted(set(p['category'] for p in context)),'context_parts':len(context),'retained_context_positive_intersections':ch,'new_reserved_window_vs_context':window_context,'new_reserved_window_vs_F1_material':window_frame,'scope':'Exact neutral oldE2a module positions retainedasreorderingcontext; NOT newF1 acceptance/systemmass. Onlyexplicitcategory selection, not allsystem parts.'})
+# Gross finite shell sections and pin screening useexistingE2a witness forces ONLY as clearlyfrozen sizingreference.
+sections=[]
+for name,w,d,t in [('thigh',.260,.240,.004),('middle',.230,.200,.003),('distal',.180,.150,.004)]:
+ A=w*d-(w-2*t)*(d-2*t);Ixx=(d*w**3-(d-2*t)*(w-2*t)**3)/12;Iyy=(w*d**3-(w-2*t)*(d-2*t)**3)/12;flat=max(w,d)-2*t;sigcrit=4*math.pi**2*210e9/(12*(1-.3**2))*(t/flat)**2
+ sections.append({'id':name,'widthY_depthX_wall_m':[w,d,t],'gross_A_m2':A,'Ixx_m4':Ixx,'Iyy_m4':Iyy,'ideal_long_flat_compression_buckling_Pa':sigcrit,'yield_assumption_Pa':355e6,'rho_assumption_kg_m3':7850,'scope':'Actual finite constantXY source shell section beforelegitimateendbore; curved/sweptshell/enddiaphragm/fork/weldstresses unknown. Not wholeframe qualifiedbuckling/FEA.'})
+maxf=defaultdict(float)
+for r in OLDLOAD['records']:
+ for eye in r['actual_ideal_cylinder_eyes']:maxf[eye['id']]=max(maxf[eye['id']],abs(eye['signed_ideal_drive_force_N']))
+pins=[]
+for act in I['actuators']:
+ f=maxf.get(act['id']);D=act['pin_m'];span=.064;cheek=.014
+ if f is None:continue
+ pins.append({'id':act['id'],'frozen_E2a_reference_eye_force_N':f,'new_pin_diameter_m':D,'fork_cheek_thickness_m':cheek,'fork_centre_support_span_m':span,'conditional_double_shear_Pa':f/(2*math.pi*D*D/4),'conditional_fork_nominal_bearing_Pa':f/(2*cheek*D),'simple_central_load_pin_bending_Pa':8*f*span/(math.pi*D**3),'not_actual_F1_shaft_or_eye_load':True,'newcompleteLP_withnewCOM_axes_required':True})
+# Reference torque/capacity only. Newjoint geometry evaluatedatactualkeyposes, keepmissingcylinderfailure.
+capacity=[]
+byjoint=defaultdict(list)
+for act in I['actuators']:
+ for j in S['all_joint_axes']:
+  if j['parent_body']==act['base_body'] and j['output_body']==act['output_body']:byjoint[j['id']].append(act);break
+for j in S['all_joint_axes']:
+ if j['id'] not in byjoint:continue
+ aa=byjoint[j['id']];worstref=max((abs(r['torque_at_same_witness_Nm']) for r in OLDLOAD['records'] if r['joint']==j['id']),default=0);pr=[]
+ for pose in S['pose_scenes']:
+  Ts={b:np.array(T) for b,T in pose['body_transforms'].items()};Jw=tr.transformations.transform_points([j['center_world_m']],Ts[j['parent_body']])[0];ax=Ts[j['parent_body']][:3,:3]@j['axis_world'];plus=minus=0;rows=[]
+  for ad in aa:
+   A=tr.transformations.transform_points([ad['neutral_A_world_m']],Ts[ad['base_body']])[0];B=tr.transformations.transform_points([ad['neutral_B_world_m']],Ts[ad['output_body']])[0];u=(B-A)/np.linalg.norm(B-A);jac=float(u@np.cross(ax,B-Jw));area=math.pi*ad['bore_m']**2/4;ann=area-math.pi*ad['rod_m']**2/4;push=.9*(20.4e6*area-.3e6*ann);pull=.9*(20.4e6*ann-.3e6*area);plus+=jac*push if jac>=0 else -jac*pull;minus+=jac*pull if jac>=0 else -jac*push
+   rows.append({'id':ad['id'],'J_m_per_rad':jac,'eye_length_m':float(np.linalg.norm(B-A)),'push_hypothesis_N':push,'pull_hypothesis_N':pull,'finite_cylinder_missing':ad['short_working_deficit_m']>0})
+  pr.append({'pose':pose['id'],'torque_interval_hypothesis_Nm':[-minus,plus],'actuators':rows})
+ capacity.append({'joint':j['id'],'frozen_E2a_reference_absolute_torque_max_Nm':worstref,'not_minimum_required_F1_torque':True,'actual_new_F1_J_and_pressure_hypothesis':pr})
+write('conditional_sections_and_drive.json',{'inputs':{'old_witness':sha(ROOT/'.scratch/gorilla_internal_f_architecture/conditional_witness_loads.json'),'F1scene':sha(O/'structure_scene.json')},'materialassumption':'S355J2H rho7850 E210GPa y355MPa, componentconnectionsunknown','sections':sections,'pin_conditionals_from_old_actual_eye_forces':pins,'drive_geometry_pressure_hypotheses':capacity,'new_F1_LP_gravity_mass_and_realshaftwrench_unknown':True,'no_strength_drive_or_3t_acceptance':True})
+# All actual stockcooling envelopes, complete unchangeddimensions; interface followsnewbarreltransform.
+cool=[]
+for p in S['parts']:
+ if p['name'].endswith('_motor_cooling_case'):
+  m=mesh(p);geo=p['source_dimensions'];axis=[1,0,0] if 'waist_roll' in p['name'] else [0,0,-1] if 'hip_yaw' in p['name'] else [0,0,1];cool.append({'id':p['name'],'source_D_id':p['source_D_module_id'],'body':p['body'],'center_world_m':m.center_mass.tolist(),'axis_world':axis,'OD_ID_L_m':[geo['outer_radius_m']*2,geo['inner_radius_m']*2,geo['length_m']],'bounds_world_m':m.bounds.tolist(),'source_dimensions_before_candidate_transform':geo,'full_unscaled_native':True})
+write('system_handoff.json',{'scene_sha256':sha(O/'structure_scene.json'),'interface_sha256':sha(O/'interface.json'),'motor_cooling_cases':cool,'window':I['reserved_window'],'window_frame_intrusions':window_frame,'barrel_mounts':[{'id':ad['id'],'neutral_barrel_frame':ad.get('barrel_neutral_frame_world'),'mountbay':ad.get('holding_core_mount_bay'),'ports':ad.get('ports'),'finite_geometry_missing':ad['short_working_deficit_m']>0} for ad in I['actuators']],'holdingcore_light_mass_not_added_or_old113kg_subtracted':True,'retained_old_context_reorder_needed':True})
+axes=[]
+for b,n in I['body_tree'].items():
+ old=a.OLD['body_tree'].get(b,{})
+ if n.get('pivot_world_m') and old.get('pivot_world_m'):
+  delta=np.array(n['pivot_world_m'])-np.array(old['pivot_world_m'])
+  if np.linalg.norm(delta)>1e-9:axes.append({'body':b,'old_E2_neutral_pivot_m':old['pivot_world_m'],'new_F1_neutral_pivot_m':n['pivot_world_m'],'delta_world_m':delta.tolist(),'reason':'Compact whole serial stackdiagnostic replacingknownE2 highstack; no SIcontractchange/AA3mustchange claim.'})
+write('axis_deltas.json',axes)
+summary={'robot_id':'gorilla_v0_1','status':'REJECTED / incomplete finite F1 branch','native_parts':len(S['parts']),'poses':len(S['pose_scenes']),'full_rotarykits':4,'hydraulic_axis_interfaces':13,'cylinder_interfaces':18,'finite_cylinders_present':14,'missing_four_cylinder_zero_eye':[(ad['id'],ad['short_working_deficit_m']) for ad in I['actuators'] if ad['short_working_deficit_m']>0],'topology_failures':len(C['topology_failures']),'union_groups':len(L['material_groups']),'disconnected_groups':len(C['disconnected_material_groups']),'mass_breakdown_net_material_kg':dict(masscat),'candidate_scope_mass_range_kg':L['candidate_scope_mass_range_kg'],'not_whole_robot_mass':True,'poses_material_invariance':C['pose_material_invariance'],'geometry_conflicts_by_pose':[{'id':ps['id'],'different_material_assembly_pairs':len(ps['actual_material_group_intersections']),'original_armor_pairs':len(ps['original_armor_intersections']),'unqualified_bearing_reference_pairs':len(ps['unqualified_bearing_reference_intersections']),'complete_reference_vs_material_pairs':len(ps['complete_component_reference_vs_material']),'complete_reference_vs_other_owner_material_pairs':sum(not r['same_owner_body'] for r in ps['complete_component_reference_vs_material']),'complete_reference_vs_original_armor_pairs':len(ps['complete_component_reference_vs_original_armor'])} for ps in C['poses']],'window_volume_L':float(np.prod(I['reserved_window']['dimensions_xyz_m'])*1000),'actualwindow_vsnewframe_pairs':len(window_frame),'window_vsoldcontext_pairs':len(window_context),'oldcontext_vsnewframe_pairs':len(ch),'actual_window_armor_rays':{k:{'nearest_faces_known':sum('distance_m' in r[k] for r in R['rows']),'unknown_open_rays':sum('distance_m' not in r[k] for r in R['rows']),'minimum_window_end_clearance_m':min((r[k]['window_end_clearance_m'] for r in R['rows'] if 'distance_m' in r[k]),default=None)} for k in ['positive_X','negative_X']},'axis_deltas':axes,'geometry_accepted':False,'physics_accepted':False,'not_AA3_outerchange_proof':True}
+write('summary.json',summary)
+report='''# Gorilla F1 finite continuous-shell branch — rejected
+
+This is one actually constructed full lower-body/waist branch of compact_a; compact_b is only the alternative complete-axis/full4stockpackage probe. Original AA3 and C15 111 armor were not edited. No fourth local patch, scale discount, density change, hidden drive/brake/holding function deletion or qualified SI claim.
+
+## Actual finite delivery
+
+375 native parts, 22 serial main bodies/21 candidate axes, 4 full unscaled rotary source packages, 18 cylinder interfaces across13hydraulicaxes, **14 actual finite cylinders**. The other4 cylinders are missing because actual finite minimum zero length fails: fold11.556mm/ankle22.667mm eachside. Their interfaces/drive calculations are mathematical diagnostics, never present hardware.
+
+Native source includes pelvis→waist yaw/pitch/roll→torso, both hip yaw/roll/pitch→thigh/knee/fold/ankle pitch→foot roll→arch→independent fore/heel. Each source owner, fixed/shaft/output housing and all original-neutral retained foot brace/pin/lock are explicit. Parent/output mainframes, bearings and shafts are separate material. Mainframebody names do not prove connection:24groups are materially disconnected. Hipyaw/roll and pelvis is not a qualified reaction chain.
+
+All5poses use immutable neutral parts; barrel eyeA and rod eyeB determine actual orientation and prismatic delta. Barrel/rod have independent displaylink owners and actualmatrices, massowner assumptions are separate. Holding mount followsbarrel orientation, not parentbody T. Locks actually withdraw110mmY inunloaded−15/+10footpose. No pose recuts/mass loss. SI loops, inertia and stiffness remain unknown.
+
+## Rejection evidence
+
+All375native parts finite/watertight/consistent/positive. 134steeluniongroups are conditionally7850kg/m³;24notonecomponent. New/new actualmaterial group pairs neutral180,crouch183,forward189,smalltilt182,independentfold195. Originalnative111armor hits111/111/107/107/117. Bearingreference envelope hits45eachpose are separately recorded and never implicitly accepted. Largest newmaterial cross:waistyaw/pitch330.620cm³; thigh/hiproll178.761–187.437cm³; ankle/arch65.509cm³; retainedfoottray/lowrails~103–107cm³ perrail; highheel/arch~75cm³. These choices failed, not evidenceAA3mustchange.
+
+Actual candidate netsteel772.656kg plus unqualifiedfullcomponentrefs107.693/123.213/154.013kg gives listedscope880.349/895.869/926.669kg. This is NOTwholeRobot, not a减重 success, and missing4cyl/holding/system/upper are not credited as removedmass. Conditional_sections_and_drive records actualgrossshellA/I, conservative40/35mmpins and oldE2a eye-force reference only. NewF1 completeLP/shaftwrenches/3tpressure/hydflow/thermalneed root integration; no exteriorwrench substitutedfornewshaftforce.
+
+## Chest/abdomen window and system boundary
+
+Reservedactualwindow X[−.090,+.110],Y±.175,Z[2.105,2.355] is17.5L and haszero originalarmormaterial intersection. 81nearesttrianglegridrays +X77known/4open,−X36known/45open. Knownfaces give≥190mmfront/340.366mmrear beyondwindowend; openray isUNKNOWN not sealedcavity proof. Frame/window and oldcontext exactpositive intersections are in retained_context_probe.json; oldcontext is not proposednewF1systemfit. Originalarmor includes legitimate openings. This does not prove installationpath/thermal/volumeforallenergybank.
+
+## Minimum next macro inputs, not a fourth local patch
+
+1. Complete support-to-support fixed/output housing stack with explicit nonoverlap atwaist3/hip3 before attaching allhydforkwebs; currently longforkwebs cutthroughmovingthigh/adjacentwaistgroups. The 4stock packages alone have0crosspackagepair but do not establish thewholeassemblyfit.
+2. Reconsider folded/ankle entirecylinder eye geometry/axis/longarm anchors to recoveractualshortzero11.556/22.667mm; never shorten theunselectedvendorzero or trim20mmcaps topretendclose. Pins40/35mmincrease realearclearance and must jointly sizeattachments.
+3. Actual candidate finite torso shell andwindow must be jointly integratedwithcompleteenergy/cooling/pumpbanks;17.5L is not allsystem volume. Retainedcontext positions are explicit conflicts to be rescheduled, not functions todelete.
+4. Newindependenttrays andlowrailinnergeometry need revisedcompatiblematerial plus actualshaft/collar/forkgraph. Retained failedE2 trays/bracejoints are plainly declared; no fullsoleplate acrossfore/heel.
+
+## Handoff
+
+structure_scene.json is actualnative+5posegeometry; interface.json carries tree/axes/18eye/stroke/holdingbay/ports; system_handoff.json gives4coolingcasesactualnativepositions; owners_and_replacements lists exactIDs and unresolvedelectronics; checks/massledger/windowrays retain allthreshold/inputversions. Root decides architecture and physical qualification. No controlledsource/Git/GPU changed.
+'''
+report=report.replace('neutral180,crouch183,forward189,smalltilt182,independentfold195',','.join(ps['id']+str(len(ps['actual_material_group_intersections'])) for ps in C['poses']))
+report=report.replace('hits111/111/107/107/117','hits'+'/'.join(str(len(ps['original_armor_intersections'])) for ps in C['poses']))
+report+='\nFinal identity correction: inheritedE2rightbraceA/BmetadatawereleftYdespitecorrectmirroredneutralmesh. F1fixed metadata toactualnegativeY andregeneratedonlyrigidmotion. All375neutralmeshesremainunchanged. All18cyl+8brace endpointframes arepresent;4missingcylinders markfinite_geometry_present=false, mathframesonly.\n'
+(O/'report.md').write_text(report)
+write('candidate_parameters.json',{'robot_id':'gorilla_v0_1','selected_template':I['selected_axis_template'],'body_tree':S['body_tree'],'joint_interfaces':S['all_joint_axes'],'shell_section_hypotheses':sections,'cylinders':[dict((k,v) for k,v in ad.items() if k!='samples') for ad in I['actuators']],'brace_interfaces':I['brace_interfaces'],'materials':{'structural_steel_density_kg_m3':7850,'E_Pa':210e9,'yield_hypothesis_Pa':355e6,'qualified':False},'parameter_entry_points':{'two_axis_template_values':'.scratch/gorilla_internal_f1_structure/axes_and_modules.py:TEMPLATES','actuator_definition':'build_f1.py:define_act +18explicit calls','finite_material_andmotions':'build_f1.py:frames/immutableactuatorfactory/motion/POSES','finiteOEMgeometry':'Dsystem modules unscaled stock(); no sourcevendor sizecrop','nextbranch_scope':'Rebuild full3D lowerleg + waist/hip fixed/output stack in aNEWfolder; do noteditthisfrozenfailedcandidate.'},'root_shifts_already_applied':True,'not_physical_acceptance':True})
+(O/'read_in.md').write_text('''# Gorilla F1 minimal read-in
+
+Read `structure_scene.json.parts` for neutral native geometry. `pose_scenes[i].parts` are already world-posed and root-Z-aligned; do not reapply `body_transforms` or rootshift. Eachrow has `body` displayowner, `mass_owner_body` gravity assumption, `material_union_group`; union only same materialgroup once. Do not infer a rigid attachment merely fromowner. Mainserial tree22bodies is candidate; actuator loops and inertia unknown.
+
+`pose_scenes[i].actual_endpoint_link_transforms` has18cyl+8brace records. `barrel_link_transform_world` is neutral-world→pose-world rigid; `rod_link_transform_world` includes actual prismatic displacement. Apply theformer toholding/brackets definedin neutralbarrelworldframe; apply `barrel_neutral_frame_world` first only if sourceholding coordinates are cylindermodule-local. Do not use `base_body` T alone. Fourrecords with `finite_geometry_present=false` are endpoint mathematics only; no barrel hardware/mountbay exists.
+
+Exact replacementsets are in `owners_and_replacements.json` and source. Retain5convertedaxescontroller/encoder/brake/wire20functions unresolved; all4fullrotarypackages representedbyunscaledsourcecomponent+finitehousing, actualcoolingcasesin `system_handoff.json`. Original111armor are comparators, not in375newparts. SixC15contact candidates are not all replaced: fourgroundpads remainoriginal; twopadupperedgeproxies are declaredreplacedbyoldE2trayreference, stillcollisionrejected.
+
+Reusable parameters: `candidate_parameters.json` + `interface.json`; all18eyes/strokes/ports/newaxes; `axis_deltas.json` gives exactE2changes. Nativefinite factories in `build_f1.py`,2stocktemplatesin `axes_and_modules.py`. Use nextNEWbranch for waist/hip stacks and full3Dlowerleg rebuild; do notoverwritefrozenF1.
+
+Rerun from repository root with `.venv/bin/python .scratch/gorilla_internal_f1_structure/build_f1.py`, then `check_f1.py`, then `finalize_f1.py`. These overwrite onlythisscratchbranch, so copyfolderfornewcandidate. No stableSI or currentF1completeLP/thermal/3tstrength result. Explicit rejection livesinchecks andreport.
+''')
+write('manifest.json',{'robot_id':'gorilla_v0_1','candidate':'F1 finite rejected branch','files':{str(p.relative_to(ROOT)):sha(p) for p in sorted(O.iterdir()) if p.is_file() and p.name!='manifest.json' and p.suffix in ['.py','.json','.png','.md']},'source_sha256':sha(O/'structure_scene.json'),'interface_sha256':sha(O/'interface.json'),'checks_sha256':sha(O/'checks.json'),'excluded_unstable_stdout_logs':True,'geometry_accepted':False,'physics_accepted':False})
+print('FINAL',summary,flush=True)

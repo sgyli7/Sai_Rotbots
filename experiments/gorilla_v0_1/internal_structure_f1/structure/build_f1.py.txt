@@ -1,0 +1,190 @@
+"""Gorilla F1 finite compact serial shell branch. Rejected diagnostic, not qualified SI.
+
+Builds immutable neutral material and poses it by rigid/link/prismatic transforms.
+Only ignored scratch outputs are written. Original armor is an unchanged comparator.
+"""
+from pathlib import Path
+from collections import defaultdict
+import copy, json, math, hashlib, importlib.util
+import numpy as np
+import trimesh as tr
+from PIL import Image, ImageDraw
+import axes_and_modules as am
+ROOT=am.ROOT; OUT=Path(__file__).resolve().parent
+read=am.read; sha=am.sha; mesh=am.mesh
+sp=importlib.util.spec_from_file_location('h',ROOT/'scripts/models/build_gorilla_internal_structure.py');h=importlib.util.module_from_spec(sp);sp.loader.exec_module(h)
+PROBE=read(OUT/'axis_probe.json'); template=PROBE['selected_template']; TREE=PROBE['body_tree']; JOINTS=PROBE['joint_supports']; J={j['id']:j for j in JOINTS}
+BASE=am.BASE; OLD=am.OLD; E2=read(ROOT/'.scratch/gorilla_internal_e2_structure/structure_scene.json')
+parts=[]; rho=7850.; motion={}; acts=[]; supports=[]
+def write(n,d): (OUT/n).write_text(json.dumps(d,indent=2,allow_nan=False)+'\n')
+def pnt(T,p):return tr.transformations.transform_points([p],T)[0]
+def box(c,d):m=tr.creation.box(d);m.apply_translation(c);return m
+def ring(c,ro,ri,L,ax):return am.ring(c,ro,ri,L,ax)
+def union(ms):return h.united(ms)
+def difference(m,c):return tr.boolean.difference([m,c],engine='manifold')
+def shell_path(stations,w,d,t):
+ v=[];fs=[]
+ for c in stations:
+  for dx,dy in [(d/2,w/2),(d/2-t,w/2-t)]:
+   v.extend([[c[0]+x,c[1]+y,c[2]] for x,y in [(-dx,-dy),(dx,-dy),(dx,dy),(-dx,dy)]])
+ for k in range(len(stations)-1):
+  a=k*8;b=a+8
+  for i in range(4):j=(i+1)%4;fs.extend([[a+i,a+j,b+j,b+i],[a+4+j,a+4+i,b+4+i,b+4+j]])
+ for k in [0,len(stations)-1]:
+  a=k*8
+  for i in range(4):j=(i+1)%4;fs.append([a+j,a+4+j,a+4+i,a+i] if k else [a+i,a+4+i,a+4+j,a+j])
+ m=tr.Trimesh(v,fs,process=False);m.fix_normals();return m
+def add(n,b,m,role='finite_frame_material',group=None,**meta):
+ m.fix_normals();d={'name':'f1_'+n,'body':b,'mass_owner_body':meta.pop('mass_owner_body',b),'role':role,'physical_assembly_id':group or b,'material_union_group':group or b,'density_kg_m3':rho,'rgba':[.23,.34,.40,1],'vertices_world_m':m.vertices.tolist(),'faces':m.faces.tolist(),**meta};parts.append(d);return d
+def basis(u,ax):
+ u=np.asarray(u,float);u/=np.linalg.norm(u);ax=np.asarray(ax,float);ax-=np.dot(ax,u)*u;ax/=np.linalg.norm(ax);return np.column_stack([u,np.cross(ax,u),ax])
+def attach_motion(p,key,kind):p['motion_interface_id']=key;p['motion_kind']=kind
+def define_act(id,base,output,j,ax,A,B,qrange,bore,rod,wall,pin):
+ A=np.array(A,float);B=np.array(B,float);j=np.array(j,float);ax=np.array(ax,float);samples=[]
+ for q in np.linspace(*qrange,121):
+  bb=pnt(tr.transformations.rotation_matrix(math.radians(q),ax,j),B);u=(bb-A)/np.linalg.norm(bb-A);samples.append({'q_deg':float(q),'eye_length_m':float(np.linalg.norm(bb-A)),'J_m_per_rad':float(u@np.cross(ax,bb-j))})
+ lo=min(x['eye_length_m'] for x in samples);hi=max(x['eye_length_m'] for x in samples);S=hi-lo+.020; minzero=S+.170; zero=lo-.010;tail=zero-minzero
+ d={'id':id,'base_body':base,'output_body':output,'pivot_world_m':j.tolist(),'axis_world':ax.tolist(),'neutral_A_world_m':A.tolist(),'neutral_B_world_m':B.tolist(),'angle_range_deg':qrange,'bore_m':bore,'rod_m':rod,'wall_m':wall,'pin_m':pin,'actual_stroke_design_m':S,'minimum_zero_eye_length_m':minzero,'allocated_custom_zero_eye_length_m':zero,'additional_tail_m':tail,'sampled_eye_length_range_m':[lo,hi],'short_working_deficit_m':max(0.,-tail),'vendor_zero_eye_known':False,'samples':samples,'zero_length_formula':'stroke + rear/front caps 40mm + piston20 + seal20 + exposedrod30 + two ears60 = stroke+170mm','pressure_hypothesis_Pa':21e6}
+ acts.append(d)
+for i,sg in enumerate([-1,1]):
+ jp=J['waist_pitch'];j=np.array(jp['center_world_m']);define_act('waist_pitch_pair_'+str(i),jp['parent_body'],jp['output_body'],j,[0,1,0],j+[0,sg*.270,.250],j+[.230,sg*.270,-.200],[-25,25],.080,.040,.006,.035)
+for side,s in [('left',1),('right',-1)]:
+ def mirror(p):q=np.array(p,float);q[1]*=s;return q
+ for fam,bore,rod,wall in [('hip',.050,.025,.005),('knee',.080,.035,.006),('fold',.063,.030,.005),('ankle',.063,.030,.005)]:
+  old=next(a for a in OLD['actuators'] if a['id']=='left_'+fam);jp=J[side+'_'+fam];A=np.array(old['neutral_A_world_m']);B=np.array(old['neutral_B_world_m'])
+  if fam=='ankle':A[1]=B[1]=.435
+  define_act(side+'_'+fam,jp['parent_body'],jp['output_body'],jp['center_world_m'],[0,1,0],mirror(A),mirror(B),old['angle_range_deg'],bore,rod,wall,.040)
+ for fam,qrange,bore,rod,wall in [('hip_roll',[-12,12],.063,.030,.005),('foot_roll',[-10,10],.050,.025,.005)]:
+  jp=J[side+'_'+fam];j=np.array(jp['center_world_m']);j[1]=abs(j[1])
+  for i,sg in enumerate([-1,1]):
+   if fam=='hip_roll':A=j+[0,sg*.180,.300];B=j+[0,sg*.150,-.400]
+   else:xx=-.055 if i==0 else .055;A=j+[xx,sg*.050,.260];B=j+[xx,-sg*.130,.020]
+   define_act(side+'_'+fam+'_pair_'+str(i),jp['parent_body'],jp['output_body'],jp['center_world_m'],[1,0,0],mirror(A),mirror(B),qrange,bore,rod,wall,.035)
+interface={'robot_id':'gorilla_v0_1','candidate':'F1 compact serial finite load shells','body_tree':TREE,'joint_supports':JOINTS,'actuators':acts,'reserved_window':PROBE['reserved_window'],'selected_axis_template':template,'axis_template_probe_sha256':sha(OUT/'axis_probe.json'),'geometry_accepted':False,'physics_accepted':False,'holding_mount_scope':'Full125x65x80mm core plus180x100x110mm integrationwindow; not qualified vendor fit, bracket/fittings/coremass not silently credited. Follows actualbarrelorientation.'}
+write('interface.json',interface)
+print('INTERFACE',len(acts),'zero deficits',[(a['id'],a['short_working_deficit_m']) for a in acts if a['short_working_deficit_m']>0],flush=True)
+# Full four rotary kits, each actual unscaled module. Generic duplicate carrier boxes excluded explicitly.
+selected=next(x for x in PROBE['two_templates'] if x['id']==PROBE['selected_diagnostic_id']);parts.extend(copy.deepcopy(selected['parts']))
+for p in parts:p['mass_owner_body']=p['body'];p['rigid_attachment_is_candidate_not_certified']=True
+frames=defaultdict(list)
+def fm(body,m):frames[body].append(m)
+def tube(body,a,b,w,d,t):fm(body,h.box_tube(a,b,w,d,t))
+# Torso load shell has an actual through-window; corner/side load path remains, no window-filling crossbars.
+outer=box([0,0,2.220],[.340,.660,.580]);inner=box([0,0,2.220],[.332,.652,.584]);tor= difference(outer,inner);window=box([.010,0,2.230],[.650,.350,.250]);tor=difference(tor,window);fm('torso',tor)
+wr=np.array(template['WR']);tube('torso',wr+[.030,0,0],[.170,0,1.963],.110,.080,.006)
+wp=np.array(template['WP']);w=np.array(template['W'])
+for sg in [-1,1]:
+ tube('waist_pitch_carrier',wp+[0,sg*.078,0],[.020,sg*.070,1.950],.050,.070,.006)
+ tube('waist_pitch_carrier',[.020,sg*.070,1.950],wr+[-.050,sg*.070,0],.050,.070,.006)
+ tube('waist_yaw_carrier',w+[0,sg*.070,.010],wp+[0,sg*.078,0],.050,.065,.006)
+ tube('pelvis',w+[0,sg*.120,-.030],[-.130,sg*.245,1.710],.080,.075,.006)
+ tube('pelvis',[-.130,sg*.245,1.710],[-.130,sg*.350,1.927],.090,.075,.006)
+for side,s in [('left',1),('right',-1)]:
+ def rp(p):q=np.array(p,float);q[1]*=s;return q
+ hy=np.array(J[side+'_hip_yaw']['center_world_m']);hr=np.array(J[side+'_hip_roll']['center_world_m']);H=np.array(J[side+'_hip']['center_world_m']);K=np.array(J[side+'_knee']['center_world_m']);F=np.array(J[side+'_fold']['center_world_m']);A=np.array(J[side+'_ankle']['center_world_m']);FR=np.array(J[side+'_foot_roll']['center_world_m'])
+ for sg in [-1,1]:
+  tube(side+'_hip_yaw_carrier',hy+[0,sg*.080,-.018],hr+[sg*.065,sg*.080,0],.060,.070,.006)
+  tube(side+'_hip_roll_carrier',hr+[sg*.073,0,0],H+[0,sg*.090,.018],.065,.070,.006)
+ thigh=shell_path([H+[.015,0,-.025],rp([.100,.350,1.430]),rp([.040,.380,1.180]),K+[.015,0,.025]],.260,.240,.004)
+ middle=shell_path([K+[.015,0,-.025],F+[.015,0,.025]],.230,.200,.003)
+ distal=shell_path([F+[.015,0,-.025],A+[.015,0,.025]],.180,.150,.004)
+ # Legitimate shaft bores in end load shells keep material around the opening; no cut of whole reaction chain.
+ for b,m,outj in [(side+'_thigh',thigh,K),(side+'_middle_shank',middle,F),(side+'_distal_shank',distal,A)]:fm(b,difference(m,ring(outj,.040,0,.500,[0,1,0])))
+ for sg in [-1,1]:
+  tube(side+'_ankle_pitch_carrier',A+[0,sg*.078,-.035],FR+[sg*.080,0,.040],.042,.054,.005)
+  tube(side+'_foot_roll_arch',FR+[-.105,0,0],rp([-.220,.350 if sg<0 else .750,.185]),.045,.055,.005)
+  for fam in ['forefoot','heel']:
+   jj=np.array(J[side+'_'+fam]['center_world_m']);tube(side+'_foot_roll_arch',rp([-.220,abs(jj[1])+sg*.125,.185]),jj+[0,sg*.125,.028],.040,.045,.005)
+ # Real fixed supports at each retained brace base and load path to arch; separate independent moving trays retained below.
+ for aa in [rp([-.220,.590,.300]),rp([-.220,.750,.300]),rp([-.220,.400,.215]),rp([-.220,.600,.215])]:tube(side+'_foot_roll_arch',rp([-.220,.500,.185]),aa+[0,0,-.025],.040,.050,.005)
+# Fixed bearing support and moving shaft/collars have separate material owners and running clearance.
+for j in JOINTS:
+ if j['id'] in ['waist_yaw','waist_roll','left_hip_yaw','right_hip_yaw']:continue
+ c=np.array(j['center_world_m']);ax=np.array(j['axis_world'],float);span=.225 if 'foot_roll' in j['id'] else .250; low=any(j['id'].endswith(x) for x in ['forefoot','heel']);ro=.020 if low else .035;ri=.014 if low else .025;fr=.025 if low else .040;boss=.043 if low else .060;gap=.125 if low else (.080 if 'foot_roll' in j['id'] else .113)
+ for sg in [-1,1]:
+  fm(j['parent_body'],ring(c+ax*sg*gap,boss,fr,.018,ax));fm(j['output_body'],ring(c+ax*sg*(gap-.027),boss-.008,ri,.014,ax))
+ fm(j['output_body'],ring(c,ro,ri,span if not low else .340,ax))
+ supports.append({**j,'shaft_OD_ID_m':[ro*2,ri*2],'bearing_reference_OD_ID_L_m':[fr*2-.001,ro*2+.001,.016],'housing_support_span_m':gap*2,'bearing_SKU_rating_fit_unknown':True})
+ for sg in [-1,1]:
+  m=ring(c+ax*sg*gap,fr-.0005,ro+.0005,.016,ax);p=add(j['id']+'_bearing_ref_'+str(sg),j['parent_body'],m,'bearing_reference');p.pop('density_kg_m3');p['mass_range_kg']=[.3,.6,1.2];p['rating_unknown']=True
+# Each actuator fixed and output ear is real finite fork/crank material, not a body-name connection.
+for a in acts:
+ for which,body,point in [('fixed',a['base_body'],a['neutral_A_world_m']),('moving',a['output_body'],a['neutral_B_world_m'])]:
+  c=np.array(point);ax=np.array(a['axis_world']);r=a['pin_m']/2;fork=[]
+  for sg in [-1,1]:fork.append(ring(c+sg*.032*ax,r+.030,r+.001,.014,ax))
+  nearest=np.array(TREE[body].get('pivot_world_m',template['W'])) if which=='fixed' else np.array(a['pivot_world_m'])
+  for sg in [-1,1]:
+   start=c+sg*.032*ax;end=nearest+sg*.073*ax
+   if np.linalg.norm(start-end)>.045:fork.append(h.box_tube(start+[0,0,-.025],end+[0,0,-.020],.050,.058,.006))
+  fm(body,union(fork));p=add(a['id']+'_'+which+'_eye_pin',body,ring(c,r,0,.106,ax),'finite_pin_material',group=a['id']+'_'+which+'_pin');p['pin_load_rating_unknown']=True
+# Append each frame primitive; final union ledger, component continuity and cross-motion report are computed independently.
+for body,ms in frames.items():
+ for i,m in enumerate(ms):add(body+'_load_shell_piece_'+str(i),body,m,section_scope='Finite actual material; stress/weld/buckling unknown. Hollow shell or box unless explicit bearing boss.')
+print('FRAMES',len(parts),flush=True)
+# Immutable actuator neutral materials: assembled finite eye/sleeve/caps and rod/piston, actual pose transforms later.
+for a in acts:
+ A=np.array(a['neutral_A_world_m']);B=np.array(a['neutral_B_world_m']);L=np.linalg.norm(B-A);u=(B-A)/L;ax=np.array(a['axis_world']);bb=basis(u,ax);r=a['bore_m']/2;rr=a['rod_m']/2;pin=a['pin_m']/2;tail=a['additional_tail_m'];S=a['actual_stroke_design_m'];ear=.030;cap=.020;start=ear+tail+cap;e=L-a['allocated_custom_zero_eye_length_m'];axisframe=np.eye(4);axisframe[:3,:3]=bb;axisframe[:3,3]=A
+ motion[a['id']]={'A':A,'B':B,'basis':bb,'L':L,'base_body':a['base_body'],'output_body':a['output_body'],'axis':ax,'finite_geometry_present':a['short_working_deficit_m']==0}
+ a['barrel_neutral_frame_world']=axisframe.tolist()
+ if a['short_working_deficit_m']>0:
+  a['holding_core_mount_bay']={'unknown':'Finitecompletecylinderdoesnotclose; endpointframeonly, actualhousing/mountbaynotgenerated.','finite_geometry_present':False}
+  continue
+ def segment(x0,x1,ro,ri=0):return ring(A+u*(x0+x1)/2,ro,ri,x1-x0,u)
+ fixed=[ring(A,pin+.018,pin+.001,.044,ax),segment(pin+.005,ear+tail,r*.68),segment(ear+tail,start,r+a['wall_m']),segment(start,start+S+.020,r+a['wall_m'],r),segment(start+S+.020,start+S+.040,r+a['wall_m'],rr+.001),segment(start+S+.040,start+S+.060,r+.002,rr+.001)]
+ rod=[segment(start+e,start+e+.020,r-.0004),segment(start+e+.010,L-ear,rr),segment(L-ear,L-pin-.005,rr*1.2),ring(B,pin+.018,pin+.001,.044,ax)]
+ for kind,ms,owner in [('barrel',fixed,a['base_body']),('rod',rod,a['output_body'])]:
+  p=add(a['id']+'_'+kind+'_material',a['id']+'_'+kind+'_link',union(ms),'finite_actuator_material',group=a['id']+'_'+kind,mass_owner_body=owner,neutral_axis_frame_world=axisframe.tolist(),endpoint_driven_geometry=True);attach_motion(p,a['id'],kind)
+ baycenter=A+u*(ear+tail+cap+min(S*.5,.160))+ax*(r+a['wall_m']+.065)
+ bay=box([0,0,0],[.125,.065,.080]);bay.apply_transform(axisframe);bay.apply_translation(baycenter-A)
+ p=add(a['id']+'_holding_core_bay',a['id']+'_barrel_link',bay,'holding_mount_window',group=a['id']+'_mount_bay',mass_owner_body=a['base_body'],not_installed_hardware=True);p.pop('density_kg_m3');p['mass_range_kg']=[0,0,0];attach_motion(p,a['id'],'barrel')
+ a['barrel_neutral_frame_world']=axisframe.tolist();a['holding_core_mount_bay']={'center_world_m':baycenter.tolist(),'dimensions_local_m':[.125,.065,.080],'integration_window_local_m':[.180,.100,.110],'local_axis_columns':'longitudinal,cross,eye_pin','role':'Reserved space only, realvendor qualification/bracket/fittings/ports pending','follows':'barrel_link actual endpoint-driven orientation'}
+ a['ports']={'cap_port_world_m':(A+u*(ear+tail+cap*.5)+ax*(r+a['wall_m'])).tolist(),'rod_port_world_m':(A+u*(start+S+.030)+ax*(r+a['wall_m'])).tolist()}
+# Retained E2 neutral independent trays and braces. Their finite parts stay invariant; no per-pose recut lock holes.
+brace_info={}
+for old in E2['parts']:
+ if not ('_tray_with_segment_plate' in old['name'] or '_brace_' in old['name']):continue
+ p=copy.deepcopy(old);p['name']=p['name'].replace('e2_','f1_');p['source_E2_neutral_id']=old['name'];p['neutral_material_preserved_from_failed_reference']=True;p['mass_owner_body']=p['body'];p['rgba']=[.36,.32,.24,1]
+ if '_brace_' in old['name']:
+  pref=old['name'].split('_brace_')[0];side='left' if 'left' in pref else 'right';fam='forefoot' if 'forefoot' in pref else 'heel';idx=old['name'].split('_brace_')[1].split('_')[0];bid=side+'_'+fam+'_brace_'+idx
+  if old.get('E2_metadata',{}).get('endpoint_A'):
+   A=np.array(old['E2_metadata']['endpoint_A']);B=np.array(old['E2_metadata']['endpoint_B'])
+   if side=='right':A[1]=-abs(A[1]);B[1]=-abs(B[1])
+   p['E2_metadata']['endpoint_A']=A.tolist();p['E2_metadata']['endpoint_B']=B.tolist();p['right_source_metadata_corrected_to_actual_mirrored_mesh']=side=='right'
+   brace_info[bid]={'A':A,'B':B,'basis':basis((B-A)/np.linalg.norm(B-A),[0,1,0]),'L':float(np.linalg.norm(B-A)),'base_body':side+'_foot_roll_arch','output_body':side+'_'+fam+'_display','axis':np.array([0,1,0])}
+  kind='rod' if any(s in old['name'] for s in ['_plunger','_moving_pin']) else 'barrel';p['motion_interface_id']=bid;p['motion_kind']=kind;p['body']=bid+'_'+kind+'_link';p['material_union_group']=bid+'_'+kind if '_pin' not in old['name'] and '_lock' not in old['name'] else p['name'];p['physical_assembly_id']=p['material_union_group'];p['endpoint_driven_geometry']=True
+  if '_lock_' in old['name']:p['unlock_translation_world_m']=[0,.110 if side=='left' else -.110,0];p['unlocked_pose_only']=True
+ parts.append(p)
+motion.update(brace_info)
+interface['actuators']=acts;interface['brace_interfaces']={k:{kk:vv.tolist() if isinstance(vv,np.ndarray) else vv for kk,vv in v.items()} for k,v in brace_info.items()};write('interface.json',interface)
+print('NEUTRAL',len(parts),'ACTS',len(acts),'BRACES',len(brace_info),flush=True)
+# Poses are actual rigid-body/link transforms. Pads determine only one root Z shift per pose.
+POSES=[('neutral',{},0,0,0,0),('crouch',{'hip':-15,'knee':30,'fold':-10,'ankle':-5},0,0,0,0),('forward_manipulation',{'hip':-10,'knee':20,'fold':-5,'ankle':-5,'waist_pitch':10},0,0,0,0),('small_lateral_tilt',{'hip':-10,'knee':20,'fold':-5,'ankle':-5},3,-3,0,0),('unloaded_independent_fold',{},0,0,-15,10)]
+pose_scenes=[]
+for pid,qs,roll,fr,qf,qh in POSES:
+ Ts={'pelvis':np.eye(4)}
+ for b,n in TREE.items():
+  if b=='pelvis':continue
+  key=n['joint_id'].removeprefix('left_').removeprefix('right_');sg=-1 if b.startswith('right_') else 1;q=roll*sg if key=='hip_roll' else fr*sg if key=='foot_roll' else qf if key=='forefoot' else qh if key=='heel' else qs.get(key,0)
+  Ts[b]=Ts[n['parent']]@tr.transformations.rotation_matrix(math.radians(q),n['axis_world'],n['pivot_world_m'])
+ padz=[]
+ for p in BASE['parts']:
+  if p['name'] in ['left_composite_forepad','right_composite_forepad','left_composite_heel_pad','right_composite_heel_pad']:padz.extend(tr.transformations.transform_points(np.array(p['vertices_world_m']),Ts[p['body']])[:,2])
+ shift=-min(padz)
+ for T in Ts.values():T[2,3]+=shift
+ mts={};dr=[]
+ for id,d in motion.items():
+  A=pnt(Ts[d['base_body']],d['A']);B=pnt(Ts[d['output_body']],d['B']);L=np.linalg.norm(B-A);u=(B-A)/L;ax=Ts[d['base_body']][:3,:3]@d['axis'];rot=basis(u,ax)@d['basis'].T
+  fixed=np.eye(4);fixed[:3,:3]=rot;fixed[:3,3]=A-rot@d['A'];rod=fixed.copy();rod[:3,3]+=u*(L-d['L']);mts[(id,'barrel')]=fixed;mts[(id,'rod')]=rod
+  dr.append({'id':id,'A_world_m':A.tolist(),'B_world_m':B.tolist(),'eye_length_m':float(L),'barrel_link_transform_world':fixed.tolist(),'rod_link_transform_world':rod.tolist(),'prismatic_delta_from_neutral_m':float(L-d['L']),'rod_and_barrel_material_invariant':True,'finite_geometry_present':d.get('finite_geometry_present',True),'absent_hardware_endpoint_frame_only':not d.get('finite_geometry_present',True)})
+ out=[]
+ for p in parts:
+  q=copy.deepcopy(p);T=mts[(p['motion_interface_id'],p['motion_kind'])] if p.get('motion_interface_id') else Ts[p['body']];T=T.copy()
+  if pid=='unloaded_independent_fold' and p.get('unlocked_pose_only'):T[:3,3]+=np.array(p['unlock_translation_world_m'])
+  m=mesh(p);m.apply_transform(T);q['vertices_world_m']=m.vertices.tolist();q['faces']=m.faces.tolist();q['applied_transform_world']=T.tolist();out.append(q)
+ pose_scenes.append({'id':pid,'parts':out,'body_transforms':{b:T.tolist() for b,T in Ts.items()},'actual_endpoint_link_transforms':dr,'root_shift_z_m':float(shift),'already_world_posed':True,'unloaded_foot_q_deg':[qf,qh],'no_pose_remeshing':True})
+ print('POSE',pid,len(out),shift,flush=True)
+removed=[p['name'] for p in E2['parts']]
+converted=['waist_pitch','left_hip_roll','right_hip_roll','left_foot_roll','right_foot_roll'];electric=['waist_yaw','waist_roll','left_hip_yaw','right_hip_yaw'];retain=[r['id'] for r in am.D['modules'] if any(r['id'].startswith('ds_'+k+'_') for k in converted) and r['id'].endswith(('_brake','_encoder','_controller','_wire_coolant_connector'))];replaced=[r['id'] for r in am.D['modules'] if any(r['id'].startswith('ds_'+k+'_') for k in electric) or (any(r['id'].startswith('ds_'+k+'_') for k in converted) and r['id'] not in retain)]
+result={'robot_id':'gorilla_v0_1','candidate':'F1 compact_a continuous finite shells','parts':parts,'pose_scenes':pose_scenes,'body_tree':TREE,'joint_supports':supports,'all_joint_axes':JOINTS,'removed_E2_structure_part_names':removed,'removed_D_system_module_ids':replaced,'retained_hydraulic_converted_electronics':retain,'unreplaced_functions':['angular feedback on13hydraulicaxes','qualifiedholdingvalve18/bracket/fittings','hydraulicclosed-loop SI joints/inertia','forcequalifiedbearings/spline/fasteners/seals','verifiedtorso-arm interfaces','newfullsystemposition/flow/heat integration'],'source_hashes':{str(p.relative_to(ROOT)):sha(p) for p in [Path(__file__),OUT/'axis_probe.json',ROOT/'.scratch/gorilla_internal_e2a_integrated/scene.json',ROOT/'.scratch/gorilla_internal_e2a_integrated/mass_ledger.json',ROOT/'.scratch/gorilla_internal_e2a_integrated/statics.json',ROOT/'experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_scene.json',ROOT/'robots/gorilla_v0_1/configs/internal_structure_d_system_spec.json']},'original_armor_unchanged':True,'geometry_accepted':False,'physics_accepted':False,'candidate_tree_is_not_stable_SI':True,'mass_scope':'F1finite listedmaterial and full4rotaryrefs;18mountbayzero because nothardware. No credit againstoldholding113kg orremaining system; latterrootmustintegrateactualmodules. Movingrod/bearingreferenceowners explicit, not fictionalfixedbody.'}
+write('structure_scene.json',result)
+print('SCENE WRITTEN',sha(OUT/'structure_scene.json'),flush=True)

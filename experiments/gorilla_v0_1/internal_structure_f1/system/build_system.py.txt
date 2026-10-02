@@ -1,0 +1,124 @@
+from pathlib import Path
+import copy,json,hashlib,math,collections
+import numpy as np,trimesh
+R=Path('/home/ethan/Projects/Sai_Rotbots');O=R/'.scratch/gorilla_internal_f1_system';T=O/'module_templates';F=R/'.scratch/gorilla_internal_f1_structure'
+load=lambda p:json.loads(Path(p).read_text());sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();write=lambda p,d:Path(p).write_text(json.dumps(d,indent=2)+'\n')
+M=load(R/'.scratch/gorilla_internal_e2a_integrated/scene.json');FS=load(F/'structure_scene.json');I=load(F/'interface.json');H=load(F/'system_handoff.json');S=load(R/'.scratch/gorilla_internal_e2_system/system_spec.json');TM={n:load(T/(n+'_template_nominal.json')) for n in ['holding','directional']};TS=load(T/'module_templates_spec.json')
+assert sha(F/'structure_scene.json')=='90b62e0135a724fb9cb7df9909d58f3b618d40f6f5be922b516e1d83ca073ee6';assert len(I['actuators'])==18
+pm={p['name']:p for p in M['parts']};mass={r['id']:r for r in M['mass_rows']};oldbank={n for n,p in pm.items() if ('_valve_' in n or '_valve_bank_' in n or p.get('category') in ['added_hydraulic_EA_valve','hydraulic_bank_complete_reserve'])};oldholding={n for n,p in pm.items() if p.get('category')=='load_hold_native_reserve'};oldlines={n for n,p in pm.items() if p.get('category')=='oil_line_native_material'};oldfluid={n for n,p in pm.items() if p.get('category')=='oil_inventory_once'};frame_remove=set(FS['removed_E2_structure_part_names'])|set(FS['removed_D_system_module_ids']);alias_remove={p['name'][3:] for p in FS['parts'] if p['name'].startswith('f1_') and p['name'][3:] in pm and p['name'][3:] not in frame_remove}; alias_remove|={'e2_'+p['name'][3:] for p in FS['parts'] if p['name'].startswith('f1_') and 'e2_'+p['name'][3:] in pm}; cooling_remove={('e_'+r['source_D_id']) for r in H['motor_cooling_cases']}; frame_remove|=alias_remove|cooling_remove; removed=oldbank|oldholding|oldlines|oldfluid|frame_remove
+ctx=[copy.deepcopy(p) for p in M['parts'] if p['name'] not in removed];base=ctx+copy.deepcopy(FS['parts']);base_ids={p['name'] for p in base};assert len(base_ids)==len(base)
+# Source module movements are complete rigid transforms, no changes to size or mass.
+movgroups={}
+for side in ['left','right']:
+ for level in ['upper','lower']:
+  n=f'ds_{side}_{level}_custom_hv_pack';movgroups[f'{side}_{level}_energy']=[n,n+'_bms_fuse_service','e_'+n+'_coldplate']
+ movgroups[f'{side}_pump']=[n for n in base_ids if n.startswith('ds_'+side+'_hydraulic_input_') or n.startswith('e_ds_'+side+'_hydraulic_input_')]
+movgroups['HX']=[n for n in base_ids if n=='e2_dual_fluid_HX_material' or n.startswith('e2_oil_HX_') and n.endswith('actual_hollow_port')];movgroups['compute']=[n for n in base_ids if n in ['ds_compute','e_ds_compute_coldplate']];movgroups['screen']=['ds_back_screen'];assert all(n in base_ids for v in movgroups.values() for n in v)
+owner={n:g for g,ids in movgroups.items() for n in ids};baymaps={r['id']:r for r in H['barrel_mounts']};aids=[a['id'] for a in I['actuators']];act={a['id']:a for a in I['actuators']};Qvert=np.array([[0,0,-1],[0,1,0],[1,0,0.]])
+Qcross=np.array([[0,1,0],[-1,0,0],[0,0,1.]]) # dims122X240Y204Z
+Qbay=np.array([[0,0,1],[1,0,0],[0,1,0.]]) # dims204X240Y122Z, four mm over window
+localholdQ=np.array([[1,0,0],[0,0,-1],[0,1,0.]])
+def tcenter(bounds,Q,c):return np.array(c)-Q@np.mean(bounds,axis=0)
+def tr(p,Q,t):p=copy.deepcopy(p);p['vertices_world_m']=(np.asarray(p['vertices_world_m'])@Q.T+t).tolist();return p
+
+def placement_list(layout):
+ pos=[('torso',[.01,0,2.165],Qbay),('torso',[.01,0,2.293],Qbay)]
+ for side in [1,-1]:
+  body='left' if side==1 else 'right'
+  if layout==1:
+   for z in [1.27,1.535]:
+    for y in [.285,.445]:pos.append((body+'_thigh',[-.06,side*y,z],Qvert))
+  else:
+   for z in [1.27,1.49]:
+    for x in [-.145,-.007]:pos.append((body+'_thigh',[x,side*.36,z],Qcross))
+ for side in [1,-1]:
+  body='left' if side==1 else 'right'
+  for j in range(2):
+   if layout==1:pos.append((body+'_middle_shank',[-.11,side*(.355+.15*j),.735],Qvert))
+   else:pos.append((body+'_middle_shank',[-.175+.14*j,side*.425,.735],Qcross))
+ for side in [1,-1]:
+  for z in ([2.135,2.4] if layout==1 else [2.07,2.208]):pos.append(('torso',[-.18,side*(.295 if layout==1 else .18),z],Qvert if layout==1 else Qbay))
+ assert len(pos)==18
+ return pos
+
+def move_spec(layout,g):
+ side=1 if g.startswith('left') else -1
+ if '_energy' in g:
+  upper='_upper_' in g; origin=np.array([-.285,side*.17,2.395 if upper else 2.045]);target=np.array([-.265,side*.17,(2.4 if upper else 2.035)] if layout==1 else [-.245,side*.19,(2.465 if upper else 2.08)])
+  Q=np.eye(3) if layout==1 else np.array([[1,0,0],[0,0,-1],[0,1,0.]])
+ elif g.endswith('_pump'):
+  vs=np.vstack([pm[n]['vertices_world_m'] for n in movgroups[g]]);origin=(vs.min(0)+vs.max(0))/2;target=origin+np.array([-.05,0,.02]) if layout==1 else origin+np.array([-.10,0,.05]);Q=np.eye(3)
+ elif g=='HX':origin=np.array([-.20,0,1.77]);target=np.array([-.21,0,1.94] if layout==1 else [.05,0,1.915]);Q=np.eye(3) if layout==1 else Qvert
+ elif g=='compute':
+  vs=np.vstack([pm[n]['vertices_world_m'] for n in movgroups[g]]);origin=(vs.min(0)+vs.max(0))/2;target=origin+np.array([-.04,0,.06 if layout==1 else -.04]);Q=np.eye(3)
+ else:origin=np.array([-.436,0,2.205]);target=np.array([-.391,0,2.205] if layout==1 else [-.386,0,2.225]);Q=np.eye(3)
+ return Q,target-Q@origin
+
+results=[]
+for layout in [1,2]:
+ parts=copy.deepcopy(base);trans={g:move_spec(layout,g) for g in movgroups};rows=[];groups=[];ports={};service=[];holds=[];valves=[]
+ for p in parts:
+  if p['name'] in owner:
+   Q,t=trans[owner[p['name']]];p['vertices_world_m']=(np.asarray(p['vertices_world_m'])@Q.T+t).tolist();p['F1_complete_group_rigid_move']=owner[p['name']]
+ for g,ids in movgroups.items():
+  Q,t=trans[g];groups.append({'id':g,'part_ids':ids,'matrix4x4':np.block([[Q,t[:,None]],[np.array([[0,0,0,1.]])]]).tolist(),'mass_preserved_kg_range':np.sum([mass[n]['mass_range_kg'] for n in ids if n in mass],axis=0).tolist(),'source_scope':'whole native group rigid move; installed interface and thermal still false'})
+ for aid,(body,c,Qval) in zip(aids,placement_list(layout)):
+  for kind,body0,Q,t,finite in [('directional',body,Qval,tcenter(TM['directional']['physical_AABB_local_m'],Qval,c),True),('holding',aid+'_barrel_link',None,None,not baymaps[aid]['finite_geometry_missing'])]:
+   template=TM[kind];gid='f1_'+aid+'_'+kind
+   if kind=='holding':
+    b=baymaps[aid];B=np.array(b['neutral_barrel_frame']);Q=B[:3,:3]@localholdQ; center=b['mountbay'].get('center_world_m')
+    if center is None: center=(B[:3,3]+B[:3,:3]@np.array([.08,.10,0])).tolist() # unsupported placement proposal only, no actual mount owner
+    t=tcenter(template['physical_AABB_local_m'],Q,center)
+   ids=[]
+   for p0 in template['parts']:
+    p=tr(p0,Q,t);p['name']=gid+'__'+p0['name'];p['body']=body0;p['physical_assembly_id']=gid;p['F1_hardware_function']=kind;p['finite_cylinder_mount_owner_present']=finite;p['source_template_id']=p0['name'];p['template_coordinates_are_local_m']=False;parts.append(p);ids.append(p['name'])
+   for r0 in template['mass_rows']:
+    r=copy.deepcopy(r0);r['id']=gid+'__'+r0['id'];r['part_name']=r['id'];r['body']=body0;r['COM_world_m']=(Q@np.array(r['COM_local_m'])+t).tolist();r['mass_range_kg']=list(r['mass_range_kg']);r['catalogue_plus_own_finite_installation_scope']=True;r['installed_owner_accepted']=False;r['gravity_mass_owner']=body0 if finite else 'UNINSTALLED_CANDIDATE_OWNER_UNKNOWN';r['counted_elsewhere']=False;r['kinematic_pose_link']=aid+'_barrel_link' if kind=='holding' else body0;r['structural_parent_mass_owner']=act[aid]['base_body'] if kind=='holding' else body0;rows.append(r)
+   for p0 in template['ports']:
+    pid=gid+'_'+p0['label'];ports[pid]={'id':pid,'module':gid,'label':p0['label'],'OEM_label':p0['OEM_label'],'hydraulic_meaning':p0['hydraulic_meaning'],'center_world_m':(Q@np.array(p0['connection_end_local_m'])+t).tolist(),'outward_axis_world':(Q@np.array(p0['outward_axis_local'])).tolist(),'body':body0,'verified_OEM_port_center':False,'mount_hardware_present':finite}
+   for sp in template['service_spaces']:
+    corners=np.array([[x,y,z] for x in [sp['bounds_local_m'][0][0],sp['bounds_local_m'][1][0]] for y in [sp['bounds_local_m'][0][1],sp['bounds_local_m'][1][1]] for z in [sp['bounds_local_m'][0][2],sp['bounds_local_m'][1][2]]]);service.append({**sp,'id':gid+'_'+sp['id'],'module':gid,'vertices_world_m':(corners@Q.T+t).tolist(),'mass_is_not_added':True})
+   rec={'id':gid,'function':kind,'actuator_id':aid,'kinematic_pose_link':aid+'_barrel_link' if kind=='holding' else body0,'body':body0,'gravity_mass_owner':body0 if finite else 'UNINSTALLED_CANDIDATE_OWNER_UNKNOWN','part_ids':ids,'module_template':template['template_id'],'matrix4x4':np.block([[Q,t[:,None]],[np.array([[0,0,0,1.]])]]).tolist(),'whole_template_dimensions_m':template['physical_dimensions_m'],'mass_range_kg':TS['templates'][kind]['listed_mass_range_kg'],'actual_OEM_CAD':False,'selected_procurement':False,'finite_mount_owner_present':finite,'mount_hardware_and_routes_accepted':False};groups.append(rec)
+   if kind=='holding':
+    rec['follows']='actual A-B barrel_link_transform_world from structure pose source, never base_body T';rec['old_window_dimensions_m']=baymaps[aid]['mountbay'].get('integration_window_local_m');rec['whole_module_minus_window_dimensions_m']=(np.array(template['physical_dimensions_m'])[[0,2,1]]-np.array(rec['old_window_dimensions_m'])).tolist() if rec['old_window_dimensions_m'] is not None else None;holds.append(rec)
+   else:valves.append(rec)
+  for pname,key in [('cap','cap_port_world_m'),('rod','rod_port_world_m')]:
+   pid='f1_'+aid+'_cylinder_'+pname;ports[pid]={'id':pid,'center_world_m':baymaps[aid]['ports'][key] if baymaps[aid]['ports'] is not None else None,'body':aid+'_barrel_link','source_scope':'structure actual drilling interface candidate; 4 absent hardware unknown','mount_hardware_present':not baymaps[aid]['finite_geometry_missing']}
+ # Retained nonreplacement mass inventory, transformed COM; tensor fields are explicitly unqualified and not manufactured.
+ for r0 in M['mass_rows']:
+  if r0['id'] in removed:continue
+  r=copy.deepcopy(r0)
+  if r['id'] in owner:
+   Q,t=trans[owner[r['id']]];r['COM_world_m']=(Q@np.array(r['COM_world_m'])+t).tolist();r['legacy_inertia_proxy_not_requalified_after_rigid_move']=True
+  r['gravity_mass_owner']=r.get('body');r['counted_elsewhere']=False;r['retained_context_challenge']=r['id']=='e2_upper_net_torso';rows.append(r)
+ # Old route endpoints are finite source interface references, converted only for moved owner groups.
+ legacy_ports={**S['port_nodes'],**S['oil_nodes']};move_nodes={}
+ for pid,node in legacy_ports.items():
+  Q=np.eye(3);t=np.zeros(3);g=None
+  for gg in movgroups:
+   if (gg.endswith('_energy') and gg.split('_')[0]+'_'+gg.split('_')[1]+'_custom_hv_pack' in pid) or (gg.endswith('_pump') and gg.split('_')[0]+'_pump' in pid) or gg=='HX' and ('oil_HX' in pid or 'true_oil_water' in pid) or gg=='compute' and 'compute' in pid:g=gg
+  if g:Q,t=trans[g]
+  new=copy.deepcopy(node);new['center_world_m']=(Q@np.array(node['center_world_m'])+t).tolist();new['legacy_interface_source']=True;new['F1_hardware_binding_accepted']=False;new['moved_group']=g;move_nodes[pid]=new
+ # 108 new module hydraulic connections, with every interface retained. No fake flow-continuity approval.
+ routes=[]
+ for k,aid in enumerate(aids):
+  pre='f1_'+aid;dg=pre+'_directional';hg=pre+'_holding';pairs=[('P_feed','e2_P_header_tap_'+str(k),dg+'_P'),('T_return',dg+'_T','e2_T_header_tap_'+str(k)),('A_working',dg+'_A',hg+'_P'),('B_working',dg+'_B',hg+'_T'),('A_to_cap',hg+'_A',pre+'_cylinder_cap'),('B_to_rod',hg+'_B',pre+'_cylinder_rod')]
+  for suffix,start,end in pairs:
+   pa=(ports.get(start) or move_nodes[start])['center_world_m'];pb=(ports.get(end) or move_nodes[end])['center_world_m'];a=np.array(pa) if pa is not None else None;b=np.array(pb) if pb is not None else None;routes.append({'id':pre+'_'+suffix,'start':start,'end':end,'actual_proposed_endpoint_world_m':[a.tolist() if a is not None else None,b.tolist() if b is not None else None],'neutral_straight_minimum_length_m':float(np.linalg.norm(b-a)) if a is not None and b is not None else None,'route_state':'NOT CONNECTED: finite hose sweep, bend/slack/moving-span/fittings/pressure/service to be rebuilt','inner_diameter_reference_m':.011,'OEM_port_centers_unknown':True,'missing_cylinder_owner':baymaps[aid]['finite_geometry_missing']})
+ # Preserve 11 pump/tank/unload/HX backbone interfaces separately; old native routes removed and no connection inherited.
+ for r0 in S['oil_routes']:
+  if any(w in r0['id'] for w in ['_P_feed','_T_return','_A_working','_B_working','_hold_A_to_cap','_hold_B_to_rod']):continue
+  r=copy.deepcopy(r0);r['route_state']='NOT CONNECTED: prior E2 native path removed; component moves + F1 valves invalidate connectivity';r['actual_proposed_endpoint_world_m']=[move_nodes[r['start']]['center_world_m'],move_nodes[r['end']]['center_world_m']];routes.append(r)
+ # Net stock is counted once. Without installed routes, this is an allocation ledger, not occupied-fluid proof.
+ known_template_oil_L=18*(TM['holding']['oil_void_known_volume_L']+TM['directional']['oil_void_known_volume_L']);min_external_hose_L=sum(math.pi*(r['inner_diameter_reference_m']/2)**2*r['neutral_straight_minimum_length_m']*1000 for r in routes if 'inner_diameter_reference_m' in r and r['neutral_straight_minimum_length_m'] is not None)
+ rows.append({'id':'f1_global_oil_stock_once','body':'spatial_distribution_unknown','mass_range_kg':S['oil_inventory']['total_mass_range_kg'],'volume_L':30,'density_kg_m3_range':[820,850,880],'not_added_again_for_template_voids':True,'COM_world_m':None,'inertia_accepted':False})
+ fluid={'oil_global_stock_L':30,'oil_global_mass_range_kg':S['oil_inventory']['total_mass_range_kg'],'new_known_template_void_L':known_template_oil_L,'new_108_hose_straight_minimum_void_L':min_external_hose_L,'not_double_counted':True,'unknown_OEM_internal_voids':True,'actual_cylinder_chamber_allocation_not_closed':True,'tank_remaining_fill_not_authorized':True,'real_disjoint_cavities_and_moving_hoses_not_completed':True,'water_source_net_inventory':S['net_coolant_inventory'],'water_inventory_spatial_validity_after_moves':False,'water_source_net_drawn_L':S['net_drawn_coolant_volume_L'],'oil_and_water_never_solid_exclusion':True}
+ # Exact holding pose matrices: finite bodies are neutral module material rigidly posed by true barrel link transforms.
+ pose_binding=[]
+ for pose in FS['pose_scenes']:
+  links={l['id']:l for l in pose['actual_endpoint_link_transforms']}
+  pose_binding.append({'pose_id':pose['id'],'holding_link_transforms':[{'module_id':'f1_'+aid+'_holding','barrel_link_transform_world':links[aid]['barrel_link_transform_world'],'finite_cylinder_owner_present':links[aid]['finite_geometry_present'],'absent_hardware_endpoint_frame_only':links[aid]['absent_hardware_endpoint_frame_only']} for aid in aids],'geometry_rule':'apply structure barrel link delta to already-neutral vertices; not base-body T'})
+ d={'schema':'gorilla_f1_complete_reference_system_candidate_v1','robot_id':'gorilla_v0_1','candidate':'F1 system whole layout '+str(layout),'coordinate_frame':M['coordinate_frame'],'parts':parts,'body_tree':{**M['body_tree'],**FS['body_tree']},'joint_supports':FS['joint_supports'],'actuators':I['actuators'],'input_hashes':{str(p.relative_to(R)):sha(p) for p in [R/'.scratch/gorilla_internal_e2a_integrated/scene.json',F/'structure_scene.json',F/'interface.json',T/'holding_template_nominal.json',T/'directional_template_nominal.json']},'original_armor_preserved_count':111,'original_armor_external_delta_mm':0,'replacement_removed_ids':sorted(removed),'new_complete_group_records':groups,'mass_rows_system_and_retained_context_only':rows,'F1_structure_mass_ledger_external':str(F/'mass_ledger.json'),'counted_elsewhere':{'structure_native_part_ids':[p['name'] for p in FS['parts']],'mass_ledger_path':str(F/'mass_ledger.json'),'mass_ledger_sha256':sha(F/'mass_ledger.json'),'four_motor_cooling_cases_counted_in_structure_only':sorted(cooling_remove),'right_hip_yaw_complete_stock_aliases_replaced':sorted(n for n in alias_remove if n.startswith('e2_'))},'structure_mass_not_added_to_context_twice':True,'retained_context_challenge_ids':['e2_upper_net_torso'],'retained_torso_scope':'Old 77.937kg net upper torso retained as incompatible challenge: new F1 660mm torso shell does not yet reconstruct shoulder axes +/-560mm fixed mounting/reaction bridge. Neither body=torso nor collision cutting authorizes removal. Intrinsic candidate mass and retained context are separate; no qualified whole net mass.', 'uninstalled_old_cylinder_fitting_ids':[n for n,p in pm.items() if p.get('category')=='oil_fitting_material'],'old_cylinder_fitting_scope':'All36 old finite fitting shapes retained as historical installation challenges; old body binding/positions NOT F1 cap/rod actual installation. 28 owner surfaces present in F1 but size/seal/motion transforms require rebuild;8 fittings refer to4 absent cylinders. Their inventory retained, no pressure/connection acceptance.', 'orphan_prior_four_case_port_shell_ids':[n for n in pm if any(n.startswith(c+'_') for c in cooling_remove)],'pose_barrel_bindings':pose_binding,'fluid_inventory':fluid,'system_ports':ports,'retained_legacy_interface_points':move_nodes,'oil_route_required_edges':routes,'service_spaces_nonphysical':service,'retained_coolant_routes_after_moves':'NATIVE HISTORICAL SPACE ONLY; endpoint membership/moved packs/HX/compute/pumps and new F1 four motor cases require rebuild; no continued flow claim','electrical_retermination_required_groups':list(movgroups),'18_OBE_inputs_require_new_24V_distribution':'NOT INSTALLED; own DC/DC/control/current/heat package unknown, finite template mating plugs present','geometry_accepted':False,'physics_accepted':False,'stable_physical_contract':False,'aesthetic_accepted':False,'flow_connected':False,'all_template_parts_visible_no_hiding':True,'source_hardware_envelopes_not_exact_material':True}
+ out=O/f'layout_{layout}_scene.json';write(out,d);write(O/f'layout_{layout}_interfaces.json',{'scene_sha256':sha(out),'ports':ports,'retained_legacy_interface_points':move_nodes,'routes':routes,'pose_barrel_bindings':pose_binding,'service_spaces':service,'missing_cylinder_owner_ids':[aid for aid in aids if baymaps[aid]['finite_geometry_missing']],'legacy_coolant_routes_all_requires_endpoint_audit':S['routes']});results.append({'layout':layout,'scene':out.name,'scene_sha256':sha(out),'parts':len(parts),'new_directional_count':len(valves),'new_holding_candidate_count':len(holds),'physically_present_cylinder_owners':14,'missing_cylinder_owner_ids':[aid for aid in aids if baymaps[aid]['finite_geometry_missing']],'complete_template_dry_mass_range_kg':(18*(np.array(TS['templates']['holding']['listed_mass_range_kg'])+np.array(TS['templates']['directional']['listed_mass_range_kg']))).tolist(),'old_complete_holding_mass_range_kg':np.sum([mass[n]['mass_range_kg'] for n in oldholding],axis=0).tolist(),'new_18_holding_mass_not_installation_credit':(18*np.array(TS['templates']['holding']['listed_mass_range_kg'])).tolist(),'removed_old_bank_mass_range_kg':np.sum([mass[n]['mass_range_kg'] for n in oldbank if n in mass],axis=0).tolist(),'known_fluid_allocations':fluid,'18_valve_window_full_nominal_dim_m':np.array(TM['directional']['physical_dimensions_m'])[[2,0,1]].tolist(),'one_nominal_valve_x_exceeds_200mm_window_by_mm':(TM['directional']['physical_dimensions_m'][2]-.2)*1000,'each_complete_holding_vs_old_mount_windows':holds,'geometry_and_physics_accepted':False});print('built',layout,len(parts),flush=True)
+write(O/'system_spec.json',{'schema':'gorilla_f1_reference_system_spec_v1','scope':'At most two complete reference layouts with all rest-native stock + published F1 structure; not complete installation because 4 cylinders and routed material/DC-DC are missing','layouts':results,'complete_module_templates':TS,'source_original_armor_delta_mm':0,'all_original_111armor_preserved':True,'replacements':{'oldbank_ids':sorted(oldbank),'oldholding_ids':sorted(oldholding),'oldoilroute_material_ids':sorted(oldlines),'oldoil_spatial_inventory_ids':sorted(oldfluid),'oldstructure_and_moved_drive_ids':sorted(frame_remove),'same_stock_aliases':sorted(alias_remove),'four_system_cooling_cases_counted_in_structure_only':sorted(cooling_remove)},'no_new_vendor_or_procurement_claim':True,'geometry_accepted':False,'physics_accepted':False,'SI_accepted':False,'installed_mass_and_full_COM_inertia_unknown':True,'heat_and_flow_source_math':'Q=area*|J*qdot|; Wloss=delta_p_bar*Q_Lmin/600 kW; 18*30V*2A=1080W OBE input upper, not measured heat; pump21MPa*59.4..64.02Lmin/60=20.79..22.407kW hydraulic at3000RPM conditional; low-demand unloading/return/real-check-drops unknown','pressure_loadholding_scope':'LHDV -21 loadpressure<=350bar; preset>=1.2 actual maxload, DEsetting<=350bar; return<=10bar; robot oscillation/shock applicability unknown','18_independent_electronic_control_retained':True,'18_local_holding_function_retained':True,'4_absent_cylinders_make_local_installation_unaccepted':True,'legacy_flow_envelope_not_inherited_by_changed_F1_axes':True,'all_routes_false':True,'broad_unknown_14_arm_16_hand_source_rows_retained':True,'old_upper_net_torso_retained_challenge':'77.937kg incompatible retained source, not qualified additional mass or fully replaced by F1; shoulder support bridge remains unknown'})
+print('spec',sha(O/'system_spec.json'),flush=True)

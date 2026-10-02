@@ -1,0 +1,25 @@
+"""Independent read-only identity/immutable material audit for Gorilla F2 A/B."""
+from pathlib import Path
+import json,hashlib
+import numpy as np,trimesh as tr,manifold3d as mf
+OUT=Path(__file__).resolve().parent;ROOT=OUT.parents[1]
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def mesh(p):return tr.Trimesh(p['vertices_world_m'],p['faces'],process=False)
+base=ROOT/'experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_scene.json';bs=json.loads(base.read_text());armor=[p for p in bs['parts'] if p['role'] in ('armor_surface','armor_cover')]
+r={'robot_id':'gorilla_v0_1','original_C15_scene_sha256':sha(base),'original_armor_count':len(armor),'original_armor_geometry_sha256':hashlib.sha256(json.dumps([(p['name'],p['vertices_world_m'],p['faces']) for p in armor],sort_keys=True).encode()).hexdigest(),'component_volume_threshold_m3':1e-10,'volume_conservation_tolerance_m3':1e-8,'layouts':{},'physics_accepted':False}
+for label in ['a','b']:
+ path=OUT/label/'module_scene.json';s=json.loads(path.read_text());original={p['name']:p for p in s['parts']};rows=[];poses=[]
+ for p in s['parts']:
+  if 'density_kg_m3' not in p:continue
+  m=mesh(p);solid=mf.Manifold(mf.Mesh64(np.asarray(m.vertices,dtype=np.float64),np.asarray(m.faces,dtype=np.uint64)));vs=[float(x.volume()) for x in solid.decompose()]
+  rows.append({'name':p['name'],'body':p['body'],'status':str(solid.status()),'raw_components':len(vs),'positive_effective_components':sum(v>1e-10 for v in vs),'negative_effective_components':sum(v<-1e-10 for v in vs),'numerical_slivers':sum(abs(v)<=1e-10 for v in vs),'volumes_m3':vs,'net_volume_m3':float(m.volume),'conservation_error_m3':abs(sum(vs)-m.volume)})
+ for pose in s['pose_scenes']:
+  err=0.;dv=0.;fail=[];changed=0
+  for p in pose['parts']:
+   op=original[p['name']];m=mesh(p);m0=mesh(op);T=np.array(p['applied_transform_world']);expected=tr.transformations.transform_points(op['vertices_world_m'],T);err=max(err,float(np.max(np.abs(expected-np.array(p['vertices_world_m'])))));dv=max(dv,abs(m.volume-m0.volume));changed+=p['faces']!=op['faces']
+   if not(np.isfinite(m.vertices).all() and m.is_watertight and m.is_winding_consistent and m.volume>1e-10):fail.append(p['name'])
+  poses.append({'id':pose['id'],'native_topology_failures':fail,'max_vertex_vs_recorded_rigid_transform_error_m':err,'faces_changed_count':changed,'max_native_volume_change_m3':float(dv),'root_shift_z_m':pose['root_shift_z_m'],'material_constancy_pass':bool(not fail and changed==0 and err<=1e-9 and dv<=1e-8)})
+ inputs={p:{'expected':h,'actual':sha(ROOT/p),'matches':sha(ROOT/p)==h} for p,h in s['input_hashes'].items() if not p.endswith('build_module.py')}
+ producer=OUT/('build_module_a_producer.py' if label=='a' else 'build_module.py');key='.scratch/gorilla_internal_f2_lower_module/build_module.py';producer_ok=sha(producer)==s['input_hashes'][key]
+ r['layouts'][label]={'source_sha256':sha(path),'historical_producer_path':str(producer.relative_to(ROOT)),'producer_sha256':sha(producer),'producer_binding_matches':producer_ok,'input_checks':inputs,'native_parts':len(s['parts']),'complete_cylinders':sum(a.get('finite_complete_geometry_present',False) for a in s['actuators']),'solid_decomposition':rows,'poses':poses,'all_material_constancy_pass':all(p['material_constancy_pass'] for p in poses),'meaningfully_multiple_material_parts':[p['name'] for p in rows if p['positive_effective_components']!=1 or p['negative_effective_components']>0],'volume_conservation_failure_parts':[p['name'] for p in rows if p['conservation_error_m3']>1e-8],'decompose_not_strength_or_contact_evidence':True}
+r['audit_script_sha256']=sha(__file__);(OUT/'invariant_audit.json').write_text(json.dumps(r,indent=2)+'\n');print(json.dumps({k:{'producer':v['producer_binding_matches'],'immutable':v['all_material_constancy_pass'],'multi':v['meaningfully_multiple_material_parts'],'volume_failed':v['volume_conservation_failure_parts']} for k,v in r['layouts'].items()},indent=2))

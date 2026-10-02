@@ -1,0 +1,64 @@
+"""Diagnostic only: reverse identified nested positive cavity boundaries; do not overwrite F1."""
+from pathlib import Path
+import json, hashlib
+import numpy as np
+import manifold3d as mm
+
+ROOT = Path(__file__).resolve().parents[2]
+DIR = Path(__file__).parent
+SOURCE = ROOT / '.scratch/gorilla_internal_f1_structure/structure_scene.json'
+LEDGER = SOURCE.parent / 'mass_ledger.json'
+NEST = DIR / 'f1_native_boundary_nesting.json'
+
+def mf(p):
+    fs = [[f[0], f[i], f[i+1]] for f in p['faces'] for i in range(1, len(f)-1)]
+    return mm.Manifold(mm.Mesh64(np.ascontiguousarray(p['vertices_world_m'], dtype=np.float64), np.ascontiguousarray(fs, dtype=np.uint64)))
+
+def join_boundaries(boundaries):
+    vertices, faces, offset = [], [], 0
+    for c in boundaries:
+        m = c.to_mesh64()
+        vertices.extend(m.vert_properties[:, :3].tolist())
+        faces.extend((m.tri_verts + offset).tolist())
+        offset += len(m.vert_properties)
+    return mm.Manifold(mm.Mesh64(np.array(vertices, dtype=np.float64, order='C'), np.array(faces, dtype=np.uint64, order='C')))
+
+# Native closed-cavity signs must survive recombination; compose() does not preserve them.
+cube = mm.Manifold.cube([.1, .1, .1]) - mm.Manifold.cube([.05, .05, .05]).translate([.025, .025, .025])
+regression = {'expected_hollow_m3': .000875, 'signed_join_m3': join_boundaries(cube.decompose()).volume(), 'unsafe_compose_m3': mm.Manifold.compose(cube.decompose()).volume()}
+assert abs(regression['signed_join_m3'] - .000875) < 1e-14
+assert abs(regression['unsafe_compose_m3'] - .001) < 1e-14
+
+s = json.loads(SOURCE.read_text())
+parts = {p['name']: p for p in s['parts']}
+n = json.loads(NEST.read_text())
+patches = []
+for r in n['bad']:
+    p = parts[r['id']]
+    u = mf(p)
+    cs = u.decompose()
+    flip = {b['boundary'] for b in r['same_orientation_nested_or_negative_root']}
+    boundaries = []
+    for j, c in enumerate(cs):
+        if j in flip:
+            m = c.to_mesh64()
+            c = mm.Manifold(mm.Mesh64(np.array(m.vert_properties[:, :3], dtype=np.float64, order='C', copy=True), np.array(m.tri_verts[:, ::-1], dtype=np.uint64, order='C', copy=True)))
+        boundaries.append(c)
+    corrected = join_boundaries(boundaries)
+    mesh = corrected.to_mesh64()
+    patches.append({'id': r['id'], 'source_signed_volume_m3': u.volume(), 'corrected_signed_volume_m3': corrected.volume(), 'density_kg_m3': p['density_kg_m3'], 'vertices_world_m': mesh.vert_properties[:, :3].tolist(), 'faces': mesh.tri_verts.tolist(), 'diagnostic_only': True})
+    parts[r['id']] = {**p, 'vertices_world_m': patches[-1]['vertices_world_m'], 'faces': patches[-1]['faces']}
+
+ledger = json.loads(LEDGER.read_text())
+groups = []
+for g in ledger['material_groups']:
+    if not any(x in {p['id'] for p in patches} for x in g['member_ids']):
+        continue
+    before = mm.Manifold.batch_boolean([mf(next(p for p in s['parts'] if p['name'] == x)) for x in g['member_ids']], mm.OpType.Add)
+    after = mm.Manifold.batch_boolean([mf(parts[x]) for x in g['member_ids']], mm.OpType.Add)
+    groups.append({'id': g['group'], 'member_ids': g['member_ids'], 'source_net_volume_m3': before.volume(), 'corrected_net_volume_m3': after.volume(), 'density_kg_m3': g['density_kg_m3'], 'diagnostic_mass_delta_kg': (after.volume()-before.volume())*g['density_kg_m3'], 'actual_attachment_or_strength_qualified': False})
+patch_path = DIR / 'f1_foot_boundary_patches.json'
+patch_path.write_text(json.dumps({'source_sha256': hashlib.sha256(SOURCE.read_bytes()).hexdigest(), 'patches': patches, 'new_candidate_or_physical_release': False}, indent=2)+'\n')
+report = {'schema': 'gorilla_f1_foot_closed_cavity_winding_diagnostic_v1', 'inputs': {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in [SOURCE, LEDGER, NEST, patch_path]}, 'signed_join_regression': regression, 'affected_parts': len(patches), 'affected_groups': groups, 'source_part_mass_delta_sum_kg': sum((p['corrected_signed_volume_m3']-p['source_signed_volume_m3'])*p['density_kg_m3'] for p in patches), 'affected_net_group_mass_delta_sum_kg': sum(g['diagnostic_mass_delta_kg'] for g in groups), 'upstream_source_modified': False, 'whole_mass_or_collision_requalification': False, 'interpretation': 'Source has nested closed positive cavities. Existing F1 native mass/solid-count receipts preserve source semantics only and cannot qualify physical material inventory. Corrected local patches are diagnostic and are not installed or a complete new candidate.'}
+(DIR/'f1_closed_cavity_diagnostic.json').write_text(json.dumps(report, indent=2)+'\n')
+print(json.dumps({k: report[k] for k in ['affected_parts','source_part_mass_delta_sum_kg','affected_net_group_mass_delta_sum_kg','affected_groups']},indent=2))

@@ -1,0 +1,56 @@
+"""Conditional hydraulic-eye/bearing allocation at SAME E2a common LP witness.
+No exterior-wrench-only shaft approval and no new F mass/LP acceptance.
+"""
+from pathlib import Path
+import math,json,hashlib
+import numpy as np
+from scipy.optimize import linprog
+O=Path(__file__).resolve().parent;ROOT=O.parents[1]
+read=lambda p:json.loads(Path(p).read_text());sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def write(n,o):(O/n).write_text(json.dumps(o,indent=2,allow_nan=False)+'\n')
+S=read(ROOT/'.scratch/gorilla_internal_e2a_integrated/scene.json');ST=read(ROOT/'.scratch/gorilla_internal_e2a_integrated/statics.json');JMAP={j['id']:j for j in S['joint_supports']}
+def pt(T,p):return (T@np.r_[p,1])[:3]
+records=[];flows=[]
+for pose in ST['poses']:
+ Ts={k:np.array(v) for k,v in pose['body_transforms'].items()};QQ=0
+ for a in S['actuators']:
+  j=next(j for j in S['joint_supports'] if j['parent_body']==a['base_body'] and j['output_body']==a['output_body']);axis=Ts[j['parent_body']][:3,:3]@np.array(j['axis_world']);P=pt(Ts[j['parent_body']],j['center_world_m']);A=pt(Ts[a['base_body']],a['neutral_A_world_m']);B=pt(Ts[a['output_body']],a['neutral_B_world_m']);u=(B-A)/np.linalg.norm(B-A);jac=float(u@np.cross(axis,B-P));ab=math.pi*a['bore_m']**2/4;aa=ab-math.pi*a['rod_m']**2/4;QQ+=(ab if jac>=0 else aa)*abs(jac)
+ flows.append({'pose':pose['id'],'all13hydraulic_axes_same_positive_qdot_sensitivity':[{'qdot_rad_s':q,'supply_L_min':QQ*q*60000,'ideal_supply_hydraulic_kW_at20_4MPa':QQ*q*20.4e6/1000} for q in [.1,.3,.5]],'flow_curve_metering_heat_holding_return_unknown':True})
+ for ci,c in enumerate(pose['cases']):
+  lp=c['common_reference_LP']
+  if not lp.get('solver_success'):continue
+  models={x['id']:x for x in lp['models_at_common_witness']}
+  for w in c['gross_hollow_shaft_at_one_common_witness']:
+   jid=w['id'];model=models[jid];j=JMAP[jid];acts=[a for a in S['actuators'] if a['base_body']==j['parent_body'] and a['output_body']==j['output_body']];axis=Ts[j['parent_body']][:3,:3]@np.array(j['axis_world']);pivot=pt(Ts[j['parent_body']],j['center_world_m']);tau=model['demand_Nm_at_common_witness'];geom=[]
+   for a in acts:
+    A=pt(Ts[a['base_body']],a['neutral_A_world_m']);B=pt(Ts[a['output_body']],a['neutral_B_world_m']);u=(B-A)/np.linalg.norm(B-A);jj=float(u@np.cross(axis,B-pivot));ab=math.pi*a['bore_m']**2/4;aa=ab-math.pi*a['rod_m']**2/4;fp=.9*(20.4e6*ab-.3e6*aa);fm=.9*(20.4e6*aa-.3e6*ab);geom.append((a,A,B,u,jj,fp,fm))
+   n=len(geom);ineq=[]
+   for i,g in enumerate(geom):
+    v=np.zeros(n+1);v[i]=1;v[-1]=-g[5];ineq.append(v.copy());v[i]=-1;v[-1]=-g[6];ineq.append(v.copy())
+   sol=linprog(np.r_[np.zeros(n),1],A_ub=np.array(ineq),b_ub=np.zeros(2*n),A_eq=[np.r_[[g[4] for g in geom],0]],b_eq=[tau],bounds=[(None,None)]*n+[(0,None)],method='highs')
+   if not sol.success:records.append({'pose':pose['id'],'case':ci,'joint':jid,'allocation_unknown':sol.message});continue
+   extF=np.array(w['resultant_force_N']);extM=np.array(w['resultant_moment_Nm']);driveF=sum(sol.x[i]*g[3] for i,g in enumerate(geom));driveM=sum(np.cross(g[2]-pivot,sol.x[i]*g[3]) for i,g in enumerate(geom));R=-(extF+driveF);M=-(extM+driveM);spread=.300 if jid=='waist_pitch' else .210;Mp=M-(M@axis)*axis;Rt=R-(R@axis)*axis;Rp=Rt/2-np.cross(axis,Mp)/spread;Rm=Rt/2+np.cross(axis,Mp)/spread;alloc=[]
+   for i,g in enumerate(geom):
+    a=g[0];f=abs(sol.x[i]);d=a['pin_m'];t=.010;gap=.045;pin_tau=f/(2*math.pi*d*d/4);eye_bearing=f/(2*d*t);bendM=f*gap/4;pin_sigma=bendM/(math.pi*d**3/32);alloc.append({'id':a['id'],'signed_ideal_drive_force_N':float(sol.x[i]),'axis_world':g[3].tolist(),'B_world_m':g[2].tolist(),'J_m_per_rad':g[4],'pin_diameter_m':d,'two_cheek_thickness_assumption_m':t,'pin_double_shear_Pa':float(pin_tau),'two_cheek_nominal_bearing_Pa':float(eye_bearing),'simple_pin_span45mm_bending_Pa':float(pin_sigma),'pin_actual_eye_compliance_clearance_or_grade_unknown':True})
+   records.append({'pose':pose['id'],'case_index':ci,'mass_profile':c['mass_profile'],'payload_kg':c['payload_kg_hypothesis'],'pressure_demand_kg':c['separate_pressure_demand_kg'],'gravity_factor':c['gravity_factor_sensitivity'],'joint':jid,'same_common_contact_reference_t':lp['reference_minimax_peak_use'],'torque_at_same_witness_Nm':tau,'force_allocation_minimax_fraction':float(sol.x[-1]),'external_descendant_force_N':extF.tolist(),'external_descendant_moment_Nm':extM.tolist(),'actual_ideal_cylinder_eyes':alloc,'bearing_resultant_force_N':R.tolist(),'bearing_resultant_moment_Nm':M.tolist(),'bearing_spread_assumption_m':spread,'bearing_plus_transverse_force_N':Rp.tolist(),'bearing_minus_transverse_force_N':Rm.tolist(),'unknown_axial_bearing_share_N':float(R@axis),'drive_axis_moment_residual_Nm':float(M@axis),'scope':'E2a commonLPsamecontactwitness plusidealdriveforcesallocatedonejoint; actualhydraulicpressure/synchrony,bearingstiffness/spacing/shaftdetailsunqualified. DoesnotproveFcaseloadorreplacefullbodyfreebody.'})
+# Native XY mid-span finite sections. Beamgrossstress usesalreadydrive-allocatedsupportwrenchasCONSERVATIVEinput sensitivity only; real shellcut/bulkhead stresses not solved.
+def rect(w,d,t,yc=0):
+ A=w*d-(w-2*t)*(d-2*t);Ixx=(d*w**3-(d-2*t)*(w-2*t)**3)/12;Iyy=(w*d**3-(w-2*t)*(d-2*t)**3)/12;return A,Ixx,Iyy
+sections=[]
+for route in ['integral_load_shell','paired_closed_webs']:
+ if route=='integral_load_shell':a,ix,iy=rect(.230,.200,.003);maxx=.100;maxy=.115;flat=.224;wall=.003
+ else:
+  a0,ix0,iy0=rect(.024,.070,.003);a=2*a0;ix=2*(ix0+a0*.105**2);iy=2*iy0;maxx=.035;maxy=.117;flat=.064;wall=.003
+ length=.390;crit=4*math.pi**2*210e9/(12*(1-.3**2))*(wall/flat)**2;euler=[{'K':k,'critical_axial_N':math.pi**2*210e9*min(ix,iy)/(k*length)**2} for k in [1,2]]
+ rr=[]
+ for r in records:
+  if r.get('joint')!='left_fold':continue
+  poseT=next(p for p in ST['poses'] if p['id']==r['pose'])['body_transforms']['left_middle_shank'];Rbody=np.array(poseT)[:3,:3].T;F=Rbody@np.array(r['bearing_resultant_force_N']);M=Rbody@np.array(r['bearing_resultant_moment_Nm']);M=M+np.cross(np.array([-.120,.470,.530])-np.array([-.085,.434,.750]),F);sigma=abs(F[2])/a+abs(M[0])*maxy/ix+abs(M[1])*maxx/iy
+  rr.append({'pose':r['pose'],'case_index':r['case_index'],'pressure_demand_kg':r['pressure_demand_kg'],'conditional_support_wrench_nominal_sigma_Pa':float(sigma),'section_centroid_neutral_m':[-.085,.434,.750],'frame':'own neutral XY material section, wrench rotatedbackbyposedmiddlebody andtranslatedfromfoldpivot; exactfullbodycutnot solved','cannot_be_actual_shell_cut_stress':True})
+ sections.append({'route':route,'actual_native_section_area_m2':a,'I_about_X_m4':ix,'I_about_Y_m4':iy,'length_m':length,'wall_m':wall,'plate_flat_span_m':flat,'gross_uniform_section_mass_kg':a*length*7850,'assumed_simple_edge_k4_local_plate_buckling_Pa':crit,'Euler_ideal_end_K_range':euler,'hypothesis_S355_nominal355MPa_not_certified':True,'nominal_wrench_sensitivities':rr,'worst_conditional_nominal_sigma_Pa':max(x['conditional_support_wrench_nominal_sigma_Pa'] for x in rr),'real_cut_rotation_corner_opening_weld_bolt_fatigue_unknown':True})
+peaks={}
+for r in records:
+ if 'bearing_resultant_force_N' not in r:continue
+ key=r['joint'];z=peaks.setdefault(key,{'max_eye_abs_N':0,'max_transverse_bearing_N':0,'max_pin_bending_Pa':0,'max_actual_support_resultant_N':0})
+ z['max_eye_abs_N']=max(z['max_eye_abs_N'],*[abs(a['signed_ideal_drive_force_N']) for a in r['actual_ideal_cylinder_eyes']]);z['max_transverse_bearing_N']=max(z['max_transverse_bearing_N'],np.linalg.norm(r['bearing_plus_transverse_force_N']),np.linalg.norm(r['bearing_minus_transverse_force_N']));z['max_pin_bending_Pa']=max(z['max_pin_bending_Pa'],*[a['simple_pin_span45mm_bending_Pa'] for a in r['actual_ideal_cylinder_eyes']]);z['max_actual_support_resultant_N']=max(z['max_actual_support_resultant_N'],np.linalg.norm(r['bearing_resultant_force_N']))
+write('conditional_witness_loads.json',{'robot_id':'gorilla_v0_1','input_master_sha256':sha(ROOT/'.scratch/gorilla_internal_e2a_integrated/scene.json'),'input_statics_sha256':sha(ROOT/'.scratch/gorilla_internal_e2a_integrated/statics.json'),'producer_sha256':sha(__file__),'records':records,'joint_peaks':peaks,'finite_sections':sections,'flow_sensitivity':flows,'physical_acceptance':False,'force_scope':'Includesidealhydrauliceyereactionsbeforebearingallocation; notonlyexternalwrench. No bearingrating/FEM/pressure/hold/continuousdrive/coolingverification.'});print('WITNESS READY',len(records),'peaks',peaks,'sections',[(x['route'],x['gross_uniform_section_mass_kg'],x['worst_conditional_nominal_sigma_Pa']/1e6) for x in sections],flush=True)

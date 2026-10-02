@@ -1,0 +1,120 @@
+"""Gorilla F macro material comparison and finite serial middle/distal/foot-interface sample.
+All routes remain rejected/unfinished. Does not modify the frozen inputs.
+"""
+from pathlib import Path
+from collections import defaultdict
+import math,json,hashlib,importlib.util
+import numpy as np,trimesh as tr
+from PIL import Image,ImageDraw
+ROOT=Path(__file__).resolve().parents[2];O=Path(__file__).resolve().parent
+read=lambda p:json.loads(Path(p).read_text());sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def write(n,o):(O/n).write_text(json.dumps(o,indent=2,allow_nan=False)+'\n')
+sp=importlib.util.spec_from_file_location('h',ROOT/'scripts/models/build_gorilla_internal_structure.py');h=importlib.util.module_from_spec(sp);sp.loader.exec_module(h)
+master=ROOT/'.scratch/gorilla_internal_e2a_integrated/scene.json';ledger=ROOT/'.scratch/gorilla_internal_e2a_integrated/mass_ledger.json';statp=ROOT/'.scratch/gorilla_internal_e2a_integrated/statics.json';basep=ROOT/'experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_scene.json';authority=ROOT/'robots/gorilla_v0_1/design/concepts/aa3/user_confirmed_four_view.jpg';S=read(master);L=read(ledger);ST=read(statp);BASE=read(basep);pm={p['name']:p for p in S['parts']}
+def mesh(p):return tr.Trimesh(p['vertices_world_m'],[[f[0],f[i],f[i+1]] for f in p['faces'] for i in range(1,len(f)-1)],process=False)
+source=defaultdict(lambda:np.zeros(3));detail=defaultdict(lambda:np.zeros(3));rows=defaultdict(list)
+for r in L['mass_rows']:
+ source[r['source']]+=r['mass_range_kg'];ids=r.get('member_ids',[]);ps=[pm[i] for i in ids if i in pm]
+ if r['source']=='E2_structure':cat='/'.join(sorted(set(p['role'] for p in ps))) if ps else 'complete_component_reference'
+ elif r['source']=='E2_system':p=pm.get(r['id'],{});cat=p.get('category') or p.get('E2_system',{}).get('category') or p.get('E_metadata',{}).get('category') or p.get('role','unknown')
+ else:cat='complete_source_group'
+ key=r['source']+'/'+str(cat);detail[key]+=r['mass_range_kg'];rows[key].append(r['id'])
+mass={'inputs':{str(p.relative_to(ROOT)):sha(p) for p in [master,ledger,statp,basep,authority]},'whole_mass_range_kg':L['whole_mass_range_kg'],'source_groups':{k:v.tolist() for k,v in source.items()},'functional_groups':{k:{'mass_range_kg':v.tolist(),'row_ids':rows[k]} for k,v in detail.items()},'rows_counted':len(L['mass_rows']),'scope':'Exact existing listed ledger. No scalar discounts/density changes; material union groups kept net. Functioncategoryofsystemcomesfromsamepartmetadata.'};write('mass_breakdown.json',mass)
+print('MASS READY',mass['source_groups'],flush=True)
+# Define explicit sample joints preserving E2 axes/serial ownership. Not an accepted physical contract.
+K=np.array([-.08,.398,.97]);F=np.array([-.12,.47,.53]);A=np.array([-.075,.5,.365]);FR=np.array([-.075,.5,.210]);LF=np.array([-.077,.5,.124]);LH=np.array([-.131,.5,.124]);rho=7850.;E=210e9;nu=.3;yield_pa=355e6
+parts=[]
+def add(n,b,m,**meta):
+ m.fix_normals();p={'name':n,'body':b,'role':'finite_frame_material','density_kg_m3':rho,'material_union_group':b,'vertices_world_m':m.vertices.tolist(),'faces':m.faces.tolist(),'rgba':[.28,.36,.40,1],'metadata':meta};parts.append(p);return p
+
+def ring(c,ro,ri,L,axis=[0,1,0]):
+ m=tr.creation.annulus(ri,ro,L,sections=64);m.apply_transform(tr.geometry.align_vectors([0,0,1],axis));m.apply_translation(c);return m
+
+def box(c,d):m=tr.creation.box(d);m.apply_translation(c);return m
+# Actual constant XY section closed shell with terminal opening lips, side skins and corner flanges.
+def shell_path(stations,w,dep,t):
+ verts=[];faces=[];poly=np.array([[-dep/2,-w/2],[dep/2,-w/2],[dep/2,w/2],[-dep/2,w/2]])
+ inner=np.array([[-dep/2+t,-w/2+t],[dep/2-t,-w/2+t],[dep/2-t,w/2-t],[-dep/2+t,w/2-t]])
+ for c in stations:
+  for q in [poly,inner]:verts.extend([[c[0]+x,c[1]+y,c[2]] for x,y in q])
+ for st in range(len(stations)-1):
+  a=st*8;b=a+8
+  for i in range(4):j=(i+1)%4;faces.extend([[a+i,a+j,b+j,b+i],[a+4+j,a+4+i,b+4+i,b+4+j]])
+ for st in [0,len(stations)-1]:
+  a=st*8
+  for i in range(4):j=(i+1)%4;faces.append([a+j,a+4+j,a+4+i,a+i] if st==len(stations)-1 else [a+i,a+4+i,a+4+j,a+j])
+ m=tr.Trimesh(verts,faces,process=False);m.fix_normals();return m
+routes=[]
+for route in ['integral_load_shell','paired_closed_webs']:
+ parts=[];top=K+[.015,0,-.025];bottom=F+[.015,0,.025];wm=.230;dm=.200;tm=.003
+ if route=='integral_load_shell':add(route+'_middle_finite_load_shell','left_middle_shank',shell_path([top,bottom],wm,dm,tm),finite_section_xy_m=[wm,dm,tm],side_skins_and_closed_corner_flange=True)
+ else:
+  for sg in [-1,1]:add(route+'_middle_closed_web_'+str(sg),'left_middle_shank',shell_path([top+[0,sg*.105,0],bottom+[0,sg*.105,0]],.024,.070,.003),finite_section_xy_m=[.024,.070,.003],not_solid_plate=True)
+  for zz in [.91,.60]:
+   c=bottom+(top-bottom)*((zz-bottom[2])/(top[2]-bottom[2]));add(route+'_end_cross_bulkhead_'+str(zz),'left_middle_shank',h.box_tube(c+[0,-.105,0],c+[0,.105,0],.040,.045,.003))
+ # Incoming knee output shaft/collars belongmiddle; outgoingfoldparentbearingbosses belongmiddle.
+ add(route+'_incoming_knee_hollow_shaft','left_middle_shank',ring(K,.035,.025,.280),shaft_ro_ri_m=[.035,.025],fit_rating_unknown=True)
+ for sg in [-1,1]:
+  cy=.113 if route=='integral_load_shell' else .105
+  add(route+'_knee_output_collar_'+str(sg),'left_middle_shank',ring(K+[0,sg*cy,0],.055,.025,.014))
+  add(route+'_fold_fixed_bearing_boss_'+str(sg),'left_middle_shank',ring(F+[0,sg*cy,0],.060,.040,.016),bearing_envelope_required=[.079,.071,.016],bearing_SKU_rating_unknown=True)
+ # Fixed actuator eye forks + two finite bulkhead ribs reachrealouterwall.
+ eye=np.array([-.09827142095,.405,.76901436955]);yy=float(bottom[1]+(top[1]-bottom[1])*((eye[2]-bottom[2])/(top[2]-bottom[2])))
+ for sg in [-1,1]:
+  c=eye+[0,sg*.0275,0];add(route+'_fold_fixed_eye_cheek_'+str(sg),'left_middle_shank',ring(c,.030,.01225,.010))
+  target=yy+sg*(.113 if route=='integral_load_shell' else .105);midy=(c[1]+target)/2
+  add(route+'_fold_eye_bulkhead_'+str(sg),'left_middle_shank',box([eye[0],midy,eye[2]-.027],[.054,abs(target-c[1])+.012,.006]),bulkhead_replaces_separate_long_tube_and_local_eye_post=True)
+ # Distal outputshaft/crank + continuous secondjoint-tojoint closedcarrier.
+ add(route+'_fold_output_hollow_shaft','left_distal_shank',ring(F,.035,.025,.250),shaft_ro_ri_m=[.035,.025])
+ out_eye=np.array([-.035,.405,.53])
+ for sg in [-1,1]:
+  c=out_eye+[0,sg*.0275,0];add(route+'_fold_output_eye_'+str(sg),'left_distal_shank',ring(c,.030,.01225,.010));add(route+'_fold_output_crank_'+str(sg),'left_distal_shank',h.box_tube([F[0]+.010,c[1],F[2]],[out_eye[0]-.015,c[1],out_eye[2]],.040,.045,.006));add(route+'_fold_output_crank_collar_'+str(sg),'left_distal_shank',ring([F[0],c[1],F[2]],.047,.025,.016))
+ dtop=F+[.015,0,-.025];dbot=A+[.015,0,.025];add(route+'_distal_finite_load_shell','left_distal_shank',shell_path([dtop,dbot],.180,.150,.004),finite_section_xy_m=[.180,.150,.004])
+ for sg in [-1,1]:
+  add(route+'_distal_fold_collar_'+str(sg),'left_distal_shank',ring(F+[0,sg*.088,0],.052,.025,.016));add(route+'_ankle_fixed_bearing_boss_'+str(sg),'left_distal_shank',ring(A+[0,sg*.088,0],.060,.040,.016))
+ # Actual ankleoutput->footrollfixed cradle + distinctmovingarch->fore/heel journal interfaces.
+ add(route+'_ankle_output_shaft','left_ankle_pitch_carrier',ring(A,.035,.025,.230))
+ for sg in [-1,1]:
+  add(route+'_ankle_output_collar_'+str(sg),'left_ankle_pitch_carrier',ring(A+[0,sg*.095,0],.050,.025,.016))
+  add(route+'_footroll_fixed_bearing_boss_'+str(sg),'left_ankle_pitch_carrier',ring(FR+[sg*.080,0,0],.060,.040,.018,[1,0,0]))
+  add(route+'_ankle_to_footroll_closed_side_'+str(sg),'left_ankle_pitch_carrier',h.box_tube(A+[0,sg*.095,-.039],FR+[sg*.080,0,.040],.034,.044,.004))
+ add(route+'_footroll_output_shaft','left_foot_roll_arch',ring(FR,.035,.025,.225,[1,0,0]));add(route+'_foot_arch_closed_crossmember','left_foot_roll_arch',h.box_tube([-.220,.35,.185],[-.220,.69,.185],.040,.050,.004))
+ add(route+'_footroll_to_arch_rear_box','left_foot_roll_arch',h.box_tube(FR+[-.100,0,0],[-.220,.5,.185],.040,.050,.004))
+ for family,j in [('forefoot',LF),('heel',LH)]:
+  for sg in [-1,1]:
+   c=j+[0,sg*.125,0];add(route+'_'+family+'_independent_fixed_journal_'+str(sg),'left_foot_roll_arch',ring(c,.040,.025,.020));add(route+'_'+family+'_arch_journal_web_'+str(sg),'left_foot_roll_arch',h.box_tube([-.220,c[1],.185],c+[0,0,.028],.030,.036,.004))
+ # Complete finite cylinder bodies preserved exactlyfromE2fold,not scaled. Theirposes/forcecapacityremainreference.
+ cyl=[]
+ for p in S['parts']:
+  if p.get('endpoint_driven_geometry') and p['name'].startswith('e2_left_fold_'):
+   q=dict(p);q['name']=route+'_'+p['name'];q['metadata']={'source_native_id':p['name'],'geometry_preserved':True};cyl.append(q)
+ parts.extend(cyl)
+ # Bearing references occupyactualannularspace butcarryonlyexplicitunqualifiedmass.
+ for p in list(parts):
+  if 'fixed_bearing_boss' in p['name']:
+   m=mesh(p);c=m.center_mass;ax=[1,0,0] if 'footroll' in p['name'] else [0,1,0];mm=ring(c,.0395,.0355,.016,ax);parts.append({'name':p['name']+'_bearing_reference','body':p['body'],'role':'bearing_reference','mass_range_kg':[.3,.6,1.2],'vertices_world_m':mm.vertices.tolist(),'faces':mm.faces.tolist(),'rating_unknown':True})
+ topo=[];groups={}
+ for p in parts:
+  m=mesh(p);topo.append({'id':p['name'],'finite':bool(np.isfinite(m.vertices).all()),'WT':bool(m.is_watertight),'winding':bool(m.is_winding_consistent),'positive':bool(m.volume>1e-10)})
+  if 'density_kg_m3' in p:
+   key=('act_'+p.get('motion_group','fixed')) if p.get('endpoint_driven_geometry') else p['body'];groups.setdefault(key,[]).append(p)
+ unions={};stats=[]
+ for g,ps in groups.items():
+  m=tr.boolean.union([mesh(p) for p in ps],engine='manifold');unions[g]=m;cs=[c for c in m.split(only_watertight=False) if c.volume>1e-10];stats.append({'group':g,'native_ids':[p['name'] for p in ps],'net_volume_m3':float(m.volume),'mass_kg':float(m.volume*rho),'positive_components':len(cs),'bounds_world_m':m.bounds.tolist()})
+ collisions=[]
+ for i,(ga,ma) in enumerate(unions.items()):
+  for gb,mb in list(unions.items())[i+1:]:
+   if np.all(ma.bounds[1]>mb.bounds[0]) and np.all(mb.bounds[1]>ma.bounds[0]):
+    m=tr.boolean.intersection([ma,mb],engine='manifold')
+    if m.volume>1e-10:collisions.append({'a':ga,'b':gb,'volume_cm3':float(m.volume*1e6),'bounds_world_m':m.bounds.tolist()})
+ armorhits=[]
+ for g,m in unions.items():
+  for p in BASE['parts']:
+   if p['role'] not in ['armor_cover','armor_surface']:continue
+   mm=mesh(p)
+   if np.all(m.bounds[1]>mm.bounds[0]) and np.all(mm.bounds[1]>m.bounds[0]):
+    x=tr.boolean.intersection([m,mm],engine='manifold')
+    if x.volume>1e-10:armorhits.append({'material_group':g,'armor_name':p['name'],'volume_cm3':float(x.volume*1e6),'bounds_world_m':x.bounds.tolist()})
+ data={'robot_id':'gorilla_v0_1','route':route,'parts':parts,'joint_interfaces':[{'id':'left_knee','parent_body':'left_thigh_not_built','output_body':'left_middle_shank','center_world_m':K.tolist(),'axis_world':[0,1,0]},{'id':'left_fold','parent_body':'left_middle_shank','output_body':'left_distal_shank','center_world_m':F.tolist(),'axis_world':[0,1,0]},{'id':'left_ankle','parent_body':'left_distal_shank','output_body':'left_ankle_pitch_carrier','center_world_m':A.tolist(),'axis_world':[0,1,0]},{'id':'left_foot_roll','parent_body':'left_ankle_pitch_carrier','output_body':'left_foot_roll_arch','center_world_m':FR.tolist(),'axis_world':[1,0,0]}],'material_union':stats,'net_material_mass_kg':sum(x['mass_kg'] for x in stats),'topology_failures':[x for x in topo if not all(x[k] for k in ['finite','WT','winding','positive'])],'different_assembly_material_intersections':collisions,'original_native_armor_material_intersections':armorhits,'sample_scope':'Leftknee→fold→ankle→footrollfixed+independentfore/heelfixedjournals; thighs/waist/movingforeheeltrays/brace/locks/wholebearingsnotrebuilt. Endpointfoldcylinder preserved source, not newcapacity. Serialownershipdoesnotcertifyconnection.','geometry_accepted':False,'physics_accepted':False,'inputs':mass['inputs']};write(route+'_native.json',data);routes.append(data)
+ print('ROUTE READY',route,len(parts),data['net_material_mass_kg'],[(x['group'],x['positive_components']) for x in stats],len(collisions),len(armorhits),flush=True)
+write('prototype_summary.json',{'routes':[{k:v for k,v in r.items() if k!='parts'} for r in routes],'physics_accepted':False});print('PROTOTYPES READY',flush=True)

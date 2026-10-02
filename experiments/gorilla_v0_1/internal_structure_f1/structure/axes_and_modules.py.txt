@@ -1,0 +1,62 @@
+"""Gorilla F1 two compact axis templates and full unscaled4 rotary kit probes."""
+from pathlib import Path
+import json,math,hashlib,copy
+import numpy as np,trimesh as tr
+ROOT=Path(__file__).resolve().parents[2];O=Path(__file__).resolve().parent
+read=lambda p:json.loads(Path(p).read_text());sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+D=read(ROOT/'robots/gorilla_v0_1/configs/internal_structure_d_system_spec.json');BASE=read(ROOT/'experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_scene.json');OLD=read(ROOT/'.scratch/gorilla_internal_e2_structure/interface.json');P=read(ROOT/'robots/gorilla_v0_1/configs/appearance_c_spec.json')['points_world_m']
+def mesh(p):return tr.Trimesh(p['vertices_world_m'],[[f[0],f[i],f[i+1]] for f in p['faces'] for i in range(1,len(f)-1)],process=False)
+def ring(c,r,ri,L,axis):
+ m=tr.creation.annulus(ri,r,L,sections=48) if ri>0 else tr.creation.cylinder(r,L,sections=48);m.apply_transform(tr.geometry.align_vectors([0,0,1],axis));m.apply_translation(c);return m
+
+def stock(prefix,j,axis,parent,child):
+ rows=[x for x in D['modules'] if x['id'].startswith('ds_'+prefix+'_')];ad=next(x for x in rows if x['id'].endswith('hollow_output_adapter'));c0=np.array(ad['center_world_m']);oa=c0-np.array(next(x for x in rows if x['id'].endswith('_gear'))['center_world_m']);oa/=np.linalg.norm(oa);T=tr.geometry.align_vectors(oa,axis);T[:3,3]=np.array(j)-T[:3,:3]@c0;out=[]
+ for r in rows:
+  if r['category']=='housing' and not r['id'].endswith(('_gear_load_shell','_motor_cooling_case','_input_hub_reserve','_hollow_output_adapter')):continue
+  geo=r['geometry'];k=geo['kind']
+  if k=='box':m=tr.creation.box(geo['dimensions_xyz_m']);m.apply_translation(r['center_world_m'])
+  else:m=ring(r['center_world_m'],geo.get('radius_m',geo.get('outer_radius_m')),geo.get('inner_radius_m',0),geo['length_m'],geo['axis_world'])
+  m.apply_transform(T);p={'name':'f1_'+r['id'],'body':child if r['id'].endswith('hollow_output_adapter') else parent,'role':'finite_frame_material' if r['category']=='housing' else 'complete_component_reference','vertices_world_m':m.vertices.tolist(),'faces':m.faces.tolist(),'rgba':[.20,.33,.41,1],'source_D_module_id':r['id'],'full_geometry_scaled':False,'source_dimensions':geo,'stock_group':prefix,'physical_assembly_id':child if r['id'].endswith('hollow_output_adapter') else parent,'material_union_group':child if r['id'].endswith('hollow_output_adapter') else parent}
+  if p['role']=='finite_frame_material':p['density_kg_m3']=7850.
+  else:p['mass_range_kg']=r['mass_range_kg']
+  out.append(p)
+ return out
+TEMPLATES=[{'id':'compact_a','W':[0,0,1.72],'WP':[0,0,1.82],'WR':[.230,0,1.91],'HY':[-.130,.350,1.86],'HR':[-.075,.350,1.74]},{'id':'compact_b','W':[.015,0,1.68],'WP':[.015,0,1.79],'WR':[.245,0,1.93],'HY':[-.100,.350,1.84],'HR':[-.020,.350,1.74]}]
+def tree(t):
+ T={'pelvis':{'parent':None}};js=[]
+ def a(c,p,j,ax,id):T[c]={'parent':p,'joint_id':id,'pivot_world_m':list(j),'axis_world':ax};js.append({'id':id,'parent_body':p,'output_body':c,'center_world_m':list(j),'axis_world':ax})
+ a('waist_yaw_carrier','pelvis',t['W'],[0,0,1],'waist_yaw');a('waist_pitch_carrier','waist_yaw_carrier',t['WP'],[0,1,0],'waist_pitch');a('torso','waist_pitch_carrier',t['WR'],[1,0,0],'waist_roll')
+ for side,s in [('left',1),('right',-1)]:
+  def rp(j):q=np.array(j,float);q[1]*=s;return q
+  for child,parent,j,ax,id in [('hip_yaw_carrier','pelvis',t['HY'],[0,0,1],'hip_yaw'),('hip_roll_carrier',side+'_hip_yaw_carrier',t['HR'],[1,0,0],'hip_roll'),('thigh',side+'_hip_roll_carrier',P['left_hip'],[0,1,0],'hip'),('middle_shank',side+'_thigh',P['left_knee'],[0,1,0],'knee'),('distal_shank',side+'_middle_shank',P['left_fold'],[0,1,0],'fold'),('ankle_pitch_carrier',side+'_distal_shank',[-.075,.5,.365],[0,1,0],'ankle'),('foot_roll_arch',side+'_ankle_pitch_carrier',[-.075,.5,.210],[1,0,0],'foot_roll'),('forefoot_display',side+'_foot_roll_arch',[-.077,.5,.124],[0,1,0],'forefoot'),('heel_display',side+'_foot_roll_arch',[-.131,.5,.124],[0,1,0],'heel')]:a(side+'_'+child,parent,rp(j),ax,side+'_'+id)
+ return T,js
+
+def probe(t):
+ pp=stock('waist_yaw',t['W'],[0,0,1],'pelvis','waist_yaw_carrier')+stock('waist_roll',t['WR'],[1,0,0],'waist_pitch_carrier','torso')
+ for side,s in [('left',1),('right',-1)]:j=np.array(t['HY'],float);j[1]*=s;pp+=stock(side+'_hip_yaw',j,[0,0,-1],'pelvis',side+'_hip_yaw_carrier')
+ armor=[(p,mesh(p)) for p in BASE['parts'] if p['role'] in ['armor_cover','armor_surface']];hits=[];selfhits=[]
+ for p in pp:
+  m=mesh(p)
+  for q,n in armor:
+   if np.all(m.bounds[1]>n.bounds[0]) and np.all(n.bounds[1]>m.bounds[0]):
+    x=tr.boolean.intersection([m,n],engine='manifold')
+    if x.volume>1e-10:hits.append({'part':p['name'],'armor':q['name'],'volume_cm3':float(x.volume*1e6),'bounds_world_m':x.bounds.tolist()})
+ for i,p in enumerate(pp):
+  m=mesh(p)
+  for q in pp[i+1:]:
+   if p['stock_group']==q['stock_group']:continue
+   n=mesh(q)
+   if np.all(m.bounds[1]>n.bounds[0]) and np.all(n.bounds[1]>m.bounds[0]):
+    x=tr.boolean.intersection([m,n],engine='manifold')
+    if x.volume>1e-10:selfhits.append({'a':p['name'],'b':q['name'],'volume_cm3':float(x.volume*1e6)})
+ return {'id':t['id'],'template':t,'parts':pp,'original_armor_hits':hits,'different_stock_package_hits':selfhits,'score':[len(selfhits),sum(x['volume_cm3'] for x in selfhits),len(hits),sum(x['volume_cm3'] for x in hits)],'geometry_accepted':False}
+if __name__=='__main__':
+ probes=[probe(t) for t in TEMPLATES];chosen=min(probes,key=lambda x:tuple(x['score']));T,js=tree(chosen['template']);window={'center_world_m':[.010,0,2.230],'dimensions_xyz_m':[.200,.350,.250],'normal_installation_axis_world':[1,0,0]};win=tr.creation.box(window['dimensions_xyz_m']);win.apply_translation(window['center_world_m']);window['original_material_intersections']=[]
+ for p in BASE['parts']:
+  if p['role'] not in ['armor_cover','armor_surface']:continue
+  m=mesh(p)
+  if np.all(m.bounds[1]>win.bounds[0]) and np.all(win.bounds[1]>m.bounds[0]):
+   x=tr.boolean.intersection([win,m],engine='manifold')
+   if x.volume>1e-10:window['original_material_intersections'].append({'part':p['name'],'volume_cm3':float(x.volume*1e6),'bounds_world_m':x.bounds.tolist()})
+ result={'robot_id':'gorilla_v0_1','two_templates':probes,'selected_diagnostic_id':chosen['id'],'selected_template':chosen['template'],'body_tree':T,'joint_supports':js,'reserved_window':window,'selection_scope':'Least full4referencepackage crossintersection thenarmor count; NOT accepted architecture, support/hyd/frame/systemstillunbuilt atprobe.','input_hashes':{str(p.relative_to(ROOT)):sha(p) for p in [ROOT/'robots/gorilla_v0_1/configs/internal_structure_d_system_spec.json',ROOT/'experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_scene.json',ROOT/'.scratch/gorilla_internal_e2_structure/interface.json']}}
+ (O/'axis_probe.json').write_text(json.dumps(result,indent=2)+'\n');print('AXES',[(p['id'],p['score']) for p in probes],'chosen',chosen['id'],'windowarmor',window['original_material_intersections'],flush=True)

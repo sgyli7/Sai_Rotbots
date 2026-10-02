@@ -1,0 +1,14 @@
+from pathlib import Path
+import hashlib,json
+P=Path(__file__).resolve().parent
+m=json.loads((P/'manifest.json').read_text())
+rows={r['path']:r for r in m['inputs']+m['outputs']}
+for f in ['verify_templates.py','finalize_receipt.py','verification.json','README.md']:
+ q=P/f; row={'path':str(q),'sha256':hashlib.sha256(q.read_bytes()).hexdigest(),'bytes':q.stat().st_size}
+ target='inputs' if f.endswith('.py') else 'outputs'
+ m[target]=[r for r in m[target] if r['path']!=str(q)]+[row]
+m['reproduction_commands']=['.venv/bin/python .scratch/gorilla_internal_f1_system/module_templates/build_templates.py','.venv/bin/python .scratch/gorilla_internal_f1_system/module_templates/verify_templates.py','.venv/bin/python .scratch/gorilla_internal_f1_system/module_templates/finalize_receipt.py']
+for r in m['inputs']+m['outputs']:
+ if hashlib.sha256(Path(r['path']).read_bytes()).hexdigest()!=r['sha256']:raise ValueError('Hash mismatch: '+r['path'])
+(P/'manifest.json').write_text(json.dumps(m,indent=2)+'\n')
+print('final manifest',hashlib.sha256((P/'manifest.json').read_bytes()).hexdigest())

@@ -1,0 +1,18 @@
+from pathlib import Path
+import json,hashlib,datetime
+P=Path(__file__).resolve().parent;R=P.parents[1];S=R/'.scratch/gorilla_internal_f1_system';ST=R/'.scratch/gorilla_internal_f1_structure'
+def rd(p):return json.loads(p.read_text())
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+st=rd(ST/'structure_scene.json');sp=rd(S/'system_spec.json');old=rd(R/'.scratch/gorilla_internal_e2a_integrated/scene.json');oldp={p['name']:p for p in old['parts']};out=[]
+for n in [1,2]:
+ s=rd(S/f'layout_{n}_scene.json');parts={p['name']:p for p in s['parts']};rows={r['id']:r for r in s['mass_rows_system_and_retained_context_only']};records=[]
+ for k,ids in sp['replacements'].items():
+  if isinstance(ids,list):records.append({'group':k,'listed_old_ids':len(ids),'old_native_present_ids':[x for x in ids if x in parts],'old_mass_row_present_ids':[x for x in ids if x in rows]})
+ el=st['retained_hydraulic_converted_electronics'];hyd=[{'id':i,'native_present':i in parts,'mass_row_present':i in rows,'range_kg':rows[i]['mass_range_kg'] if i in rows else None} for i in el];pads=['left_composite_forepad','left_composite_heel_pad','right_composite_forepad','right_composite_heel_pad'];padrows=[]
+ for p in pads:padrows.append({'id':p,'geometry_vertices_faces_exact_E2a':all(parts[p][k]==oldp[p][k] for k in ['vertices_world_m','faces']),'mass_row_present':p in rows,'role':parts[p]['role']})
+ edges=['left_composite_forepad_upper_edge','right_composite_forepad_upper_edge'];edge=[{'id':i,'E2a_native_present':i in oldp,'F1_native_present':i in parts,'F1_mass_row_present':i in rows,'extra_F1_subtraction_credit_kg':0.0} for i in edges]
+ water=[r for r in rows.values() if r['id'].startswith('e_coolant_inventory_')];torso=parts['e2_upper_net_torso'];v=torso['vertices_world_m'];f=torso['faces']
+ out.append({'layout':n,'scene_sha256':sha(S/f'layout_{n}_scene.json'),'replacements':records,'twenty_hydraulic_feedback_brake_controller_connector_rows':hyd,'twenty_retained_native_and_mass_count':sum(x['native_present'] and x['mass_row_present'] for x in hyd),'four_main_pads':padrows,'two_already_absent_upperedges':edge,'old_upper_torso_native_present':True,'old_upper_torso_mass_challenge_retained':rows['e2_upper_net_torso']['retained_context_challenge'],'old_upper_torso_range_kg':rows['e2_upper_net_torso']['mass_range_kg'],'water_inventory_row_ids':[r['id'] for r in water],'stock_disjoint_spatial_allocation_qualified':False})
+receipt={'schema':'gorilla_f1_replacement_details_receipt_v1','computed_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'inputs':{str(p):sha(p) for p in [ST/'structure_scene.json',S/'system_spec.json',R/'.scratch/gorilla_internal_e2a_integrated/scene.json']},'layouts':out,'upstream_unchanged':True}
+(P/'replacement_details_receipt.json').write_text(json.dumps(receipt,indent=2)+'\n')
+print([(x['layout'],[(r['group'],len(r['old_native_present_ids']),len(r['old_mass_row_present_ids'])) for r in x['replacements']]) for x in out])

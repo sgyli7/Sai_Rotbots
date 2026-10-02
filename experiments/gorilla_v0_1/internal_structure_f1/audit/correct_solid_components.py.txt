@@ -1,0 +1,43 @@
+"""Keep signed inner voids while correcting material component counts, Mesh64 only."""
+from pathlib import Path
+import json,hashlib,datetime
+import numpy as np
+import manifold3d as mm
+P=Path(__file__).resolve().parent;R=P.parents[1];ST=R/'.scratch/gorilla_internal_f1_structure'
+scene_path=ST/'structure_scene.json';ledger_path=ST/'mass_ledger.json';checks_path=ST/'checks.json'
+s=json.loads(scene_path.read_bytes());ledger=json.loads(ledger_path.read_bytes());checks=json.loads(checks_path.read_bytes());parts={p['name']:p for p in s['parts']};tol=1e-10
+
+def tri(fs):return np.ascontiguousarray([[f[0],f[i],f[i+1]] for f in fs for i in range(1,len(f)-1)],dtype=np.uint64)
+def mf(p):return mm.Manifold(mm.Mesh64(np.ascontiguousarray(p['vertices_world_m'],dtype=np.float64),tri(p['faces'])))
+def tet(vs,fs):
+ o=(vs.min(0)+vs.max(0))/2;a,b,c=(vs-o)[fs].transpose(1,0,2);vv=np.einsum('ij,ij->i',a,np.cross(b,c))/6;V=float(vv.sum());C=(vv[:,None]*(a+b+c)/4).sum(0)/V+o;return V,C
+
+def correct(u):
+ cs=u.decompose(); vs=[c.volume() for c in cs]; positive=[i for i,v in enumerate(vs) if v>tol]; negative=[i for i,v in enumerate(vs) if v< -tol]; small=[i for i,v in enumerate(vs) if abs(v)<=tol]
+ attach=[];net={i:vs[i] for i in positive};unknown=[]
+ for j in negative:
+  m=cs[j].to_mesh64(); reversed_void=mm.Manifold(mm.Mesh64(np.array(m.vert_properties[:,:3],dtype=np.float64,order="C",copy=True),np.array(m.tri_verts[:,::-1],dtype=np.uint64,order="C",copy=True)))
+  candidates=[]
+  for i in positive:
+   iv=(cs[i]^reversed_void).volume()
+   if abs(iv+vs[j])<=max(tol,abs(vs[j])*1e-8):candidates.append((vs[i],i,iv))
+  if not candidates:unknown.append(j);continue
+  _,parent,iv=min(candidates);net[parent]+=vs[j];attach.append({'negative_boundary_index':j,'negative_volume_m3':vs[j],'smallest_containing_positive_index':parent,'containment_intersection_volume_m3':iv})
+ return {'raw_boundary_components':len(cs),'positive_outer_boundary_components':len(positive),'negative_inner_cavity_boundaries':len(negative),'small_signed_boundary_components':len(small),'all_signed_boundary_volumes_m3':vs,'negative_boundary_assignments':attach,'unassigned_negative_boundary_indices':unknown,'corrected_material_solid_component_count':len(positive) if not unknown else None,'corrected_solid_component_net_volumes_m3':[net[i] for i in positive],'signed_boundary_volume_sum_m3':sum(vs),'union_net_volume_m3':u.volume(),'signed_volume_conservation_error_m3':sum(vs)-u.volume(),'corrected_solids_volume_conservation_error_m3':sum(net.values())+sum(vs[i] for i in small)-u.volume() if not unknown else None}
+
+# Closed inner surfaces must subtract from their containing solid, not be flipped positive.
+reg=[]
+outer=mm.Manifold.cube([2,2,2]);hollow=outer-mm.Manifold.cube([1,1,1]).translate([.5,.5,.5]);ring=mm.Manifold.cylinder(1,1)-mm.Manifold.cylinder(1,.5)
+examples=[('closed_hollow_cube',hollow,1,7.),('through_hollow_ring',ring,1,ring.volume()),('two_disjoint_hollow_cubes',hollow+hollow.translate([3,0,0]),2,14.),('island_inside_closed_cavity',hollow+mm.Manifold.cube([.2,.2,.2]).translate([.8,.8,.8]),2,7.008)]
+for name,u,n,V in examples:
+ c=correct(u);c.update(id=name,expected_corrected_solids=n,expected_volume_m3=V);assert c['corrected_material_solid_component_count']==n and abs(c['union_net_volume_m3']-V)<1e-9;reg.append(c)
+rows=[]
+for g in ledger['material_groups']:
+ inputs=[mf(parts[n]) for n in g['member_ids']]
+ if any(str(m.status()).split('.')[-1]!='NoError' for m in inputs):raise ValueError('Mesh64 invalid '+g['group'])
+ u=mm.Manifold.batch_boolean(inputs,mm.OpType.Add);c=correct(u);m=u.to_mesh64();V,C=tet(np.asarray(m.vert_properties[:,:3]),np.asarray(m.tri_verts,dtype=int))
+ c.update(group=g['group'],member_ids=g['member_ids'],old_positive_surface_count=g.get('positive_connected_components'),old_surface_volume_sum_cm3=sum(g.get('component_volumes_cm3',[])),Mesh64_status=str(u.status()),signed_tetra_volume_m3=V,tetra_minus_manifold_volume_m3=V-u.volume(),centroid_world_m=C.tolist(),ledger_float32_net_volume_delta_m3=V-g['net_volume_m3'],density_kg_m3=g['density_kg_m3'],independent_Mesh64_mass_kg=V*g['density_kg_m3'])
+ rows.append(c)
+report={'schema':'gorilla_f1_signed_solid_component_correction_v1','computed_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'inputs':{str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in [scene_path,ledger_path,checks_path]},'method':'native triangles -> manifold3d.Manifold(Mesh64); Add union; decompose raw signed boundary surfaces; count positive outer boundaries, attach each negative inner cavity by full-volume intersection to smallest containing positive; preserve all signed volumes. Independent signed tetrahedron first moments on resulting Mesh64. Never trimesh.split/fix_normals for component/material logic.','tolerance_m3':tol,'containment_volume_tolerance':'max(1e-10m3, cavity-volume*1e-8)','regressions':reg,'material_group_count':len(rows),'groups':rows,'old_disconnected_surface_group_count':len(checks.get('disconnected_material_groups',[])),'corrected_disconnected_material_group_count':sum(r['corrected_material_solid_component_count']>1 for r in rows if r['corrected_material_solid_component_count'] is not None),'unresolved_groups':[r['group'] for r in rows if r['corrected_material_solid_component_count'] is None],'corrected_whole_material_solid_component_count':sum(r['corrected_material_solid_component_count'] for r in rows if r['corrected_material_solid_component_count'] is not None),'net_material_mass_Mesh64_kg':sum(r['independent_Mesh64_mass_kg'] for r in rows),'net_material_mass_ledger_kg':ledger['net_material_mass_kg'],'max_volume_conservation_error_m3':max(abs(r['signed_volume_conservation_error_m3']) for r in rows),'connectivity_strength_or_attachment_qualified':False,'upstream_frozen_report_not_modified':True}
+(P/'solid_components_receipt.json').write_text(json.dumps(report,indent=2)+'\n')
+print(json.dumps({k:report[k] for k in ['material_group_count','old_disconnected_surface_group_count','corrected_disconnected_material_group_count','corrected_whole_material_solid_component_count','unresolved_groups','net_material_mass_Mesh64_kg','net_material_mass_ledger_kg','max_volume_conservation_error_m3']},indent=2));print('changed',[(r['group'],r['old_positive_surface_count'],r['corrected_material_solid_component_count'],r['negative_inner_cavity_boundaries']) for r in rows if r['old_positive_surface_count']!=r['corrected_material_solid_component_count']])

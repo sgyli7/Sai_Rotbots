@@ -1,0 +1,21 @@
+from pathlib import Path
+import json,hashlib,datetime
+P=Path(__file__).resolve().parent;R=P.parents[1]
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+def rd(p):return json.loads(p.read_text())
+inputs={}
+for fname in ['structure_receipt.json','solid_components_receipt.json','system_templates_receipt.json','present_mass_receipt.json','replacement_details_receipt.json']:
+ for k,v in rd(P/fname)['inputs'].items():
+  if isinstance(v,dict):path=Path(v['path']);digest=v['sha256']
+  else:path=Path(k);digest=v
+  inputs[str(path)]={'sha256':digest,'exists':path.exists(),'current_sha256':sha(path) if path.exists() else None}
+for name in ['system_handoff.json']:
+ path=R/'.scratch/gorilla_internal_f1_structure'/name;inputs[str(path)]={'sha256':sha(path),'exists':True,'current_sha256':sha(path)}
+for name in ['manifest.json','source_binding_audit.json','screen_summary.json','flow_and_power.json','build_system.py']:
+ path=R/'.scratch/gorilla_internal_f1_system'/name;inputs[str(path)]={'sha256':sha(path),'exists':True,'current_sha256':sha(path)}
+solid=rd(P/'solid_components_receipt.json');mass=rd(P/'present_mass_receipt.json');sys=rd(P/'system_templates_receipt.json')
+final={'schema':'gorilla_f1_final_independent_audit_receipt_v1','finalized_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'scope':'Both frozen rejected F1 layouts; read-only source audit; outputs only .scratch/gorilla_internal_f1_audit','input_hash_errors':[k for k,v in inputs.items() if v['sha256']!=v['current_sha256']],'source_frozen_and_unchanged':all(v['sha256']==v['current_sha256'] for v in inputs.values()),'old24_component_scope':'old closed surface-island diagnosis, superseded for material-solid count','corrected_material_disconnected_groups':solid['corrected_disconnected_material_group_count'],'corrected_whole_material_solid_components':solid['corrected_whole_material_solid_component_count'],'uncorrected_frozen_system_ledger_had_phantom_rows':142,'removed_phantom_historical_mass_range_kg':mass['layouts'][0]['removed_phantom_historical_mass_range_kg'],'corrected_present_retained_context_excluding_templates_and_oil_range_kg':mass['layouts'][0]['corrected_present_retained_context_excluding_new36templates_oil_range_kg'],'combined_listed_present_inventory_range_kg_not_robot_mass':mass['layouts'][0]['combined_listed_present_candidate_inventory_range_kg'],'complete_robot_geometry_physics_mass_COM_inertia_qualified':False,'original_torso_challenge_preserved_kg':77.9372235775857,'four_missing_cylinders_not_zero_mass':True,'system_completed_vs_first_structure_pending_receipt':True,'upperedge_ids_absent_before_F1_no_credit':True,'all18holding_and18directional_accounted_while_4holding_unsupported':True,'declared_global_oil_stock_count':1,'water_inventory_rows_count':16,'upstream_edited':False,'not_a_physics_release':True,'receipt_files':['structure_receipt.json','solid_components_receipt.json','system_templates_receipt.json','present_mass_receipt.json','replacement_details_receipt.json','report.md']}
+(P/'final_receipt.json').write_text(json.dumps(final,indent=2)+'\n')
+commands=['.venv/bin/python .scratch/gorilla_internal_f1_audit/'+s for s in ['audit_structure.py','correct_solid_components.py','audit_system_templates.py','classify_present_mass.py','audit_replacement_details.py','finalize_audit.py']]
+manifest={'schema':'gorilla_f1_final_independent_audit_manifest_v1','finalized_utc':final['finalized_utc'],'inputs':inputs,'outputs':{str(p):{'sha256':sha(p),'bytes':p.stat().st_size} for p in sorted(P.iterdir()) if p.is_file() and p.name!='manifest.json'},'reproduction_commands_from_repo_root':commands,'python_runtime':str(R/'.venv/bin/python'),'solid_component_tolerance_m3':1e-10,'no_OEM_source_assets_copied':True,'outputs_stay_ignored':True}
+(P/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n'); print('final source errors',final['input_hash_errors']);print('report',sha(P/'report.md'));print('final_receipt',sha(P/'final_receipt.json'));print('manifest',sha(P/'manifest.json'))
