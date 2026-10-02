@@ -1,0 +1,198 @@
+{
+  "date": "2026-09-28",
+  "status": "isolated_probe_not_engineering_or_sim2sim_acceptance",
+  "question": "Can an isolated R2 planar loop remain closed, and can the artificial drive be transferred?",
+  "scope_limitations": [
+    "Fixed frame, artificial masses and inertia geometry",
+    "Zero gravity and geometric contacts disabled",
+    "No real motor, gearbox, passive pad, object, cloth, whole robot or manufacturing assembly",
+    "Godot drive gains were varied; this is not a calibrated dynamics parity comparison",
+    "Temporary source is retained locally in ignored .scratch, not a published diagnostic deliverable"
+  ],
+  "source_sha256": {
+    ".scratch/goose_four_bar_probe/mujoco_probe.py": "e08224289d0b36b54ffdc94d62496393bbb69f2c8ac1f4fcc2ec1de8ba84d605",
+    ".scratch/goose_four_bar_probe/mechanism.xml": "bb2ef8196eef7475de471baaef2a66f6ebb6d9c86b9209284c44e206beb36075",
+    ".scratch/goose_four_bar_probe/godot_probe.gd": "d3b67c94c50102e28b5435a3c80a3ed95fa92e30bfb6f022128d74d41ef5cc6e",
+    ".scratch/goose_four_bar_probe/drive_body.gd": "de8a1e3f7dc8f7856de234c4fd7d7e5532fc6059d7fddc13252e601aec741fe9",
+    ".scratch/goose_four_bar_probe/drive_body_high_gain.gd": "68dc320bea5d7b4a6437ec1039a514e4d0e6a88d89e9ea02f8faa2b26fe96e48",
+    ".scratch/goose_four_bar_probe/drive_body_unactuated.gd": "796fdaf0fce2d3bbc6bb20241d9b771e1194910517720ebad5d52d51504c8205",
+    ".scratch/goose_four_bar_probe/project.godot": "da357a06b10e30eee256072040c526f2486d9f38f2416572300bc6fbf6a04f69",
+    ".scratch/goose_four_bar_probe/main.tscn": "bf65679ceb190daf957ec4c43c1b635ed3b70d76261bf4baf6441ecbb580a081"
+  },
+  "mujoco_result": {
+    "scope": "Isolated fixed-base ideal loop with artificial masses and PD drive; not full robot/CAD/servo/grasp validation",
+    "mujoco_version": "3.10.0",
+    "dt_s": 0.0005,
+    "L_m": 0.025,
+    "H_m": 0.014,
+    "gravity": [
+      0,
+      0,
+      0
+    ],
+    "geometric_contacts_disabled": true,
+    "masses_kg": {
+      "each_crank": 0.005,
+      "jaw": 0.02
+    },
+    "real_motor_model": false,
+    "ideal_known_force_feedforward": true,
+    "passive_compliance_model": false,
+    "ground_or_grasp_object": false,
+    "kinematic_tree_hinges": 3,
+    "actuators": 1,
+    "closure_equality_constraints": 1,
+    "cases": [
+      {
+        "artificial_applied_jaw_com_force_N": [
+          0.0,
+          0,
+          0.0
+        ],
+        "max_loop_residual_mm": 1.4241525478745433e-07,
+        "max_jaw_tilt_deg": 5.948960752782834e-07,
+        "max_ideal_path_residual_mm": 1.4536053263847215e-07,
+        "max_target_tracking_error_deg": 1.4432353197834553,
+        "actual_crank_range_deg": [
+          -33.94492289392899,
+          40.081688560068656
+        ],
+        "drive_saturation_steps": 0,
+        "samples": 1100
+      },
+      {
+        "artificial_applied_jaw_com_force_N": [
+          0.5,
+          0,
+          0.0
+        ],
+        "max_loop_residual_mm": 9.899918640249494e-05,
+        "max_jaw_tilt_deg": 0.0005295290598978596,
+        "max_ideal_path_residual_mm": 0.0001293883581228387,
+        "max_target_tracking_error_deg": 1.4432476259690386,
+        "actual_crank_range_deg": [
+          -33.945011113538456,
+          40.08181825180799
+        ],
+        "drive_saturation_steps": 0,
+        "samples": 1100
+      },
+      {
+        "artificial_applied_jaw_com_force_N": [
+          1.0,
+          0,
+          0.0
+        ],
+        "max_loop_residual_mm": 0.0001980742030060352,
+        "max_jaw_tilt_deg": 0.0010594736203907217,
+        "max_ideal_path_residual_mm": 0.00025887824219094214,
+        "max_target_tracking_error_deg": 1.4432844883446532,
+        "actual_crank_range_deg": [
+          -33.94527681990247,
+          40.08220888490326
+        ],
+        "drive_saturation_steps": 0,
+        "samples": 1100
+      },
+      {
+        "artificial_applied_jaw_com_force_N": [
+          0.0,
+          0,
+          0.5
+        ],
+        "max_loop_residual_mm": 1.4241444931212215e-07,
+        "max_jaw_tilt_deg": 5.948914167176748e-07,
+        "max_ideal_path_residual_mm": 1.453593946598719e-07,
+        "max_target_tracking_error_deg": 1.4432353197834558,
+        "actual_crank_range_deg": [
+          -33.944922893929,
+          40.08168856006861
+        ],
+        "drive_saturation_steps": 0,
+        "samples": 1100
+      }
+    ]
+  },
+  "godot_results": {
+    "callback_high_gain": {
+      "actual_crank_range_deg": [
+        -90.8700593217111,
+        135.164116127
+      ],
+      "artificial_applied_jaw_com_force_N": [
+        0.0,
+        0,
+        0
+      ],
+      "dt_s": 0.0005,
+      "geometric_contacts_disabled": true,
+      "godot_version": "4.7.2-stable (official)",
+      "gravity": 0,
+      "hinge_constraints": 4,
+      "max_ideal_path_residual_mm": 0.225301773753017,
+      "max_jaw_tilt_deg": 0.911979878028208,
+      "max_loop_residual_mm": 0.0218449877138482,
+      "max_target_tracking_error_deg": 119.19782338705,
+      "physics_engine": "Jolt Physics",
+      "real_motor_model": false,
+      "samples": 11001,
+      "scope": "Isolated fixed-base four-hinge ideal loop; artificial masses and PD/feedforward drive; no robot/CAD/real servo/grasp test"
+    },
+    "unactuated_rest": {
+      "actual_crank_range_deg": [
+        39.9999988363717,
+        39.9999988363717
+      ],
+      "artificial_applied_jaw_com_force_N": [
+        0.0,
+        0,
+        0
+      ],
+      "dt_s": 0.0005,
+      "geometric_contacts_disabled": true,
+      "godot_version": "4.7.2-stable (official)",
+      "gravity": 0,
+      "hinge_constraints": 4,
+      "max_ideal_path_residual_mm": 1.86264514923096e-06,
+      "max_jaw_tilt_deg": 0.0,
+      "max_loop_residual_mm": 1.86264514923096e-06,
+      "max_target_tracking_error_deg": 73.8632331706555,
+      "physics_engine": "Jolt Physics",
+      "real_motor_model": false,
+      "samples": 11001,
+      "scope": "Isolated fixed-base four-hinge ideal loop; artificial masses and PD/feedforward drive; no robot/CAD/real servo/grasp test"
+    },
+    "lower_gain": {
+      "actual_crank_range_deg": [
+        -34.7301049105458,
+        39.9391623414344
+      ],
+      "artificial_applied_jaw_com_force_N": [
+        0.0,
+        0,
+        0
+      ],
+      "dt_s": 0.0005,
+      "geometric_contacts_disabled": true,
+      "godot_version": "4.7.2-stable (official)",
+      "gravity": 0,
+      "hinge_constraints": 4,
+      "max_ideal_path_residual_mm": 0.000126673569411651,
+      "max_jaw_tilt_deg": 0.0,
+      "max_loop_residual_mm": 6.8539264930223e-05,
+      "max_target_tracking_error_deg": 67.3170960827609,
+      "physics_engine": "Jolt Physics",
+      "real_motor_model": false,
+      "samples": 11001,
+      "scope": "Isolated fixed-base four-hinge ideal loop; artificial masses and PD/feedforward drive; no robot/CAD/real servo/grasp test"
+    }
+  },
+  "observations": [
+    "MuJoCo standalone loop retained parallel jaw with the stated artificial forces and known-force feedforward",
+    "Godot unactuated loop stayed at its initial pose with tiny closure residual",
+    "Godot high gain drive exceeded candidate travel and had major tracking error",
+    "Godot lower gain retained small closure residual but still had major tracking error",
+    "Existing production MJCF converter equality support remains absent; no transfer gate is closed"
+  ],
+  "next_required": "Diagnose drive timing, physical inertia, gain and state-read semantics before any dynamic equivalence claim"
+}

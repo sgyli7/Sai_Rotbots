@@ -1,0 +1,6209 @@
+{
+  "schema": "goose_stage_one_si_v1",
+  "status": "TRAINING_CANDIDATE_NOT_HARDWARE_FREEZE",
+  "robot": "Goose_V0.1",
+  "coordinates": "right-handed X forward Y left Z up; radians, metres, seconds, kilograms, newton-metres; quaternion wxyz",
+  "root_origin_at_zero_m": [
+    0.0,
+    0.0,
+    0.29
+  ],
+  "joint_order": [
+    "neck_yaw",
+    "neck_pitch",
+    "neck_mid_pitch",
+    "head_pitch",
+    "head_roll",
+    "beak_hinge",
+    "right_hip_yaw",
+    "right_hip_roll",
+    "right_hip_pitch",
+    "right_knee_pitch",
+    "right_ankle_pitch",
+    "right_ankle_roll",
+    "left_hip_yaw",
+    "left_hip_roll",
+    "left_hip_pitch",
+    "left_knee_pitch",
+    "left_ankle_pitch",
+    "left_ankle_roll"
+  ],
+  "joints": [
+    {
+      "name": "neck_yaw",
+      "parent": "torso",
+      "pivot_world_at_zero_m": [
+        0.043,
+        0.0,
+        0.342
+      ],
+      "axis_parent": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "range_rad": [
+        -0.5,
+        0.5
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 0.5,
+      "kp_nm_rad": 12.0,
+      "kd_nm_s_rad": 0.7,
+      "torque_peak_limit_nm": 2.0,
+      "continuous_design_limit_nm": 1.04,
+      "speed_limit_rad_s": 38.746309394274114,
+      "armature_kg_m2": 0.0009734999999999999,
+      "frictionloss_nm": 0.03,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak40_10_v3",
+      "limits_status": "candidate conservative operational limits, not certified mechanical stops"
+    },
+    {
+      "name": "neck_pitch",
+      "parent": "neck_yaw",
+      "pivot_world_at_zero_m": [
+        0.043,
+        0.0,
+        0.408
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.6,
+        2.6
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 2.6,
+      "kp_nm_rad": 100.0,
+      "kd_nm_s_rad": 3.5,
+      "torque_peak_limit_nm": 12.0,
+      "continuous_design_limit_nm": 6.4,
+      "speed_limit_rad_s": 4.1887902047863905,
+      "armature_kg_m2": 0.02357424,
+      "frictionloss_nm": 0.4,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_36_v3",
+      "limits_status": "candidate conservative operational limits, not certified mechanical stops"
+    },
+    {
+      "name": "neck_mid_pitch",
+      "parent": "neck_pitch",
+      "pivot_world_at_zero_m": [
+        -0.03,
+        0.0,
+        0.512
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        -1.4,
+        1.4
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 1.4,
+      "kp_nm_rad": 20.0,
+      "kd_nm_s_rad": 0.7,
+      "torque_peak_limit_nm": 4.0,
+      "continuous_design_limit_nm": 2.0,
+      "speed_limit_rad_s": 12.56637061435917,
+      "armature_kg_m2": 0.0015733,
+      "frictionloss_nm": 0.05,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_10_v3",
+      "limits_status": "candidate conservative operational limits, not certified mechanical stops"
+    },
+    {
+      "name": "head_pitch",
+      "parent": "neck_mid_pitch",
+      "pivot_world_at_zero_m": [
+        0.042,
+        0.0,
+        0.605
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        -1.6,
+        1.6
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 1.6,
+      "kp_nm_rad": 20.0,
+      "kd_nm_s_rad": 0.7,
+      "torque_peak_limit_nm": 4.0,
+      "continuous_design_limit_nm": 2.0,
+      "speed_limit_rad_s": 12.56637061435917,
+      "armature_kg_m2": 0.0015733,
+      "frictionloss_nm": 0.05,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_10_v3",
+      "limits_status": "candidate conservative operational limits, not certified mechanical stops"
+    },
+    {
+      "name": "head_roll",
+      "parent": "head_pitch",
+      "pivot_world_at_zero_m": [
+        0.081,
+        0.0,
+        0.5855
+      ],
+      "axis_parent": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.6,
+        0.6
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 0.6,
+      "kp_nm_rad": 2.0,
+      "kd_nm_s_rad": 0.1,
+      "torque_peak_limit_nm": 0.18,
+      "continuous_design_limit_nm": 0.14,
+      "speed_limit_rad_s": 3.0,
+      "armature_kg_m2": 2e-05,
+      "frictionloss_nm": 0.006,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "xc330_m288_t",
+      "limits_status": "candidate conservative operational limits, not certified mechanical stops"
+    },
+    {
+      "name": "beak_hinge",
+      "parent": "head_roll",
+      "pivot_world_at_zero_m": [
+        0.16,
+        0.0,
+        0.576
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        0.0,
+        0.55
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 0.55,
+      "kp_nm_rad": 12.0,
+      "kd_nm_s_rad": 0.6,
+      "torque_peak_limit_nm": 4.7,
+      "continuous_design_limit_nm": 3.5,
+      "speed_limit_rad_s": 1.0,
+      "armature_kg_m2": 0.0003,
+      "frictionloss_nm": 0.05,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "xm540_3_to_1_unselected_gears",
+      "limits_status": "candidate conservative operational limits, not certified mechanical stops"
+    },
+    {
+      "name": "right_hip_yaw",
+      "parent": "torso",
+      "pivot_world_at_zero_m": [
+        0.0,
+        -0.059,
+        0.292
+      ],
+      "axis_parent": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "range_rad": [
+        -0.6,
+        0.6
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 0.6,
+      "kp_nm_rad": 12.0,
+      "kd_nm_s_rad": 0.7,
+      "torque_peak_limit_nm": 2.0,
+      "continuous_design_limit_nm": 1.04,
+      "speed_limit_rad_s": 38.746309394274114,
+      "armature_kg_m2": 0.0009734999999999999,
+      "frictionloss_nm": 0.03,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak40_10_v3",
+      "limits_status": "candidate conservative operational limits, not certified mechanical stops"
+    },
+    {
+      "name": "right_hip_roll",
+      "parent": "right_hip_yaw",
+      "pivot_world_at_zero_m": [
+        -0.051,
+        -0.078,
+        0.24
+      ],
+      "axis_parent": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.5,
+        0.5
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 0.5,
+      "kp_nm_rad": 100.0,
+      "kd_nm_s_rad": 3.5,
+      "torque_peak_limit_nm": 12.0,
+      "continuous_design_limit_nm": 6.4,
+      "speed_limit_rad_s": 4.1887902047863905,
+      "armature_kg_m2": 0.02357424,
+      "frictionloss_nm": 0.4,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_36_v3",
+      "limits_status": "candidate conservative operational limits, not certified mechanical stops"
+    },
+    {
+      "name": "right_hip_pitch",
+      "parent": "right_hip_roll",
+      "pivot_world_at_zero_m": [
+        0.007,
+        -0.089,
+        0.227
+      ],
+      "axis_parent": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "range_rad": [
+        -1.1,
+        1.1
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 1.1,
+      "kp_nm_rad": 100.0,
+      "kd_nm_s_rad": 3.5,
+      "torque_peak_limit_nm": 12.0,
+      "continuous_design_limit_nm": 6.4,
+      "speed_limit_rad_s": 4.1887902047863905,
+      "armature_kg_m2": 0.02357424,
+      "frictionloss_nm": 0.4,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_36_v3",
+      "limits_status": "candidate conservative operational limits, not certified mechanical stops"
+    },
+    {
+      "name": "right_knee_pitch",
+      "parent": "right_hip_pitch",
+      "pivot_world_at_zero_m": [
+        -0.058,
+        -0.089,
+        0.132
+      ],
+      "axis_parent": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.2,
+        1.8
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 1.8,
+      "kp_nm_rad": 100.0,
+      "kd_nm_s_rad": 3.5,
+      "torque_peak_limit_nm": 12.0,
+      "continuous_design_limit_nm": 6.4,
+      "speed_limit_rad_s": 4.1887902047863905,
+      "armature_kg_m2": 0.02357424,
+      "frictionloss_nm": 0.4,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_36_v3",
+      "limits_status": "candidate conservative operational limits, not certified mechanical stops"
+    },
+    {
+      "name": "right_ankle_pitch",
+      "parent": "right_knee_pitch",
+      "pivot_world_at_zero_m": [
+        -0.007,
+        -0.089,
+        0.062
+      ],
+      "axis_parent": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "range_rad": [
+        -1.1,
+        1.1
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 1.1,
+      "kp_nm_rad": 100.0,
+      "kd_nm_s_rad": 3.5,
+      "torque_peak_limit_nm": 12.0,
+      "continuous_design_limit_nm": 6.4,
+      "speed_limit_rad_s": 4.1887902047863905,
+      "armature_kg_m2": 0.02357424,
+      "frictionloss_nm": 0.4,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_36_v3",
+      "limits_status": "candidate conservative operational limits, not certified mechanical stops"
+    },
+    {
+      "name": "right_ankle_roll",
+      "parent": "right_ankle_pitch",
+      "pivot_world_at_zero_m": [
+        0.053,
+        -0.089,
+        0.036
+      ],
+      "axis_parent": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.5,
+        0.5
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 0.5,
+      "kp_nm_rad": 20.0,
+      "kd_nm_s_rad": 0.7,
+      "torque_peak_limit_nm": 4.0,
+      "continuous_design_limit_nm": 2.0,
+      "speed_limit_rad_s": 12.56637061435917,
+      "armature_kg_m2": 0.0015733,
+      "frictionloss_nm": 0.05,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_10_v3",
+      "limits_status": "candidate conservative operational limits, not certified mechanical stops"
+    },
+    {
+      "name": "left_hip_yaw",
+      "parent": "torso",
+      "pivot_world_at_zero_m": [
+        0.0,
+        0.059,
+        0.292
+      ],
+      "axis_parent": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "range_rad": [
+        -0.6,
+        0.6
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 0.6,
+      "kp_nm_rad": 12.0,
+      "kd_nm_s_rad": 0.7,
+      "torque_peak_limit_nm": 2.0,
+      "continuous_design_limit_nm": 1.04,
+      "speed_limit_rad_s": 38.746309394274114,
+      "armature_kg_m2": 0.0009734999999999999,
+      "frictionloss_nm": 0.03,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak40_10_v3",
+      "limits_status": "candidate conservative operational limits, not certified mechanical stops"
+    },
+    {
+      "name": "left_hip_roll",
+      "parent": "left_hip_yaw",
+      "pivot_world_at_zero_m": [
+        -0.051,
+        0.078,
+        0.24
+      ],
+      "axis_parent": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.5,
+        0.5
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 0.5,
+      "kp_nm_rad": 100.0,
+      "kd_nm_s_rad": 3.5,
+      "torque_peak_limit_nm": 12.0,
+      "continuous_design_limit_nm": 6.4,
+      "speed_limit_rad_s": 4.1887902047863905,
+      "armature_kg_m2": 0.02357424,
+      "frictionloss_nm": 0.4,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_36_v3",
+      "limits_status": "candidate conservative operational limits, not certified mechanical stops"
+    },
+    {
+      "name": "left_hip_pitch",
+      "parent": "left_hip_roll",
+      "pivot_world_at_zero_m": [
+        0.007,
+        0.089,
+        0.227
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        -1.1,
+        1.1
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 1.1,
+      "kp_nm_rad": 100.0,
+      "kd_nm_s_rad": 3.5,
+      "torque_peak_limit_nm": 12.0,
+      "continuous_design_limit_nm": 6.4,
+      "speed_limit_rad_s": 4.1887902047863905,
+      "armature_kg_m2": 0.02357424,
+      "frictionloss_nm": 0.4,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_36_v3",
+      "limits_status": "candidate conservative operational limits, not certified mechanical stops"
+    },
+    {
+      "name": "left_knee_pitch",
+      "parent": "left_hip_pitch",
+      "pivot_world_at_zero_m": [
+        -0.058,
+        0.089,
+        0.132
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        -1.8,
+        0.2
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 1.8,
+      "kp_nm_rad": 100.0,
+      "kd_nm_s_rad": 3.5,
+      "torque_peak_limit_nm": 12.0,
+      "continuous_design_limit_nm": 6.4,
+      "speed_limit_rad_s": 4.1887902047863905,
+      "armature_kg_m2": 0.02357424,
+      "frictionloss_nm": 0.4,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_36_v3",
+      "limits_status": "candidate conservative operational limits, not certified mechanical stops"
+    },
+    {
+      "name": "left_ankle_pitch",
+      "parent": "left_knee_pitch",
+      "pivot_world_at_zero_m": [
+        -0.007,
+        0.089,
+        0.062
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        -1.1,
+        1.1
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 1.1,
+      "kp_nm_rad": 100.0,
+      "kd_nm_s_rad": 3.5,
+      "torque_peak_limit_nm": 12.0,
+      "continuous_design_limit_nm": 6.4,
+      "speed_limit_rad_s": 4.1887902047863905,
+      "armature_kg_m2": 0.02357424,
+      "frictionloss_nm": 0.4,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_36_v3",
+      "limits_status": "candidate conservative operational limits, not certified mechanical stops"
+    },
+    {
+      "name": "left_ankle_roll",
+      "parent": "left_ankle_pitch",
+      "pivot_world_at_zero_m": [
+        0.053,
+        0.089,
+        0.036
+      ],
+      "axis_parent": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.5,
+        0.5
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 0.5,
+      "kp_nm_rad": 20.0,
+      "kd_nm_s_rad": 0.7,
+      "torque_peak_limit_nm": 4.0,
+      "continuous_design_limit_nm": 2.0,
+      "speed_limit_rad_s": 12.56637061435917,
+      "armature_kg_m2": 0.0015733,
+      "frictionloss_nm": 0.05,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_10_v3",
+      "limits_status": "candidate conservative operational limits, not certified mechanical stops"
+    }
+  ],
+  "bodies": [
+    {
+      "name": "torso",
+      "mass_kg": 2.0522058218101553,
+      "com_local_m": [
+        -0.012969250046693965,
+        -0.0004119059148408552,
+        0.001397474034320223
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          0.008237711896110736,
+          -4.254989361463356e-05,
+          -0.0006337083510910826
+        ],
+        [
+          -4.254989361463356e-05,
+          0.012138785768190904,
+          2.441074079309253e-05
+        ],
+        [
+          -0.0006337083510910826,
+          2.441074079309253e-05,
+          0.012929273540853409
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.18821463666760385,
+      "com_randomization_m": 0.005,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "neck_yaw",
+      "mass_kg": 0.40333747376146284,
+      "com_local_m": [
+        0.0,
+        6.836133233037413e-21,
+        0.06123200318179006
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          0.00026101233977434183,
+          -5.37667398159468e-23,
+          -1.2504227274564538e-18
+        ],
+        [
+          -5.37667398159468e-23,
+          0.00023415388144100847,
+          -2.1969034655691194e-21
+        ],
+        [
+          -1.2504227274564538e-18,
+          -2.1969034655691194e-21,
+          0.00017335856810057944
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.07232465125640909,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "neck_pitch",
+      "mass_kg": 0.3849130301524491,
+      "com_local_m": [
+        -0.060948903506987916,
+        0.0012080651045142125,
+        0.0856208595089561
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          0.0006226825351618151,
+          -4.339699943170732e-06,
+          0.0002960384821134998
+        ],
+        [
+          -4.339699943170732e-06,
+          0.0007459117986580684,
+          2.006298739098889e-05
+        ],
+        [
+          0.0002960384821134998,
+          2.006298739098889e-05,
+          0.0003899711855906927
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.09973087462859563,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "neck_mid_pitch",
+      "mass_kg": 0.36546305561269893,
+      "com_local_m": [
+        0.06145245220578835,
+        0.000748984225351465,
+        0.07915769465618416
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          0.0004454922174980055,
+          1.8325248697995308e-06,
+          -0.00022460549354213767
+        ],
+        [
+          1.8325248697995308e-06,
+          0.0005637806463247107,
+          3.760658404657887e-06
+        ],
+        [
+          -0.00022460549354213767,
+          3.760658404657887e-06,
+          0.0003421350581590478
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.09346868925223656,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "head_pitch",
+      "mass_kg": 0.06518204602470656,
+      "com_local_m": [
+        0.029758710579607765,
+        -9.870572220967716e-19,
+        -0.014214247255787238
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          2.4112700364186993e-05,
+          1.188705826826057e-12,
+          7.1811860229558905e-06
+        ],
+        [
+          1.188705826826057e-12,
+          2.7973173156711664e-05,
+          8.429004960453426e-12
+        ],
+        [
+          7.1811860229558905e-06,
+          8.429004960453426e-12,
+          3.081200544317303e-05
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.21843213372286605,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "head_roll",
+      "mass_kg": 0.5770640666376233,
+      "com_local_m": [
+        0.06121277855728301,
+        0.004564860647854283,
+        0.0018447899000348933
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          0.00032897588298040257,
+          -3.661688239780397e-05,
+          9.372878223143866e-05
+        ],
+        [
+          -3.661688239780397e-05,
+          0.0006024725383803332,
+          2.3093057466406248e-05
+        ],
+        [
+          9.372878223143866e-05,
+          2.3093057466406248e-05,
+          0.0006642390949326833
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.29361477275566034,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "beak_hinge",
+      "mass_kg": 0.03303491100741975,
+      "com_local_m": [
+        0.03980905248470826,
+        1.3349385130144181e-09,
+        -0.027364511576743022
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          6.1271173975860685e-06,
+          7.68881898338729e-13,
+          1.470905446418858e-07
+        ],
+        [
+          7.68881898338729e-13,
+          2.0024182772210517e-05,
+          1.195062920185113e-10
+        ],
+        [
+          1.470905446418858e-07,
+          1.195062920185113e-10,
+          2.4938796217538835e-05
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.34283190525744955,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "right_hip_yaw",
+      "mass_kg": 0.381,
+      "com_local_m": [
+        -0.04832283464566929,
+        -0.018002624671916018,
+        -0.04927034120734913
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          0.00019391011056430445,
+          -1.8362677165354333e-05,
+          -5.025574803149605e-05
+        ],
+        [
+          -1.8362677165354333e-05,
+          0.00026321686286089236,
+          -1.8722729658792654e-05
+        ],
+        [
+          -5.025574803149605e-05,
+          -1.8722729658792654e-05,
+          0.0002215377053805774
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.0589763779527559,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "right_hip_roll",
+      "mass_kg": 0.381,
+      "com_local_m": [
+        0.05495538057742782,
+        -0.010422572178477682,
+        -0.012317585301837242
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          0.00016818195472440944,
+          1.2090183727034115e-05,
+          1.4288398950131216e-05
+        ],
+        [
+          1.2090183727034115e-05,
+          0.0002027787719816273,
+          -2.709868766404195e-06
+        ],
+        [
+          1.4288398950131216e-05,
+          -2.709868766404195e-06,
+          0.00023144862401574802
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.0589763779527559,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "right_hip_pitch",
+      "mass_kg": 0.4540583325700578,
+      "com_local_m": [
+        -0.05674598283312498,
+        1.3877787807814457e-17,
+        -0.08293643644841345
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          0.0005595540508211201,
+          1.1722029159257488e-10,
+          -0.00022365945188760806
+        ],
+        [
+          1.1722029159257488e-10,
+          0.0006190979707669515,
+          -8.020335692681577e-11
+        ],
+        [
+          -0.00022365945188760806,
+          -8.020335692681577e-11,
+          0.000388692942301383
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.07314532299588018,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "right_knee_pitch",
+      "mass_kg": 0.43542949080735593,
+      "com_local_m": [
+        0.045382452061838725,
+        -1.3877787807814457e-17,
+        -0.06228964008487668
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          0.00036731195051759724,
+          7.024643950596612e-11,
+          0.0001134764017904075
+        ],
+        [
+          7.024643950596612e-11,
+          0.0003762489221125872,
+          5.117954849052122e-11
+        ],
+        [
+          0.0001134764017904075,
+          5.117954849052122e-11,
+          0.00029722678329483626
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.07186625457166146,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "right_ankle_pitch",
+      "mass_kg": 0.32906628484728684,
+      "com_local_m": [
+        0.053049865830748145,
+        0.0,
+        -0.022927889503079397
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          0.00011738928043515143,
+          0.0,
+          3.939268247262965e-05
+        ],
+        [
+          0.0,
+          0.00021558627375936444,
+          5.3601303693436193e-20
+        ],
+        [
+          3.939268247262965e-05,
+          5.3601303693436193e-20,
+          0.00020513042615864227
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.0923214770187859,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "right_ankle_roll",
+      "mass_kg": 0.39124076966000065,
+      "com_local_m": [
+        -0.024239401180270306,
+        -1.1191440917046602e-07,
+        -0.019810677661195347
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          0.0003378737617435427,
+          4.4920471072577974e-08,
+          -1.464283048900667e-05
+        ],
+        [
+          4.4920471072577974e-08,
+          0.001046720269664503,
+          1.6139772268894056e-09
+        ],
+        [
+          -1.464283048900667e-05,
+          1.6139772268894056e-09,
+          0.0012048416714211573
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.24259072369502865,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "left_hip_yaw",
+      "mass_kg": 0.381,
+      "com_local_m": [
+        -0.04832283464566929,
+        0.018002624671916018,
+        -0.04927034120734913
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          0.00019391011056430445,
+          1.8362677165354333e-05,
+          -5.025574803149605e-05
+        ],
+        [
+          1.8362677165354333e-05,
+          0.00026321686286089236,
+          1.8722729658792654e-05
+        ],
+        [
+          -5.025574803149605e-05,
+          1.8722729658792654e-05,
+          0.0002215377053805774
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.0589763779527559,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "left_hip_roll",
+      "mass_kg": 0.381,
+      "com_local_m": [
+        0.05495538057742782,
+        0.010422572178477682,
+        -0.012317585301837242
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          0.00016818195472440944,
+          -1.2090183727034115e-05,
+          1.4288398950131216e-05
+        ],
+        [
+          -1.2090183727034115e-05,
+          0.0002027787719816273,
+          2.709868766404195e-06
+        ],
+        [
+          1.4288398950131216e-05,
+          2.709868766404195e-06,
+          0.00023144862401574802
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.0589763779527559,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "left_hip_pitch",
+      "mass_kg": 0.4540583325700578,
+      "com_local_m": [
+        -0.05674598283312498,
+        -1.3877787807814457e-17,
+        -0.08293643644841345
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          0.0005595540508211197,
+          1.1722029152439632e-10,
+          -0.00022365945188760814
+        ],
+        [
+          1.1722029152439632e-10,
+          0.0006190979707669513,
+          -8.02033568229391e-11
+        ],
+        [
+          -0.00022365945188760814,
+          -8.02033568229391e-11,
+          0.0003886929423013828
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.07314532299588018,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "left_knee_pitch",
+      "mass_kg": 0.43542949080735593,
+      "com_local_m": [
+        0.045382452061838725,
+        -1.3877787807814457e-17,
+        -0.06228964008487668
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          0.00036731195051759724,
+          7.02464395287469e-11,
+          0.00011347640179040745
+        ],
+        [
+          7.02464395287469e-11,
+          0.00037624892211258706,
+          5.117954843595463e-11
+        ],
+        [
+          0.00011347640179040745,
+          5.117954843595463e-11,
+          0.00029722678329483637
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.07186625457166146,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "left_ankle_pitch",
+      "mass_kg": 0.32906628484728684,
+      "com_local_m": [
+        0.053049865830748145,
+        0.0,
+        -0.022927889503079404
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          0.00011738928043515154,
+          2.063723649379045e-20,
+          3.9392682472629616e-05
+        ],
+        [
+          2.063723649379045e-20,
+          0.0002155862737593645,
+          -1.1252058242074538e-19
+        ],
+        [
+          3.9392682472629616e-05,
+          -1.1252058242074538e-19,
+          0.00020513042615864227
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.0923214770187859,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "left_ankle_roll",
+      "mass_kg": 0.3912407696600007,
+      "com_local_m": [
+        -0.02423940118027031,
+        -1.119144091982216e-07,
+        -0.01981067766119535
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          0.00033787376174354165,
+          4.492047107394766e-08,
+          -1.4642830489006693e-05
+        ],
+        [
+          4.492047107394766e-08,
+          0.0010467202696645026,
+          1.6139772270824292e-09
+        ],
+        [
+          -1.4642830489006693e-05,
+          1.6139772270824292e-09,
+          0.0012048416714211562
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.24259072369502865,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    }
+  ],
+  "nominal_robot_mass_kg": 8.624790160775918,
+  "actuator_catalog": {
+    "ak45_36_v3": {
+      "model": "AK45-36 V3.0 KV80",
+      "mass": 0.349,
+      "diameter": 0.055,
+      "length": 0.0565,
+      "rated": 8.0,
+      "peak": 24.0,
+      "rpm": 40.0,
+      "no_load_rpm": 52.0,
+      "rotor_gcm2": 181.9,
+      "ratio": 36,
+      "backdrive": 0.8,
+      "usd": 185.9,
+      "url": "https://www.cubemars.com/product/ak45-36-v3-0-kv80-robotic-actuator.html"
+    },
+    "ak45_10_v3": {
+      "model": "AK45-10 V3.0 KV75",
+      "mass": 0.262,
+      "diameter": 0.053,
+      "length": 0.0452,
+      "rated": 2.5,
+      "peak": 7.0,
+      "rpm": 120.0,
+      "no_load_rpm": 180.0,
+      "rotor_gcm2": 157.33,
+      "ratio": 10,
+      "backdrive": 0.1,
+      "usd": 155.9,
+      "url": "https://www.cubemars.com/product/ak45-10-v3-0-kv75-robotic-actuator.html"
+    },
+    "ak40_10_v3": {
+      "model": "AK40-10 V3.0 KV170",
+      "mass": 0.19,
+      "diameter": 0.053,
+      "length": 0.0402,
+      "rated": 1.3,
+      "peak": 4.1,
+      "rpm": 370.0,
+      "no_load_rpm": 435.0,
+      "rotor_gcm2": 97.35,
+      "ratio": 10,
+      "backdrive": 0.06,
+      "usd": 135.9,
+      "url": "https://www.cubemars.com/product/ak40-10-v3-0-kv170-robotic-actuator.html"
+    }
+  },
+  "physics_dt_s": 0.001,
+  "torque_dt_s": 0.005,
+  "policy_dt_s": 0.02,
+  "observation_size": 65,
+  "action_size": 18,
+  "observation_layout": [
+    {
+      "name": "body_angular_velocity_rad_s",
+      "start": 0,
+      "length": 3,
+      "scale": 0.25
+    },
+    {
+      "name": "projected_gravity_unit",
+      "start": 3,
+      "length": 3,
+      "scale": 1
+    },
+    {
+      "name": "command_vx_vy_yaw_rate",
+      "start": 6,
+      "length": 3,
+      "scale": 1
+    },
+    {
+      "name": "joint_q_minus_neutral_rad",
+      "start": 9,
+      "length": 18,
+      "scale": 1
+    },
+    {
+      "name": "joint_velocity_rad_s",
+      "start": 27,
+      "length": 18,
+      "scale": 0.1
+    },
+    {
+      "name": "previous_clipped_action",
+      "start": 45,
+      "length": 18,
+      "scale": 1
+    },
+    {
+      "name": "phase_sin_cos",
+      "start": 63,
+      "length": 2,
+      "scale": 1
+    }
+  ],
+  "action_semantics": "clip to [-1,1]; target=q_neutral+scale*action; clamp to range; slew at speed_limit; PD at 200Hz; speed-envelope torque clipping; 2s squared-torque budget derates to continuous limit; nominal-model gravity feedforward for five neck/head joints from encoder q and IMU orientation only; no root support, no actual randomized-mass input",
+  "gravity_feedforward_joints": [
+    "neck_yaw",
+    "neck_pitch",
+    "neck_mid_pitch",
+    "head_pitch",
+    "head_roll"
+  ],
+  "positive_mechanical_power_limit_w": 350.0,
+  "phase_frequency_hz": 1.2,
+  "foot_friction_range": [
+    0.45,
+    0.9
+  ],
+  "latency_policy_steps": [
+    0,
+    1
+  ],
+  "strength_multiplier_range": [
+    0.85,
+    1.0
+  ],
+  "engineering_change_rule": "Joint order/axes/frames/contact mesh/limits/actuator family changes require a new model+contract version. Allocated masses/COM/inertias may only vary within documented randomization; no guarantee of transfer without holdout and real calibration.",
+  "compatibility": {
+    "mujoco": "implemented",
+    "godot_jolt": "neutral SI data only; adapter validation pending",
+    "unity": "neutral SI data only; adapter validation pending",
+    "bevy": "neutral SI data only; adapter validation pending"
+  },
+  "source_hashes": {
+    "robots/Goose_V0.1/cad/source/fuller_exterior_candidate/closed/scene.json": "96ca8160cca02e3f897728227787ac98c600d82ef96878bfb7a8d4d78a5ae738",
+    "robots/Goose_V0.1/cad/source/fuller_exterior_candidate/closed/hardware_basis.json": "9e490e8ca9ee20d4b41c919319feb893d7b3212a99caa2e9d4eb0d8e80a8aacf",
+    "robots/Goose_V0.1/cad/source/foot_support_candidate/foot_parts.json": "98f8a0138af9fcc0c23ee39941b60249606b6a2b6389a813e33aa88b15b6a52e"
+  },
+  "items": [
+    {
+      "name": "neck_yaw",
+      "chain": "fixed",
+      "mass_kg": 0.19,
+      "center_m": [
+        0.043,
+        0.0,
+        0.342
+      ],
+      "basis": "manufacturer mass; uniform cylinder inertia; output plane centered provisionally",
+      "relative_uncertainty": 0.03,
+      "body": "torso",
+      "inertia_at_com_kg_m2": [
+        [
+          5.894417500000001e-05,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          5.894417500000001e-05,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          6.671375e-05
+        ]
+      ]
+    },
+    {
+      "name": "neck_yaw_mount_reserve",
+      "chain": "fixed",
+      "mass_kg": 0.012,
+      "center_m": [
+        0.043,
+        0.0,
+        0.342
+      ],
+      "basis": "assumed horn/idler/fixing allowance, not a selected assembly",
+      "relative_uncertainty": 0.5,
+      "body": "torso",
+      "inertia_at_com_kg_m2": [
+        [
+          7.690000000000002e-07,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          7.690000000000002e-07,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.2500000000000003e-06
+        ]
+      ]
+    },
+    {
+      "name": "neck_pitch",
+      "chain": "fixed",
+      "mass_kg": 0.349,
+      "center_m": [
+        0.043,
+        0.0,
+        0.408
+      ],
+      "basis": "manufacturer mass; uniform cylinder inertia; output plane centered provisionally",
+      "relative_uncertainty": 0.03,
+      "body": "neck_yaw",
+      "inertia_at_com_kg_m2": [
+        [
+          0.00015882408333333333,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.000131965625,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.00015882408333333333
+        ]
+      ]
+    },
+    {
+      "name": "neck_pitch_mount_reserve",
+      "chain": "fixed",
+      "mass_kg": 0.012,
+      "center_m": [
+        0.043,
+        0.0,
+        0.408
+      ],
+      "basis": "assumed horn/idler/fixing allowance, not a selected assembly",
+      "relative_uncertainty": 0.5,
+      "body": "neck_yaw",
+      "inertia_at_com_kg_m2": [
+        [
+          7.690000000000002e-07,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          7.690000000000002e-07,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.2500000000000003e-06
+        ]
+      ]
+    },
+    {
+      "name": "neck_mid_pitch",
+      "chain": "lower",
+      "mass_kg": 0.262,
+      "center_m": [
+        -0.03,
+        0.0,
+        0.512
+      ],
+      "basis": "manufacturer mass; uniform cylinder inertia; output plane centered provisionally",
+      "relative_uncertainty": 0.03,
+      "body": "neck_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          9.060374833333336e-05,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          9.199475e-05,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          9.060374833333336e-05
+        ]
+      ]
+    },
+    {
+      "name": "neck_mid_pitch_mount_reserve",
+      "chain": "lower",
+      "mass_kg": 0.012,
+      "center_m": [
+        -0.03,
+        0.0,
+        0.512
+      ],
+      "basis": "assumed horn/idler/fixing allowance, not a selected assembly",
+      "relative_uncertainty": 0.5,
+      "body": "neck_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          7.690000000000002e-07,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          7.690000000000002e-07,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.2500000000000003e-06
+        ]
+      ]
+    },
+    {
+      "name": "head_pitch",
+      "chain": "upper",
+      "mass_kg": 0.262,
+      "center_m": [
+        0.042,
+        0.0,
+        0.605
+      ],
+      "basis": "manufacturer mass; uniform cylinder inertia; output plane centered provisionally",
+      "relative_uncertainty": 0.03,
+      "body": "neck_mid_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          9.060374833333336e-05,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          9.199475e-05,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          9.060374833333336e-05
+        ]
+      ]
+    },
+    {
+      "name": "head_pitch_mount_reserve",
+      "chain": "upper",
+      "mass_kg": 0.012,
+      "center_m": [
+        0.042,
+        0.0,
+        0.605
+      ],
+      "basis": "assumed horn/idler/fixing allowance, not a selected assembly",
+      "relative_uncertainty": 0.5,
+      "body": "neck_mid_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          7.690000000000002e-07,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          7.690000000000002e-07,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.2500000000000003e-06
+        ]
+      ]
+    },
+    {
+      "name": "head_roll",
+      "chain": "head",
+      "mass_kg": 0.023,
+      "center_m": [
+        0.081,
+        0.0,
+        0.5780000000000001
+      ],
+      "basis": "catalog motor mass; uniform case center approximation",
+      "relative_uncertainty": 0.03,
+      "body": "head_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          2.982333333333333e-06,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          3.511333333333333e-06,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          2.062333333333333e-06
+        ]
+      ]
+    },
+    {
+      "name": "head_roll_mount_reserve",
+      "chain": "head",
+      "mass_kg": 0.012,
+      "center_m": [
+        0.076,
+        0.0,
+        0.587
+      ],
+      "basis": "assumed horn/idler/fixing allowance, not a selected assembly",
+      "relative_uncertainty": 0.5,
+      "body": "head_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          7.690000000000002e-07,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          7.690000000000002e-07,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.2500000000000003e-06
+        ]
+      ]
+    },
+    {
+      "name": "beak_drive",
+      "chain": "head",
+      "mass_kg": 0.165,
+      "center_m": [
+        0.12450000000000001,
+        0.0,
+        0.5892664991614216
+      ],
+      "basis": "catalog motor mass; uniform case center approximation",
+      "relative_uncertainty": 0.03,
+      "body": "head_roll",
+      "inertia_at_com_kg_m2": [
+        [
+          4.20509375e-05,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          6.248687500000001e-05,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          7.36759375e-05
+        ]
+      ]
+    },
+    {
+      "name": "beak_drive_mount_reserve",
+      "chain": "head",
+      "mass_kg": 0.012,
+      "center_m": [
+        0.14,
+        0.0,
+        0.5892664991614216
+      ],
+      "basis": "assumed horn/idler/fixing allowance, not a selected assembly",
+      "relative_uncertainty": 0.5,
+      "body": "head_roll",
+      "inertia_at_com_kg_m2": [
+        [
+          7.690000000000002e-07,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          7.690000000000002e-07,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.2500000000000003e-06
+        ]
+      ]
+    },
+    {
+      "name": "right_hip_yaw",
+      "chain": "fixed",
+      "mass_kg": 0.19,
+      "center_m": [
+        0.0,
+        -0.059,
+        0.292
+      ],
+      "basis": "manufacturer mass; uniform cylinder inertia; output plane centered provisionally",
+      "relative_uncertainty": 0.03,
+      "body": "torso",
+      "inertia_at_com_kg_m2": [
+        [
+          5.894417500000001e-05,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          5.894417500000001e-05,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          6.671375e-05
+        ]
+      ]
+    },
+    {
+      "name": "right_hip_yaw_mount_reserve",
+      "chain": "fixed",
+      "mass_kg": 0.012,
+      "center_m": [
+        0.0,
+        -0.059,
+        0.278
+      ],
+      "basis": "assumed horn/idler/fixing allowance, not a selected assembly",
+      "relative_uncertainty": 0.5,
+      "body": "torso",
+      "inertia_at_com_kg_m2": [
+        [
+          7.690000000000002e-07,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          7.690000000000002e-07,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.2500000000000003e-06
+        ]
+      ]
+    },
+    {
+      "name": "right_hip_roll",
+      "chain": "fixed",
+      "mass_kg": 0.349,
+      "center_m": [
+        -0.051,
+        -0.078,
+        0.24
+      ],
+      "basis": "manufacturer mass; uniform cylinder inertia; output plane centered provisionally",
+      "relative_uncertainty": 0.03,
+      "body": "right_hip_yaw",
+      "inertia_at_com_kg_m2": [
+        [
+          0.000131965625,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.00015882408333333333,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.00015882408333333333
+        ]
+      ]
+    },
+    {
+      "name": "right_hip_roll_mount_reserve",
+      "chain": "fixed",
+      "mass_kg": 0.012,
+      "center_m": [
+        -0.051,
+        -0.078,
+        0.24
+      ],
+      "basis": "assumed horn/idler/fixing allowance, not a selected assembly",
+      "relative_uncertainty": 0.5,
+      "body": "right_hip_yaw",
+      "inertia_at_com_kg_m2": [
+        [
+          7.690000000000002e-07,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          7.690000000000002e-07,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.2500000000000003e-06
+        ]
+      ]
+    },
+    {
+      "name": "right_hip_pitch",
+      "chain": "fixed",
+      "mass_kg": 0.349,
+      "center_m": [
+        0.007,
+        -0.089,
+        0.227
+      ],
+      "basis": "manufacturer mass; uniform cylinder inertia; output plane centered provisionally",
+      "relative_uncertainty": 0.03,
+      "body": "right_hip_roll",
+      "inertia_at_com_kg_m2": [
+        [
+          0.00015882408333333333,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.000131965625,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.00015882408333333333
+        ]
+      ]
+    },
+    {
+      "name": "right_hip_pitch_mount_reserve",
+      "chain": "fixed",
+      "mass_kg": 0.012,
+      "center_m": [
+        0.007,
+        -0.089,
+        0.227
+      ],
+      "basis": "assumed horn/idler/fixing allowance, not a selected assembly",
+      "relative_uncertainty": 0.5,
+      "body": "right_hip_roll",
+      "inertia_at_com_kg_m2": [
+        [
+          7.690000000000002e-07,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          7.690000000000002e-07,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.2500000000000003e-06
+        ]
+      ]
+    },
+    {
+      "name": "right_knee_pitch",
+      "chain": "fixed",
+      "mass_kg": 0.349,
+      "center_m": [
+        -0.058,
+        -0.089,
+        0.132
+      ],
+      "basis": "manufacturer mass; uniform cylinder inertia; output plane centered provisionally",
+      "relative_uncertainty": 0.03,
+      "body": "right_hip_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          0.00015882408333333333,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.000131965625,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.00015882408333333333
+        ]
+      ]
+    },
+    {
+      "name": "right_knee_pitch_mount_reserve",
+      "chain": "fixed",
+      "mass_kg": 0.012,
+      "center_m": [
+        -0.058,
+        -0.089,
+        0.132
+      ],
+      "basis": "assumed horn/idler/fixing allowance, not a selected assembly",
+      "relative_uncertainty": 0.5,
+      "body": "right_hip_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          7.690000000000002e-07,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          7.690000000000002e-07,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.2500000000000003e-06
+        ]
+      ]
+    },
+    {
+      "name": "right_ankle_pitch",
+      "chain": "fixed",
+      "mass_kg": 0.349,
+      "center_m": [
+        -0.007,
+        -0.089,
+        0.062
+      ],
+      "basis": "manufacturer mass; uniform cylinder inertia; output plane centered provisionally",
+      "relative_uncertainty": 0.03,
+      "body": "right_knee_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          0.00015882408333333333,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.000131965625,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.00015882408333333333
+        ]
+      ]
+    },
+    {
+      "name": "right_ankle_pitch_mount_reserve",
+      "chain": "fixed",
+      "mass_kg": 0.012,
+      "center_m": [
+        -0.007,
+        -0.089,
+        0.062
+      ],
+      "basis": "assumed horn/idler/fixing allowance, not a selected assembly",
+      "relative_uncertainty": 0.5,
+      "body": "right_knee_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          7.690000000000002e-07,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          7.690000000000002e-07,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.2500000000000003e-06
+        ]
+      ]
+    },
+    {
+      "name": "right_ankle_roll",
+      "chain": "fixed",
+      "mass_kg": 0.262,
+      "center_m": [
+        0.053,
+        -0.089,
+        0.036
+      ],
+      "basis": "manufacturer mass; uniform cylinder inertia; output plane centered provisionally",
+      "relative_uncertainty": 0.03,
+      "body": "right_ankle_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          9.199475e-05,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          9.060374833333336e-05,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          9.060374833333336e-05
+        ]
+      ]
+    },
+    {
+      "name": "right_ankle_roll_mount_reserve",
+      "chain": "fixed",
+      "mass_kg": 0.012,
+      "center_m": [
+        0.053,
+        -0.089,
+        0.036
+      ],
+      "basis": "assumed horn/idler/fixing allowance, not a selected assembly",
+      "relative_uncertainty": 0.5,
+      "body": "right_ankle_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          7.690000000000002e-07,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          7.690000000000002e-07,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.2500000000000003e-06
+        ]
+      ]
+    },
+    {
+      "name": "left_hip_yaw",
+      "chain": "fixed",
+      "mass_kg": 0.19,
+      "center_m": [
+        0.0,
+        0.059,
+        0.292
+      ],
+      "basis": "manufacturer mass; uniform cylinder inertia; output plane centered provisionally",
+      "relative_uncertainty": 0.03,
+      "body": "torso",
+      "inertia_at_com_kg_m2": [
+        [
+          5.894417500000001e-05,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          5.894417500000001e-05,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          6.671375e-05
+        ]
+      ]
+    },
+    {
+      "name": "left_hip_yaw_mount_reserve",
+      "chain": "fixed",
+      "mass_kg": 0.012,
+      "center_m": [
+        0.0,
+        0.059,
+        0.278
+      ],
+      "basis": "assumed horn/idler/fixing allowance, not a selected assembly",
+      "relative_uncertainty": 0.5,
+      "body": "torso",
+      "inertia_at_com_kg_m2": [
+        [
+          7.690000000000002e-07,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          7.690000000000002e-07,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.2500000000000003e-06
+        ]
+      ]
+    },
+    {
+      "name": "left_hip_roll",
+      "chain": "fixed",
+      "mass_kg": 0.349,
+      "center_m": [
+        -0.051,
+        0.078,
+        0.24
+      ],
+      "basis": "manufacturer mass; uniform cylinder inertia; output plane centered provisionally",
+      "relative_uncertainty": 0.03,
+      "body": "left_hip_yaw",
+      "inertia_at_com_kg_m2": [
+        [
+          0.000131965625,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.00015882408333333333,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.00015882408333333333
+        ]
+      ]
+    },
+    {
+      "name": "left_hip_roll_mount_reserve",
+      "chain": "fixed",
+      "mass_kg": 0.012,
+      "center_m": [
+        -0.051,
+        0.078,
+        0.24
+      ],
+      "basis": "assumed horn/idler/fixing allowance, not a selected assembly",
+      "relative_uncertainty": 0.5,
+      "body": "left_hip_yaw",
+      "inertia_at_com_kg_m2": [
+        [
+          7.690000000000002e-07,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          7.690000000000002e-07,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.2500000000000003e-06
+        ]
+      ]
+    },
+    {
+      "name": "left_hip_pitch",
+      "chain": "fixed",
+      "mass_kg": 0.349,
+      "center_m": [
+        0.007,
+        0.089,
+        0.227
+      ],
+      "basis": "manufacturer mass; uniform cylinder inertia; output plane centered provisionally",
+      "relative_uncertainty": 0.03,
+      "body": "left_hip_roll",
+      "inertia_at_com_kg_m2": [
+        [
+          0.00015882408333333333,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.000131965625,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.00015882408333333333
+        ]
+      ]
+    },
+    {
+      "name": "left_hip_pitch_mount_reserve",
+      "chain": "fixed",
+      "mass_kg": 0.012,
+      "center_m": [
+        0.007,
+        0.089,
+        0.227
+      ],
+      "basis": "assumed horn/idler/fixing allowance, not a selected assembly",
+      "relative_uncertainty": 0.5,
+      "body": "left_hip_roll",
+      "inertia_at_com_kg_m2": [
+        [
+          7.690000000000002e-07,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          7.690000000000002e-07,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.2500000000000003e-06
+        ]
+      ]
+    },
+    {
+      "name": "left_knee_pitch",
+      "chain": "fixed",
+      "mass_kg": 0.349,
+      "center_m": [
+        -0.058,
+        0.089,
+        0.132
+      ],
+      "basis": "manufacturer mass; uniform cylinder inertia; output plane centered provisionally",
+      "relative_uncertainty": 0.03,
+      "body": "left_hip_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          0.00015882408333333333,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.000131965625,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.00015882408333333333
+        ]
+      ]
+    },
+    {
+      "name": "left_knee_pitch_mount_reserve",
+      "chain": "fixed",
+      "mass_kg": 0.012,
+      "center_m": [
+        -0.058,
+        0.089,
+        0.132
+      ],
+      "basis": "assumed horn/idler/fixing allowance, not a selected assembly",
+      "relative_uncertainty": 0.5,
+      "body": "left_hip_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          7.690000000000002e-07,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          7.690000000000002e-07,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.2500000000000003e-06
+        ]
+      ]
+    },
+    {
+      "name": "left_ankle_pitch",
+      "chain": "fixed",
+      "mass_kg": 0.349,
+      "center_m": [
+        -0.007,
+        0.089,
+        0.062
+      ],
+      "basis": "manufacturer mass; uniform cylinder inertia; output plane centered provisionally",
+      "relative_uncertainty": 0.03,
+      "body": "left_knee_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          0.00015882408333333333,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.000131965625,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.00015882408333333333
+        ]
+      ]
+    },
+    {
+      "name": "left_ankle_pitch_mount_reserve",
+      "chain": "fixed",
+      "mass_kg": 0.012,
+      "center_m": [
+        -0.007,
+        0.089,
+        0.062
+      ],
+      "basis": "assumed horn/idler/fixing allowance, not a selected assembly",
+      "relative_uncertainty": 0.5,
+      "body": "left_knee_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          7.690000000000002e-07,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          7.690000000000002e-07,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.2500000000000003e-06
+        ]
+      ]
+    },
+    {
+      "name": "left_ankle_roll",
+      "chain": "fixed",
+      "mass_kg": 0.262,
+      "center_m": [
+        0.053,
+        0.089,
+        0.036
+      ],
+      "basis": "manufacturer mass; uniform cylinder inertia; output plane centered provisionally",
+      "relative_uncertainty": 0.03,
+      "body": "left_ankle_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          9.199475e-05,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          9.060374833333336e-05,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          9.060374833333336e-05
+        ]
+      ]
+    },
+    {
+      "name": "left_ankle_roll_mount_reserve",
+      "chain": "fixed",
+      "mass_kg": 0.012,
+      "center_m": [
+        0.053,
+        0.089,
+        0.036
+      ],
+      "basis": "assumed horn/idler/fixing allowance, not a selected assembly",
+      "relative_uncertainty": 0.5,
+      "body": "left_ankle_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          7.690000000000002e-07,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          7.690000000000002e-07,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.2500000000000003e-06
+        ]
+      ]
+    },
+    {
+      "name": "torso_shell_right_aft",
+      "chain": "fixed",
+      "mass_kg": 0.10510377177111807,
+      "center_m": [
+        -0.09807368965084116,
+        -0.05023740856277761,
+        0.28886347018139236
+      ],
+      "basis": "actual modeled hollow shell volume at assumed PETG 1250 kg/m3",
+      "relative_uncertainty": 0.2,
+      "body": "torso",
+      "inertia_at_com_kg_m2": [
+        [
+          0.00045520473645126836,
+          4.1103645045901644e-05,
+          -6.375340243818823e-07
+        ],
+        [
+          4.1103645045901644e-05,
+          0.000520018765294872,
+          -1.6930783966656674e-05
+        ],
+        [
+          -6.375340243818823e-07,
+          -1.6930783966656674e-05,
+          0.00024792429741536844
+        ]
+      ]
+    },
+    {
+      "name": "torso_shell_right_fore",
+      "chain": "fixed",
+      "mass_kg": 0.10446227209718632,
+      "center_m": [
+        0.07220347172442798,
+        -0.050197059137814144,
+        0.3018780068784812
+      ],
+      "basis": "actual modeled hollow shell volume at assumed PETG 1250 kg/m3",
+      "relative_uncertainty": 0.2,
+      "body": "torso",
+      "inertia_at_com_kg_m2": [
+        [
+          0.0004843435021641789,
+          -6.522016006408753e-05,
+          1.6280229421190067e-05
+        ],
+        [
+          -6.522016006408753e-05,
+          0.0006431970371173359,
+          -2.5564609199245406e-05
+        ],
+        [
+          1.6280229421190067e-05,
+          -2.5564609199245406e-05,
+          0.0003193968421411561
+        ]
+      ]
+    },
+    {
+      "name": "wing_access_cover_right",
+      "chain": "fixed",
+      "mass_kg": 0.050155847233829924,
+      "center_m": [
+        -0.006124421091377974,
+        -0.10491238460325186,
+        0.2981232082712234
+      ],
+      "basis": "actual modeled hollow shell volume at assumed PETG 1250 kg/m3",
+      "relative_uncertainty": 0.2,
+      "body": "torso",
+      "inertia_at_com_kg_m2": [
+        [
+          3.512931467877125e-05,
+          -3.102589647511592e-06,
+          -4.422950190907227e-06
+        ],
+        [
+          -3.102589647511592e-06,
+          0.0001719083421120239,
+          -3.813084595353991e-06
+        ],
+        [
+          -4.422950190907227e-06,
+          -3.813084595353991e-06,
+          0.00014434506154830916
+        ]
+      ]
+    },
+    {
+      "name": "torso_shell_left_aft",
+      "chain": "fixed",
+      "mass_kg": 0.10495873698691932,
+      "center_m": [
+        -0.09809461150129081,
+        0.05017330023701228,
+        0.28913215704439604
+      ],
+      "basis": "actual modeled hollow shell volume at assumed PETG 1250 kg/m3",
+      "relative_uncertainty": 0.2,
+      "body": "torso",
+      "inertia_at_com_kg_m2": [
+        [
+          0.00045458806901751904,
+          -4.0971301832831614e-05,
+          -1.1150541823482514e-06
+        ],
+        [
+          -4.0971301832831614e-05,
+          0.0005195942677078885,
+          1.6338551757458667e-05
+        ],
+        [
+          -1.1150541823482514e-06,
+          1.6338551757458667e-05,
+          0.00024744664666028886
+        ]
+      ]
+    },
+    {
+      "name": "torso_shell_left_fore",
+      "chain": "fixed",
+      "mass_kg": 0.1044448743676567,
+      "center_m": [
+        0.07222616376962557,
+        0.05018635959347441,
+        0.30172834065387766
+      ],
+      "basis": "actual modeled hollow shell volume at assumed PETG 1250 kg/m3",
+      "relative_uncertainty": 0.2,
+      "body": "torso",
+      "inertia_at_com_kg_m2": [
+        [
+          0.0004840527989905032,
+          6.50806528308326e-05,
+          1.7008128645723818e-05
+        ],
+        [
+          6.50806528308326e-05,
+          0.000642797859854915,
+          2.548495200140121e-05
+        ],
+        [
+          1.7008128645723818e-05,
+          2.548495200140121e-05,
+          0.00031920486685262534
+        ]
+      ]
+    },
+    {
+      "name": "wing_access_cover_left",
+      "chain": "fixed",
+      "mass_kg": 0.05011523178235777,
+      "center_m": [
+        -0.0061105145235271635,
+        0.10491140836165186,
+        0.2980263762984223
+      ],
+      "basis": "actual modeled hollow shell volume at assumed PETG 1250 kg/m3",
+      "relative_uncertainty": 0.2,
+      "body": "torso",
+      "inertia_at_com_kg_m2": [
+        [
+          3.508555720820335e-05,
+          3.0579874404334246e-06,
+          -3.974609839822528e-06
+        ],
+        [
+          3.0579874404334246e-06,
+          0.00017182230415224486,
+          3.7556146556339944e-06
+        ],
+        [
+          -3.974609839822528e-06,
+          3.7556146556339944e-06,
+          0.00014428539440079202
+        ]
+      ]
+    },
+    {
+      "name": "body_nose_plug",
+      "chain": "fixed",
+      "mass_kg": 7.728248455869013e-05,
+      "center_m": [
+        0.14819999999999964,
+        0.0,
+        0.3160000000000008
+      ],
+      "basis": "solid nominal mesh with assumed density 1250 kg/m3; material not released",
+      "relative_uncertainty": 0.3,
+      "body": "torso",
+      "inertia_at_com_kg_m2": [
+        [
+          6.344827113137191e-10,
+          -0.0,
+          -5.686866711302065e-21
+        ],
+        [
+          -0.0,
+          3.262527791330723e-10,
+          1.0770580892617547e-24
+        ],
+        [
+          -5.686866711302065e-21,
+          1.0770580892617547e-24,
+          3.262527791542688e-10
+        ]
+      ]
+    },
+    {
+      "name": "body_tail_plug",
+      "chain": "fixed",
+      "mass_kg": 7.728248455869057e-05,
+      "center_m": [
+        -0.17019999999999771,
+        -3.484159753054411e-20,
+        0.3119999999999985
+      ],
+      "basis": "solid nominal mesh with assumed density 1250 kg/m3; material not released",
+      "relative_uncertainty": 0.3,
+      "body": "torso",
+      "inertia_at_com_kg_m2": [
+        [
+          6.344827113674858e-10,
+          4.5828821698087045e-25,
+          5.118180040171859e-20
+        ],
+        [
+          4.5828821698087045e-25,
+          3.2625277921992625e-10,
+          1.314010868899345e-24
+        ],
+        [
+          5.118180040171859e-20,
+          1.314010868899345e-24,
+          3.2625277918942397e-10
+        ]
+      ]
+    },
+    {
+      "name": "belly_frame",
+      "chain": "fixed",
+      "mass_kg": 0.15,
+      "center_m": [
+        -0.010000000000000002,
+        0.0,
+        0.21550000000000002
+      ],
+      "basis": "assumed machined/frame assembly budget, not solid visual block",
+      "relative_uncertainty": 0.5,
+      "body": "torso",
+      "inertia_at_com_kg_m2": [
+        [
+          9.817277728908013e-05,
+          -1.4720976769808298e-07,
+          -2.683447207255017e-19
+        ],
+        [
+          -1.4720976769808298e-07,
+          0.0002745261111893299,
+          5.1124298607170455e-22
+        ],
+        [
+          -2.683447207255017e-19,
+          5.1124298607170455e-22,
+          0.00036630112766885815
+        ]
+      ]
+    },
+    {
+      "name": "button_socket",
+      "chain": "fixed",
+      "mass_kg": 0.0015367500346712656,
+      "center_m": [
+        -0.086,
+        3.9248577607197276e-19,
+        0.37799999999999934
+      ],
+      "basis": "solid nominal mesh with assumed density 1250 kg/m3; material not released",
+      "relative_uncertainty": 0.3,
+      "body": "torso",
+      "inertia_at_com_kg_m2": [
+        [
+          3.962632786540272e-08,
+          -1.7405258722469964e-23,
+          1.075334796318936e-19
+        ],
+        [
+          -1.7405258722469964e-23,
+          3.962632786540272e-08,
+          -3.0502285087893266e-23
+        ],
+        [
+          1.075334796318936e-19,
+          -3.0502285087893266e-23,
+          7.526561588290849e-08
+        ]
+      ]
+    },
+    {
+      "name": "top_button",
+      "chain": "fixed",
+      "mass_kg": 0.0009237725672985778,
+      "center_m": [
+        -0.08600000000000002,
+        2.3318685299595667e-19,
+        0.3810000000000004
+      ],
+      "basis": "solid nominal mesh with assumed density 1250 kg/m3; material not released",
+      "relative_uncertainty": 0.3,
+      "body": "torso",
+      "inertia_at_com_kg_m2": [
+        [
+          1.608316033433547e-08,
+          -9.908934421208148e-24,
+          1.613002194478404e-19
+        ],
+        [
+          -9.908934421208148e-24,
+          1.6083160334318925e-08,
+          4.5236439748994605e-24
+        ],
+        [
+          1.613002194478404e-19,
+          4.5236439748994605e-24,
+          3.024125763418561e-08
+        ]
+      ]
+    },
+    {
+      "name": "neck_yaw_mount",
+      "chain": "fixed",
+      "mass_kg": 0.022337473761462848,
+      "center_m": [
+        0.04300000000000001,
+        1.2343690866542836e-19,
+        0.3809999999999996
+      ],
+      "basis": "solid nominal mesh with assumed density 1250 kg/m3; material not released",
+      "relative_uncertainty": 0.3,
+      "body": "neck_yaw",
+      "inertia_at_com_kg_m2": [
+        [
+          4.091295638786262e-06,
+          -5.376673981594676e-23,
+          -1.257314531080602e-18
+        ],
+        [
+          -5.376673981594676e-23,
+          4.091295638786262e-06,
+          -2.2582030722697667e-21
+        ],
+        [
+          -1.257314531080602e-18,
+          -2.2582030722697667e-21,
+          7.951151433912762e-06
+        ]
+      ]
+    },
+    {
+      "name": "lower_neck_fork_rear",
+      "chain": "lower",
+      "mass_kg": 0.02936548973171995,
+      "center_m": [
+        0.007982107141338625,
+        -0.03324999999999999,
+        0.4578885048945313
+      ],
+      "basis": "5.5mm aluminium paired plate; assumed density 2700kg/m3; painted ivory",
+      "relative_uncertainty": 0.1,
+      "body": "neck_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          2.4470991588306786e-05,
+          -5.783951632201028e-11,
+          1.6642350508232492e-05
+        ],
+        [
+          -5.783951632201028e-11,
+          3.6792442829579405e-05,
+          -4.059889126468126e-11
+        ],
+        [
+          1.6642350508232492e-05,
+          -4.059889126468126e-11,
+          1.2442991425152672e-05
+        ]
+      ]
+    },
+    {
+      "name": "lower_neck_fork_front",
+      "chain": "lower",
+      "mass_kg": 0.02936548973171995,
+      "center_m": [
+        0.007982107141338622,
+        0.03325000000000001,
+        0.4578885048945313
+      ],
+      "basis": "5.5mm aluminium paired plate; assumed density 2700kg/m3; painted ivory",
+      "relative_uncertainty": 0.1,
+      "body": "neck_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          2.4470991588306786e-05,
+          -5.783951632201028e-11,
+          1.6642350508232472e-05
+        ],
+        [
+          -5.783951632201028e-11,
+          3.6792442829579405e-05,
+          -4.059889126468126e-11
+        ],
+        [
+          1.6642350508232472e-05,
+          -4.059889126468126e-11,
+          1.2442991425152644e-05
+        ]
+      ]
+    },
+    {
+      "name": "lower_neck_fork_bridge",
+      "chain": "lower",
+      "mass_kg": 0.017182050689009205,
+      "center_m": [
+        0.006499999999999998,
+        -6.084611773967329e-19,
+        0.4600000000000001
+      ],
+      "basis": "solid nominal mesh with assumed density 2700 kg/m3; material not released",
+      "relative_uncertainty": 0.3,
+      "body": "neck_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          6.6155372357352975e-06,
+          -4.1099688677327203e-22,
+          -1.568191618848733e-20
+        ],
+        [
+          -4.1099688677327203e-22,
+          4.029804657809465e-07,
+          -6.272766475394946e-22
+        ],
+        [
+          -1.568191618848733e-20,
+          -6.272766475394946e-22,
+          6.890168644828984e-06
+        ]
+      ]
+    },
+    {
+      "name": "upper_neck_fork_rear",
+      "chain": "upper",
+      "mass_kg": 0.02284890976393368,
+      "center_m": [
+        0.0045432562751817045,
+        -0.033249999999999995,
+        0.5566183726887766
+      ],
+      "basis": "5.5mm aluminium paired plate; assumed density 2700kg/m3; painted ivory",
+      "relative_uncertainty": 0.1,
+      "body": "neck_mid_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          1.5188902104212598e-05,
+          -3.6711135682706653e-11,
+          -1.1423630106431278e-05
+        ],
+        [
+          -3.6711135682706653e-11,
+          2.4371904590471106e-05,
+          2.842152439605668e-11
+        ],
+        [
+          -1.1423630106431278e-05,
+          2.842152439605668e-11,
+          9.27748061096933e-06
+        ]
+      ]
+    },
+    {
+      "name": "upper_neck_fork_front",
+      "chain": "upper",
+      "mass_kg": 0.02284890976393368,
+      "center_m": [
+        0.004543256275181705,
+        0.033249999999999995,
+        0.5566183726887766
+      ],
+      "basis": "5.5mm aluminium paired plate; assumed density 2700kg/m3; painted ivory",
+      "relative_uncertainty": 0.1,
+      "body": "neck_mid_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          1.5188902104211455e-05,
+          -3.6711135682148306e-11,
+          -1.142363010643127e-05
+        ],
+        [
+          -3.6711135682148306e-11,
+          2.437190459046996e-05,
+          2.8421524467525085e-11
+        ],
+        [
+          -1.142363010643127e-05,
+          2.8421524467525085e-11,
+          9.277480610969335e-06
+        ]
+      ]
+    },
+    {
+      "name": "upper_neck_fork_bridge",
+      "chain": "upper",
+      "mass_kg": 0.015765236084831553,
+      "center_m": [
+        0.005999999999999998,
+        0.0,
+        0.5585000000000004
+      ],
+      "basis": "solid nominal mesh with assumed density 2700 kg/m3; material not released",
+      "relative_uncertainty": 0.3,
+      "body": "neck_mid_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          6.063868782644928e-06,
+          -3.7490919849525726e-22,
+          9.357733594441621e-20
+        ],
+        [
+          -3.7490919849525726e-22,
+          3.6966643557028493e-07,
+          3.839070192591434e-21
+        ],
+        [
+          9.357733594441621e-20,
+          3.839070192591434e-21,
+          6.315806354809905e-06
+        ]
+      ]
+    },
+    {
+      "name": "head_roll_bridge_rear",
+      "chain": "head",
+      "mass_kg": 0.00376690103453314,
+      "center_m": [
+        0.06077566294802811,
+        -0.030000000000000006,
+        0.6023521500970728
+      ],
+      "basis": "5.5mm aluminium paired plate; assumed density 2700kg/m3; painted ivory",
+      "relative_uncertainty": 0.1,
+      "body": "head_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          5.104533802663871e-08,
+          5.94352914746288e-13,
+          5.122364845247436e-08
+        ],
+        [
+          5.94352914746288e-13,
+          4.5195172408940377e-07,
+          4.2145025050620114e-12
+        ],
+        [
+          5.122364845247436e-08,
+          4.2145025050620114e-12,
+          4.0704372464890356e-07
+        ]
+      ]
+    },
+    {
+      "name": "head_roll_bridge_front",
+      "chain": "head",
+      "mass_kg": 0.003766901034533139,
+      "center_m": [
+        0.060775662948028115,
+        0.029999999999999992,
+        0.602352150097073
+      ],
+      "basis": "5.5mm aluminium paired plate; assumed density 2700kg/m3; painted ivory",
+      "relative_uncertainty": 0.1,
+      "body": "head_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          5.104533802578109e-08,
+          5.943529125129003e-13,
+          5.122364845238503e-08
+        ],
+        [
+          5.943529125129003e-13,
+          4.5195172408854615e-07,
+          4.214502469327809e-12
+        ],
+        [
+          5.122364845238503e-08,
+          4.214502469327809e-12,
+          4.0704372464890133e-07
+        ]
+      ]
+    },
+    {
+      "name": "head_roll_bridge_bridge",
+      "chain": "head",
+      "mass_kg": 0.012648243955640282,
+      "center_m": [
+        0.08099999999999997,
+        1.3422221864333614e-18,
+        0.5994999999999989
+      ],
+      "basis": "solid nominal mesh with assumed density 2700 kg/m3; material not released",
+      "relative_uncertainty": 0.3,
+      "body": "head_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          4.011453223384416e-06,
+          1.3751170461912454e-21,
+          -1.1204657413410152e-18
+        ],
+        [
+          1.3751170461912454e-21,
+          2.9667063666472467e-07,
+          1.0177563817180867e-20
+        ],
+        [
+          -1.1204657413410152e-18,
+          1.0177563817180867e-20,
+          4.213631662437085e-06
+        ]
+      ]
+    },
+    {
+      "name": "neck_cable_0",
+      "chain": "lower",
+      "mass_kg": 0.005,
+      "center_m": [
+        0.030079861949854,
+        0.031,
+        0.39599412779780485
+      ],
+      "basis": "assumed 5 g per visible cable segment; moving harness unmeasured",
+      "relative_uncertainty": 0.5,
+      "body": "neck_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          4.058927964094148e-07,
+          -2.017988244438015e-12,
+          2.3266369436551874e-08
+        ],
+        [
+          -2.017988244438015e-12,
+          4.0705947511197055e-07,
+          -1.187051954555773e-13
+        ],
+        [
+          2.3266369436551874e-08,
+          -1.187051954555773e-13,
+          1.1733125953753285e-08
+        ]
+      ]
+    },
+    {
+      "name": "neck_cable_1",
+      "chain": "lower",
+      "mass_kg": 0.005,
+      "center_m": [
+        -0.008929289321881346,
+        0.031,
+        0.45092928932188137
+      ],
+      "basis": "assumed 5 g per visible cable segment; moving harness unmeasured",
+      "relative_uncertainty": 0.5,
+      "body": "neck_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          2.1911023086473847e-06,
+          -1.3106367405687297e-12,
+          2.1803674194271443e-06
+        ],
+        [
+          -1.3106367405687297e-12,
+          4.371282693121815e-06,
+          -1.3106366908188316e-12
+        ],
+        [
+          2.1803674194271443e-06,
+          -1.3106366908188316e-12,
+          2.191102308648621e-06
+        ]
+      ]
+    },
+    {
+      "name": "neck_cable_2",
+      "chain": "lower",
+      "mass_kg": 0.005,
+      "center_m": [
+        -0.047,
+        0.031,
+        0.5045
+      ],
+      "basis": "assumed 5 g per visible cable segment; moving harness unmeasured",
+      "relative_uncertainty": 0.5,
+      "body": "neck_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          3.3481285533981564e-07,
+          -2.0474279387601833e-12,
+          4.373692394452052e-20
+        ],
+        [
+          -2.0474279387601833e-12,
+          3.3460862240711313e-07,
+          1.421450028196917e-19
+        ],
+        [
+          4.373692394452052e-20,
+          1.421450028196917e-19,
+          1.0307288637560965e-08
+        ]
+      ]
+    },
+    {
+      "name": "neck_cable_3",
+      "chain": "upper",
+      "mass_kg": 0.005,
+      "center_m": [
+        -0.0020670183603120097,
+        0.030138764337042767,
+        0.5604254034961896
+      ],
+      "basis": "assumed 5 g per visible cable segment; moving harness unmeasured",
+      "relative_uncertainty": 0.5,
+      "body": "neck_mid_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          2.50242337434201e-06,
+          6.831432811104543e-08,
+          -2.766835801826993e-06
+        ],
+        [
+          6.831432811104543e-08,
+          5.574980943446815e-06,
+          6.148353387515018e-08
+        ],
+        [
+          -2.766835801826993e-06,
+          6.148353387515018e-08,
+          3.086533170501062e-06
+        ]
+      ]
+    },
+    {
+      "name": "neck_cable_4",
+      "chain": "upper",
+      "mass_kg": 0.005,
+      "center_m": [
+        0.058967211920049695,
+        0.024606448383488567,
+        0.5986080252243235
+      ],
+      "basis": "assumed 5 g per visible cable segment; moving harness unmeasured",
+      "relative_uncertainty": 0.5,
+      "body": "neck_mid_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          4.6542633904091125e-08,
+          9.830941695446633e-08,
+          5.4631584146221454e-08
+        ],
+        [
+          9.830941695446633e-08,
+          3.6846679869204344e-07,
+          -1.5417503484174114e-08
+        ],
+        [
+          5.4631584146221454e-08,
+          -1.5417503484174114e-08,
+          3.877505701533364e-07
+        ]
+      ]
+    },
+    {
+      "name": "goose_head_shell",
+      "chain": "head",
+      "mass_kg": 0.1056136570959176,
+      "center_m": [
+        0.1289024312864182,
+        6.350302778891563e-07,
+        0.5989052542806835
+      ],
+      "basis": "conditional 2.4 mm shell area approximation; head/beak/foot are not hollow manufacturing CAD",
+      "relative_uncertainty": 0.35,
+      "body": "head_roll",
+      "inertia_at_com_kg_m2": [
+        [
+          9.057590939959623e-05,
+          -1.9383891728742225e-09,
+          9.977123989585644e-06
+        ],
+        [
+          -1.9383891728742225e-09,
+          0.00012574924097413572,
+          2.962746349399027e-10
+        ],
+        [
+          9.977123989585644e-06,
+          2.962746349399027e-10,
+          0.00013931981325004695
+        ]
+      ]
+    },
+    {
+      "name": "flush_camera_window",
+      "chain": "head",
+      "mass_kg": 0.007475692796831451,
+      "center_m": [
+        0.17867852650092472,
+        -2.0746754724783474e-19,
+        0.6060000000000013
+      ],
+      "basis": "solid nominal mesh with assumed density 1250 kg/m3; material not released",
+      "relative_uncertainty": 0.3,
+      "body": "head_roll",
+      "inertia_at_com_kg_m2": [
+        [
+          2.516626238481956e-06,
+          3.50159155695521e-20,
+          2.6469779601696886e-18
+        ],
+        [
+          3.50159155695521e-20,
+          1.0566554968178314e-06,
+          -3.828985861629793e-11
+        ],
+        [
+          2.6469779601696886e-18,
+          -3.828985861629793e-11,
+          1.4699825745217092e-06
+        ]
+      ]
+    },
+    {
+      "name": "camera_glass",
+      "chain": "head",
+      "mass_kg": 0.002241145377556921,
+      "center_m": [
+        0.1810000000000006,
+        -7.689340281429553e-20,
+        0.606000000000005
+      ],
+      "basis": "solid nominal mesh with assumed density 2500 kg/m3; material not released",
+      "relative_uncertainty": 0.3,
+      "body": "head_roll",
+      "inertia_at_com_kg_m2": [
+        [
+          2.2847033411188604e-07,
+          -3.119160226502052e-23,
+          7.610061635487855e-19
+        ],
+        [
+          -3.119160226502052e-23,
+          1.1459565803579398e-07,
+          -1.044315523348206e-22
+        ],
+        [
+          7.610061635487855e-19,
+          -1.044315523348206e-22,
+          1.1459565804222944e-07
+        ]
+      ]
+    },
+    {
+      "name": "camera_inner_lens",
+      "chain": "head",
+      "mass_kg": 0.0005209645349275581,
+      "center_m": [
+        0.18200000000000557,
+        0.0,
+        0.6060000000000265
+      ],
+      "basis": "solid nominal mesh with assumed density 2500 kg/m3; material not released",
+      "relative_uncertainty": 0.3,
+      "body": "head_roll",
+      "inertia_at_com_kg_m2": [
+        [
+          2.4687273871703522e-08,
+          -1.1029074834040368e-21,
+          1.7701665108634792e-18
+        ],
+        [
+          -1.1029074834040368e-21,
+          1.2364672258257321e-08,
+          -1.7232929428188076e-23
+        ],
+        [
+          1.7701665108634792e-18,
+          -1.7232929428188076e-23,
+          1.236467226659737e-08
+        ]
+      ]
+    },
+    {
+      "name": "camera_eye_bezel",
+      "chain": "head",
+      "mass_kg": 0.00026727587328515283,
+      "center_m": [
+        0.1805000000000071,
+        4.996904562574171e-18,
+        0.6060000000000173
+      ],
+      "basis": "solid nominal mesh with assumed density 1250 kg/m3; material not released",
+      "relative_uncertainty": 0.3,
+      "body": "head_roll",
+      "inertia_at_com_kg_m2": [
+        [
+          6.674835096148652e-08,
+          -6.205793298708286e-22,
+          1.19114008207636e-18
+        ],
+        [
+          -6.205793298708286e-22,
+          3.3406248583518385e-08,
+          -1.7939479534741472e-22
+        ],
+        [
+          1.19114008207636e-18,
+          -1.7939479534741472e-22,
+          3.340624858670303e-08
+        ]
+      ]
+    },
+    {
+      "name": "fixed_upper_bill",
+      "chain": "head",
+      "mass_kg": 0.03785908818198055,
+      "center_m": [
+        0.19669655759710553,
+        -3.993699312626367e-09,
+        0.5634465208705333
+      ],
+      "basis": "conditional 2.4 mm shell area approximation; head/beak/foot are not hollow manufacturing CAD",
+      "relative_uncertainty": 0.35,
+      "body": "head_roll",
+      "inertia_at_com_kg_m2": [
+        [
+          9.168015763495617e-06,
+          -3.0185362649669228e-21,
+          2.014646531305447e-06
+        ],
+        [
+          -3.0185362649669228e-21,
+          2.198792125894247e-05,
+          1.0676965256340264e-09
+        ],
+        [
+          2.014646531305447e-06,
+          1.0676965256340264e-09,
+          2.8387105807068064e-05
+        ]
+      ]
+    },
+    {
+      "name": "hinged_lower_bill",
+      "chain": "head",
+      "mass_kg": 0.02829896356916163,
+      "center_m": [
+        0.20038584896107914,
+        1.5583459397853528e-09,
+        0.5475246198181087
+      ],
+      "basis": "conditional 2.4 mm shell area approximation; head/beak/foot are not hollow manufacturing CAD",
+      "relative_uncertainty": 0.35,
+      "body": "beak_hinge",
+      "inertia_at_com_kg_m2": [
+        [
+          4.701067550855585e-06,
+          -1.3846045658288518e-21,
+          -4.47401206396626e-07
+        ],
+        [
+          -1.3846045658288518e-21,
+          1.65488565278023e-05,
+          1.2493874086842852e-10
+        ],
+        [
+          -4.47401206396626e-07,
+          1.2493874086842852e-10,
+          2.0868303910341246e-05
+        ]
+      ]
+    },
+    {
+      "name": "upper_grip_pad",
+      "chain": "head",
+      "mass_kg": 0.0031694674163129997,
+      "center_m": [
+        0.2086915542871988,
+        5.02598293271371e-20,
+        0.5536000000000035
+      ],
+      "basis": "solid nominal mesh with assumed density 1200 kg/m3; material not released",
+      "relative_uncertainty": 0.3,
+      "body": "head_roll",
+      "inertia_at_com_kg_m2": [
+        [
+          3.503860373904137e-07,
+          2.9794171187673245e-22,
+          -3.3034284942917713e-18
+        ],
+        [
+          2.9794171187673245e-22,
+          1.0036491026633924e-06,
+          -4.871112094678175e-12
+        ],
+        [
+          -3.3034284942917713e-18,
+          -4.871112094678175e-12,
+          1.353370671167008e-06
+        ]
+      ]
+    },
+    {
+      "name": "lower_grip_pad",
+      "chain": "head",
+      "mass_kg": 0.0034335897010056068,
+      "center_m": [
+        0.20869155428719882,
+        4.077562936017989e-19,
+        0.552350000000002
+      ],
+      "basis": "solid nominal mesh with assumed density 1200 kg/m3; material not released",
+      "relative_uncertainty": 0.3,
+      "body": "beak_hinge",
+      "inertia_at_com_kg_m2": [
+        [
+          3.796473600664188e-07,
+          -2.3721326460928133e-22,
+          5.082197683525802e-19
+        ],
+        [
+          -2.3721326460928133e-22,
+          1.0873490141120293e-06,
+          -5.716791278107459e-12
+        ],
+        [
+          5.082197683525802e-19,
+          -5.716791278107459e-12,
+          1.4661515604308658e-06
+        ]
+      ]
+    },
+    {
+      "name": "beak_pinion_envelope",
+      "chain": "head",
+      "mass_kg": 0.009588239703076179,
+      "center_m": [
+        0.13999999999999985,
+        0.02999999999999999,
+        0.5892664991614218
+      ],
+      "basis": "steel-filled transmission envelope bound; includes solid gear discs, bearing annuli, shaft",
+      "relative_uncertainty": 0.4,
+      "body": "head_roll",
+      "inertia_at_com_kg_m2": [
+        [
+          1.6718785327448108e-07,
+          -3.2466839042706336e-20,
+          1.0389388493666028e-19
+        ],
+        [
+          -3.2466839042706336e-20,
+          2.3307593814913265e-07,
+          1.2986735617082534e-19
+        ],
+        [
+          1.0389388493666028e-19,
+          1.2986735617082534e-19,
+          1.6718785327962384e-07
+        ]
+      ]
+    },
+    {
+      "name": "beak_output_gear_envelope",
+      "chain": "head",
+      "mass_kg": 0.07074105978794445,
+      "center_m": [
+        0.15999999999999998,
+        0.03,
+        0.5759999999999996
+      ],
+      "basis": "steel-filled transmission envelope bound; includes solid gear discs, bearing annuli, shaft",
+      "relative_uncertainty": 0.4,
+      "body": "head_roll",
+      "inertia_at_com_kg_m2": [
+        [
+          6.716874143680427e-06,
+          -1.5584082740499041e-19,
+          -2.4934532384798466e-18
+        ],
+        [
+          -1.5584082740499041e-19,
+          1.2684197007247785e-05,
+          -8.311510794932822e-19
+        ],
+        [
+          -2.4934532384798466e-18,
+          -8.311510794932822e-19,
+          6.716874143657986e-06
+        ]
+      ]
+    },
+    {
+      "name": "beak_supported_output_shaft",
+      "chain": "head",
+      "mass_kg": 0.029881858947524938,
+      "center_m": [
+        0.16000000000000003,
+        -1.0140728915071667e-18,
+        0.5759999999999987
+      ],
+      "basis": "steel-filled transmission envelope bound; includes solid gear discs, bearing annuli, shaft",
+      "relative_uncertainty": 0.4,
+      "body": "head_roll",
+      "inertia_at_com_kg_m2": [
+        [
+          1.448470117461214e-05,
+          -6.025845326326296e-20,
+          1.2467266192399233e-18
+        ],
+        [
+          -6.025845326326296e-20,
+          2.3822108092191947e-07,
+          -3.217247303538576e-20
+        ],
+        [
+          1.2467266192399233e-18,
+          -3.217247303538576e-20,
+          1.4484701174573492e-05
+        ]
+      ]
+    },
+    {
+      "name": "jaw_bearing_reserve_right",
+      "chain": "head",
+      "mass_kg": 0.005901872307421828,
+      "center_m": [
+        0.15999999999999995,
+        -0.03599999999999997,
+        0.5759999999999991
+      ],
+      "basis": "steel-filled transmission envelope bound; includes solid gear discs, bearing annuli, shaft",
+      "relative_uncertainty": 0.4,
+      "body": "head_roll",
+      "inertia_at_com_kg_m2": [
+        [
+          1.2999640455602017e-07,
+          3.2466839042706336e-20,
+          -1.3506205041765836e-18
+        ],
+        [
+          3.2466839042706336e-20,
+          2.354016744926091e-07,
+          1.2986735617082534e-19
+        ],
+        [
+          -1.3506205041765836e-18,
+          1.2986735617082534e-19,
+          1.2999640455066962e-07
+        ]
+      ]
+    },
+    {
+      "name": "internal_jaw_heel_right",
+      "chain": "head",
+      "mass_kg": 0.0006511788686262563,
+      "center_m": [
+        0.16385763311616264,
+        -0.021999999999999995,
+        0.5629804882329503
+      ],
+      "basis": "solid nominal mesh with assumed density 1250 kg/m3; material not released",
+      "relative_uncertainty": 0.3,
+      "body": "beak_hinge",
+      "inertia_at_com_kg_m2": [
+        [
+          3.288320791152614e-08,
+          3.971591911057484e-13,
+          8.995873783650967e-09
+        ],
+        [
+          3.971591911057484e-13,
+          3.702892914960644e-08,
+          1.1767680464079194e-13
+        ],
+        [
+          8.995873783650967e-09,
+          1.1767680464079194e-13,
+          5.187577975137169e-09
+        ]
+      ]
+    },
+    {
+      "name": "jaw_bearing_reserve_left",
+      "chain": "head",
+      "mass_kg": 0.005901872307421828,
+      "center_m": [
+        0.15999999999999995,
+        0.035999999999999956,
+        0.5759999999999991
+      ],
+      "basis": "steel-filled transmission envelope bound; includes solid gear discs, bearing annuli, shaft",
+      "relative_uncertainty": 0.4,
+      "body": "head_roll",
+      "inertia_at_com_kg_m2": [
+        [
+          1.2999640455602017e-07,
+          -5.194694246833014e-20,
+          -1.3506205041765836e-18
+        ],
+        [
+          -5.194694246833014e-20,
+          2.354016744926091e-07,
+          -2.337612411074856e-19
+        ],
+        [
+          -1.3506205041765836e-18,
+          -2.337612411074856e-19,
+          1.2999640455066962e-07
+        ]
+      ]
+    },
+    {
+      "name": "internal_jaw_heel_left",
+      "chain": "head",
+      "mass_kg": 0.0006511788686262564,
+      "center_m": [
+        0.1638576331161626,
+        0.02199999999999999,
+        0.5629804882329503
+      ],
+      "basis": "solid nominal mesh with assumed density 1250 kg/m3; material not released",
+      "relative_uncertainty": 0.3,
+      "body": "beak_hinge",
+      "inertia_at_com_kg_m2": [
+        [
+          3.288320791152614e-08,
+          3.971591880038211e-13,
+          8.995873783609607e-09
+        ],
+        [
+          3.971591880038211e-13,
+          3.7028929149573353e-08,
+          1.1767679016513123e-13
+        ],
+        [
+          8.995873783609607e-09,
+          1.1767679016513123e-13,
+          5.1875779751413045e-09
+        ]
+      ]
+    },
+    {
+      "name": "pinion_bearing_reserve",
+      "chain": "head",
+      "mass_kg": 0.0059018723074218335,
+      "center_m": [
+        0.14,
+        0.03799999999999999,
+        0.5892664991614214
+      ],
+      "basis": "steel-filled transmission envelope bound; includes solid gear discs, bearing annuli, shaft",
+      "relative_uncertainty": 0.4,
+      "body": "head_roll",
+      "inertia_at_com_kg_m2": [
+        [
+          1.2999640455311117e-07,
+          -0.0,
+          -1.0389388493666029e-19
+        ],
+        [
+          -0.0,
+          2.3540167448928452e-07,
+          -2.5973471234165072e-20
+        ],
+        [
+          -1.0389388493666029e-19,
+          -2.5973471234165072e-20,
+          1.2999640455059172e-07
+        ]
+      ]
+    },
+    {
+      "name": "right_thigh_fork_rear",
+      "chain": "fixed",
+      "mass_kg": 0.027938140940524193,
+      "center_m": [
+        -0.024186214243365336,
+        -0.12225000000000003,
+        0.18142014841354293
+      ],
+      "basis": "5.5mm aluminium paired plate; assumed density 2700kg/m3; painted ivory",
+      "relative_uncertainty": 0.1,
+      "body": "right_hip_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          1.9409894123875715e-05,
+          5.861014580513024e-11,
+          -1.2736340991434914e-05
+        ],
+        [
+          5.861014580513024e-11,
+          2.8803985519320396e-05,
+          -4.010167799597002e-11
+        ],
+        [
+          -1.2736340991434914e-05,
+          -4.010167799597002e-11,
+          9.509580478711624e-06
+        ]
+      ]
+    },
+    {
+      "name": "right_thigh_fork_front",
+      "chain": "fixed",
+      "mass_kg": 0.02793814094052417,
+      "center_m": [
+        -0.024186214243365336,
+        -0.055749999999999966,
+        0.18142014841354295
+      ],
+      "basis": "5.5mm aluminium paired plate; assumed density 2700kg/m3; painted ivory",
+      "relative_uncertainty": 0.1,
+      "body": "right_hip_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          1.9409894123875715e-05,
+          5.861014576046249e-11,
+          -1.273634099143495e-05
+        ],
+        [
+          5.861014576046249e-11,
+          2.880398551932011e-05,
+          -4.010167856771726e-11
+        ],
+        [
+          -1.273634099143495e-05,
+          -4.010167856771726e-11,
+          9.509580478711839e-06
+        ]
+      ]
+    },
+    {
+      "name": "right_thigh_fork_bridge",
+      "chain": "fixed",
+      "mass_kg": 0.01718205068900943,
+      "center_m": [
+        -0.025500000000000005,
+        -0.08900000000000001,
+        0.17950000000000027
+      ],
+      "basis": "solid nominal mesh with assumed density 2700 kg/m3; material not released",
+      "relative_uncertainty": 0.3,
+      "body": "right_hip_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          6.6155372357371856e-06,
+          -0.0,
+          -0.0
+        ],
+        [
+          -0.0,
+          4.029804657823269e-07,
+          -3.7636598852369624e-19
+        ],
+        [
+          -0.0,
+          -3.7636598852369624e-19,
+          6.890168644829108e-06
+        ]
+      ]
+    },
+    {
+      "name": "right_shin_fork_rear",
+      "chain": "fixed",
+      "mass_kg": 0.018765401519591066,
+      "center_m": [
+        -0.0335150068644183,
+        -0.12225000000000011,
+        0.09839314667665257
+      ],
+      "basis": "5.5mm aluminium paired plate; assumed density 2700kg/m3; painted ivory",
+      "relative_uncertainty": 0.1,
+      "body": "right_knee_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          7.0524162089100886e-06,
+          3.51232198190088e-11,
+          4.819162209059152e-06
+        ],
+        [
+          3.51232198190088e-11,
+          1.0924169226487657e-05,
+          2.558977398982309e-11
+        ],
+        [
+          4.819162209059152e-06,
+          2.558977398982309e-11,
+          3.948983738706499e-06
+        ]
+      ]
+    },
+    {
+      "name": "right_shin_fork_front",
+      "chain": "fixed",
+      "mass_kg": 0.018765401519591055,
+      "center_m": [
+        -0.0335150068644183,
+        -0.05574999999999999,
+        0.09839314667665257
+      ],
+      "basis": "5.5mm aluminium paired plate; assumed density 2700kg/m3; painted ivory",
+      "relative_uncertainty": 0.1,
+      "body": "right_knee_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          7.052416208910409e-06,
+          3.512321973414006e-11,
+          4.819162209059159e-06
+        ],
+        [
+          3.512321973414006e-11,
+          1.0924169226487655e-05,
+          2.5589774400766416e-11
+        ],
+        [
+          4.819162209059159e-06,
+          2.5589774400766416e-11,
+          3.9489837387067845e-06
+        ]
+      ]
+    },
+    {
+      "name": "right_shin_fork_bridge",
+      "chain": "fixed",
+      "mass_kg": 0.016898687768173833,
+      "center_m": [
+        -0.03250000000000001,
+        -0.08900000000000001,
+        0.09700000000000002
+      ],
+      "basis": "solid nominal mesh with assumed density 2700 kg/m3; material not released",
+      "relative_uncertainty": 0.3,
+      "body": "right_knee_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          6.5052017028052594e-06,
+          7.712417797616714e-21,
+          -7.712417797616714e-21
+        ],
+        [
+          7.712417797616714e-21,
+          3.9631765974039057e-07,
+          3.0849671190466857e-20
+        ],
+        [
+          -7.712417797616714e-21,
+          3.0849671190466857e-20,
+          6.775294344511098e-06
+        ]
+      ]
+    },
+    {
+      "name": "right_ankle_crossmember",
+      "chain": "fixed",
+      "mass_kg": 0.03506628484728682,
+      "center_m": [
+        0.022,
+        -0.089,
+        0.04999999999999998
+      ],
+      "basis": "solid nominal mesh with assumed density 2700 kg/m3; material not released",
+      "relative_uncertainty": 0.3,
+      "body": "right_ankle_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          4.244887754891604e-06,
+          -0.0,
+          -0.0
+        ],
+        [
+          -0.0,
+          1.4029520930312086e-05,
+          5.3601303693436193e-20
+        ],
+        [
+          -0.0,
+          5.3601303693436193e-20,
+          1.8139982676516402e-05
+        ]
+      ]
+    },
+    {
+      "name": "right_foot_upper_aft",
+      "chain": "fixed",
+      "mass_kg": 0.06166282586019281,
+      "center_m": [
+        -0.016168509531038728,
+        -0.08899998003019235,
+        0.030653374256396013
+      ],
+      "basis": "conditional 2.4 mm shell area approximation; head/beak/foot are not hollow manufacturing CAD",
+      "relative_uncertainty": 0.35,
+      "body": "right_ankle_roll",
+      "inertia_at_com_kg_m2": [
+        [
+          3.337091058861638e-05,
+          -0.0,
+          -4.69273930835277e-06
+        ],
+        [
+          -0.0,
+          4.135163154634434e-05,
+          -9.315038078765866e-10
+        ],
+        [
+          -4.69273930835277e-06,
+          -9.315038078765866e-10,
+          6.578832318025322e-05
+        ]
+      ]
+    },
+    {
+      "name": "right_foot_upper_fore",
+      "chain": "fixed",
+      "mass_kg": 0.07660446595499822,
+      "center_m": [
+        0.06043395244313304,
+        -0.08900016589539676,
+        0.03377719828470503
+      ],
+      "basis": "conditional 2.4 mm shell area approximation; head/beak/foot are not hollow manufacturing CAD",
+      "relative_uncertainty": 0.35,
+      "body": "right_ankle_roll",
+      "inertia_at_com_kg_m2": [
+        [
+          5.981955009518856e-05,
+          1.2266733358267478e-19,
+          4.554434232260765e-06
+        ],
+        [
+          1.2266733358267478e-19,
+          4.842038186865441e-05,
+          2.324279722312148e-09
+        ],
+        [
+          4.554434232260765e-06,
+          2.324279722312148e-09,
+          8.989163738943371e-05
+        ]
+      ]
+    },
+    {
+      "name": "left_thigh_fork_rear",
+      "chain": "fixed",
+      "mass_kg": 0.02793814094052417,
+      "center_m": [
+        -0.024186214243365336,
+        0.05574999999999998,
+        0.1814201484135429
+      ],
+      "basis": "5.5mm aluminium paired plate; assumed density 2700kg/m3; painted ivory",
+      "relative_uncertainty": 0.1,
+      "body": "left_hip_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          1.940989412387614e-05,
+          5.861014579619669e-11,
+          -1.2736340991434878e-05
+        ],
+        [
+          5.861014579619669e-11,
+          2.880398551932068e-05,
+          -4.0101678746388275e-11
+        ],
+        [
+          -1.2736340991434878e-05,
+          -4.0101678746388275e-11,
+          9.50958047871182e-06
+        ]
+      ]
+    },
+    {
+      "name": "left_thigh_fork_front",
+      "chain": "fixed",
+      "mass_kg": 0.027938140940524187,
+      "center_m": [
+        -0.02418621424336534,
+        0.12225000000000004,
+        0.18142014841354298
+      ],
+      "basis": "5.5mm aluminium paired plate; assumed density 2700kg/m3; painted ivory",
+      "relative_uncertainty": 0.1,
+      "body": "left_hip_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          1.9409894123875427e-05,
+          5.861014576939604e-11,
+          -1.273634099143495e-05
+        ],
+        [
+          5.861014576939604e-11,
+          2.880398551932011e-05,
+          -4.010167856771726e-11
+        ],
+        [
+          -1.273634099143495e-05,
+          -4.010167856771726e-11,
+          9.509580478711482e-06
+        ]
+      ]
+    },
+    {
+      "name": "left_thigh_fork_bridge",
+      "chain": "fixed",
+      "mass_kg": 0.01718205068900943,
+      "center_m": [
+        -0.0255,
+        0.08900000000000001,
+        0.17950000000000035
+      ],
+      "basis": "solid nominal mesh with assumed density 2700 kg/m3; material not released",
+      "relative_uncertainty": 0.3,
+      "body": "left_hip_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          6.615537235736557e-06,
+          -0.0,
+          -9.409149713092405e-20
+        ],
+        [
+          -0.0,
+          4.0298046578169957e-07,
+          6.272766475394936e-19
+        ],
+        [
+          -9.409149713092405e-20,
+          6.272766475394936e-19,
+          6.890168644829075e-06
+        ]
+      ]
+    },
+    {
+      "name": "left_shin_fork_rear",
+      "chain": "fixed",
+      "mass_kg": 0.018765401519591062,
+      "center_m": [
+        -0.033515006864418294,
+        0.05574999999999997,
+        0.09839314667665257
+      ],
+      "basis": "5.5mm aluminium paired plate; assumed density 2700kg/m3; painted ivory",
+      "relative_uncertainty": 0.1,
+      "body": "left_knee_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          7.052416208910375e-06,
+          3.512321976987427e-11,
+          4.8191622090591695e-06
+        ],
+        [
+          3.512321976987427e-11,
+          1.0924169226487621e-05,
+          2.5589774347165116e-11
+        ],
+        [
+          4.8191622090591695e-06,
+          2.5589774347165116e-11,
+          3.948983738706776e-06
+        ]
+      ]
+    },
+    {
+      "name": "left_shin_fork_front",
+      "chain": "fixed",
+      "mass_kg": 0.018765401519591066,
+      "center_m": [
+        -0.0335150068644183,
+        0.12224999999999996,
+        0.09839314667665258
+      ],
+      "basis": "5.5mm aluminium paired plate; assumed density 2700kg/m3; painted ivory",
+      "relative_uncertainty": 0.1,
+      "body": "left_knee_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          7.052416208910375e-06,
+          3.51232197832746e-11,
+          4.819162209059134e-06
+        ],
+        [
+          3.51232197832746e-11,
+          1.0924169226487657e-05,
+          2.5589774061291496e-11
+        ],
+        [
+          4.819162209059134e-06,
+          2.5589774061291496e-11,
+          3.948983738706821e-06
+        ]
+      ]
+    },
+    {
+      "name": "left_shin_fork_bridge",
+      "chain": "fixed",
+      "mass_kg": 0.01689868776817383,
+      "center_m": [
+        -0.0325,
+        0.08899999999999998,
+        0.09700000000000002
+      ],
+      "basis": "solid nominal mesh with assumed density 2700 kg/m3; material not released",
+      "relative_uncertainty": 0.3,
+      "body": "left_knee_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          6.505201702805194e-06,
+          -0.0,
+          -4.6274506785700255e-20
+        ],
+        [
+          -0.0,
+          3.963176597402669e-07,
+          -0.0
+        ],
+        [
+          -4.6274506785700255e-20,
+          -0.0,
+          6.775294344511094e-06
+        ]
+      ]
+    },
+    {
+      "name": "left_ankle_crossmember",
+      "chain": "fixed",
+      "mass_kg": 0.03506628484728682,
+      "center_m": [
+        0.022,
+        0.08900000000000001,
+        0.04999999999999996
+      ],
+      "basis": "solid nominal mesh with assumed density 2700 kg/m3; material not released",
+      "relative_uncertainty": 0.3,
+      "body": "left_ankle_pitch",
+      "inertia_at_com_kg_m2": [
+        [
+          4.244887754891747e-06,
+          8.933550615572699e-21,
+          -1.7867101231145398e-20
+        ],
+        [
+          8.933550615572699e-21,
+          1.402952093031216e-05,
+          -1.0720260738687239e-19
+        ],
+        [
+          -1.7867101231145398e-20,
+          -1.0720260738687239e-19,
+          1.8139982676516436e-05
+        ]
+      ]
+    },
+    {
+      "name": "left_foot_upper_aft",
+      "chain": "fixed",
+      "mass_kg": 0.06166282586019281,
+      "center_m": [
+        -0.01616850953103872,
+        0.0890000199698079,
+        0.030653374256395995
+      ],
+      "basis": "conditional 2.4 mm shell area approximation; head/beak/foot are not hollow manufacturing CAD",
+      "relative_uncertainty": 0.35,
+      "body": "left_ankle_roll",
+      "inertia_at_com_kg_m2": [
+        [
+          3.3370910588616304e-05,
+          -0.0,
+          -4.692739308352775e-06
+        ],
+        [
+          -0.0,
+          4.135163154634431e-05,
+          -9.315038079342173e-10
+        ],
+        [
+          -4.692739308352775e-06,
+          -9.315038079342173e-10,
+          6.578832318025305e-05
+        ]
+      ]
+    },
+    {
+      "name": "left_foot_upper_fore",
+      "chain": "fixed",
+      "mass_kg": 0.07660446595499822,
+      "center_m": [
+        0.06043395244313302,
+        0.08899983410460294,
+        0.03377719828470503
+      ],
+      "basis": "conditional 2.4 mm shell area approximation; head/beak/foot are not hollow manufacturing CAD",
+      "relative_uncertainty": 0.35,
+      "body": "left_ankle_roll",
+      "inertia_at_com_kg_m2": [
+        [
+          5.9819550095188196e-05,
+          1.8400100037401216e-19,
+          4.554434232260765e-06
+        ],
+        [
+          1.8400100037401216e-19,
+          4.842038186865435e-05,
+          2.3242797223734816e-09
+        ],
+        [
+          4.554434232260765e-06,
+          2.3242797223734816e-09,
+          8.989163738943334e-05
+        ]
+      ]
+    },
+    {
+      "name": "battery_service",
+      "chain": "fixed",
+      "mass_kg": 0.4,
+      "center_m": [
+        -0.07,
+        0,
+        0.28
+      ],
+      "basis": "CNHL 220406BK 6S 2200mAh catalog 372g plus 28g retention/lead allocation; total400g; supplier tolerance and lead layout remain",
+      "relative_uncertainty": 0.125,
+      "body": "torso",
+      "inertia_at_com_kg_m2": [
+        [
+          0.0002241666666666667,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0005633333333333332,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0006208333333333333
+        ]
+      ]
+    },
+    {
+      "name": "compute_stack",
+      "chain": "fixed",
+      "mass_kg": 0.054,
+      "center_m": [
+        -0.06,
+        0,
+        0.345
+      ],
+      "basis": "component mass budget incl. assigned harness reserve; not measured assembly",
+      "relative_uncertainty": 0.35,
+      "body": "torso",
+      "inertia_at_com_kg_m2": [
+        [
+          1.4976e-05,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          3.3407999999999996e-05,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          3.9167999999999995e-05
+        ]
+      ]
+    },
+    {
+      "name": "logic_buck",
+      "chain": "fixed",
+      "mass_kg": 0.025,
+      "center_m": [
+        -0.063,
+        0.05500000000000001,
+        0.322
+      ],
+      "basis": "5V logic /12V servo converter and heatsink allocation; exact SKU pending",
+      "relative_uncertainty": 0.25,
+      "body": "torso",
+      "inertia_at_com_kg_m2": [
+        [
+          2.7604166666666666e-06,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          6.010416666666668e-06,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          6.754166666666668e-06
+        ]
+      ]
+    },
+    {
+      "name": "servo_buck",
+      "chain": "fixed",
+      "mass_kg": 0.04,
+      "center_m": [
+        -0.063,
+        -0.05500000000000001,
+        0.322
+      ],
+      "basis": "5V logic /12V servo converter and heatsink allocation; exact SKU pending",
+      "relative_uncertainty": 0.25,
+      "body": "torso",
+      "inertia_at_com_kg_m2": [
+        [
+          4.416666666666667e-06,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          9.616666666666669e-06,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.080666666666667e-05
+        ]
+      ]
+    },
+    {
+      "name": "main_protection",
+      "chain": "fixed",
+      "mass_kg": 0.093,
+      "center_m": [
+        0.08299999999999999,
+        0.0,
+        0.30100000000000005
+      ],
+      "basis": "component mass budget incl. assigned harness reserve; not measured assembly",
+      "relative_uncertainty": 0.35,
+      "body": "torso",
+      "inertia_at_com_kg_m2": [
+        [
+          2.841231969028374e-05,
+          1.5639914033697282e-21,
+          -0.0
+        ],
+        [
+          1.5639914033697282e-21,
+          2.5611541464381598e-05,
+          -3.33651499385542e-20
+        ],
+        [
+          -0.0,
+          -3.33651499385542e-20,
+          3.2155140686920745e-05
+        ]
+      ]
+    },
+    {
+      "name": "interfaces_audio",
+      "chain": "fixed",
+      "mass_kg": 0.10235,
+      "center_m": [
+        0.025,
+        0,
+        0.25
+      ],
+      "basis": "component mass budget incl. assigned harness reserve; not measured assembly",
+      "relative_uncertainty": 0.35,
+      "body": "torso",
+      "inertia_at_com_kg_m2": [
+        [
+          3.179673333333333e-05,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          2.524633333333333e-05,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          3.957533333333333e-05
+        ]
+      ]
+    },
+    {
+      "name": "camera_module",
+      "chain": "head",
+      "mass_kg": 0.025,
+      "center_m": [
+        0.166,
+        0.0,
+        0.606
+      ],
+      "basis": "assumed 25 g complete camera module; optical meshes excluded",
+      "relative_uncertainty": 0.4,
+      "body": "head_roll",
+      "inertia_at_com_kg_m2": [
+        [
+          3.7499999999999997e-06,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          2.2270833333333335e-06,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          2.2270833333333335e-06
+        ]
+      ]
+    },
+    {
+      "name": "head_internal_frame_reserve",
+      "chain": "head",
+      "mass_kg": 0.08,
+      "center_m": [
+        0.139,
+        0.0,
+        0.588
+      ],
+      "basis": "unmodeled internal metal load-path reserve",
+      "relative_uncertainty": 0.5,
+      "body": "head_roll",
+      "inertia_at_com_kg_m2": [
+        [
+          5.126666666666668e-06,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          5.126666666666668e-06,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          8.333333333333335e-06
+        ]
+      ]
+    },
+    {
+      "name": "right_foot_sole",
+      "body": "right_ankle_roll",
+      "mass_kg": 0.08019915007142217,
+      "center_m": [
+        0.02677058161163045,
+        -0.08900012878486625,
+        0.003049605742333658
+      ],
+      "relative_uncertainty": 0.3,
+      "basis": "actual foot candidate solid volume; assumed material density",
+      "inertia_at_com_kg_m2": [
+        [
+          7.243584323407658e-05,
+          1.976584130312543e-08,
+          -3.484172584872837e-07
+        ],
+        [
+          1.976584130312543e-08,
+          0.000261110742733914,
+          1.843866977054533e-10
+        ],
+        [
+          -3.484172584872837e-07,
+          1.843866977054533e-10,
+          0.0003325362370016295
+        ]
+      ]
+    },
+    {
+      "name": "right_foot_trim",
+      "body": "right_ankle_roll",
+      "mass_kg": 0.005903257583686586,
+      "center_m": [
+        0.029882622629444616,
+        -0.08900372338644413,
+        0.014212211043069732
+      ],
+      "relative_uncertainty": 0.3,
+      "basis": "actual foot candidate solid volume; assumed material density",
+      "inertia_at_com_kg_m2": [
+        [
+          8.371353698730064e-06,
+          2.4692680485855483e-08,
+          1.9401222450440892e-09
+        ],
+        [
+          2.4692680485855483e-08,
+          2.5611197927853648e-05,
+          1.028292642799435e-11
+        ],
+        [
+          1.9401222450440892e-09,
+          1.028292642799435e-11,
+          3.39627233009664e-05
+        ]
+      ]
+    },
+    {
+      "name": "right_foot_load_plate",
+      "body": "right_ankle_roll",
+      "mass_kg": 0.1468710701897009,
+      "center_m": [
+        0.028844492227018896,
+        -0.08899999999999998,
+        0.0055000000000000005
+      ],
+      "relative_uncertainty": 0.1,
+      "basis": "actual foot candidate solid volume; assumed material density",
+      "inertia_at_com_kg_m2": [
+        [
+          8.568543089055088e-05,
+          7.146840492458159e-20,
+          -4.4667753077863494e-21
+        ],
+        [
+          7.146840492458159e-20,
+          0.0003786347931431782,
+          -8.933550615572699e-21
+        ],
+        [
+          -4.4667753077863494e-21,
+          -8.933550615572699e-21,
+          0.0004639285678465565
+        ]
+      ]
+    },
+    {
+      "name": "left_foot_sole",
+      "body": "left_ankle_roll",
+      "mass_kg": 0.0801991500714222,
+      "center_m": [
+        0.026770581611630456,
+        0.08899987121513381,
+        0.0030496057423336576
+      ],
+      "relative_uncertainty": 0.3,
+      "basis": "actual foot candidate solid volume; assumed material density",
+      "inertia_at_com_kg_m2": [
+        [
+          7.243584323407608e-05,
+          1.9765841303157193e-08,
+          -3.4841725848728275e-07
+        ],
+        [
+          1.9765841303157193e-08,
+          0.00026111074273391387,
+          1.843866977054533e-10
+        ],
+        [
+          -3.4841725848728275e-07,
+          1.843866977054533e-10,
+          0.000332536237001629
+        ]
+      ]
+    },
+    {
+      "name": "left_foot_trim",
+      "body": "left_ankle_roll",
+      "mass_kg": 0.005903257583686581,
+      "center_m": [
+        0.029882622629444643,
+        0.08899627661355594,
+        0.014212211043069743
+      ],
+      "relative_uncertainty": 0.3,
+      "basis": "actual foot candidate solid volume; assumed material density",
+      "inertia_at_com_kg_m2": [
+        [
+          8.37135369873013e-06,
+          2.4692680485826532e-08,
+          1.940122245046157e-09
+        ],
+        [
+          2.4692680485826532e-08,
+          2.5611197927853658e-05,
+          1.0282926411450737e-11
+        ],
+        [
+          1.940122245046157e-09,
+          1.0282926411450737e-11,
+          3.396272330096648e-05
+        ]
+      ]
+    },
+    {
+      "name": "left_foot_load_plate",
+      "body": "left_ankle_roll",
+      "mass_kg": 0.1468710701897009,
+      "center_m": [
+        0.028844492227018896,
+        0.08899999999999998,
+        0.0055
+      ],
+      "relative_uncertainty": 0.1,
+      "basis": "actual foot candidate solid volume; assumed material density",
+      "inertia_at_com_kg_m2": [
+        [
+          8.568543089055073e-05,
+          -7.146840492458159e-20,
+          -8.933550615572699e-21
+        ],
+        [
+          -7.146840492458159e-20,
+          0.0003786347931431782,
+          8.933550615572699e-21
+        ],
+        [
+          -8.933550615572699e-21,
+          8.933550615572699e-21,
+          0.0004639285678465565
+        ]
+      ]
+    },
+    {
+      "name": "neck_yaw_structure_allocation",
+      "body": "neck_yaw",
+      "mass_kg": 0.02,
+      "center_m": [
+        0.043,
+        0.0,
+        0.342
+      ],
+      "relative_uncertainty": 0.3,
+      "basis": "additional adapter/harness allowance above previous mount reserve",
+      "inertia_at_com_kg_m2": [
+        [
+          3.0933333333333335e-06,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          3.0933333333333335e-06,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          5.333333333333334e-06
+        ]
+      ]
+    },
+    {
+      "name": "neck_pitch_structure_allocation",
+      "body": "neck_pitch",
+      "mass_kg": 0.02,
+      "center_m": [
+        0.043,
+        0.0,
+        0.408
+      ],
+      "relative_uncertainty": 0.3,
+      "basis": "additional adapter/harness allowance above previous mount reserve",
+      "inertia_at_com_kg_m2": [
+        [
+          3.0933333333333335e-06,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          3.0933333333333335e-06,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          5.333333333333334e-06
+        ]
+      ]
+    },
+    {
+      "name": "neck_mid_pitch_structure_allocation",
+      "body": "neck_mid_pitch",
+      "mass_kg": 0.02,
+      "center_m": [
+        -0.03,
+        0.0,
+        0.512
+      ],
+      "relative_uncertainty": 0.3,
+      "basis": "additional adapter/harness allowance above previous mount reserve",
+      "inertia_at_com_kg_m2": [
+        [
+          3.0933333333333335e-06,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          3.0933333333333335e-06,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          5.333333333333334e-06
+        ]
+      ]
+    },
+    {
+      "name": "head_pitch_structure_allocation",
+      "body": "head_pitch",
+      "mass_kg": 0.01,
+      "center_m": [
+        0.042,
+        0.0,
+        0.605
+      ],
+      "relative_uncertainty": 0.3,
+      "basis": "additional adapter/harness allowance above previous mount reserve",
+      "inertia_at_com_kg_m2": [
+        [
+          1.5466666666666668e-06,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.5466666666666668e-06,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          2.666666666666667e-06
+        ]
+      ]
+    },
+    {
+      "name": "head_roll_structure_allocation",
+      "body": "head_roll",
+      "mass_kg": 0.01,
+      "center_m": [
+        0.081,
+        0.0,
+        0.5855
+      ],
+      "relative_uncertainty": 0.3,
+      "basis": "additional adapter/harness allowance above previous mount reserve",
+      "inertia_at_com_kg_m2": [
+        [
+          1.5466666666666668e-06,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.5466666666666668e-06,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          2.666666666666667e-06
+        ]
+      ]
+    },
+    {
+      "name": "right_hip_yaw_structure_allocation",
+      "body": "right_hip_yaw",
+      "mass_kg": 0.02,
+      "center_m": [
+        0.0,
+        -0.059,
+        0.292
+      ],
+      "relative_uncertainty": 0.3,
+      "basis": "additional adapter/harness allowance above previous mount reserve",
+      "inertia_at_com_kg_m2": [
+        [
+          3.0933333333333335e-06,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          3.0933333333333335e-06,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          5.333333333333334e-06
+        ]
+      ]
+    },
+    {
+      "name": "right_hip_roll_structure_allocation",
+      "body": "right_hip_roll",
+      "mass_kg": 0.02,
+      "center_m": [
+        -0.051,
+        -0.078,
+        0.24
+      ],
+      "relative_uncertainty": 0.3,
+      "basis": "additional adapter/harness allowance above previous mount reserve",
+      "inertia_at_com_kg_m2": [
+        [
+          3.0933333333333335e-06,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          3.0933333333333335e-06,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          5.333333333333334e-06
+        ]
+      ]
+    },
+    {
+      "name": "right_hip_pitch_structure_allocation",
+      "body": "right_hip_pitch",
+      "mass_kg": 0.02,
+      "center_m": [
+        0.007,
+        -0.089,
+        0.227
+      ],
+      "relative_uncertainty": 0.3,
+      "basis": "additional adapter/harness allowance above previous mount reserve",
+      "inertia_at_com_kg_m2": [
+        [
+          3.0933333333333335e-06,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          3.0933333333333335e-06,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          5.333333333333334e-06
+        ]
+      ]
+    },
+    {
+      "name": "right_knee_pitch_structure_allocation",
+      "body": "right_knee_pitch",
+      "mass_kg": 0.02,
+      "center_m": [
+        -0.058,
+        -0.089,
+        0.132
+      ],
+      "relative_uncertainty": 0.3,
+      "basis": "additional adapter/harness allowance above previous mount reserve",
+      "inertia_at_com_kg_m2": [
+        [
+          3.0933333333333335e-06,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          3.0933333333333335e-06,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          5.333333333333334e-06
+        ]
+      ]
+    },
+    {
+      "name": "right_ankle_pitch_structure_allocation",
+      "body": "right_ankle_pitch",
+      "mass_kg": 0.02,
+      "center_m": [
+        -0.007,
+        -0.089,
+        0.062
+      ],
+      "relative_uncertainty": 0.3,
+      "basis": "additional adapter/harness allowance above previous mount reserve",
+      "inertia_at_com_kg_m2": [
+        [
+          3.0933333333333335e-06,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          3.0933333333333335e-06,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          5.333333333333334e-06
+        ]
+      ]
+    },
+    {
+      "name": "right_ankle_roll_structure_allocation",
+      "body": "right_ankle_roll",
+      "mass_kg": 0.02,
+      "center_m": [
+        0.053,
+        -0.089,
+        0.036
+      ],
+      "relative_uncertainty": 0.3,
+      "basis": "additional adapter/harness allowance above previous mount reserve",
+      "inertia_at_com_kg_m2": [
+        [
+          3.0933333333333335e-06,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          3.0933333333333335e-06,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          5.333333333333334e-06
+        ]
+      ]
+    },
+    {
+      "name": "left_hip_yaw_structure_allocation",
+      "body": "left_hip_yaw",
+      "mass_kg": 0.02,
+      "center_m": [
+        0.0,
+        0.059,
+        0.292
+      ],
+      "relative_uncertainty": 0.3,
+      "basis": "additional adapter/harness allowance above previous mount reserve",
+      "inertia_at_com_kg_m2": [
+        [
+          3.0933333333333335e-06,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          3.0933333333333335e-06,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          5.333333333333334e-06
+        ]
+      ]
+    },
+    {
+      "name": "left_hip_roll_structure_allocation",
+      "body": "left_hip_roll",
+      "mass_kg": 0.02,
+      "center_m": [
+        -0.051,
+        0.078,
+        0.24
+      ],
+      "relative_uncertainty": 0.3,
+      "basis": "additional adapter/harness allowance above previous mount reserve",
+      "inertia_at_com_kg_m2": [
+        [
+          3.0933333333333335e-06,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          3.0933333333333335e-06,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          5.333333333333334e-06
+        ]
+      ]
+    },
+    {
+      "name": "left_hip_pitch_structure_allocation",
+      "body": "left_hip_pitch",
+      "mass_kg": 0.02,
+      "center_m": [
+        0.007,
+        0.089,
+        0.227
+      ],
+      "relative_uncertainty": 0.3,
+      "basis": "additional adapter/harness allowance above previous mount reserve",
+      "inertia_at_com_kg_m2": [
+        [
+          3.0933333333333335e-06,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          3.0933333333333335e-06,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          5.333333333333334e-06
+        ]
+      ]
+    },
+    {
+      "name": "left_knee_pitch_structure_allocation",
+      "body": "left_knee_pitch",
+      "mass_kg": 0.02,
+      "center_m": [
+        -0.058,
+        0.089,
+        0.132
+      ],
+      "relative_uncertainty": 0.3,
+      "basis": "additional adapter/harness allowance above previous mount reserve",
+      "inertia_at_com_kg_m2": [
+        [
+          3.0933333333333335e-06,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          3.0933333333333335e-06,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          5.333333333333334e-06
+        ]
+      ]
+    },
+    {
+      "name": "left_ankle_pitch_structure_allocation",
+      "body": "left_ankle_pitch",
+      "mass_kg": 0.02,
+      "center_m": [
+        -0.007,
+        0.089,
+        0.062
+      ],
+      "relative_uncertainty": 0.3,
+      "basis": "additional adapter/harness allowance above previous mount reserve",
+      "inertia_at_com_kg_m2": [
+        [
+          3.0933333333333335e-06,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          3.0933333333333335e-06,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          5.333333333333334e-06
+        ]
+      ]
+    },
+    {
+      "name": "left_ankle_roll_structure_allocation",
+      "body": "left_ankle_roll",
+      "mass_kg": 0.02,
+      "center_m": [
+        0.053,
+        0.089,
+        0.036
+      ],
+      "relative_uncertainty": 0.3,
+      "basis": "additional adapter/harness allowance above previous mount reserve",
+      "inertia_at_com_kg_m2": [
+        [
+          3.0933333333333335e-06,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          3.0933333333333335e-06,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          5.333333333333334e-06
+        ]
+      ]
+    },
+    {
+      "name": "dual_can_interface_allocation",
+      "body": "torso",
+      "mass_kg": 0.06,
+      "center_m": [
+        -0.04,
+        0,
+        0.32
+      ],
+      "relative_uncertainty": 0.3,
+      "basis": "dual CAN + harness allocation replacing two TTL hubs",
+      "inertia_at_com_kg_m2": [
+        [
+          9.280000000000001e-06,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          2.5780000000000004e-05,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          3.2500000000000004e-05
+        ]
+      ]
+    }
+  ],
+  "collision_geometries": [
+    {
+      "body": "torso",
+      "name": "visual_00",
+      "type": "mesh",
+      "mesh": "visual_00",
+      "rgba": "0.78 0.78 0.74 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "torso",
+      "name": "visual_01",
+      "type": "mesh",
+      "mesh": "visual_01",
+      "rgba": "0.045 0.055 0.065 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "torso",
+      "name": "visual_02",
+      "type": "mesh",
+      "mesh": "visual_02",
+      "rgba": "0.95 0.19 0.002 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "neck_yaw",
+      "name": "visual_03",
+      "type": "mesh",
+      "mesh": "visual_03",
+      "rgba": "0.045 0.055 0.065 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "neck_pitch",
+      "name": "visual_04",
+      "type": "mesh",
+      "mesh": "visual_04",
+      "rgba": "0.78 0.78 0.74 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "neck_pitch",
+      "name": "visual_05",
+      "type": "mesh",
+      "mesh": "visual_05",
+      "rgba": "0.45 0.49 0.51 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "neck_mid_pitch",
+      "name": "visual_06",
+      "type": "mesh",
+      "mesh": "visual_06",
+      "rgba": "0.78 0.78 0.74 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "neck_mid_pitch",
+      "name": "visual_07",
+      "type": "mesh",
+      "mesh": "visual_07",
+      "rgba": "0.45 0.49 0.51 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "head_pitch",
+      "name": "visual_08",
+      "type": "mesh",
+      "mesh": "visual_08",
+      "rgba": "0.045 0.055 0.065 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "head_pitch",
+      "name": "visual_09",
+      "type": "mesh",
+      "mesh": "visual_09",
+      "rgba": "0.45 0.49 0.51 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "head_pitch",
+      "name": "visual_10",
+      "type": "mesh",
+      "mesh": "visual_10",
+      "rgba": "0.95 0.19 0.002 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "head_pitch",
+      "name": "visual_11",
+      "type": "mesh",
+      "mesh": "visual_11",
+      "rgba": "0.025 0.03 0.035 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "head_pitch",
+      "name": "visual_12",
+      "type": "mesh",
+      "mesh": "visual_12",
+      "rgba": "0.78 0.78 0.74 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "neck_pitch",
+      "name": "visual_13",
+      "type": "mesh",
+      "mesh": "visual_13",
+      "rgba": "0.025 0.03 0.035 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "neck_mid_pitch",
+      "name": "visual_14",
+      "type": "mesh",
+      "mesh": "visual_14",
+      "rgba": "0.025 0.03 0.035 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "head_roll",
+      "name": "visual_15",
+      "type": "mesh",
+      "mesh": "visual_15",
+      "rgba": "0.78 0.78 0.74 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "head_roll",
+      "name": "visual_16",
+      "type": "mesh",
+      "mesh": "visual_16",
+      "rgba": "0.045 0.055 0.065 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "head_roll",
+      "name": "visual_17",
+      "type": "mesh",
+      "mesh": "visual_17",
+      "rgba": "0.01 0.025 0.04 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "head_roll",
+      "name": "visual_18",
+      "type": "mesh",
+      "mesh": "visual_18",
+      "rgba": "0.003 0.009 0.016 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "head_roll",
+      "name": "visual_19",
+      "type": "mesh",
+      "mesh": "visual_19",
+      "rgba": "0.95 0.19 0.002 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "beak_hinge",
+      "name": "visual_20",
+      "type": "mesh",
+      "mesh": "visual_20",
+      "rgba": "0.95 0.19 0.002 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "head_roll",
+      "name": "visual_21",
+      "type": "mesh",
+      "mesh": "visual_21",
+      "rgba": "0.025 0.03 0.035 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "beak_hinge",
+      "name": "visual_22",
+      "type": "mesh",
+      "mesh": "visual_22",
+      "rgba": "0.025 0.03 0.035 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "head_roll",
+      "name": "visual_23",
+      "type": "mesh",
+      "mesh": "visual_23",
+      "rgba": "0.45 0.49 0.51 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "beak_hinge",
+      "name": "visual_24",
+      "type": "mesh",
+      "mesh": "visual_24",
+      "rgba": "0.045 0.055 0.065 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "right_hip_pitch",
+      "name": "visual_25",
+      "type": "mesh",
+      "mesh": "visual_25",
+      "rgba": "0.78 0.78 0.74 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "right_hip_pitch",
+      "name": "visual_26",
+      "type": "mesh",
+      "mesh": "visual_26",
+      "rgba": "0.45 0.49 0.51 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "right_knee_pitch",
+      "name": "visual_27",
+      "type": "mesh",
+      "mesh": "visual_27",
+      "rgba": "0.78 0.78 0.74 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "right_knee_pitch",
+      "name": "visual_28",
+      "type": "mesh",
+      "mesh": "visual_28",
+      "rgba": "0.45 0.49 0.51 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "right_ankle_pitch",
+      "name": "visual_29",
+      "type": "mesh",
+      "mesh": "visual_29",
+      "rgba": "0.45 0.49 0.51 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "right_ankle_roll",
+      "name": "visual_30",
+      "type": "mesh",
+      "mesh": "visual_30",
+      "rgba": "0.025 0.03 0.035 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "right_ankle_roll",
+      "name": "visual_31",
+      "type": "mesh",
+      "mesh": "visual_31",
+      "rgba": "0.95 0.19 0.002 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "right_ankle_roll",
+      "name": "visual_32",
+      "type": "mesh",
+      "mesh": "visual_32",
+      "rgba": "0.78 0.78 0.74 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "left_hip_pitch",
+      "name": "visual_33",
+      "type": "mesh",
+      "mesh": "visual_33",
+      "rgba": "0.78 0.78 0.74 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "left_hip_pitch",
+      "name": "visual_34",
+      "type": "mesh",
+      "mesh": "visual_34",
+      "rgba": "0.45 0.49 0.51 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "left_knee_pitch",
+      "name": "visual_35",
+      "type": "mesh",
+      "mesh": "visual_35",
+      "rgba": "0.78 0.78 0.74 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "left_knee_pitch",
+      "name": "visual_36",
+      "type": "mesh",
+      "mesh": "visual_36",
+      "rgba": "0.45 0.49 0.51 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "left_ankle_pitch",
+      "name": "visual_37",
+      "type": "mesh",
+      "mesh": "visual_37",
+      "rgba": "0.45 0.49 0.51 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "left_ankle_roll",
+      "name": "visual_38",
+      "type": "mesh",
+      "mesh": "visual_38",
+      "rgba": "0.025 0.03 0.035 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "left_ankle_roll",
+      "name": "visual_39",
+      "type": "mesh",
+      "mesh": "visual_39",
+      "rgba": "0.95 0.19 0.002 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "left_ankle_roll",
+      "name": "visual_40",
+      "type": "mesh",
+      "mesh": "visual_40",
+      "rgba": "0.78 0.78 0.74 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "right_ankle_roll",
+      "name": "visual_41",
+      "type": "mesh",
+      "mesh": "visual_41",
+      "rgba": "0.45 0.49 0.51 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "left_ankle_roll",
+      "name": "visual_42",
+      "type": "mesh",
+      "mesh": "visual_42",
+      "rgba": "0.45 0.49 0.51 1",
+      "contype": "0",
+      "conaffinity": "0",
+      "group": "1"
+    },
+    {
+      "body": "torso",
+      "name": "neck_yaw_case",
+      "type": "cylinder",
+      "fromto": "0.043 0 0.0319 0.043 0 0.0721",
+      "size": "0.0265",
+      "rgba": ".10 .12 .13 1",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "2"
+    },
+    {
+      "body": "neck_yaw",
+      "name": "neck_pitch_case",
+      "type": "cylinder",
+      "fromto": "0 -0.02825 0.066 0 0.02825 0.066",
+      "size": "0.0275",
+      "rgba": ".10 .12 .13 1",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "2"
+    },
+    {
+      "body": "neck_pitch",
+      "name": "neck_mid_pitch_case",
+      "type": "cylinder",
+      "fromto": "-0.073 -0.0226 0.104 -0.073 0.0226 0.104",
+      "size": "0.0265",
+      "rgba": ".10 .12 .13 1",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "2"
+    },
+    {
+      "body": "neck_mid_pitch",
+      "name": "head_pitch_case",
+      "type": "cylinder",
+      "fromto": "0.072 -0.0226 0.093 0.072 0.0226 0.093",
+      "size": "0.0265",
+      "rgba": ".10 .12 .13 1",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "2"
+    },
+    {
+      "body": "torso",
+      "name": "right_hip_yaw_case",
+      "type": "cylinder",
+      "fromto": "0 -0.059 -0.0181 0 -0.059 0.0221",
+      "size": "0.0265",
+      "rgba": ".10 .12 .13 1",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "2"
+    },
+    {
+      "body": "right_hip_yaw",
+      "name": "right_hip_roll_case",
+      "type": "cylinder",
+      "fromto": "-0.07925 -0.019 -0.052 -0.02275 -0.019 -0.052",
+      "size": "0.0275",
+      "rgba": ".10 .12 .13 1",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "2"
+    },
+    {
+      "body": "right_hip_roll",
+      "name": "right_hip_pitch_case",
+      "type": "cylinder",
+      "fromto": "0.058 0.01725 -0.013 0.058 -0.03925 -0.013",
+      "size": "0.0275",
+      "rgba": ".10 .12 .13 1",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "2"
+    },
+    {
+      "body": "right_hip_pitch",
+      "name": "right_knee_pitch_case",
+      "type": "cylinder",
+      "fromto": "-0.065 0.02825 -0.095 -0.065 -0.02825 -0.095",
+      "size": "0.0275",
+      "rgba": ".10 .12 .13 1",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "2"
+    },
+    {
+      "body": "right_knee_pitch",
+      "name": "right_ankle_pitch_case",
+      "type": "cylinder",
+      "fromto": "0.051 0.02825 -0.07 0.051 -0.02825 -0.07",
+      "size": "0.0275",
+      "rgba": ".10 .12 .13 1",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "2"
+    },
+    {
+      "body": "right_ankle_pitch",
+      "name": "right_ankle_roll_case",
+      "type": "cylinder",
+      "fromto": "0.0374 0 -0.026 0.0826 0 -0.026",
+      "size": "0.0265",
+      "rgba": ".10 .12 .13 1",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "2"
+    },
+    {
+      "body": "torso",
+      "name": "left_hip_yaw_case",
+      "type": "cylinder",
+      "fromto": "0 0.059 -0.0181 0 0.059 0.0221",
+      "size": "0.0265",
+      "rgba": ".10 .12 .13 1",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "2"
+    },
+    {
+      "body": "left_hip_yaw",
+      "name": "left_hip_roll_case",
+      "type": "cylinder",
+      "fromto": "-0.07925 0.019 -0.052 -0.02275 0.019 -0.052",
+      "size": "0.0275",
+      "rgba": ".10 .12 .13 1",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "2"
+    },
+    {
+      "body": "left_hip_roll",
+      "name": "left_hip_pitch_case",
+      "type": "cylinder",
+      "fromto": "0.058 -0.01725 -0.013 0.058 0.03925 -0.013",
+      "size": "0.0275",
+      "rgba": ".10 .12 .13 1",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "2"
+    },
+    {
+      "body": "left_hip_pitch",
+      "name": "left_knee_pitch_case",
+      "type": "cylinder",
+      "fromto": "-0.065 -0.02825 -0.095 -0.065 0.02825 -0.095",
+      "size": "0.0275",
+      "rgba": ".10 .12 .13 1",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "2"
+    },
+    {
+      "body": "left_knee_pitch",
+      "name": "left_ankle_pitch_case",
+      "type": "cylinder",
+      "fromto": "0.051 -0.02825 -0.07 0.051 0.02825 -0.07",
+      "size": "0.0275",
+      "rgba": ".10 .12 .13 1",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "2"
+    },
+    {
+      "body": "left_ankle_pitch",
+      "name": "left_ankle_roll_case",
+      "type": "cylinder",
+      "fromto": "0.0374 0 -0.026 0.0826 0 -0.026",
+      "size": "0.0265",
+      "rgba": ".10 .12 .13 1",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "2"
+    },
+    {
+      "body": "head_roll",
+      "name": "fixed_upper_bill_contact",
+      "type": "mesh",
+      "mesh": "fixed_upper_bill_contact",
+      "rgba": ".9 .6 .1 .2",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "3"
+    },
+    {
+      "body": "beak_hinge",
+      "name": "hinged_lower_bill_contact",
+      "type": "mesh",
+      "mesh": "hinged_lower_bill_contact",
+      "rgba": ".9 .6 .1 .2",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "3"
+    },
+    {
+      "body": "torso",
+      "name": "torso_collision",
+      "type": "ellipsoid",
+      "pos": "-0.015 0 0.011",
+      "size": "0.147 0.109 0.085",
+      "rgba": ".8 .4 .1 .15",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "3"
+    },
+    {
+      "body": "head_roll",
+      "name": "head_collision",
+      "type": "ellipsoid",
+      "pos": "0.047 0 0.0175",
+      "size": "0.054 0.039 0.042",
+      "rgba": ".8 .4 .1 .15",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "3"
+    },
+    {
+      "body": "neck_pitch",
+      "name": "lower_neck_fork_rear_collision",
+      "type": "mesh",
+      "mesh": "lower_neck_fork_rear_collision",
+      "rgba": ".9 .6 .1 .2",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "3"
+    },
+    {
+      "body": "neck_pitch",
+      "name": "lower_neck_fork_front_collision",
+      "type": "mesh",
+      "mesh": "lower_neck_fork_front_collision",
+      "rgba": ".9 .6 .1 .2",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "3"
+    },
+    {
+      "body": "neck_pitch",
+      "name": "lower_neck_fork_bridge_collision",
+      "type": "mesh",
+      "mesh": "lower_neck_fork_bridge_collision",
+      "rgba": ".9 .6 .1 .2",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "3"
+    },
+    {
+      "body": "neck_mid_pitch",
+      "name": "upper_neck_fork_rear_collision",
+      "type": "mesh",
+      "mesh": "upper_neck_fork_rear_collision",
+      "rgba": ".9 .6 .1 .2",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "3"
+    },
+    {
+      "body": "neck_mid_pitch",
+      "name": "upper_neck_fork_front_collision",
+      "type": "mesh",
+      "mesh": "upper_neck_fork_front_collision",
+      "rgba": ".9 .6 .1 .2",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "3"
+    },
+    {
+      "body": "neck_mid_pitch",
+      "name": "upper_neck_fork_bridge_collision",
+      "type": "mesh",
+      "mesh": "upper_neck_fork_bridge_collision",
+      "rgba": ".9 .6 .1 .2",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "3"
+    },
+    {
+      "body": "head_pitch",
+      "name": "head_roll_bridge_rear_collision",
+      "type": "mesh",
+      "mesh": "head_roll_bridge_rear_collision",
+      "rgba": ".9 .6 .1 .2",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "3"
+    },
+    {
+      "body": "head_pitch",
+      "name": "head_roll_bridge_front_collision",
+      "type": "mesh",
+      "mesh": "head_roll_bridge_front_collision",
+      "rgba": ".9 .6 .1 .2",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "3"
+    },
+    {
+      "body": "head_pitch",
+      "name": "head_roll_bridge_bridge_collision",
+      "type": "mesh",
+      "mesh": "head_roll_bridge_bridge_collision",
+      "rgba": ".9 .6 .1 .2",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "3"
+    },
+    {
+      "body": "right_hip_pitch",
+      "name": "right_thigh_fork_rear_collision",
+      "type": "mesh",
+      "mesh": "right_thigh_fork_rear_collision",
+      "rgba": ".9 .6 .1 .2",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "3"
+    },
+    {
+      "body": "right_hip_pitch",
+      "name": "right_thigh_fork_front_collision",
+      "type": "mesh",
+      "mesh": "right_thigh_fork_front_collision",
+      "rgba": ".9 .6 .1 .2",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "3"
+    },
+    {
+      "body": "right_hip_pitch",
+      "name": "right_thigh_fork_bridge_collision",
+      "type": "mesh",
+      "mesh": "right_thigh_fork_bridge_collision",
+      "rgba": ".9 .6 .1 .2",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "3"
+    },
+    {
+      "body": "right_knee_pitch",
+      "name": "right_shin_fork_rear_collision",
+      "type": "mesh",
+      "mesh": "right_shin_fork_rear_collision",
+      "rgba": ".9 .6 .1 .2",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "3"
+    },
+    {
+      "body": "right_knee_pitch",
+      "name": "right_shin_fork_front_collision",
+      "type": "mesh",
+      "mesh": "right_shin_fork_front_collision",
+      "rgba": ".9 .6 .1 .2",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "3"
+    },
+    {
+      "body": "right_knee_pitch",
+      "name": "right_shin_fork_bridge_collision",
+      "type": "mesh",
+      "mesh": "right_shin_fork_bridge_collision",
+      "rgba": ".9 .6 .1 .2",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "3"
+    },
+    {
+      "body": "left_hip_pitch",
+      "name": "left_thigh_fork_rear_collision",
+      "type": "mesh",
+      "mesh": "left_thigh_fork_rear_collision",
+      "rgba": ".9 .6 .1 .2",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "3"
+    },
+    {
+      "body": "left_hip_pitch",
+      "name": "left_thigh_fork_front_collision",
+      "type": "mesh",
+      "mesh": "left_thigh_fork_front_collision",
+      "rgba": ".9 .6 .1 .2",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "3"
+    },
+    {
+      "body": "left_hip_pitch",
+      "name": "left_thigh_fork_bridge_collision",
+      "type": "mesh",
+      "mesh": "left_thigh_fork_bridge_collision",
+      "rgba": ".9 .6 .1 .2",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "3"
+    },
+    {
+      "body": "left_knee_pitch",
+      "name": "left_shin_fork_rear_collision",
+      "type": "mesh",
+      "mesh": "left_shin_fork_rear_collision",
+      "rgba": ".9 .6 .1 .2",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "3"
+    },
+    {
+      "body": "left_knee_pitch",
+      "name": "left_shin_fork_front_collision",
+      "type": "mesh",
+      "mesh": "left_shin_fork_front_collision",
+      "rgba": ".9 .6 .1 .2",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "3"
+    },
+    {
+      "body": "left_knee_pitch",
+      "name": "left_shin_fork_bridge_collision",
+      "type": "mesh",
+      "mesh": "left_shin_fork_bridge_collision",
+      "rgba": ".9 .6 .1 .2",
+      "contype": "2",
+      "conaffinity": "3",
+      "group": "3"
+    },
+    {
+      "body": "right_ankle_roll",
+      "name": "right_foot_contact",
+      "type": "mesh",
+      "mesh": "right_foot_contact",
+      "rgba": ".3 .5 .2 .3",
+      "contype": "2",
+      "conaffinity": "3",
+      "condim": "6",
+      "group": "3"
+    },
+    {
+      "body": "left_ankle_roll",
+      "name": "left_foot_contact",
+      "type": "mesh",
+      "mesh": "left_foot_contact",
+      "rgba": ".3 .5 .2 .3",
+      "contype": "2",
+      "conaffinity": "3",
+      "condim": "6",
+      "group": "3"
+    }
+  ],
+  "collision_exclusions": [
+    [
+      "beak_hinge",
+      "head_roll"
+    ],
+    [
+      "head_pitch",
+      "head_roll"
+    ],
+    [
+      "head_pitch",
+      "neck_mid_pitch"
+    ],
+    [
+      "left_ankle_pitch",
+      "left_ankle_roll"
+    ],
+    [
+      "left_ankle_pitch",
+      "left_knee_pitch"
+    ],
+    [
+      "left_hip_pitch",
+      "left_hip_roll"
+    ],
+    [
+      "left_hip_pitch",
+      "left_knee_pitch"
+    ],
+    [
+      "left_hip_pitch",
+      "torso"
+    ],
+    [
+      "left_hip_roll",
+      "left_hip_yaw"
+    ],
+    [
+      "left_hip_roll",
+      "torso"
+    ],
+    [
+      "left_hip_yaw",
+      "torso"
+    ],
+    [
+      "neck_mid_pitch",
+      "neck_pitch"
+    ],
+    [
+      "neck_pitch",
+      "neck_yaw"
+    ],
+    [
+      "neck_pitch",
+      "torso"
+    ],
+    [
+      "neck_yaw",
+      "torso"
+    ],
+    [
+      "right_ankle_pitch",
+      "right_ankle_roll"
+    ],
+    [
+      "right_ankle_pitch",
+      "right_knee_pitch"
+    ],
+    [
+      "right_hip_pitch",
+      "right_hip_roll"
+    ],
+    [
+      "right_hip_pitch",
+      "right_knee_pitch"
+    ],
+    [
+      "right_hip_pitch",
+      "torso"
+    ],
+    [
+      "right_hip_roll",
+      "right_hip_yaw"
+    ],
+    [
+      "right_hip_roll",
+      "torso"
+    ],
+    [
+      "right_hip_yaw",
+      "torso"
+    ]
+  ],
+  "asset_sha256": {
+    "assets/fixed_upper_bill_contact.obj": "b53f5aa09effddbd9cbe105c355d83badcc9db176c48cf11b23fc3c373d1cd87",
+    "assets/head_roll_bridge_bridge_collision.obj": "7432a8ee8e3e36537f9b04de3d4001779d9989454bdaafdae3934e131b81aeef",
+    "assets/head_roll_bridge_front_collision.obj": "224478ab605d183c914ad417cac9698f6459a67d1180b741f674f902543cc672",
+    "assets/head_roll_bridge_rear_collision.obj": "a73c7f256121f70fb6a42f1732d3c5543a1e1bc152474d34ead9f4a61eb1ed4b",
+    "assets/hinged_lower_bill_contact.obj": "87196b2cc8746397387aaff89bf2ae1c287211ea1addec987d92583307fb81ad",
+    "assets/left_foot_contact.obj": "4ac9cd191ee37a40f324beba0819223fa8485c0ba008c2ca44368dc30d3c0d6f",
+    "assets/left_shin_fork_bridge_collision.obj": "32f56d2398f0503cf76b6432f62bd8aadbb37883aa2ceaa0df83e1e3e2647cb5",
+    "assets/left_shin_fork_front_collision.obj": "a1a1a0bd74e83486016c2c01c96baef5346c5052e4248a71ae09f224a3838b48",
+    "assets/left_shin_fork_rear_collision.obj": "e73e3c0b2d2d40c76b5215351fe21b0ab839e603ed3f283952bfa856909eb50e",
+    "assets/left_thigh_fork_bridge_collision.obj": "f32f0f40dd458ff2925d2fcb6eb0e8aeb52880fb088758c06747af5f8e6af3ec",
+    "assets/left_thigh_fork_front_collision.obj": "7cd361af307ca925ae7d01ec69ad551ab0eff9e6e8476dae3550e504f50aa892",
+    "assets/left_thigh_fork_rear_collision.obj": "49bd83e89a6836fdd89a29c5d2030277b6ba181dbeb101c82ba1457d12d404cb",
+    "assets/lower_neck_fork_bridge_collision.obj": "05b21e4236c74e5277cd95fac46ea8466970bb0105215b6235893dd209d4fb89",
+    "assets/lower_neck_fork_front_collision.obj": "7c7fdb0d1957c32bf7c3e05814dca2c10bb191a737af1ff8a9b9b4740b8c9339",
+    "assets/lower_neck_fork_rear_collision.obj": "39c700f8a347df143fc77d1650150cff6da3a1ba5379dda69085705558e60062",
+    "assets/right_foot_contact.obj": "325aa634b0654a1c71880e69b5668dd1fca57fe7de4256784a8a26179373c8d8",
+    "assets/right_shin_fork_bridge_collision.obj": "32f56d2398f0503cf76b6432f62bd8aadbb37883aa2ceaa0df83e1e3e2647cb5",
+    "assets/right_shin_fork_front_collision.obj": "953f829dac7e3fe561301424a18310eb1a4ccf0e278665407972056dbeb27c5b",
+    "assets/right_shin_fork_rear_collision.obj": "ada4023f5854ef4c7c3f2edbfa2b17a5432a06854390c40edcf793eda3fbe888",
+    "assets/right_thigh_fork_bridge_collision.obj": "f32f0f40dd458ff2925d2fcb6eb0e8aeb52880fb088758c06747af5f8e6af3ec",
+    "assets/right_thigh_fork_front_collision.obj": "5f73043708f095c6221ee947841aa6a2e960f74e2775aa1a64d5b602371c880b",
+    "assets/right_thigh_fork_rear_collision.obj": "b487963c93e85bb368dface669291b83e18c4af1759a5903eddc26887d910c3f",
+    "assets/upper_neck_fork_bridge_collision.obj": "8e8214adb0bf9fc0e2ecc5918c84e222d021619d5cf91871e0f2f9be21464187",
+    "assets/upper_neck_fork_front_collision.obj": "469fee2ddda8ba398b270335a8c2250fc95aab4541b3992802ecb0926edd5169",
+    "assets/upper_neck_fork_rear_collision.obj": "9dd1c734d195d71ed018b77c84490a78b50d40111313f2094a473d1e6c4a267a",
+    "assets/visual_00.obj": "beaf00c80a8413bc81ec6ece46eb86dfa7e287fac1ff26fbed20976dc3d0b774",
+    "assets/visual_01.obj": "76f2aa46ea99473a2316f84ce983fd1c1c8fbaf21d77ef9061b828a2b6b254e8",
+    "assets/visual_02.obj": "dcffc4817987ba483074a1f01a547a0eeaca50414ce55f2c7d3f662a81021621",
+    "assets/visual_03.obj": "c130d6d7e08613fb4a8fc64ce6ebab8c5370a7a09d7ac5ed85f49f7fe88f45fb",
+    "assets/visual_04.obj": "ab015c558a3f01c521e24c85ed966b7651f22748cbcbd3c1ba408e03e1e00e9b",
+    "assets/visual_05.obj": "1a1bf3ae2cc68fc73457360e9a52077d256b651376e2d1839570608f0b74d4e5",
+    "assets/visual_06.obj": "c977a4f11bd7aa6806a2f75d0b127f2ff5fabe0c02bf756f9848f2a7f269027a",
+    "assets/visual_07.obj": "b274c456133992655b5afdf65c2647d078e74c65af44f1788b3bbce9629f4427",
+    "assets/visual_08.obj": "16964530c14cae54fd07bb7ce7cc17bae68992db8d6c2ae8d875abebdd2d98e3",
+    "assets/visual_09.obj": "09dfd517289a9c1e2a03f0c5850402c6bf3e7a8d852b1cff183b6448a6e442df",
+    "assets/visual_10.obj": "2a43a3196183d161a310c1e96c3b8a189e98090f74d6740fc5f1283ea7bb6361",
+    "assets/visual_11.obj": "3bcb7b9ab85963e9da2e4d497814a8881cd591650ff6a4c53a671a19387b80be",
+    "assets/visual_12.obj": "79b4c5f73a01e0596150c620098640719e02b0f4460fb9ed3bb21f168e954122",
+    "assets/visual_13.obj": "888e5e526b74a9dd50d999494d60ddbc7593d1744dc7526ad567cc1af5ffa383",
+    "assets/visual_14.obj": "a3f16059cd40748e3f7af159a20e676b44fc9e7f68418c74ea1d3d7614c19eab",
+    "assets/visual_15.obj": "cfedb30465297cf847178436fa7be17c23480a7b88f0f8a3d6354af72de423ca",
+    "assets/visual_16.obj": "d7bc86059b249cc094772b1d14a5657d4bfe7246ece9959131458d051f4d5502",
+    "assets/visual_17.obj": "a4e411d685ab8a9b558ad8d2b34f96da4d33e4ec66d7863d660c6c96040105b3",
+    "assets/visual_18.obj": "860c9b74909ce52dd2bb039e468ff00a6525ef9fa4454c92fdbf9e6abf6bfa7b",
+    "assets/visual_19.obj": "e32817c5dc4f0c9a4c2b73c1f7473459c17c5581458387e76a1cce2cb3310627",
+    "assets/visual_20.obj": "f9a5b5cedbba2cb7010067fd8daf3e4f27c8a28a25fac79e9cfd71d6191307e8",
+    "assets/visual_21.obj": "7f07a26bf4207df88c226fc754353fdfe2cad28b63508996b98df42b0021d3dc",
+    "assets/visual_22.obj": "ab1e36fde86e26419eca71a91eb79795e76728af49691306fcdfbb6db4a276d2",
+    "assets/visual_23.obj": "bc3481d08d7f4fb515fab423555ab73d7fdb5a11b9a32baddbf95d05321492c3",
+    "assets/visual_24.obj": "b430d1e5f5c433c8e734e3b31ec067c65fb8badf139b9cc66e606941efc94a32",
+    "assets/visual_25.obj": "edaf3509fc30d03c676918d297583ad8f7f0f553b7807b427c2ba8866e6d6ecb",
+    "assets/visual_26.obj": "cf67e2ce9b7b7123d804ab40e51b19a05dd5507d430b1db853cdac22de8ce634",
+    "assets/visual_27.obj": "dfe3bc1254fc124f5d78199adb10464bb45b3d190c337a08856ebbf54aec83e2",
+    "assets/visual_28.obj": "10ce94d3c4e7eede5bc44ac0efa0481f4282d048cf44ab9b23c4305dcd8565c2",
+    "assets/visual_29.obj": "bff6a7dc3f7abf3e80fc17d745ac9a088a3821d084fe6c96516a233dc5150268",
+    "assets/visual_30.obj": "705c955363b5d1abe482832cc8173d410b2b33fb26d32395ba08884b599622c6",
+    "assets/visual_31.obj": "0a4c23eb6c68d69e0b0b829d563554409742b7540cd7f50a3114740ba530dcd7",
+    "assets/visual_32.obj": "7545565ca71314afeb0f0473e22371d0e851a1711d87fac7750e3c590c14c91f",
+    "assets/visual_33.obj": "edaf3509fc30d03c676918d297583ad8f7f0f553b7807b427c2ba8866e6d6ecb",
+    "assets/visual_34.obj": "cf67e2ce9b7b7123d804ab40e51b19a05dd5507d430b1db853cdac22de8ce634",
+    "assets/visual_35.obj": "dfe3bc1254fc124f5d78199adb10464bb45b3d190c337a08856ebbf54aec83e2",
+    "assets/visual_36.obj": "10ce94d3c4e7eede5bc44ac0efa0481f4282d048cf44ab9b23c4305dcd8565c2",
+    "assets/visual_37.obj": "bff6a7dc3f7abf3e80fc17d745ac9a088a3821d084fe6c96516a233dc5150268",
+    "assets/visual_38.obj": "705c955363b5d1abe482832cc8173d410b2b33fb26d32395ba08884b599622c6",
+    "assets/visual_39.obj": "0a4c23eb6c68d69e0b0b829d563554409742b7540cd7f50a3114740ba530dcd7",
+    "assets/visual_40.obj": "7545565ca71314afeb0f0473e22371d0e851a1711d87fac7750e3c590c14c91f",
+    "assets/visual_41.obj": "3ef73c080735dc93feb0e453b279e30397209a8a1b579c89561e9a0a8c4e6467",
+    "assets/visual_42.obj": "3ef73c080735dc93feb0e453b279e30397209a8a1b579c89561e9a0a8c4e6467"
+  },
+  "model_sha256": "bbfaa8a94dcbfba2588b4b2d1b6dcf5dc7e7544d34ee5180146ce1567c1c29e7"
+}

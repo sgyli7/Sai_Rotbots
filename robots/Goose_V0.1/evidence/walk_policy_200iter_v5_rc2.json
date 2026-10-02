@@ -1,0 +1,283 @@
+{
+  "scope": "MuJoCo free-base training-environment replay; no Godot or real-hardware acceptance",
+  "model_sha256": "07d4209a5a7b9322a04b9cdb62694a69cf35c97716c262909d21f039599c4cb0",
+  "spec_sha256": "c3b9f885ebbe854c47a3f0dbecdbef190b7fcb39f3b412c980561e3c838be62e",
+  "policy_sha256": "6e94c69ad3d1f472294ee0b17b115c7da5e92c92415bb2cbb035bc3c4ad41b04",
+  "duration_per_case_s": 8.0,
+  "criteria": "idle drift <5 cm; forward/backward >=50% commanded travel with two stance breaks and >8 mm foot lift per side; turn >=50% yaw; all survive and tilt <25 deg",
+  "cases": [
+    {
+      "name": "idle",
+      "command_vx_vy_yawrate": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "elapsed_s": 1.22,
+      "completed": false,
+      "failures": 1,
+      "root_delta_m": null,
+      "yaw_change_rad": 0.09058540083460075,
+      "max_tilt_deg": 36.05191473414087,
+      "foot_contact_breaks": {
+        "left": 1,
+        "right": 5
+      },
+      "foot_peak_height_m": {
+        "left": 0.005671308633597889,
+        "right": 0.009413333613654012
+      },
+      "gait_observed": false,
+      "pass": false,
+      "trace": [
+        {
+          "t_s": 0.02,
+          "root_xyz_m": [
+            0.0003390856577499311,
+            -7.288680448488217e-05,
+            0.283087810093232
+          ],
+          "contacts": {
+            "left": true,
+            "right": true
+          }
+        },
+        {
+          "t_s": 0.42,
+          "root_xyz_m": [
+            0.025982004533816966,
+            0.0008703031054938746,
+            0.28714052871511897
+          ],
+          "contacts": {
+            "left": true,
+            "right": false
+          }
+        },
+        {
+          "t_s": 0.82,
+          "root_xyz_m": [
+            0.05598213576043816,
+            -0.014753376079184408,
+            0.28798819295696076
+          ],
+          "contacts": {
+            "left": true,
+            "right": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "forward",
+      "command_vx_vy_yawrate": [
+        0.1,
+        0.0,
+        0.0
+      ],
+      "elapsed_s": 0.98,
+      "completed": false,
+      "failures": 1,
+      "root_delta_m": null,
+      "yaw_change_rad": -0.13895921267343195,
+      "max_tilt_deg": 35.42991109973178,
+      "foot_contact_breaks": {
+        "left": 0,
+        "right": 1
+      },
+      "foot_peak_height_m": {
+        "left": 0.0063810744581274115,
+        "right": 0.008340709811595896
+      },
+      "gait_observed": false,
+      "pass": false,
+      "trace": [
+        {
+          "t_s": 0.02,
+          "root_xyz_m": [
+            0.0003918940070046453,
+            -7.840921311160834e-05,
+            0.28327644657990725
+          ],
+          "contacts": {
+            "left": true,
+            "right": true
+          }
+        },
+        {
+          "t_s": 0.42,
+          "root_xyz_m": [
+            0.031664691234853465,
+            0.00030662001928937805,
+            0.28929439994414446
+          ],
+          "contacts": {
+            "left": true,
+            "right": true
+          }
+        },
+        {
+          "t_s": 0.82,
+          "root_xyz_m": [
+            0.09381163840819325,
+            -0.015954518998755798,
+            0.2840750162833613
+          ],
+          "contacts": {
+            "left": true,
+            "right": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "backward",
+      "command_vx_vy_yawrate": [
+        -0.025,
+        0.0,
+        0.0
+      ],
+      "elapsed_s": 1.3,
+      "completed": false,
+      "failures": 1,
+      "root_delta_m": null,
+      "yaw_change_rad": 0.0070452681431521745,
+      "max_tilt_deg": 35.24823199619685,
+      "foot_contact_breaks": {
+        "left": 2,
+        "right": 2
+      },
+      "foot_peak_height_m": {
+        "left": 0.003511696924120407,
+        "right": 0.009476691079334805
+      },
+      "gait_observed": false,
+      "pass": false,
+      "trace": [
+        {
+          "t_s": 0.02,
+          "root_xyz_m": [
+            0.000337987427870234,
+            -7.260755878900384e-05,
+            0.2830826834487297
+          ],
+          "contacts": {
+            "left": true,
+            "right": true
+          }
+        },
+        {
+          "t_s": 0.42,
+          "root_xyz_m": [
+            0.016930887981059187,
+            -0.0013804330375277352,
+            0.28426368329714946
+          ],
+          "contacts": {
+            "left": true,
+            "right": false
+          }
+        },
+        {
+          "t_s": 0.82,
+          "root_xyz_m": [
+            -0.0017613270227818001,
+            -0.0047664516844864455,
+            0.2818299682053664
+          ],
+          "contacts": {
+            "left": true,
+            "right": true
+          }
+        },
+        {
+          "t_s": 1.22,
+          "root_xyz_m": [
+            -0.052586797973346165,
+            0.004071770539553982,
+            0.22746045386204733
+          ],
+          "contacts": {
+            "left": true,
+            "right": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "turn_left",
+      "command_vx_vy_yawrate": [
+        0.0,
+        0.0,
+        0.2
+      ],
+      "elapsed_s": 1.34,
+      "completed": false,
+      "failures": 1,
+      "root_delta_m": null,
+      "yaw_change_rad": -0.13046645060497902,
+      "max_tilt_deg": 36.54704628969644,
+      "foot_contact_breaks": {
+        "left": 3,
+        "right": 2
+      },
+      "foot_peak_height_m": {
+        "left": 0.005901190470887545,
+        "right": 0.006373263609139673
+      },
+      "gait_observed": false,
+      "pass": false,
+      "trace": [
+        {
+          "t_s": 0.02,
+          "root_xyz_m": [
+            0.00045133153421963816,
+            -7.625668384062567e-05,
+            0.2832761583758646
+          ],
+          "contacts": {
+            "left": true,
+            "right": true
+          }
+        },
+        {
+          "t_s": 0.42,
+          "root_xyz_m": [
+            0.017999341262987127,
+            -0.005806251050277615,
+            0.2851110396819405
+          ],
+          "contacts": {
+            "left": true,
+            "right": true
+          }
+        },
+        {
+          "t_s": 0.82,
+          "root_xyz_m": [
+            -0.0005705417578546712,
+            -0.015237208081256042,
+            0.2842444569472166
+          ],
+          "contacts": {
+            "left": true,
+            "right": true
+          }
+        },
+        {
+          "t_s": 1.22,
+          "root_xyz_m": [
+            -0.04611359749827613,
+            0.0051144699706382685,
+            0.23536699129399835
+          ],
+          "contacts": {
+            "left": true,
+            "right": true
+          }
+        }
+      ]
+    }
+  ],
+  "pass": false
+}

@@ -1,0 +1,852 @@
+<robot name="goose_body_bay_reference_si_v1">
+  <link name="world" />
+  <joint name="root" type="floating">
+    <parent link="world" />
+    <child link="torso" />
+    <origin xyz="0 0 0" rpy="0 0 0" />
+  </joint>
+  <link name="torso">
+    <inertial>
+      <origin xyz="-0.014192751185813823 -0.0017329935524373985 0.32991239544524614" rpy="0 0 0" />
+      <mass value="2.1465136455389726" />
+      <inertia ixx="0.008374438540431848" iyy="0.014503837055127047" izz="0.016881362763138112" ixy="-0.0001895098845453331" ixz="0.0009541718092832567" iyz="1.1571243112179047e-05" />
+    </inertial>
+    <visual name="visual_00">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_00.obj" />
+      </geometry>
+      <material name="ivory">
+        <color rgba="0.78000000000000003 0.78000000000000003 0.73999999999999999 1" />
+      </material>
+    </visual>
+    <visual name="visual_01">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_01.obj" />
+      </geometry>
+      <material name="graphite">
+        <color rgba="0.044999999999999998 0.055 0.065000000000000002 1" />
+      </material>
+    </visual>
+    <visual name="visual_02">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_02.obj" />
+      </geometry>
+      <material name="orange">
+        <color rgba="0.94999999999999996 0.19 0.002 1" />
+      </material>
+    </visual>
+    <visual name="visual_04">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_04.obj" />
+      </geometry>
+      <material name="titanium">
+        <color rgba="0.45000000000000001 0.48999999999999999 0.51000000000000001 1" />
+      </material>
+    </visual>
+    <visual name="visual_05">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_05.obj" />
+      </geometry>
+      <material name="rubber">
+        <color rgba="0.025000000000000001 0.029999999999999999 0.035000000000000003 1" />
+      </material>
+    </visual>
+  </link>
+  <joint name="neck_yaw" type="revolute">
+    <parent link="torso" />
+    <child link="neck_yaw" />
+    <origin xyz="0.042999999999999997 0 0.34570000000000001" rpy="0 0 0" />
+    <axis xyz="0 0 1" />
+    <limit lower="-0.5" upper="0.5" effort="2.0" velocity="38.746309394274114" />
+    <dynamics damping="0.01" friction="0.03" />
+  </joint>
+  <link name="neck_yaw">
+    <inertial>
+      <origin xyz="-1.1827472334857703e-10 -0.0022249624644583746 0.061557805242292096" rpy="0 0 0" />
+      <mass value="0.4329192720569949" />
+      <inertia ixx="0.00029534496930418115" iyy="0.000241033027838454" izz="0.00020706463138341847" ixy="-1.46980636435281e-12" ixz="3.2794856958551754e-12" iyz="4.2788535811320184e-06" />
+    </inertial>
+    <visual name="visual_03">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_03.obj" />
+      </geometry>
+      <material name="graphite">
+        <color rgba="0.044999999999999998 0.055 0.065000000000000002 1" />
+      </material>
+    </visual>
+    <visual name="visual_54">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_54.obj" />
+      </geometry>
+      <material name="titanium">
+        <color rgba="0.45000000000000001 0.48999999999999999 0.51000000000000001 1" />
+      </material>
+    </visual>
+    <visual name="visual_55">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_55.obj" />
+      </geometry>
+      <material name="ivory">
+        <color rgba="0.78000000000000003 0.78000000000000003 0.73999999999999999 1" />
+      </material>
+    </visual>
+  </link>
+  <joint name="neck_pitch" type="revolute">
+    <parent link="neck_yaw" />
+    <child link="neck_pitch" />
+    <origin xyz="0 0 0.065999999999999948" rpy="0 0 0" />
+    <axis xyz="0 1 0" />
+    <limit lower="-0.6" upper="2.6" effort="12.0" velocity="4.1887902047863905" />
+    <dynamics damping="0.01" friction="0.4" />
+  </joint>
+  <link name="neck_pitch">
+    <inertial>
+      <origin xyz="-0.05799548597643267 -0.00090780865849446031 0.081857880153021478" rpy="0 0 0" />
+      <mass value="0.6107350780492311" />
+      <inertia ixx="0.0012909814201038186" iyy="0.0013881252930672055" izz="0.0008716258402988986" ixy="-4.547012227302411e-05" ixz="0.000556631624350527" iyz="7.964983467041426e-05" />
+    </inertial>
+    <visual name="visual_08">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_08.obj" />
+      </geometry>
+      <material name="rubber">
+        <color rgba="0.025000000000000001 0.029999999999999999 0.035000000000000003 1" />
+      </material>
+    </visual>
+    <visual name="visual_26">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_26.obj" />
+      </geometry>
+      <material name="graphite">
+        <color rgba="0.044999999999999998 0.055 0.065000000000000002 1" />
+      </material>
+    </visual>
+    <visual name="visual_53">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_53.obj" />
+      </geometry>
+      <material name="ivory">
+        <color rgba="0.78000000000000003 0.78000000000000003 0.73999999999999999 1" />
+      </material>
+    </visual>
+    <visual name="visual_56">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_56.obj" />
+      </geometry>
+      <material name="titanium">
+        <color rgba="0.45000000000000001 0.48999999999999999 0.51000000000000001 1" />
+      </material>
+    </visual>
+  </link>
+  <joint name="neck_mid_pitch" type="revolute">
+    <parent link="neck_pitch" />
+    <child link="neck_mid_pitch" />
+    <origin xyz="-0.072999999999999995 0 0.10400000000000009" rpy="0 0 0" />
+    <axis xyz="0 1 0" />
+    <limit lower="-1.4" upper="1.4" effort="12.0" velocity="4.1887902047863905" />
+    <dynamics damping="0.01" friction="0.4" />
+  </joint>
+  <link name="neck_mid_pitch">
+    <inertial>
+      <origin xyz="0.052393753795951604 0.0020634254785762882 0.067520416219901236" rpy="0 0 0" />
+      <mass value="0.5145364404531154" />
+      <inertia ixx="0.0011354498725309535" iyy="0.0012305544887446453" izz="0.000879006997896177" ixy="6.750631292422952e-05" ixz="-0.0005196656193582194" iyz="8.848428021518052e-05" />
+    </inertial>
+    <visual name="visual_09">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_09.obj" />
+      </geometry>
+      <material name="rubber">
+        <color rgba="0.025000000000000001 0.029999999999999999 0.035000000000000003 1" />
+      </material>
+    </visual>
+    <visual name="visual_27">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_27.obj" />
+      </geometry>
+      <material name="graphite">
+        <color rgba="0.044999999999999998 0.055 0.065000000000000002 1" />
+      </material>
+    </visual>
+    <visual name="visual_57">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_57.obj" />
+      </geometry>
+      <material name="ivory">
+        <color rgba="0.78000000000000003 0.78000000000000003 0.73999999999999999 1" />
+      </material>
+    </visual>
+    <visual name="visual_58">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_58.obj" />
+      </geometry>
+      <material name="titanium">
+        <color rgba="0.45000000000000001 0.48999999999999999 0.51000000000000001 1" />
+      </material>
+    </visual>
+  </link>
+  <joint name="head_pitch" type="revolute">
+    <parent link="neck_mid_pitch" />
+    <child link="head_pitch" />
+    <origin xyz="0.072000000000000008 0 0.092999999999999972" rpy="0 0 0" />
+    <axis xyz="0 1 0" />
+    <limit lower="-1.6" upper="1.6" effort="4.0" velocity="12.56637061435917" />
+    <dynamics damping="0.01" friction="0.05" />
+  </joint>
+  <link name="head_pitch">
+    <inertial>
+      <origin xyz="0.029758710579607779 -9.8705722209677163e-19 -0.014214247255787238" rpy="0 0 0" />
+      <mass value="0.06518204602470656" />
+      <inertia ixx="2.4112700364187095e-05" iyy="2.797317315671176e-05" izz="3.0812005443173014e-05" ixy="1.18870582767309e-12" ixz="7.181186022955907e-06" iyz="8.429004960453426e-12" />
+    </inertial>
+    <visual name="visual_06">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_06.obj" />
+      </geometry>
+      <material name="ivory">
+        <color rgba="0.78000000000000003 0.78000000000000003 0.73999999999999999 1" />
+      </material>
+    </visual>
+    <visual name="visual_07">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_07.obj" />
+      </geometry>
+      <material name="titanium">
+        <color rgba="0.45000000000000001 0.48999999999999999 0.51000000000000001 1" />
+      </material>
+    </visual>
+  </link>
+  <joint name="head_roll" type="revolute">
+    <parent link="head_pitch" />
+    <child link="head_roll" />
+    <origin xyz="0.039 0 -0.019499999999999962" rpy="0 0 0" />
+    <axis xyz="1 0 0" />
+    <limit lower="-0.6" upper="0.6" effort="0.18" velocity="3.0" />
+    <dynamics damping="0.01" friction="0.006" />
+  </joint>
+  <link name="head_roll">
+    <inertial>
+      <origin xyz="0.056652098479449256 0.0010933478216618644 0.010315910456322408" rpy="0 0 0" />
+      <mass value="0.6467862136785603" />
+      <inertia ixx="0.00040860607001060826" iyy="0.0006035506664364712" izz="0.00061637886932888" ixy="6.050434896469754e-07" ixz="0.00010563893509582668" iyz="3.948371579577576e-06" />
+    </inertial>
+    <visual name="visual_10">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_10.obj" />
+      </geometry>
+      <material name="graphite">
+        <color rgba="0.044999999999999998 0.055 0.065000000000000002 1" />
+      </material>
+    </visual>
+    <visual name="visual_11">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_11.obj" />
+      </geometry>
+      <material name="glass">
+        <color rgba="0.01 0.025000000000000001 0.040000000000000001 1" />
+      </material>
+    </visual>
+    <visual name="visual_12">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_12.obj" />
+      </geometry>
+      <material name="lens">
+        <color rgba="0.0030000000000000001 0.0089999999999999993 0.016 1" />
+      </material>
+    </visual>
+    <visual name="visual_13">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_13.obj" />
+      </geometry>
+      <material name="orange">
+        <color rgba="0.94999999999999996 0.19 0.002 1" />
+      </material>
+    </visual>
+    <visual name="visual_15">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_15.obj" />
+      </geometry>
+      <material name="rubber">
+        <color rgba="0.025000000000000001 0.029999999999999999 0.035000000000000003 1" />
+      </material>
+    </visual>
+    <visual name="visual_25">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_25.obj" />
+      </geometry>
+      <material name="titanium">
+        <color rgba="0.45000000000000001 0.48999999999999999 0.51000000000000001 1" />
+      </material>
+    </visual>
+    <visual name="visual_38">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_38.obj" />
+      </geometry>
+      <material name="ivory">
+        <color rgba="0.78000000000000003 0.78000000000000003 0.73999999999999999 1" />
+      </material>
+    </visual>
+  </link>
+  <joint name="beak_hinge" type="revolute">
+    <parent link="head_roll" />
+    <child link="beak_hinge" />
+    <origin xyz="0.079000000000000001 0 -0.0095000000000000639" rpy="0 0 0" />
+    <axis xyz="0 1 0" />
+    <limit lower="0.0" upper="0.55" effort="4.5" velocity="1.0" />
+    <dynamics damping="0.01" friction="0.08" />
+  </joint>
+  <link name="beak_hinge">
+    <inertial>
+      <origin xyz="0.019171693409097884 0.0021173250088120988 -0.013640486731100299" rpy="0 0 0" />
+      <mass value="0.06762954187560048" />
+      <inertia ixx="3.702086364789416e-05" iyy="6.0254740049941144e-05" izz="7.117373379831975e-05" ixy="3.337571326402423e-06" ixz="1.8325518310549633e-05" iyz="-1.360805120856146e-06" />
+    </inertial>
+    <visual name="visual_14">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_14.obj" />
+      </geometry>
+      <material name="orange">
+        <color rgba="0.94999999999999996 0.19 0.002 1" />
+      </material>
+    </visual>
+    <visual name="visual_16">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_16.obj" />
+      </geometry>
+      <material name="rubber">
+        <color rgba="0.025000000000000001 0.029999999999999999 0.035000000000000003 1" />
+      </material>
+    </visual>
+    <visual name="visual_17">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_17.obj" />
+      </geometry>
+      <material name="titanium">
+        <color rgba="0.45000000000000001 0.48999999999999999 0.51000000000000001 1" />
+      </material>
+    </visual>
+    <visual name="visual_18">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_18.obj" />
+      </geometry>
+      <material name="graphite">
+        <color rgba="0.044999999999999998 0.055 0.065000000000000002 1" />
+      </material>
+    </visual>
+  </link>
+  <joint name="right_hip_yaw" type="revolute">
+    <parent link="torso" />
+    <child link="right_hip_yaw" />
+    <origin xyz="-0.017999999999999999 -0.065000000000000002 0.3387" rpy="0 0 0" />
+    <axis xyz="0 0 1" />
+    <limit lower="-0.6" upper="0.6" effort="2.0" velocity="38.746309394274114" />
+    <dynamics damping="0.01" friction="0.03" />
+  </joint>
+  <link name="right_hip_yaw">
+    <inertial>
+      <origin xyz="-0.02222674674999112 8.8517958241052241e-10 -0.041141636815153371" rpy="0 0 0" />
+      <mass value="0.4679029510549537" />
+      <inertia ixx="0.0005134200786291527" iyy="0.0007198312073257859" izz="0.00037031396313128126" ixy="-8.413091553620785e-12" ixz="-0.0002065414875396822" iyz="-4.797798841447058e-10" />
+    </inertial>
+    <visual name="visual_28">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_28.obj" />
+      </geometry>
+      <material name="graphite">
+        <color rgba="0.044999999999999998 0.055 0.065000000000000002 1" />
+      </material>
+    </visual>
+    <visual name="visual_39">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_39.obj" />
+      </geometry>
+      <material name="ivory">
+        <color rgba="0.78000000000000003 0.78000000000000003 0.73999999999999999 1" />
+      </material>
+    </visual>
+  </link>
+  <joint name="right_hip_roll" type="revolute">
+    <parent link="right_hip_yaw" />
+    <child link="right_hip_roll" />
+    <origin xyz="-0.033000000000000002 0 -0.054999999999999993" rpy="0 0 0" />
+    <axis xyz="1 0 0" />
+    <limit lower="-0.5" upper="0.5" effort="12.0" velocity="4.1887902047863905" />
+    <dynamics damping="0.01" friction="0.4" />
+  </joint>
+  <link name="right_hip_roll">
+    <inertial>
+      <origin xyz="0.059580137134601426 -0.010388214790760894 -0.011597649834218682" rpy="0 0 0" />
+      <mass value="0.4793867924884531" />
+      <inertia ixx="0.0002604957101858333" iyy="0.0002787778304798859" izz="0.00035802597796463786" ixy="-3.249242209490524e-07" ixz="2.3518959104301158e-05" iyz="-5.983451374010338e-06" />
+    </inertial>
+    <visual name="visual_29">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_29.obj" />
+      </geometry>
+      <material name="graphite">
+        <color rgba="0.044999999999999998 0.055 0.065000000000000002 1" />
+      </material>
+    </visual>
+    <visual name="visual_41">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_41.obj" />
+      </geometry>
+      <material name="ivory">
+        <color rgba="0.78000000000000003 0.78000000000000003 0.73999999999999999 1" />
+      </material>
+    </visual>
+    <visual name="visual_44">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_44.obj" />
+      </geometry>
+      <material name="titanium">
+        <color rgba="0.45000000000000001 0.48999999999999999 0.51000000000000001 1" />
+      </material>
+    </visual>
+  </link>
+  <joint name="right_hip_pitch" type="revolute">
+    <parent link="right_hip_roll" />
+    <child link="right_hip_pitch" />
+    <origin xyz="0.066000000000000003 -0.010999999999999996 -0.013000000000000012" rpy="0 0 0" />
+    <axis xyz="0 -1 0" />
+    <limit lower="-1.1" upper="1.1" effort="12.0" velocity="4.1887902047863905" />
+    <dynamics damping="0.01" friction="0.4" />
+  </joint>
+  <link name="right_hip_pitch">
+    <inertial>
+      <origin xyz="-0.051659257799522386 0.0017189376476315771 -0.091393669956037399" rpy="0 0 0" />
+      <mass value="0.5993243195245721" />
+      <inertia ixx="0.001399502299314565" iyy="0.001415588206219582" izz="0.0007685572503505669" ixy="3.7517105607905606e-05" ixz="-0.0005257418807643579" iyz="6.63826168381078e-05" />
+    </inertial>
+    <visual name="visual_30">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_30.obj" />
+      </geometry>
+      <material name="graphite">
+        <color rgba="0.044999999999999998 0.055 0.065000000000000002 1" />
+      </material>
+    </visual>
+    <visual name="visual_43">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_43.obj" />
+      </geometry>
+      <material name="ivory">
+        <color rgba="0.78000000000000003 0.78000000000000003 0.73999999999999999 1" />
+      </material>
+    </visual>
+    <visual name="visual_45">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_45.obj" />
+      </geometry>
+      <material name="titanium">
+        <color rgba="0.45000000000000001 0.48999999999999999 0.51000000000000001 1" />
+      </material>
+    </visual>
+  </link>
+  <joint name="right_knee_pitch" type="revolute">
+    <parent link="right_hip_pitch" />
+    <child link="right_knee_pitch" />
+    <origin xyz="-0.065000000000000002 0 -0.11499999999999999" rpy="0 0 0" />
+    <axis xyz="0 -1 0" />
+    <limit lower="-0.2" upper="1.8" effort="12.0" velocity="4.1887902047863905" />
+    <dynamics damping="0.01" friction="0.4" />
+  </joint>
+  <link name="right_knee_pitch">
+    <inertial>
+      <origin xyz="0.039091328994514889 -0.0013998275132786064 -0.068985121241976824" rpy="0 0 0" />
+      <mass value="0.5805977675498256" />
+      <inertia ixx="0.0011691824081163779" iyy="0.001053635210870662" izz="0.0007277171977076499" ixy="-5.1010292721989403e-05" ixz="0.0003693677437753215" iyz="9.001803809909181e-05" />
+    </inertial>
+    <visual name="visual_31">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_31.obj" />
+      </geometry>
+      <material name="graphite">
+        <color rgba="0.044999999999999998 0.055 0.065000000000000002 1" />
+      </material>
+    </visual>
+    <visual name="visual_46">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_46.obj" />
+      </geometry>
+      <material name="ivory">
+        <color rgba="0.78000000000000003 0.78000000000000003 0.73999999999999999 1" />
+      </material>
+    </visual>
+    <visual name="visual_47">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_47.obj" />
+      </geometry>
+      <material name="titanium">
+        <color rgba="0.45000000000000001 0.48999999999999999 0.51000000000000001 1" />
+      </material>
+    </visual>
+  </link>
+  <joint name="right_ankle_pitch" type="revolute">
+    <parent link="right_knee_pitch" />
+    <child link="right_ankle_pitch" />
+    <origin xyz="0.051000000000000004 0 -0.090000000000000011" rpy="0 0 0" />
+    <axis xyz="0 -1 0" />
+    <limit lower="-1.1" upper="1.1" effort="12.0" velocity="4.1887902047863905" />
+    <dynamics damping="0.01" friction="0.4" />
+  </joint>
+  <link name="right_ankle_pitch">
+    <inertial>
+      <origin xyz="0.054712525545990036 1.3877787807814457e-17 -0.023646482804595199" rpy="0 0 0" />
+      <mass value="0.31906628484728683" />
+      <inertia ixx="0.00011042097431968249" iyy="0.00017959304624913394" izz="0.00017343883809721404" ixy="0.0" ixz="2.6848255071100957e-05" iyz="5.3601303693436193e-20" />
+    </inertial>
+    <visual name="visual_19">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_19.obj" />
+      </geometry>
+      <material name="titanium">
+        <color rgba="0.45000000000000001 0.48999999999999999 0.51000000000000001 1" />
+      </material>
+    </visual>
+    <visual name="visual_32">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_32.obj" />
+      </geometry>
+      <material name="graphite">
+        <color rgba="0.044999999999999998 0.055 0.065000000000000002 1" />
+      </material>
+    </visual>
+  </link>
+  <joint name="right_ankle_roll" type="revolute">
+    <parent link="right_ankle_pitch" />
+    <child link="right_ankle_roll" />
+    <origin xyz="0.059999999999999998 0 -0.025999999999999995" rpy="0 0 0" />
+    <axis xyz="1 0 0" />
+    <limit lower="-0.5" upper="0.5" effort="4.0" velocity="12.56637061435917" />
+    <dynamics damping="0.01" friction="0.05" />
+  </joint>
+  <link name="right_ankle_roll">
+    <inertial>
+      <origin xyz="-0.024132174821781947 -9.9037718775951689e-08 -0.017827131859101734" rpy="0 0 0" />
+      <mass value="0.3378204690026597" />
+      <inertia ixx="0.0002691497230738392" iyy="0.0008557882274473611" izz="0.0009653828868839544" ixy="2.517158874284239e-08" ixz="-1.3934078293964428e-05" iyz="1.4989410488208178e-09" />
+    </inertial>
+    <visual name="visual_20">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_20.obj" />
+      </geometry>
+      <material name="orange">
+        <color rgba="0.94999999999999996 0.19 0.002 1" />
+      </material>
+    </visual>
+    <visual name="visual_21">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_21.obj" />
+      </geometry>
+      <material name="ivory">
+        <color rgba="0.78000000000000003 0.78000000000000003 0.73999999999999999 1" />
+      </material>
+    </visual>
+    <visual name="visual_59">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_59.obj" />
+      </geometry>
+      <material name="rubber">
+        <color rgba="0.025000000000000001 0.029999999999999999 0.035000000000000003 1" />
+      </material>
+    </visual>
+    <visual name="visual_60">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_60.obj" />
+      </geometry>
+      <material name="titanium">
+        <color rgba="0.45000000000000001 0.48999999999999999 0.51000000000000001 1" />
+      </material>
+    </visual>
+  </link>
+  <joint name="left_hip_yaw" type="revolute">
+    <parent link="torso" />
+    <child link="left_hip_yaw" />
+    <origin xyz="-0.017999999999999999 0.065000000000000002 0.3387" rpy="0 0 0" />
+    <axis xyz="0 0 1" />
+    <limit lower="-0.6" upper="0.6" effort="2.0" velocity="38.746309394274114" />
+    <dynamics damping="0.01" friction="0.03" />
+  </joint>
+  <link name="left_hip_yaw">
+    <inertial>
+      <origin xyz="-0.022226746749991113 8.8517962404388584e-10 -0.041141636815153426" rpy="0 0 0" />
+      <mass value="0.4679029510549538" />
+      <inertia ixx="0.0005134200786291523" iyy="0.0007198312073257856" izz="0.00037031396313128126" ixy="-8.413091373248603e-12" ixz="-0.00020654148753968224" iyz="-4.79779886222981e-10" />
+    </inertial>
+    <visual name="visual_33">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_33.obj" />
+      </geometry>
+      <material name="graphite">
+        <color rgba="0.044999999999999998 0.055 0.065000000000000002 1" />
+      </material>
+    </visual>
+    <visual name="visual_40">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_40.obj" />
+      </geometry>
+      <material name="ivory">
+        <color rgba="0.78000000000000003 0.78000000000000003 0.73999999999999999 1" />
+      </material>
+    </visual>
+  </link>
+  <joint name="left_hip_roll" type="revolute">
+    <parent link="left_hip_yaw" />
+    <child link="left_hip_roll" />
+    <origin xyz="-0.033000000000000002 0 -0.054999999999999993" rpy="0 0 0" />
+    <axis xyz="1 0 0" />
+    <limit lower="-0.5" upper="0.5" effort="12.0" velocity="4.1887902047863905" />
+    <dynamics damping="0.01" friction="0.4" />
+  </joint>
+  <link name="left_hip_roll">
+    <inertial>
+      <origin xyz="0.059580137572231566 0.010388304328403139 -0.011597746622571015" rpy="0 0 0" />
+      <mass value="0.4793867845955629" />
+      <inertia ixx="0.0002604943680509979" iyy="0.00027877833209404414" izz="0.0003580241230390559" ixy="3.2606512451115924e-07" ixz="2.351772724771368e-05" iyz="5.96988799649201e-06" />
+    </inertial>
+    <visual name="visual_34">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_34.obj" />
+      </geometry>
+      <material name="graphite">
+        <color rgba="0.044999999999999998 0.055 0.065000000000000002 1" />
+      </material>
+    </visual>
+    <visual name="visual_42">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_42.obj" />
+      </geometry>
+      <material name="ivory">
+        <color rgba="0.78000000000000003 0.78000000000000003 0.73999999999999999 1" />
+      </material>
+    </visual>
+    <visual name="visual_49">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_49.obj" />
+      </geometry>
+      <material name="titanium">
+        <color rgba="0.45000000000000001 0.48999999999999999 0.51000000000000001 1" />
+      </material>
+    </visual>
+  </link>
+  <joint name="left_hip_pitch" type="revolute">
+    <parent link="left_hip_roll" />
+    <child link="left_hip_pitch" />
+    <origin xyz="0.066000000000000003 0.010999999999999996 -0.013000000000000012" rpy="0 0 0" />
+    <axis xyz="0 1 0" />
+    <limit lower="-1.1" upper="1.1" effort="12.0" velocity="4.1887902047863905" />
+    <dynamics damping="0.01" friction="0.4" />
+  </joint>
+  <link name="left_hip_pitch">
+    <inertial>
+      <origin xyz="-0.051656484807437585 -0.0017189377854475857 -0.091392156080729092" rpy="0 0 0" />
+      <mass value="0.5993241243826795" />
+      <inertia ixx="0.0013996708580227889" iyy="0.0014155822765689868" izz="0.0007683822571898105" ixy="-3.752157673389327e-05" ixz="-0.0005252354021864334" iyz="-6.638520409086244e-05" />
+    </inertial>
+    <visual name="visual_35">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_35.obj" />
+      </geometry>
+      <material name="graphite">
+        <color rgba="0.044999999999999998 0.055 0.065000000000000002 1" />
+      </material>
+    </visual>
+    <visual name="visual_48">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_48.obj" />
+      </geometry>
+      <material name="ivory">
+        <color rgba="0.78000000000000003 0.78000000000000003 0.73999999999999999 1" />
+      </material>
+    </visual>
+    <visual name="visual_50">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_50.obj" />
+      </geometry>
+      <material name="titanium">
+        <color rgba="0.45000000000000001 0.48999999999999999 0.51000000000000001 1" />
+      </material>
+    </visual>
+  </link>
+  <joint name="left_knee_pitch" type="revolute">
+    <parent link="left_hip_pitch" />
+    <child link="left_knee_pitch" />
+    <origin xyz="-0.065000000000000002 0 -0.11499999999999999" rpy="0 0 0" />
+    <axis xyz="0 1 0" />
+    <limit lower="-1.8" upper="0.2" effort="12.0" velocity="4.1887902047863905" />
+    <dynamics damping="0.01" friction="0.4" />
+  </joint>
+  <link name="left_knee_pitch">
+    <inertial>
+      <origin xyz="0.039091116499032491 0.0013998281584287203 -0.068984647773184568" rpy="0 0 0" />
+      <mass value="0.5805978057789087" />
+      <inertia ixx="0.0011691994809506802" iyy="0.0010536712193333284" izz="0.0007277362633954147" ixy="5.101417830795704e-05" ixz="0.0003694875863708337" iyz="-9.002026900979672e-05" />
+    </inertial>
+    <visual name="visual_36">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_36.obj" />
+      </geometry>
+      <material name="graphite">
+        <color rgba="0.044999999999999998 0.055 0.065000000000000002 1" />
+      </material>
+    </visual>
+    <visual name="visual_51">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_51.obj" />
+      </geometry>
+      <material name="ivory">
+        <color rgba="0.78000000000000003 0.78000000000000003 0.73999999999999999 1" />
+      </material>
+    </visual>
+    <visual name="visual_52">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_52.obj" />
+      </geometry>
+      <material name="titanium">
+        <color rgba="0.45000000000000001 0.48999999999999999 0.51000000000000001 1" />
+      </material>
+    </visual>
+  </link>
+  <joint name="left_ankle_pitch" type="revolute">
+    <parent link="left_knee_pitch" />
+    <child link="left_ankle_pitch" />
+    <origin xyz="0.051000000000000004 0 -0.090000000000000011" rpy="0 0 0" />
+    <axis xyz="0 1 0" />
+    <limit lower="-1.1" upper="1.1" effort="12.0" velocity="4.1887902047863905" />
+    <dynamics damping="0.01" friction="0.4" />
+  </joint>
+  <link name="left_ankle_pitch">
+    <inertial>
+      <origin xyz="0.054712525545990036 -1.3877787807814457e-17 -0.023646482804595199" rpy="0 0 0" />
+      <mass value="0.31906628484728683" />
+      <inertia ixx="0.00011042097431968261" iyy="0.000179593046249134" izz="0.00017343883809721407" ixy="3.395916400100549e-20" ixz="2.6848255071100913e-05" iyz="-1.1853795347905523e-19" />
+    </inertial>
+    <visual name="visual_22">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_22.obj" />
+      </geometry>
+      <material name="titanium">
+        <color rgba="0.45000000000000001 0.48999999999999999 0.51000000000000001 1" />
+      </material>
+    </visual>
+    <visual name="visual_37">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_37.obj" />
+      </geometry>
+      <material name="graphite">
+        <color rgba="0.044999999999999998 0.055 0.065000000000000002 1" />
+      </material>
+    </visual>
+  </link>
+  <joint name="left_ankle_roll" type="revolute">
+    <parent link="left_ankle_pitch" />
+    <child link="left_ankle_roll" />
+    <origin xyz="0.059999999999999998 0 -0.025999999999999995" rpy="0 0 0" />
+    <axis xyz="1 0 0" />
+    <limit lower="-0.5" upper="0.5" effort="4.0" velocity="12.56637061435917" />
+    <dynamics damping="0.01" friction="0.05" />
+  </joint>
+  <link name="left_ankle_roll">
+    <inertial>
+      <origin xyz="-0.024132174821781413 -9.9037732098627984e-08 -0.017827131859104634" rpy="0 0 0" />
+      <mass value="0.3378204690027342" />
+      <inertia ixx="0.0002691497230739714" iyy="0.0008557882274476275" izz="0.0009653828868843278" ixy="2.5171588746857153e-08" ixz="-1.3934078293962389e-05" iyz="1.4989409904964495e-09" />
+    </inertial>
+    <visual name="visual_23">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_23.obj" />
+      </geometry>
+      <material name="orange">
+        <color rgba="0.94999999999999996 0.19 0.002 1" />
+      </material>
+    </visual>
+    <visual name="visual_24">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_24.obj" />
+      </geometry>
+      <material name="ivory">
+        <color rgba="0.78000000000000003 0.78000000000000003 0.73999999999999999 1" />
+      </material>
+    </visual>
+    <visual name="visual_61">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_61.obj" />
+      </geometry>
+      <material name="rubber">
+        <color rgba="0.025000000000000001 0.029999999999999999 0.035000000000000003 1" />
+      </material>
+    </visual>
+    <visual name="visual_62">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="assets/visual_62.obj" />
+      </geometry>
+      <material name="titanium">
+        <color rgba="0.45000000000000001 0.48999999999999999 0.51000000000000001 1" />
+      </material>
+    </visual>
+  </link>
+</robot>

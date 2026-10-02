@@ -1,0 +1,331 @@
+{
+  "status": "PRELIMINARY ANALYTIC SCREEN ONLY",
+  "appearance_pass": false,
+  "physics_pass": false,
+  "manufacturing_pass": false,
+  "scene_sha256": "91937ac1a69e3a3ab07d380e647bbf89f2b11f0d8c56143a3976ced37b6f900f",
+  "design_target": {
+    "force_n": 50,
+    "contact_definition": "Normal compressive force at a defined grip-pad station; not pull-out force or arbitrary beak-tip force",
+    "proposed_station_x_mm": 240,
+    "closed_lever_mm": 80,
+    "adjustable_force_required": true
+  },
+  "bird_reference": {
+    "force_n": 50.32,
+    "species": "Anser anser",
+    "source": "https://bicyt.conicet.gov.ar/fichas/produccion/5443291",
+    "primary_abstract_pdf": "https://revistas.unlp.edu.ar/Morfol/article/download/915/869/3338",
+    "limitation": "2010 conference abstract; bite station, sample size and duration not provided in retrieved abstract; not a universal biological specification"
+  },
+  "motor_basis": {
+    "model": "XM540-W270-T",
+    "nominal_mass_g": 165,
+    "former_motor_mass_g": 23,
+    "motor_only_mass_increase_g": 142,
+    "source": "https://robotis.us/products/dynamixel-xm540-w270-t",
+    "screen_torque_nm": 2.12,
+    "basis": "Manufacturer estimated continuous torque = 20% of 10.6 Nm stall; no measured thermal-duty rating established here",
+    "nominal_case_whd_mm": [
+      33.5,
+      58.5,
+      44
+    ],
+    "dimension_note": "e-manual depth is 44 mm; shop metadata lists 45 mm. Detailed fit must resolve drawing/horn/cable envelopes; current screen uses e-manual body."
+  },
+  "transmission": {
+    "ratio": 3,
+    "centers_mm": 24,
+    "pitch_radii_mm": [
+      6,
+      18
+    ],
+    "envelopes_not_released_gears": true,
+    "possible_tooth_combination": "20/60 teeth at module 0.6 fits the pitch envelopes; tooth form, SKU and strength unvalidated",
+    "estimated_tangential_load_at_4_77_nm_n": 265.0,
+    "motor_catalog_radial_load_n": 40,
+    "requires_independently_supported_pinion_and_output": true,
+    "notes": "A single bearing reservation is not a released bearing pair or frame. Do not put the gear mesh load directly on the servo output bearing."
+  },
+  "force_sensitivity": [
+    {
+      "efficiency": 0.6,
+      "lever_mm": 60,
+      "screened_output_torque_nm": 3.816,
+      "normal_force_n": 63.6
+    },
+    {
+      "efficiency": 0.6,
+      "lever_mm": 80,
+      "screened_output_torque_nm": 3.816,
+      "normal_force_n": 47.699999999999996
+    },
+    {
+      "efficiency": 0.6,
+      "lever_mm": 95,
+      "screened_output_torque_nm": 3.816,
+      "normal_force_n": 40.16842105263158
+    },
+    {
+      "efficiency": 0.6,
+      "lever_mm": 103,
+      "screened_output_torque_nm": 3.816,
+      "normal_force_n": 37.04854368932039
+    },
+    {
+      "efficiency": 0.75,
+      "lever_mm": 60,
+      "screened_output_torque_nm": 4.7700000000000005,
+      "normal_force_n": 79.50000000000001
+    },
+    {
+      "efficiency": 0.75,
+      "lever_mm": 80,
+      "screened_output_torque_nm": 4.7700000000000005,
+      "normal_force_n": 59.62500000000001
+    },
+    {
+      "efficiency": 0.75,
+      "lever_mm": 95,
+      "screened_output_torque_nm": 4.7700000000000005,
+      "normal_force_n": 50.21052631578948
+    },
+    {
+      "efficiency": 0.75,
+      "lever_mm": 103,
+      "screened_output_torque_nm": 4.7700000000000005,
+      "normal_force_n": 46.31067961165049
+    },
+    {
+      "efficiency": 0.85,
+      "lever_mm": 60,
+      "screened_output_torque_nm": 5.406,
+      "normal_force_n": 90.1
+    },
+    {
+      "efficiency": 0.85,
+      "lever_mm": 80,
+      "screened_output_torque_nm": 5.406,
+      "normal_force_n": 67.57499999999999
+    },
+    {
+      "efficiency": 0.85,
+      "lever_mm": 95,
+      "screened_output_torque_nm": 5.406,
+      "normal_force_n": 56.90526315789473
+    },
+    {
+      "efficiency": 0.85,
+      "lever_mm": 103,
+      "screened_output_torque_nm": 5.406,
+      "normal_force_n": 52.48543689320388
+    }
+  ],
+  "jaw_kinematics": {
+    "hinge_world_mm": [
+      160.0,
+      0.0,
+      576.0
+    ],
+    "opening_degrees": 17.99565588191963,
+    "tip_drop_mm": 30,
+    "pad_station_drops": [
+      {
+        "closed_contact_x_mm": 179,
+        "lower_contact_vertical_drop_mm": 4.744791506713618
+      },
+      {
+        "closed_contact_x_mm": 208,
+        "lower_contact_vertical_drop_mm": 13.704193176852927
+      },
+      {
+        "closed_contact_x_mm": 238,
+        "lower_contact_vertical_drop_mm": 22.97253973216946
+      },
+      {
+        "closed_contact_x_mm": 244,
+        "lower_contact_vertical_drop_mm": 24.82620904323276
+      }
+    ],
+    "limitation": "Rigid rotation only; excludes object contact, elastic pad compression, full swept collision and pulling grip."
+  },
+  "beak_shell_sweep": {
+    "scope": "19 sampled poses; sufficient global Z separating plane for upper/lower orange shell solids only. Excludes heels, head, pads, gears and other parts.",
+    "passed": true,
+    "poses": [
+      {
+        "angle_deg": 0.0,
+        "vertical_separating_gap_mm": 1.783859030917938
+      },
+      {
+        "angle_deg": 0.9997586601066463,
+        "vertical_separating_gap_mm": 1.9802054787609222
+      },
+      {
+        "angle_deg": 1.9995173202132925,
+        "vertical_separating_gap_mm": 1.9692459346601936
+      },
+      {
+        "angle_deg": 2.9992759803199385,
+        "vertical_separating_gap_mm": 1.950983735387922
+      },
+      {
+        "angle_deg": 3.999034640426585,
+        "vertical_separating_gap_mm": 1.925424441102109
+      },
+      {
+        "angle_deg": 4.998793300533231,
+        "vertical_separating_gap_mm": 1.8925758336541776
+      },
+      {
+        "angle_deg": 5.998551960639877,
+        "vertical_separating_gap_mm": 1.8524479142190557
+      },
+      {
+        "angle_deg": 6.9983106207465235,
+        "vertical_separating_gap_mm": 1.8050529002506437
+      },
+      {
+        "angle_deg": 7.99806928085317,
+        "vertical_separating_gap_mm": 1.7504052217618664
+      },
+      {
+        "angle_deg": 8.997827940959816,
+        "vertical_separating_gap_mm": 1.6885215169314733
+      },
+      {
+        "angle_deg": 9.997586601066462,
+        "vertical_separating_gap_mm": 1.6194206270380391
+      },
+      {
+        "angle_deg": 10.997345261173109,
+        "vertical_separating_gap_mm": 1.5431235907235532
+      },
+      {
+        "angle_deg": 11.997103921279754,
+        "vertical_separating_gap_mm": 1.4596536375883034
+      },
+      {
+        "angle_deg": 12.996862581386402,
+        "vertical_separating_gap_mm": 1.3690361811177354
+      },
+      {
+        "angle_deg": 13.996621241493047,
+        "vertical_separating_gap_mm": 1.2712988109456091
+      },
+      {
+        "angle_deg": 14.996379901599695,
+        "vertical_separating_gap_mm": 1.1664712844535643
+      },
+      {
+        "angle_deg": 15.99613856170634,
+        "vertical_separating_gap_mm": 1.054585517711189
+      },
+      {
+        "angle_deg": 16.995897221812985,
+        "vertical_separating_gap_mm": 0.9356755757588644
+      },
+      {
+        "angle_deg": 17.99565588191963,
+        "vertical_separating_gap_mm": 0.8097776622360016
+      }
+    ]
+  },
+  "camera_nominal_axis_gaps": {
+    "camera_board_to_beak_motor_x_gap_mm": 5.75,
+    "camera_board_to_output_shaft_z_gap_mm": 2.0,
+    "camera_board_to_pinion_gear_y_gap_mm": 17.0
+  },
+  "shell_print_envelope": {
+    "scope": "Bounding boxes and paired surface offsets, not minimum wall thickness, print supports, fastening or assembly",
+    "passed": true,
+    "parts": [
+      {
+        "part": "torso_shell_right_aft",
+        "bounding_box_mm": [
+          132.9773888651654,
+          91.65342332501056,
+          162.3048484711102
+        ],
+        "fits_256_cube": true,
+        "paired_surface_offset_mm": [
+          2.3999999999999178,
+          2.400000000000079
+        ]
+      },
+      {
+        "part": "torso_shell_right_fore",
+        "bounding_box_mm": [
+          157.68421052631578,
+          90.08175127869713,
+          187.61768512967598
+        ],
+        "fits_256_cube": true,
+        "paired_surface_offset_mm": [
+          2.399999999999918,
+          2.400000000000078
+        ]
+      },
+      {
+        "part": "wing_access_cover_right",
+        "bounding_box_mm": [
+          203.52800000000002,
+          50.97869991811941,
+          97.68574134175421
+        ],
+        "fits_256_cube": true,
+        "paired_surface_offset_mm": [
+          2.375881885991979,
+          2.399999691574557
+        ]
+      },
+      {
+        "part": "torso_shell_left_aft",
+        "bounding_box_mm": [
+          132.9773888651654,
+          91.65342332501056,
+          162.3048484711102
+        ],
+        "fits_256_cube": true,
+        "paired_surface_offset_mm": [
+          2.3999999999999178,
+          2.400000000000079
+        ]
+      },
+      {
+        "part": "torso_shell_left_fore",
+        "bounding_box_mm": [
+          157.68421052631578,
+          90.08175127869713,
+          187.61768512967598
+        ],
+        "fits_256_cube": true,
+        "paired_surface_offset_mm": [
+          2.399999999999918,
+          2.400000000000078
+        ]
+      },
+      {
+        "part": "wing_access_cover_left",
+        "bounding_box_mm": [
+          203.52800000000002,
+          50.97869991811941,
+          97.68574134175421
+        ],
+        "fits_256_cube": true,
+        "paired_surface_offset_mm": [
+          2.375881885991979,
+          2.399999691574557
+        ]
+      }
+    ]
+  },
+  "remaining": [
+    "Head and beak load path, shell cavities, fasteners and bearing pair design",
+    "Force sensor/current calibration, thermal duty and compliant pads",
+    "Updated head mass and inertia, neck torque, seated ground reach, balance and dynamic simulation",
+    "Object retention, fabric-edge grip and drag tests; grip force is not traction capacity",
+    "Camera field of view and beak occlusion",
+    "Full mesh self-intersections, assembly clearances and complete motion sweep"
+  ]
+}

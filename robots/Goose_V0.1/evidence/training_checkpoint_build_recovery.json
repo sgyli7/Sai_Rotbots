@@ -1,0 +1,25 @@
+{
+  "schema": "goose_training_checkpoint_build_recovery_v1",
+  "retained_failures": [
+    {
+      "stage": "visual_material_export",
+      "error": "KeyError pcb_reference",
+      "resolution": "explicit PCB palette and material coverage; full rebuild passed"
+    },
+    {
+      "stage": "new_collision_local_hull",
+      "part": "neck_cable_3",
+      "cluster": 2,
+      "error": "invalid nearly planar local hull",
+      "resolution": "local50um minimum bounding fallback recorded per hull, not whole-part solid filling"
+    },
+    {
+      "stage": "early_smoke",
+      "error": "read incomplete pre-validation contract: missing source_scene_sha256",
+      "resolution": "repeat after builder exit; final coherent contract/model verified"
+    }
+  ],
+  "degenerate_local_hull_fallbacks": 815,
+  "collision_hulls": 15715,
+  "manufacturing_release": false
+}

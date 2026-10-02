@@ -42,3 +42,17 @@ MuJoCo, MuJoCo Warp, Warp, PyTorch, rsl_rl, NumPy, trimesh and ONNX Runtime are
 external dependencies, not relicensed by this project. Python packages are
 installed from their distributions with their own license material. Any future
 binary bundle must carry the licenses of the components it actually contains.
+
+## Goose and MicroDuck references
+
+Goose source geometry in this milestone is independently generated. Vendor servo
+and electronics bodies are dimensional proxies, not redistributed vendor CAD.
+The user-supplied handoff images, documents and procurement sheets are preserved
+as reference material and do not establish manufacturing or performance claims.
+
+[Pollen Robotics MicroDuck](https://github.com/pollen-robotics/microduck) and
+[MicroDuck RL](https://github.com/pollen-robotics/microduck_rl) are engineering
+references. Upstream repositories are not bundled in this milestone. Sources and
+pinned comparison revisions are recorded in Goose's design documents. Any later
+copied source or hardware asset must retain its own upstream license and notices;
+this reference does not relicense material not present in this repository.

@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "coordinate_frame": "torso_x_forward_y_left_z_up",
+  "units": "SI",
+  "status": "mechanical_reservations_not_board_mount_acceptance",
+  "components": [
+    {"name":"battery_3s","sku":"CNHL 1501303BK","center_m":[-0.040,0,-0.002],"reserved_xyz_m":[0.088,0.049,0.029],"mass_reserve_kg":0.145,"notes":"Nominal 78x39x21.5 mm, 125 g; reservation adds stated size variation, strap and lead space. XT60/balance lead route still needs a plug keepout."},
+    {"name":"radxa_zero_3w","sku":"Radxa ZERO 3W","center_m":[-0.045,0,0.0255],"reserved_xyz_m":[0.070,0.034,0.015],"mass_reserve_kg":0.030,"notes":"65x30 board; envelope/weight conservative planning values, connector and cooling must be checked on actual revision."},
+    {"name":"usb_hub","sku":"Waveshare USB HUB HAT (B) 20317","center_m":[-0.045,0,0.0465],"reserved_xyz_m":[0.0656,0.0307,0.0148],"mass_reserve_kg":0.024,"notes":"2023 vendor STEP body/connector envelope, excludes USB plug bends. Four holes 58x23 M2.5 standoffs; powered hub upstream VBUS isolation unresolved."},
+    {"name":"u2d2_12v","sku":"ROBOTIS U2D2 902-0132-000","center_m":[-0.046,0.045,0.024],"reserved_xyz_m":[0.048,0.018,0.015],"mass_reserve_kg":0.009,"notes":"12V bus DATA/GND; USB adapter itself does not supply servo current."},
+    {"name":"u2d2_5v","sku":"ROBOTIS U2D2 902-0132-000","center_m":[-0.046,-0.045,0.024],"reserved_xyz_m":[0.048,0.018,0.015],"mass_reserve_kg":0.009,"notes":"5V bus separate VDD rail; adapters are not galvanic isolators."},
+    {"name":"imu","sku":"WitMotion WT901C-TTL A.002533","center_m":[-0.012,-0.042,0.041],"reserved_xyz_m":[0.054,0.039,0.018],"mass_reserve_kg":0.014,"notes":"51.3x36x15mm official table; 51.5x36.1 drawing; orientation/mount must be measured; no trustworthy magnetic heading."},
+    {"name":"imu_usb_ttl","sku":"WitMotion original USB-TTL A.000057","center_m":[0.035,-0.052,0.044],"reserved_xyz_m":[0.025,0.012,0.010],"mass_reserve_kg":0.010,"notes":"Converter/mechanical dimensions and weight unverified; provisional cable-pocket reservation, subject to actual sample."},
+    {"name":"servo_buck","sku":"Pololu D24V90F5 #2866","center_m":[0.045,0.045,0.025],"reserved_xyz_m":[0.044,0.024,0.014],"mass_reserve_kg":0.009,"notes":"5V servo branch; nominal PCB 40.6x20.3x7.6, four holes 35.6x15.2; wire/thermal margin not included."},
+    {"name":"logic_buck","sku":"Pololu D24V90F5 #2866","center_m":[0.045,-0.045,0.025],"reserved_xyz_m":[0.044,0.024,0.014],"mass_reserve_kg":0.009,"notes":"Separate 5V logic branch; validate camera plus hub plus two U2D2 plus IMU actual loads."},
+    {"name":"motor_relay","sku":"Panasonic CB1a-12V","center_m":[-0.002,0.048,0.029],"reserved_xyz_m":[0.026,0.022,0.025],"mass_reserve_kg":0.033,"notes":"12V coil/NO motor rail control candidate; DC-load, coil release and body dimensions to be confirmed on physical part."},
+    {"name":"audio_player","sku":"DFRobot DFR0299","center_m":[-0.049,0.035,0.040],"reserved_xyz_m":[0.028,0.026,0.014],"mass_reserve_kg":0.010,"notes":"28x26 adjustable edge clip reservation; body outline and solder/pin height not established by text specification."},
+    {"name":"audio_buck","sku":"Pololu D36V6ALV #3798","center_m":[-0.027,0.028,0.056],"reserved_xyz_m":[0.020,0.014,0.009],"mass_reserve_kg":0.002,"notes":"4.5V from 3S upstream of motor stop; solder-pad component, not an M2 mounting board."},
+    {"name":"speaker","sku":"Same Sky CMS-3058-18L200","center_m":[-0.098,0,-0.005],"reserved_xyz_m":[0.006,0.031,0.031],"mass_reserve_kg":0.00835,"notes":"Diameter 30 plus fit clearance; axis rear-facing and grille/mounting ring require CAD."},
+    {"name":"fused_harness_switches","sku":"custom 14/18/21 AWG harness and labelled fuses","center_m":[-0.015,0,0.010],"reserved_xyz_m":[0.030,0.050,0.035],"mass_reserve_kg":0.100,"notes":"Estimated wire/fuse/plug mass; no physical wiring harness produced. Remote E-stop switch-box and charger are not onboard mass."}
+  ]
+}

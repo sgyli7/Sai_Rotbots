@@ -1,0 +1,55 @@
+{
+  "status": "provisional_mujoco_contact_and_torque_trial_not_release",
+  "model_sha256": "4ee69da4503446be062b5d2464ee7220e03bef841003a9b76a725b3cefa17293",
+  "appearance_manifest_sha256": "91367f122b1d3bd206b058ccdae78b743ab1d017caeed86311051be1d4dd9378",
+  "wall_mm": 1.6,
+  "mass_kg": 4.08,
+  "contact_friction": ".9 .005 .0001",
+  "controller": "joint PD kp=24 kd=1.1, per-joint vendor screening torque clips; no free-root support",
+  "trials": [
+    {
+      "pose": "standing",
+      "duration_s": 2.0,
+      "time_to_fall_s": 0.681,
+      "final_root_position_m": [
+        0.3664,
+        0.0041,
+        0.1323
+      ],
+      "minimum_root_height_m": 0.1131,
+      "maximum_absolute_root_pitch_deg": 89.96,
+      "actuator_saturation_fraction": 0.201,
+      "final_com_m": [
+        0.3148,
+        0.0039,
+        0.1178
+      ],
+      "final_contacts": 1
+    },
+    {
+      "pose": "ground_reach",
+      "duration_s": 2.0,
+      "time_to_fall_s": 0.243,
+      "final_root_position_m": [
+        0.2783,
+        0.0,
+        0.1395
+      ],
+      "minimum_root_height_m": 0.1141,
+      "maximum_absolute_root_pitch_deg": 89.94,
+      "actuator_saturation_fraction": 0.216,
+      "final_com_m": [
+        0.1902,
+        0.001,
+        0.1032
+      ],
+      "final_contacts": 5
+    }
+  ],
+  "limitations": [
+    "Thin-shell printed mass, center and inertia are approximate; motor placements are trial reservations.",
+    "No thermal/current/voltage derating, cable or hardware joint package has been verified.",
+    "No continuous self-collision, gait, grip, drag or cross-engine training result.",
+    "A failed PD stand can reflect controller tuning as well as hardware; a passed stand is not walking validation."
+  ]
+}

@@ -9,3 +9,14 @@
 *.pt binary
 licenses/RaspberryPi5-MIT.txt -text whitespace=cr-at-eol
 robots/*/models/** linguist-generated=true
+
+# Preserve imported procurement workbooks/CSV byte-for-byte.
+robots/Goose_V0.1/**/*.csv -text
+*.blend binary
+*.xlsx binary
+
+# GitHub snapshot: byte-identical large Goose assets through Git LFS.
+robots/Goose_V0.1/cad/source/mechanical_preview/quad_assembly.blend filter=lfs diff=lfs merge=lfs -text
+robots/Goose_V0.1/models/mechanical_reference/assets/visual_12.obj filter=lfs diff=lfs merge=lfs -text
+robots/Goose_V0.1/models/mechanical_reference/assets/visual_69.obj filter=lfs diff=lfs merge=lfs -text
+robots/Goose_V0.1/models/tip_grip_physics/assets/tip_group_visual_1.obj filter=lfs diff=lfs merge=lfs -text

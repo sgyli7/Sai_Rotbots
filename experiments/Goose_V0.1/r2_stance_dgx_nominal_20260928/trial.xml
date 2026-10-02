@@ -1,0 +1,77 @@
+<mujoco model="goose_r2_stance_trial">
+  <compiler angle="radian" autolimits="true" />
+  <option timestep=".001" gravity="0 0 -9.81" integrator="implicitfast" iterations="80" />
+  <worldbody>
+    <geom name="floor" type="plane" size="2 2 .1" friction=".8 .005 .0001" rgba=".7 .7 .7 1" />
+    <body name="torso" pos="-0.01 0 0.35">
+      <freejoint name="root" />
+      <inertial pos="-0.000824350379 0.000392198411 -0.00290453638" mass="2.25346888" diaginertia="0.0213543553 0.0211706967 0.019496536" />
+      <geom name="body_collision" type="ellipsoid" size="0.175 0.1025 0.115" mass="0" rgba=".91 .9 .86 1" />
+      <body name="right_thigh" pos="0 -0.088 -0.064">
+        <joint name="right_hip_yaw" axis="0 0 1" range="-0.7 0.7" damping=".03" armature=".00005" />
+        <joint name="right_hip_roll" axis="1 0 0" range="-0.7 0.7" damping=".03" armature=".00005" />
+        <joint name="right_hip_pitch" axis="0 1 0" range="-1.5 1.5" damping=".03" armature=".00005" />
+        <inertial pos="-0.0449138206 1.90764775e-08 -0.0976001878" mass="0.158629984" diaginertia="0.000322669781 0.000384469484 0.000101589333" />
+        <geom name="right_thigh_link" type="capsule" fromto="0 0 0 -0.055 0 -0.129" size=".019" mass="0" contype="0" conaffinity="0" rgba=".9 .9 .85 1" />
+        <body name="right_shin" pos="-0.055 0 -0.129">
+          <joint name="right_knee_pitch" axis="0 1 0" range="-1.8 1.8" damping=".03" armature=".00005" />
+          <inertial pos="0.0479484101 2.03502183e-08 -0.0827541797" mass="0.146063427" diaginertia="0.000204359041 0.000298155733 0.000130382237" />
+          <geom name="right_shin_link" type="capsule" fromto="0 0 0 0.065 0 -0.106" size=".017" mass="0" contype="0" conaffinity="0" rgba=".9 .9 .85 1" />
+          <body name="right_foot" pos="0.065 0 -0.106">
+            <joint name="right_ankle_pitch" axis="0 1 0" range="-1.5 1.5" damping=".03" armature=".00005" />
+            <inertial pos="0.0506155638 -9.45755285e-09 -0.0312700247" mass="0.276019064" diaginertia="0.000205920356 0.00117219569 0.00129570192" />
+            <geom name="right_sole_contact" type="box" size="0.1145 0.046 0.0065" pos="0.05 0 -0.044" mass="0" friction=".9 .005 .0001" rgba=".1 .1 .1 1" />
+          </body>
+        </body>
+      </body>
+      <body name="left_thigh" pos="0 0.088 -0.064">
+        <joint name="left_hip_yaw" axis="0 0 1" range="-0.7 0.7" damping=".03" armature=".00005" />
+        <joint name="left_hip_roll" axis="1 0 0" range="-0.7 0.7" damping=".03" armature=".00005" />
+        <joint name="left_hip_pitch" axis="0 1 0" range="-1.5 1.5" damping=".03" armature=".00005" />
+        <inertial pos="-0.0449138206 1.90764774e-08 -0.0976001878" mass="0.158629984" diaginertia="0.000322669781 0.000384469484 0.000101589333" />
+        <geom name="left_thigh_link" type="capsule" fromto="0 0 0 -0.055 0 -0.129" size=".019" mass="0" contype="0" conaffinity="0" rgba=".9 .9 .85 1" />
+        <body name="left_shin" pos="-0.055 0 -0.129">
+          <joint name="left_knee_pitch" axis="0 1 0" range="-1.8 1.8" damping=".03" armature=".00005" />
+          <inertial pos="0.0479484101 2.03502184e-08 -0.0827541797" mass="0.146063427" diaginertia="0.000204359041 0.000298155733 0.000130382237" />
+          <geom name="left_shin_link" type="capsule" fromto="0 0 0 0.065 0 -0.106" size=".017" mass="0" contype="0" conaffinity="0" rgba=".9 .9 .85 1" />
+          <body name="left_foot" pos="0.065 0 -0.106">
+            <joint name="left_ankle_pitch" axis="0 1 0" range="-1.5 1.5" damping=".03" armature=".00005" />
+            <inertial pos="0.0506155638 -9.01723298e-09 -0.0312700247" mass="0.276019064" diaginertia="0.000205920356 0.00117219569 0.00129570192" />
+            <geom name="left_sole_contact" type="box" size="0.1145 0.046 0.0065" pos="0.05 0 -0.044" mass="0" friction=".9 .005 .0001" rgba=".1 .1 .1 1" />
+          </body>
+        </body>
+      </body>
+      <body name="neck_lower" pos="0.069 0 0.127">
+        <joint name="neck_lower_pitch" axis="0 1 0" range="-0.8 1.5" damping=".03" armature=".00005" />
+        <inertial pos="-0.0486403586 1.60030164e-08 0.129346859" mass="0.25439906" diaginertia="0.000522429143 0.000642779199 0.000195451347" />
+        <geom type="capsule" fromto="0 0 0 -0.059 0 0.155" size=".02" mass="0" contype="0" conaffinity="0" rgba=".9 .9 .85 1" />
+        <body name="neck_upper" pos="-0.059 0 0.155">
+          <joint name="neck_upper_pitch" axis="0 1 0" range="-1.5 1.5" damping=".03" armature=".00005" />
+          <inertial pos="0.0639480629 2.05961451e-08 0.0868241061" mass="0.156195402" diaginertia="0.000229958659 0.000376972259 0.000187660822" />
+          <geom type="capsule" fromto="0 0 0 0.086 0 0.112" size=".018" mass="0" contype="0" conaffinity="0" rgba=".9 .9 .85 1" />
+          <body name="head" pos="0.086 0 0.112">
+            <joint name="head_pitch" axis="0 1 0" range="-2 2" damping=".03" armature=".00005" />
+            <inertial pos="0.0987991149 -1.15453328e-07 -0.032508021" mass="0.254391144" diaginertia="0.000399783818 0.000999187205 0.000793716805" />
+            <geom type="box" size="0.06 0.046 0.051" pos="0.054 0 -0.014" mass="0" contype="0" conaffinity="0" rgba=".9 .9 .85 1" />
+            <site name="beak_tip_visual_datum" pos="0.229 0 -0.075" size=".002" />
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+  <actuator>
+    <motor name="right_hip_yaw_motor" joint="right_hip_yaw" ctrllimited="true" ctrlrange="-0.82 0.82" />
+    <motor name="right_hip_roll_motor" joint="right_hip_roll" ctrllimited="true" ctrlrange="-0.82 0.82" />
+    <motor name="right_hip_pitch_motor" joint="right_hip_pitch" ctrllimited="true" ctrlrange="-0.82 0.82" />
+    <motor name="right_knee_pitch_motor" joint="right_knee_pitch" ctrllimited="true" ctrlrange="-0.82 0.82" />
+    <motor name="right_ankle_pitch_motor" joint="right_ankle_pitch" ctrllimited="true" ctrlrange="-0.82 0.82" />
+    <motor name="left_hip_yaw_motor" joint="left_hip_yaw" ctrllimited="true" ctrlrange="-0.82 0.82" />
+    <motor name="left_hip_roll_motor" joint="left_hip_roll" ctrllimited="true" ctrlrange="-0.82 0.82" />
+    <motor name="left_hip_pitch_motor" joint="left_hip_pitch" ctrllimited="true" ctrlrange="-0.82 0.82" />
+    <motor name="left_knee_pitch_motor" joint="left_knee_pitch" ctrllimited="true" ctrlrange="-0.82 0.82" />
+    <motor name="left_ankle_pitch_motor" joint="left_ankle_pitch" ctrllimited="true" ctrlrange="-0.82 0.82" />
+    <motor name="neck_lower_pitch_motor" joint="neck_lower_pitch" ctrllimited="true" ctrlrange="-2.12 2.12" />
+    <motor name="neck_upper_pitch_motor" joint="neck_upper_pitch" ctrllimited="true" ctrlrange="-2.12 2.12" />
+    <motor name="head_pitch_motor" joint="head_pitch" ctrllimited="true" ctrlrange="-0.82 0.82" />
+  </actuator>
+</mujoco>
