@@ -1,0 +1,529 @@
+{
+  "scene_sha256": "624e7a8974a8de0abf0865ad35bcfa6ee06a089de27f80627f945296cbc96f85",
+  "native_part_count": 545,
+  "frozen_scene_path": "robots/gorilla_v0_1/cad/source/appearance_c_scene.json",
+  "scene_build_inputs": [
+    {
+      "path": "scripts/models/build_gorilla_appearance_reconstruction.py",
+      "sha256": "c29366a0ebe00815e78100182be734cffcfc62b2ddd553ceb8b0c5945b1ac0a0"
+    },
+    {
+      "path": "scripts/models/gorilla_appearance_mechanics.py",
+      "sha256": "6f2e3ac57cb8b7059ec56d58f4c9ff3ec98f1bb7b39d9c57a902a1a39acae6f0"
+    },
+    {
+      "path": "scripts/models/gorilla_primary_structure.py",
+      "sha256": "91b6efd46dd02547480934778ec47d69527c483e85f15388856e78b66d903b12"
+    },
+    {
+      "path": "src/sai_agent/structural_statics.py",
+      "sha256": "71cc4b231444a4167e53474c0910b71d55e99e602ccffac15938eb6f8c404d79"
+    },
+    {
+      "path": "robots/gorilla_v0_1/configs/structure_c14_spec.json",
+      "sha256": "2a09c34a81b3f2477d5b3dd5b8026f64b53baa2a25a3c23ac928396e871a31ad"
+    },
+    {
+      "path": "scripts/models/build_gorilla_proportion_layout.py",
+      "sha256": "63d99154e900fbbacd252589fecc9329abb5db0c890659ae3166ac428c1bb312"
+    },
+    {
+      "path": "robots/gorilla_v0_1/source/appearance_c_reference_landmarks.json",
+      "sha256": "851b3a1a394566a9d3fea23ef7f9c10b8183f66c2b688444857c88553b51843b"
+    },
+    {
+      "path": "robots/gorilla_v0_1/source/appearance_c_front_shape_constraints.json",
+      "sha256": "937d98d2c218a586e2db2b2a2725199a51e3956e69890915ef02e5a41bb793dd"
+    }
+  ],
+  "authority_sha256": "079a148340d6bb94ac2bbf5e63851c1c6bbec02acde666047c2d52385ad8bc0a",
+  "landmarks_sha256": "851b3a1a394566a9d3fea23ef7f9c10b8183f66c2b688444857c88553b51843b",
+  "method": "All supplied native parts, every face fan triangle, exact -X ray. Complete-scene intersections retained, no visual mesh exclusions. Native cage only; Cycles-applied bevel tessellation not evaluated.",
+  "front_source_mapping": {
+    "scale_m_per_px": 0.005135658914728682,
+    "center_u_px": 325.5,
+    "ground_v_px": 603
+  },
+  "entry_definition": "Original black-opening FRONT polygon, 0.70px edge margin, 0.50px raster. Entry X is the fitted source-side surface +12mm; well rear mouth is entry-72mm. Grille-gap rays exclude any sample intersecting an actual louver ahead of the entry.",
+  "axial_depth_m": {
+    "entry": 0,
+    "well_rear_mouth": 0.072,
+    "analysis_window": [
+      -0.05,
+      0.22
+    ]
+  },
+  "appearance_or_thermal_accepted": false,
+  "sides": {
+    "left": {
+      "polygon_sample_count": 2688,
+      "actual_grille_gap_ray_count": 2008,
+      "grille_ray_count": 680,
+      "gap_rays_with_armor_ahead_or_within_throat": 0,
+      "gap_rays_with_armor_strictly_inside_0_to_72mm": 0,
+      "gap_rays_without_armor_ahead_or_within_throat": 2008,
+      "part_hit_summary": {
+        "left_radiator_turning_plenum": {
+          "category": "candidate_turning_plenum_wall",
+          "gap_ray_hit_count": 2008,
+          "depth_range_from_entry_m": [
+            0.08780581118863068,
+            0.1463249722717545
+          ],
+          "world_x_range_m": [
+            0.2213068106739819,
+            0.22504561000000006
+          ],
+          "local_left_uv_bbox_px": [
+            254.0,
+            271.0,
+            163.5,
+            204.5
+          ]
+        },
+        "left_vent_fastener_3": {
+          "category": "intake_frame_or_fastener",
+          "gap_ray_hit_count": 4,
+          "depth_range_from_entry_m": [
+            -0.013220100110742095,
+            -0.009000000442967615
+          ],
+          "world_x_range_m": [
+            0.3656267999999999,
+            0.36962680000000003
+          ],
+          "local_left_uv_bbox_px": [
+            268.5,
+            269.5,
+            203.0,
+            203.5
+          ]
+        }
+      },
+      "examples": [
+        {
+          "label": "no_armor_in_throat_window",
+          "sample_id": 0,
+          "source_uv_px": [
+            255.5,
+            163.5
+          ],
+          "local_left_uv_px": [
+            255.5,
+            163.5
+          ],
+          "world_yz_m": [
+            0.3594961240310077,
+            2.2571220930232556
+          ],
+          "entry_x_m": 0.3128514211886307,
+          "is_actual_grille_gap": true,
+          "hits": [
+            {
+              "x_m": 0.22504561,
+              "face_index": 0,
+              "fan_triangle_index": 1,
+              "depth_from_entry_m": 0.08780581118863068,
+              "part": "left_radiator_turning_plenum",
+              "category": "candidate_turning_plenum_wall"
+            },
+            {
+              "x_m": 0.22133957483382785,
+              "face_index": 4,
+              "fan_triangle_index": 0,
+              "depth_from_entry_m": 0.09151184635480283,
+              "part": "left_radiator_turning_plenum",
+              "category": "candidate_turning_plenum_wall"
+            }
+          ]
+        },
+        {
+          "label": "no_armor_in_throat_window",
+          "sample_id": 619,
+          "source_uv_px": [
+            263.0,
+            173.5
+          ],
+          "local_left_uv_px": [
+            263.0,
+            173.5
+          ],
+          "world_yz_m": [
+            0.32097868217054265,
+            2.205765503875969
+          ],
+          "entry_x_m": 0.35772729789590246,
+          "is_actual_grille_gap": true,
+          "hits": [
+            {
+              "x_m": 0.22504561,
+              "face_index": 0,
+              "fan_triangle_index": 1,
+              "depth_from_entry_m": 0.13268168789590246,
+              "part": "left_radiator_turning_plenum",
+              "category": "candidate_turning_plenum_wall"
+            },
+            {
+              "x_m": 0.22150339563305754,
+              "face_index": 4,
+              "fan_triangle_index": 0,
+              "depth_from_entry_m": 0.13622390226284492,
+              "part": "left_radiator_turning_plenum",
+              "category": "candidate_turning_plenum_wall"
+            }
+          ]
+        },
+        {
+          "label": "no_armor_in_throat_window",
+          "sample_id": 1303,
+          "source_uv_px": [
+            263.0,
+            184.0
+          ],
+          "local_left_uv_px": [
+            263.0,
+            184.0
+          ],
+          "world_yz_m": [
+            0.32097868217054265,
+            2.1518410852713177
+          ],
+          "entry_x_m": 0.3649905869324473,
+          "is_actual_grille_gap": true,
+          "hits": [
+            {
+              "x_m": 0.22504561,
+              "face_index": 0,
+              "fan_triangle_index": 1,
+              "depth_from_entry_m": 0.13994497693244728,
+              "part": "left_radiator_turning_plenum",
+              "category": "candidate_turning_plenum_wall"
+            },
+            {
+              "x_m": 0.22150339563305754,
+              "face_index": 4,
+              "fan_triangle_index": 1,
+              "depth_from_entry_m": 0.14348719129938975,
+              "part": "left_radiator_turning_plenum",
+              "category": "candidate_turning_plenum_wall"
+            }
+          ]
+        },
+        {
+          "label": "no_armor_in_throat_window",
+          "sample_id": 1995,
+          "source_uv_px": [
+            254.5,
+            194.5
+          ],
+          "local_left_uv_px": [
+            254.5,
+            194.5
+          ],
+          "world_yz_m": [
+            0.36463178294573645,
+            2.0979166666666664
+          ],
+          "entry_x_m": 0.3603684939091916,
+          "is_actual_grille_gap": true,
+          "hits": [
+            {
+              "x_m": 0.22504561,
+              "face_index": 0,
+              "fan_triangle_index": 0,
+              "depth_from_entry_m": 0.13532288390919162,
+              "part": "left_radiator_turning_plenum",
+              "category": "candidate_turning_plenum_wall"
+            },
+            {
+              "x_m": 0.22131773206059724,
+              "face_index": 4,
+              "fan_triangle_index": 0,
+              "depth_from_entry_m": 0.13905076184859438,
+              "part": "left_radiator_turning_plenum",
+              "category": "candidate_turning_plenum_wall"
+            }
+          ]
+        },
+        {
+          "label": "no_armor_in_throat_window",
+          "sample_id": 2687,
+          "source_uv_px": [
+            268.5,
+            204.5
+          ],
+          "local_left_uv_px": [
+            268.5,
+            204.5
+          ],
+          "world_yz_m": [
+            0.29273255813953486,
+            2.0465600775193797
+          ],
+          "entry_x_m": 0.3559665005537097,
+          "is_actual_grille_gap": true,
+          "hits": [
+            {
+              "x_m": 0.22504561,
+              "face_index": 0,
+              "fan_triangle_index": 0,
+              "depth_from_entry_m": 0.1309208905537097,
+              "part": "left_radiator_turning_plenum",
+              "category": "candidate_turning_plenum_wall"
+            },
+            {
+              "x_m": 0.22162353088582598,
+              "face_index": 4,
+              "fan_triangle_index": 1,
+              "depth_from_entry_m": 0.13434296966788373,
+              "part": "left_radiator_turning_plenum",
+              "category": "candidate_turning_plenum_wall"
+            }
+          ]
+        }
+      ]
+    },
+    "right": {
+      "polygon_sample_count": 2688,
+      "actual_grille_gap_ray_count": 2008,
+      "grille_ray_count": 680,
+      "gap_rays_with_armor_ahead_or_within_throat": 0,
+      "gap_rays_with_armor_strictly_inside_0_to_72mm": 0,
+      "gap_rays_without_armor_ahead_or_within_throat": 2008,
+      "part_hit_summary": {
+        "right_radiator_turning_plenum": {
+          "category": "candidate_turning_plenum_wall",
+          "gap_ray_hit_count": 2008,
+          "depth_range_from_entry_m": [
+            0.08780581118863065,
+            0.1463249722717545
+          ],
+          "world_x_range_m": [
+            0.2213068106739819,
+            0.22504561000000003
+          ],
+          "local_left_uv_bbox_px": [
+            254.0,
+            271.0,
+            163.5,
+            204.5
+          ]
+        },
+        "right_vent_fastener_3": {
+          "category": "intake_frame_or_fastener",
+          "gap_ray_hit_count": 4,
+          "depth_range_from_entry_m": [
+            -0.013220100110742095,
+            -0.00900000044296767
+          ],
+          "world_x_range_m": [
+            0.3656268,
+            0.3696268
+          ],
+          "local_left_uv_bbox_px": [
+            268.5,
+            269.5,
+            203.0,
+            203.5
+          ]
+        }
+      },
+      "examples": [
+        {
+          "label": "no_armor_in_throat_window",
+          "sample_id": 0,
+          "source_uv_px": [
+            395.5,
+            163.5
+          ],
+          "local_left_uv_px": [
+            255.5,
+            163.5
+          ],
+          "world_yz_m": [
+            -0.3594961240310077,
+            2.2571220930232556
+          ],
+          "entry_x_m": 0.3128514211886307,
+          "is_actual_grille_gap": true,
+          "hits": [
+            {
+              "x_m": 0.22504561000000003,
+              "face_index": 0,
+              "fan_triangle_index": 0,
+              "depth_from_entry_m": 0.08780581118863065,
+              "part": "right_radiator_turning_plenum",
+              "category": "candidate_turning_plenum_wall"
+            },
+            {
+              "x_m": 0.22133957483382782,
+              "face_index": 4,
+              "fan_triangle_index": 1,
+              "depth_from_entry_m": 0.09151184635480286,
+              "part": "right_radiator_turning_plenum",
+              "category": "candidate_turning_plenum_wall"
+            }
+          ]
+        },
+        {
+          "label": "no_armor_in_throat_window",
+          "sample_id": 619,
+          "source_uv_px": [
+            388.0,
+            173.5
+          ],
+          "local_left_uv_px": [
+            263.0,
+            173.5
+          ],
+          "world_yz_m": [
+            -0.32097868217054265,
+            2.205765503875969
+          ],
+          "entry_x_m": 0.35772729789590246,
+          "is_actual_grille_gap": true,
+          "hits": [
+            {
+              "x_m": 0.22504561,
+              "face_index": 0,
+              "fan_triangle_index": 0,
+              "depth_from_entry_m": 0.13268168789590246,
+              "part": "right_radiator_turning_plenum",
+              "category": "candidate_turning_plenum_wall"
+            },
+            {
+              "x_m": 0.22150339563305754,
+              "face_index": 4,
+              "fan_triangle_index": 1,
+              "depth_from_entry_m": 0.13622390226284492,
+              "part": "right_radiator_turning_plenum",
+              "category": "candidate_turning_plenum_wall"
+            }
+          ]
+        },
+        {
+          "label": "no_armor_in_throat_window",
+          "sample_id": 1303,
+          "source_uv_px": [
+            388.0,
+            184.0
+          ],
+          "local_left_uv_px": [
+            263.0,
+            184.0
+          ],
+          "world_yz_m": [
+            -0.32097868217054265,
+            2.1518410852713177
+          ],
+          "entry_x_m": 0.3649905869324473,
+          "is_actual_grille_gap": true,
+          "hits": [
+            {
+              "x_m": 0.22504561,
+              "face_index": 0,
+              "fan_triangle_index": 1,
+              "depth_from_entry_m": 0.13994497693244728,
+              "part": "right_radiator_turning_plenum",
+              "category": "candidate_turning_plenum_wall"
+            },
+            {
+              "x_m": 0.22150339563305754,
+              "face_index": 4,
+              "fan_triangle_index": 1,
+              "depth_from_entry_m": 0.14348719129938975,
+              "part": "right_radiator_turning_plenum",
+              "category": "candidate_turning_plenum_wall"
+            }
+          ]
+        },
+        {
+          "label": "no_armor_in_throat_window",
+          "sample_id": 1995,
+          "source_uv_px": [
+            396.5,
+            194.5
+          ],
+          "local_left_uv_px": [
+            254.5,
+            194.5
+          ],
+          "world_yz_m": [
+            -0.36463178294573645,
+            2.0979166666666664
+          ],
+          "entry_x_m": 0.3603684939091916,
+          "is_actual_grille_gap": true,
+          "hits": [
+            {
+              "x_m": 0.22504561,
+              "face_index": 0,
+              "fan_triangle_index": 0,
+              "depth_from_entry_m": 0.13532288390919162,
+              "part": "right_radiator_turning_plenum",
+              "category": "candidate_turning_plenum_wall"
+            },
+            {
+              "x_m": 0.22131773206059724,
+              "face_index": 4,
+              "fan_triangle_index": 0,
+              "depth_from_entry_m": 0.13905076184859438,
+              "part": "right_radiator_turning_plenum",
+              "category": "candidate_turning_plenum_wall"
+            }
+          ]
+        },
+        {
+          "label": "no_armor_in_throat_window",
+          "sample_id": 2687,
+          "source_uv_px": [
+            382.5,
+            204.5
+          ],
+          "local_left_uv_px": [
+            268.5,
+            204.5
+          ],
+          "world_yz_m": [
+            -0.29273255813953486,
+            2.0465600775193797
+          ],
+          "entry_x_m": 0.3559665005537097,
+          "is_actual_grille_gap": true,
+          "hits": [
+            {
+              "x_m": 0.22504561,
+              "face_index": 0,
+              "fan_triangle_index": 1,
+              "depth_from_entry_m": 0.1309208905537097,
+              "part": "right_radiator_turning_plenum",
+              "category": "candidate_turning_plenum_wall"
+            },
+            {
+              "x_m": 0.22162353088582598,
+              "face_index": 4,
+              "fan_triangle_index": 0,
+              "depth_from_entry_m": 0.13434296966788373,
+              "part": "right_radiator_turning_plenum",
+              "category": "candidate_turning_plenum_wall"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "trace_file_sha256": "95b04b4e79b63bd9aa8d7b2eb0086cdd65e27f3c7d6d114178e70d025dcd9359",
+  "ray_map_sha256": "727a4d5a387d2d95616d62ebb9230b688fed40a6b93bbc5aca1a17cbc4486c39",
+  "limitation": "Geometric source cage check only. Candidate duct walls are distinguished by actual part names and construction, not proven airflow. A rear chamber wall is a legitimate geometric turn surface, not an open axial exhaust. Side outlet continuity and heat transfer are not evaluated.",
+  "schema": "gorilla_sampled_intake_armor_clearance_v1",
+  "checker_path": "scripts/evaluation/check_gorilla_intake_clearance.py",
+  "checker_sha256": "e29375248eba1483e6a7936783b0b1feb5d8ded42180eb37f8def205324526bb",
+  "sampling_scope": "Right uses the mirrored registered left opening, matching current model symmetry; it is not an independently traced original-right contour. No sub-grid or bevel guarantee.",
+  "sampled_intake_armor_clearance_pass": true,
+  "physics_accepted": false,
+  "thermal_accepted": false,
+  "artifact_files": {
+    "traces": "/home/ethan/Projects/Sai_Rotbots/artifacts/gorilla_v0_1/appearance_c_intake_check/intake_ray_traces.json",
+    "ray_map": "/home/ethan/Projects/Sai_Rotbots/artifacts/gorilla_v0_1/appearance_c_intake_check/intake_ray_map.png"
+  }
+}

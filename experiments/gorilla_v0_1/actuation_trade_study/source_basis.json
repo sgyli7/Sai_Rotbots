@@ -1,0 +1,74 @@
+{
+  "schema": "gorilla_actuation_source_basis_v1",
+  "robot_id": "gorilla_v0_1",
+  "recorded_date": "2026-10-02",
+  "status": "deferred_by_user_appearance_priority",
+  "reason": "User requires exact reconstruction of the sole design image before further engineering architecture work.",
+  "new_hardware_selected": false,
+  "architecture_comparison_completed": false,
+  "model_modified_by_this_study": false,
+  "physical_gate_closed": false,
+  "input_checkpoint": "gorilla_layout_b",
+  "input_files_sha256": {
+    "robots/gorilla_v0_1/configs/layout_b_spec.json": "3b47ba69542dd55c7ee66266d129fe60a4d3d8ff6c0c5e92d07342cd7fe588f3",
+    "robots/gorilla_v0_1/models/full/robot.json": "b6ed8e1fa0070473e72a7338ef8a882a14e7f458441dd891352555bc8ced80ea",
+    "robots/gorilla_v0_1/evidence/layout_b_screen.json": "594af216a586a82c5210b94f47a18725b2e173515e834b2c65a32eba4cd19578",
+    "robots/gorilla_v0_1/hardware/layout_b_mass_components.csv": "2d9558b65488a36f4adf02a710f6239101908c86238b46a0249e55c70a2d72fc"
+  },
+  "source_scope": "Official source pages/PDFs were opened and readable tables inspected. Complete installed assemblies and operating conditions were not verified. No supplier contact.",
+  "sources": [
+    {
+      "manufacturer": "Parker Hannifin",
+      "document": "HY08-1151 Series HMI",
+      "url": "https://www.parker.com/content/dam/Parker-com/Literature/Industrial-Cylinder/cylinder/cat/english/HY08-1151-2_NA_HMI.pdf",
+      "printed_pages_used": [1, 28],
+      "facts": {
+        "series_max_working_pressure_bar": 210,
+        "mass_reference_bore_mm": 40,
+        "mass_reference_rod_mm": 18,
+        "mass_reference_mounts": ["B", "BB", "SB"],
+        "zero_stroke_dry_mass_kg": 4.2,
+        "added_dry_mass_per_10mm_stroke_kg": 0.09,
+        "existing_150mm_stroke_dry_mass_reference_kg": 5.55
+      },
+      "exclusions": "Full joint/support/linkage, valves, hoses, fluid, pump, storage, sensors and cooling are not included in the dry cylinder mass."
+    },
+    {
+      "manufacturer": "Tecnotion",
+      "document": "Torque Brochure EN 2.5",
+      "url": "https://www.tecnotion.com/wp-content/uploads/2022/05/Torque_Brochure_EN_2-5.pdf",
+      "printed_pages_used": [20, 21, 35],
+      "sku": "QTR-A-160-34-Z",
+      "order_code": "10 8160",
+      "facts": {
+        "electromagnetic_kit_mass_excluding_cables_kg": 1.613,
+        "catalog_continuous_torque_nm": 15.3,
+        "continuous_condition_coil_temperature_c": 100,
+        "continuous_condition_mount_surface_temperature_c": 20,
+        "stator_od_mm": 160,
+        "max_axial_dimension_mm": 34.5
+      },
+      "exclusions": "No complete motor carrier, bearings, brake, driver, installed cooling or complete joint validation."
+    },
+    {
+      "manufacturer": "Harmonic Drive",
+      "document": "CSG-65-100-2UH official product page",
+      "url": "https://www.harmonicdrive.net/products/gear-units/gear-units/csg-2uh/csg-65-100-2uh",
+      "sku": "CSG-65-100-2UH",
+      "facts": {
+        "catalog_mass_kg": 20.9,
+        "rated_torque_l10_nm": 1236,
+        "average_input_speed_limit_rpm": 1900,
+        "allowable_output_moment_nm": 1860
+      },
+      "exclusions": "Catalog limits have their own conditions and do not certify a complete robot joint continuous operating point."
+    }
+  ],
+  "remaining_red_unknowns": [
+    "complete drive mass allocation",
+    "installed envelope and motion sweep",
+    "continuous torque-speed and thermal operating point",
+    "electrical supply and regeneration",
+    "hydraulic simultaneous flow and complete system thermal budget"
+  ]
+}

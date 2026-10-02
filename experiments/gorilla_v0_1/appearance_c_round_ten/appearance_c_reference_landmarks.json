@@ -1,0 +1,4866 @@
+{
+  "schema": "gorilla_appearance_reference_landmarks_v1",
+  "robot_id": "gorilla_v0_1",
+  "checkpoint_id": "gorilla_appearance_c_reference",
+  "created_by": "manual_reference_decomposition",
+  "source": {
+    "path": "design/concepts/aa3/user_confirmed_four_view.jpg",
+    "sha256": "079a148340d6bb94ac2bbf5e63851c1c6bbec02acde666047c2d52385ad8bc0a",
+    "image_dimensions_px": [
+      1280,
+      1280
+    ],
+    "authority": "sole_user_confirmed_appearance_reference",
+    "other_aa_images_used": false
+  },
+  "goal": "100 percent design-reference fidelity is the user goal, not a passed conclusion or a measured score.",
+  "measurement_contract": {
+    "coordinates": "Global source JPEG pixels; (u,v), origin top-left, u right, v down. xyxy bounds are approximate edge coordinates.",
+    "point_method": "Manually inspected original and temporary enlarged crops with 20 px grid; no generated redraw or alternative reference.",
+    "pixel_uncertainty": "Typically 2-4 px for a clear contour; 5-7 px for partial ring/occlusion. These are visual-selection ranges, not survey confidence intervals.",
+    "scale_m_per_front_pixel": 0.005135658914728682,
+    "height_assumption_m": 2.65,
+    "depth_calibrated": false,
+    "inertia_mass_structure_derived": false,
+    "profile_semantics": "Samples describe visible outlines/color boundaries. An open profile must remain open; closing across occlusion would invent hidden geometry. Closed blue/color patches may be occlusion-truncated visible regions, not complete part silhouettes.",
+    "curve_policy": "Retain deliberate sharp ridges/corner breaks; interpolate curved spans with shallow controlled curvature. Shallow bevels and broad multi-facet curved faces must not be replaced by an ellipsoid or universal cylinder.",
+    "material_color_policy": "Ivory, vivid azure blue, warm gold/yellow, and layered near-black; no precise material RGB/PBR values are claimed from shaded JPEG pixels.",
+    "joint_policy": "Visible bearing cap centers are appearance landmarks. They are not enough to determine physical multi-axis mechanism, axle depth or hidden knee origin."
+  },
+  "views": {
+    "front": {
+      "label": "FRONT",
+      "frame_bbox_xyxy_px": [
+        21,
+        64,
+        629,
+        656
+      ],
+      "robot_bbox_xyxy_px_approx": [
+        138,
+        87,
+        513,
+        603
+      ],
+      "centerline_u_px_approx": 325.5,
+      "ground_v_px_approx": 603,
+      "height_px_approx": 516,
+      "visual_template_map": {
+        "positive_y": "sheet right, robot anatomical left",
+        "y_m_formula": "(u - 325.5) * (2.65 / 516)",
+        "z_m_formula": "(603 - v) * (2.65 / 516)",
+        "x_m": null,
+        "warning": "Projected visual fit only; not manufactured dimensions."
+      },
+      "profiles": [
+        {
+          "id": "chest_ivory_outer",
+          "material_role": "ivory",
+          "global_uv_px": [
+            [
+              254,
+              98
+            ],
+            [
+              274,
+              91
+            ],
+            [
+              300,
+              87
+            ],
+            [
+              326,
+              87
+            ],
+            [
+              352,
+              89
+            ],
+            [
+              378,
+              94
+            ],
+            [
+              397,
+              102
+            ],
+            [
+              386,
+              124
+            ],
+            [
+              374,
+              146
+            ],
+            [
+              365,
+              165
+            ],
+            [
+              355,
+              194
+            ],
+            [
+              347,
+              224
+            ],
+            [
+              339,
+              252
+            ],
+            [
+              333,
+              262
+            ],
+            [
+              313,
+              263
+            ],
+            [
+              305,
+              256
+            ],
+            [
+              298,
+              229
+            ],
+            [
+              290,
+              201
+            ],
+            [
+              280,
+              174
+            ],
+            [
+              273,
+              151
+            ],
+            [
+              262,
+              130
+            ],
+            [
+              255,
+              111
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Continuous headless chest shield. The narrow bottom belongs to the ivory shield, not a neck or separate helmet. Preserve crown arc, shoulder cutaways and the approximately 25 px bottom width.",
+          "feature_edges_global_uv_px": [
+            [
+              [
+                267,
+                100
+              ],
+              [
+                286,
+                113
+              ],
+              [
+                357,
+                113
+              ],
+              [
+                380,
+                99
+              ]
+            ],
+            [
+              [
+                285,
+                128
+              ],
+              [
+                301,
+                123
+              ],
+              [
+                347,
+                123
+              ],
+              [
+                365,
+                128
+              ]
+            ],
+            [
+              [
+                298,
+                177
+              ],
+              [
+                307,
+                216
+              ],
+              [
+                315,
+                257
+              ]
+            ],
+            [
+              [
+                353,
+                177
+              ],
+              [
+                342,
+                219
+              ],
+              [
+                332,
+                257
+              ]
+            ]
+          ]
+        },
+        {
+          "id": "crown_ivory_inset",
+          "material_role": "ivory",
+          "global_uv_px": [
+            [
+              268,
+              98
+            ],
+            [
+              286,
+              113
+            ],
+            [
+              357,
+              113
+            ],
+            [
+              380,
+              99
+            ],
+            [
+              361,
+              92
+            ],
+            [
+              303,
+              92
+            ],
+            [
+              281,
+              95
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Shallow crown plate with clipped corners and a fine seam; the long shield begins below this plate.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "chest_central_light",
+          "material_role": "yellow_amber",
+          "global_uv_px": [
+            [
+              320,
+              179
+            ],
+            [
+              329,
+              179
+            ],
+            [
+              329,
+              221
+            ],
+            [
+              319,
+              221
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Narrow recessed vertical light in dark border. White shield surface continues around it.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "left_vent_ivory_mount",
+          "material_role": "ivory",
+          "global_uv_px": [
+            [
+              253,
+              154
+            ],
+            [
+              271,
+              156
+            ],
+            [
+              278,
+              163
+            ],
+            [
+              280,
+              202
+            ],
+            [
+              275,
+              211
+            ],
+            [
+              254,
+              214
+            ],
+            [
+              244,
+              211
+            ],
+            [
+              241,
+              203
+            ],
+            [
+              241,
+              166
+            ],
+            [
+              245,
+              157
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Visible mount surrounds embedded dark slatted opening. A rounded gold bezel sits inside the ivory edge, not in front as a large box.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "left_vent_gold_bezel",
+          "material_role": "gold",
+          "global_uv_px": [
+            [
+              255,
+              159
+            ],
+            [
+              268,
+              159
+            ],
+            [
+              273,
+              164
+            ],
+            [
+              275,
+              200
+            ],
+            [
+              271,
+              208
+            ],
+            [
+              255,
+              210
+            ],
+            [
+              250,
+              205
+            ],
+            [
+              249,
+              166
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Rounded rectangular bezel, unequal contour due illustration; do not replace with a sharp square extrusion.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "left_vent_black_opening",
+          "material_role": "dark",
+          "global_uv_px": [
+            [
+              255,
+              163
+            ],
+            [
+              267,
+              163
+            ],
+            [
+              270,
+              166
+            ],
+            [
+              272,
+              200
+            ],
+            [
+              269,
+              205
+            ],
+            [
+              256,
+              205
+            ],
+            [
+              253,
+              202
+            ],
+            [
+              253,
+              167
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Approximately 11 visible horizontal slats. Count is visual, not an airflow or thermal claim.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "left_blue_chest_cheek_visible",
+          "material_role": "blue",
+          "global_uv_px": [
+            [
+              277,
+              162
+            ],
+            [
+              286,
+              184
+            ],
+            [
+              292,
+              212
+            ],
+            [
+              303,
+              250
+            ],
+            [
+              279,
+              243
+            ],
+            [
+              272,
+              238
+            ],
+            [
+              251,
+              237
+            ],
+            [
+              243,
+              231
+            ],
+            [
+              240,
+              216
+            ],
+            [
+              252,
+              211
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 4,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Lower blue cheek narrows under the ivory shield. Boundary near the vent is partially occluded; this polygon captures only the visible blue patch.",
+          "feature_edges_global_uv_px": [
+            [
+              [
+                273,
+                196
+              ],
+              [
+                279,
+                234
+              ]
+            ],
+            [
+              [
+                251,
+                216
+              ],
+              [
+                270,
+                219
+              ]
+            ]
+          ]
+        },
+        {
+          "id": "left_blue_shoulder_sweep",
+          "material_role": "blue",
+          "global_uv_px": [
+            [
+              214,
+              109
+            ],
+            [
+              237,
+              102
+            ],
+            [
+              252,
+              101
+            ],
+            [
+              263,
+              128
+            ],
+            [
+              272,
+              143
+            ],
+            [
+              280,
+              149
+            ],
+            [
+              275,
+              155
+            ],
+            [
+              255,
+              150
+            ],
+            [
+              244,
+              145
+            ],
+            [
+              231,
+              133
+            ],
+            [
+              213,
+              124
+            ],
+            [
+              211,
+              117
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "A swept shoulder ribbon with a broad rear/top shoulder lip, diagonal ridge and taper to chest. This is not a spherical shoulder cap.",
+          "feature_edges_global_uv_px": [
+            [
+              [
+                215,
+                121
+              ],
+              [
+                250,
+                128
+              ],
+              [
+                273,
+                144
+              ]
+            ],
+            [
+              [
+                227,
+                108
+              ],
+              [
+                251,
+                111
+              ]
+            ]
+          ]
+        },
+        {
+          "id": "left_upper_arm_ivory_guard_visible_arc",
+          "material_role": "ivory",
+          "global_uv_px": [
+            [
+              204,
+              127
+            ],
+            [
+              216,
+              131
+            ],
+            [
+              228,
+              143
+            ],
+            [
+              233,
+              156
+            ],
+            [
+              230,
+              174
+            ],
+            [
+              217,
+              187
+            ],
+            [
+              203,
+              198
+            ]
+          ],
+          "closed_visible_region": false,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Arc is visible; hidden circle and rear guard thickness are not reconstructed here. Blue outer guard covers the lower outer portion.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "left_upper_arm_blue_outer_guard",
+          "material_role": "blue",
+          "global_uv_px": [
+            [
+              175,
+              151
+            ],
+            [
+              183,
+              148
+            ],
+            [
+              190,
+              165
+            ],
+            [
+              198,
+              186
+            ],
+            [
+              201,
+              199
+            ],
+            [
+              184,
+              211
+            ],
+            [
+              172,
+              215
+            ],
+            [
+              156,
+              209
+            ],
+            [
+              152,
+              204
+            ],
+            [
+              160,
+              181
+            ],
+            [
+              167,
+              164
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Asymmetric open-bottom shoulder armor, with a bright broad facet on the upper/inner face and dark lower mouth.",
+          "feature_edges_global_uv_px": [
+            [
+              [
+                178,
+                155
+              ],
+              [
+                185,
+                174
+              ],
+              [
+                193,
+                194
+              ]
+            ]
+          ]
+        },
+        {
+          "id": "left_upper_arm_lower_ivory_guard",
+          "material_role": "ivory",
+          "global_uv_px": [
+            [
+              214,
+              192
+            ],
+            [
+              228,
+              200
+            ],
+            [
+              232,
+              216
+            ],
+            [
+              224,
+              240
+            ],
+            [
+              216,
+              258
+            ],
+            [
+              208,
+              263
+            ],
+            [
+              187,
+              251
+            ],
+            [
+              180,
+              240
+            ],
+            [
+              188,
+              217
+            ],
+            [
+              197,
+              201
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Tapered angled guard overlaps the dark upper arm. Sloped ends and small yellow marker are part of its identity, not a plain straight tube.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "left_elbow_blue_yoke_visible",
+          "material_role": "blue",
+          "global_uv_px": [
+            [
+              160,
+              227
+            ],
+            [
+              178,
+              230
+            ],
+            [
+              187,
+              244
+            ],
+            [
+              180,
+              254
+            ],
+            [
+              174,
+              243
+            ],
+            [
+              158,
+              238
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 4,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "A separate short blue bracket around a visible dark/gold elbow bearing; gap remains open.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "left_forearm_blue_outer",
+          "material_role": "blue",
+          "global_uv_px": [
+            [
+              146,
+              261
+            ],
+            [
+              158,
+              264
+            ],
+            [
+              176,
+              274
+            ],
+            [
+              194,
+              284
+            ],
+            [
+              205,
+              292
+            ],
+            [
+              207,
+              304
+            ],
+            [
+              202,
+              321
+            ],
+            [
+              195,
+              341
+            ],
+            [
+              188,
+              359
+            ],
+            [
+              163,
+              361
+            ],
+            [
+              145,
+              369
+            ],
+            [
+              141,
+              354
+            ],
+            [
+              138,
+              326
+            ],
+            [
+              138,
+              302
+            ],
+            [
+              141,
+              278
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Outward-biased broad shell with slanted upper opening, flat/radiused face bands and a narrower wrist mouth. Preserve its asymmetric contour.",
+          "feature_edges_global_uv_px": [
+            [
+              [
+                147,
+                262
+              ],
+              [
+                170,
+                269
+              ],
+              [
+                192,
+                282
+              ],
+              [
+                205,
+                292
+              ]
+            ],
+            [
+              [
+                166,
+                273
+              ],
+              [
+                159,
+                320
+              ],
+              [
+                151,
+                359
+              ]
+            ],
+            [
+              [
+                187,
+                283
+              ],
+              [
+                177,
+                333
+              ],
+              [
+                168,
+                359
+              ]
+            ],
+            [
+              [
+                149,
+                344
+              ],
+              [
+                163,
+                337
+              ],
+              [
+                181,
+                341
+              ],
+              [
+                195,
+                335
+              ]
+            ]
+          ]
+        },
+        {
+          "id": "left_forearm_gold_marker",
+          "material_role": "gold",
+          "global_uv_px": [
+            [
+              169,
+              339
+            ],
+            [
+              175,
+              341
+            ],
+            [
+              172,
+              351
+            ],
+            [
+              167,
+              351
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Small marker straddles the lower diagonal cuff region; does not define a raised antenna.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "left_palm_outer_ivory_guard",
+          "material_role": "ivory",
+          "global_uv_px": [
+            [
+              155,
+              369
+            ],
+            [
+              166,
+              366
+            ],
+            [
+              172,
+              373
+            ],
+            [
+              168,
+              390
+            ],
+            [
+              151,
+              401
+            ],
+            [
+              141,
+              395
+            ],
+            [
+              144,
+              382
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Outer palm shell is angled and separated from the thumb shell by dark mechanics.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "left_thumb_ivory_guard",
+          "material_role": "ivory",
+          "global_uv_px": [
+            [
+              179,
+              370
+            ],
+            [
+              188,
+              369
+            ],
+            [
+              195,
+              385
+            ],
+            [
+              192,
+              391
+            ],
+            [
+              180,
+              388
+            ],
+            [
+              174,
+              379
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Thumb opposes the three long fingers. Its dark tip points inward/down and is not a fourth straight picket.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "left_hand_visible_curl_envelope",
+          "material_role": "dark",
+          "global_uv_px": [
+            [
+              149,
+              399
+            ],
+            [
+              170,
+              392
+            ],
+            [
+              181,
+              403
+            ],
+            [
+              185,
+              419
+            ],
+            [
+              180,
+              427
+            ],
+            [
+              168,
+              437
+            ],
+            [
+              155,
+              434
+            ],
+            [
+              145,
+              425
+            ],
+            [
+              139,
+              414
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 4,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Three long fingers have ivory proximal shields and segmented dark bent tips; dark palm knuckles remain visible. Envelope does not supply unseen tendon or hinge axes.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "left_hip_ivory_connector",
+          "material_role": "ivory",
+          "global_uv_px": [
+            [
+              278,
+              242
+            ],
+            [
+              291,
+              240
+            ],
+            [
+              303,
+              256
+            ],
+            [
+              302,
+              267
+            ],
+            [
+              293,
+              269
+            ],
+            [
+              283,
+              260
+            ],
+            [
+              270,
+              255
+            ],
+            [
+              267,
+              249
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Small sloped connector bridges chest and hip joint. Pair remains separate, revealing multiple dark bearing layers.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "pelvis_front_yellow_cartridge",
+          "material_role": "gold",
+          "global_uv_px": [
+            [
+              309,
+              274
+            ],
+            [
+              318,
+              280
+            ],
+            [
+              335,
+              279
+            ],
+            [
+              345,
+              273
+            ],
+            [
+              350,
+              281
+            ],
+            [
+              346,
+              310
+            ],
+            [
+              339,
+              338
+            ],
+            [
+              333,
+              346
+            ],
+            [
+              315,
+              346
+            ],
+            [
+              308,
+              338
+            ],
+            [
+              301,
+              308
+            ],
+            [
+              300,
+              282
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Narrow tapered front cartridge, inset dark slot near bottom. Side hip mechanics remain dark and exposed.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "left_thigh_blue_outer",
+          "material_role": "blue",
+          "global_uv_px": [
+            [
+              264,
+              268
+            ],
+            [
+              276,
+              268
+            ],
+            [
+              286,
+              280
+            ],
+            [
+              292,
+              301
+            ],
+            [
+              299,
+              330
+            ],
+            [
+              300,
+              347
+            ],
+            [
+              291,
+              368
+            ],
+            [
+              281,
+              377
+            ],
+            [
+              269,
+              351
+            ],
+            [
+              243,
+              343
+            ],
+            [
+              224,
+              362
+            ],
+            [
+              218,
+              374
+            ],
+            [
+              213,
+              367
+            ],
+            [
+              208,
+              349
+            ],
+            [
+              213,
+              324
+            ],
+            [
+              224,
+              295
+            ],
+            [
+              237,
+              276
+            ],
+            [
+              249,
+              270
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Broad curved faceted thigh with narrow hip attachment and a large asymmetric lower yellow insert. Pair splays outward toward knees.",
+          "feature_edges_global_uv_px": [
+            [
+              [
+                258,
+                275
+              ],
+              [
+                251,
+                311
+              ],
+              [
+                243,
+                343
+              ]
+            ],
+            [
+              [
+                270,
+                281
+              ],
+              [
+                268,
+                332
+              ],
+              [
+                269,
+                351
+              ]
+            ]
+          ]
+        },
+        {
+          "id": "left_knee_yellow_insert",
+          "material_role": "gold",
+          "global_uv_px": [
+            [
+              237,
+              342
+            ],
+            [
+              263,
+              346
+            ],
+            [
+              274,
+              365
+            ],
+            [
+              282,
+              383
+            ],
+            [
+              269,
+              402
+            ],
+            [
+              260,
+              393
+            ],
+            [
+              239,
+              391
+            ],
+            [
+              233,
+              400
+            ],
+            [
+              224,
+              384
+            ],
+            [
+              224,
+              371
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Yellow polygon breaks out of the thigh and wraps the knee. Bottom notch exposes a separate small dark pad.",
+          "feature_edges_global_uv_px": [
+            [
+              [
+                247,
+                348
+              ],
+              [
+                249,
+                387
+              ]
+            ],
+            [
+              [
+                225,
+                381
+              ],
+              [
+                238,
+                391
+              ],
+              [
+                260,
+                393
+              ]
+            ]
+          ]
+        },
+        {
+          "id": "left_middle_leg_blue_outer",
+          "material_role": "blue",
+          "global_uv_px": [
+            [
+              228,
+              429
+            ],
+            [
+              240,
+              424
+            ],
+            [
+              260,
+              426
+            ],
+            [
+              279,
+              440
+            ],
+            [
+              282,
+              455
+            ],
+            [
+              271,
+              475
+            ],
+            [
+              255,
+              496
+            ],
+            [
+              246,
+              503
+            ],
+            [
+              230,
+              503
+            ],
+            [
+              215,
+              483
+            ],
+            [
+              206,
+              464
+            ],
+            [
+              206,
+              446
+            ],
+            [
+              213,
+              435
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "A distinct forward face, broad upper opening and clipped lower corner; black side mechanics are visible on both sides.",
+          "feature_edges_global_uv_px": [
+            [
+              [
+                228,
+                435
+              ],
+              [
+                247,
+                442
+              ],
+              [
+                266,
+                434
+              ]
+            ],
+            [
+              [
+                247,
+                442
+              ],
+              [
+                240,
+                482
+              ],
+              [
+                239,
+                499
+              ]
+            ]
+          ]
+        },
+        {
+          "id": "left_lower_leg_blue_bridge",
+          "material_role": "blue",
+          "global_uv_px": [
+            [
+              220,
+              512
+            ],
+            [
+              241,
+              512
+            ],
+            [
+              239,
+              530
+            ],
+            [
+              233,
+              540
+            ],
+            [
+              211,
+              538
+            ],
+            [
+              209,
+              531
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Short slanted bridge between the second and ankle bearing groups, with two parallel cheek sides and open dark hinge gap.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "left_foot_ivory_toe_upper",
+          "material_role": "ivory",
+          "global_uv_px": [
+            [
+              190,
+              557
+            ],
+            [
+              228,
+              557
+            ],
+            [
+              240,
+              572
+            ],
+            [
+              226,
+              579
+            ],
+            [
+              157,
+              580
+            ],
+            [
+              170,
+              568
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Broad low toe cover, bevel breaks and an overlapping upper step; not a single uniform wedge.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "left_foot_ivory_side_rail",
+          "material_role": "ivory",
+          "global_uv_px": [
+            [
+              225,
+              579
+            ],
+            [
+              250,
+              571
+            ],
+            [
+              258,
+              580
+            ],
+            [
+              259,
+              595
+            ],
+            [
+              235,
+              601
+            ],
+            [
+              218,
+              596
+            ],
+            [
+              211,
+              584
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Visible ivory side rail is separate from central toe and black heel block.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "left_foot_dark_front_bumper",
+          "material_role": "dark",
+          "global_uv_px": [
+            [
+              158,
+              581
+            ],
+            [
+              211,
+              582
+            ],
+            [
+              226,
+              599
+            ],
+            [
+              149,
+              600
+            ],
+            [
+              151,
+              591
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Dark low front bumper/sole, visibly clipped lower corners.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "left_foot_dark_heel_block",
+          "material_role": "dark",
+          "global_uv_px": [
+            [
+              248,
+              565
+            ],
+            [
+              263,
+              564
+            ],
+            [
+              270,
+              592
+            ],
+            [
+              264,
+              599
+            ],
+            [
+              253,
+              599
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Rear dark block remains higher than the fore sole; it is not a small flat black stripe.",
+          "feature_edges_global_uv_px": []
+        }
+      ],
+      "joint_landmarks": [
+        {
+          "id": "viewer_left_shoulder_bearing",
+          "global_uv_px": [
+            225,
+            157
+          ],
+          "semantic_role": "visible dark bearing group center",
+          "uncertainty_px": 5,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "viewer_left_elbow_bearing",
+          "global_uv_px": [
+            169,
+            252
+          ],
+          "semantic_role": "visible gold-ring cap center",
+          "uncertainty_px": 3,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "viewer_left_wrist_group",
+          "global_uv_px": [
+            166,
+            370
+          ],
+          "semantic_role": "dark shell mouth and hand base",
+          "uncertainty_px": 4,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "viewer_left_hip_primary_cap",
+          "global_uv_px": [
+            280,
+            277
+          ],
+          "semantic_role": "visible hip bearing cap below ivory connector",
+          "uncertainty_px": 4,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "viewer_left_thigh_outer_cap",
+          "global_uv_px": [
+            230,
+            293
+          ],
+          "semantic_role": "upper leg outer sloped circular cap",
+          "uncertainty_px": 5,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "viewer_left_knee_outer_ring",
+          "global_uv_px": [
+            216,
+            407
+          ],
+          "semantic_role": "viewer-left endpoint of transverse knee bearing group",
+          "uncertainty_px": 3,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "viewer_left_knee_inner_ring",
+          "global_uv_px": [
+            276,
+            414
+          ],
+          "semantic_role": "viewer-right endpoint of same group",
+          "uncertainty_px": 3,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "viewer_left_low_fold_outer_ring",
+          "global_uv_px": [
+            209,
+            496
+          ],
+          "semantic_role": "outer visible lower fold cap",
+          "uncertainty_px": 3,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "viewer_left_low_fold_inner_ring",
+          "global_uv_px": [
+            264,
+            500
+          ],
+          "semantic_role": "inner visible lower fold cap",
+          "uncertainty_px": 3,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "viewer_left_ankle_outer_ring",
+          "global_uv_px": [
+            194,
+            547
+          ],
+          "semantic_role": "outer ankle cap",
+          "uncertainty_px": 3,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "viewer_left_ankle_inner_ring",
+          "global_uv_px": [
+            249,
+            549
+          ],
+          "semantic_role": "inner ankle cap",
+          "uncertainty_px": 3,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "viewer_right_elbow_bearing",
+          "global_uv_px": [
+            484,
+            252
+          ],
+          "semantic_role": "visible gold-ring cap center",
+          "uncertainty_px": 3,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "viewer_right_wrist_group",
+          "global_uv_px": [
+            488,
+            370
+          ],
+          "semantic_role": "dark shell mouth and hand base",
+          "uncertainty_px": 4,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "viewer_right_hip_primary_cap",
+          "global_uv_px": [
+            371,
+            277
+          ],
+          "semantic_role": "visible hip bearing cap below ivory connector",
+          "uncertainty_px": 4,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "viewer_right_knee_outer_ring",
+          "global_uv_px": [
+            434,
+            410
+          ],
+          "semantic_role": "outer transverse knee bearing cap",
+          "uncertainty_px": 3,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "viewer_right_knee_inner_ring",
+          "global_uv_px": [
+            372,
+            414
+          ],
+          "semantic_role": "inner transverse knee bearing cap",
+          "uncertainty_px": 3,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "viewer_right_low_fold_outer_ring",
+          "global_uv_px": [
+            435,
+            498
+          ],
+          "semantic_role": "outer lower fold cap",
+          "uncertainty_px": 3,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "viewer_right_low_fold_inner_ring",
+          "global_uv_px": [
+            382,
+            501
+          ],
+          "semantic_role": "inner lower fold cap",
+          "uncertainty_px": 3,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "viewer_right_ankle_outer_ring",
+          "global_uv_px": [
+            450,
+            547
+          ],
+          "semantic_role": "outer ankle cap",
+          "uncertainty_px": 3,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "viewer_right_ankle_inner_ring",
+          "global_uv_px": [
+            397,
+            549
+          ],
+          "semantic_role": "inner ankle cap",
+          "uncertainty_px": 3,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        }
+      ]
+    },
+    "left": {
+      "label": "LEFT",
+      "frame_bbox_xyxy_px": [
+        650,
+        64,
+        1258,
+        656
+      ],
+      "robot_bbox_xyxy_px_approx": [
+        854,
+        85,
+        1058,
+        604
+      ],
+      "ground_v_px_approx": 602,
+      "height_px_approx": 517,
+      "projection_note": "Different apparent pose; body/leg overlap and perspective are not calibrated. Positive forward is toward sheet left. Use contour relationships, not a physical depth contract.",
+      "profiles": [
+        {
+          "id": "chest_ivory_forward_outer_arc",
+          "material_role": "ivory",
+          "global_uv_px": [
+            [
+              1010,
+              85
+            ],
+            [
+              986,
+              87
+            ],
+            [
+              949,
+              96
+            ],
+            [
+              918,
+              106
+            ],
+            [
+              891,
+              120
+            ],
+            [
+              876,
+              136
+            ],
+            [
+              855,
+              162
+            ],
+            [
+              861,
+              184
+            ],
+            [
+              871,
+              218
+            ],
+            [
+              888,
+              248
+            ],
+            [
+              907,
+              271
+            ],
+            [
+              918,
+              274
+            ]
+          ],
+          "closed_visible_region": false,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Visible front/crown side boundary. Physical +X is toward sheet left in LEFT. Do not use these sampled pixels as calibrated manufacturing depth.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "chest_ivory_rear_outer_arc",
+          "material_role": "ivory",
+          "global_uv_px": [
+            [
+              1010,
+              85
+            ],
+            [
+              1025,
+              93
+            ],
+            [
+              1041,
+              111
+            ],
+            [
+              1057,
+              135
+            ],
+            [
+              1058,
+              165
+            ],
+            [
+              1055,
+              202
+            ],
+            [
+              1048,
+              232
+            ],
+            [
+              1036,
+              254
+            ],
+            [
+              1028,
+              259
+            ]
+          ],
+          "closed_visible_region": false,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Visible back arc; lower continuation is occluded by arm/hip. Do not close with invented hidden material.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "shoulder_blue_sweep_visible",
+          "material_role": "blue",
+          "global_uv_px": [
+            [
+              907,
+              147
+            ],
+            [
+              925,
+              131
+            ],
+            [
+              954,
+              112
+            ],
+            [
+              989,
+              101
+            ],
+            [
+              1008,
+              98
+            ],
+            [
+              1020,
+              110
+            ],
+            [
+              1030,
+              132
+            ],
+            [
+              1027,
+              145
+            ],
+            [
+              1018,
+              150
+            ],
+            [
+              1008,
+              131
+            ],
+            [
+              995,
+              123
+            ],
+            [
+              969,
+              129
+            ],
+            [
+              942,
+              143
+            ],
+            [
+              925,
+              158
+            ],
+            [
+              909,
+              161
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Swept top lip over dark shoulder bearing. Polygon includes visible blue face; inner shoulder mechanism occupies the curved cutout.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "side_vent_ivory_mount",
+          "material_role": "ivory",
+          "global_uv_px": [
+            [
+              906,
+              164
+            ],
+            [
+              934,
+              161
+            ],
+            [
+              941,
+              166
+            ],
+            [
+              941,
+              218
+            ],
+            [
+              935,
+              223
+            ],
+            [
+              912,
+              220
+            ],
+            [
+              903,
+              213
+            ],
+            [
+              900,
+              178
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "In LEFT the vent face turns away; only gold vertical bezel edge and ivory support depth are visible. Its thickness must be constrained with FRONT/TOP rather than extruded as an isolated box.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "upper_arm_ivory_guard_visible_arc",
+          "material_role": "ivory",
+          "global_uv_px": [
+            [
+              970,
+              198
+            ],
+            [
+              958,
+              186
+            ],
+            [
+              949,
+              172
+            ],
+            [
+              951,
+              155
+            ],
+            [
+              962,
+              141
+            ],
+            [
+              978,
+              134
+            ],
+            [
+              993,
+              132
+            ],
+            [
+              1008,
+              137
+            ],
+            [
+              1021,
+              151
+            ]
+          ],
+          "closed_visible_region": false,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "White shoulder bearing cover is a curved multi-facet guard interrupted by blue armor, not a complete visible sphere.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "upper_arm_blue_outer_guard",
+          "material_role": "blue",
+          "global_uv_px": [
+            [
+              982,
+              159
+            ],
+            [
+              996,
+              153
+            ],
+            [
+              1009,
+              157
+            ],
+            [
+              1020,
+              171
+            ],
+            [
+              1028,
+              190
+            ],
+            [
+              1032,
+              205
+            ],
+            [
+              1026,
+              215
+            ],
+            [
+              1017,
+              208
+            ],
+            [
+              1007,
+              204
+            ],
+            [
+              990,
+              207
+            ],
+            [
+              981,
+              212
+            ],
+            [
+              973,
+              201
+            ],
+            [
+              970,
+              195
+            ],
+            [
+              977,
+              184
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Open bottom leaves dark linkage and blue elbow bracket visible.",
+          "feature_edges_global_uv_px": [
+            [
+              [
+                991,
+                158
+              ],
+              [
+                1001,
+                181
+              ],
+              [
+                1015,
+                200
+              ]
+            ]
+          ]
+        },
+        {
+          "id": "forearm_blue_outer",
+          "material_role": "blue",
+          "global_uv_px": [
+            [
+              1033,
+              263
+            ],
+            [
+              1043,
+              261
+            ],
+            [
+              1048,
+              270
+            ],
+            [
+              1047,
+              292
+            ],
+            [
+              1040,
+              316
+            ],
+            [
+              1032,
+              337
+            ],
+            [
+              1015,
+              357
+            ],
+            [
+              1002,
+              374
+            ],
+            [
+              987,
+              366
+            ],
+            [
+              972,
+              359
+            ],
+            [
+              961,
+              355
+            ],
+            [
+              958,
+              345
+            ],
+            [
+              961,
+              322
+            ],
+            [
+              967,
+              305
+            ],
+            [
+              990,
+              288
+            ],
+            [
+              1014,
+              275
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Side silhouette is long, slanted and bowed rearward at the shoulder end. A beveled/curved shell with several face bands is required.",
+          "feature_edges_global_uv_px": [
+            [
+              [
+                973,
+                301
+              ],
+              [
+                984,
+                310
+              ],
+              [
+                979,
+                337
+              ],
+              [
+                969,
+                357
+              ]
+            ],
+            [
+              [
+                1002,
+                291
+              ],
+              [
+                1014,
+                296
+              ],
+              [
+                1003,
+                336
+              ],
+              [
+                993,
+                368
+              ]
+            ]
+          ]
+        },
+        {
+          "id": "thigh_blue_forward_visible_edge",
+          "material_role": "blue",
+          "global_uv_px": [
+            [
+              940,
+              287
+            ],
+            [
+              927,
+              301
+            ],
+            [
+              916,
+              318
+            ],
+            [
+              906,
+              334
+            ],
+            [
+              898,
+              349
+            ]
+          ],
+          "closed_visible_region": false,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Forward part of upper thigh is visible; upper/rear surface is occluded by forearm. This edge supports a Z-shaped appearance but does not fix the hidden knee axis.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "thigh_blue_lower_visible_edge",
+          "material_role": "blue",
+          "global_uv_px": [
+            [
+              901,
+              349
+            ],
+            [
+              914,
+              369
+            ],
+            [
+              929,
+              382
+            ],
+            [
+              942,
+              376
+            ],
+            [
+              953,
+              364
+            ]
+          ],
+          "closed_visible_region": false,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Visible blue/yellow interface and lower thigh contour. Central upper-leg continuation is occluded.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "knee_yellow_insert",
+          "material_role": "gold",
+          "global_uv_px": [
+            [
+              893,
+              349
+            ],
+            [
+              906,
+              350
+            ],
+            [
+              915,
+              366
+            ],
+            [
+              927,
+              381
+            ],
+            [
+              923,
+              395
+            ],
+            [
+              914,
+              409
+            ],
+            [
+              903,
+              408
+            ],
+            [
+              894,
+              400
+            ],
+            [
+              879,
+              392
+            ],
+            [
+              876,
+              386
+            ],
+            [
+              882,
+              367
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Forward shield over the knee linkage; the yellow centroid is not the knee rotation center.",
+          "feature_edges_global_uv_px": [
+            [
+              [
+                891,
+                354
+              ],
+              [
+                887,
+                379
+              ],
+              [
+                893,
+                395
+              ]
+            ],
+            [
+              [
+                901,
+                355
+              ],
+              [
+                898,
+                381
+              ],
+              [
+                905,
+                402
+              ]
+            ]
+          ]
+        },
+        {
+          "id": "middle_leg_blue_outer",
+          "material_role": "blue",
+          "global_uv_px": [
+            [
+              935,
+              430
+            ],
+            [
+              949,
+              434
+            ],
+            [
+              965,
+              445
+            ],
+            [
+              982,
+              458
+            ],
+            [
+              982,
+              471
+            ],
+            [
+              969,
+              484
+            ],
+            [
+              968,
+              501
+            ],
+            [
+              956,
+              506
+            ],
+            [
+              945,
+              494
+            ],
+            [
+              931,
+              478
+            ],
+            [
+              915,
+              458
+            ],
+            [
+              909,
+              446
+            ],
+            [
+              916,
+              433
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Middle leg sweeps back toward the low fold, with forward clipped shell and open rear mechanical layer.",
+          "feature_edges_global_uv_px": [
+            [
+              [
+                918,
+                437
+              ],
+              [
+                941,
+                451
+              ],
+              [
+                963,
+                457
+              ]
+            ],
+            [
+              [
+                941,
+                451
+              ],
+              [
+                958,
+                482
+              ],
+              [
+                959,
+                501
+              ]
+            ]
+          ]
+        },
+        {
+          "id": "middle_leg_blue_rear_cap_visible",
+          "material_role": "blue",
+          "global_uv_px": [
+            [
+              1005,
+              437
+            ],
+            [
+              1019,
+              454
+            ],
+            [
+              1016,
+              471
+            ],
+            [
+              1007,
+              477
+            ],
+            [
+              1003,
+              463
+            ],
+            [
+              994,
+              447
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Separate rear cheek/cap exposed beside middle leg; preserve the gap with the main front shell.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "lower_leg_blue_forward_bridge",
+          "material_role": "blue",
+          "global_uv_px": [
+            [
+              970,
+              512
+            ],
+            [
+              977,
+              512
+            ],
+            [
+              983,
+              523
+            ],
+            [
+              972,
+              540
+            ],
+            [
+              961,
+              539
+            ],
+            [
+              957,
+              533
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Short blue bridge is angled forward toward ankle, rather than vertical straight shin.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "lower_leg_ivory_rear_guard",
+          "material_role": "ivory",
+          "global_uv_px": [
+            [
+              1026,
+              510
+            ],
+            [
+              1037,
+              516
+            ],
+            [
+              1031,
+              533
+            ],
+            [
+              1021,
+              544
+            ],
+            [
+              1016,
+              547
+            ],
+            [
+              1005,
+              539
+            ],
+            [
+              1011,
+              525
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Separate rear white guard, bounded by dark bearing and link gaps.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "foot_ivory_upper_toe",
+          "material_role": "ivory",
+          "global_uv_px": [
+            [
+              939,
+              554
+            ],
+            [
+              950,
+              554
+            ],
+            [
+              962,
+              567
+            ],
+            [
+              965,
+              579
+            ],
+            [
+              889,
+              582
+            ],
+            [
+              914,
+              568
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Low long forward toe with sloping upper panel and two steps/rails.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "foot_ivory_side_and_lower_toe",
+          "material_role": "ivory",
+          "global_uv_px": [
+            [
+              887,
+              582
+            ],
+            [
+              912,
+              580
+            ],
+            [
+              964,
+              580
+            ],
+            [
+              967,
+              598
+            ],
+            [
+              884,
+              598
+            ],
+            [
+              876,
+              591
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Toe rail wraps the lower front; sole remains dark along the ground.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "foot_dark_heel",
+          "material_role": "dark",
+          "global_uv_px": [
+            [
+              1001,
+              570
+            ],
+            [
+              1027,
+              570
+            ],
+            [
+              1040,
+              572
+            ],
+            [
+              1051,
+              592
+            ],
+            [
+              1051,
+              599
+            ],
+            [
+              1000,
+              600
+            ],
+            [
+              991,
+              596
+            ],
+            [
+              994,
+              583
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Large clipped dark heel block, almost full foot height, with visible inset face.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "ground_contact_silhouette",
+          "material_role": "dark",
+          "global_uv_px": [
+            [
+              872,
+              600
+            ],
+            [
+              968,
+              600
+            ],
+            [
+              992,
+              601
+            ],
+            [
+              1052,
+              600
+            ]
+          ],
+          "closed_visible_region": false,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Illustrated bottom silhouette only, not a measured real contact polygon.",
+          "feature_edges_global_uv_px": []
+        }
+      ],
+      "joint_landmarks": [
+        {
+          "id": "shoulder_bearing",
+          "global_uv_px": [
+            993,
+            174
+          ],
+          "semantic_role": "partially visible dark shoulder bearing center",
+          "uncertainty_px": 6,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "elbow_gold_ring",
+          "global_uv_px": [
+            1013,
+            253
+          ],
+          "semantic_role": "clearly visible elbow cap",
+          "uncertainty_px": 3,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "hip_gold_ring",
+          "global_uv_px": [
+            959,
+            285
+          ],
+          "semantic_role": "clearly visible near-side hip/waist-level cap",
+          "uncertainty_px": 4,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin",
+          "ambiguity": "Ring role is appearance-local; no inherited 3-DOF hip mechanism is assumed."
+        },
+        {
+          "id": "wrist_group",
+          "global_uv_px": [
+            964,
+            365
+          ],
+          "semantic_role": "dark wrist cap below forearm shell",
+          "uncertainty_px": 5,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "knee_gold_ring_partially_occluded",
+          "global_uv_px": [
+            983,
+            420
+          ],
+          "semantic_role": "partly visible ring behind curled fingers and lower yellow thigh insert",
+          "uncertainty_px": 7,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin",
+          "ambiguity": "Center is estimated from the remaining visible arc. The hand and yellow insert occlude the axle bridge. Do not assign patella centroid or a hidden front knee axis."
+        },
+        {
+          "id": "low_fold_gold_ring",
+          "global_uv_px": [
+            992,
+            499
+          ],
+          "semantic_role": "clearly visible large low fold cap",
+          "uncertainty_px": 3,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "ankle_gold_ring",
+          "global_uv_px": [
+            986,
+            551
+          ],
+          "semantic_role": "clearly visible ankle cap",
+          "uncertainty_px": 3,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        }
+      ],
+      "z_leg_observation": {
+        "hip_visible_ring_uv_px": [
+          959,
+          285
+        ],
+        "knee_partial_ring_uv_px": [
+          983,
+          420
+        ],
+        "fold_visible_ring_uv_px": [
+          992,
+          499
+        ],
+        "ankle_visible_ring_uv_px": [
+          986,
+          551
+        ],
+        "ring_chain_is_physical_axis_chain": false,
+        "reason": "Knee cap/bridge is partially occluded by hand and yellow armor; apparent Z comes from successive shell/link edges. The illustration does not supply a calibrated 3D axle line."
+      }
+    },
+    "rear": {
+      "label": "REAR",
+      "frame_bbox_xyxy_px": [
+        21,
+        677,
+        629,
+        1258
+      ],
+      "robot_bbox_xyxy_px_approx": [
+        137,
+        699,
+        514,
+        1218
+      ],
+      "centerline_u_px_approx": 325.5,
+      "ground_v_px_approx": 1217,
+      "height_px_approx": 518,
+      "projection_note": "Approximately same height/width family as FRONT but a separately drawn view. Positive anatomical left is sheet left. Do not copy FRONT front shield as back enclosure.",
+      "profiles": [
+        {
+          "id": "rear_chest_ivory_outer",
+          "material_role": "ivory",
+          "global_uv_px": [
+            [
+              247,
+              711
+            ],
+            [
+              269,
+              704
+            ],
+            [
+              296,
+              700
+            ],
+            [
+              326,
+              699
+            ],
+            [
+              356,
+              700
+            ],
+            [
+              379,
+              705
+            ],
+            [
+              399,
+              713
+            ],
+            [
+              398,
+              724
+            ],
+            [
+              387,
+              747
+            ],
+            [
+              391,
+              766
+            ],
+            [
+              393,
+              792
+            ],
+            [
+              391,
+              814
+            ],
+            [
+              382,
+              821
+            ],
+            [
+              378,
+              842
+            ],
+            [
+              369,
+              853
+            ],
+            [
+              352,
+              857
+            ],
+            [
+              294,
+              857
+            ],
+            [
+              277,
+              853
+            ],
+            [
+              266,
+              849
+            ],
+            [
+              261,
+              823
+            ],
+            [
+              251,
+              816
+            ],
+            [
+              247,
+              793
+            ],
+            [
+              247,
+              766
+            ],
+            [
+              259,
+              740
+            ],
+            [
+              248,
+              722
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Broad compact rear enclosure ends above the hip connector, not a pointed duplicate of the front shield. Shoulder cutaways leave black bearing stacks exposed.",
+          "feature_edges_global_uv_px": [
+            [
+              [
+                272,
+                744
+              ],
+              [
+                274,
+                811
+              ],
+              [
+                286,
+                850
+              ]
+            ],
+            [
+              [
+                378,
+                745
+              ],
+              [
+                373,
+                813
+              ],
+              [
+                360,
+                852
+              ]
+            ]
+          ]
+        },
+        {
+          "id": "rear_crown_ivory_inset",
+          "material_role": "ivory",
+          "global_uv_px": [
+            [
+              266,
+              711
+            ],
+            [
+              283,
+              705
+            ],
+            [
+              359,
+              706
+            ],
+            [
+              378,
+              713
+            ],
+            [
+              359,
+              735
+            ],
+            [
+              289,
+              735
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Shallow clipped crown panel and small recessed fastener points.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "rear_blue_service_hatch",
+          "material_role": "blue",
+          "global_uv_px": [
+            [
+              304,
+              748
+            ],
+            [
+              345,
+              748
+            ],
+            [
+              353,
+              757
+            ],
+            [
+              353,
+              817
+            ],
+            [
+              347,
+              824
+            ],
+            [
+              302,
+              824
+            ],
+            [
+              296,
+              817
+            ],
+            [
+              296,
+              757
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Flat-faced hatch with shallow clipped corners, narrow dark edge, corner screws, small top tab and recessed handle. Do not make it a thick pill.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "rear_blue_hatch_top_tab",
+          "material_role": "blue",
+          "global_uv_px": [
+            [
+              322,
+              738
+            ],
+            [
+              329,
+              738
+            ],
+            [
+              330,
+              748
+            ],
+            [
+              321,
+              748
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Small centered blue service tab sits above hatch, not above torso silhouette.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "rear_hatch_handle_dark",
+          "material_role": "dark",
+          "global_uv_px": [
+            [
+              318,
+              754
+            ],
+            [
+              332,
+              754
+            ],
+            [
+              332,
+              762
+            ],
+            [
+              318,
+              762
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Horizontal inset opening near top of hatch.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "rear_lower_ivory_connector",
+          "material_role": "ivory",
+          "global_uv_px": [
+            [
+              299,
+              855
+            ],
+            [
+              350,
+              855
+            ],
+            [
+              347,
+              867
+            ],
+            [
+              342,
+              875
+            ],
+            [
+              309,
+              875
+            ],
+            [
+              304,
+              868
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Separate short trapezoid below back enclosure; dark waist mechanics remain visible behind.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "rear_left_yellow_pelvis_band_visible",
+          "material_role": "gold",
+          "global_uv_px": [
+            [
+              278,
+              862
+            ],
+            [
+              298,
+              866
+            ],
+            [
+              312,
+              879
+            ],
+            [
+              313,
+              907
+            ],
+            [
+              303,
+              902
+            ],
+            [
+              298,
+              885
+            ],
+            [
+              289,
+              878
+            ],
+            [
+              279,
+              877
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Visible left half of yellow pelvis band; center is occluded by long white rear cartridge. A continuous full-width rectangular bar would be a different design.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "rear_right_yellow_pelvis_band_visible",
+          "material_role": "gold",
+          "global_uv_px": [
+            [
+              349,
+              867
+            ],
+            [
+              371,
+              862
+            ],
+            [
+              375,
+              868
+            ],
+            [
+              371,
+              876
+            ],
+            [
+              359,
+              880
+            ],
+            [
+              350,
+              896
+            ],
+            [
+              342,
+              909
+            ],
+            [
+              338,
+              909
+            ],
+            [
+              339,
+              882
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Visible right half, curved and tapered into the white center.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "rear_long_ivory_pelvis_cartridge",
+          "material_role": "ivory",
+          "global_uv_px": [
+            [
+              309,
+              880
+            ],
+            [
+              340,
+              880
+            ],
+            [
+              341,
+              904
+            ],
+            [
+              337,
+              935
+            ],
+            [
+              335,
+              951
+            ],
+            [
+              329,
+              957
+            ],
+            [
+              315,
+              957
+            ],
+            [
+              309,
+              948
+            ],
+            [
+              307,
+              921
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Three staged surfaces, fine seam near 902 px and small dark inset near 944 px. It is narrower than the front yellow cartridge.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "rear_left_forearm_blue_outer",
+          "material_role": "blue",
+          "global_uv_px": [
+            [
+              143,
+              874
+            ],
+            [
+              160,
+              881
+            ],
+            [
+              187,
+              896
+            ],
+            [
+              202,
+              908
+            ],
+            [
+              204,
+              924
+            ],
+            [
+              194,
+              948
+            ],
+            [
+              182,
+              973
+            ],
+            [
+              162,
+              970
+            ],
+            [
+              143,
+              980
+            ],
+            [
+              139,
+              960
+            ],
+            [
+              137,
+              932
+            ],
+            [
+              137,
+              905
+            ],
+            [
+              140,
+              886
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Rear projection confirms asymmetric opening and sloped cuff; silhouette remains broad toward its outer side.",
+          "feature_edges_global_uv_px": [
+            [
+              [
+                151,
+                880
+              ],
+              [
+                165,
+                890
+              ],
+              [
+                157,
+                943
+              ],
+              [
+                149,
+                973
+              ]
+            ],
+            [
+              [
+                151,
+                950
+              ],
+              [
+                168,
+                951
+              ],
+              [
+                189,
+                956
+              ]
+            ]
+          ]
+        },
+        {
+          "id": "rear_left_thigh_blue_outer",
+          "material_role": "blue",
+          "global_uv_px": [
+            [
+              259,
+              881
+            ],
+            [
+              274,
+              879
+            ],
+            [
+              282,
+              890
+            ],
+            [
+              286,
+              913
+            ],
+            [
+              296,
+              938
+            ],
+            [
+              298,
+              961
+            ],
+            [
+              293,
+              977
+            ],
+            [
+              280,
+              992
+            ],
+            [
+              269,
+              966
+            ],
+            [
+              238,
+              960
+            ],
+            [
+              218,
+              984
+            ],
+            [
+              212,
+              988
+            ],
+            [
+              207,
+              970
+            ],
+            [
+              207,
+              948
+            ],
+            [
+              220,
+              918
+            ],
+            [
+              231,
+              897
+            ],
+            [
+              244,
+              883
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Same thigh family as FRONT: faceted broad lower portion, narrow hip junction, and yellow overlap; no uniform oval pod.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "rear_left_knee_yellow_insert",
+          "material_role": "gold",
+          "global_uv_px": [
+            [
+              238,
+              960
+            ],
+            [
+              265,
+              964
+            ],
+            [
+              280,
+              984
+            ],
+            [
+              285,
+              997
+            ],
+            [
+              271,
+              1016
+            ],
+            [
+              261,
+              1007
+            ],
+            [
+              239,
+              1008
+            ],
+            [
+              231,
+              1015
+            ],
+            [
+              220,
+              997
+            ],
+            [
+              218,
+              984
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Yellow lower facet and black hinge pad remain layered.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "rear_left_middle_leg_blue_outer",
+          "material_role": "blue",
+          "global_uv_px": [
+            [
+              223,
+              1044
+            ],
+            [
+              237,
+              1039
+            ],
+            [
+              256,
+              1042
+            ],
+            [
+              276,
+              1059
+            ],
+            [
+              279,
+              1075
+            ],
+            [
+              263,
+              1097
+            ],
+            [
+              253,
+              1116
+            ],
+            [
+              236,
+              1118
+            ],
+            [
+              225,
+              1112
+            ],
+            [
+              211,
+              1088
+            ],
+            [
+              205,
+              1073
+            ],
+            [
+              209,
+              1059
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Distal shell has a broad upper opening and narrow clipped bottom; bearing group appears separately below.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "rear_left_lower_leg_blue_bridge",
+          "material_role": "blue",
+          "global_uv_px": [
+            [
+              219,
+              1128
+            ],
+            [
+              242,
+              1128
+            ],
+            [
+              242,
+              1149
+            ],
+            [
+              237,
+              1161
+            ],
+            [
+              211,
+              1159
+            ],
+            [
+              208,
+              1151
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Short bridge sits between lower fold and ankle, not a long continuous shin.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "rear_left_foot_dark_heel",
+          "material_role": "dark",
+          "global_uv_px": [
+            [
+              201,
+              1179
+            ],
+            [
+              250,
+              1179
+            ],
+            [
+              263,
+              1215
+            ],
+            [
+              188,
+              1217
+            ],
+            [
+              187,
+              1208
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Broad dark clipped heel plate with inset face and lower center relief.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "rear_left_foot_ivory_side_rails_visible",
+          "material_role": "ivory",
+          "global_uv_px": [
+            [
+              188,
+              1179
+            ],
+            [
+              189,
+              1206
+            ],
+            [
+              176,
+              1211
+            ],
+            [
+              169,
+              1207
+            ],
+            [
+              171,
+              1192
+            ],
+            [
+              185,
+              1177
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Visible outside ivory rail; hidden interior connection is not reconstructed here.",
+          "feature_edges_global_uv_px": []
+        }
+      ],
+      "joint_landmarks": [
+        {
+          "id": "viewer_left_elbow_gold_ring",
+          "global_uv_px": [
+            166,
+            868
+          ],
+          "semantic_role": "visible elbow cap",
+          "uncertainty_px": 3,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "viewer_left_hip_primary_cap",
+          "global_uv_px": [
+            279,
+            890
+          ],
+          "semantic_role": "dark hip cap",
+          "uncertainty_px": 5,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "viewer_left_knee_outer_ring",
+          "global_uv_px": [
+            217,
+            1028
+          ],
+          "semantic_role": "visible outer knee bearing cap",
+          "uncertainty_px": 3,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "viewer_left_knee_inner_ring",
+          "global_uv_px": [
+            278,
+            1030
+          ],
+          "semantic_role": "visible inner knee bearing cap",
+          "uncertainty_px": 3,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "viewer_left_low_fold_outer_ring",
+          "global_uv_px": [
+            207,
+            1119
+          ],
+          "semantic_role": "visible low fold cap",
+          "uncertainty_px": 3,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "viewer_left_low_fold_inner_ring",
+          "global_uv_px": [
+            263,
+            1122
+          ],
+          "semantic_role": "visible low fold cap",
+          "uncertainty_px": 3,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "viewer_left_ankle_outer_ring",
+          "global_uv_px": [
+            199,
+            1168
+          ],
+          "semantic_role": "visible ankle cap",
+          "uncertainty_px": 3,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "viewer_left_ankle_inner_ring",
+          "global_uv_px": [
+            248,
+            1169
+          ],
+          "semantic_role": "visible ankle cap",
+          "uncertainty_px": 3,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "viewer_right_elbow_gold_ring",
+          "global_uv_px": [
+            482,
+            868
+          ],
+          "semantic_role": "visible elbow cap",
+          "uncertainty_px": 3,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        }
+      ]
+    },
+    "top": {
+      "label": "TOP",
+      "frame_bbox_xyxy_px": [
+        650,
+        677,
+        1258,
+        1258
+      ],
+      "robot_bbox_xyxy_px_approx": [
+        763,
+        831,
+        1150,
+        1126
+      ],
+      "centerline_u_px_approx": 956.5,
+      "projection_note": "Illustrated TOP includes visible front surfaces and self-occluded legs. No orthographic calibration or common depth scale is given; preserve visible contour and region adjacency without guessing hidden feet or rear internals.",
+      "profiles": [
+        {
+          "id": "top_chest_ivory_outer",
+          "material_role": "ivory",
+          "global_uv_px": [
+            [
+              885,
+              843
+            ],
+            [
+              909,
+              838
+            ],
+            [
+              933,
+              835
+            ],
+            [
+              958,
+              835
+            ],
+            [
+              982,
+              835
+            ],
+            [
+              1007,
+              838
+            ],
+            [
+              1034,
+              846
+            ],
+            [
+              1047,
+              858
+            ],
+            [
+              1048,
+              872
+            ],
+            [
+              1041,
+              899
+            ],
+            [
+              1029,
+              931
+            ],
+            [
+              1016,
+              962
+            ],
+            [
+              1001,
+              997
+            ],
+            [
+              979,
+              1030
+            ],
+            [
+              965,
+              1049
+            ],
+            [
+              943,
+              1051
+            ],
+            [
+              925,
+              1031
+            ],
+            [
+              906,
+              1005
+            ],
+            [
+              892,
+              977
+            ],
+            [
+              879,
+              950
+            ],
+            [
+              868,
+              918
+            ],
+            [
+              859,
+              885
+            ],
+            [
+              857,
+              866
+            ],
+            [
+              866,
+              851
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Single continuous crown-to-forward-tip armor envelope. TOP appears to mix top projection and visible frontal surfaces; do not force it into calibrated orthographic depth.",
+          "feature_edges_global_uv_px": [
+            [
+              [
+                901,
+                850
+              ],
+              [
+                922,
+                846
+              ],
+              [
+                987,
+                846
+              ],
+              [
+                1017,
+                851
+              ]
+            ],
+            [
+              [
+                923,
+                923
+              ],
+              [
+                995,
+                923
+              ]
+            ],
+            [
+              [
+                923,
+                923
+              ],
+              [
+                909,
+                940
+              ]
+            ],
+            [
+              [
+                995,
+                923
+              ],
+              [
+                1008,
+                941
+              ]
+            ],
+            [
+              [
+                937,
+                1036
+              ],
+              [
+                968,
+                1036
+              ]
+            ]
+          ]
+        },
+        {
+          "id": "top_crown_ivory_inset",
+          "material_role": "ivory",
+          "global_uv_px": [
+            [
+              901,
+              850
+            ],
+            [
+              922,
+              845
+            ],
+            [
+              987,
+              845
+            ],
+            [
+              1018,
+              850
+            ],
+            [
+              1014,
+              872
+            ],
+            [
+              1003,
+              902
+            ],
+            [
+              994,
+              922
+            ],
+            [
+              930,
+              923
+            ],
+            [
+              920,
+              903
+            ],
+            [
+              910,
+              875
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Trapezoid central crown panel with clipped corners, perimeter shallow bevel and four sparse fastener points.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "top_left_blue_shoulder_sweep",
+          "material_role": "blue",
+          "global_uv_px": [
+            [
+              837,
+              861
+            ],
+            [
+              869,
+              851
+            ],
+            [
+              875,
+              860
+            ],
+            [
+              876,
+              879
+            ],
+            [
+              877,
+              900
+            ],
+            [
+              887,
+              926
+            ],
+            [
+              894,
+              943
+            ],
+            [
+              887,
+              948
+            ],
+            [
+              869,
+              936
+            ],
+            [
+              854,
+              915
+            ],
+            [
+              845,
+              897
+            ],
+            [
+              833,
+              879
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Shoulder blue surface wraps crown side and tapers forward beside the long white wedge.",
+          "feature_edges_global_uv_px": [
+            [
+              [
+                839,
+                894
+              ],
+              [
+                861,
+                900
+              ],
+              [
+                882,
+                926
+              ]
+            ],
+            [
+              [
+                871,
+                858
+              ],
+              [
+                867,
+                880
+              ]
+            ]
+          ]
+        },
+        {
+          "id": "top_right_blue_shoulder_sweep",
+          "material_role": "blue",
+          "global_uv_px": [
+            [
+              1040,
+              852
+            ],
+            [
+              1051,
+              850
+            ],
+            [
+              1079,
+              862
+            ],
+            [
+              1086,
+              874
+            ],
+            [
+              1088,
+              885
+            ],
+            [
+              1080,
+              907
+            ],
+            [
+              1063,
+              931
+            ],
+            [
+              1044,
+              948
+            ],
+            [
+              1036,
+              944
+            ],
+            [
+              1040,
+              928
+            ],
+            [
+              1041,
+              904
+            ],
+            [
+              1040,
+              876
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Manually observed right counterpart; art asymmetry is retained at reference stage.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "top_left_upper_arm_ivory_guard_visible",
+          "material_role": "ivory",
+          "global_uv_px": [
+            [
+              817,
+              882
+            ],
+            [
+              831,
+              884
+            ],
+            [
+              840,
+              897
+            ],
+            [
+              842,
+              920
+            ],
+            [
+              836,
+              940
+            ],
+            [
+              822,
+              952
+            ],
+            [
+              807,
+              949
+            ],
+            [
+              800,
+              931
+            ],
+            [
+              797,
+              907
+            ],
+            [
+              804,
+              892
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Curved layered guard around dark bearing with gold seam, partially overlapped by blue outer shell.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "top_left_upper_arm_blue_guard",
+          "material_role": "blue",
+          "global_uv_px": [
+            [
+              796,
+              901
+            ],
+            [
+              801,
+              927
+            ],
+            [
+              809,
+              944
+            ],
+            [
+              813,
+              956
+            ],
+            [
+              804,
+              967
+            ],
+            [
+              786,
+              960
+            ],
+            [
+              775,
+              953
+            ],
+            [
+              773,
+              944
+            ],
+            [
+              781,
+              922
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Blue outer cap has directional flat/radiused facets and small inset yellow marker.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "top_left_forearm_blue_outer",
+          "material_role": "blue",
+          "global_uv_px": [
+            [
+              781,
+              974
+            ],
+            [
+              799,
+              987
+            ],
+            [
+              819,
+              992
+            ],
+            [
+              828,
+              1009
+            ],
+            [
+              825,
+              1032
+            ],
+            [
+              817,
+              1057
+            ],
+            [
+              791,
+              1068
+            ],
+            [
+              775,
+              1064
+            ],
+            [
+              769,
+              1047
+            ],
+            [
+              764,
+              1022
+            ],
+            [
+              766,
+              996
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Top confirms slanted upper opening and outward breadth, with dark linkage exposed between elbow and shell.",
+          "feature_edges_global_uv_px": [
+            [
+              [
+                782,
+                975
+              ],
+              [
+                798,
+                989
+              ],
+              [
+                819,
+                993
+              ],
+              [
+                828,
+                1006
+              ]
+            ],
+            [
+              [
+                781,
+                989
+              ],
+              [
+                788,
+                1029
+              ],
+              [
+                792,
+                1063
+              ]
+            ],
+            [
+              [
+                783,
+                1050
+              ],
+              [
+                805,
+                1045
+              ],
+              [
+                822,
+                1042
+              ]
+            ]
+          ]
+        },
+        {
+          "id": "top_right_forearm_blue_outer",
+          "material_role": "blue",
+          "global_uv_px": [
+            [
+              1133,
+              975
+            ],
+            [
+              1143,
+              983
+            ],
+            [
+              1149,
+              1002
+            ],
+            [
+              1149,
+              1020
+            ],
+            [
+              1143,
+              1045
+            ],
+            [
+              1137,
+              1065
+            ],
+            [
+              1118,
+              1068
+            ],
+            [
+              1094,
+              1057
+            ],
+            [
+              1087,
+              1034
+            ],
+            [
+              1085,
+              1013
+            ],
+            [
+              1090,
+              997
+            ],
+            [
+              1110,
+              987
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Visible opposite forearm is a broad asymmetric shell, not a round side-on capsule.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "top_left_hand_outer_ivory_guard",
+          "material_role": "ivory",
+          "global_uv_px": [
+            [
+              780,
+              1070
+            ],
+            [
+              793,
+              1068
+            ],
+            [
+              795,
+              1090
+            ],
+            [
+              790,
+              1097
+            ],
+            [
+              779,
+              1094
+            ],
+            [
+              776,
+              1080
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Palm shell and finger curls remain separate; three long fingers are tucked rather than spread as straight rods.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "top_right_hand_outer_ivory_guard",
+          "material_role": "ivory",
+          "global_uv_px": [
+            [
+              1122,
+              1069
+            ],
+            [
+              1137,
+              1071
+            ],
+            [
+              1140,
+              1086
+            ],
+            [
+              1137,
+              1096
+            ],
+            [
+              1124,
+              1098
+            ],
+            [
+              1118,
+              1091
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Ivory palm shell around visible dark mechanism.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "top_left_blue_hip_visible_patch",
+          "material_role": "blue",
+          "global_uv_px": [
+            [
+              855,
+              956
+            ],
+            [
+              864,
+              972
+            ],
+            [
+              878,
+              990
+            ],
+            [
+              899,
+              1005
+            ],
+            [
+              899,
+              1020
+            ],
+            [
+              884,
+              1032
+            ],
+            [
+              852,
+              1028
+            ],
+            [
+              839,
+              1016
+            ],
+            [
+              835,
+              998
+            ],
+            [
+              837,
+              973
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Only the hip/thigh patch visible behind torso is recorded; hidden leg depth and foot projections must not be guessed.",
+          "feature_edges_global_uv_px": []
+        },
+        {
+          "id": "top_left_yellow_hip_band_visible",
+          "material_role": "gold",
+          "global_uv_px": [
+            [
+              844,
+              1022
+            ],
+            [
+              858,
+              1027
+            ],
+            [
+              882,
+              1031
+            ],
+            [
+              894,
+              1025
+            ],
+            [
+              890,
+              1035
+            ],
+            [
+              879,
+              1041
+            ],
+            [
+              852,
+              1036
+            ]
+          ],
+          "closed_visible_region": true,
+          "point_uncertainty_px": 3,
+          "points_role": "manually_observed_visible_contour_or_color_boundary_samples",
+          "comment": "Small visible strip beneath blue hip patch, not evidence for a full width horizontal beam.",
+          "feature_edges_global_uv_px": []
+        }
+      ],
+      "joint_landmarks": [
+        {
+          "id": "viewer_left_shoulder_bearing",
+          "global_uv_px": [
+            839,
+            916
+          ],
+          "semantic_role": "dark/gold shoulder stack center between blue ribbon and white guard",
+          "uncertainty_px": 6,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "viewer_left_elbow_gold_ring",
+          "global_uv_px": [
+            788,
+            982
+          ],
+          "semantic_role": "visible elbow ring center",
+          "uncertainty_px": 3,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "viewer_left_wrist_group",
+          "global_uv_px": [
+            795,
+            1072
+          ],
+          "semantic_role": "dark wrist/hand base",
+          "uncertainty_px": 4,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "viewer_right_shoulder_bearing",
+          "global_uv_px": [
+            1078,
+            915
+          ],
+          "semantic_role": "opposite shoulder bearing group",
+          "uncertainty_px": 6,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "viewer_right_elbow_gold_ring",
+          "global_uv_px": [
+            1136,
+            982
+          ],
+          "semantic_role": "opposite elbow cap",
+          "uncertainty_px": 3,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        },
+        {
+          "id": "viewer_right_wrist_group",
+          "global_uv_px": [
+            1119,
+            1073
+          ],
+          "semantic_role": "opposite wrist/hand base",
+          "uncertainty_px": 4,
+          "geometry_evidence": "visible ring/hinge feature, not a specified physical joint origin"
+        }
+      ]
+    }
+  },
+  "profile_relationships": [
+    {
+      "id": "front_appearance_scale",
+      "constraint": "Front visual template uses H=2.65 m / 516 px; W approximately 375 px * scale = 1.926 m. The header W=2.587 m remains pending.",
+      "status": "user_confirmed_proportion_priority",
+      "scope": "visual model scale only, not physical survey"
+    },
+    {
+      "id": "headless_continuous_wedge",
+      "profiles": [
+        "front.chest_ivory_outer",
+        "top.top_chest_ivory_outer",
+        "left.chest_ivory_forward_outer_arc"
+      ],
+      "constraint": "No separate head/neck. Ivory crown and chest shield form one continuous envelope, with shallow planar/curved transitions."
+    },
+    {
+      "id": "chest_multi_level_geometry",
+      "profiles": [
+        "front.crown_ivory_inset",
+        "front.chest_ivory_outer",
+        "top.top_crown_ivory_inset"
+      ],
+      "constraint": "Keep crown inset, approximately 120 px frontal break and long tapered main shield as separate face regions within one envelope. Broad front face has shallow curvature, distinct flank facets and radiused perimeter."
+    },
+    {
+      "id": "shoulder_sweep",
+      "profiles": [
+        "front.left_blue_shoulder_sweep",
+        "left.shoulder_blue_sweep_visible",
+        "top.top_left_blue_shoulder_sweep"
+      ],
+      "constraint": "Loft swept ribbon profiles with corner/ridge continuity. Keep dark recessed shoulder bearing gap and rear/top width. Do not fit a generic ellipsoid."
+    },
+    {
+      "id": "forearm_asymmetric_open_shell",
+      "profiles": [
+        "front.left_forearm_blue_outer",
+        "left.forearm_blue_outer",
+        "top.top_left_forearm_blue_outer"
+      ],
+      "constraint": "Maintain slanted elbow opening, outward broad face, narrower wrist mouth and separate lower cuff line. Loft several asymmetrical cross-sections with facet ridges; an axial cone/capsule is insufficient."
+    },
+    {
+      "id": "leg_splay_and_three_stage_fold",
+      "profiles": [
+        "front.left_thigh_blue_outer",
+        "front.left_middle_leg_blue_outer",
+        "front.left_lower_leg_blue_bridge",
+        "left.thigh_blue_forward_visible_edge",
+        "left.middle_leg_blue_outer",
+        "left.lower_leg_blue_forward_bridge"
+      ],
+      "constraint": "Front legs spread toward knee/fold and wide low feet. Side appearance is upper forward shield, rearward middle segment, short forward ankle bridge. Preserve three discrete stages and exposed bearing groups. Exact physical knee axis is occluded and must stay unresolved here."
+    },
+    {
+      "id": "layered_joint_caps",
+      "profiles": [],
+      "constraint": "Visible rings consist of deep dark outer housing, thin recessed gold band, dark face, inner bearing/bridge. Side caps and transverse bridge have different diameters/lengths. Do not replace all joints with identical flat black discs."
+    },
+    {
+      "id": "hand_visible_character",
+      "profiles": [
+        "front.left_palm_outer_ivory_guard",
+        "front.left_thumb_ivory_guard",
+        "front.left_hand_visible_curl_envelope",
+        "top.top_left_hand_outer_ivory_guard"
+      ],
+      "constraint": "Each visible hand has three long segmented curled fingers and one opposing thumb. Ivory proximal guards, dark exposed knuckles/tips and angled outer palm shell are independent surfaces. No unseen hinge count or tendon route is specified."
+    },
+    {
+      "id": "foot_step_and_heel",
+      "profiles": [
+        "front.left_foot_ivory_toe_upper",
+        "front.left_foot_ivory_side_rail",
+        "left.foot_ivory_upper_toe",
+        "left.foot_dark_heel",
+        "rear.rear_left_foot_dark_heel"
+      ],
+      "constraint": "Broad low foot has ivory sloping upper toe, an overlapping low perimeter rail, dark front sole and a tall clipped rear heel block. Preserve depth layering and proportions; do not use a single box/wedge."
+    },
+    {
+      "id": "back_front_different_shapes",
+      "profiles": [
+        "front.chest_ivory_outer",
+        "rear.rear_chest_ivory_outer",
+        "rear.rear_blue_service_hatch"
+      ],
+      "constraint": "The back ends high and relatively wide above waist; it does not duplicate the long pointed front shield. Blue service hatch is thin rectangular/clipped with tab, recessed handle and screws."
+    },
+    {
+      "id": "symmetry_seed_only",
+      "constraint": "Most major body features are approximately bilateral. Reflection about the measured centerline may seed geometry, but manually compare both original halves before acceptance; reflected samples are not additional observed landmarks."
+    }
+  ],
+  "layout_b_comparison": {
+    "path": "images/layout_b_four_view.png",
+    "sha256": "87ac22fef318051960de14b49b93f11d89e1f9015eca2a06c23693babd9250a3",
+    "comparison_method": "Actually viewed source JPG and actual B four-view render; qualitative geometry differences only, no invented fidelity percentage.",
+    "user_acceptance": "rejected_due_to_coarse_model_and_low_fidelity",
+    "core_items": [
+      {
+        "id": "chest_face_hierarchy",
+        "observed_difference": "B turns crown and main shield into one broad flat/simple surface, losing the crown seam, shallow intermediate ridge and long narrow tip.",
+        "minimum_geometry_repair": "Use front/side/top contours to make a continuous multi-face shield with crown inset, flank facets and the small bottom bevel; preserve the original envelope."
+      },
+      {
+        "id": "shoulder_ribbon",
+        "observed_difference": "B blue shoulders are rounded pods; source has swept faceted ribbon shells that taper inward and wrap the crown-side dark bearings.",
+        "minimum_geometry_repair": "Rebuild the shoulder sweep with independent contour loft sections and deliberate ridges, retaining recessed black mechanism space."
+      },
+      {
+        "id": "upper_arm_guards",
+        "observed_difference": "B ivory guards are simple tapered tubes and blue outer caps lack the source overlap/cutout.",
+        "minimum_geometry_repair": "Separate ivory bearing guard, outer blue open cap and lower ivory angled guard. Match visible arcs/openings before choosing any internal module."
+      },
+      {
+        "id": "embedded_vents",
+        "observed_difference": "B vents read as protruding orange square boxes, source vents have rounded gold inset bezels, dark slats and ivory side mounts integrated into chest cheeks.",
+        "minimum_geometry_repair": "Form shallow pocket/rounded bezel/slats within the matching chest-side surfaces; avoid moving the body contour outward to accommodate a box."
+      },
+      {
+        "id": "blue_chest_cheeks",
+        "observed_difference": "B leaves broad simplified side blue strips/voids; source cheeks have separate diagonal facets and narrow toward the white tip.",
+        "minimum_geometry_repair": "Use the visible color boundary profiles and preserve the dark recessed mechanical layer between shoulder, vent and hip."
+      },
+      {
+        "id": "forearm_form",
+        "observed_difference": "B forearms are near-vertical symmetric balloon/cone shapes, source is slanted asymmetric armor with a wide outer face, slanted upper opening and narrower lower mouth.",
+        "minimum_geometry_repair": "Loft front/side/top asymmetrical contour sections, add face-ridge/cuff separation and expose correct dark openings."
+      },
+      {
+        "id": "wrist_layering",
+        "observed_difference": "B wrists are single plain gaps/rings, source has nested dark knuckle/bearing pieces and a sloped ivory palm shell.",
+        "minimum_geometry_repair": "Build independent wrist mouth, exposed bearing/knuckle layer and separate ivory palm shell; do not hide the source gap."
+      },
+      {
+        "id": "hand_curl",
+        "observed_difference": "B hands have nearly equal straight pickets and block palms; source has three bent segmented fingers, ivory proximal shields and an opposing thumb with angled guards.",
+        "minimum_geometry_repair": "Rebuild fingers around observed curved envelopes with distinct proximal/dark distal pieces and separate thumb; keep gaps visible."
+      },
+      {
+        "id": "hip_waist_layers",
+        "observed_difference": "B hip area uses oversized plain black transverse components and a simple hanging center block.",
+        "minimum_geometry_repair": "Restore paired sloped ivory connectors, nested dark side bearings and tapered yellow/ivory front/rear cartridges; do not thicken the waist to fit prior drives."
+      },
+      {
+        "id": "thigh_facet_shape",
+        "observed_difference": "B thighs are largely round pods with simplified yellow blocks. Source thighs have a narrow hip entry, broad curved/faceted lower volume and a polygonal overlap.",
+        "minimum_geometry_repair": "Match blue/yellow outline and the diagonal highlight crease using multiple controlled face bands and the original front leg splay."
+      },
+      {
+        "id": "knee_overlap",
+        "observed_difference": "B yellow knee panels are simple rectangles/extrusions, source has a clipped polygon that wraps the dark transverse bearing and leaves a small dark bottom pad.",
+        "minimum_geometry_repair": "Use the traced yellow outline and independent black pad/bearing bridge; preserve the small lower notch and side facets."
+      },
+      {
+        "id": "three_leg_stages",
+        "observed_difference": "B lower legs are generic shells and short straight connectors, source has three distinct swept stages with rearward/forward changes and layered exposed mechanisms.",
+        "minimum_geometry_repair": "Fit the front and side appearance profiles per stage and restore separate bearing cheek caps/bridges. Keep the occluded exact knee axis unresolved until joint design."
+      },
+      {
+        "id": "gold_ring_mechanics",
+        "observed_difference": "B repeats identical flat black circles with bright flat border. Source uses nested offset housings, thin gold band, dark rounded caps and connecting collars of varying widths.",
+        "minimum_geometry_repair": "Use per-joint observed cap size, band inset and stepped coaxial geometry; avoid one universal joint primitive."
+      },
+      {
+        "id": "foot_architecture",
+        "observed_difference": "B feet are smooth flat wedges/plates, source uses stepped ivory toe armor, separate side rails, dark clipped front bumper and tall rear heel block.",
+        "minimum_geometry_repair": "Rebuild overlapping toe/rail/bumper/heel parts from front/left/rear contours with shallow bevels and source-compatible silhouette."
+      },
+      {
+        "id": "rear_top_identity",
+        "observed_difference": "B top looks split into two broad separate ivory masses, and back/hatch/pelvis are over-simplified. Source top is a continuous wedge envelope; back has an inset crown and thin clipped service hatch with tab/handle/fasteners.",
+        "minimum_geometry_repair": "Integrate the continuous crown/front shield and deliberately distinct rear enclosure; restore visible service details and pelvis subdivisions without inventing hidden geometry."
+      }
+    ]
+  },
+  "acceptance_limits": {
+    "appearance_passed": false,
+    "100_percent_achieved": false,
+    "physics_passed": false,
+    "manufacturing_passed": false,
+    "unseen_surfaces": "Not defined by this reference. Any inferred reconstruction must be labelled and kept separate from directly observed reference points."
+  }
+}

@@ -1,0 +1,167 @@
+{
+  "robot_id": "gorilla_v0_1",
+  "phase": "c15_composite_foot_candidate_before_formal_internal_design",
+  "frozen_module_path": "scripts/models/gorilla_composite_foot.py",
+  "frozen_module_sha256": "cbb73130ceb3c501fe737dde8fb0289087c8c793bcd38e843774f0d649e51c1e",
+  "entrypoint": "replace_composite_feet(g,points,palette), after add_primary_structure",
+  "reference_scene_sha256": "624e7a8974a8de0abf0865ad35bcfa6ee06a089de27f80627f945296cbc96f85",
+  "SI_spec_unchanged": true,
+  "display_bodies": [
+    "left_forefoot_display",
+    "left_heel_display",
+    "right_forefoot_display",
+    "right_heel_display"
+  ],
+  "fixed_parent_bodies": [
+    "left_foot",
+    "right_foot"
+  ],
+  "part_fields": [
+    "composite_foot_side",
+    "composite_foot_group",
+    "composite_foot_pivot_world_m",
+    "composite_foot_axis_world",
+    "composite_foot_interface_candidate"
+  ],
+  "lock_field": "composite_foot_unlock_translation_world_m; signed +/-Y 0.032m",
+  "original_upper_ankle_by_side": {
+    "left": {
+      "part_names": [
+        "left_ankle_wide_inner_bridge",
+        "left_ankle_negative_y_bridge_shoulder",
+        "left_ankle_negative_y_support_cheek",
+        "left_ankle_negative_y_recessed_face",
+        "left_ankle_negative_y_thin_rim",
+        "left_ankle_positive_y_bridge_shoulder",
+        "left_ankle_positive_y_support_cheek",
+        "left_ankle_positive_y_recessed_face",
+        "left_ankle_positive_y_thin_rim",
+        "left_z_ankle_primary_socket"
+      ],
+      "vertices_and_faces_exactly_preserved": true
+    },
+    "right": {
+      "part_names": [
+        "right_ankle_wide_inner_bridge",
+        "right_ankle_negative_y_bridge_shoulder",
+        "right_ankle_negative_y_support_cheek",
+        "right_ankle_negative_y_recessed_face",
+        "right_ankle_negative_y_thin_rim",
+        "right_ankle_positive_y_bridge_shoulder",
+        "right_ankle_positive_y_support_cheek",
+        "right_ankle_positive_y_recessed_face",
+        "right_ankle_positive_y_thin_rim",
+        "right_z_ankle_primary_socket"
+      ],
+      "vertices_and_faces_exactly_preserved": true
+    }
+  },
+  "original_nonfoot_parts_exact": true,
+  "topology": {
+    "tagged_components": 132,
+    "closed_winding_positive_volume_all": true
+  },
+  "pose_results": [
+    {
+      "id": "left_neutral",
+      "angles_deg": {
+        "forefoot": 0,
+        "heel": 0
+      },
+      "locks_withdrawn": false,
+      "expected_stop_pairs": [
+        [
+          "left_composite_negative_y_fore_rotor",
+          "left_composite_negative_y_forefoot_neutral_stop"
+        ],
+        [
+          "left_composite_negative_y_heel_rotor",
+          "left_composite_negative_y_heel_neutral_stop"
+        ],
+        [
+          "left_composite_positive_y_fore_rotor",
+          "left_composite_positive_y_forefoot_neutral_stop"
+        ],
+        [
+          "left_composite_positive_y_heel_rotor",
+          "left_composite_positive_y_heel_neutral_stop"
+        ]
+      ],
+      "unexpected_cross_group_pairs": []
+    },
+    {
+      "id": "left_unloaded_fold",
+      "angles_deg": {
+        "forefoot": -15,
+        "heel": 10
+      },
+      "locks_withdrawn": true,
+      "expected_stop_pairs": [],
+      "unexpected_cross_group_pairs": []
+    },
+    {
+      "id": "right_neutral",
+      "angles_deg": {
+        "forefoot": 0,
+        "heel": 0
+      },
+      "locks_withdrawn": false,
+      "expected_stop_pairs": [
+        [
+          "right_composite_negative_y_fore_rotor",
+          "right_composite_negative_y_forefoot_neutral_stop"
+        ],
+        [
+          "right_composite_negative_y_heel_rotor",
+          "right_composite_negative_y_heel_neutral_stop"
+        ],
+        [
+          "right_composite_positive_y_fore_rotor",
+          "right_composite_positive_y_forefoot_neutral_stop"
+        ],
+        [
+          "right_composite_positive_y_heel_rotor",
+          "right_composite_positive_y_heel_neutral_stop"
+        ]
+      ],
+      "unexpected_cross_group_pairs": []
+    },
+    {
+      "id": "right_unloaded_fold",
+      "angles_deg": {
+        "forefoot": -15,
+        "heel": 10
+      },
+      "locks_withdrawn": true,
+      "expected_stop_pairs": [],
+      "unexpected_cross_group_pairs": []
+    }
+  ],
+  "remaining_failures": [
+    "White upper-ankle front guard shortened substantially for toe clearance; actual Cycles whole-foot source comparison still required, appearance not accepted.",
+    "Heel front corner mouth opened for fixed shaft/seat clearance; exact guard mounts and service retention not assigned.",
+    "Stop bracket attachment requires added stationary arch mounts; fore bracket top/boss bottom vertical separation 35mm. Tongue guide mounts are also unverified.",
+    "Within-group skin/frame/material overlaps not audited or manufactured joins; some fork/rotor/ear meetings are only envelope overlaps.",
+    "Separate contact materials, masses/inertias and future SI articulated-body contract missing; no few-ton capacity conclusion.",
+    "Only neutral and unloaded endpoint poses checked; continuous sweep and native engine physical contact not verified."
+  ],
+  "diagnostic_script": ".scratch/check_gorilla_c15_composite_module.py",
+  "diagnostic_script_auxiliary_sources": [
+    ".scratch/check_gorilla_c15_foot_space.py (AST function definitions only)",
+    ".scratch/check_gorilla_c12_foot_native.py (AST project function only)",
+    ".scratch/gorilla_c15_foot_space_scene.json (frozen C14)"
+  ],
+  "diagnostic_report": ".scratch/gorilla_c15_composite_module_report.json",
+  "diagnostic_scene": ".scratch/gorilla_c15_composite_native_scene.json",
+  "actual_native_views": [
+    ".scratch/gorilla_c15_composite_neutral_left_native.png",
+    ".scratch/gorilla_c15_composite_unloaded_fold_left_native.png",
+    ".scratch/gorilla_c15_composite_neutral_front_native.png"
+  ],
+  "diagnostic_runtime": "uv run --no-project --with numpy --with pillow --with scipy python .scratch/check_gorilla_c15_composite_module.py",
+  "controlled_module_edits_stopped": true,
+  "integrated_scene_sha256": "7a1e49f45838303ca5fd86265dc9980c10cde85ed7626424136afd3863aa5886",
+  "integrated_foot_native_geometry_matches_diagnosed_candidate": true,
+  "appearance_accepted": false,
+  "physics_accepted": false
+}

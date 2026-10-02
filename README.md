@@ -1,12 +1,21 @@
 # Sai_Rotbots
 
-面向真实世界互动与任务的开源机器人工程。保留轮腿机器人 **Sai_Agent_001**、后备箱平整的 **Sai_Agent_002**，并开发长颈双足机器人 **Goose V0.1**。仓库由 `Sai_Agent_001` 直接改名，提交历史和旧版本发布均保留。
+面向真实世界互动与任务的开源机器人工程。保留轮腿机器人 **Sai_Agent_001**、后备箱平整的 **Sai_Agent_002**，并开发 **Goose V0.1** 与大型双足双手机器人 **Gorilla V0.1**。仓库由 `Sai_Agent_001` 直接改名，提交历史和旧版本发布均保留。
 
 | Robot | Cargo bay | Guide |
 |---|---|---|
 | Sai_Agent_001 | Original powered opposed pads and belt mechanism | [001](robots/Sai_Agent_001/README.md) |
 | Sai_Agent_002 | Continuous flat floor, no moving clamp mechanism | [002](robots/Sai_Agent_002/README.md) |
 | Goose_V0.1 | Long-neck biped with a gripping beak; initial training checkpoint | [Goose](robots/Goose_V0.1/README.md) |
+| gorilla_v0_1 | AA3 appearance; C15 segmented-foot stage, physical gates open | [Gorilla](robots/gorilla_v0_1/README.md) |
+
+## Gorilla V0.1：AA3 外形与复合脚阶段
+
+Gorilla 以用户确认的 AA3 四视图为唯一外观基准，原图比例优先、高度暂取 2.65 m；目标是双足移动、双手操作与自主复杂任务。当前 [C15 阶段基底](robots/gorilla_v0_1/design/appearance_c15_stage.md)保存实际外壳、有限壁厚主框架和分段前掌/足弓/后跟；已提供同源可编辑模型、七机位实渲及有界几何检查。
+
+![Gorilla C15 actual source geometry](robots/gorilla_v0_1/images/appearance_c_four_view.png)
+
+这是一份可回退的探索候选，外观、完整内部装配、锁止承力和稳定物理合同仍未放行。历史 B 的运行模型与 C15 显示几何分别保留版本；Gorilla 不使用现有轮腿控制器或策略，Bevy 原生物理任务尚待后续验证。下一阶段先闭合真实内部模块的质量、空间、输出、供电与热预算，再细化壳体。
 
 ## Goose V0.1：一只幽默又实用的机器人鹅
 

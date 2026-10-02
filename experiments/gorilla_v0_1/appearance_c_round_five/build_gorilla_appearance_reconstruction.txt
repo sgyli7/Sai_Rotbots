@@ -1,0 +1,565 @@
+#!/usr/bin/env python3
+"""Reconstruct the sole Gorilla AA3 artwork as editable hard-surface geometry.
+
+This appearance source has no physical approval or inferred hardware mass.
+Pixel coordinates refer to the user's original 1280-square sheet; hidden depths
+are explicit reconstruction choices, not measurements from calibrated cameras.
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import math
+from pathlib import Path
+
+import numpy as np
+from scipy.interpolate import PchipInterpolator
+
+from build_gorilla_proportion_layout import Geometry as PrimitiveGeometry
+
+ROOT = Path(__file__).resolve().parents[2]
+ROBOT = ROOT / "robots/gorilla_v0_1"
+SCALE = 2.65 / 516
+CX = 325.5
+GROUND = 603
+PALETTE = {
+    "ivory": [0.91, 0.88, 0.80, 1],
+    "blue": [0.015, 0.57, 0.88, 1],
+    "gold": [1.0, 0.64, 0.13, 1],
+    "dark": [0.075, 0.08, 0.084, 1],
+    "metal": [0.16, 0.17, 0.17, 1],
+    "black": [0.018, 0.022, 0.026, 1],
+}
+IVORY, BLUE, GOLD, DARK, METAL, BLACK = (PALETTE[k] for k in ("ivory", "blue", "gold", "dark", "metal", "black"))
+
+
+def sha(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def yz(px, py, rear=False):
+    return np.array([(px - CX if rear else CX - px) * SCALE, (GROUND - py) * SCALE])
+
+
+class Geometry(PrimitiveGeometry):
+    """A named control mesh plus explicit surface finish parameters."""
+
+    def part(self, name, body, vertices, faces, color, hardware=False, note=""):
+        super().part(name, body, vertices, faces, color, hardware, note)
+        part = self.parts[-1]
+        part.pop("shell_density_kg_m3")
+        part.pop("shell_thickness_m")
+        part.pop("mass_basis_note")
+        part.update({
+            "role": "visible_mechanism" if hardware else "armor_surface",
+            "physical_mass_assigned": False,
+            "reconstruction_note": note or "Visible shape reconstructed from the sole artwork; hidden depth is a candidate.",
+            "edge_bevel_m": 0,
+            "bevel_segments": 3,
+            "surface_shading": "mechanical_smooth" if hardware else "flat_weighted_normals",
+        })
+
+    def panel(self, name, body, outline, front, depth, color, bevel=.006, rear=False, camber=.012):
+        """A shaped plate from an artwork outline, with separately editable rim.
+
+        outline uses original full-sheet FRONT pixels. rear=True reverses lateral
+        coordinates and extrusion. Front can be a scalar or f(y,z) surface depth.
+        The source is genuine three-dimensional geometry, with no image texture.
+        """
+        q = np.array([yz(x, z, rear) for x, z in outline])
+        center = q.mean(axis=0)
+        inward = center + .94 * (q - center)
+        sign = -1 if rear else 1
+        def position(p, inset=0):
+            y, z = p
+            x = front(y, z) if callable(front) else front
+            return [x + sign * inset, y, z]
+        v = [position(p) for p in q]
+        v += [position(p, camber) for p in inward]
+        v += [position(p, -depth) for p in q]
+        n = len(q)
+        v.append(position(center, camber))
+        faces = []
+        for i in range(n):
+            j = (i + 1) % n
+            faces.extend([[i, j, n+j, n+i], [n+i, n+j, 3*n], [i, 2*n+i, 2*n+j, j]])
+        faces.append(list(reversed(range(2*n, 3*n))))
+        self.part(name, body, v, faces, color)
+        self.parts[-1]["edge_bevel_m"] = bevel
+        self.parts[-1]["reference_outline_px"] = outline
+
+    def tube(self, name, body, points, radius, color, n=10):
+        # Closed constant-section polylines for seams, conduits and trim.
+        for i, (a, b) in enumerate(zip(points[:-1], points[1:])):
+            self.link(f"{name}_{i:02}", body, a, b, [(0, radius, radius), (1, radius, radius)], color, True, n)
+            self.parts[-1]["edge_bevel_m"] = 0
+
+    def seam(self, name, body, pixels, surface, radius=.0013, color=METAL, rear=False):
+        line=[]
+        for px, py in pixels:
+            y,z=yz(px,py,rear)
+            x=surface(y,z) if callable(surface) else surface
+            line.append([x+(-.003 if rear else .003),y,z])
+        self.tube(name,body,line,radius,color,8)
+
+    def bolt(self, name, body, pos, axis=(1,0,0), radius=.006, color=METAL):
+        a=np.asarray(pos,float);d=np.asarray(axis,float);d/=np.linalg.norm(d)
+        self.link(name,body,a-d*.002,a+d*.002,[(0,radius,radius),(1,radius,radius)],color,True,12)
+        self.parts[-1]["edge_bevel_m"] = .0006
+
+    def rounded_rect(self, name, body, center, width, height, thickness, radius, color, rear=False):
+        # The rectangle's broad face is in YZ, with actual rounded corners.
+        cx,cy,cz=center
+        p=[]
+        for sy,sz,start in ((1,1,0),(-1,1,90),(-1,-1,180),(1,-1,270)):
+            # Profile generated clockwise in YZ.
+            yc=cy+sy*(width/2-radius);zc=cz+sz*(height/2-radius)
+            for a in np.linspace(start,start+90,7):
+                t=math.radians(a)
+                p.append([yc+radius*math.cos(t),zc+radius*math.sin(t)])
+        n=len(p);sgn=-1 if rear else 1
+        v=[[cx,y,z] for y,z in p]+[[cx-sgn*thickness,y,z] for y,z in p]
+        f=[list(reversed(range(n))),list(range(n,2*n))]
+        f += [[i,(i+1)%n,(i+1)%n+n,i+n] for i in range(n)]
+        self.part(name,body,v,f,color,True)
+        self.parts[-1]["edge_bevel_m"] = .0015
+
+
+CHEST_CURVE=PchipInterpolator([1.745,1.90,2.16,2.31,2.48,2.60,2.65],[.305,.37,.54,.54,.28,.045,-.025])
+
+
+def chest_front(y,z):
+    x=float(CHEST_CURVE(z))
+    return x-.020*(abs(y)/.37)**2
+
+
+def chest_back(y,z):
+    return float(np.interp(z,[1.75,1.90,2.16,2.46,2.59,2.65],[-.155,-.25,-.32,-.33,-.27,-.19]))+.018*(abs(y)/.4)**2
+
+
+def mirror_outline(outline):
+    return [[2*CX-x,y] for x,y in reversed(outline)]
+
+
+def polygon_span(outline, scan_y):
+    crossings=[]
+    for a,b in zip(outline,outline[1:]+outline[:1]):
+        if abs(a[1]-b[1])<1e-9:
+            if abs(scan_y-a[1])<1e-8:crossings.extend([a[0],b[0]])
+        elif min(a[1],b[1])-1e-8<=scan_y<=max(a[1],b[1])+1e-8:
+            crossings.append(a[0]+(b[0]-a[0])*(scan_y-a[1])/(b[1]-a[1]))
+    if not crossings:raise ValueError(f"No contour at {scan_y}")
+    return min(crossings),max(crossings)
+
+
+def dual_view_shell(g,name,body,front_outline,side_outline,color,sign=1,steps=15):
+    """A wraparound shell constrained by front and left silhouettes.
+
+    The cross section has broad planes with curved/chamfered transitions. This
+    changes the geometry type, rather than thickening a two-dimensional plate.
+    Side art is uncalibrated and therefore remains an appearance depth choice.
+    """
+    lower=max(min(p[1] for p in front_outline),min(p[1] for p in side_outline))+.15
+    upper=min(max(p[1] for p in front_outline),max(p[1] for p in side_outline))-.15
+    profile=[(1,-.58),(1,.58),(.82,.87),(.50,1),(-.54,1),(-.91,.77),(-1,.35),
+             (-1,-.35),(-.91,-.77),(-.54,-1),(.50,-1),(.82,-.87)]
+    vertices=[]
+    for py in np.linspace(lower,upper,steps):
+        fa,fb=polygon_span(front_outline,float(py));sa,sb=polygon_span(side_outline,float(py))
+        y0,y1=(CX-fb)*SCALE,(CX-fa)*SCALE
+        x0,x1=(971-sb)*SCALE,(971-sa)*SCALE
+        cy,ry=(y0+y1)/2,max((y1-y0)/2,.003)
+        cx,rx=(x0+x1)/2,max((x1-x0)/2,.004)
+        for xx,yy in profile:vertices.append([cx+rx*xx,sign*(cy+ry*yy),(GROUND-py)*SCALE])
+    n=len(profile);faces=[list(reversed(range(n)))]
+    for k in range(steps-1):
+        for i in range(n):
+            j=(i+1)%n;faces.append([k*n+i,k*n+j,(k+1)*n+j,(k+1)*n+i])
+    faces.append(list(range((steps-1)*n,steps*n)))
+    g.part(name,body,vertices,faces,color)
+    g.parts[-1].update({"edge_bevel_m":0,"surface_shading":"curved_hard_surface",
+        "reference_front_outline_px":front_outline,"reference_left_outline_px":side_outline,
+        "reconstruction_note":"Cross sections from sole FRONT/LEFT silhouettes; depth interpretation and hidden caps uncalibrated."})
+
+
+def shoulder_sweep(g,side,sign):
+    # The front end narrows inward and down, rather than project as a flat
+    # rectangular shoulder pad. Sections wrap the same underlying dark socket.
+    sections=[
+        [[.335,.235,2.335],[.145,.457,2.445],[.112,.470,2.400],[.308,.260,2.310]],
+        [[.160,.302,2.477],[.083,.548,2.458],[.066,.557,2.411],[.137,.320,2.430]],
+        [[.035,.345,2.549],[-.020,.586,2.538],[-.022,.593,2.491],[.015,.359,2.501]],
+        [[-.105,.370,2.572],[-.105,.578,2.553],[-.105,.584,2.505],[-.105,.382,2.523]],
+        [[-.228,.373,2.543],[-.232,.553,2.516],[-.213,.560,2.472],[-.206,.382,2.495]],
+        [[-.322,.330,2.458],[-.308,.540,2.447],[-.275,.546,2.411],[-.288,.345,2.415]],
+        [[-.290,.273,2.344],[-.300,.491,2.420],[-.265,.506,2.394],[-.263,.285,2.318]],
+    ]
+    vertices=[[x,sign*y,z] for section in sections for x,y,z in section]
+    faces=[[3,2,1,0]]
+    for k in range(len(sections)-1):
+        for i in range(4):faces.append([4*k+i,4*k+(i+1)%4,4*(k+1)+(i+1)%4,4*(k+1)+i])
+    faces.append(list(range(4*(len(sections)-1),4*len(sections))))
+    g.part(side+"_blue_continuous_shoulder_sweep","torso",vertices,faces,BLUE)
+    g.parts[-1].update({"edge_bevel_m":0,"surface_shading":"curved_hard_surface",
+        "reconstruction_note":"One swept blue shoulder over the dark bearing, linking the original front, side and rear arcs."})
+
+
+def curved_artwork_plate(g,name,body,outline,surface,depth,color,rear=False,camber=.012):
+    across=[-1,-.91,-.68,-.30,0,.30,.68,.91,1]
+    vertices=[];steps=28
+    lo=min(p[1] for p in outline)+.10;hi=max(p[1] for p in outline)-.10
+    sign=-1 if rear else 1
+    for py in np.linspace(lo,hi,steps):
+        a,b=polygon_span(outline,float(py));cy=(CX-(a+b)/2)*SCALE;ry=max((b-a)*SCALE/2,.002)
+        for t in across:
+            y=sign*(cy+ry*t);z=(GROUND-py)*SCALE
+            vertices.append([surface(y,z)+sign*camber*(1-t*t),y,z])
+    n=len(across);count=len(vertices)
+    vertices += [[x-sign*depth,y,z] for x,y,z in vertices]
+    faces=[]
+    for k in range(steps-1):
+        for i in range(n-1):
+            q=[k*n+i,k*n+i+1,(k+1)*n+i+1,(k+1)*n+i]
+            faces.append(q);faces.append([v+count for v in reversed(q)])
+        for i in (0,n-1):
+            q=[k*n+i,(k+1)*n+i,(k+1)*n+i+count,k*n+i+count]
+            faces.append(q if i==0 else list(reversed(q)))
+    for k in (0,steps-1):
+        for i in range(n-1):
+            q=[k*n+i,k*n+i+count,k*n+i+1+count,k*n+i+1]
+            faces.append(q if k==0 else list(reversed(q)))
+    g.part(name,body,vertices,faces,color)
+    g.parts[-1].update({"edge_bevel_m":0,"surface_shading":"curved_hard_surface","reference_outline_px":outline})
+
+
+def continuous_crown(g):
+    # Connect front shield and rear shell in actual 3D; no open black slot in TOP.
+    sections=[(-.327,2.48,.385),(-.29,2.57,.380),(-.20,2.626,.35),(-.075,2.646,.315),
+              (.045,2.597,.335),(.18,2.526,.325),(.30,2.457,.290),(.43,2.38,.250)]
+    vertices=[]
+    across=[-1,-.91,-.60,0,.60,.91,1]
+    for x,z,width in sections:
+        for t in across:vertices.append([x,t*width,z-.017*t*t])
+    n=len(across);count=len(vertices)
+    vertices += [[x,y,z-.025] for x,y,z in vertices]
+    faces=[]
+    for k in range(len(sections)-1):
+        for i in range(n-1):
+            q=[k*n+i,(k+1)*n+i,(k+1)*n+i+1,k*n+i+1]
+            faces.append(q);faces.append([v+count for v in reversed(q)])
+        for i in (0,n-1):
+            q=[k*n+i,k*n+i+count,(k+1)*n+i+count,(k+1)*n+i]
+            faces.append(q if i==0 else list(reversed(q)))
+    for k in (0,len(sections)-1):
+        for i in range(n-1):
+            q=[k*n+i,k*n+i+1,k*n+i+1+count,k*n+i+count]
+            faces.append(q if k==0 else list(reversed(q)))
+    g.part("ivory_continuous_crown_bridge","torso",vertices,faces,IVORY)
+    g.parts[-1].update({"edge_bevel_m":0,"surface_shading":"curved_hard_surface"})
+
+
+def continuous_torso_shell(g,profiles):
+    front=profiles["front"]["chest_ivory_outer"]
+    back=[[x,y-612] for x,y in profiles["rear"]["rear_chest_ivory_outer"]]
+    cheek=profiles["front"]["left_blue_chest_cheek_visible"]
+    steps=48;vertices=[];faces=[];colors=[]
+    for py in np.linspace(87.12,262.80,steps):
+        a,b=polygon_span(front,float(py));yf=max((b-a)*SCALE/2,.003)
+        back_py=min(max(py,min(p[1] for p in back)+.1),max(p[1] for p in back)-.1)
+        ra,rb=polygon_span(back,float(back_py));yr=max((rb-ra)*SCALE/2,.003)
+        if py>245:yr*=max(.35,1-(py-245)/25)
+        ys=max(yf+.022,yr+.020)
+        if min(p[1] for p in cheek)<py<max(p[1] for p in cheek):
+            ca,cb=polygon_span(cheek,float(py));ys=max(ys,(CX-ca)*SCALE)
+        z=(GROUND-py)*SCALE;xf=chest_front(0,z);xr=chest_back(0,z);xm=(xf-.10+xr+.047)/2
+        ring=[(xf,yf*.80),(xf,-yf*.80),(xf-.012,-yf),(xf-.10,-yf-.027),
+              (xm,-ys),(xr+.047,-yr-.022),(xr,-yr*.92),(xr,yr*.92),
+              (xr+.047,yr+.022),(xm,ys),(xf-.10,yf+.027),(xf-.012,yf)]
+        vertices.extend([[x,y,z] for x,y in ring])
+    n=12;faces.append(list(reversed(range(n))));colors.append(IVORY)
+    for k in range(steps-1):
+        z=vertices[k*n][2]
+        for i in range(n):
+            faces.append([k*n+i,k*n+(i+1)%n,(k+1)*n+(i+1)%n,(k+1)*n+i])
+            is_side=i in (3,4,8,9)
+            color=BLUE if is_side and z<2.55 else IVORY
+            if i in (5,6,7) and z<1.842:color=DARK
+            colors.append(color)
+    faces.append(list(range((steps-1)*n,steps*n)));colors.append(DARK)
+    g.part("continuous_ivory_blue_torso_shell","torso",vertices,faces,IVORY)
+    g.parts[-1].update({"face_rgba":colors,"edge_bevel_m":0,"surface_shading":"curved_hard_surface",
+        "reconstruction_note":"Single closed torso control mesh with original white front/rear and blue side regions; eliminates overlapping roof skins.",
+        "reference_front_outline_px":front,"reference_rear_outline_normalized_px":back})
+
+
+def refine_volumes(g,spec):
+    landmarks=json.loads((ROBOT/"source/appearance_c_reference_landmarks.json").read_text())
+    profiles={v:{p["id"]:p["global_uv_px"] for p in info["profiles"]} for v,info in landmarks["views"].items()}
+    remove=["ivory_continuous_front_carapace","ivory_long_shield_face","ivory_crown_top_lip","ivory_back_carapace",
+            "saffron_front_pelvis","saffron_pelvis_front_inset","ivory_rear_sacral_cover","rear_saffron_crossbar"]
+    for side in ("left","right"):
+        remove += [side+suffix for suffix in ("_blue_shoulder_swept_top","_blue_shoulder_front_fold","_blue_rear_shoulder",
+            "_blue_forearm_outer","_blue_forearm_long_plane","_blue_deltoid_outer","_blue_deltoid_front_plane",
+            "_ivory_shoulder_cap","_ivory_upper_arm_link_cover","_ivory_upper_arm_inner_fold",
+            "_blue_thigh_armor","_blue_thigh_front_facet","_blue_middle_shank","_blue_shank_front_plane",
+            "_blue_chest_flank","_blue_lower_chest_flange","_gold_knee_guard","_gold_knee_center_face")]
+    g.parts=[p for p in g.parts if p["name"] not in remove]
+    continuous_torso_shell(g,profiles)
+    curved_artwork_plate(g,"ivory_crown_inset","torso",profiles["front"]["crown_ivory_inset"],lambda y,z:chest_front(y,z)+.014,.009,[.95,.93,.87,1],camber=.013)
+    curved_artwork_plate(g,"saffron_front_pelvis_cartridge","pelvis",profiles["front"]["pelvis_front_yellow_cartridge"],
+        lambda y,z:.305+.014*(z-1.40),.075,GOLD,camber=.010)
+    curved_artwork_plate(g,"ivory_rear_pelvis_cartridge","pelvis",[[x,y-612] for x,y in profiles["rear"]["rear_long_ivory_pelvis_cartridge"]],
+        lambda y,z:-.217,.043,IVORY,rear=True,camber=.008)
+    for side in ("left","right"):
+        curved_artwork_plate(g,side+"_rear_yellow_pelvis_band","pelvis",[[x,y-612] for x,y in profiles["rear"]["rear_"+side+"_yellow_pelvis_band_visible"]],
+            lambda y,z:-.195,.037,GOLD,rear=True,camber=.008)
+    for part in g.parts:
+        if part["name"]=="dark_torso_inner_layer":
+            # Keep the visible carrier inside the blue/ivory envelope so it
+            # cannot incorrectly occlude the art's blue inner cheek.
+            for v in part["vertices_world_m"]:v[0]=.60*v[0]-.035;v[1]*=.90
+    for side,s in (("left",1),("right",-1)):
+        shoulder_sweep(g,side,s)
+        dual_view_shell(g,side+"_blue_forearm_wrap",side+"_forearm",profiles["front"]["left_forearm_blue_outer"],profiles["left"]["forearm_blue_outer"],BLUE,s,18)
+        dual_view_shell(g,side+"_blue_deltoid_wrap",side+"_upper_arm",profiles["front"]["left_upper_arm_blue_outer_guard"],profiles["left"]["upper_arm_blue_outer_guard"],BLUE,s,12)
+        dual_view_shell(g,side+"_ivory_shoulder_cap",side+"_upper_arm",
+            [[202,130],[213,126],[221,136],[226,153],[225,170],[211,188],[198,178],[188,161],[190,145]],
+            [[990,132],[1008,137],[1020,151],[1024,167],[1019,182],[1004,191],[982,195],[961,184],[949,172],[951,155],[962,141],[978,134]],IVORY,s,12)
+        dual_view_shell(g,side+"_ivory_lower_upper_arm",side+"_upper_arm",profiles["front"]["left_upper_arm_lower_ivory_guard"],
+            [[967,197],[979,202],[1000,216],[1004,236],[995,254],[984,260],[970,237],[955,212]],IVORY,s,12)
+        dual_view_shell(g,side+"_blue_thigh_wrap",side+"_thigh",profiles["front"]["left_thigh_blue_outer"],
+            [[970,269],[949,283],[927,301],[916,318],[902,336],[897,350],[909,368],[929,382],[943,376],[965,351],[984,321],[987,299],[980,279]],BLUE,s,18)
+        dual_view_shell(g,side+"_blue_middle_shank_wrap",side+"_middle_shank",profiles["front"]["left_middle_leg_blue_outer"],profiles["left"]["middle_leg_blue_outer"],BLUE,s,15)
+        knee_outline=profiles["front"]["left_knee_yellow_insert"]
+        if s<0:knee_outline=mirror_outline(knee_outline)
+        curved_artwork_plate(g,side+"_yellow_front_knee_insert",side+"_thigh",knee_outline,
+            lambda y,z:float(np.interp(z,[1.025,1.11,1.25,1.34],[.320,.385,.475,.400])),.065,GOLD,camber=.010)
+        knee_rear=[[x,y-612] for x,y in profiles["rear"]["rear_left_knee_yellow_insert"]]
+        if s>0:knee_rear=mirror_outline(knee_rear)
+        curved_artwork_plate(g,side+"_yellow_rear_knee_insert",side+"_thigh",knee_rear,
+            lambda y,z:-.10+.030*(z-1.10),.035,GOLD,rear=True,camber=.009)
+        # Preserve original gold markers on the actual new front surfaces.
+        for part in g.parts:
+            if not part["name"].startswith(side+"_"):continue
+            if "radiator" in part["name"] or "vent_fastener" in part["name"]:
+                for v in part["vertices_world_m"]:v[0]-=.072
+                if "radiator_ivory_socket" in part["name"]:
+                    # A real white side support, rather than a protruding thin box.
+                    face_x=max(v[0] for v in part["vertices_world_m"])
+                    for v in part["vertices_world_m"]:
+                        if v[0]<face_x-.002:v[0]-=.150
+            if "forearm_gold_marker" in part["name"]:
+                for v in part["vertices_world_m"]:v[0]-=.207
+            if "deltoid_gold_marker" in part["name"]:
+                for v in part["vertices_world_m"]:v[0]-=.185
+            if "upper_arm_gold_marker" in part["name"]:
+                for v in part["vertices_world_m"]:v[0]-=.170
+            if "gold_knee" in part["name"]:
+                for v in part["vertices_world_m"]:
+                    v[0] += float(np.interp(v[2],[1.025,1.11,1.25,1.34],[.055,.105,.165,.125]))
+            if "thigh_small_marker" in part["name"]:
+                for v in part["vertices_world_m"]:v[0]-=.195
+        # Blue U-yokes frame the small elbow barrel rather than leave a bare rod.
+        outline=profiles["front"]["left_elbow_blue_yoke_visible"]
+        g.panel(side+"_blue_elbow_yoke",side+"_upper_arm",outline if s==1 else mirror_outline(outline),
+                -.100,.036,BLUE,.004,camber=.005)
+
+
+def build(spec):
+    g=Geometry(spec)
+    # The narrow-tip main shield and thin crown are separate original features.
+    g.panel("ivory_continuous_front_carapace","torso",
+        [[254,101],[272,90],[302,86],[348,86],[380,91],[398,103],
+         [387,138],[367,185],[340,258],[330,263],[315,262],[289,198],[272,153],[261,121]],
+        chest_front,.039,IVORY,.007,camber=.012)
+    g.panel("ivory_crown_top_lip","torso",
+        [[257,101],[274,91],[303,87],[349,87],[378,92],[394,101],
+         [378,111],[356,114],[296,114],[279,112]],
+        lambda y,z:chest_front(y,z)+.014,.018,[.95,.93,.87,1],.004,camber=.008)
+    g.panel("ivory_long_shield_face","torso",
+        [[279,124],[294,118],[357,118],[373,125],[365,164],[353,199],
+         [335,252],[326,259],[316,255],[299,206],[288,171]],
+        lambda y,z:chest_front(y,z)+.020,.012,IVORY,.005,camber=.008)
+    # Inset panel line around the crown, as shown on FRONT and TOP.
+    g.seam("crown_top_panel_line","torso",[[274,99],[288,109],[361,109],[376,99]],
+           lambda y,z:chest_front(y,z)+.034,.0012,color=[.46,.45,.41,1])
+    for i,(px,py) in enumerate(((278,102),(296,111),(356,111),(375,102))):
+        y,z=yz(px,py);g.bolt(f"crown_fastener_{i}","torso",[chest_front(y,z)+.037,y,z],radius=.004)
+    # Back has a broad trapezoidal shell; rear pixel coordinates are normalized
+    # to FRONT origin (the original REAR panel ground is 1215 rather than 603).
+    rear_outline=[[244,109],[262,98],[298,92],[349,91],[381,100],[400,110],
+                  [391,142],[383,194],[381,226],[369,253],[342,260],[294,260],
+                  [273,251],[262,224],[257,194],[251,146]]
+    g.panel("ivory_back_carapace","torso",rear_outline,chest_back,.039,IVORY,.007,rear=True,camber=.009)
+    # Open dark carrier: hidden in front by the original ivory/blue armor.
+    g.loft("dark_torso_inner_layer","torso",[
+        ([.00,0,1.75],.13,.22),([.05,0,1.94],.23,.29),
+        ([.03,0,2.15],.27,.37),([-.045,0,2.38],.25,.40),([-.10,0,2.54],.16,.35)],DARK,True,square=True)
+    for side,s in (("left",1),("right",-1)):
+        def out(p): return p if s==1 else mirror_outline(p)
+        # Chest sides retain the staggered shoulders, vents and lower blue flanges.
+        g.panel(side+"_blue_chest_flank","torso",out([
+            [252,147],[275,145],[291,192],[307,250],[289,252],[273,244],
+            [250,238],[244,221],[245,190]]),
+            lambda y,z:.30+(.15 if z>2.08 else .02),.25,BLUE,.010,camber=.025)
+        g.panel(side+"_blue_lower_chest_flange","torso",out([
+            [253,212],[272,208],[290,243],[302,256],[277,251],[260,243],[252,228]]),
+            lambda y,z:.35,.08,BLUE,.006,camber=.012)
+        # Swept compact shoulders, in contrast to the rejected inflated blobs.
+        g.panel(side+"_blue_shoulder_swept_top","torso",out([
+            [212,113],[220,107],[251,101],[259,108],[269,127],[277,150],
+            [259,154],[239,147],[225,132],[216,124]]),
+            lambda y,z:.075+.10*(2.60-z),.38,BLUE,.012,camber=.017)
+        g.panel(side+"_blue_shoulder_front_fold","torso",out([
+            [218,121],[240,124],[266,146],[277,151],[261,157],[238,150],[225,137]]),
+            .15,.046,[.012,.49,.79,1],.006,camber=.010)
+        # Rear visible shoulder is slightly behind the crown.
+        g.panel(side+"_blue_rear_shoulder","torso",out([
+            [210,120],[218,113],[248,107],[266,129],[274,145],[252,150],[223,142]]),
+            -.25,.055,BLUE,.009,rear=True,camber=.012)
+        # Radiators have rounded inset frames, black wells and narrow louvers.
+        y=s*(CX-260)*SCALE;z=(GROUND-185)*SCALE
+        g.rounded_rect(side+"_radiator_ivory_socket","torso",[.477,y,z],.174,.333,.025,.034,IVORY)
+        g.rounded_rect(side+"_radiator_gold_trim","torso",[.489,y,z],.137,.287,.012,.023,GOLD)
+        g.rounded_rect(side+"_radiator_black_well","torso",[.493,y,z],.112,.266,.018,.016,BLACK)
+        for i in range(13):
+            zz=z-.120+i*.020
+            g.box(side+f"_radiator_louver_{i:02}","torso",[.498,y,zz],[.007,.093,.0055],[.29,.29,.25,1],True)
+            g.parts[-1]["edge_bevel_m"] = .001
+        for zz in (z-.13,z+.13):
+            for dy in (-.060,.060):
+                g.bolt(side+f"_vent_fastener_{zz:.3f}_{dy:.3f}".replace("-","n").replace(".","p"),"torso",[.502,y+dy,zz],radius=.0038)
+    # Slim vertical central indicator, flush with the long shield.
+    zz=(GROUND-200)*SCALE;xx=chest_front(0,zz)+.042
+    g.rounded_rect("central_indicator_recess","torso",[xx,0,zz],.069,.248,.010,.010,DARK)
+    g.rounded_rect("central_indicator_gold_frame","torso",[xx+.002,0,zz],.054,.220,.006,.007,GOLD)
+    g.rounded_rect("central_indicator_lit_strip","torso",[xx+.007,0,zz],.025,.185,.004,.004,[1,.83,.32,1])
+    # Back service door follows REAR: rounded corners, inset dark seam, four screws.
+    g.rounded_rect("rear_service_door_shadow","torso",[-.354,0,2.180],.310,.400,.010,.037,DARK,True)
+    g.rounded_rect("rear_blue_service_door","torso",[-.359,0,2.180],.290,.380,.012,.027,BLUE,True)
+    g.rounded_rect("rear_service_latch","torso",[-.374,0,2.320],.068,.026,.009,.007,DARK,True)
+    g.rounded_rect("rear_door_upper_tab","torso",[-.336,0,2.425],.048,.054,.015,.008,BLUE,True)
+    for i,(y,z) in enumerate(((-.113,2.027),(.113,2.027),(-.113,2.33),(.113,2.33))):
+        g.bolt(f"rear_door_screw_{i}","torso",[-.377,y,z],axis=(-1,0,0),radius=.005)
+    g.seam("rear_crown_panel_seam","torso",[[280,107],[296,131],[352,131],[370,107]],
+           lambda y,z:chest_back(y,z)-.016,.0013,rear=True,color=[.46,.45,.41,1])
+    # Short ivory coupler under the shield, then a compact saffron pelvis.
+    g.panel("ivory_central_waist_coupler","pelvis",[[308,263],[342,263],[338,275],[314,275]],.23,.10,IVORY,.007,camber=.004)
+    g.loft("dark_pelvis_inner_layer","pelvis",[([0,0,1.43],.105,.16),([0,0,1.62],.14,.18),([0,0,1.75],.12,.15)],DARK,True,square=True)
+    g.panel("saffron_front_pelvis","pelvis",[[300,278],[308,275],[338,275],[348,282],
+        [342,322],[336,344],[314,344],[305,322]],.302,.103,GOLD,.009,camber=.009)
+    g.panel("saffron_pelvis_front_inset","pelvis",[[308,284],[335,284],[340,291],[333,333],[318,333]],.323,.007,[1,.69,.20,1],.004,camber=.003)
+    g.rounded_rect("pelvis_front_black_latch","pelvis",[.339,0,1.410],.044,.061,.008,.008,DARK)
+    g.panel("ivory_rear_sacral_cover","pelvis",[[307,294],[337,294],[335,340],[329,353],[316,353],[310,340]],-.217,.043,IVORY,.008,rear=True,camber=.01)
+    g.panel("rear_saffron_crossbar","pelvis",[[274,278],[285,270],[312,276],[336,276],[360,270],[372,278],[369,286],[283,286]],-.195,.065,GOLD,.007,rear=True,camber=.008)
+    for side,s in (("left",1),("right",-1)):
+        def out(p):return p if s==1 else mirror_outline(p)
+        sh=spec["points_world_m"][side+"_shoulder"]
+        el=spec["points_world_m"][side+"_elbow"]
+        # Upper shoulder porcelain cap and compact outer swept deltoid.
+        g.panel(side+"_ivory_shoulder_cap",side+"_upper_arm",out([
+            [202,130],[213,126],[221,136],[226,153],[225,170],[211,188],
+            [198,178],[188,161],[190,145]]),.12,.22,IVORY,.009,camber=.022)
+        g.panel(side+"_blue_deltoid_outer",side+"_upper_arm",out([
+            [184,151],[195,153],[200,169],[197,194],[194,214],[172,217],
+            [153,206],[160,183],[172,161]]),.15,.25,BLUE,.009,camber=.025)
+        g.panel(side+"_blue_deltoid_front_plane",side+"_upper_arm",out([
+            [185,155],[193,161],[195,184],[185,204],[167,208],[162,202],[170,183]]),
+            .175,.021,[.013,.61,.92,1],.004,camber=.008)
+        g.panel(side+"_ivory_upper_arm_link_cover",side+"_upper_arm",out([
+            [204,184],[220,192],[229,210],[218,233],[204,250],[185,243],
+            [182,230],[190,207]]),.165,.16,IVORY,.009,camber=.019)
+        g.panel(side+"_ivory_upper_arm_inner_fold",side+"_upper_arm",out([
+            [208,199],[219,211],[210,236],[203,244],[193,238],[197,218]]),
+            .19,.015,[.96,.94,.87,1],.004,camber=.005)
+        # Thick outward-biased blue forearm with slanted upper and lower openings.
+        g.panel(side+"_blue_forearm_outer",side+"_forearm",out([
+            [156,260],[181,269],[203,282],[208,307],[201,340],[190,359],
+            [167,362],[146,370],[141,350],[138,309],[141,278]]),
+            lambda y,z:.20+.022*math.sin((z-1.22)/.56*math.pi),.26,BLUE,.012,camber=.034)
+        g.panel(side+"_blue_forearm_long_plane",side+"_forearm",out([
+            [159,272],[176,276],[193,286],[196,307],[187,342],[177,355],[150,364],[147,343],[147,305]]),
+            lambda y,z:.241+.012*math.sin((z-1.22)/.56*math.pi),.018,[.015,.61,.93,1],.006,camber=.008)
+        # Upper lip is a separate bent edge, with an actual dark gap around the joint.
+        g.seam(side+"_forearm_upper_edge",""+side+"_forearm",out([[151,263],[170,269],[188,278],[203,287]]),.211,.0022,color=DARK)
+        for tag,pixels,xpos in (("deltoid",[[185,181],[190,177],[193,199],[189,202]],.190),
+                               ("upper_arm",[[196,228],[200,228],[196,241],[192,240]],.216),
+                               ("forearm",[[170,338],[175,337],[173,351],[169,352]],.267)):
+            body=side+("_upper_arm" if tag!="forearm" else "_forearm")
+            g.panel(side+"_"+tag+"_gold_marker",body,out(pixels),xpos,.008,GOLD,.002,camber=.002)
+        # Ivory hip transition, blue thigh and the separate faceted yellow guard.
+        g.panel(side+"_ivory_hip_cuff",side+"_thigh",out([
+            [271,250],[287,249],[300,260],[296,269],[287,278],[272,271],[265,260]]),.090,.15,IVORY,.007,camber=.006)
+        g.panel(side+"_blue_thigh_armor",side+"_thigh",out([
+            [246,269],[268,270],[279,283],[290,309],[298,341],[297,364],
+            [286,382],[272,393],[235,390],[221,377],[216,349],[220,315],[230,286]]),
+            lambda y,z:.13+.070*math.sin((z-1.1)/.55*math.pi),.28,BLUE,.011,camber=.026)
+        g.panel(side+"_blue_thigh_front_facet",side+"_thigh",out([
+            [248,275],[264,277],[275,300],[282,332],[279,350],[250,348],[234,358],
+            [228,340],[233,304]]),.222,.018,[.014,.61,.92,1],.007,camber=.005)
+        g.panel(side+"_gold_knee_guard",side+"_thigh",out([
+            [243,342],[273,348],[285,375],[280,392],[268,402],[243,399],[231,387],[231,368]]),
+            .274,.082,GOLD,.008,camber=.012)
+        g.panel(side+"_gold_knee_center_face",side+"_thigh",out([
+            [247,349],[267,351],[278,376],[270,393],[250,390],[240,377]]),
+            .293,.008,[1,.69,.20,1],.004,camber=.006)
+        # Middle leg sweeps rearward in depth; deliberately asymmetrical armor.
+        g.panel(side+"_blue_middle_shank",side+"_middle_shank",out([
+            [218,429],[241,427],[266,431],[277,442],[275,464],[265,491],
+            [244,504],[218,499],[207,484],[202,457],[205,441]]),
+            lambda y,z:float(np.interp(z,[.52,.70,.88],[.065,.19,.275])),.19,BLUE,.010,camber=.020)
+        g.panel(side+"_blue_shank_front_plane",side+"_middle_shank",out([
+            [222,434],[243,435],[263,439],[259,466],[243,496],[222,493],[211,477],[211,454]]),
+            lambda y,z:float(np.interp(z,[.52,.70,.88],[.093,.215,.305])),.015,[.02,.61,.92,1],.006,camber=.008)
+        g.panel(side+"_blue_distal_front_guard",side+"_distal_shank",out([
+            [213,513],[239,514],[246,531],[239,543],[207,541],[208,528]]),
+            .055,.055,BLUE,.006,camber=.009)
+        g.panel(side+"_ivory_distal_side_tab",side+"_distal_shank",out([
+            [245,524],[252,528],[250,543],[240,548],[238,542]]),-.035,.022,IVORY,.004,camber=.004)
+        for tag,pixels,xpos in (("thigh",[[261,281],[265,281],[263,291],[260,291]],.224),
+                               ("knee",[[234,366],[239,363],[237,378],[233,379]],.290),
+                               ("shank",[[208,447],[211,446],[210,458],[207,458]],.231)):
+            body=side+("_thigh" if tag!="shank" else "_middle_shank")
+            g.panel(side+"_"+tag+"_small_marker",body,out(pixels),xpos,.004,GOLD if tag!="knee" else METAL,.001,camber=.001)
+    refine_volumes(g,spec)
+    from gorilla_appearance_mechanics import add_mechanics
+    first_mechanics=len(g.parts)
+    add_mechanics(g,spec["points_world_m"],PALETTE)
+    # These parts already have native bevel/lathe profiles. Additional blanket
+    # bevels collapsed tiny ring/knuckle edges in round-three GLB topology.
+    for part in g.parts[first_mechanics:]:part["edge_bevel_m"]=0
+    for part in g.parts:
+        if any(token in part["name"] for token in ("small_marker","ivory_central_waist_coupler","ivory_distal_side_tab")):
+            part["edge_bevel_m"]=0
+    return g
+
+
+def main():
+    p=argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--spec",type=Path,default=ROBOT/"configs/appearance_c_spec.json")
+    p.add_argument("--output",type=Path,default=ROBOT/"cad/source/appearance_c_scene.json")
+    args=p.parse_args()
+    spec=json.loads(args.spec.read_text())
+    image=ROBOT/spec["appearance_authority"]["path"]
+    if sha(image)!=spec["appearance_authority"]["sha256"]:raise ValueError("Sole artwork identity changed")
+    g=build(spec)
+    v=np.concatenate([np.array(p["vertices_world_m"]) for p in g.parts])
+    scripts=[Path(__file__),Path(__file__).with_name("gorilla_appearance_mechanics.py"),Path(__file__).with_name("build_gorilla_proportion_layout.py"),ROBOT/"source/appearance_c_reference_landmarks.json"]
+    scene={
+        "schema":"gorilla_appearance_scene_v2","robot_id":"gorilla_v0_1","checkpoint_id":"gorilla_appearance_c",
+        "spec_path":str(args.spec.relative_to(ROOT)),"spec_sha256":sha(args.spec),
+        "appearance_authority_path":str(image.relative_to(ROOT)),"image_sha256":sha(image),
+        "units":"m","coordinate_frame":spec["coordinate_frame"],"rgba_encoding":"sRGB converted to linear by renderer",
+        "parts":g.parts,"bounds_world_m":[v.min(axis=0).tolist(),v.max(axis=0).tolist()],"dimensions_xyz_m":np.ptp(v,axis=0).tolist(),
+        "build_inputs":[{"path":str(x.relative_to(ROOT)),"sha256":sha(x)} for x in scripts],
+        "physical_parameters_status":"not_assigned_appearance_reconstruction_only",
+        "appearance_accepted":False,"physics_accepted":False,
+        "uncertainties":["Artwork cameras, illumination and four-view poses are not calibrated.","Hidden depths and unseen mechanism surfaces are reconstructed candidates.","Display grouping uses historical body names; it is not a new physical joint contract.","Explicit bevel modifiers are applied identically before all rendering and export."],
+    }
+    args.output.parent.mkdir(parents=True,exist_ok=True)
+    args.output.write_text(json.dumps(scene,indent=2)+"\n")
+    print(json.dumps({"scene":str(args.output),"parts":len(g.parts),"dimensions_xyz_m":scene["dimensions_xyz_m"]}))
+
+
+if __name__=="__main__":main()

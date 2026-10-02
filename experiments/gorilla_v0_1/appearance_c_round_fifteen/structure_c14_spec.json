@@ -1,0 +1,48 @@
+{
+  "schema": "gorilla_primary_structure_candidate_v1",
+  "robot_id": "gorilla_v0_1",
+  "status": "editable_structural_and_quasistatic_candidate_not_stable_physics",
+  "appearance_spec": "robots/gorilla_v0_1/configs/appearance_c_spec.json",
+  "material": {
+    "id": "s355j2h_conditional",
+    "density_kg_m3": 7850,
+    "young_modulus_Pa": 210000000000,
+    "poisson_ratio": 0.3,
+    "minimum_yield_Pa": 355000000,
+    "candidate_wall_range_m": [0.006, 0.01],
+    "properties_basis": "SSAB 355J2H material product, 3-12.5 mm wall; ambient elastic coefficients and density from SSAB handbook section 1.6.3. Custom bent/welded members still require material certificates and joint/HAZ qualification.",
+    "sources": [
+      "https://www.ssab.com/en/brands-and-products/ssab-domex/product-offer/tube-355-j2h",
+      "https://www.ssab.com/-/media/files/en/infra/news-and-articles/ssab-domex-tube-structural-hollow-sections-en-1993-handbook.pdf",
+      "https://steelconstruction.info/topics/design/steel-material-properties/"
+    ]
+  },
+  "screen_policy": {
+    "gravity_m_s2": 9.80665,
+    "nominal_yield_margin_target": 2.0,
+    "proof_claim": false,
+    "contact": "Unilateral vertical reactions at actual sole polygon vertices; no fixed root/ground torque. Gravity-only quasistatics.",
+    "articulations": "Wrench demands at current geometric joints; no actuator torque limits or stiffness assigned. Required holding torque is not supplied automatically.",
+    "load_cases": "External 2/3-tonne equivalent crown compression is a structural test demand, not a rated lifting payload. A 1.5 multiplier is a sensitivity case, not a certified dynamic factor."
+  },
+  "nonstructural_mass_candidates": [
+    {"id":"battery", "body":"torso", "mass_range_kg":[50,65,90], "position_world_m":[-0.23,0,2.12]},
+    {"id":"cooling", "body":"torso", "mass_range_kg":[25,35,55], "position_world_m":[0.14,0,2.11]},
+    {"id":"compute_sensors_display", "body":"torso", "mass_range_kg":[10,16,24], "position_world_m":[-0.16,0,2.32]},
+    {"id":"torso_housings_mounts_wiring", "body":"torso", "mass_range_kg":[20,32,50], "position_world_m":[-0.03,0,2.16]},
+    {"id":"waist_drives_bearings", "body":"pelvis", "mass_range_kg":[40,60,85], "position_world_m":[-0.01,0,1.70]},
+    {"id":"pelvis_mounts_wiring", "body":"pelvis", "mass_range_kg":[10,16,25], "position_world_m":[0,0,1.61]},
+    {"id":"hip_drives_support", "body":"thigh", "symmetric":true, "mass_range_kg":[40,60,85], "position_left_world_m":[-0.045,0.31,1.60]},
+    {"id":"knee_drives_support", "body":"middle_shank", "symmetric":true, "mass_range_kg":[20,32,45], "position_left_world_m":[-0.08,0.41,0.99]},
+    {"id":"fold_drives_support", "body":"distal_shank", "symmetric":true, "mass_range_kg":[15,24,35], "position_left_world_m":[-0.12,0.46,0.54]},
+    {"id":"ankle_drives_sole_support", "body":"foot", "symmetric":true, "mass_range_kg":[12,18,28], "position_left_world_m":[-0.075,0.53,0.24]},
+    {"id":"shoulder_drives_support", "body":"upper_arm", "symmetric":true, "mass_range_kg":[15,24,35], "position_left_world_m":[-0.13,0.56,2.29]},
+    {"id":"elbow_wrist_drives", "body":"forearm", "symmetric":true, "mass_range_kg":[12,20,30], "position_left_world_m":[-0.15,0.81,1.67]},
+    {"id":"hand_drives_mechanisms", "body":"palm", "symmetric":true, "mass_range_kg":[5,8,14], "position_left_world_m":[0.04,0.84,1.10]},
+    {"id":"leg_mounts_wiring", "body":"thigh", "symmetric":true, "mass_range_kg":[8,12,20], "position_left_world_m":[0.05,0.40,1.22]}
+  ],
+  "reserve_basis": "Explicit sensitivity allowances covering unselected drives/internal bearings, battery, thermal, wiring/mounts and electronics. Excludes the separately modeled primary boxes and frame-side steel shaft sockets. Not measured or supplier-validated; no historical B mass imported. Existing decorative mechanism solids are not also counted as filled steel. Exact drive envelopes and assembly trims remain red.",
+  "armor_density_range_kg_m3": [1300,2000,2800],
+  "armor_basis": "Actual current thin-cover/plate mesh volumes times a broad conditional material-density range. Appearance skin thickness is not manufacturing-approved. No physical claim about a chosen armor material.",
+  "open_items": ["joint_topology_and_axes", "material_certificates", "bolts_welds_flange_fatigue", "bearing_seat_stresses", "local_and_global_buckling", "continuous_drive_capacity", "mass_inertia_uncertainty", "all_installation_and_motion_clearances", "frictional_native_contact_and_dynamic_stability", "power_regeneration_thermal"]
+}

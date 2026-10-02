@@ -1,0 +1,660 @@
+"""Reference-shaped Gorilla C joints, articulated hands, and low broad shoes.
+
+This module adds only editable appearance geometry.  The AA3 user-confirmed
+four-view image is the reference; visible motor/barrel representations are not
+SKU envelopes, physical mass estimates, or verified manufacturing assemblies.
+Every color boundary below is an actual mesh boundary, never a reference image
+projected onto a simpler model.  ``add_mechanics`` accepts the existing Geometry
+builder and complete world-space point dictionary.
+"""
+from __future__ import annotations
+
+import math
+
+import numpy as np
+
+
+def _unit(value):
+    value = np.asarray(value, dtype=float)
+    return value / np.linalg.norm(value)
+
+
+def _radial_basis(axis):
+    axis = _unit(axis)
+    candidate = np.array([1.0, 0.0, 0.0])
+    if abs(np.dot(axis, candidate)) > 0.9:
+        candidate = np.array([0.0, 1.0, 0.0])
+    first = _unit(candidate - axis * np.dot(axis, candidate))
+    return axis, first, np.cross(axis, first)
+
+
+def _lathe(g, name, body, center, axis, profile, color, *, n=48,
+           hardware=True, note=""):
+    """Closed solid of revolution, with beveled axial profiles and polygon caps."""
+    axis, first, second = _radial_basis(axis)
+    center = np.asarray(center, float)
+    vertices = []
+    for offset, radius in profile:
+        for i in range(n):
+            angle = 2.0 * math.pi * i / n
+            vertices.append(center + axis * offset + radius * (
+                first * math.cos(angle) + second * math.sin(angle)))
+    faces = [list(reversed(range(n)))]
+    for k in range(len(profile) - 1):
+        for i in range(n):
+            nxt = (i + 1) % n
+            faces.append([k * n + i, k * n + nxt,
+                          (k + 1) * n + nxt, (k + 1) * n + i])
+    faces.append(list(range((len(profile) - 1) * n, len(profile) * n)))
+    g.part(name, body, vertices, faces, color, hardware, note)
+
+
+def _torus(g, name, body, center, axis, radius, radial_thickness,
+           axial_thickness, color, *, n=64, m=8, hardware=True):
+    """Thin closed ring.  Radial/axial tubes may differ, as in a machined lip."""
+    axis, first, second = _radial_basis(axis)
+    center = np.asarray(center, float)
+    vertices = []
+    for i in range(n):
+        angle = 2.0 * math.pi * i / n
+        radial = first * math.cos(angle) + second * math.sin(angle)
+        for j in range(m):
+            cross_angle = 2.0 * math.pi * j / m
+            vertices.append(center + radial * (
+                radius + radial_thickness * math.cos(cross_angle))
+                + axis * axial_thickness * math.sin(cross_angle))
+    faces = []
+    for i in range(n):
+        for j in range(m):
+            faces.append([i * m + j, ((i + 1) % n) * m + j,
+                          ((i + 1) % n) * m + (j + 1) % m,
+                          i * m + (j + 1) % m])
+    g.part(name, body, vertices, faces, color, hardware)
+
+
+def _prism(g, name, body, center, u, v, normal, outline, depth,
+           color, *, bevel=0.004, hardware=False, note=""):
+    """Beveled closed prism in an arbitrary frame; outline is in local (u,v)."""
+    center = np.asarray(center, float)
+    u, v, normal = _unit(u), _unit(v), _unit(normal)
+    outline = np.asarray(outline, float)
+    centroid = outline.mean(axis=0)
+    radius = np.linalg.norm(outline - centroid, axis=1)
+    inset = centroid + (outline - centroid) * (
+        1.0 - min(bevel / max(float(radius.min()), 1e-8), 0.23))
+    bevel = min(bevel, depth * 0.35)
+    layers = [(-depth / 2, inset), (-depth / 2 + bevel, outline),
+              (depth / 2 - bevel, outline), (depth / 2, inset)]
+    vertices = [center + p[0] * u + p[1] * v + z * normal
+                for z, polygon in layers for p in polygon]
+    n = len(outline)
+    faces = [list(reversed(range(n)))]
+    for k in range(3):
+        for i in range(n):
+            nxt = (i + 1) % n
+            faces.append([k * n + i, k * n + nxt,
+                          (k + 1) * n + nxt, (k + 1) * n + i])
+    faces.append(list(range(3 * n, 4 * n)))
+    g.part(name, body, vertices, faces, color, hardware, note)
+
+
+def _rounded_rectangle(width, height, corner):
+    x, y = width / 2, height / 2
+    corner = min(corner, x * 0.7, y * 0.7)
+    return [(-x + corner, -y), (x - corner, -y), (x, -y + corner),
+            (x, y - corner), (x - corner, y), (-x + corner, y),
+            (-x, y - corner), (-x, -y + corner)]
+
+
+def _segment(g, name, body, start, end, depth, width, color,
+             *, hardware=True, taper=0.84):
+    """Finger/connector castings use chamfered sections, rather than capsules."""
+    start, end = np.asarray(start, float), np.asarray(end, float)
+    axis = _unit(end - start)
+    cross_width = np.array([0.0, 1.0, 0.0])
+    cross_width = _unit(cross_width - axis * np.dot(axis, cross_width))
+    forward = _unit(np.cross(cross_width, axis))
+    if forward[0] < 0:
+        forward *= -1
+    outline = np.array(_rounded_rectangle(depth, width, min(depth, width) * .18))
+    vertices = []
+    rings = [(0.0, .83), (.10, 1.0), (.82, taper), (1.0, taper * .83)]
+    for t, scale in rings:
+        center = start + t * (end - start)
+        for x, y in outline * scale:
+            vertices.append(center + forward * x + cross_width * y)
+    n = len(outline)
+    faces = [list(reversed(range(n)))]
+    for k in range(len(rings) - 1):
+        for i in range(n):
+            nxt = (i + 1) % n
+            faces.append([k*n+i, k*n+nxt, (k+1)*n+nxt, (k+1)*n+i])
+    faces.append(list(range((len(rings)-1)*n, len(rings)*n)))
+    g.part(name, body, vertices, faces, color, hardware)
+    return axis, cross_width, forward
+
+
+def _curved_casting(g, name, body, path, depth, width, color):
+    """A continuous narrow chamfered casting following a short bent centerline."""
+    path = np.asarray(path, float)
+    outline = np.asarray(_rounded_rectangle(depth, width, min(depth, width)*.20))
+    vertices = []
+    previous_forward = None
+    for i, center in enumerate(path):
+        tangent = _unit(path[min(i+1, len(path)-1)] - path[max(i-1, 0)])
+        cross_width = np.array([0.0, 1.0, 0.0])
+        cross_width = _unit(cross_width - tangent*np.dot(tangent, cross_width))
+        forward = _unit(np.cross(cross_width, tangent))
+        if ((previous_forward is None and forward[0] < 0)
+                or (previous_forward is not None and np.dot(forward,previous_forward) < 0)):
+            forward *= -1
+        previous_forward = forward
+        scale = .84 if i in (0, len(path)-1) else 1.0
+        vertices.extend(center + scale*(x*forward+y*cross_width) for x,y in outline)
+    n = len(outline)
+    faces = [list(reversed(range(n)))]
+    for k in range(len(path)-1):
+        for i in range(n):
+            nxt = (i+1) % n
+            faces.append([k*n+i, k*n+nxt, (k+1)*n+nxt, (k+1)*n+i])
+    faces.append(list(range((len(path)-1)*n, len(path)*n)))
+    g.part(name, body, vertices, faces, color, True,
+           "Narrow exposed casting reconstructed from the artwork joint gap; "
+           "appearance only, not a hidden drive or a certified load-bearing part.")
+
+
+def _armor_edge_anchor(g, names, lower, y_target, fallback):
+    """Pick a rearward vertex on the actual current shell end, not stale B depth."""
+    matches = [np.asarray(p["vertices_world_m"], float)
+               for p in g.parts if p["name"] in names]
+    if not matches:
+        return np.asarray(fallback, float)
+    vertices = np.concatenate(matches)
+    zmin, zmax = vertices[:,2].min(), vertices[:,2].max()
+    band = min(.075, max(.035, .13*(zmax-zmin)))
+    selected = vertices[vertices[:,2] <= zmin+band] if lower else vertices[vertices[:,2] >= zmax-band]
+    # Rear side of the shell is where the artwork's dark fork disappears under
+    # the armor.  Keep the two ears narrow and leave the central void open.
+    selected = selected[selected[:,0] <= selected[:,0].min()+.045]
+    cost = (selected[:,1]-y_target)**2 + .08*(selected[:,2]-(zmin if lower else zmax))**2
+    anchor = selected[np.argmin(cost)].copy()
+    anchor[0] += .007  # a small real overlap underneath the visible shell lip
+    return anchor
+
+
+def _leg_shell_connections(g, side, points, palette):
+    knee, fold = (np.asarray(points[f"{side}_{name}"],float) for name in ("knee", "fold"))
+    for direction, label in ((-1, "negative_y"), (1, "positive_y")):
+        ky = knee[1] + direction*.073
+        upper = _armor_edge_anchor(g,
+            (side+"_blue_thigh_wrap", side+"_blue_thigh_armor"), True, ky,
+            knee+[.13,direction*.073,.185])
+        _curved_casting(g,side+"_knee_upper_"+label+"_fork_ear",side+"_thigh",
+            [upper, knee+[.077,direction*.073,.116],
+             knee+[.015,direction*.073,.035]], .061,.036,palette["dark"])
+        lower = _armor_edge_anchor(g,
+            (side+"_blue_middle_shank_wrap",side+"_blue_middle_shank"),False,ky,
+            knee+[.17,direction*.073,-.105])
+        _curved_casting(g,side+"_knee_lower_"+label+"_fork_ear",side+"_middle_shank",
+            [knee+[.011,direction*.073,-.027],
+             knee+[.073,direction*.073,-.082],lower],
+            .058,.035,palette["dark"])
+        fy = fold[1]+direction*.066
+        middle_end = _armor_edge_anchor(g,
+            (side+"_blue_middle_shank_wrap",side+"_blue_middle_shank"),True,fy,
+            fold+[.14,direction*.066,.054])
+        _curved_casting(g,side+"_fold_upper_"+label+"_bent_shoulder",side+"_middle_shank",
+            [middle_end,fold+[.079,direction*.066,.058],
+             fold+[.015,direction*.066,.018]],
+            .050,.034,palette["dark"])
+
+
+def _bearing(g, name, body, center, radius, length, palette, *, gold=True):
+    """Compact transverse bearing with ribbed barrel, recess, and thin gold lip."""
+    center = np.asarray(center, float)
+    dark, metal, black = (palette[k] for k in ("dark", "metal", "black"))
+    axis = np.array([0.0, 1.0, 0.0])
+    _lathe(g, name + "_inner_barrel", body, center, axis,
+           [(-length*.48, radius*.73), (-length*.42, radius*.83),
+            (length*.42, radius*.83), (length*.48, radius*.73)], dark)
+    # Two restrained dark collars separate the support cheeks and shaft.  More
+    # equally spaced bright ribs produced the rejected accordion-like first pass.
+    band_color = [float(.7*a + .3*b) for a,b in zip(dark, metal)]
+    for i, offset in enumerate((-.23, .23)):
+        _lathe(g, name + f"_barrel_band_{i}", body,
+               center + axis * offset * length, axis,
+               [(-length*.066, radius*.80), (-length*.047, radius*.94),
+                (length*.047, radius*.94), (length*.066, radius*.80)], band_color)
+    for s, label in ((-1, "negative_y"), (1, "positive_y")):
+        end = center + axis * s * length / 2
+        _lathe(g, name + "_" + label + "_support_cheek", body, end, axis,
+               [(-.013, radius*.77), (-.009, radius),
+                (.009, radius), (.013, radius*.91)], dark)
+        face = end + axis * s * .0135
+        _lathe(g, name + "_" + label + "_recessed_face", body, face, axis,
+               [(-.0025, radius*.81), (.0025, radius*.81)], black)
+        # Ring is narrow, inset, and much smaller than the surrounding armor.
+        _torus(g, name + "_" + label + "_thin_rim", body,
+               face + axis * s * .001, axis, radius*.81, .0040, .0032,
+               palette["gold"] if gold else metal)
+        _lathe(g, name + "_" + label + "_central_cap", body,
+               face + axis * s * .0035, axis,
+               [(-.0017, radius*.65), (.0017, radius*.65)], dark)
+        # Small concentric step is dark-on-dark, not an invented colored badge.
+        _torus(g, name + "_" + label + "_cap_step", body,
+               face + axis * s * .005, axis, radius*.55, .0014, .001,
+               metal, n=48, m=6)
+
+
+def _forward_elbow_cover(g, side, elbow, palette):
+    """The small near-circular gold lip visible in the source FRONT elbow gap.
+
+    This shallow +X-facing cover supplements the existing transverse casing.
+    It remains within that casing's bounding envelope and represents no extra
+    physical rotation axis, drive SKU, or inferred internal assembly.
+    """
+    elbow = np.asarray(elbow, float)
+    body = side + "_forearm"
+    axis = np.array([1.0,0.0,0.0])
+    _lathe(g,side+"_elbow_forward_shallow_cover",body,
+           elbow+[.068,0,0],axis,
+           [(-.003,.053),(0.0,.064),(.011,.064),(.016,.058)],
+           palette["dark"],n=48,hardware=True,
+           note="Shallow front-facing cover matching the artwork elbow circle; "
+                "appearance only, within the existing transverse casing bounds.")
+    _lathe(g,side+"_elbow_forward_recessed_face",body,
+           elbow+[.0815,0,0],axis,[(-.0015,.052),(.0015,.052)],
+           palette["black"],n=48)
+    _torus(g,side+"_elbow_forward_thin_gold_ring",body,
+           elbow+[.083,0,0],axis,.055,.0028,.0015,
+           palette["gold"],n=64,m=8)
+    _lathe(g,side+"_elbow_forward_dark_center",body,
+           elbow+[.0835,0,0],axis,[(-.001,.049),(.001,.049)],
+           palette["dark"],n=48)
+
+
+def _oblique_leg_covers(g, side, joint_name, center, radius, length, body, palette):
+    """Shallow forward/outward cover lips at the existing transverse shaft ends.
+
+    FRONT shows an ellipse at either side of the shaft, not a new center pivot.
+    These casing surfaces stay inside the original bearing bounding envelope.
+    """
+    center = np.asarray(center,float)
+    for direction,label in ((-1,"negative_y"),(1,"positive_y")):
+        normal = _unit([.52,direction*.854,0])
+        mount = center + [radius*.34,direction*length*.39,0]
+        name = side+"_"+joint_name+"_"+label+"_oblique_cover"
+        _lathe(g,name+"_shallow_cheek",body,mount,normal,
+               [(-.007,radius*.58),(-.005,radius*.70),
+                (.005,radius*.70),(.007,radius*.64)],
+               palette["dark"],n=48,hardware=True,
+               note="Artwork-shaped shallow oblique casing at a transverse shaft end; "
+                    "no additional physical axis or internal drive asserted.")
+        face = mount+normal*.0072
+        _lathe(g,name+"_dark_recess",body,face,normal,
+               [(-.001,radius*.55),(.001,radius*.55)],palette["black"],n=48)
+        _torus(g,name+"_thin_gold_lip",body,face+normal*.0006,normal,
+               radius*.58,.0034,.0017,palette["gold"],n=64,m=8)
+
+
+def _link_casting(g, name, body, a, b, width, depth, palette):
+    """Dark structural link with a narrower inset surface, visible between shells."""
+    axis, cross_width, forward = _segment(
+        g, name + "_frame", body, a, b, depth, width, palette["dark"],
+        hardware=True, taper=.93)
+    middle = (np.asarray(a) + np.asarray(b)) / 2 + forward * (depth/2 + .001)
+    _prism(g, name + "_recess", body, middle, cross_width, axis, forward,
+           _rounded_rectangle(width*.52, np.linalg.norm(np.asarray(b)-a)*.64, .007),
+           .004, palette["black"], bevel=.001, hardware=True)
+
+
+def _hands(g, side, s, points, palette):
+    wrist, palm = (np.asarray(points[f"{side}_{key}"], float)
+                   for key in ("wrist", "palm"))
+    body = side + "_palm"
+    ivory, dark, black, metal = (palette[k] for k in ("ivory", "dark", "black", "metal"))
+    # A narrow cuff and separated palm cover preserve exposed black wrist parts.
+    _bearing(g, side + "_wrist", body, wrist, .064, .128, palette, gold=False)
+    # The bearing stays at the forearm's wrist anchor.  Only the palm/finger
+    # appearance below is inclined, avoiding the previous 35 mm collar shift.
+    first_part = len(g.parts)
+    _prism(g, side + "_palm_inner_carrier", body,
+           palm + [-.009, 0, -.021], [0, s, 0], [0, 0, 1], [1, 0, 0],
+           [(-.062,-.077),(.060,-.072),(.080,-.045),(.080,.050),
+            (.054,.097),(-.034,.095),(-.064,.040)],
+           .082, dark, bevel=.006, hardware=True)
+    # The source ivory guard lies toward the outer palm.  The inner hinges stay
+    # visible; covering the full palm width made the previous mesh a white block.
+    _prism(g, side + "_ivory_palm_dorsal", body,
+           palm + [.046,0,0], [0,s,0], [0,0,1], [1,0,0],
+           # The seven FRONT landmark points (155,369)..(144,382), expressed
+           # relative to the reference palm and unrotated by the 18-degree rest
+           # slant.  This preserves the high inner corner and lower outer tip.
+           [(.0042,.1024),(-.0545,.1003),(-.0727,.0567),(-.0262,-.0202),
+            (.0743,-.0469),(.1136,-.0018),(.0786,.0561)],
+           .020, ivory, bevel=.003)
+    g.parts[-1]["edge_bevel_m"] = .002
+    for vertex in g.parts[-1]["vertices_world_m"]:
+        u = s*(vertex[1]-palm[1])
+        vertex[0] = round(vertex[0]+.007*max(0.0,1.0-((u-.030)/.072)**2),8)
+    # The rear image also shows a substantial clipped ivory palm plate; a thin
+    # horizontal stripe on a black carrier did not reproduce that color area.
+    _prism(g, side + "_ivory_palm_reverse_cover", body,
+           palm + [-.055,0,0], [0,s,0], [0,0,1], [1,0,0],
+           [(.004,.092),(-.046,.091),(-.062,.052),(-.022,-.018),
+            (.065,-.042),(.098,-.002),(.068,.050)],
+           .018, ivory, bevel=.003)
+    g.parts[-1]["edge_bevel_m"] = .002
+    _prism(g, side + "_palm_lower_dark_seam", body,
+           palm + [.056,s*.034,-.068], [0,s,0], [0,0,1], [1,0,0],
+           _rounded_rectangle(.082,.005,.0012),.0025,black,
+           bevel=.0007, hardware=True)
+    # Two small exposed dark hinge hats correspond to the source hand's inner
+    # edge.  They are casing details, not newly declared physical hand joints.
+    for label,y,z,r in (("upper",-.030,.071,.020),("lower",-.041,-.042,.018)):
+        _lathe(g,side+"_palm_"+label+"_exposed_hinge",body,
+               palm+[.039,s*y,z],[1,0,0],
+               [(-.004,r*.76),(-.002,r),(.006,r),(.010,r*.81)],
+               dark,n=32)
+    joints = {joint["name"]: joint for joint in g.spec["joints"]}
+    # Three fingers, with one longest center finger and naturally curled tips.
+    # Knuckle spacing is intentionally smaller than rejected B geometry.
+    lengths = [(.083,.060),(.094,.067),(.086,.062)]
+    for i, (upper_length, lower_length) in enumerate(lengths, start=1):
+        proximal = joints[f"{side}_finger_{i}_proximal"]["child"]
+        distal = joints[f"{side}_finger_{i}_distal"]["child"]
+        y = s * (i - 2) * .053
+        p = palm + [.018, y, -.086]
+        d = p + [.021,-s*.007,-upper_length]
+        end = d + [.049,-s*.040,-lower_length]
+        _lathe(g, f"{side}_finger_{i}_root_joint", proximal, p, [0, 1, 0],
+               [(-.024, .021), (-.018, .026), (.018, .026), (.024, .021)],
+               dark, n=24)
+        axis, width_axis, forward = _segment(g, f"{side}_finger_{i}_proximal_casting",
+            proximal,p+[0,0,-.010],d,.061,.051,dark,hardware=True)
+        # Ivory first phalanx plate spans the visible proximal back, with dark seams.
+        pad_center = p + (d-p)*.47 + forward * .031
+        _prism(g, f"{side}_finger_{i}_ivory_first_pad", proximal,
+               pad_center, width_axis, axis, forward,
+               _rounded_rectangle(.046,upper_length*.78,.006),
+               .013,ivory,bevel=.0025)
+        g.parts[-1]["edge_bevel_m"] = .0015
+        _prism(g, f"{side}_finger_{i}_ivory_reverse_first_pad", proximal,
+               p + (d-p)*.45 - forward*.030, width_axis, axis, forward,
+               _rounded_rectangle(.043,upper_length*.67,.005),
+               .011,ivory,bevel=.002)
+        g.parts[-1]["edge_bevel_m"] = .0015
+        # The lower black segment has a continuous slight bend, not a sharp hook.
+        _lathe(g, f"{side}_finger_{i}_interphalangeal_joint", distal,
+               d, width_axis, [(-.021, .021), (-.017, .025),
+                               (.017, .025), (.021, .021)], metal, n=24)
+        mid = d+(end-d)*.53+[-.005,s*.005,-.004]
+        _curved_casting(g,f"{side}_finger_{i}_curved_distal",distal,
+                       [d,mid,end],.055,.050,dark)
+        # Small inset rubber contact surface is actual geometry on the inner side.
+        tip_axis = _unit(end-d)
+        tip_width = _unit(np.array([0, 1, 0]) - tip_axis * tip_axis[1])
+        tip_forward = _unit(np.cross(tip_width, tip_axis))
+        if tip_forward[0] < 0:
+            tip_forward *= -1
+        _prism(g, f"{side}_finger_{i}_tip_contact_pad", distal,
+               d + (end-d)*.74 - tip_forward*.023,
+               tip_width, tip_axis, tip_forward,
+               _rounded_rectangle(.032, lower_length*.40, .005),
+               .005, black, bevel=.001, hardware=True)
+    thumb_proximal = joints[side + "_thumb_proximal"]["child"]
+    thumb_distal = joints[side + "_thumb_distal"]["child"]
+    p = palm + [.010, -s*.112, .039]
+    d = p + [.023, -s*.040, -.078]
+    end = d + [.043, s*.012, -.063]
+    _prism(g, side + "_thumb_root_web", body,
+           palm + [-.005, -s*.094, .021], [0, s, 0], [0, 0, 1], [1, 0, 0],
+           [(-.047, -.051), (.029, -.045), (.034, .047),
+            (-.002, .060), (-.038, .032)],
+           .085, dark, bevel=.005, hardware=True)
+    _lathe(g, side + "_thumb_root_pin", thumb_proximal, p, [1, 0, 0],
+           [(-.036, .022), (-.029, .030), (.029, .030), (.036, .022)],
+           metal, n=32)
+    axis, width_axis, forward = _segment(g, side + "_thumb_proximal_casting",
+        thumb_proximal, p, d, .062, .050, dark, hardware=True)
+    _prism(g, side + "_thumb_ivory_first_pad", thumb_proximal,
+           p + (d-p)*.48 + forward*.032, width_axis, axis, forward,
+           _rounded_rectangle(.044,.074,.006),
+           .014,ivory,bevel=.0025)
+    g.parts[-1]["edge_bevel_m"] = .0015
+    _lathe(g, side + "_thumb_middle_pin", thumb_distal, d, [1, 0, 0],
+           [(-.027, .024), (.027, .024)], dark, n=24)
+    _segment(g, side + "_thumb_black_terminal", thumb_distal,
+             d, end, .054, .046, dark, hardware=True, taper=.72)
+    # Source palm and fingers lean inward.  This neutral appearance transform
+    # is applied to the actual meshes about the passed-in palm anchor, and does
+    # not claim the engineering joint anchors have been correspondingly frozen.
+    angle = math.radians(-s * 18.0)
+    c, sn = math.cos(angle), math.sin(angle)
+    rotation = np.array([[1.0, 0.0, 0.0], [0.0, c, -sn], [0.0, sn, c]])
+    for part in g.parts[first_part:]:
+        vertices = np.asarray(part["vertices_world_m"], float)
+        part["vertices_world_m"] = np.round(
+            (vertices - palm) @ rotation.T + palm, 8).tolist()
+    neck_end = palm + rotation @ np.array([-.028,0,.066])
+    for direction,label in ((-1,"negative_y"),(1,"positive_y")):
+        a = wrist + [.012,direction*.045,-.025]
+        b = neck_end + [0,direction*.045,0]
+        _curved_casting(g,side+"_palm_wrist_"+label+"_short_neck",body,
+                       [a,(a+b)/2+[.005,0,.006],b],.038,.028,dark)
+
+
+def _shoe_loft(g, name, body, origin, rings, color, *, hardware=False):
+    """Closed low shoe rings; each outline is a real edited top-view polygon."""
+    origin = np.asarray(origin, float)
+    vertices = []
+    for z, outline in rings:
+        vertices.extend(origin + [x, y, z] for x, y in outline)
+    n = len(rings[0][1])
+    if any(len(outline) != n for _, outline in rings):
+        raise ValueError(name + ": shoe loft rings must share vertex count")
+    faces = [list(reversed(range(n)))]
+    for k in range(len(rings)-1):
+        for i in range(n):
+            nxt = (i+1) % n
+            faces.append([k*n+i, k*n+nxt, (k+1)*n+nxt, (k+1)*n+i])
+    faces.append(list(range((len(rings)-1)*n, len(rings)*n)))
+    g.part(name, body, vertices, faces, color, hardware)
+
+
+def _shoe_panel(g, name, body, origin, outline, bottom, top_function, color):
+    """Foot panel with a sloped top, faceted perimeter, and finite panel thickness."""
+    origin = np.asarray(origin, float)
+    vertices = [origin + [x, y, bottom] for x, y in outline]
+    vertices += [origin + [x, y, top_function(x, y)] for x, y in outline]
+    n = len(outline)
+    faces = [list(reversed(range(n))), list(range(n, 2*n))]
+    faces += [[i, (i+1)%n, (i+1)%n+n, i+n] for i in range(n)]
+    # A broad top is split around an interior point so that edited slopes don't
+    # depend on arbitrary triangulation of a nonplanar n-gon in OBJ/Blender.
+    middle = np.asarray(outline).mean(axis=0)
+    vertices.append(origin + [middle[0], middle[1], top_function(*middle)])
+    faces.pop(1)
+    faces += [[n+i, n+(i+1)%n, 2*n] for i in range(n)]
+    g.part(name, body, vertices, faces, color)
+
+
+def _outline_scanline(outline, v):
+    """Horizontal extent of a manually traced visible artwork polygon."""
+    outline = np.asarray(outline,float)
+    v = min(float(outline[:,1].max())-.05,max(float(outline[:,1].min())+.05,v))
+    hits=[]
+    for a,b in zip(outline,np.roll(outline,-1,axis=0)):
+        if abs(float(b[1]-a[1])) < 1e-10:
+            continue
+        t=(v-a[1])/(b[1]-a[1])
+        if 0 <= t <= 1:
+            hits.append(float(a[0]+t*(b[0]-a[0])))
+    return min(hits),max(hits)
+
+
+def _artwork_upper_toe(g,side,s,origin,body,ivory):
+    """One closed sloping toe from FRONT/LEFT toe-plate contour sections.
+
+    Coordinates are the observed landmark polygons.  Their uncalibrated art
+    proportions guide appearance only and are not manufacturing dimensions.
+    The front/side visible-region height disagreement is retained as a small
+    reconstruction uncertainty; section caps overlap the separate lower rail.
+    """
+    front=[(190,557),(228,557),(240,572),(226,579),(157,580),(170,568)]
+    left=[(939,554),(950,554),(962,567),(965,579),(889,582),(914,568)]
+    scale=2.65/516.0
+    rings=[]
+    for z in (.111,.123,.143,.169,.195,.219,.235):
+        fu0,fu1=_outline_scanline(front,603-z/scale)
+        lu0,lu1=_outline_scanline(left,603-z/scale)
+        x0,x1=(962-lu1)*scale,(962-lu0)*scale
+        y0,y1=(209.5-fu1)*scale,(209.5-fu0)*scale
+        cx,cy=(x0+x1)/2,s*(y0+y1)/2
+        rx,ry=max((x1-x0)/2,.004),max((y1-y0)/2,.004)
+        clip=min(.012,.24*min(rx,ry))
+        section=[(cx-rx+clip,cy-ry),(cx+rx-clip,cy-ry),
+                 (cx+rx,cy-ry+clip),(cx+rx,cy+ry-clip),
+                 (cx+rx-clip,cy+ry),(cx-rx+clip,cy+ry),
+                 (cx-rx,cy+ry-clip),(cx-rx,cy-ry+clip)]
+        rings.append((z,section))
+    _shoe_loft(g,side+"_ivory_artwork_sloping_toe",body,origin,rings,ivory)
+    g.parts[-1]["edge_bevel_m"] = .0025
+
+
+def _feet(g, side, s, points, palette):
+    foot=np.asarray(points[f"{side}_foot"],float)
+    ankle=np.asarray(points[f"{side}_ankle"],float)
+    body=side+"_foot"
+    origin=np.array([foot[0],foot[1],0.0])
+    ivory,dark,black=(palette[k] for k in ("ivory","dark","black"))
+    # A real cut-corner footprint, made wider/deeper only through shoe parts.
+    # Neither the ankle bearing nor its attachment point is scaled.
+    outline=[(-.469,-.259),(-.423,-.313),(.342,-.313),
+             (.465,-.246),(.476,.243),(.387,.310),
+             (-.417,.310),(-.469,.252)]
+    outline=[(x,s*y) for x,y in outline]
+    inset=[(x*.974,y*.975) for x,y in outline]
+    _shoe_loft(g,side+"_black_ground_sole",body,origin,
+               [(0.0,inset),(.010,outline),(.027,outline),(.033,inset)],black,hardware=True)
+    _shoe_loft(g,side+"_graphite_sole_upper_band",body,origin,
+               [(.028,inset),(.034,outline),(.043,inset)],dark,hardware=True)
+    _artwork_upper_toe(g,side,s,origin,body,ivory)
+    # Separate low inner and outer rails.  Their heights, offsets and clipped
+    # leading edges reproduce the visible toe layering rather than a white box.
+    inner=[(-.060,-.228),(.018,-.286),(.302,-.281),(.426,-.177),
+           (.442,-.105),(.382,-.054),(.045,-.081),(-.041,-.139)]
+    outer=[(-.055,.209),(.285,.214),(.425,.239),(.442,.274),
+           (.398,.306),(.285,.295),(-.061,.272),(-.091,.243)]
+    for label,rail in (("inner",inner),("outer",outer)):
+        _shoe_panel(g,side+"_ivory_"+label+"_low_rail",body,origin,
+                    [(x,s*y) for x,y in rail],.038,
+                    lambda x,y:.163-.107*max(x+.040,0.0)
+                    -.009*abs(y)/.30,ivory)
+        g.parts[-1]["edge_bevel_m"] = .0025
+    rim=[(.314,-.082),(.421,-.080),(.443,-.047),(.448,.253),
+         (.414,.299),(.347,.300),(.319,.273),(.306,-.044)]
+    _shoe_panel(g,side+"_ivory_lower_toe_front_rim",body,origin,
+                [(x,s*y) for x,y in rim],.089,
+                lambda x,y:.128-.016*max(x-.30,0.0)-.004*abs(y)/.30,ivory)
+    g.parts[-1]["edge_bevel_m"] = .002
+    # The source front bumper is a tall clipped lip under the white rim, and
+    # occupies the fore-toe side rather than the whole foot as a uniform stripe.
+    bumper=[(.383,-.044),(.416,-.083),(.461,-.075),(.476,-.044),
+            (.475,.268),(.447,.306),(.389,.302),(.378,.271)]
+    bumper=[(x,s*y) for x,y in bumper]
+    bumper_top=[(x-.027,y*.92) for x,y in bumper]
+    _shoe_loft(g,side+"_graphite_clipped_front_bumper",body,origin,
+               [(.015,bumper),(.031,bumper),(.102,bumper_top)],dark,hardware=True)
+    g.parts[-1]["edge_bevel_m"] = .003
+    # Rear heel follows the ankle center laterally, so its tall inner edge is
+    # visible in FRONT while the higher outer toe occludes the opposite edge.
+    heel_origin=np.array([foot[0],ankle[1],0.0])
+    heel_bottom=[(-.464,-.183),(-.421,-.213),(-.192,-.211),(-.149,-.178),
+                 (-.148,.176),(-.191,.211),(-.420,.212),(-.464,.181)]
+    heel_middle=[(x+.009,y*.987) for x,y in heel_bottom]
+    heel_top=[(x+.025,y*.77) for x,y in heel_bottom]
+    _shoe_loft(g,side+"_black_clipped_tall_heel",body,heel_origin,
+               [(.031,heel_bottom),(.063,heel_middle),
+                (.185,heel_top),(.199,[(x+.010,y*.96) for x,y in heel_top])],
+               dark,hardware=True)
+    _prism(g,side+"_heel_recessed_rear_face",body,
+           heel_origin+[-.466,0,.112],[0,1,0],[0,0,1],[1,0,0],
+           [(-.168,-.051),(.168,-.051),(.132,.063),(-.131,.063)],
+           .006,black,bevel=.0015,hardware=True)
+    # Small ankle-front cap, not the previous high flat platform.  The long
+    # black horizontal slit was absent from the source and is deliberately gone.
+    cap_origin=np.array([ankle[0]+.084,ankle[1]+s*.028,0.0])
+    cap_outline=[(-.104,-.084),(-.072,-.121),(.097,-.121),(.132,-.085),
+                 (.131,.083),(.096,.121),(-.073,.121),(-.104,.083)]
+    _shoe_panel(g,side+"_ivory_ankle_front_cap",body,cap_origin,cap_outline,.212,
+                lambda x,y:.278-.23*max(x-.016,0.0)-.020*abs(y)/.125,ivory)
+    g.parts[-1]["edge_bevel_m"] = .003
+    for direction in (-1,1):
+        start=ankle+[-.027,direction*.075,-.020]
+        end=heel_origin+[-.199,direction*.084,.102]
+        _link_casting(g,side+f"_heel_link_{direction:+d}".replace("+","p").replace("-","n"),
+                      body,start,end,.036,.044,palette)
+
+
+def add_mechanics(g, points, palette):
+    """Add source-specific visible mechanics; ``points`` uses left/right keys.
+
+    Feature correspondence:
+      * Narrow gold-ring joints with ribbed transverse housings and dark caps.
+      * Exposed dark arm/hip/fold connectors beneath segmented ivory armor.
+      * Clipped ivory palm cover, three distinct tapered fingers and inner thumb.
+      * Ivory first phalanges, short black bent tips, and real inter-finger gaps.
+      * Ground-level double sole, sloping ivory toe panels/side walls, dark heel.
+
+    Axis depths and hidden joint geometry remain reconstructions.  This function
+    deliberately makes no assertion that appearance or physical gates passed.
+    """
+    for side, s in (("left", 1), ("right", -1)):
+        p = {key: np.asarray(points[f"{side}_{key}"], float)
+             for key in ("shoulder", "elbow", "wrist", "palm", "hip", "knee", "fold", "ankle", "foot")}
+        _bearing(g, side + "_shoulder", side + "_upper_arm", p["shoulder"],
+                 .115, .175, palette, gold=False)
+        _bearing(g, side + "_elbow", side + "_forearm", p["elbow"],
+                 .086, .188, palette)
+        _forward_elbow_cover(g,side,p["elbow"],palette)
+        _bearing(g, side + "_hip", side + "_thigh", p["hip"],
+                 .106, .218, palette)
+        _bearing(g, side + "_knee", side + "_middle_shank", p["knee"],
+                 .086, .235, palette)
+        _oblique_leg_covers(g,side,"knee",p["knee"],.086,.235,
+                            side+"_middle_shank",palette)
+        _bearing(g, side + "_fold", side + "_distal_shank", p["fold"],
+                 .081, .205, palette)
+        _oblique_leg_covers(g,side,"fold",p["fold"],.081,.205,
+                            side+"_distal_shank",palette)
+        _bearing(g, side + "_ankle", side + "_foot", p["ankle"],
+                 .076, .183, palette)
+        # Near-vertical structural members form the layered dark waist/leg gaps.
+        # They stay under the shell boundaries and avoid a giant pelvis crossbar.
+        _link_casting(g, side + "_upper_arm_exposed_link", side + "_upper_arm",
+                      p["shoulder"] + [-.026, 0, -.027],
+                      p["elbow"] + [-.042, 0, .022], .120, .130, palette)
+        _link_casting(g, side + "_distal_shank_exposed_link", side + "_distal_shank",
+                      p["fold"] + [-.018, 0, -.022],
+                      p["ankle"] + [-.012, 0, .025], .138, .130, palette)
+        # The source left elevation exposes a slanting ivory brace above the
+        # ankle hub.  It is a narrow, separate guard on the dark leg mechanism,
+        # rather than an enlarged white shoe or a white cylinder around the hub.
+        for direction, label in ((-1, "negative_y"), (1, "positive_y")):
+            brace_center = p["ankle"] + [-.060, direction*.098, .074]
+            _prism(g, side + "_ivory_ankle_" + label + "_sloping_brace",
+                   side + "_distal_shank", brace_center,
+                   [1, 0, 0], [0, 0, 1], [0, 1, 0],
+                   [(-.032, -.057), (.024, -.066), (.061, -.046),
+                    (.062, -.024), (.020, .062), (-.010, .073),
+                    (-.046, .055), (-.052, .029)],
+                   .031, palette["ivory"], bevel=.004)
+        for label, offset in (("front", .049), ("rear", -.053)):
+            a = p["hip"] + [offset, -s*.015, .072]
+            b = p["hip"] + [offset+.018, -s*.046, -.084]
+            _link_casting(g, side + "_hip_" + label + "_short_coupler",
+                          side + "_thigh", a, b, .073, .072, palette)
+        _hands(g, side, s, points, palette)
+        _feet(g, side, s, points, palette)
+        _leg_shell_connections(g,side,points,palette)
