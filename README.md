@@ -1,11 +1,12 @@
 # Sai_Rotbots
 
-开源轮腿机器人系列。保留 **Sai_Agent_001**，新增后备箱平整、去掉电动夹垫的 **Sai_Agent_002**。仓库由 `Sai_Agent_001` 直接改名，提交历史和旧版本发布均保留。
+机器人设计与仿真工程仓库。保留轮腿机器人 **Sai_Agent_001**、后备箱平整的 **Sai_Agent_002**，并推进双足双手的 **Gorilla V0.1** 探索布局。仓库由 `Sai_Agent_001` 直接改名，提交历史和旧版本发布均保留。
 
 | Robot | Cargo bay | Guide |
 |---|---|---|
 | Sai_Agent_001 | Original powered opposed pads and belt mechanism | [001](robots/Sai_Agent_001/README.md) |
 | Sai_Agent_002 | Continuous flat floor, no moving clamp mechanism | [002](robots/Sai_Agent_002/README.md) |
+| gorilla_v0_1 | AA3 appearance; exploratory biped/two-hand layout, physical gates open | [Gorilla](robots/gorilla_v0_1/README.md) |
 
 ## Project organization
 
@@ -20,6 +21,10 @@ paths to their new locations without rewriting historical experiment records.
 
 Both variants retain the front SO101 arm, four wheel-legs, camera mounts and
 rear touchscreen layout. Hardware has not been built or calibrated.
+
+Gorilla has a separate appearance authority, physical contract and evidence.
+Its current engineering layout does not use the wheel-leg controllers or
+policies below; Bevy native physics and autonomous tasks remain later gates.
 
 ![Sai_Agent_002 actual model](robots/Sai_Agent_002/images/front.png)
 ![Sai_Agent_002 cargo surface](robots/Sai_Agent_002/images/cargo-top.png)

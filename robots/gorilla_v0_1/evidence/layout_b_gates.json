@@ -1,0 +1,157 @@
+{
+  "schema": "gorilla_engineering_gates_v1",
+  "robot_id": "gorilla_v0_1",
+  "checkpoint_id": "gorilla_layout_b",
+  "model_sha256": "36ccc0e692cc7d9ee067b2d4844ece4d2dc76e76ad308dfdbfdcc50359ec6ae1",
+  "gates": [
+    {
+      "id": "d01_appearance",
+      "level": "design",
+      "status": "UNACCEPTED",
+      "basis": [
+        "design/concepts/aa3/user_confirmed_four_view.jpg",
+        "evidence/layout_b_visual_review.json",
+        "evidence/layout_b_render.json"
+      ],
+      "applicable_scope": "Same-source reconstruction, H2.65 m and original image proportions; does not authorize changing shape.",
+      "closing_condition": "Restore local armor/vent/palm/foot features against the sole reference and inspect same-source views; present major conflicts and smallest shape proposal before any major change."
+    },
+    {
+      "id": "r01_internal_packaging",
+      "level": "red",
+      "status": "FAILED_DECLARED_ENVELOPES",
+      "basis": [
+        "configs/layout_b_spec.json",
+        "evidence/layout_b_internal_screen.json"
+      ],
+      "applicable_scope": "Neutral complete-module exclusive-space hypotheses: 25 certified drive-envelope overlaps, including 23 same-anchor pairs. Actual material/cavity/assembly/sweep remain unverified.",
+      "closing_condition": "Separate complete modules; close bearing, brake, cooling, cable, fastener/tool access and full motion paths within exterior envelope."
+    },
+    {
+      "id": "r02_mass_inertia",
+      "level": "red",
+      "status": "PARTIAL",
+      "basis": [
+        "evidence/layout_b_build.json",
+        "hardware/layout_b_mass_components.csv",
+        "models/full/robot.json"
+      ],
+      "applicable_scope": "890.757 kg estimated candidate; explicit thin skins and component masses; +/- component assumptions only. Compiled tensor readback passed.",
+      "closing_condition": "Identify real moving parts and parent/child drive allocation, rotor reflected inertia and credible component ranges; recompute full robot and perturbed loads."
+    },
+    {
+      "id": "r03_drive_load",
+      "level": "red",
+      "status": "FAILED",
+      "basis": [
+        "evidence/layout_b_screen.json",
+        "hardware/component_basis.md"
+      ],
+      "applicable_scope": "42 finite contact-static samples, virtual 0/10/20/40/60 kg loads and 20 kg mass perturbations; no grasp or thermal acceptance.",
+      "closing_condition": "Pass empty and loaded support/handling cases with real complete-module continuous torque/speed at credible mass and contact conditions; then add dynamic margins."
+    },
+    {
+      "id": "r04_structure",
+      "level": "red",
+      "status": "NOT_CHECKED",
+      "basis": [
+        "design/layout_b_checkpoint_review.md",
+        "configs/layout_b_spec.json"
+      ],
+      "applicable_scope": "Named load-chain and frame mass reserves only; earth weight about 8.74 kN, worst sample ankle-roll about 1.64 kN*m.",
+      "closing_condition": "Provide material, sections, bearings/flanges/fasteners, deflection, peak/fatigue proof over task load range with consistent mass and space."
+    },
+    {
+      "id": "r05_continuous_thermal",
+      "level": "red",
+      "status": "OPEN",
+      "basis": [
+        "hardware/component_basis.md",
+        "configs/layout_b_spec.json"
+      ],
+      "applicable_scope": "CSG rated reducer values and QTR electromagnetic reference; total module cooling and duty cycle not verified.",
+      "closing_condition": "Same-workpoint motor/gear/driver supply, speed, continuous torque, loss and heat rejection over task cycle, including enclosed installation."
+    },
+    {
+      "id": "r06_power_regen",
+      "level": "red",
+      "status": "OPEN",
+      "basis": [
+        "hardware/component_basis.md",
+        "configs/layout_b_spec.json"
+      ],
+      "applicable_scope": "32S LFP 60 Ah, 102.4 V nominal/116.8 V full; 8 kW continuous/20 kW peak budgets are requirements only.",
+      "closing_condition": "Close real pack/BMS/driver ratings at SOC/full-charge, wiring, fusing, disconnection, emergency stop, negative power absorption/dump energy and cooling."
+    },
+    {
+      "id": "r07_contact_sweeps",
+      "level": "red",
+      "status": "REJECTED_SCREEN",
+      "basis": [
+        "evidence/layout_b_screen.json",
+        "evidence/layout_b_render.json"
+      ],
+      "applicable_scope": "Sparse body proxies and same-source compound hand contacts; wrist interface versus proxy overlap unresolved; low-reach and single-support reject.",
+      "closing_condition": "Use actual assembly clearances to distinguish intentional bearing interfaces and interference, then rerun full sampled/continuous self/world contact with no hidden support."
+    },
+    {
+      "id": "r08_free_root",
+      "level": "red",
+      "status": "FAILED",
+      "basis": [
+        "evidence/layout_b_screen.json"
+      ],
+      "applicable_scope": "Unassisted free root, force-clamped native position hold; 2 ms and 20 ms MuJoCo each stopped after one integration due to contact penetration.",
+      "closing_condition": "Pass finite documented duration and perturbations under physical joint torque/speed/power limits; no welded root, compensation or contact suppression."
+    },
+    {
+      "id": "r09_sensing",
+      "level": "red",
+      "status": "NOT_CHECKED",
+      "basis": [
+        "models/full/robot.json",
+        "design/task_and_simulation_handoff.md"
+      ],
+      "applicable_scope": "Main stereo and wrist mount sites/FOV hypotheses; no implemented camera/sensor or optical occlusion proof.",
+      "closing_condition": "Model actual lenses/working range, same-source visibility and near-field occlusion during manipulation; validate timing and observations without answer leakage."
+    },
+    {
+      "id": "r10_bevy_tasks",
+      "level": "red",
+      "status": "NOT_CHECKED",
+      "basis": [
+        "design/task_and_simulation_handoff.md",
+        "models/full/robot.json"
+      ],
+      "applicable_scope": "Bevy/Rapier 50 Hz/20 ms/one integration target; MuJoCo diagnostic does not constitute game acceptance.",
+      "closing_condition": "Verify SI adapter and native free-root contact, actual two-hand pick/carry/place/release, locomotion and composed tasks/recovery; report repeated successes/failures/realtime."
+    },
+    {
+      "id": "y01_drive_supply",
+      "level": "yellow",
+      "status": "SUPPLY_UNRESOLVED",
+      "basis": [
+        "hardware/component_basis.md",
+        "configs/layout_b_spec.json"
+      ],
+      "applicable_scope": "Reducer SKUs exist; motor/support/brake/driver/cooling composite not procured or detailed. Related red gates remain blocking.",
+      "closing_condition": "Resolve exact parts/custom drawings and supply after complete module physical range, packing/load/thermal validation; yellow cannot approve physics."
+    },
+    {
+      "id": "y02_custom_hand_pack_sensor",
+      "level": "yellow",
+      "status": "SUPPLY_UNRESOLVED",
+      "basis": [
+        "configs/layout_b_spec.json",
+        "models/full/robot.json"
+      ],
+      "applicable_scope": "Finger 16 N*m design requirement, pack and camera functional envelopes are unselected hypotheses. Related red gates remain blocking.",
+      "closing_condition": "Resolve exact or custom part identities with size/mass/output/thermal range; separately pass structure, grasp, power and sensing red gates."
+    }
+  ],
+  "corresponding_stage_release": false,
+  "physical_hard_freeze": false,
+  "simulation_acceptance": false,
+  "hardware_acceptance": false,
+  "rule": "Supply uncertainty may be yellow only; unknown or failed physical conditions block the corresponding stage."
+}

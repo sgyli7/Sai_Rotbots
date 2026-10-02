@@ -1,0 +1,1702 @@
+{
+  "schema": "gorilla_layout_spec_v1",
+  "robot_id": "gorilla_v0_1",
+  "checkpoint_id": "gorilla_layout_a",
+  "maturity": "exploratory_engineering_layout_not_frozen",
+  "appearance_revision": "AA3",
+  "coordinate_frame": {
+    "forward": "+X",
+    "left": "+Y",
+    "up": "+Z",
+    "units": "SI"
+  },
+  "design_envelope_target_m": {
+    "height": 2.65,
+    "width": 2.587,
+    "depth": null
+  },
+  "appearance_policy": "Preserve AA3 wedge head-body, saffron front pelvis, azure forearms and shanks, genuine three-link Z legs, broad low feet; local changes only. Any numeric discrepancy is a review finding, not permission to change the original design.",
+  "root_body": "pelvis",
+  "root_position_world_m": [
+    0,
+    0,
+    1.39
+  ],
+  "points_world_m": {
+    "pelvis": [
+      0,
+      0,
+      1.39
+    ],
+    "torso": [
+      0,
+      0,
+      1.56
+    ],
+    "left_shoulder": [
+      0,
+      0.8,
+      2.29
+    ],
+    "left_elbow": [
+      0.04,
+      1.03,
+      1.69
+    ],
+    "left_wrist": [
+      0.06,
+      1.105,
+      1.09
+    ],
+    "left_palm": [
+      0.06,
+      1.105,
+      0.9
+    ],
+    "left_hip": [
+      0,
+      0.41,
+      1.39
+    ],
+    "left_knee": [
+      0.18,
+      0.43,
+      0.87
+    ],
+    "left_fold": [
+      -0.12,
+      0.43,
+      0.44
+    ],
+    "left_ankle": [
+      0.055,
+      0.43,
+      0.205
+    ],
+    "left_foot": [
+      0.12,
+      0.43,
+      0.09
+    ]
+  },
+  "joints": [
+    {
+      "name": "waist_yaw",
+      "parent": "pelvis",
+      "child": "waist_yaw_link",
+      "position_world_m": [
+        0,
+        0,
+        1.56
+      ],
+      "axis_parent": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "range_rad": [
+        -0.6,
+        0.6
+      ],
+      "drive_class": "medium",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "waist_pitch",
+      "parent": "waist_yaw_link",
+      "child": "waist_pitch_link",
+      "position_world_m": [
+        0,
+        0,
+        1.56
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.35,
+        0.55
+      ],
+      "drive_class": "large",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "waist_roll",
+      "parent": "waist_pitch_link",
+      "child": "torso",
+      "position_world_m": [
+        0,
+        0,
+        1.56
+      ],
+      "axis_parent": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.25,
+        0.25
+      ],
+      "drive_class": "large",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "left_shoulder_pitch",
+      "parent": "torso",
+      "child": "left_shoulder_pitch_link",
+      "position_world_m": [
+        0,
+        0.8,
+        2.29
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        -2.0,
+        1.2
+      ],
+      "drive_class": "medium",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "left_shoulder_roll",
+      "parent": "left_shoulder_pitch_link",
+      "child": "left_shoulder_roll_link",
+      "position_world_m": [
+        0,
+        0.8,
+        2.29
+      ],
+      "axis_parent": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "range_rad": [
+        -1.2,
+        1.2
+      ],
+      "drive_class": "medium",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "left_shoulder_yaw",
+      "parent": "left_shoulder_roll_link",
+      "child": "left_upper_arm",
+      "position_world_m": [
+        0,
+        0.8,
+        2.29
+      ],
+      "axis_parent": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "range_rad": [
+        -1.2,
+        1.2
+      ],
+      "drive_class": "small",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "left_elbow_pitch",
+      "parent": "left_upper_arm",
+      "child": "left_forearm",
+      "position_world_m": [
+        0.04,
+        1.03,
+        1.69
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        -1.5,
+        1.1
+      ],
+      "drive_class": "medium",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "left_wrist_yaw",
+      "parent": "left_forearm",
+      "child": "left_wrist_yaw_link",
+      "position_world_m": [
+        0.06,
+        1.105,
+        1.09
+      ],
+      "axis_parent": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "range_rad": [
+        -1.0,
+        1.0
+      ],
+      "drive_class": "small",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "left_wrist_pitch",
+      "parent": "left_wrist_yaw_link",
+      "child": "left_wrist_pitch_link",
+      "position_world_m": [
+        0.06,
+        1.105,
+        1.09
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.8,
+        0.8
+      ],
+      "drive_class": "small",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "left_wrist_roll",
+      "parent": "left_wrist_pitch_link",
+      "child": "left_palm",
+      "position_world_m": [
+        0.06,
+        1.105,
+        1.09
+      ],
+      "axis_parent": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.8,
+        0.8
+      ],
+      "drive_class": "small",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "left_hip_yaw",
+      "parent": "pelvis",
+      "child": "left_hip_yaw_link",
+      "position_world_m": [
+        0,
+        0.41,
+        1.39
+      ],
+      "axis_parent": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "range_rad": [
+        -0.6,
+        0.6
+      ],
+      "drive_class": "medium",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "left_hip_roll",
+      "parent": "left_hip_yaw_link",
+      "child": "left_hip_roll_link",
+      "position_world_m": [
+        0,
+        0.41,
+        1.39
+      ],
+      "axis_parent": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.65,
+        0.65
+      ],
+      "drive_class": "large",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "left_hip_pitch",
+      "parent": "left_hip_roll_link",
+      "child": "left_thigh",
+      "position_world_m": [
+        0,
+        0.41,
+        1.39
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        -1.0,
+        1.0
+      ],
+      "drive_class": "large",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "left_knee_pitch",
+      "parent": "left_thigh",
+      "child": "left_middle_shank",
+      "position_world_m": [
+        0.18,
+        0.43,
+        0.87
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        -1.15,
+        1.15
+      ],
+      "drive_class": "large",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "left_fold_pitch",
+      "parent": "left_middle_shank",
+      "child": "left_distal_shank",
+      "position_world_m": [
+        -0.12,
+        0.43,
+        0.44
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.9,
+        0.9
+      ],
+      "drive_class": "medium",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "left_ankle_pitch",
+      "parent": "left_distal_shank",
+      "child": "left_ankle_pitch_link",
+      "position_world_m": [
+        0.055,
+        0.43,
+        0.205
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.7,
+        0.7
+      ],
+      "drive_class": "medium",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "left_ankle_roll",
+      "parent": "left_ankle_pitch_link",
+      "child": "left_foot",
+      "position_world_m": [
+        0.055,
+        0.43,
+        0.205
+      ],
+      "axis_parent": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.5,
+        0.5
+      ],
+      "drive_class": "medium",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "left_finger_1_proximal",
+      "parent": "left_palm",
+      "child": "left_finger_1_proximal_link",
+      "position_world_m": [
+        0.09,
+        1.003,
+        0.79
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        0,
+        1.15
+      ],
+      "drive_class": "finger",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "left_finger_1_distal",
+      "parent": "left_finger_1_proximal_link",
+      "child": "left_finger_1_distal_link",
+      "position_world_m": [
+        0.09,
+        1.003,
+        0.695
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        0,
+        1.3
+      ],
+      "drive_class": "finger",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "left_finger_2_proximal",
+      "parent": "left_palm",
+      "child": "left_finger_2_proximal_link",
+      "position_world_m": [
+        0.09,
+        1.105,
+        0.79
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        0,
+        1.15
+      ],
+      "drive_class": "finger",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "left_finger_2_distal",
+      "parent": "left_finger_2_proximal_link",
+      "child": "left_finger_2_distal_link",
+      "position_world_m": [
+        0.09,
+        1.105,
+        0.695
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        0,
+        1.3
+      ],
+      "drive_class": "finger",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "left_finger_3_proximal",
+      "parent": "left_palm",
+      "child": "left_finger_3_proximal_link",
+      "position_world_m": [
+        0.09,
+        1.207,
+        0.79
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        0,
+        1.15
+      ],
+      "drive_class": "finger",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "left_finger_3_distal",
+      "parent": "left_finger_3_proximal_link",
+      "child": "left_finger_3_distal_link",
+      "position_world_m": [
+        0.09,
+        1.207,
+        0.695
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        0,
+        1.3
+      ],
+      "drive_class": "finger",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "left_thumb_proximal",
+      "parent": "left_palm",
+      "child": "left_thumb_proximal_link",
+      "position_world_m": [
+        0.08,
+        0.93,
+        0.93
+      ],
+      "axis_parent": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "range_rad": [
+        0,
+        1.15
+      ],
+      "drive_class": "finger",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "left_thumb_distal",
+      "parent": "left_thumb_proximal_link",
+      "child": "left_thumb_distal_link",
+      "position_world_m": [
+        0.085,
+        0.965,
+        0.835
+      ],
+      "axis_parent": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "range_rad": [
+        0,
+        1.3
+      ],
+      "drive_class": "finger",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "right_shoulder_pitch",
+      "parent": "torso",
+      "child": "right_shoulder_pitch_link",
+      "position_world_m": [
+        0,
+        -0.8,
+        2.29
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        -2.0,
+        1.2
+      ],
+      "drive_class": "medium",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "right_shoulder_roll",
+      "parent": "right_shoulder_pitch_link",
+      "child": "right_shoulder_roll_link",
+      "position_world_m": [
+        0,
+        -0.8,
+        2.29
+      ],
+      "axis_parent": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "range_rad": [
+        -1.2,
+        1.2
+      ],
+      "drive_class": "medium",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "right_shoulder_yaw",
+      "parent": "right_shoulder_roll_link",
+      "child": "right_upper_arm",
+      "position_world_m": [
+        0,
+        -0.8,
+        2.29
+      ],
+      "axis_parent": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "range_rad": [
+        -1.2,
+        1.2
+      ],
+      "drive_class": "small",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "right_elbow_pitch",
+      "parent": "right_upper_arm",
+      "child": "right_forearm",
+      "position_world_m": [
+        0.04,
+        -1.03,
+        1.69
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        -1.5,
+        1.1
+      ],
+      "drive_class": "medium",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "right_wrist_yaw",
+      "parent": "right_forearm",
+      "child": "right_wrist_yaw_link",
+      "position_world_m": [
+        0.06,
+        -1.105,
+        1.09
+      ],
+      "axis_parent": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "range_rad": [
+        -1.0,
+        1.0
+      ],
+      "drive_class": "small",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "right_wrist_pitch",
+      "parent": "right_wrist_yaw_link",
+      "child": "right_wrist_pitch_link",
+      "position_world_m": [
+        0.06,
+        -1.105,
+        1.09
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.8,
+        0.8
+      ],
+      "drive_class": "small",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "right_wrist_roll",
+      "parent": "right_wrist_pitch_link",
+      "child": "right_palm",
+      "position_world_m": [
+        0.06,
+        -1.105,
+        1.09
+      ],
+      "axis_parent": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.8,
+        0.8
+      ],
+      "drive_class": "small",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "right_hip_yaw",
+      "parent": "pelvis",
+      "child": "right_hip_yaw_link",
+      "position_world_m": [
+        0,
+        -0.41,
+        1.39
+      ],
+      "axis_parent": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "range_rad": [
+        -0.6,
+        0.6
+      ],
+      "drive_class": "medium",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "right_hip_roll",
+      "parent": "right_hip_yaw_link",
+      "child": "right_hip_roll_link",
+      "position_world_m": [
+        0,
+        -0.41,
+        1.39
+      ],
+      "axis_parent": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.65,
+        0.65
+      ],
+      "drive_class": "large",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "right_hip_pitch",
+      "parent": "right_hip_roll_link",
+      "child": "right_thigh",
+      "position_world_m": [
+        0,
+        -0.41,
+        1.39
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        -1.0,
+        1.0
+      ],
+      "drive_class": "large",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "right_knee_pitch",
+      "parent": "right_thigh",
+      "child": "right_middle_shank",
+      "position_world_m": [
+        0.18,
+        -0.43,
+        0.87
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        -1.15,
+        1.15
+      ],
+      "drive_class": "large",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "right_fold_pitch",
+      "parent": "right_middle_shank",
+      "child": "right_distal_shank",
+      "position_world_m": [
+        -0.12,
+        -0.43,
+        0.44
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.9,
+        0.9
+      ],
+      "drive_class": "medium",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "right_ankle_pitch",
+      "parent": "right_distal_shank",
+      "child": "right_ankle_pitch_link",
+      "position_world_m": [
+        0.055,
+        -0.43,
+        0.205
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.7,
+        0.7
+      ],
+      "drive_class": "medium",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "right_ankle_roll",
+      "parent": "right_ankle_pitch_link",
+      "child": "right_foot",
+      "position_world_m": [
+        0.055,
+        -0.43,
+        0.205
+      ],
+      "axis_parent": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.5,
+        0.5
+      ],
+      "drive_class": "medium",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "right_finger_1_proximal",
+      "parent": "right_palm",
+      "child": "right_finger_1_proximal_link",
+      "position_world_m": [
+        0.09,
+        -1.003,
+        0.79
+      ],
+      "axis_parent": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "range_rad": [
+        0,
+        1.15
+      ],
+      "drive_class": "finger",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "right_finger_1_distal",
+      "parent": "right_finger_1_proximal_link",
+      "child": "right_finger_1_distal_link",
+      "position_world_m": [
+        0.09,
+        -1.003,
+        0.695
+      ],
+      "axis_parent": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "range_rad": [
+        0,
+        1.3
+      ],
+      "drive_class": "finger",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "right_finger_2_proximal",
+      "parent": "right_palm",
+      "child": "right_finger_2_proximal_link",
+      "position_world_m": [
+        0.09,
+        -1.105,
+        0.79
+      ],
+      "axis_parent": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "range_rad": [
+        0,
+        1.15
+      ],
+      "drive_class": "finger",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "right_finger_2_distal",
+      "parent": "right_finger_2_proximal_link",
+      "child": "right_finger_2_distal_link",
+      "position_world_m": [
+        0.09,
+        -1.105,
+        0.695
+      ],
+      "axis_parent": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "range_rad": [
+        0,
+        1.3
+      ],
+      "drive_class": "finger",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "right_finger_3_proximal",
+      "parent": "right_palm",
+      "child": "right_finger_3_proximal_link",
+      "position_world_m": [
+        0.09,
+        -1.207,
+        0.79
+      ],
+      "axis_parent": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "range_rad": [
+        0,
+        1.15
+      ],
+      "drive_class": "finger",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "right_finger_3_distal",
+      "parent": "right_finger_3_proximal_link",
+      "child": "right_finger_3_distal_link",
+      "position_world_m": [
+        0.09,
+        -1.207,
+        0.695
+      ],
+      "axis_parent": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "range_rad": [
+        0,
+        1.3
+      ],
+      "drive_class": "finger",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "right_thumb_proximal",
+      "parent": "right_palm",
+      "child": "right_thumb_proximal_link",
+      "position_world_m": [
+        0.08,
+        -0.93,
+        0.93
+      ],
+      "axis_parent": [
+        -1.0,
+        0.0,
+        0.0
+      ],
+      "range_rad": [
+        0,
+        1.15
+      ],
+      "drive_class": "finger",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    },
+    {
+      "name": "right_thumb_distal",
+      "parent": "right_thumb_proximal_link",
+      "child": "right_thumb_distal_link",
+      "position_world_m": [
+        0.085,
+        -0.965,
+        0.835
+      ],
+      "axis_parent": [
+        -1.0,
+        0.0,
+        0.0
+      ],
+      "range_rad": [
+        0,
+        1.3
+      ],
+      "drive_class": "finger",
+      "qpos_neutral_rad": 0,
+      "positive_direction": "right_hand_rule_about_axis_parent"
+    }
+  ],
+  "drive_classes": {
+    "large": {
+      "gearbox_sku": "CSG-65-100-2UH",
+      "gearbox_rated_l10_nm": 1236,
+      "gearbox_mass_kg": 20.9,
+      "gearbox_envelope_m": [
+        0.26,
+        0.26,
+        0.115
+      ],
+      "complete_module_envelope_m": [
+        0.29,
+        0.29,
+        0.245
+      ],
+      "mass_components_kg": {
+        "gearbox": 20.9,
+        "motor": 6,
+        "output_bearing": 2,
+        "housing_mount": 2,
+        "driver_encoder": 1,
+        "brake": 2
+      },
+      "design_torque_nm": 988.8,
+      "design_peak_nm": 1236,
+      "design_speed_rad_s": 0.65,
+      "input_motor_torque_at_design_nm": 13.184,
+      "source_url": "https://www.harmonicdrive.net/products/gear-units/gear-units/csg-2uh/csg-65-100-2uh",
+      "ratio": 100,
+      "drive_status": "custom_combined_module_not_selected_or_thermally_verified",
+      "torque_status": "screening_design_requirement_only_not_hardware_continuous_rating",
+      "mass_uncertainty_fraction": 0.2,
+      "motor_efficiency_assumption": 0.85,
+      "gear_efficiency_assumption": 0.75,
+      "armature_kg_m2": 0,
+      "armature_status": "not_identified; zero is a diagnostic omission, blocks stable control handoff"
+    },
+    "medium": {
+      "gearbox_sku": "CSG-45-100-2UH",
+      "gearbox_rated_l10_nm": 459,
+      "gearbox_mass_kg": 7,
+      "gearbox_envelope_m": [
+        0.18,
+        0.18,
+        0.0795
+      ],
+      "complete_module_envelope_m": [
+        0.22,
+        0.22,
+        0.185
+      ],
+      "mass_components_kg": {
+        "gearbox": 7,
+        "motor": 3,
+        "output_bearing": 1.5,
+        "housing_mount": 1.2,
+        "driver_encoder": 0.6,
+        "brake": 0.9
+      },
+      "design_torque_nm": 367.2,
+      "design_peak_nm": 459,
+      "design_speed_rad_s": 0.85,
+      "input_motor_torque_at_design_nm": 4.896,
+      "source_url": "https://www.harmonicdrive.net/products/gear-units/gear-units/csg-2uh/csg-45-100-2uh",
+      "ratio": 100,
+      "drive_status": "custom_combined_module_not_selected_or_thermally_verified",
+      "torque_status": "screening_design_requirement_only_not_hardware_continuous_rating",
+      "mass_uncertainty_fraction": 0.2,
+      "motor_efficiency_assumption": 0.85,
+      "gear_efficiency_assumption": 0.75,
+      "armature_kg_m2": 0,
+      "armature_status": "not_identified; zero is a diagnostic omission, blocks stable control handoff"
+    },
+    "small": {
+      "gearbox_sku": "CSG-32-100-2UH",
+      "gearbox_rated_l10_nm": 178,
+      "gearbox_mass_kg": 3.2,
+      "gearbox_envelope_m": [
+        0.138,
+        0.138,
+        0.062
+      ],
+      "complete_module_envelope_m": [
+        0.165,
+        0.165,
+        0.135
+      ],
+      "mass_components_kg": {
+        "gearbox": 3.2,
+        "motor": 1.3,
+        "output_bearing": 0.5,
+        "housing_mount": 0.5,
+        "driver_encoder": 0.3,
+        "brake": 0.3
+      },
+      "design_torque_nm": 142.4,
+      "design_peak_nm": 178,
+      "design_speed_rad_s": 1.0,
+      "input_motor_torque_at_design_nm": 1.8986667,
+      "source_url": "https://www.harmonicdrive.net/products/gear-units/gear-units/csg-2uh/csg-32-100-2uh",
+      "ratio": 100,
+      "drive_status": "custom_combined_module_not_selected_or_thermally_verified",
+      "torque_status": "screening_design_requirement_only_not_hardware_continuous_rating",
+      "mass_uncertainty_fraction": 0.2,
+      "motor_efficiency_assumption": 0.85,
+      "gear_efficiency_assumption": 0.75,
+      "armature_kg_m2": 0,
+      "armature_status": "not_identified; zero is a diagnostic omission, blocks stable control handoff"
+    },
+    "finger": {
+      "gearbox_sku": null,
+      "gearbox_rated_l10_nm": null,
+      "gearbox_mass_kg": null,
+      "complete_module_envelope_m": [
+        0.075,
+        0.075,
+        0.08
+      ],
+      "mass_components_kg": {
+        "custom_motor_gear_bracket_driver": 0.8
+      },
+      "design_torque_nm": 16,
+      "design_peak_nm": 20,
+      "design_speed_rad_s": 1.2,
+      "source_url": null,
+      "ratio": 40,
+      "drive_status": "custom_combined_module_not_selected_or_thermally_verified",
+      "torque_status": "screening_design_requirement_only_not_hardware_continuous_rating",
+      "mass_uncertainty_fraction": 0.2,
+      "motor_efficiency_assumption": 0.85,
+      "gear_efficiency_assumption": 0.75,
+      "armature_kg_m2": 0,
+      "armature_status": "not_identified; zero is a diagnostic omission, blocks stable control handoff"
+    }
+  },
+  "mass_components": [
+    {
+      "name": "pelvis_frame",
+      "body": "pelvis",
+      "mass_kg": 12,
+      "position_world_m": [
+        0,
+        0,
+        1.37
+      ],
+      "box_size_m": [
+        0.52,
+        0.69,
+        0.23
+      ]
+    },
+    {
+      "name": "torso_frame",
+      "body": "torso",
+      "mass_kg": 18,
+      "position_world_m": [
+        -0.05,
+        0,
+        2.05
+      ],
+      "box_size_m": [
+        0.48,
+        1.0,
+        0.64
+      ]
+    },
+    {
+      "name": "battery_32s_60ah",
+      "body": "pelvis",
+      "mass_kg": 58,
+      "position_world_m": [
+        -0.045,
+        0,
+        1.415
+      ],
+      "box_size_m": [
+        0.47,
+        0.52,
+        0.23
+      ]
+    },
+    {
+      "name": "power_protection_distribution",
+      "body": "torso",
+      "mass_kg": 6,
+      "position_world_m": [
+        -0.12,
+        -0.25,
+        1.87
+      ],
+      "box_size_m": [
+        0.2,
+        0.22,
+        0.18
+      ]
+    },
+    {
+      "name": "logic_compute_sensors",
+      "body": "torso",
+      "mass_kg": 5,
+      "position_world_m": [
+        0.045,
+        0,
+        2.31
+      ],
+      "box_size_m": [
+        0.25,
+        0.3,
+        0.18
+      ]
+    },
+    {
+      "name": "cooling_system_reserve",
+      "body": "torso",
+      "mass_kg": 10,
+      "position_world_m": [
+        0.23,
+        0,
+        2.03
+      ],
+      "box_size_m": [
+        0.25,
+        0.62,
+        0.28
+      ]
+    },
+    {
+      "name": "cables_connectors_reserve",
+      "body": "torso",
+      "mass_kg": 8,
+      "position_world_m": [
+        0,
+        0,
+        1.93
+      ],
+      "box_size_m": [
+        0.3,
+        0.6,
+        0.3
+      ]
+    },
+    {
+      "name": "unmodelled_mounts_reserve",
+      "body": "pelvis",
+      "mass_kg": 8,
+      "position_world_m": [
+        0,
+        0,
+        1.39
+      ],
+      "box_size_m": [
+        0.4,
+        0.6,
+        0.22
+      ]
+    },
+    {
+      "name": "left_upper_arm_frame",
+      "body": "left_upper_arm",
+      "mass_kg": 3,
+      "position_world_m": [
+        0.02,
+        0.925,
+        1.99
+      ],
+      "box_size_m": [
+        0.24,
+        0.27,
+        0.45
+      ]
+    },
+    {
+      "name": "left_forearm_frame",
+      "body": "left_forearm",
+      "mass_kg": 3,
+      "position_world_m": [
+        0.05,
+        1.09,
+        1.38
+      ],
+      "box_size_m": [
+        0.28,
+        0.33,
+        0.43
+      ]
+    },
+    {
+      "name": "left_palm_frame",
+      "body": "left_palm",
+      "mass_kg": 1.5,
+      "position_world_m": [
+        0.06,
+        1.105,
+        0.9
+      ],
+      "box_size_m": [
+        0.18,
+        0.3,
+        0.21
+      ]
+    },
+    {
+      "name": "left_thigh_frame",
+      "body": "left_thigh",
+      "mass_kg": 6,
+      "position_world_m": [
+        0.09,
+        0.42,
+        1.13
+      ],
+      "box_size_m": [
+        0.28,
+        0.35,
+        0.42
+      ]
+    },
+    {
+      "name": "left_middle_shank_frame",
+      "body": "left_middle_shank",
+      "mass_kg": 5,
+      "position_world_m": [
+        0.03,
+        0.43,
+        0.655
+      ],
+      "box_size_m": [
+        0.28,
+        0.29,
+        0.3
+      ]
+    },
+    {
+      "name": "left_distal_shank_frame",
+      "body": "left_distal_shank",
+      "mass_kg": 3,
+      "position_world_m": [
+        -0.03,
+        0.43,
+        0.325
+      ],
+      "box_size_m": [
+        0.2,
+        0.24,
+        0.18
+      ]
+    },
+    {
+      "name": "left_foot_frame",
+      "body": "left_foot",
+      "mass_kg": 6,
+      "position_world_m": [
+        0.12,
+        0.43,
+        0.09
+      ],
+      "box_size_m": [
+        0.56,
+        0.37,
+        0.12
+      ]
+    },
+    {
+      "name": "right_upper_arm_frame",
+      "body": "right_upper_arm",
+      "mass_kg": 3,
+      "position_world_m": [
+        0.02,
+        -0.925,
+        1.99
+      ],
+      "box_size_m": [
+        0.24,
+        0.27,
+        0.45
+      ]
+    },
+    {
+      "name": "right_forearm_frame",
+      "body": "right_forearm",
+      "mass_kg": 3,
+      "position_world_m": [
+        0.05,
+        -1.09,
+        1.38
+      ],
+      "box_size_m": [
+        0.28,
+        0.33,
+        0.43
+      ]
+    },
+    {
+      "name": "right_palm_frame",
+      "body": "right_palm",
+      "mass_kg": 1.5,
+      "position_world_m": [
+        0.06,
+        -1.105,
+        0.9
+      ],
+      "box_size_m": [
+        0.18,
+        0.3,
+        0.21
+      ]
+    },
+    {
+      "name": "right_thigh_frame",
+      "body": "right_thigh",
+      "mass_kg": 6,
+      "position_world_m": [
+        0.09,
+        -0.42,
+        1.13
+      ],
+      "box_size_m": [
+        0.28,
+        0.35,
+        0.42
+      ]
+    },
+    {
+      "name": "right_middle_shank_frame",
+      "body": "right_middle_shank",
+      "mass_kg": 5,
+      "position_world_m": [
+        0.03,
+        -0.43,
+        0.655
+      ],
+      "box_size_m": [
+        0.28,
+        0.29,
+        0.3
+      ]
+    },
+    {
+      "name": "right_distal_shank_frame",
+      "body": "right_distal_shank",
+      "mass_kg": 3,
+      "position_world_m": [
+        -0.03,
+        -0.43,
+        0.325
+      ],
+      "box_size_m": [
+        0.2,
+        0.24,
+        0.18
+      ]
+    },
+    {
+      "name": "right_foot_frame",
+      "body": "right_foot",
+      "mass_kg": 6,
+      "position_world_m": [
+        0.12,
+        -0.43,
+        0.09
+      ],
+      "box_size_m": [
+        0.56,
+        0.37,
+        0.12
+      ]
+    }
+  ],
+  "shell_estimation": {
+    "material": "aluminium candidate",
+    "density_kg_m3": 2700,
+    "thickness_m": 0.003,
+    "method": "closed exterior surface area times thickness, thin-shell approximation; not solid mesh volume",
+    "uncertainty_fraction": 0.3,
+    "physical_status": "layout estimate not strength/fatigue proof"
+  },
+  "appearance_dimensions": {
+    "torso_width_m": 1.27,
+    "torso_rear_x_m": -0.34,
+    "torso_front_x_m": 0.47,
+    "torso_top_z_m": 2.65,
+    "pelvis_front_color": "saffron",
+    "forearm_width_m": 0.377,
+    "foot_size_m": [
+      0.56,
+      0.37,
+      0.18
+    ]
+  },
+  "internal_envelope_policy": "Complete actuator envelopes include estimated motor/support/driver/brake; electrical connectors, tool and cooling clearances require own proof. Coaxial gimbal packaging is a RED OPEN risk, never auto-exclude contacts to pass.",
+  "sensors": [
+    {
+      "name": "main_stereo",
+      "body": "torso",
+      "position_world_m": [
+        0.4,
+        0,
+        2.35
+      ],
+      "forward": [
+        1,
+        0,
+        -0.25
+      ],
+      "horizontal_fov_deg": 90,
+      "status": "custom mount optical envelope; stripe remains a light"
+    },
+    {
+      "name": "left_wrist_rgbd",
+      "body": "left_palm",
+      "position_world_m": [
+        0.16,
+        1.1,
+        1.075
+      ],
+      "forward": [
+        1,
+        0,
+        -1
+      ],
+      "horizontal_fov_deg": 80,
+      "status": "candidate, unselected SKU"
+    },
+    {
+      "name": "right_wrist_rgbd",
+      "body": "right_palm",
+      "position_world_m": [
+        0.16,
+        -1.1,
+        1.075
+      ],
+      "forward": [
+        1,
+        0,
+        -1
+      ],
+      "horizontal_fov_deg": 80,
+      "status": "candidate, unselected SKU"
+    }
+  ],
+  "battery": {
+    "chemistry_candidate": "LiFePO4",
+    "series_cells": 32,
+    "capacity_ah": 60,
+    "nominal_voltage_v": 102.4,
+    "full_voltage_v": 116.8,
+    "nominal_energy_wh": 6144,
+    "usable_fraction_assumption": 0.8,
+    "continuous_bus_power_design_w": 8000,
+    "peak_bus_power_design_w": 20000,
+    "task_average_power_hypotheses_w": [
+      2000,
+      4000,
+      6000
+    ],
+    "status": "unselected custom pack; cell current, BMS, drive voltage, regenerative dump, thermal and wiring remain RED OPEN"
+  },
+  "timing": {
+    "bevy_target_physics_hz": 50,
+    "bevy_target_control_hz": 50,
+    "bevy_target_physics_substeps": 1,
+    "mujoco_diagnostic_dt_s": 0.002,
+    "mujoco_handoff_status": "diagnostic physics only, does not validate Bevy 20ms"
+  },
+  "task_load_scan_kg": [
+    0,
+    10,
+    20,
+    40,
+    60
+  ],
+  "gpu_coordination": {
+    "peers": [
+      {
+        "title": "规划 G1 本地闭环实施",
+        "thread_id": "01a0f76d-d804-7400-b9e4-76b36da4cca7"
+      },
+      {
+        "title": "Goose Sim2Sim 训练任务",
+        "thread_id": "01a0f894-b365-71b0-9ce6-5e8305425e2f"
+      }
+    ],
+    "policy": "equal independent tasks; briefly coordinate estimated start/duration before GPU PPO or heavy training; queue and use a timed wake-up if waiting; no routine chatter",
+    "current_gpu_training_planned": false
+  }
+}

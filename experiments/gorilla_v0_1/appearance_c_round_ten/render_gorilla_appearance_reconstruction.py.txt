@@ -1,0 +1,224 @@
+#!/usr/bin/env python3
+"""Render/export the actual C appearance mesh with all surface bevels applied."""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import math
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+ROOT=Path(__file__).resolve().parents[2]
+ROBOT=ROOT/"robots/gorilla_v0_1"
+BLENDER_ROOT=Path("/home/ethan/Softwares/blender-local/root")
+EXPORT=ROBOT/"cad/exports/appearance_c"
+IMAGES=ROBOT/"images"
+
+
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+
+
+def arguments():
+    p=argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--scene",type=Path,default=ROBOT/"cad/source/appearance_c_scene.json")
+    p.add_argument("--resolution",type=int,default=900)
+    p.add_argument("--samples",type=int,default=48)
+    p.add_argument("--views",default="front,left,rear,top,threequarter")
+    p.add_argument("--no-export",action="store_true")
+    p.add_argument("--tag",default="appearance_c")
+    argv=sys.argv[sys.argv.index("--")+1:] if "--" in sys.argv else None
+    return p.parse_args(argv)
+
+
+def wrapper(args):
+    env=os.environ.copy()
+    env["LD_LIBRARY_PATH"]=":".join(str(BLENDER_ROOT/p) for p in (
+        "usr/lib","usr/lib/aarch64-linux-gnu","usr/lib/aarch64-linux-gnu/lapack","usr/lib/aarch64-linux-gnu/blas"))
+    env["BLENDER_SYSTEM_SCRIPTS"]=str(BLENDER_ROOT/"usr/share/blender/scripts")
+    env["BLENDER_SYSTEM_DATAFILES"]=str(BLENDER_ROOT/"usr/share/blender/datafiles")
+    env["PYTHONHOME"]="/usr";env["PYTHONNOUSERSITE"]="1"
+    env["PYTHONPATH"]=str(ROOT/".venv/lib/python3.12/site-packages")
+    EXPORT.mkdir(parents=True,exist_ok=True);IMAGES.mkdir(parents=True,exist_ok=True)
+    cmd=[str(BLENDER_ROOT/"usr/bin/blender"),"-b","--threads","12","--python-exit-code","1","--python",str(Path(__file__).resolve()),"--",
+         "--scene",str(args.scene),"--resolution",str(args.resolution),"--samples",str(args.samples),"--views",args.views,"--tag",args.tag]
+    if args.no_export:cmd.append("--no-export")
+    logdir=ROOT/"artifacts/gorilla_v0_1/appearance_c_render";logdir.mkdir(parents=True,exist_ok=True)
+    log=logdir/f"{args.tag}.log"
+    with log.open("w") as f:
+        result=subprocess.run(cmd,env=env,stdout=f,stderr=subprocess.STDOUT)
+    if result.returncode:
+        print(log.read_text()[-6000:]);raise RuntimeError(f"Blender render failed; log {log}")
+    from PIL import Image,ImageDraw,ImageFont
+    n=args.resolution;views=args.views.split(",")
+    paths=[IMAGES/f"{args.tag}_{v}.png" for v in views]
+    if all(v in views for v in ("front","left","rear","top")):
+        sheet=Image.new("RGB",(2*n,2*n+110),"white");draw=ImageDraw.Draw(sheet)
+        try:font=ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",max(16,n//42))
+        except OSError:font=ImageFont.load_default()
+        for name,c,r in (("front",0,0),("left",1,0),("rear",0,1),("top",1,1)):
+            im=Image.open(IMAGES/f"{args.tag}_{name}.png").convert("RGBA")
+            sheet.paste(im,(c*n,55+r*n),im)
+            draw.text((c*n+20,55+r*n+12),name.upper(),fill="#2b3e51",font=font)
+        draw.text((20,15),"Gorilla V0.1 / AA3 appearance reconstruction C / actual 3D mesh",fill="#2b3e51",font=font)
+        draw.text((20,2*n+68),"Source-bound appearance iteration; not yet accepted. No physical approval.",fill="#2b3e51",font=font)
+        out=IMAGES/f"{args.tag}_four_view.png";sheet.save(out);paths.append(out)
+    source=json.loads(args.scene.read_text())
+    manifest={"schema":"gorilla_appearance_render_v2","robot_id":"gorilla_v0_1","checkpoint_id":"gorilla_appearance_c",
+        "scene_path":str(args.scene.relative_to(ROOT)),"scene_sha256":sha(args.scene),"spec_path":source["spec_path"],"spec_sha256":source["spec_sha256"],
+        "image_authority_sha256":source["image_sha256"],"renderer_script_path":str(Path(__file__).resolve().relative_to(ROOT)),"renderer_script_sha256":sha(Path(__file__).resolve()),
+        "renderer":"Blender 4.0.2 Cycles CPU","resolution":n,"samples":args.samples,
+        "source_scope":"Editable control meshes with recorded bevel parameters; modifiers applied identically before rendering and export.",
+        "views":"Same actual source geometry. Standard four views use the neutral pose; TOP is full-body vertical orthographic. Extra reference cameras and the explicitly recorded illustrative top_pose_a are diagnostics. top_upper_assembly isolation cannot establish whole-body acceptance.",
+        "post_processing":"Only alpha compositing onto a white labeled contact sheet; no shape, color or geometry correction.",
+        "images":[{"path":str(p.relative_to(ROOT)),"sha256":sha(p)} for p in paths],
+        "camera_definitions":json.loads((EXPORT/f"{args.tag}_camera_manifest.json").read_text()),
+        "appearance_accepted":False,"physics_accepted":False}
+    if not args.no_export:
+        manifest["exports"]=[{"path":str(p.relative_to(ROOT)),"sha256":sha(p)} for p in (ROBOT/"cad/source/appearance_c.blend",EXPORT/"appearance_c.glb",EXPORT/"evaluated_mesh_manifest.json")]
+    (EXPORT/f"{args.tag}_render_manifest.json").write_text(json.dumps(manifest,indent=2)+"\n")
+    print(json.dumps({"render_manifest":str(EXPORT/f"{args.tag}_render_manifest.json"),"images":[str(p) for p in paths]}))
+
+
+def blender_render(args):
+    import bpy
+    from mathutils import Vector,Matrix
+    data=json.loads(args.scene.read_text())
+    for item in [{"path":data["spec_path"],"sha256":data["spec_sha256"]},{"path":data["appearance_authority_path"],"sha256":data["image_sha256"]},*data["build_inputs"]]:
+        if sha(ROOT/item["path"])!=item["sha256"]:raise ValueError("Stale input: "+item["path"])
+    bpy.ops.object.select_all(action="SELECT");bpy.ops.object.delete(use_global=False)
+    scene=bpy.context.scene;scene.render.engine="CYCLES";scene.cycles.device="CPU"
+    scene.cycles.samples=args.samples;scene.cycles.use_denoising=False
+    bpy.context.preferences.filepaths.save_version=0
+    scene.render.resolution_x=scene.render.resolution_y=args.resolution;scene.render.resolution_percentage=100
+    scene.render.image_settings.file_format="PNG";scene.render.image_settings.color_mode="RGBA"
+    scene.render.film_transparent=True
+    scene.view_settings.view_transform="Standard";scene.view_settings.look="None"
+    scene.view_settings.exposure=-.35;scene.view_settings.gamma=1
+    world=bpy.data.worlds.new("white_studio");world.use_nodes=True
+    world.node_tree.nodes["Background"].inputs["Color"].default_value=(1,1,1,1)
+    world.node_tree.nodes["Background"].inputs["Strength"].default_value=.30;scene.world=world
+    def linear(c):return c/12.92 if c<=.04045 else ((c+.055)/1.055)**2.4
+    materials={};objects=[];evaluated=[]
+    for part in data["parts"]:
+        mesh=bpy.data.meshes.new(part["name"]+"_mesh");mesh.from_pydata(part["vertices_world_m"],[],part["faces"]);mesh.update()
+        ob=bpy.data.objects.new(part["name"],mesh);bpy.context.collection.objects.link(ob)
+        ob["body"]=part["body"];ob["role"]=part["role"];ob["physical_mass_assigned"]=False
+        color=tuple(linear(c) for c in part["rgba"][:3])+(part["rgba"][3],)
+        key=(tuple(part["rgba"]),part["role"])
+        if key not in materials:
+            mat=bpy.data.materials.new("paint_"+str(len(materials)));mat.use_nodes=True;mat.diffuse_color=color
+            bsdf=mat.node_tree.nodes.get("Principled BSDF");bsdf.inputs["Base Color"].default_value=color
+            bsdf.inputs["Metallic"].default_value=.25 if part["role"]=="visible_mechanism" else .12
+            bsdf.inputs["Roughness"].default_value=.32 if part["role"]=="visible_mechanism" else .28
+            materials[key]=mat
+        mesh.materials.append(materials[key])
+        if "face_rgba" in part:
+            if len(part["face_rgba"])!=len(mesh.polygons):raise ValueError("Face palette mismatch: "+part["name"])
+            local_slots={tuple(part["rgba"]):0}
+            for face,rgba in zip(mesh.polygons,part["face_rgba"]):
+                rgba_key=tuple(rgba)
+                if rgba_key not in local_slots:
+                    mk=(rgba_key,part["role"])
+                    if mk not in materials:
+                        mat=bpy.data.materials.new("paint_"+str(len(materials)));mat.use_nodes=True
+                        color_face=tuple(linear(c) for c in rgba[:3])+(rgba[3],);mat.diffuse_color=color_face
+                        bsdf=mat.node_tree.nodes.get("Principled BSDF");bsdf.inputs["Base Color"].default_value=color_face
+                        bsdf.inputs["Metallic"].default_value=.12;bsdf.inputs["Roughness"].default_value=.28
+                        materials[mk]=mat
+                    local_slots[rgba_key]=len(mesh.materials);mesh.materials.append(materials[mk])
+                face.material_index=local_slots[rgba_key]
+        for p in mesh.polygons:p.use_smooth=part["surface_shading"] in ("mechanical_smooth","curved_hard_surface")
+        mesh.use_auto_smooth=True;mesh.auto_smooth_angle=math.radians(45)
+        bpy.context.view_layer.objects.active=ob;ob.select_set(True)
+        if part["edge_bevel_m"]>0:
+            mod=ob.modifiers.new("source_recorded_bevel","BEVEL");mod.width=part["edge_bevel_m"]
+            mod.segments=part["bevel_segments"];mod.limit_method="ANGLE";mod.angle_limit=math.radians(25)
+            mod.use_clamp_overlap=True
+            bpy.ops.object.modifier_apply(modifier=mod.name)
+        if part["surface_shading"]!="curved_hard_surface":
+            mod=ob.modifiers.new("surface_weighted_normals","WEIGHTED_NORMAL");mod.keep_sharp=True;mod.weight=50
+            bpy.ops.object.modifier_apply(modifier=mod.name)
+        ob.select_set(False);objects.append(ob)
+        evaluated.append({"name":ob.name,"body":part["body"],"vertices":len(ob.data.vertices),"polygons":len(ob.data.polygons)})
+    EXPORT.mkdir(parents=True,exist_ok=True);IMAGES.mkdir(parents=True,exist_ok=True)
+    scene["source_scene_sha256"]=sha(args.scene);scene["image_authority_sha256"]=data["image_sha256"]
+    scene["appearance_accepted"]=False;scene["physics_accepted"]=False
+    if not args.no_export:
+        for ob in objects:ob.select_set(True)
+        bpy.context.view_layer.objects.active=objects[0]
+        bpy.ops.export_scene.gltf(filepath=str(EXPORT/"appearance_c.glb"),export_format="GLB",use_selection=True,export_yup=True)
+        bpy.ops.object.select_all(action="DESELECT")
+        (EXPORT/"evaluated_mesh_manifest.json").write_text(json.dumps({"scene_sha256":sha(args.scene),"bevels_applied":True,"parts":evaluated},indent=2)+"\n")
+    bpy.ops.mesh.primitive_plane_add(size=200,location=(0,0,-.004))
+    floor=bpy.context.object;floor.name="studio_shadow_floor";floor.is_shadow_catcher=True
+    floor_mat=bpy.data.materials.new("studio_floor");floor_mat.diffuse_color=(.95,.95,.95,1);floor.data.materials.append(floor_mat)
+    def light(name,pos,power,size):
+        ld=bpy.data.lights.new(name,"AREA");ld.energy=power;ld.shape="DISK";ld.size=size
+        ob=bpy.data.objects.new(name,ld);bpy.context.collection.objects.link(ob);ob.location=pos
+        ob.rotation_euler=(Vector((0,0,1.4))-ob.location).to_track_quat("-Z","Y").to_euler()
+    light("key_front",(4,-3,6),250,4);light("fill_left",(1,4,4),180,4);light("rear_soft",(-4,1,5),250,4)
+    cam=bpy.data.cameras.new("source_orthographic_camera");ob=bpy.data.objects.new("source_orthographic_camera",cam)
+    bpy.context.collection.objects.link(ob);scene.camera=ob;cam.type="ORTHO"
+    positions={"front":((8,0,1.325),(0,0,1.325),3.04),"left":((0,8,1.325),(0,0,1.325),3.04),
+               "rear":((-8,0,1.325),(0,0,1.325),3.04),"top":((0,0,8),(.1,0,0),2.26),
+               "threequarter":((4,-6,3.7),(0,0,1.325),3.10),
+               "chest_detail":((6,-1,2.5),(.12,0,2.22),1.38),
+               "hand_detail":((5,3,2),(.13,.84,1.04),.63),
+               "leg_detail":((5,3,1.4),(.1,.44,.69),1.31),
+               "top_reference":((2.80,0,4.50),(.1,0,1.50),2.55),
+               "front_reference":((8,0,2.20),(0,0,1.325),3.04),
+               "top_pose_a":((.362,0,4.50),(.1,0,1.50),2.55),
+               "top_near_vertical":((.1,0,5.0),(.1,0,1.45),2.55),
+               "top_upper_assembly":((2.80,0,4.50),(.1,0,1.82),2.40)}
+    ob.location=(4,-6,3.7);ob.rotation_euler=(Vector((0,0,1.325))-ob.location).to_track_quat("-Z","Y").to_euler();cam.ortho_scale=3.1
+    if not args.no_export:bpy.ops.wm.save_as_mainfile(filepath=str(ROBOT/"cad/source/appearance_c.blend"))
+    camera_records=[]
+    for name in args.views.split(","):
+        pos,target,scale=positions[name];ob.location=pos
+        ob.rotation_euler=(Vector(target)-ob.location).to_track_quat("-Z","Y").to_euler()
+        cam.type="ORTHO";cam.ortho_scale=scale
+        if name=="top":ob.rotation_euler=(0,0,math.pi/2)
+        if name in ("top_reference","top_near_vertical","top_upper_assembly","top_pose_a"):
+            cam.type="PERSP";cam.lens=58 if name=="top_near_vertical" else 45;cam.sensor_width=36
+            if name=="top_near_vertical":ob.rotation_euler=(0,0,math.pi/2)
+        hidden=[]
+        pose=None
+        if name=="top_pose_a":
+            spec=json.loads((ROOT/data["spec_path"]).read_text());affected=[]
+            # Candidate display pose only: each complete arm stays rigidly
+            # connected at its existing shoulder. No foot translation/hiding.
+            for side in ("left","right"):
+                pivot=Vector(spec["points_world_m"][side+"_shoulder"])
+                transform=Matrix.Translation(pivot)@Matrix.Rotation(math.radians(-50),4,"Y")@Matrix.Translation(-pivot)
+                for mesh in objects:
+                    body=mesh["body"]
+                    if body.startswith(side+"_") and any(label in body for label in ("upper_arm","forearm","palm","finger","thumb")):
+                        mesh.matrix_world=transform;affected.append(mesh.name)
+            pose={"scope":"Illustrative shoulder display pose, not a physical joint contract or validated feasible posture.",
+                  "axis_world":[0,1,0],"rotation_deg":-50,"description":"Both complete arms forward about the source shoulder pivots; all legs and feet remain neutral.",
+                  "affected_mesh_names":affected}
+        if name=="top_upper_assembly":
+            for mesh in objects:
+                body=mesh["body"]
+                if any(label in body for label in ("thigh","middle_shank","distal_shank","foot","hip_","knee_","ankle_")):
+                    mesh.hide_render=True;hidden.append(mesh.name)
+        camera_records.append({"view":name,"projection":cam.type,"position_m":list(pos),"target_m":list(target),
+            "rotation_euler_rad":list(ob.rotation_euler),"ortho_scale_m":scale if cam.type=="ORTHO" else None,
+            "lens_mm":cam.lens if cam.type=="PERSP" else None,"sensor_width_mm":cam.sensor_width if cam.type=="PERSP" else None,
+            "assembly_isolation":name=="top_upper_assembly","hidden_mesh_names":hidden,
+            "display_pose":pose,
+            "interpretation":"Uncalibrated artwork camera/pose candidate; not appearance acceptance." if name.startswith("top_") or name.endswith("_reference") else "Actual neutral geometry."})
+        scene.render.filepath=str(IMAGES/f"{args.tag}_{name}.png")
+        bpy.ops.render.render(write_still=True)
+        for mesh in objects:mesh.hide_render=False;mesh.matrix_world=Matrix.Identity(4)
+    (EXPORT/f"{args.tag}_camera_manifest.json").write_text(json.dumps(camera_records,indent=2)+"\n")
+
+
+if __name__=="__main__":
+    args=arguments()
+    try:import bpy
+    except ImportError:wrapper(args)
+    else:blender_render(args)

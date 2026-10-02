@@ -13,6 +13,9 @@ from .paths import resource_root, model_root, robot_catalog
 
 
 def prepare_godot(root,destination,robot_id=None):
+    selected=robot_id or os.environ.get('SAI_ROBOT_ID','Sai_Agent_001')
+    if not robot_catalog(root).get(selected,{}).get('godot_supported',True):
+        raise ValueError(f'{selected} is an engineering layout; its Godot controller is not validated')
     models=model_root(robot_id, root)
     destination.mkdir(parents=True,exist_ok=True)
     for path in (root/'integrations/godot').iterdir():
@@ -27,7 +30,8 @@ def prepare_godot(root,destination,robot_id=None):
 def main(argv=None):
     parser=argparse.ArgumentParser()
     parser.add_argument('mode',choices=['godot'])
-    parser.add_argument('--robot',choices=list(robot_catalog()),default='Sai_Agent_001')
+    parser.add_argument('--robot',choices=[name for name,entry in robot_catalog().items()
+                                         if entry.get('godot_supported',True)],default='Sai_Agent_001')
     parser.add_argument('--godot-bin',default=shutil.which('godot'))
     parser.add_argument('--headless',action='store_true')
     parser.add_argument('--case',choices=['stop','W','S','A','D','WA','shift','W_shift'])

@@ -41,3 +41,11 @@ def test_default_robot_and_unknown_robot_remain_compatible(monkeypatch):
     assert paths.model_root() == paths.model_root("Sai_Agent_002")
     with pytest.raises(ValueError, match="Unknown robot"):
         paths.model_root("unknown")
+
+
+def test_exploratory_gorilla_does_not_use_wheel_leg_godot_controller(tmp_path):
+    root=Path(__file__).resolve().parents[1]
+    destination=tmp_path/'gorilla'
+    with pytest.raises(ValueError,match='engineering layout'):
+        prepare_godot(root,destination,'gorilla_v0_1')
+    assert not destination.exists()
