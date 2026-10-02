@@ -1,0 +1,222 @@
+{
+  "schema": "gorilla_e2_independent_statics_formula_review_v1",
+  "robot_id": "gorilla_v0_1",
+  "candidate": "internal_structure_e2",
+  "review_completed_utc": "2026-10-02T20:53:01.947225+00:00",
+  "reviewer": "e2_statics_formula_review",
+  "review_mode": "read_only_source_and_existing_numeric_output; did not import target lp/resultant functions, solve target LPs, rebuild unions or run full model",
+  "input_sha256": {
+    ".scratch/gorilla_e2_statics.py": "ecbc17e86bd0989887dff4f70b4a95a84174d3acedc90cc65041ad4ada469cec",
+    ".scratch/gorilla_internal_e2_integrated/scene.json": "5a9aeca66ade1defcf34d0e0bd2e14a7928bfca1741753b096f86b977f5b66d4",
+    ".scratch/gorilla_internal_e2_integrated/statics.json": "a674de5bab9db2786faac2278b5f65c28f083c1be4990fcc5d823fada0f9c9c3",
+    ".scratch/gorilla_internal_e2_structure/structure_scene.json": "baf16ef2e19272f18ae95aa9d94d7e0416e583bcca32c98fefe5abb1ca787618",
+    "src/sai_agent/structural_statics.py": "71cc4b231444a4167e53474c0910b71d55e99e602ccffac15938eb6f8c404d79",
+    ".scratch/gorilla_internal_e2_structure/build_structure.py": "c3f129b107490635d87424a6d71f05aa3692a704234ce5321ee7b2d5e0425cc2"
+  },
+  "summary": "One definite gross hollow-shaft transverse-shear formula mismatch. No sign error found in LP balance, generalized torque or cylinder capacity; no current body-owner/pose/contact defect found. Hydraulic eye and bearing reactions remain unallocated, so the exterior-child-wrench sensitivity is neither actual shaft stress nor a bound.",
+  "physical_acceptance": false,
+  "hardware_or_material_acceptance": false,
+  "findings": [
+    {
+      "id": "annular_transverse_shear_coefficient",
+      "priority": "P2",
+      "file": ".scratch/gorilla_e2_statics.py",
+      "line": 108,
+      "status": "historical_found_then_fixed_current_source_confirmed",
+      "observed": "Initial read used solid-circle term for annulus; root then corrected factor. Initial read source hash was not retained; final hashed source contains correct annular factor.",
+      "expected_within_elementary_beam_assumption": "For the annular Jourawski VQ/(Ib) neutral-axis maximum, multiply 4V/(3A) by (ro^2+ro*ri+ri^2)/(ro^2+ri^2). This remains elementary beam sensitivity, not 3D local stress.",
+      "derivation": {
+        "Q_at_neutral_axis_m3": "2*(ro^3-ri^3)/3",
+        "material_width_at_neutral_axis_m": "2*(ro-ri)",
+        "I_m4": "pi*(ro^4-ri^4)/4",
+        "tau_Pa": "V*Q/(I*b)"
+      },
+      "factors": [
+        {
+          "outer_radius_m": 0.04,
+          "inner_radius_m": 0.028,
+          "annular_jourawski_factor": 1.4697986577181208
+        },
+        {
+          "outer_radius_m": 0.045,
+          "inner_radius_m": 0.032,
+          "annular_jourawski_factor": 1.4722859954083307
+        }
+      ],
+      "impact": "Transverse-shear addend must increase by about 47%; total combined sensitivity increases according to its contribution. LP constraints/objective and torque capacities are unchanged.",
+      "recommendation": "Correct the annular coefficient or explicitly rename this term as a solid-circle approximation. Preserve the no-actual-stress/no-bound scope.",
+      "current_source_sha256": "ecbc17e86bd0989887dff4f70b4a95a84174d3acedc90cc65041ad4ada469cec",
+      "original_snapshot_sha256": null
+    }
+  ],
+  "passed_formula_checks": [
+    {
+      "topic": "vertical_equilibrium",
+      "source_lines": [
+        26,
+        27
+      ],
+      "proof": "Upward n at (x,y,z) contributes [0,0,n] and moment [y*n,-x*n,0]. Therefore sum(n)=-Fz; sum(x*n)=My; sum(y*n)=-Mx. The script uses exactly these equations. Its current generated loads are vertical and have zero net yaw moment."
+    },
+    {
+      "topic": "generalized_torque",
+      "source_line": 85,
+      "proof": "Required actuator torque is minus the projection of all exterior distal moments onto the parent-transformed unit axis. bias=-Mext.dot(axis), coefficient_i=-axis.dot((v_i-J) cross ez) for descendant-owned contact points; ownership masking is required and present."
+    },
+    {
+      "topic": "cylinder_torque_and_signed_capacity",
+      "source_lines": [
+        89,
+        90
+      ],
+      "proof": "Extension force on B is +fp*u; retraction is -fm*u. jac=u.dot(axis cross (B-J))=axis.dot((B-J) cross u). Per cylinder endpoints are 0.9*jac*fp and -0.9*jac*fm; summing minima/maxima reproduces negative/positive capacity, including negative jac."
+    },
+    {
+      "topic": "normalized_minimax_constraints",
+      "source_lines": [
+        29,
+        32
+      ],
+      "proof": "The two rows represent c+k.n <= Cpos*t and -(c+k.n) <= Cneg*t, with n>=0 and t>=0. For the reviewed Cpos,Cneg>0, t<=1 is existence of one common witness within the listed references only."
+    },
+    {
+      "topic": "dual_signs_and_lower_bound",
+      "source_lines": [
+        35,
+        37
+      ],
+      "proof": "For min c.x with Ax<=b, Ex=d, x>=0, lambda<=0 and r=c-A.T.lambda-E.T.y>=0 give lower bound b.lambda+d.y. The script checks these signs and the gap consistently."
+    },
+    {
+      "topic": "section_geometry",
+      "source_lines": [
+        107,
+        108
+      ],
+      "proof": "A=pi*(ro^2-ri^2), I=pi*(ro^4-ri^4)/4 and Jp=2I are annular section properties. |N|/A+M_b*ro/I and |T|*ro/Jp match the uniform isotropic circular-section sensitivity assumption with a unit shaft axis. Builder lines 67-74 define matching moving-shaft radii."
+    },
+    {
+      "topic": "foot_brace_pin_factor_count",
+      "source_line": 95,
+      "builder_file": ".scratch/gorilla_internal_e2_structure/build_structure.py",
+      "builder_lines": [
+        151,
+        166
+      ],
+      "proof": "Within each brace there are two separate D16 lock pins at two telescope-overlap stations, each assigned a double-shear reference. Thus 2 locks times 2 planes times A times (355 MPa/sqrt(3)) divided by FS2 is per-brace gross axial reference; outer sum across two braces is separate. D24 fixed/moving endpoint pins are in series and are not included in this expression. No brace/end-pin factor has been counted twice.",
+      "gross_per_brace_reference_N": 82419.04311080286,
+      "required_conditions": "Two lock pins share brace axial load ideally; each pin has two effective shear planes; 355 MPa is the material sensitivity; side-wall bearing, ligaments, end pins, stiffness/load sharing, buckling and actual engagement remain unqualified."
+    }
+  ],
+  "data_checks": {
+    "body_tree_count": 52,
+    "parts_count": 1579,
+    "mass_rows_count": 1105,
+    "missing_or_conflicting_body_owners": 0,
+    "support_parent_joint_tree_mismatches": 0,
+    "nonunit_joint_axes": 0,
+    "mass_union_member_body_mismatches": 0,
+    "max_body_transform_orthogonality_error": 4.440892098500626e-16,
+    "independently_recomputed_contact_vertex_sets_match": true,
+    "pad_vertices_below_ground": 0,
+    "contact_vertex_counts": {
+      "neutral": 28,
+      "crouch": 28,
+      "forward_manipulation": 28,
+      "small_lateral_tilt": 28,
+      "unloaded_independent_fold": 2
+    },
+    "fold_contact_bodies": [
+      "left_heel_display",
+      "right_heel_display"
+    ],
+    "existing_output_successful_lp_cases": 48,
+    "existing_output_infeasible_fold_cases": 3,
+    "existing_output_source_hashes_match_at_review": true,
+    "max_independent_contact_coefficient_error_Nm_per_N": 0.0,
+    "max_independent_cylinder_capacity_error_Nm": 3.637978807091713e-12,
+    "max_neutral_gravity_bias_error_Nm": 0.0,
+    "certificate_recomputation": {
+      "successful_cases": 48,
+      "max_balance_error_N_or_Nm": 1.1641532182693481e-10,
+      "max_capacity_constraint_violation": 1.1796119636642288e-16,
+      "max_dual_sign_error": 2.0328790734103208e-20,
+      "max_absolute_primal_dual_gap": 3.3306690738754696e-16,
+      "max_stored_reduced_cost_disagreement": 0.0
+    },
+    "certificate_balance_target_method": "All successful cases compare E*n to the independently generated normal_contact witness and to the finite inventory total vertical force; neutral cases additionally reconstruct all gravity moments and distal bias directly from scene.mass_rows COMs.",
+    "actual_D16_foot_lock_counts_by_side_family": {
+      "left_forefoot": 4,
+      "left_heel": 4,
+      "right_forefoot": 4,
+      "right_heel": 4
+    },
+    "per_brace_D16_lock_stations_m": {
+      "forefoot": [
+        0.285,
+        0.335
+      ],
+      "heel": [
+        0.075,
+        0.11
+      ]
+    }
+  },
+  "scope_observations": [
+    {
+      "topic": "unallocated_hydraulic_eye_and_bearing_forces",
+      "source_line": 109,
+      "finding_type": "required_interpretation_already_stated_in_source",
+      "text": "Child exterior F,M contains gravity/payload/contact, not hydraulic eye forces. Actual interface/shaft section forces require Fshaft=-(Fext+sum(Feye)+other interfaces), Mshaft(J)=-(Mext+sum((B-J) cross Feye)+other interfaces), followed by bearing/support/section partition. LP bounds only generalized torque; multiple cylinder force splits are not solved. No upper or lower actual shaft-stress bound follows."
+    },
+    {
+      "topic": "combined_scalar_sensitivity",
+      "source_line": 108,
+      "text": "sqrt(sigma^2+3*tau^2) is valid for a coincident uniaxial-normal-plus-shear stress state. Here sigma/tau sum component magnitudes whose extrema generally occur at different section locations. Output is a combined sensitivity, not the stress at an actual material point. The current missing annular factor also prevents a conservative-profile claim."
+    },
+    {
+      "topic": "contact_witness_is_not_stress_extremum",
+      "source_lines": [
+        98,
+        109
+      ],
+      "text": "The common witness minimizes capacity use t only. Grossshaft sensitivity at it is not maximized/minimized over all feasible contact allocations; solver tie breaking is not a structural extremum."
+    },
+    {
+      "topic": "right_foot_brace_reference",
+      "source_line": 95,
+      "text": "Both sides use actual_foot_brace_report_left and side is unused. The reviewed builder mirrors the same foot geometry/q and current locked-pose magnitudes agree, so no numeric capacity defect is established for these poses. Right-side details retain left IDs; independent asymmetric right-foot states would require right-derived arms or an explicit symmetry restriction."
+    },
+    {
+      "topic": "restricted_contact_guard",
+      "source_line": 27,
+      "text": "lp itself enforces only vertical force and roll/pitch moment equations; unlike normal_contacts it does not reject horizontal loads/yaw. All current generated loads are vertical, so this is a future-domain guard limitation, not an active sign error."
+    },
+    {
+      "topic": "moving_material_and_mass_intervals",
+      "source_lines": [
+        63,
+        68,
+        113
+      ],
+      "text": "Native unions change volume in four nonneutral poses and fixed inventory mass is reused with posed union COM. Those cases remain COM/material proxies as the source scope states. Three coherent all-low/nominal/all-high profiles are not independent interval worst cases."
+    },
+    {
+      "topic": "foot_brace_pin_scope",
+      "source_line": 95,
+      "text": "No factor-of-two double count is established: first 2=two lock stations/pins per brace, second 2=assumed shear planes, subsequent sum=two separate braces. Full brace capacity cannot be assigned from this gross lock-only reference because D24 end interfaces, bearing/ligaments, engagement, load sharing and stability are unresolved."
+    }
+  ],
+  "not_performed": [
+    "Full-model rerun",
+    "Target LP solve or target lp import",
+    "Mesh/union rebuild",
+    "Physical failure conclusion",
+    "Pressure control qualification",
+    "Bearing/eye force allocation",
+    "FE/stress concentration/fatigue evaluation",
+    "Material-grade certification",
+    "Procurement",
+    "GPU task"
+  ]
+}

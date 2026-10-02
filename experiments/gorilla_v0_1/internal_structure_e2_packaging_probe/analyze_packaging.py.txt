@@ -1,0 +1,69 @@
+from pathlib import Path
+import json,hashlib,time,collections,itertools
+import numpy as np,trimesh
+R=Path('/home/ethan/Projects/Sai_Rotbots');O=R/'.scratch/gorilla_internal_e2_packaging'
+paths=[R/'.scratch/gorilla_internal_e2_system/system_spec.json',R/'.scratch/gorilla_internal_e2_system/system_scene.json',R/'.scratch/gorilla_internal_e2_system/limited_system_screen.json',R/'.scratch/gorilla_internal_e2_upper/upper_scene.json',R/'.scratch/gorilla_internal_e2_structure/interface.json',R/'robots/gorilla_v0_1/cad/source/appearance_c_scene.json']
+sha=lambda b:hashlib.sha256(b).hexdigest()
+raw={str(p.relative_to(R)):p.read_bytes() for p in paths};d={k:json.loads(v) for k,v in raw.items()}
+sp=d[str(paths[0].relative_to(R))];sc=d[str(paths[1].relative_to(R))];screen=d[str(paths[2].relative_to(R))];upper=d[str(paths[3].relative_to(R))];base=d[str(paths[5].relative_to(R))]
+assert sc['source_spec_sha256']==sha(raw[str(paths[0].relative_to(R))])
+screen_input_is_current=all(screen['inputs'][str(p.relative_to(R))]==sha(raw[str(p.relative_to(R))]) for p in paths[:2])
+def mesh(p):return trimesh.Trimesh(p['vertices_world_m'],[[f[0],f[i],f[i+1]] for f in p['faces'] for i in range(1,len(f)-1)],process=False)
+ms={p['name']:mesh(p) for p in sc['parts']};pm={p['name']:p for p in sc['parts']};mm={m['id']:m for m in sp['modules']};am={p['name']:mesh(p) for p in base['parts'] if p['role'] in ['armor_cover','armor_surface']};um={p['name']:mesh(p) for p in upper['parts']}
+def inter(a,b):
+ if not np.all(np.minimum(a.bounds[1],b.bounds[1])-np.maximum(a.bounds[0],b.bounds[0])>1e-6):return 0.
+ return float(trimesh.boolean.intersection([a,b],engine='manifold').volume)
+def hits(g,against):
+ out=[]
+ for n,m in g.items():
+  for k,b in against.items():
+   v=inter(m,b)
+   if v>1e-9:out.append({'module':n,'other':k,'positive_volume_m3':v})
+ return out
+if not screen_input_is_current:
+ selected=[n for n in screen['screened_module_ids'] if n in ms]
+ fresh=hits({n:ms[n] for n in selected},am)
+ screen=dict(screen,positive_armor_overlaps=[{'module':h['module'],'armor':h['other'],'native_positive_volume_m3':h['positive_volume_m3']} for h in fresh],positive_armor_overlap_count=len(fresh),screened_module_count=len(selected),inputs={str(p.relative_to(R)):sha(raw[str(p.relative_to(R))]) for p in paths[:2]})
+ (O/'independent_current_system_screen.json').write_text(json.dumps(screen,indent=2)+'\n')
+byarmor=collections.defaultdict(lambda:[0,0.]);bycat=collections.defaultdict(lambda:[0,0.])
+for h in screen['positive_armor_overlaps']:
+ byarmor[h['armor']][0]+=1;byarmor[h['armor']][1]+=h['native_positive_volume_m3'];bycat[mm[h['module']]['category']][0]+=1;bycat[mm[h['module']]['category']][1]+=h['native_positive_volume_m3']
+def shifted(ids,dt):
+ out={}
+ for n in ids:
+  m=ms[n].copy();m.apply_translation(dt);out[n]=m
+ return out
+fluid={'coolant_inventory','oil_inventory_once','coolant_inventory_unknown_internal'}
+solid={n:m for n,m in ms.items() if pm[n]['category'] not in fluid};solid.update(um)
+groups={
+ 'rear_screen_complete_reserve':['ds_back_screen'],
+ 'paired_upper_packs':['ds_left_upper_custom_hv_pack','ds_right_upper_custom_hv_pack'],
+ 'dual_fluid_HX_material_only':['e2_dual_fluid_HX_material'],
+}
+for side in [-1,1]:
+ ids=[p['name'] for p in sc['parts'] if p['category']=='added_hydraulic_EA_valve' and np.mean(p['vertices_world_m'],axis=0)[1]*side>0]
+ ids += [f'e2_added_bank_{side}_connection_end'];groups[f'new_valve_bank_{side}']=ids
+results={};t=time.monotonic()
+for key,ids in groups.items():
+ orig=hits({n:ms[n] for n in ids},am)
+ if key.startswith('new_valve'):
+  offsets=[np.array([x,0,z]) for x,z in itertools.product(np.arange(-.30,.101,.05),np.arange(-.1,.501,.05))]
+ else:
+  offsets=[np.array([x,0,z]) for x,z in itertools.product(np.arange(-.10,.101,.025),np.arange(-.10,.101,.025))]
+ offsets.sort(key=lambda q:float(q@q));zero=[];best=None;checked=0
+ for dt in offsets:
+  g=shifted(ids,dt);hs=hits(g,am);checked+=1;v=sum(h['positive_volume_m3'] for h in hs)
+  row={'translation_xyz_m':np.round(dt,8).tolist(),'L2_translation_m':float(np.linalg.norm(dt)),'armor_pair_count':len(hs),'armor_overlap_pair_volume_sum_m3':v,'armor_hits':hs}
+  if best is None or (len(hs),v,float(dt@dt))<(best['armor_pair_count'],best['armor_overlap_pair_volume_sum_m3'],best['L2_translation_m']**2):best=row
+  if not hs:
+   blockers=hits(g,{n:m for n,m in solid.items() if n not in ids});row['other_system_upper_pair_count']=len(blockers);row['other_hits']=blockers;zero.append(row)
+   if len(zero)>=5:break
+ results[key]={'ids':ids,'original_armor_pair_count':len(orig),'original_armor_pair_volume_sum_m3':sum(h['positive_volume_m3'] for h in orig),'sampled_translation_count':checked,'sampled_grid_scope':'Neutral rigid complete stated group, no rotation/scale; x/z discrete grid only. No replumb/mount/pose/access qualification.','nearest_five_armor_clear_samples':zero,'best_sample':best,'all_modules_same_size':True,'physical_or_packaging_acceptance':False}
+ print(key,checked,'armor_clear',len(zero),'bestpairs',best['armor_pair_count'],flush=True)
+r={'schema':'gorilla_e2_independent_packaging_review_v1','source_inputs':{k:sha(v) for k,v in raw.items()},'script_sha256':sha(Path(__file__).read_bytes()),'original_screen_was_current':screen_input_is_current,'elapsed_s':time.monotonic()-t,'baseline_screen':{'module_count':screen['screened_module_count'],'armor_count':screen['armor_count'],'positive_pair_count':screen['positive_armor_overlap_count'],'pair_volumes_not_union':True},'armor_rank':sorted([{'id':k,'pairs':v[0],'pair_volume_sum_m3':v[1]} for k,v in byarmor.items()],key=lambda r:-r['pair_volume_sum_m3']),'category_rank':sorted([{'category':k,'pairs':v[0],'pair_volume_sum_m3':v[1]} for k,v in bycat.items()],key=lambda r:-r['pair_volume_sum_m3']),'rigid_group_relocation_lower_bound':results,'AA3_change_required_proven':False,'original_armor_modified':False,'all_geometry_physics_aesthetic_acceptance':False,'limitation':'No native structure source was available at input capture; module-vs-upper included 15 upper finite-material rows. This is an independent neutral lower-bound translation probe. Armor-clear meshes may be outside armor envelope, in holes or collide with structure; not a realizable packing solution.'}
+(O/'review.json').write_text(json.dumps(r,indent=2)+'\n')
+# Save exact retained input sources, never read another evolving file under their identity.
+for key,bb in raw.items():
+ short=Path(key).parent.name+'_'+Path(key).name
+ (O/short).write_bytes(bb)
+print('review',sha((O/'review.json').read_bytes()),'elapsed',r['elapsed_s'],flush=True)

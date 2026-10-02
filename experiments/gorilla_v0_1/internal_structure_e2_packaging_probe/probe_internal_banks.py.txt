@@ -1,0 +1,29 @@
+from pathlib import Path
+import json,hashlib,itertools,time
+import numpy as np,trimesh
+R=Path('/home/ethan/Projects/Sai_Rotbots');O=R/'.scratch/gorilla_internal_e2_packaging';scene=json.loads((O/'gorilla_internal_e2_system_system_scene.json').read_text());upper=json.loads((O/'gorilla_internal_e2_upper_upper_scene.json').read_text());base=json.loads((O/'source_appearance_c_scene.json').read_text());r=json.loads((O/'review.json').read_text())
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def mesh(p):return trimesh.Trimesh(p['vertices_world_m'],[[f[0],f[i],f[i+1]] for f in p['faces'] for i in range(1,len(f)-1)],process=False)
+ms={p['name']:mesh(p) for p in scene['parts']};arm={p['name']:mesh(p) for p in base['parts'] if p['role'] in ['armor_cover','armor_surface']};solid={p['name']:ms[p['name']] for p in scene['parts'] if p['category'] not in ['oil_inventory_once','coolant_inventory','coolant_inventory_unknown_internal']};solid.update({p['name']:mesh(p) for p in upper['parts']})
+def hits(mm,other):
+ out=[]
+ for n,m in mm.items():
+  for k,b in other.items():
+   if not np.all(np.minimum(m.bounds[1],b.bounds[1])-np.maximum(m.bounds[0],b.bounds[0])>1e-6):continue
+   v=float(trimesh.boolean.intersection([m,b],engine='manifold').volume)
+   if v>1e-9:out.append({'module':n,'other':k,'positive_volume_m3':v})
+ return out
+out={};t=time.monotonic()
+for key,g in r['rigid_group_relocation_lower_bound'].items():
+ if not key.startswith('new_valve'):continue
+ rows=[];ids=g['ids']
+ for x,z in itertools.product(np.arange(-.30,.001,.05),np.arange(.35,.501,.05)):
+  dt=np.array([x,0,z]);group={}
+  for n in ids:
+   m=ms[n].copy();m.apply_translation(dt);group[n]=m
+  bh=hits(group,arm)
+  if not bh:
+   nh=hits(group,{n:m for n,m in solid.items() if n not in ids});bb=np.array([m.bounds for m in group.values()]);rows.append({'translation_xyz_m':np.round(dt,8).tolist(),'armor_pair_count':0,'other_system_and_upper_pair_count':len(nh),'other_hits':nh,'group_bounds_xyz_m':[bb[:,0].min(0).tolist(),bb[:,1].max(0).tolist()]})
+ rows.sort(key=lambda a:(a['other_system_and_upper_pair_count'],sum(h['positive_volume_m3'] for h in a['other_hits'])));out[key]={'grid_scope':'x inward [−300,0]mm step50 and z upward[350,500]mm step50; neutral no rotation or scale, complete5 new EA slices with coil/lever plusbank end. Within global torso AABB only, not a true free cavity.','armor_clear_samples':rows,'installation_accepted':False};print(key,len(rows),'bestnewnew',rows[0]['other_system_and_upper_pair_count'] if rows else None,flush=True)
+result={'schema':'gorilla_e2_inward_bank_packaging_probe_v1','inputs':{p.name:sha(p) for p in [O/'review.json',O/'gorilla_internal_e2_system_system_scene.json',O/'gorilla_internal_e2_upper_upper_scene.json',O/'source_appearance_c_scene.json']},'producer_sha256':sha(__file__),'elapsed_s':time.monotonic()-t,'banks':out,'limitations':'No lower structure native existed at capture. Whole-bank motion, output brackets, plumbing changes and extraction paths unqualified. Neutral armor clearance cannot prove inside actual shell nor whole packing.','all_acceptance_false':True}
+(O/'internal_bank_probe.json').write_text(json.dumps(result,indent=2)+'\n');print(sha(O/'internal_bank_probe.json'))

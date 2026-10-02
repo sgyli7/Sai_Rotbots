@@ -1,0 +1,36 @@
+"""Gorilla E2 selective serial candidate definition, not a physical contract."""
+from pathlib import Path
+import numpy as np,json,math,hashlib
+ROOT=Path(__file__).resolve().parents[2];OUT=Path(__file__).resolve().parent
+SYS=ROOT/'robots/gorilla_v0_1/configs/internal_structure_d_system_spec.json';SP=ROOT/'robots/gorilla_v0_1/configs/appearance_c_spec.json';DS=ROOT/'robots/gorilla_v0_1/configs/internal_structure_d_spec.json'
+P={k:np.array(v,float) for k,v in json.loads(SP.read_text())['points_world_m'].items()};old=json.loads(DS.read_text());tree={'pelvis':{'parent':None}};joints=[]
+W=np.array([0.,0.,1.87]);WP=np.array([0.,0.,2.07]);WR=np.array([.125,0.,2.30]);HY=np.array([-.250,.354,2.025]);HR=np.array([-.015,.354,1.850]);H=P['left_hip'];K=P['left_knee'];F=P['left_fold'];A=P['left_ankle']+[0,0,.080];FR=np.array([-.075,.50,.210]);LF=np.array([-.077,.5,.124]);LH=np.array([-.131,.5,.124])
+def add(child,parent,j,axis,jid):
+ tree[child]={'parent':parent,'pivot_world_m':list(j),'axis_world':axis,'joint_id':jid,'status':'candidate axis, not stable SI'};joints.append({'id':jid,'parent_body':parent,'output_body':child,'center_world_m':list(j),'axis_world':axis})
+add('waist_yaw_carrier','pelvis',W,[0,0,1],'waist_yaw');add('waist_pitch_carrier','waist_yaw_carrier',WP,[0,1,0],'waist_pitch');add('torso','waist_pitch_carrier',WR,[1,0,0],'waist_roll')
+for side,sg in [('left',1),('right',-1)]:
+ def rp(v):q=np.array(v,float);q[1]*=sg;return q
+ for child,parent,p,axis,jid in [('hip_yaw_carrier','pelvis',HY,[0,0,1],'hip_yaw'),('hip_roll_carrier',side+'_hip_yaw_carrier',HR,[1,0,0],'hip_roll'),('thigh',side+'_hip_roll_carrier',H,[0,1,0],'hip'),('middle_shank',side+'_thigh',K,[0,1,0],'knee'),('distal_shank',side+'_middle_shank',F,[0,1,0],'fold'),('ankle_pitch_carrier',side+'_distal_shank',A,[0,1,0],'ankle'),('foot_roll_arch',side+'_ankle_pitch_carrier',FR,[1,0,0],'foot_roll'),('forefoot_display',side+'_foot_roll_arch',LF,[0,1,0],'forefoot'),('heel_display',side+'_foot_roll_arch',LH,[0,1,0],'heel')]:add(side+'_'+child,parent,rp(p),axis,side+'_'+jid)
+def rot(axis,q):
+ import trimesh
+ return trimesh.transformations.rotation_matrix(math.radians(q),axis)[:3,:3]
+acts=[]
+def actuator(id,parent,out,j,axis,a,b,qrange,bore,rod,wall,pin):
+ vals=[]
+ for q in np.linspace(*qrange,121):
+  bb=j+rot(axis,q)@(b-j);L=np.linalg.norm(bb-a);jac=float((bb-a)/L@np.cross(axis,bb-j));vals.append({'q_deg':float(q),'eye_length_m':float(L),'J_m_per_rad':jac})
+ lo=min(z['eye_length_m'] for z in vals);hi=max(z['eye_length_m'] for z in vals);S=hi-lo+.020;zmin=S+.140;tail=max(0,lo-.010-zmin)
+ acts.append({'id':id,'base_body':parent,'output_body':out,'pivot_world_m':list(j),'axis_world':axis,'neutral_A_world_m':list(a),'neutral_B_world_m':list(b),'angle_range_deg':qrange,'bore_m':bore,'rod_m':rod,'wall_m':wall,'pin_m':pin,'actual_stroke_design_m':float(S),'minimum_zero_eye_length_m':float(zmin),'allocated_custom_zero_eye_length_m':float(zmin+tail),'additional_tail_m':float(tail),'sampled_eye_length_range_m':[float(lo),float(hi)],'short_working_deficit_m':float(max(0,zmin+.010-lo)),'vendor_zero_eye_known':False,'samples':vals,'scope':'Finite custom envelope/material only; pressure/connection/drive unqualified'})
+for i,y in enumerate([-.20,.20]):actuator('waist_pitch_pair_'+str(i),'waist_yaw_carrier','waist_pitch_carrier',WP,[0,1,0],WP+[0,y,.300],WP+[.230,y,-.200],[-25,25],.080,.040,.006,.030)
+for side,sg in [('left',1),('right',-1)]:
+ def r(v):q=np.array(v,float);q[1]*=sg;return q
+ for i,sy in enumerate([-.180,.180]):actuator(side+'_hip_roll_pair_'+str(i),side+'_hip_yaw_carrier',side+'_hip_roll_carrier',r(HR),[1,0,0],r(HR+[0,sy,.300]),r(HR+[0,sy/abs(sy)*.150,-.400]),[-12,12],.063,.030,.005,.025)
+ for i,sx in enumerate([-.055,.055]):
+  sy=-.050 if i==0 else .050;by=.130 if i==0 else -.130
+  actuator(side+'_foot_roll_pair_'+str(i),side+'_ankle_pitch_carrier',side+'_foot_roll_arch',r(FR),[1,0,0],r(FR+[sx,sy,.260]),r(FR+[sx,by,.020]),[-10,10],.050,.025,.005,.025)
+ for fam,parent,out,j in [('hip','hip_roll_carrier','thigh',H),('knee','thigh','middle_shank',K),('fold','middle_shank','distal_shank',F),('ankle','distal_shank','ankle_pitch_carrier',A)]:
+  q=next(x for x in old['actuator_definitions'] if x['id']=='left_'+fam);a=np.array(q['A_neutral_world_m']);b=np.array(q['B_neutral_world_m'])
+  if fam=='ankle':a=A+(F-A)/np.linalg.norm(F-A)*.180+[.100,0,.035];b=A+[.140,0,0];a[1]-=.065;b[1]-=.065
+  actuator(side+'_'+fam,side+'_'+parent,side+'_'+out,r(j),[0,1,0],r(a),r(b),{'hip':[-30,0],'knee':[0,60],'fold':[-20,0],'ankle':[-10,0]}[fam],q['bore_m'],q['rod_m'],.006 if fam=='knee' else .005,.025 if fam=='knee' else .018 if fam=='hip' else .022)
+if __name__=='__main__':
+ data={'robot_id':'gorilla_v0_1','candidate':'E2 selective actual serial CAD input','body_tree':tree,'joint_supports':joints,'actuators':acts,'source_hashes':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in [SYS,SP,DS]},'other18_electric_axis_references_retained':'4 waistyaw/waistroll/hipyaw groups constructed here;14 arm groups by root.16hand reserves by root.','axis_changes_are_not_new_physical_contract':True,'geometry_accepted':False,'physics_accepted':False,'producer_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest()};(OUT/'interface.json').write_text(json.dumps(data,indent=2)+'\n');print('interface',len(acts),'actuators',[x['id'] for x in acts if x['short_working_deficit_m']>1e-9])

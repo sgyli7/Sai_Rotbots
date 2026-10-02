@@ -1,0 +1,20 @@
+from pathlib import Path
+import json,hashlib,time,collections
+import numpy as np,trimesh
+R=Path('/home/ethan/Projects/Sai_Rotbots');O=R/'.scratch/gorilla_internal_e2_packaging'
+paths=[O/'gorilla_internal_e2_system_system_spec.json',O/'gorilla_internal_e2_system_system_scene.json',O/'captured_structure_scene.json',O/'gorilla_internal_e2_upper_upper_scene.json',O/'source_appearance_c_scene.json'];spec,sys,struct,upper,base=[json.loads(p.read_text()) for p in paths]
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def mesh(p):return trimesh.Trimesh(p['vertices_world_m'],[[f[0],f[i],f[i+1]] for f in p['faces'] for i in range(1,len(f)-1)],process=False)
+arm={p['name']:mesh(p) for p in base['parts'] if p['role'] in ['armor_cover','armor_surface']};fluidcats=['oil_inventory_once','coolant_inventory','coolant_inventory_unknown_internal'];newids={m['id'] for m in spec['modules'] if m['id'].startswith(('e_','e2_'))};critical={m['id'] for m in spec['modules'] if m['id'].startswith('ds_') and any(q in m['id'] for q in ['hydraulic_input','custom_oil_tank','custom_hv_pack','hv_dc','bms_fuse','compute','dc_dc','back_screen'])};sample=[p for p in sys['parts'] if (p['name'] in newids and p['category'] not in fluidcats) or p['name'] in critical];groups={'system_new_and_named_sourcecritical':sample,'structure_all_native':struct['parts'],'upper_all_native':upper['parts']};reports={};start=time.monotonic()
+for key,parts in groups.items():
+ hits=[];checked=0;top=collections.defaultdict(lambda:[0,0.])
+ for p in parts:
+  m=mesh(p)
+  for n,b in arm.items():
+   if not np.all(np.minimum(m.bounds[1],b.bounds[1])-np.maximum(m.bounds[0],b.bounds[0])>1e-6):continue
+   checked+=1;v=float(trimesh.boolean.intersection([m,b],engine='manifold').volume)
+   if v>1e-9:
+    h={'module':p['name'],'body':p['body'],'role':p['role'],'category':p.get('category'),'armor':n,'positive_volume_m3':v,'component_envelope_overlap_is_not_exact_OEM_material':p['role'] in ['complete_component_reference','component_module_envelope','bearing_reference']};hits.append(h);top[n][0]+=1;top[n][1]+=v
+ reports[key]={'screened_native_count':len(parts),'native_armor_boolean_pairs':checked,'positive_pair_count':len(hits),'positive_pairs':hits,'top_armor':sorted([{'armor':n,'pairs':v[0],'pair_volume_sum_m3':v[1]} for n,v in top.items()],key=lambda q:-q['pair_volume_sum_m3'])};print(key,len(parts),len(hits),flush=True)
+r={'schema':'gorilla_e2_complete_captured_packaging_scope_v1','inputs':{str(p.relative_to(R)):sha(p) for p in paths},'producer_sha256':sha(__file__),'elapsed_s':time.monotonic()-start,'groups':reports,'scope':'Neutral, exact finite native armor intersections. System new plus source-critical same rule as producer screen; includes all current new P/T header materials. Structure all587 and upper15 vs all111 immutable original armor, separating OEM/bearing envelopes by flag. Does not screen all system retained drives or all new-new; no internal containment, movement/access proof.','AA3_outer_change_required_proven':False,'all_geometry_physics_aesthetic_acceptance':False,'source_parts_are_not_assembly_qualification':True}
+(O/'full_capture_screen.json').write_text(json.dumps(r,indent=2)+'\n');print('sha',sha(O/'full_capture_screen.json'),'elapsed',r['elapsed_s'])

@@ -1,0 +1,90 @@
+"""Finite upper-body graft for Gorilla E2; every installation remains unqualified.
+
+Keeps source catalogue envelopes and mass bounds. Complete actuator internals,
+joint flange bolts, gearbox load qualification and hand transmissions are open.
+"""
+from pathlib import Path
+import copy, hashlib, importlib.util, json
+import numpy as np
+import trimesh
+
+ROOT=Path(__file__).resolve().parents[1]
+OUT=ROOT/'.scratch/gorilla_internal_e2_upper'
+ROBOT=ROOT/'robots/gorilla_v0_1'
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def write(p,v):Path(p).write_text(json.dumps(v,indent=2,allow_nan=False)+'\n')
+def mesh(p):return trimesh.Trimesh(p['vertices_world_m'],[[f[0],f[i],f[i+1]] for f in p['faces'] for i in range(1,len(f)-1)],process=False)
+
+def main():
+ OUT.mkdir(parents=True,exist_ok=True)
+ sp=ROBOT/'configs/internal_structure_d_system_spec.json';ip=ROOT/'.scratch/gorilla_internal_e2_structure/interface.json'
+ hpath=ROOT/'scripts/models/build_gorilla_internal_structure.py'
+ d=json.loads(sp.read_text());inter=json.loads(ip.read_text())
+ mod=importlib.util.spec_from_file_location('upper_net_helpers',hpath);h=importlib.util.module_from_spec(mod);mod.loader.exec_module(h)
+ axes={a['id']:a for a in d['axis_order'] if a.get('gear_family')};rows={r['id']:r for r in d['modules']};tree={};supports=[];mapping={};parts=[];union_rows=[]
+ sequence=[('shoulder_pitch','torso','shoulder_pitch_carrier'),('shoulder_roll','shoulder_pitch_carrier','shoulder_roll_carrier'),('shoulder_yaw','shoulder_roll_carrier','upper_arm'),('elbow_pitch','upper_arm','proximal_forearm'),('forearm_roll','proximal_forearm','distal_forearm'),('wrist_pitch','distal_forearm','wrist_pitch_carrier'),('wrist_yaw','wrist_pitch_carrier','palm')]
+ families=[]
+ for side in ('left','right'):
+  for joint,parent,out in sequence:
+   pref='ds_'+side+'_'+joint;a=axes[pref];parent=parent if parent=='torso' else side+'_'+parent;out=side+'_'+out
+   tree[out]={'parent':parent,'pivot_world_m':a['center_world_m'],'axis_world':a['axis_world'],'joint_id':side+'_'+joint,'status':'Candidate serial carrier; complete mechanical joint unqualified'}
+   supports.append({'id':side+'_'+joint,'parent_body':parent,'output_body':out,'center_world_m':a['center_world_m'],'axis_world':a['axis_world'],'kind':'electric_catalogue_reference','catalogue_reducer_rated_Nm':a['catalogue_reducer_rated_Nm'],'motor_Tc_Nm':a['motor_Tc_Nm'],'motor_Ts_Nm':a['motor_Ts_Nm'],'physical_capacity_qualified':False})
+   families.append((pref,parent,out))
+   for name in rows:
+    if name.startswith(pref+'_'):
+     mapping[name]=out if name.endswith(('_hollow_output_adapter','_carrier_lower','_carrier_upper')) else parent
+  for r in d['axis_order']:
+   if r['id'].startswith('ds_'+side+'_') and not r.get('gear_family'):
+    child=r['proposed_output_body'];parent=side+'_palm'
+    if 'distal_link' in child:parent=child.replace('distal_link','proximal_link')
+    tree[child]={'parent':parent,'pivot_world_m':r['center_world_m'],'axis_world':r['axis_world'],'joint_id':r['id'][3:],'status':'Original finger-axis volume hypothesis; finite selected hand drive/link path absent'}
+    supports.append({'id':r['id'][3:],'parent_body':parent,'output_body':child,'center_world_m':r['center_world_m'],'axis_world':r['axis_world'],'kind':'unqualified_hand_reserve','physical_capacity_qualified':False})
+ groups={}
+ def stock(body,m):groups.setdefault(body,[]).append(m)
+ def ring(c,ro,ri,L,axis):
+  a=trimesh.creation.annulus(r_min=ri,r_max=ro,height=L,sections=48)
+  a.apply_transform(trimesh.geometry.align_vectors([0,0,1],axis));a.apply_translation(c);return a
+ def tube(body,a,b,w=.06,d=.06,t=.006):stock(body,h.box_tube(np.array(a),np.array(b),w,d,t))
+ # Each moving carrier starts at its actual retained output adapter; next motor
+ # stator case is reached by two finite hollow rails. No welded connection is
+ # inferred merely from intersections or common body labels.
+ for side in ('left','right'):
+  seq=[x for x in families if x[0].startswith('ds_'+side+'_')]
+  for index,(pref,parent,out) in enumerate(seq):
+   adapter=rows[pref+'_hollow_output_adapter'];ag=adapter['geometry'];start=np.array(ag['center_world_m']);u=np.array(ag['axis_world'],float);u/=np.linalg.norm(u)
+   R=ag['outer_radius_m'];stock(out,ring(start,R+.012,max(.016,R-.012),.020,u))
+   if index+1<len(seq):
+    npref,nparent,nout=seq[index+1];assert nparent==out
+    target=np.array(rows[npref+'_motor_cooling_case']['center_world_m']);endaxis=np.array(axes[npref]['axis_world'],float);endaxis/=np.linalg.norm(endaxis)
+    # Carrier ribs use a transverse direction independent of the next axis.
+    v=np.cross(u,[0,0,1.]);
+    if np.linalg.norm(v)<.1:v=np.cross(u,[0,1.,0])
+    v/=np.linalg.norm(v);offset=max(.030,R*.75)
+    for sign in (-1,1):tube(out,start+v*offset*sign,target+v*offset*sign,.060,.050,.006)
+    g=rows[npref+'_motor_cooling_case']['geometry'];stock(out,ring(target,g['outer_radius_m']+.010,g['outer_radius_m']+.001,.022,endaxis))
+   else:
+    palm=np.array([-.020,.840 if side=='left' else -.840,1.105]);tube(out,start,palm+[.045,0,0],.060,.090,.006)
+ # A finite torso cage links the waist-roll output mounting area to shoulder
+ # stator mounts and equipment rails. It replaces the original display bars.
+ WR=np.array(inter['body_tree']['torso']['pivot_world_m']);waist_output=WR+np.array([.170,0,0])
+ for x in (-.230,.160):
+  for y in (-.270,.270):tube('torso',[x,y,1.935],[x,y,2.445],.080,.060,.006)
+ for z in (1.935,2.445):
+  for x in (-.230,.160):tube('torso',[x,-.270,z],[x,.270,z],.080,.060,.006)
+  for y in (-.270,.270):tube('torso',[-.230,y,z],[.160,y,z],.080,.060,.006)
+ for side,sign in [('left',1),('right',-1)]:
+  target=np.array(rows['ds_'+side+'_shoulder_pitch_motor']['center_world_m'])
+  tube('torso',[-.13,sign*.270,2.36],target,.080,.080,.008)
+  tube('torso',waist_output,[.160,sign*.270,2.445],.080,.060,.006)
+ for body,ms in groups.items():
+  union=h.united(ms);name='e2_upper_net_'+body
+  p={'name':name,'body':body,'role':'E2_finite_load_material','vertices_world_m':union.vertices.tolist(),'faces':union.faces.tolist(),'color_rgba':[.22,.25,.29,1.],'edge_bevel_m':0,'density_kg_m3_hypothesis':7850,'mass_range_kg':[union.volume*7850]*3,'mass_group':name,'manufacturing_or_connection_qualified':False,'scope':'Finite net union of candidate hollow load shell/ribs; stock interfaces, welds, bolts and fatigue unqualified'};parts.append(p)
+  islands=[m for m in union.split(only_watertight=False) if m.volume>1e-10]
+  union_rows.append({'id':name,'body':body,'mass_kg':union.volume*7850,'positive_material_islands':len(islands),'native_watertight':bool(union.is_watertight),'connected_load_path_qualified':False})
+ # Original display ownership stays explicit; forearm cover follows distal roll.
+ visual_map={side+'_forearm':side+'_distal_forearm' for side in ('left','right')};visual_map.update({side+'_foot':side+'_foot_roll_arch' for side in ('left','right')})
+ source={'robot_id':'gorilla_v0_1','candidate':'internal_structure_e2_upper','parts':parts,'body_tree_graft':tree,'joint_supports_graft':supports,'system_module_body_reassignments':mapping,'original_visual_body_aliases':visual_map,'net_material_rows':union_rows,'complete_actuator_installation':False,'hand_transmissions_and_shell_attachments_qualified':False,'geometry_accepted':False,'physics_accepted':False,'input_hashes':{str(p.relative_to(ROOT)):sha(p) for p in [sp,ip,hpath,Path(__file__).resolve()]}}
+ write(OUT/'upper_scene.json',source);write(OUT/'upper_summary.json',{'native_parts':len(parts),'mass_kg':sum(r['mass_kg'] for r in union_rows),'net_material_rows':union_rows,'source_sha256':sha(OUT/'upper_scene.json'),'geometry_accepted':False})
+ print(json.dumps({'parts':len(parts),'mass_kg':sum(r['mass_kg'] for r in union_rows),'islands':[r['positive_material_islands'] for r in union_rows]}))
+
+if __name__=='__main__':main()

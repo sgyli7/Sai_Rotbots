@@ -1,0 +1,88 @@
+"""Freeze exact E2/E2a diagnostic inputs without modifying prior snapshots."""
+from pathlib import Path
+import gzip, hashlib, json, shutil
+
+ROOT = Path(__file__).resolve().parents[1]
+OUT = ROOT / 'experiments/gorilla_v0_1/internal_structure_e2'
+
+def digest(data):
+    return hashlib.sha256(data).hexdigest()
+
+def main():
+    OUT.mkdir(parents=True, exist_ok=True)
+    rows = []
+    groups = {
+        'structure': '.scratch/gorilla_internal_e2_structure',
+        'system': '.scratch/gorilla_internal_e2_system',
+        'upper': '.scratch/gorilla_internal_e2_upper',
+        'upper_replay': '.scratch/gorilla_internal_e2_upper_replay',
+        'inventory_correction': '.scratch/gorilla_internal_e2a_supplement',
+        'integrated_e2a': '.scratch/gorilla_internal_e2a_integrated',
+        'independent_audit': '.scratch/gorilla_internal_e2_audit',
+    }
+    files = [(group / p.relative_to(ROOT / source), p)
+             for label, source in groups.items()
+             for group in [Path(label)]
+             for p in (ROOT / source).rglob('*') if p.is_file() and '__pycache__' not in p.parts]
+    for name in ('scene.json', 'mass_ledger.json', 'statics.json'):
+        files.append((Path('superseded_e2') / name, ROOT / '.scratch/gorilla_internal_e2_integrated' / name))
+    scripts = ['gorilla_e2_integrate.py', 'gorilla_e2_statics.py', 'gorilla_e2_render.py',
+               'gorilla_e2_resource_audit.py', 'gorilla_e2_upper.py', 'gorilla_e2_upper_replay.py',
+               'gorilla_e2a_integrate.py', 'gorilla_e2a_statics.py', 'gorilla_e2a_render.py',
+               'gorilla_e2a_resource_audit.py', 'gorilla_e2a_right_hip_inventory.py', 'gorilla_e2_freeze.py']
+    files.extend((Path('root_scripts') / name, ROOT / '.scratch' / name) for name in scripts)
+    dependencies = [
+        '.scratch/gorilla_internal_d_geometry/probe_finite_actuators.py',
+        '.scratch/gorilla_internal_e_system/build_thermal_route_probe.py',
+        '.scratch/gorilla_e_selective_route.json',
+        '.scratch/gorilla_internal_e_macro/comparison.json',
+    ]
+    files.extend((Path('dependency_inputs') / p.removeprefix('.scratch/'), ROOT / p) for p in dependencies)
+    for rel, src in files:
+        data = src.read_bytes()
+        if rel.suffix == '.py':
+            rel = Path(str(rel) + '.txt')
+        compressed = len(data) > 1024 * 1024 and rel.suffix in ('.json', '.blend', '.glb')
+        if compressed:
+            rel = Path(str(rel) + '.gz')
+            stored = gzip.compress(data, compresslevel=6, mtime=0)
+        else:
+            stored = data
+        dst = OUT / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        if dst.exists() and dst.read_bytes() != stored:
+            raise ValueError('Refuse to overwrite snapshot: ' + str(dst))
+        dst.write_bytes(stored)
+        assert digest(gzip.decompress(stored) if compressed else stored) == digest(data)
+        rows.append({'stored_path': str(rel), 'original_path': str(src.relative_to(ROOT)),
+                     'compression': 'gzip_mtime_0' if compressed else None,
+                     'stored_sha256': digest(stored), 'uncompressed_sha256': digest(data),
+                     'stored_bytes': len(stored), 'uncompressed_bytes': len(data)})
+    external = []
+    for path in (
+        'experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_scene.json',
+        'experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c.blend',
+        'robots/gorilla_v0_1/design/concepts/aa3/user_confirmed_four_view.jpg',
+        'robots/gorilla_v0_1/configs/appearance_c_spec.json',
+        'robots/gorilla_v0_1/configs/internal_structure_d_spec.json',
+        'robots/gorilla_v0_1/configs/internal_structure_d_system_spec.json',
+        'robots/gorilla_v0_1/cad/source/appearance_c_scene.json',
+        'robots/gorilla_v0_1/cad/source/internal_structure_d_scene.json',
+        'robots/gorilla_v0_1/cad/source/internal_structure_d_leg_scene.json',
+        'robots/gorilla_v0_1/cad/source/internal_structure_d_foot_scene.json',
+        'robots/gorilla_v0_1/cad/source/internal_structure_d_system_scene.json',
+        'scripts/models/render_gorilla_internal_architecture.py',
+        'src/sai_agent/structural_statics.py',
+    ):
+        external.append({'path': path, 'sha256': digest((ROOT / path).read_bytes())})
+    manifest = {'robot_id': 'gorilla_v0_1', 'candidate': 'internal_structure_e2a',
+                'files': rows, 'existing_repository_inputs': external,
+                'scope': 'Exact direct E2a input hashes and outputs. Includes superseded E2 omission evidence. Upstream historical metadata exceptions are explicit in provenance_exceptions.json; does not claim recursive bitwise rebuild or acceptance.',
+                'geometry_accepted': False, 'physics_accepted': False, 'stable_physical_contract': False}
+    (OUT / 'snapshot_manifest.json').write_text(json.dumps(manifest, indent=2, allow_nan=False) + '\n')
+    print(json.dumps({'files': len(rows), 'stored_MB': sum(r['stored_bytes'] for r in rows) / 1048576,
+                      'max_file_MB': max(r['stored_bytes'] for r in rows) / 1048576,
+                      'manifest_sha256': digest((OUT / 'snapshot_manifest.json').read_bytes())}))
+
+if __name__ == '__main__':
+    main()

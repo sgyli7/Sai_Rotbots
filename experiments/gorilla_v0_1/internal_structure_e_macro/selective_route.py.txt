@@ -1,0 +1,57 @@
+from pathlib import Path
+import json, math, hashlib
+import numpy as np
+from scipy.optimize import linprog
+
+ROOT=Path('/home/ethan/Projects/Sai_Rotbots')
+P=[ROOT/'.scratch/gorilla_internal_e_macro/comparison.json',ROOT/'experiments/gorilla_v0_1/internal_structure_e_constraints/reference_axes.json',ROOT/'robots/gorilla_v0_1/evidence/internal_structure_d_screen.json',ROOT/'robots/gorilla_v0_1/configs/internal_structure_d_spec.json',ROOT/'robots/gorilla_v0_1/configs/appearance_c_spec.json']
+macro,ref,screen,spec,appearance=[json.loads(p.read_text()) for p in P]
+converted={'ds_waist_pitch','ds_left_hip_roll','ds_right_hip_roll','ds_left_foot_roll','ds_right_foot_roll'}
+selected=[p for p in macro['B_route']['finite_pairs'] if p['family'] in ('waist_pitch','hip_roll','foot_roll')]
+results=[]
+for ca in ref['cases']:
+    b=next(x for x in macro['frozen_D_common_LP_cases'] if x['route']=='B_pairs' and x['pose']==ca['pose'] and x['case']==ca['case'])
+    bmodels={m['id']:m for m in b['models_at_common_witness']}
+    models=[]
+    for m in ca['models_at_joint_witness']:
+        n={k:m[k] for k in ('id','bias','coeff','plus','minus','SI_unit')}
+        if m['id'] in converted:
+            n['plus'],n['minus']=bmodels[m['id']]['plus'],bmodels[m['id']]['minus']
+        models.append(n)
+    v=np.asarray(next(p for p in screen['poses'] if p['id']==ca['pose'])['actual_pad_contact_vertices_world_m'])
+    E=np.vstack([np.ones(len(v)),v[:,0],v[:,1]])
+    Eq=np.column_stack([E,np.zeros(3)]);target=E@np.asarray(ca['normal_reactions_N'])
+    A=[];rhs=[]
+    for m in models:
+        A.extend([np.r_[np.asarray(m['coeff'])/m['plus'],-1],np.r_[-np.asarray(m['coeff'])/m['minus'],-1]])
+        rhs.extend([-m['bias']/m['plus'],m['bias']/m['minus']])
+    A=np.asarray(A);rhs=np.asarray(rhs);cost=np.r_[np.zeros(len(v)),1.]
+    sol=linprog(cost,A_ub=A,b_ub=rhs,A_eq=Eq,b_eq=target,bounds=[(0,None)]*len(cost),method='highs')
+    assert sol.success
+    lam=np.asarray(sol.ineqlin.marginals);y=np.asarray(sol.eqlin.marginals)
+    dual=rhs@lam+target@y;red=cost-A.T@lam-Eq.T@y
+    gap=sol.fun-dual;viol=max(0.,np.max(A@sol.x-rhs),-np.min(sol.x),np.max(lam),-np.min(red))
+    assert abs(gap)<1e-7 and viol<1e-7
+    results.append({'pose':ca['pose'],'case':ca['case'],'reference_minimax_peak_use':float(sol.fun),'dual_lower_bound':float(dual),'gap':float(gap),'max_normalized_primal_dual_violation':float(viol),'equality_residual':float(np.max(abs(Eq@sol.x-target))),'normal_reactions_N':sol.x[:-1].tolist(),'models_at_common_witness':[{**m,'demand':float(m['bias']+np.asarray(m['coeff'])@sol.x[:-1])} for m in models]})
+# Neutral same-sign angular speed sensitivity, not an actual task trajectory.
+flow=[]
+for qdot in (.1,.3,.5):
+    old,new=0.,0.
+    for d in spec['actuator_definitions']:
+        family=d['id'].split('_',1)[1]
+        j=np.asarray(appearance['points_world_m'][d['id'].split('_',1)[0]+'_'+{'hip':'hip','knee':'knee','fold':'fold','ankle':'ankle'}[family]])
+        a,bb=np.asarray(d['A_neutral_world_m']),np.asarray(d['B_neutral_world_m'])
+        J=float((bb-a)/np.linalg.norm(bb-a)@np.cross([0,1,0],bb-j))
+        Ac=math.pi*d['bore_m']**2/4;Aa=Ac-math.pi*d['rod_m']**2/4
+        old+=(Ac if J*qdot>=0 else Aa)*abs(J*qdot)
+    for p in selected:
+        s=next(s for s in p['samples'] if s['q_deg']==0)
+        bore,rod,_=p['bore_rod_wall_m'];Ac=math.pi*bore*bore/4;Aa=Ac-math.pi*rod*rod/4
+        new+=p['axis_count']*sum((Ac if c['J_m_per_rad']*qdot>=0 else Aa)*abs(c['J_m_per_rad']*qdot) for c in s['cylinders'])
+    flow.append({'all13_axis_speed_rad_s_hypothesis':qdot,'retained8_cylinder_flow_L_min':old*60000,'new10_cylinder_flow_L_min':new*60000,'combined18_cylinder_flow_L_min':(old+new)*60000,'ideal_21MPa_stream_kW':(old+new)*21000,'same_time_all_axes_not_mandatory_task':True})
+new_mass=sum(p['axis_count']*sum(d['gross_material_mass_kg_at7850'] for d in p['pair_cylinders']) for p in selected)
+support=macro['B_route']['new_converted_axis_support_gross_kg']
+removed=macro['B_route']['known_removed5_OEM_gear_motor_kg']
+report={'robot_id':'gorilla_v0_1','candidate':'E selective hybrid constraint reference','producer_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'input_hashes':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in P},'scope':'Root capacity/space alternative, not new native geometry. Keep existing D8 single hydraulic pitch cylinders, add only five paired waist/hip-roll/foot-roll axes (10 cylinders); retain18 rotary axis references. All LP uses frozen D masses/contact/proxy serial tree; new mass/axes, structure, duty, pressure/flow, thermal and installed drive are unresolved. Numerically checked primal/dual is not a hardware proof.','converted_axes':sorted(converted),'hydraulic_axis_count':13,'cylinder_count':18,'native_pairs_from_macro_JSON_families':[p['family'] for p in selected],'new10_cylinder_gross_metal_kg':new_mass,'new5_axis_support_gross_material_kg':support,'removed5_known_gear_motor_kg':removed,'known_material_and_OEM_delta_kg':new_mass+support-removed,'not_subtracting_unknown_old_housing_or_carrier_union':True,'new_valves_connectors_oil_and_installation_frames_not_counted_in_this_delta':True,'flow_sensitivity':flow,'cases':results,'physics_accepted':False,'stable_contract':False,'AA3_outer_change_required_proven':False}
+(ROOT/'.scratch/gorilla_e_selective_route.json').write_text(json.dumps(report,indent=2,allow_nan=False)+'\n')
+print(json.dumps({'known_mass_delta_kg':report['known_material_and_OEM_delta_kg'],'reference_range':[min(x['reference_minimax_peak_use'] for x in results),max(x['reference_minimax_peak_use'] for x in results)],'nonpressure_reference_le1':sum(x['reference_minimax_peak_use']<=1+1e-8 and not x['case']['separate_pressure_demand_kg'] for x in results),'pressure_reference_le1':sum(x['reference_minimax_peak_use']<=1+1e-8 and x['case']['separate_pressure_demand_kg']>0 for x in results),'flows':flow}),flush=True)

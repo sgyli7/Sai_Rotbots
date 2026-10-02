@@ -1,0 +1,38 @@
+"""Same-source Gorilla E2 native orthographic diagnostics; no mesh editing."""
+from pathlib import Path
+import json, numpy as np
+from PIL import Image,ImageDraw
+OUT=Path(__file__).resolve().parent;S=json.loads((OUT/'structure_scene.json').read_text());B=json.loads((OUT.parents[1]/'experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_scene.json').read_text())
+views=[('FRONT',[1,2],0,-1),('LEFT',[0,2],1,-1),('REAR',[1,2],0,1)]
+def frame(dr,pp,xyorigin,scale,view,wire=False):
+ label,axes,dep,sg=view;rows=[]
+ for p in pp:
+  v=np.array(p['vertices_world_m']);xy=np.c_[xyorigin[0]+sg*v[:,axes[0]]*scale,xyorigin[1]-v[:,2]*scale];col=(80,112,133) if 'density_kg_m3' in p else (154,185,202)
+  if p['role']=='finite_actuator_material':col=(140,146,151)
+  if 'lock' in p['name']:col=(186,116,45)
+  for f in p['faces']:rows.append((float(v[f,dep].mean()),xy[f].tolist(),col))
+ for _,poly,col in sorted(rows,key=lambda x:x[0],reverse=dep==0):
+  pts=[tuple(x) for x in poly]
+  if wire:dr.line(pts+[pts[0]],fill=(62,153,190),width=1)
+  else:dr.polygon(pts,fill=col,outline=(70,80,87))
+for pose in S['pose_scenes']:
+ im=Image.new('RGB',(1860,1070),'white');dr=ImageDraw.Draw(im)
+ for i,v in enumerate(views):
+  frame(dr,pose['parts'],[620*i+310,960],325,v);dr.text((i*620+20,20),v[0]+' | '+pose['id'],fill='black');dr.line((i*620+5,960,i*620+615,960),fill=(190,190,190))
+ dr.text((20,1035),'Gorilla E2 actual native meshes | no complete assembly/strength/fit acceptance',fill=(140,30,20));im.save(OUT/(pose['id']+'_native_threeview.png'))
+ if pose['id']=='neutral':
+  ap=[p for p in B['parts'] if p['role'] in ['armor_cover','armor_surface']]
+  for i,v in enumerate(views):frame(dr,ap,[620*i+310,960],325,v,wire=True)
+  im.save(OUT/'neutral_original_armor_wire_overlay.png')
+# Left serial bodies and common waist as separate assembly diagnostics; right is mirror source.
+bodies=[b for b in S['body_tree'] if not b.startswith('right_')];im=Image.new('RGB',(1800,((len(bodies)+2)//3)*410),'white');dr=ImageDraw.Draw(im)
+for bi,b in enumerate(bodies):
+ pp=[p for p in S['parts'] if p['body']==b];r,c=divmod(bi,3);x0=c*600;y0=r*410
+ if not pp:continue
+ verts=np.concatenate([np.array(p['vertices_world_m']) for p in pp]);lo=verts.min(axis=0);hi=verts.max(axis=0);span=hi-lo;scale=min(260/max(span[1],.01),310/max(span[2],.01),260/max(span[0],.01));centre=(lo+hi)/2
+ for i,v in enumerate(views[:2]):
+  pp2=[]
+  for p in pp:q=dict(p);q['vertices_world_m']=(np.array(p['vertices_world_m'])-centre).tolist();pp2.append(q)
+  frame(dr,pp2,[x0+150+300*i,y0+210],scale,v)
+ dr.text((x0+8,y0+5),b,fill='black');dr.text((x0+8,y0+385),'Part ownership only; material connection checked separately',fill=(140,30,20))
+im.save(OUT/'body_assembly_diagnostics.png');print('PROJECTED',len(S['pose_scenes']),'poses',len(bodies),'bodies')
