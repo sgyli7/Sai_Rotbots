@@ -1,0 +1,123 @@
+"""Read-only canonical Gorilla D native/GLB/resource identity audit."""
+from pathlib import Path
+import json,hashlib,io,collections
+import numpy as np,trimesh as tr
+from scipy.spatial import cKDTree
+from PIL import Image
+ROOT=Path(__file__).resolve().parents[2];OUT=Path(__file__).resolve().parent
+SCENE=ROOT/'robots/gorilla_v0_1/cad/source/internal_structure_d_scene.json'
+EXPORT=ROOT/'robots/gorilla_v0_1/cad/exports/internal_structure_d'
+EXPECTED='2933318e60dfe786f5cae61d88682519589f1eb5f8a23c999e6f7c6566cdd280'
+COORD_TOL_M=2e-6
+
+def sha(b):return hashlib.sha256(b).hexdigest()
+def file_sha(p):return sha(p.read_bytes())
+def write(n,d):(OUT/n).write_text(json.dumps(d,indent=2,allow_nan=False)+'\n')
+def mesh(p):
+ ff=[]
+ for f in p['faces']:
+  for k in range(1,len(f)-1):ff.append([f[0],f[k],f[k+1]])
+ return tr.Trimesh(p['vertices_world_m'],ff,process=False)
+def exact_weld(m):
+ v,inverse=np.unique(m.vertices,axis=0,return_inverse=True)
+ return tr.Trimesh(v,inverse[m.faces],process=False)
+source_bytes=SCENE.read_bytes();source=json.loads(source_bytes);parts={p['name']:p for p in source['parts']}
+basepath=ROOT/source['base_scene'];base=json.loads(basepath.read_bytes());bp={p['name']:p for p in base['parts']}
+retained=sorted(parts.keys()&bp.keys());added=sorted(parts.keys()-bp.keys());armor=[p['name'] for p in base['parts'] if p.get('role') in ('armor_cover','armor_surface')]
+result={'robot_id':'gorilla_v0_1','expected_master_scene_sha256':EXPECTED,'source_sha256':sha(source_bytes),'base_scene_sha256':file_sha(basepath),'source_part_count':len(source['parts']),'source_names_unique':len(parts)==len(source['parts']),'added_count':len(added),'retained_count':len(retained),'native_topology':[],'retained_rows_equal':all(parts[n]==bp[n] for n in retained),'retained_row_failures':[n for n in retained if parts[n]!=bp[n]],'original_armor_count':len(armor),'original_armor_rows_equal':all(n in parts and parts[n]==bp[n] for n in armor),'coordinate_tolerance_m':COORD_TOL_M,'manifest_checks':[],'input_file_hash_checks':[],'output_file_hash_checks':[],'glb_mesh_checks':[],'unknown':[],'physical_acceptance':False,'resource_acceptance_is_not_physical_acceptance':True,'audit_script_sha256':file_sha(Path(__file__))}
+for n,p in parts.items():
+ m=mesh(p);finite=bool(np.isfinite(m.vertices).all())
+ result['native_topology'].append({'name':n,'added':n in added,'finite_coordinates':finite,'watertight':bool(m.is_watertight),'winding_consistent':bool(m.is_winding_consistent),'positive_signed_volume':bool(m.volume>0),'signed_volume_m3':float(m.volume) if np.isfinite(m.volume) else None,'vertices':len(m.vertices),'triangles':len(m.faces)})
+manifest_paths=sorted(EXPORT.glob('*manifest.json'));manifest_bytes={p.name:p.read_bytes() for p in manifest_paths};manifests={n:json.loads(b) for n,b in manifest_bytes.items()}
+seeninputs=set();seenoutputs=set()
+for n,d in manifests.items():
+ result['manifest_checks'].append({'name':n,'sha256':sha(manifest_bytes[n]),'scene_hash_matches_master':d.get('scene_sha256')==EXPECTED,'physics_accepted':d.get('physics_accepted'),'geometry_accepted':d.get('geometry_accepted')})
+ for path,expected in d.get('input_hashes',{}).items():
+  key=(path,expected)
+  if key in seeninputs:continue
+  seeninputs.add(key);p=ROOT/path
+  result['input_file_hash_checks'].append({'path':path,'expected_sha256':expected,'actual_sha256':file_sha(p) if p.exists() else None,'matches':p.exists() and file_sha(p)==expected})
+sm=manifests.get('internal_structure_d_source_manifest.json');rm=manifests.get('internal_structure_d_render_manifest.json');nm=manifests.get('internal_structure_d_native_parts_manifest.json')
+if sm:
+ result['render_retained_before_after_equal']=sm['retained_mesh_identity_before']==sm['retained_mesh_identity_after'];result['render_retained_names_match_source']=sorted(q['name'] for q in sm['retained_mesh_identity_before'])==retained;result['render_added_names_match_source']=sorted(sm['added_native_part_names'])==added
+else:result['unknown'].append('source manifest not present')
+if nm:result['native_imported_names_match_source']=sorted(p['name'] for p in nm['parts'])==added
+else:result['unknown'].append('native parts manifest not present')
+if rm:
+ result['render_resolution_px']=rm.get('resolution_px');result['render_samples']=rm.get('samples');result['render_view_count']=len(rm.get('images',[]))
+ rows=list(rm.get('images',[]))+list(rm.get('exports',[]))+list(rm.get('manifests',{}).values())
+ if rm.get('review_board'):rows.append(rm['review_board'])
+ for q in rows:
+  if not isinstance(q,dict) or 'path' not in q or 'sha256' not in q:continue
+  key=(q['path'],q['sha256'])
+  if key in seenoutputs:continue
+  seenoutputs.add(key);p=ROOT/q['path'];row={'path':q['path'],'expected_sha256':q['sha256'],'actual_sha256':file_sha(p) if p.exists() else None,'matches':p.exists() and file_sha(p)==q['sha256']}
+  if p.exists() and p.suffix=='.png':
+   with Image.open(p) as im:row['actual_dimensions_px']=list(im.size);im.verify()
+  result['output_file_hash_checks'].append(row)
+else:result['unknown'].append('render manifest not present / render not yet finalized')
+
+# Actually load GLB through trimesh; GLTF normal/UV seams duplicate positions.
+# Exact-position welding tests the material surface without moving a vertex.
+glbpath=EXPORT/'internal_structure_d.glb'
+if glbpath.exists():
+ glbbytes=glbpath.read_bytes();result['glb_sha256']=sha(glbbytes)
+ gs=tr.load(io.BytesIO(glbbytes),file_type='glb',force='scene',process=False)
+ result['glb_geometry_count']=len(gs.geometry);result['glb_mesh_node_count']=len(gs.graph.nodes_geometry)
+ result['glb_node_names_match_source']=sorted(gs.graph.nodes_geometry)==sorted(parts)
+ result['glb_coordinate_conversion']='glTF Y-up to source Blender SI Z-up: (x,y,z)=(gltf_x,-gltf_z,gltf_y), graph world T first'
+ for node in gs.graph.nodes_geometry:
+  T,geometry=gs.graph[node];gm=gs.geometry[geometry].copy();gm.apply_transform(T)
+  v=gm.vertices.copy();gm.vertices=np.column_stack((v[:,0],-v[:,2],v[:,1]));w=exact_weld(gm)
+  row={'name':node,'mesh_name':geometry,'raw_attribute_split_vertices':len(gm.vertices),'exact_weld_vertices':len(w.vertices),'triangles':len(w.faces),'finite_coordinates':bool(np.isfinite(w.vertices).all()),'watertight_after_exact_position_weld':bool(w.is_watertight),'winding_consistent':bool(w.is_winding_consistent),'positive_signed_volume':bool(w.volume>0),'signed_volume_m3':float(w.volume)}
+  if node in parts:
+   p=parts[node];sv=np.asarray(p['vertices_world_m']);dist,ix=cKDTree(sv).query(w.vertices)
+   row['max_source_vertex_distance_m']=float(dist.max());row['vertices_match_source_within_tolerance']=bool(np.all(dist<=COORD_TOL_M));row['triangle_count_matches_native_polygons']=len(w.faces)==sum(len(f)-2 for f in p['faces'])
+   # Every exported triangle must tessellate exactly one native polygon; no extra shape.
+   polygons=[set(f) for f in p['faces']];membership=collections.defaultdict(set)
+   for i,f in enumerate(p['faces']):
+    for j in f:membership[j].add(i)
+   ok=True
+   for f in w.faces:
+    inds=set(int(ix[k]) for k in f);possible=None
+    for j in inds:possible=membership[j].copy() if possible is None else possible&membership[j]
+    if not possible:ok=False;break
+   row['triangles_tessellate_source_polygons']=ok
+  else:row['missing_source_name']=True
+  result['glb_mesh_checks'].append(row)
+else:result['unknown'].append('GLB not present / export not finalized')
+# Separately verify archived C15 display meshes; no weakening of strict raw
+# control/native check. Legacy applied display bevels must be original-identical.
+baseglb=basepath.parent/'appearance_c.glb'
+result['strict_control_native_GLB_failure_names']=[q['name'] for q in result['glb_mesh_checks'] if not all(q.get(k,False) for k in ['vertices_match_source_within_tolerance','triangle_count_matches_native_polygons','triangles_tessellate_source_polygons'])]
+result['frozen_C15_display_mesh_checks']=[]
+if baseglb.exists():
+ bb=baseglb.read_bytes();result['frozen_C15_glb_sha256']=sha(bb);bs=tr.load(io.BytesIO(bb),file_type='glb',force='scene',process=False)
+ for n in retained:
+  if n not in bs.graph.nodes_geometry or n not in gs.graph.nodes_geometry:
+   result['frozen_C15_display_mesh_checks'].append({'name':n,'missing':True,'matches':False});continue
+  def nodeworld(ss,name):
+   tt,gg=ss.graph[name];mm=ss.geometry[gg].copy();mm.apply_transform(tt);return exact_weld(mm)
+  old=nodeworld(bs,n);now=nodeworld(gs,n);dd,ii=cKDTree(old.vertices).query(now.vertices)
+  faces_old=set(tuple(sorted(f)) for f in old.faces);faces_now=set(tuple(sorted(int(ii[k]) for k in f)) for f in now.faces)
+  matches=len(old.vertices)==len(now.vertices) and len(old.faces)==len(now.faces) and np.all(dd<=COORD_TOL_M) and faces_old==faces_now
+  result['frozen_C15_display_mesh_checks'].append({'name':n,'matches':bool(matches),'max_vertex_distance_m':float(dd.max()),'triangle_count_equal':len(old.faces)==len(now.faces),'vertex_count_equal':len(old.vertices)==len(now.vertices),'triangles_equal_after_coordinate_mapping':faces_old==faces_now,'control_source_edge_bevel_m':parts[n].get('edge_bevel_m')})
+ result['frozen_C15_display_preserved']=all(q['matches'] for q in result['frozen_C15_display_mesh_checks'])
+else:result['unknown'].append('Frozen C15 GLB not available; retained display comparison unknown')
+result['GLB_added_control_mesh_match']=all(all(q.get(k,False) for k in ['vertices_match_source_within_tolerance','triangle_count_matches_native_polygons','triangles_tessellate_source_polygons']) for q in result['glb_mesh_checks'] if q['name'] in added)
+result['GLB_all_closed_positive']=all(all(q.get(k,False) for k in ['finite_coordinates','watertight_after_exact_position_weld','winding_consistent','positive_signed_volume']) for q in result['glb_mesh_checks'])
+result['source_hash_at_finish']=file_sha(SCENE)
+result['manifests_stable_during_audit']=all(p.exists() and p.read_bytes()==manifest_bytes[p.name] for p in manifest_paths)
+result['glb_stable_during_audit']=glbpath.exists() and file_sha(glbpath)==result.get('glb_sha256')
+if not(result['manifests_stable_during_audit'] and result['glb_stable_during_audit']):result['unknown'].append('manifests or GLB changed while checking; this is a bounded snapshot, rerun after render finalization')
+result['native_failure_names']=[q['name'] for q in result['native_topology'] if not all(q[k] for k in ['finite_coordinates','watertight','winding_consistent','positive_signed_volume'])]
+result['glb_failure_names']=[q['name'] for q in result['glb_mesh_checks'] if not all(q.get(k,False) for k in ['finite_coordinates','watertight_after_exact_position_weld','winding_consistent','positive_signed_volume','vertices_match_source_within_tolerance','triangle_count_matches_native_polygons','triangles_tessellate_source_polygons'])]
+resource_checks=[result['source_sha256']==EXPECTED,result['source_hash_at_finish']==EXPECTED,len(parts)==1482,len(added)==1091,len(retained)==391,len(armor)==111,result['retained_rows_equal'],result['original_armor_rows_equal'],not result['native_failure_names'],result.get('render_retained_before_after_equal'),result.get('render_retained_names_match_source'),result.get('render_added_names_match_source'),result.get('native_imported_names_match_source'),all(q['matches'] for q in result['input_file_hash_checks']),all(q['matches'] for q in result['output_file_hash_checks']),result.get('glb_geometry_count')==1482,result.get('glb_node_names_match_source'),not result['glb_failure_names'],result.get('render_samples')==64,result.get('render_resolution_px')==[800,800],result.get('render_view_count')==6,not result['unknown']]
+result['resource_checks_pass']=all(resource_checks)
+result['strict_raw_control_resource_checks_pass']=result['resource_checks_pass']
+result['source_bound_display_resource_checks_pass']=all(resource_checks[:17]+[result['GLB_all_closed_positive'],result['GLB_added_control_mesh_match'],result.get('frozen_C15_display_preserved',False)]+resource_checks[18:])
+write('report.json',result)
+lines=['# Gorilla canonical D 资源身份审计','',f"绑定master：{EXPECTED}。只读一次稳定快照，未开Blender、未重渲、未修改受控文件。",'',f"资源检查通过={result['resource_checks_pass']}；unknown={result['unknown']}。",'',f"源 {len(parts)} 件，其中新增 {len(added)}、保留 {len(retained)}；原111甲壳逐值保留={result['original_armor_rows_equal']}，保留391row完整逐值一致={result['retained_rows_equal']}。",f"原生WT/绕向/正体积/有限坐标失败={result['native_failure_names']}。",f"render retained before/after相等={result.get('render_retained_before_after_equal')}；所有manifest输入SHA一致={all(q['matches'] for q in result['input_file_hash_checks'])}；所有输出SHA一致={all(q['matches'] for q in result['output_file_hash_checks'])}。",f"图参数={result.get('render_resolution_px')} / {result.get('render_samples')}samples / {result.get('render_view_count')}图。",f"trimesh实际载入GLB：geometry={result.get('glb_geometry_count')}，mesh node={result.get('glb_mesh_node_count')}，名字一致={result.get('glb_node_names_match_source')}；GLB失败={result['glb_failure_names']}。",'', 'GLB法线/材质缝会复制同位置顶点，raw attribute topology不等于材料断裂。本检查只将完全相同位置的顶点合并，不挪动坐标；随后检查三角WT、绕向、正体积，并将标准Y-up转换回源SI Z-up。坐标匹配阈值2µm，每个实际三角须是原polygon的合法顶点子集且总三角数一致。', '', '**资源通过不等于物理通过。D仍是拒绝候选，接口干涉、真实部件、载荷、材料、驱动与连接能力没有因此关闭，AA3改形必需性没有据此证明。**']
+lines+=['',f"新增1091件对raw control严格匹配={result['GLB_added_control_mesh_match']}；原391保留显示GLB对冻结C15实际GLB逐mesh匹配={result.get('frozen_C15_display_preserved')}。",f"严格所有1482 GLB→raw control判据仍通过={result['strict_raw_control_resource_checks_pass']}，46个原件已有显示倒角与raw control不一致，完整保留为严格失败，不静默放宽。",f"另列 source-bound display身份判据通过={result['source_bound_display_resource_checks_pass']}（新增必须匹配raw control，原件必须匹配冻结C15显示网格，全部GLB必须闭合且源row/材料before-after/所有SHA不变）。"]
+(OUT/'report.md').write_text('\n'.join(lines)+'\n')
+print(json.dumps({k:result[k] for k in ['source_part_count','added_count','retained_count','resource_checks_pass','native_failure_names','glb_failure_names','unknown','manifests_stable_during_audit','glb_stable_during_audit']},indent=2),flush=True)

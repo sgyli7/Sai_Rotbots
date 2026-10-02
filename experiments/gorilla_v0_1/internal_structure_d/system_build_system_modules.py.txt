@@ -1,0 +1,170 @@
+from pathlib import Path
+import json, hashlib, math, importlib.util
+import numpy as np
+import trimesh
+ROOT=Path('/home/ethan/Projects/Sai_Rotbots'); OUT=ROOT/'.scratch/gorilla_internal_d_system'
+BASE=ROOT/'robots/gorilla_v0_1/cad/source/appearance_c_scene.json'; SPEC=ROOT/'robots/gorilla_v0_1/configs/appearance_c_spec.json'
+base=json.loads(BASE.read_text()); spec=json.loads(SPEC.read_text()); modules=[]; axes=[]
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+SRC={
+ 'csg65':{'exact_source':'https://www.harmonicdrive.net/products/gear-units/gear-units/csg-2uh/csg-65-100-2uh','D':.260,'L':.1235,'m':20.9,'rated':1236,'ratio':100,'scope':'Root supplied dimension115+8.5mm; product reference internal_module_research.md. Integrated output bearing included, not an added pair.'},
+ 'csg50':{'exact_source':'Root verified CSG-50-100-2UH official page and local official dimensions .scratch/gorilla_internal_d_root_sources/csg50.pdf','D':.190,'L':.090,'m':8.9,'rated':611,'ratio':100,'pdf_sha256':sha(ROOT/'.scratch/gorilla_internal_d_root_sources/csg50.pdf')},
+ 'csg32':{'exact_source':'Root verified CSG-32-100-2UH official page and local official dimensions .scratch/gorilla_internal_d_root_sources/csg32.pdf','D':.138,'L':.062,'m':3.2,'rated':178,'ratio':100,'pdf_sha256':sha(ROOT/'.scratch/gorilla_internal_d_root_sources/csg32.pdf')},
+ 'qtl210':{'exact_source':'https://www.tecnotion.com/wp-content/uploads/2025/11/QTL210_Specsheet_EN_2.4.pdf','D':.210,'L':.066,'m':5.8,'stator_mass_ex_cables_kg':4.2,'rotor_mass_kg':1.6,'rotor_Jr_kg_m2':.009,'Tc':65,'Ts':46,'bus_max_Vdc':680,'rpm_at_maxV_Tc':716,'Pc_W':690,'thermal':'windings100C/mount20C; complete outlet/connector/cooling not included'},
+ 'qtr160':{'exact_source':'https://www.tecnotion.com/wp-content/uploads/2022/05/Torque_Brochure_EN_2-5.pdf pp20-21/35','pdf_sha256':sha(OUT/'tecnotion_torque_brochure_2_5.pdf'),'D':.160,'L':.0345,'m':1.613,'stator_mass_ex_cables_kg':1.212,'rotor_mass_kg':.401,'rotor_Jr_kg_m2':.0014,'Tc':15.3,'Ts':None,'voltage_speed_curve':'Z winding catalog48Vdc/260rpm@Tc is a source point only; complete installed curve/bus unassigned','thermal':'windings100C/mount20C; not sealed robot continuous qualification'},
+ 'emrax':{'exact_source':'https://emrax.com/wp-content/uploads/2025/03/EMRAX_188_datasheet_v1.6.pdf p2','D':.188,'L':.079,'m':7.9,'continuous_kW':34,'continuous_Nm':52,'cooling':'LC >=6L/min <=50C; sufficient air circulation even LC, not completely enclosed','pdf_sha256':sha(ROOT/'.scratch/gorilla_internal_d_sources/emrax188_v1_6.pdf')},
+ 'z16':{'exact_source':'https://productfinder.hawe.com/downloads/D6820-en.pdf pp5/7/10/13-14','Dcc':11,'L':.1417,'B':.113,'B1':.089,'m':2.6,'p1_MPa':23,'rpm':[700,3500],'duty_percent':100,'pdf_sha256':sha(ROOT/'.scratch/gorilla_internal_d_sources/hawe_z_pumps_d6820_en.pdf')},
+ 'psl3':{'exact_source':'https://productfinder.hawe.com/downloads/D7700_3-en.pdf pp110/112/118/146/155','section_EA_m':3.7,'body_dims': [.080,.0495,.096],'EA_height_above_body':.2688,'Pmax_MPa':42,'returnmax_MPa':5,'AB_nominal_L_min':80,'conditions':'full spool + standard6bar spring; metering pressure drop and return amplification apply','pdf_sha256':sha(ROOT/'.scratch/gorilla_internal_d_sources/hawe_psl3_d7700_3_en.pdf')},
+ 'battery_benchmark':{'exact_source':'robots/gorilla_v0_1/hardware/internal_module_research.md, A actual Victron NG imported CAD manifest','capacity_kWh':2.56,'m':19,'dims':[.160260794060,.235795325916,.341202481542],'scope':'25.6V benchmark maxseries2; custom HV pack is new design, not four-series OEM packs'},
+}
+COL={'drive':[.40,.40,.35,1],'motor':[.25,.32,.34,1],'housing':[.33,.35,.36,1],'energy':[.23,.52,.31,1],'hydraulic':[.47,.35,.24,1],'control':[.22,.35,.57,1],'sensor':[.55,.45,.27,1],'service':[.62,.39,.23,1]}
+def add(id,body,category,geometry,mass,source=None,assumption='',function='',unknown=None,**extra):
+ g=dict(geometry); r={'id':id,'body':body,'category':category,'geometry':g,'center_world_m':g['center_world_m'],'mass_range_kg':list(mass),'exact_source':source or 'own co-design geometry/mass allowance; no SKU selected','own_assumption':assumption,'function':function or category,'physics_unknown':unknown or ['complete mounting/load path','actual sustained task thermal and force qualification'],'inside_c15_shell_verified':False,'physical_contract_stable':False,'rgba':COL.get(category,[.35,.35,.35,1])};r.update(extra);modules.append(r);return r
+
+def box(id,body,cat,c,d,m,**kw):return add(id,body,cat,{'kind':'box','center_world_m':list(c),'dimensions_xyz_m':list(d)},m,**kw)
+def cyl(id,body,cat,c,D,L,a,m,**kw):return add(id,body,cat,{'kind':'cylinder','center_world_m':list(c),'radius_m':D/2,'length_m':L,'axis_world':list(a)},m,**kw)
+def ann(id,body,c,D,di,L,a,source=None,assumption='',density=2700):
+ v=math.pi*(D*D-di*di)*L/4;nom=v*density
+ return add(id,body,'housing',{'kind':'annulus','center_world_m':list(c),'outer_radius_m':D/2,'inner_radius_m':di/2,'length_m':L,'axis_world':list(a)},[nom*.9,nom,nom*1.25],source=source,assumption=assumption+' Finite material density '+str(density)+'kg/m3; strength/material cert not qualified.',function='load carrier / mounting wall',material_volume_m3=v)
+
+def drive(name,body,child,c,a,family,input_sign=1):
+ c=np.asarray(c,float);a=np.asarray(a,float);a/=np.linalg.norm(a);g=SRC[family];motor=SRC['qtl210' if family=='csg65' else 'qtr160'];gl=g['L'];ml=motor['L'];gap=.007
+ mc=c+input_sign*a*(gl/2+gap+ml/2)
+ axes.append({'id':name,'parent_packaging_body':body,'proposed_output_body':child,'center_world_m':c.tolist(),'axis_world':a.tolist(),'gear_family':family,'ratio':100,'catalogue_reducer_rated_Nm':g['rated'],'motor_Tc_Nm':motor['Tc'],'motor_Ts_Nm':motor['Ts'],'eta_not_selected':True,'capacity_scope':'No complete joint capacity assigned. Gear L10 condition, motor Tc/Ts, mounting20C, voltage-speed and brake unknown.','transmission_path':'motor rotor -> custom coupling/input hub -> CSG100 -> integral output bearing -> hollow output adapter -> finite carrier -> next separated axis','axis_support_path':'child carrier -> hollow output adapter -> CSG2UH integral output support -> custom external load shell -> parent carrier; extra external bearings not selected or silently added','nested_carrier_status':'Separated physical axes and finite carrier allowances; not a completed serial joint or through-pin construct.'})
+ cyl(name+'_gear',body,'drive',c,g['D'],gl,a,[g['m']]*3,source=g['exact_source'],assumption='OEM dimensional reference envelope, integrated output bearing mass included. Not uniform material.',function='100:1 reducer and integrated output support',gear_rated_Nm=g['rated'],gear_ratio=100)
+ cyl(name+'_motor',body,'motor',mc,motor['D'],ml,a,[motor['m']]*3,source=motor['exact_source'],assumption='Bare stator/rotor reference envelope, connection protrusions reserved separately; OEM mass not inferred from cylinder volume. One parent owner is packaging only, not rigid rotor mass assignment.',function='frameless electromagnetic constituent',Tc_Nm=motor['Tc'],Ts_Nm=motor['Ts'],known_stator_mass_ex_cables_kg=motor.get('stator_mass_ex_cables_kg'),known_rotor_mass_kg=motor.get('rotor_mass_kg'),known_rotor_Jr_kg_m2=motor.get('rotor_Jr_kg_m2'),installed_motor_dynamic_split_status='stator/rotor published nominal fields retained if known; actual rotor hub/installed COM and rotation contract unclosed; kit mass counted once')
+ ann(name+'_gear_load_shell',body,c,g['D']+.012,g['D']+.004,gl+.020,a,assumption='Own 4mm radial aluminium case; not strength-approved')
+ ann(name+'_motor_cooling_case',body,mc,motor['D']+.016,motor['D']+.004,ml+.008,a,assumption='Own 6mm radial case/cooling passage space, water seal/mount20C not achieved')
+ ic=c+input_sign*a*(gl/2+gap/2)
+ ann(name+'_input_hub_reserve',body,ic,.070,.030,gap+.006,a,assumption='Unverified rotor/input coupling interface reserve',density=7850)
+ oc=c-input_sign*a*(gl/2+.025)
+ ann(name+'_hollow_output_adapter',body,oc,min(g['D']-.020,.160),.060,.035,a,assumption='Finite hollow steel output adapter; torque/bolt/seat/yield unknown',density=7850)
+ bc=mc+input_sign*a*(ml/2+.024)
+ cyl(name+'_brake',body,'drive',bc,min(.120,motor['D']),.035,a,[.8,1.5,3.0],assumption='Own fail-safe brake installation allowance; no torque/temperature or held-load qualification',function='independent holding/safe-stop brake')
+ ec=bc+input_sign*a*.025
+ cyl(name+'_encoder',body,'sensor',ec,.070,.012,a,[.10,.20,.35],assumption='Own absolute encoder and connector allowance',function='joint rotor/output feedback')
+ dc=mc+np.array([.09,0,.05])
+ box(name+'_controller',body,'control',dc,[.070,.035,.100],[.7,1.1,1.8],assumption='Own local servo/controller/connector package, bus/rms current/regen unqualified',function='joint power electronics')
+ box(name+'_wire_coolant_connector',body,'service',mc+np.array([0,0,.09]),[.035,.045,.070],[.12,.25,.5],assumption='Actual nonzero cable/fitting/bolt allowance, pinout and bend radii unknown',function='service interface')
+ # Two plates outside the gear radial extent reserve a finite U carrier, not a solid crossing shaft.
+ for sg in (-1,1):
+  pc=c+np.array([0,0,sg*(g['D']/2+.020)])
+  box(name+('_carrier_upper' if sg>0 else '_carrier_lower'),body,'housing',pc,[.120,.110,.008],[.285,.42,.70],assumption='Finite 8mm carrier plate outside gear rim; output bridge and material/load sharing not qualified',function='nested output carrier material')
+
+# New separated axis hypotheses; source C15 points inform available regions, not legacy coincident47 allocation.
+drive('ds_waist_yaw','pelvis','d_waist_yaw_carrier',[.025,0,1.53],[0,0,1],'csg65',-1)
+drive('ds_waist_pitch','pelvis','d_waist_pitch_carrier',[-.125,0,1.71],[0,1,0],'csg50',-1)
+drive('ds_waist_roll','torso','torso',[.165,0,1.70],[1,0,0],'csg50',-1)
+for side,s in [('left',1),('right',-1)]:
+ ax=np.array([-.075,s*.25,-.493]);ax/=np.linalg.norm(ax)
+ drive('ds_'+side+'_shoulder_pitch','torso','d_'+side+'_shoulder_pitch_carrier',[-.13,s*.46,2.36],[0,s,0],'csg65',-1)
+ drive('ds_'+side+'_shoulder_roll',side+'_upper_arm','d_'+side+'_shoulder_roll_carrier',[-.12,s*.675,2.19],[1,0,0],'csg50',1)
+ drive('ds_'+side+'_shoulder_yaw',side+'_upper_arm',side+'_upper_arm',[-.10,s*.64,1.955],ax,'csg50',-1)
+ drive('ds_'+side+'_elbow_pitch',side+'_upper_arm',side+'_forearm',[-.205,s*.80,1.79],[0,s,0],'csg50',-1)
+ drive('ds_'+side+'_forearm_roll',side+'_forearm','d_'+side+'_distal_forearm',[-.20,s*.815,1.52],[0,0,1],'csg32',1)
+ drive('ds_'+side+'_wrist_pitch',side+'_forearm','d_'+side+'_wrist_pitch_carrier',[-.10,s*.815,1.265],[0,s,0],'csg32',-1)
+ drive('ds_'+side+'_wrist_yaw',side+'_palm',side+'_palm',[-.02,s*.84,1.095],[0,0,1],'csg32',1)
+ drive('ds_'+side+'_hip_yaw','pelvis','d_'+side+'_hip_yaw_carrier',[-.045,s*.235,1.555],[0,0,1],'csg65',-1)
+ drive('ds_'+side+'_hip_roll',side+'_thigh','d_'+side+'_hip_roll_carrier',[-.035,s*.415,1.61],[1,0,0],'csg50',1)
+ drive('ds_'+side+'_foot_roll',side+'_foot',side+'_foot',[-.03,s*.6,.16],[1,0,0],'csg32',1)
+ # Hand actuator units placed using actual C15 body bounds, not stale C15 finger positions copied from B spec.
+ for b in sorted(set(p['body'] for p in base['parts'])):
+  if b.startswith(side+'_') and ('finger' in b or 'thumb' in b):
+   pp=[p for p in base['parts'] if p['body']==b];v=np.concatenate([np.array(p['vertices_world_m']) for p in pp]);c=(v.min(0)+v.max(0))/2;c[2]=v.max(0)[2]-.022
+   cyl('ds_'+b+'_compact_drive',b,'drive',c,.038,.035,[0,s,0],[.18,.35,.65],assumption='Own compact motor+transmission+encoder+holding mechanism complete reserve; no vendor torque/speed inherited',function='independent finger flexion candidate',physics_unknown=['actual linkage/tendon/gearing','finger load and backdrive/holding','skin contact selfcollision','local controller voltage/heat'])
+   axes.append({'id':'ds_'+b+'_flexion','parent_packaging_body':b,'proposed_output_body':b,'center_world_m':c.tolist(),'axis_world':[0,s,0],'status':'actual C15 finger volume-derived axis hypothesis; stable hierarchy and motor interface not established'})
+
+# Four new HV custom packs use OEM energy-density/CAD benchmark only.
+for side,s in [('left',1),('right',-1)]:
+ for level,z in [('lower',2.045),('upper',2.395)]:
+  id='ds_'+side+'_'+level+'_custom_hv_pack';c=[-.285,s*.17,z]
+  box(id,'torso','energy',c,SRC['battery_benchmark']['dims'],[19,23,28],source=SRC['battery_benchmark']['exact_source'],assumption='Custom2.56kWh cell-and-case candidate uses complete OEM CAD energy-density benchmark; this own range excludes explicit external HV BMS/fuse/service row. OEM chemistry/25.6V/max2series does not define HV topology',function='distributed battery2.56kWh',capacity_kWh=2.56,physics_unknown=['cell/BMS/insulation/creepage/short circuit','custom HV bus and pack voltage','regen SOC acceptance','sustained discharge and thermal','assembly/extraction path'])
+  box(id+'_bms_fuse_service','torso','energy',[-.185,s*.17,z],[.024,.10,.20],[.45,.8,1.4],assumption='Nonzero external HV BMS/fusing/service-disconnect addition, explicitly outside own cell+case mass row; no OEM pack reconfiguration claimed',function='pack-local protection',mass_scope='additional provisional HV service allowance; actual mass partition not qualified')
+box('ds_hv_distribution','torso','energy',[.22,0,2.34],[.11,.18,.18],[2,3.5,6],assumption='Custom contactors/precharge/DC-link/isolation-monitor/full cabinet',function='HV distribution and regen acceptance',physics_unknown=['bus voltage','fault energy','regen dump/charge acceptance','contactors and DC fault isolation'])
+box('ds_low_voltage_converter','torso','energy',[.16,0,2.18],[.10,.16,.075],[.8,1.3,2.2],assumption='Complete DC/DC24V auxiliaries and thermal reserve',function='isolated auxiliaries supply')
+
+# Motor/pump drive pair kept as distinct real source constituents + real allowance parts.
+for side,s in [('left',1),('right',-1)]:
+ id='ds_'+side+'_hydraulic_input';y=s*.145;z=2.31
+ cyl(id+'_emrax188_lc','torso','motor',[-.12,y,z],.188,.079,[1,0,0],[7.9]*3,source=SRC['emrax']['exact_source'],assumption='LC motor body188x79 nominal only, full shaft/terminal protrusion separately reserved',function='hydraulic pump prime mover',physics_unknown=[SRC['emrax']['cooling'],'S1 torque-speed at chosen bus/controller','motor shaft/coupling and bearings'])
+ box(id+'_z16_pump','torso','hydraulic',[.05435,y,z],[.1417,.113,.089],[2.6]*3,source=SRC['z16']['exact_source'],assumption='Manufacturer H105.2+shaft36.5 envelope, orientation X; not OEM solid shape or coupling AABB',function='11cc/rev fixed gear pump',design_pressure_MPa=21,manufacturer_continuous_pressure_MPa=23,manufacturer_rpm_range=[700,3500],physics_unknown=['precise efficiency at21MPa','cavitation/inlet/hot viscosity','pressure ripple/noise/life','pump motor torque-speed match'])
+ cyl(id+'_coupling','torso','hydraulic',[-.045,y,z],.075,.070,[1,0,0],[.4,.8,1.4],assumption='Own complete guarded coupling allowance; exact motor/pump hub/shaft fit unknown',function='motor-pump physical transmission')
+ ann(id+'_motor_mount_case','torso',[-.12,y,z],.208,.192,.09,[1,0,0],assumption='Finite LC mounting case; not enclosed zero-airflow acceptance')
+ box(id+'_pump_mount','torso','housing',[.047,y,z-.063],[.18,.16,.012],[.6,1.0,1.6],assumption='Finite mounting plate, load/bolt fatigue unknown',function='pump support')
+ box(id+'_inverter','torso','control',[.06,y,2.50],[.10,.12,.065],[1.1,1.8,3],assumption='Full candidate inverter+DC-link/connectors, no sourced bus/current/regen qualified',function='motor electrical drive')
+ cyl(id+'_return_filter','torso','hydraulic',[.25,s*.24,2.37],.07,.14,[0,0,1],[.4,.7,1.2],source='HAWE FXU D6020 p15/23 F100/10 mass0.7kg as mass-only filter benchmark',assumption='Own complete filter/cap service envelope; catalog100L/min rating not sufficient until amplified return mapped',function='oil filtering',physics_unknown=['real element pressure-drop/temp','return flow includes area ratio','fitting/service extraction'])
+
+# 30L usable oil + 15% headspace: finite custom tank, fluid separately counted.
+tank=[.268,.448,.313];inner=[.260,.440,.305];c=[.025,0,1.99]
+vout=np.prod(tank);vin=np.prod(inner);mass=(vout-vin)*2700
+add('ds_custom_oil_tank','torso','hydraulic',{'kind':'hollow_box','center_world_m':c,'dimensions_xyz_m':tank,'wall_thickness_m':.004,'closed':True},[mass*.9,mass,mass*1.3],assumption='Own4mm aluminium tank, inner34.89L holds30L oil+headspace; baffles/ports separately reserved',function='oil reservoir with real headspace',physics_unknown=['slosh/air separation/suction','sealing/pressure and wall fatigue','thermal expansion/mount dynamics','actual service access'],internal_volume_L=float(vin*1000),usable_oil_L=30)
+box('ds_oil_30l','torso','hydraulic',c,[.260,.440,.26224],[24.6,25.5,26.4],assumption='Own30L fluid with density820/850/880kg/m3; not structural material or sourced fluid grade',function='system total oil inventory',collision_scope='fluid inside tank is intentional containment; root must account cylinder/lines inventory within30L not add same oil again')
+box('ds_oil_baffles_ports_breather','torso','hydraulic',[.025,0,2.168],[.20,.28,.035],[1,2,3.5],assumption='Baffles/return diffuser/breather/fill-level and connectors nonzero complete allowance',function='reservoir internals and service')
+
+# Eight EA sections are split into two four-section banks; full manual lever remains geometrically present.
+for side,s in [('left',1),('right',-1)]:
+ for i,key in enumerate(['hip','knee','fold','ankle']):
+  y=s*(.159+i*.052);bodyc=[.26,y,1.830];id='ds_'+side+'_'+key+'_valve'
+  box(id+'_section_body','torso','hydraulic',bodyc,[.080,.0495,.096],[2.8]*3,source=SRC['psl3']['exact_source'],assumption='Part mass allocation2.8+EAcoil0.6+lever0.3=source3.7kg section; true OEM COM unknown',function='independent directional metering section',mass_partition_parent=id)
+  box(id+'_ea_solenoid','torso','control',[.26,y,1.9025],[.0692,.049,.049],[.6]*3,source=SRC['psl3']['exact_source'],assumption='EA attachment mechanical drawing envelope incl coil/connector; own uniform COM split',function='electrohydraulic actuation',physics_unknown=['electrical/heat/connector service','15.1W S1 coil condition not hydraulic thermal'],mass_partition_parent=id)
+  cyl(id+'_ea_lever','torso','hydraulic',[.26,y,2.0314],.013,.2308,[0,0,1],[.3]*3,source=SRC['psl3']['exact_source'],assumption='Retains full EA268.8mm from bodytop1.878 to lever top2.1468; drawn slender shaft+handle envelope, not hidden to fit',function='full EA mechanical manual actuation',mass_partition_parent=id)
+  cyl(id+'_ea_handle','torso','hydraulic',[.26,y,2.1134],.022,.0668,[0,0,1],[.03,.05,.08],assumption='Handle geometry included in source3.7kg mass already: this row is display subdivision, mass counted in lever row only',function='manual lever grip',mass_counted_elsewhere=id+'_ea_lever')
+  cyl(id+'_load_hold_block','torso','hydraulic',[.36,y,1.86],.045,.075,[0,0,1],[.6,1.2,2],assumption='Nonzero custom independently rated load-holding/block-valve module and connection',function='load hold and fault isolation',physics_unknown=['rated flow and trapped pressure','hose break/valve fault responses','shock relief/cross-port paths','complete mechanical seals/ports'])
+ for typ,y,D,m in [('connection',s*.095,[.080,.065,.110],3.8),('end',s*.357,[.080,.025,.096],1.0)]:
+  box('ds_'+side+'_valve_bank_'+typ,'torso','hydraulic',[.26,y,1.83],D,[m]*3,source=SRC['psl3']['exact_source'],assumption='Source mass PSL3/4 connection3.8 or E4 end1kg; own install footprint pending exact configured bank drawing',function='bank shared '+typ)
+
+# Onboard sensing, processing and display; connectors/thermal extra blocks remain.
+box('ds_compute','torso','control',[-.10,0,2.55],[.15,.18,.065],[1.2,2.0,3.5],assumption='Complete compute/enclosure/SSD/heatsink reserve; processing latency and power unknown',function='perception/task/planning compute',power_W_range=[80,150,250])
+box('ds_network_switch','torso','control',[.11,0,2.43],[.06,.16,.04],[.25,.45,.75],assumption='Network/control timebase module including enclosure',function='distributed bus/time synchronization',power_W_range=[8,15,25])
+box('ds_imu','torso','sensor',[.045,0,2.485],[.025,.025,.015],[.03,.06,.10],assumption='IMU mounting/calibration board+housing',function='base attitude feedback',power_W_range=[1,2,4])
+box('ds_back_screen','torso','control',[-.436,0,2.205],[.03,.29,.39],[1.0,1.7,2.7],assumption='Complete screen/driver/bracket reserve behind actual C15 rear display/service region; avoid duplicate retained display envelope mass',function='rear operational interface',power_W_range=[10,20,35],replace_source_display_envelope_if_integrated=True)
+for side,s in [('left',1),('right',-1)]:
+ box('ds_'+side+'_depth_camera','torso','sensor',[.19,s*.16,2.56],[.026,.124,.029],[.114,.116,.118],source='RealSense D455 datasheet2022 in internal_module_research.md',assumption='True camera124x29x26mm rotated; USB and protective window separate',function='depth perception',power_W_range=[3.1,3.461,5])
+ box('ds_'+side+'_camera_bracket_window','torso','sensor',[.21,s*.16,2.56],[.02,.14,.045],[.1,.2,.35],assumption='Complete bracket/protective window/connectors, no FOV proof',function='sensor mounting/FOV space')
+
+# Merge independently derived thermal/lines when it arrives; mass counted only once.
+child=OUT/'thermal_lines_modules.json'
+if child.exists():
+ tx=json.loads(child.read_text());mods=tx if isinstance(tx,list) else tx['modules']
+ for r in mods:
+  r.setdefault('rgba',[.18,.47,.51,1]);r.setdefault('center_world_m',r['geometry']['center_world_m']);modules.append(r)
+else:mods=[]
+
+def mesh_of(g):
+ kind=g.get('kind',g.get('type'));c=np.array(g['center_world_m']);
+ if kind in ('box','hollow_box'):
+  d=np.array(g.get('dimensions_xyz_m',g.get('dimensions_m')));m=trimesh.creation.box(extents=d)
+  if kind=='hollow_box':
+   w=g.get('wall_thickness_m',g.get('wall_m',.003));di=d-2*w
+   if g.get('open_ends'):
+    ax=np.array(g.get('axis_world',[1,0,0]),float); ai=int(np.argmax(np.abs(ax)));di[ai]=d[ai]+.002
+   m=trimesh.boolean.difference([m,trimesh.creation.box(extents=di)],engine='manifold')
+  m.apply_translation(c);return m
+ if kind in ('cylinder','annulus','hollow_cylinder'):
+  a=np.array(g.get('axis_world',g.get('axis',[0,0,1])),dtype=float);a/=np.linalg.norm(a);L=g['length_m'];r=g.get('radius_m',g.get('outer_radius_m'))
+  m=trimesh.creation.cylinder(radius=r,height=L,sections=32)
+  if kind=='annulus':m=trimesh.boolean.difference([m,trimesh.creation.cylinder(radius=g['inner_radius_m'],height=L+.002,sections=32)],engine='manifold')
+  if kind=='hollow_cylinder':m=trimesh.boolean.difference([m,trimesh.creation.cylinder(radius=g['inner_radius_m'],height=L-2*g['endcap_thickness_m'],sections=32)],engine='manifold')
+  m.apply_transform(trimesh.geometry.align_vectors([0,0,1],a));m.apply_translation(c);return m
+ raise ValueError('unsupported '+str(kind))
+parts=[]; bounds={};bad=[]
+for r in modules:
+ m=mesh_of(r['geometry']);bounds[r['id']]=m.bounds.tolist()
+ if not(m.is_watertight and m.volume>0):bad.append(r['id'])
+ r['role']='component_module_envelope';r['native_part_name']=r['id'];r['bounds_world_m']=bounds[r['id']]
+ r.setdefault('rigid_connection_qualified',False);r.setdefault('inertia_scope','proxy packaging mass allocation; rotor/input/output inertia and actual installed COM unclosed')
+ parts.append({'name':r['id'],'body':r['body'],'role':'component_module_envelope','vertices_world_m':m.vertices.tolist(),'faces':m.faces.tolist(),'color_rgba':r['rgba'],'edge_bevel_m':0,'module_id':r['id'],'mass_range_kg':r['mass_range_kg'],'mass_counted_elsewhere':r.get('mass_counted_elsewhere',False),'category':r['category'],'exact_source':r.get('exact_source'),'own_assumption':r.get('own_assumption'),'is_closed':m.is_watertight,'primitive_material_volume_m3':float(m.volume),'mass_scope':'component reference mass/range, never volume-derived OEM mass; housing range distinct from geometric material volume and unqualified strength','internal_structure_d':{'candidate_only':True,'rigid_connection_qualified':False,'exact_source':r.get('exact_source'),'physics_unknown':r.get('physics_unknown')}})
+# Broad phase is only diagnostic: report own module overlaps, never use it to claim collision absence.
+broad=[]
+for i,a in enumerate(modules):
+ for b in modules[i+1:]:
+  ba=np.array(bounds[a['id']]);bb=np.array(bounds[b['id']]);ov=np.minimum(ba[1],bb[1])-np.maximum(ba[0],bb[0]);
+  if np.all(ov>1e-6):broad.append({'a':a['id'],'b':b['id'],'AABB_overlap_dimensions_m':ov.tolist(),'intentional_containment_possible':a['id'].startswith('ds_oil') and b['id'].startswith('ds_oil'),'status':'needs native positive-volume/type-aware integration check; not waived'})
+counts={};mass={}
+for r in modules:
+ cat=r['category'];counts[cat]=counts.get(cat,0)+1
+ if r.get('mass_counted_elsewhere'):continue
+ mass.setdefault(cat,np.zeros(3));mass[cat]+=r['mass_range_kg']
+report={'schema':'gorilla_internal_d_system_candidate_v1','status':'macro native packaging assumptions; not selected components or passed geometry/physics','base_scene':str(BASE.relative_to(ROOT)),'base_scene_sha256':sha(BASE),'base_spec':str(SPEC.relative_to(ROOT)),'base_spec_sha256':sha(SPEC),'builder_sha256':sha(__file__),'coordinate_frame':base['coordinate_frame'],'sources':SRC,'modules':modules,'axis_order':axes,'proposed_serial_groups':{'waist':['ds_waist_yaw','ds_waist_pitch','ds_waist_roll'],'arms':{s:[f'ds_{s}_{a}' for a in ['shoulder_pitch','shoulder_roll','shoulder_yaw','elbow_pitch','forearm_roll','wrist_pitch','wrist_yaw']] for s in ['left','right']},'hips':{s:[f'ds_{s}_hip_yaw',f'ds_{s}_hip_roll','root_leg_hip_pitch'] for s in ['left','right']},'feet':{s:['root_leg_ankle_pitch',f'ds_{s}_foot_roll'] for s in ['left','right']}},'moving_body_allocation_warning':'body field is present-C15 packaging/mass allocation only. Proposed serial output carriers and forearm/foot subdivisions must be reparented and inertias recomputed before SI contract. No coincident orthogonal through-pin is constructed or accepted.','mass_range_by_category_kg':{k:v.tolist() for k,v in mass.items()},'mass_range_total_kg':sum(mass.values()).tolist(),'mass_excludes':['root eight pitch-cylinder leg structure/support/links','retained C15 armor and primary frame net material','root D segmented-foot steel/contact mechanism'],'battery_total_kWh':10.24,'all_parts_drawn':len(parts),'closed_native_failure_ids':bad,'child_thermal_lines_present':bool(mods),'potential_AABB_overlaps':broad,'power_flow_screen':{'pump_count':2,'pump_model':'HAWE Z16 displacement11cc/rev, not16cc','design_pressure_MPa':21,'manufacturer_continuous_limit_MPa':23,'chosen_rpm_hypothesis':3000,'two_pumps_ideal_L_min':66,'eta_volume_sensitivity_not_measured':[.90,.97],'two_pumps_flow_sensitivity_L_min':[59.4,64.02],'two_pumps_hydraulic_power_sensitivity_kW':[20.79,22.407],'one_pump_ideal_torque_Nm':21*11/(2*math.pi),'one_pump_eta_mechanical_sensitivity':[.85,.9],'one_pump_torque_sensitivity_Nm':[21*11/(2*math.pi)/.85,21*11/(2*math.pi)/.9],'motor_LC_continuous_nominal_Nm':52,'motor_LC_continuous_nominal_kW_each':34,'not_rpm_independent_power':True,'max_pump_rpm_3500_two_ideal_L_min':77,'max_two_volume_efficiency_flow_L_min':[69.3,74.69],'80L_min_not_met':True,'no_joint_task_gate_pass':'Simultaneous limb demand, full EMRAX LC torque-speed curve and controllers/HV battery/inlet/thermal not closed.'},'global_unknowns':['true whole native collision vs unchanged armor/new leg integration','actual source full motor connector/shaft AABB','load/torque and fatigue of every co-designed carrier','new axis stable body hierarchy/inertias','custom HV insulation/BMS/current/regen','oil holding/failure stop and valve return/pressure losses','cooling full duty/airflow/service access'],'no_A_989kg_inheritance':True}
+(OUT/'system_modules.json').write_text(json.dumps(report,indent=2)+'\n');(OUT/'system_native_parts.json').write_text(json.dumps({'schema':'gorilla_internal_d_native_parts_v1','source_system_modules_sha256':sha(OUT/'system_modules.json'),'base_scene_sha256':sha(BASE),'parts':parts},indent=2)+'\n')
+print(json.dumps({'module_count':len(modules),'axes':len(axes),'mass_range_kg':report['mass_range_total_kg'],'category':report['mass_range_by_category_kg'],'child':bool(mods),'native_bad':bad,'AABB_pairs':len(broad)},indent=2))

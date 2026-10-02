@@ -1,0 +1,415 @@
+{
+  "review_timestamp_utc": "2026-10-02 18:40 UTC",
+  "scope": "Independent AST-isolated pure LP evaluation; no main evaluator, geometry replay, CI/GPU or full-model run. Old review.md/json untouched.",
+  "evaluator_path": "/home/ethan/Projects/Sai_Rotbots/scripts/evaluation/evaluate_gorilla_distributed_layout.py",
+  "evaluator_sha256": "cd5e70271a962c73168ce747823ea3af52742c3370ddc62e0dd7d07f77f8cee7",
+  "function_sha256": "526b0fbd805d8fa7cebc56509084846fadc53dbfb350601aec5a7c502ffe53cd",
+  "function_line_range": [
+    22,
+    48
+  ],
+  "test_vertices_m": [
+    [
+      -1.0,
+      -1.0,
+      0.0
+    ],
+    [
+      -1.0,
+      1.0,
+      0.0
+    ],
+    [
+      1.0,
+      -1.0,
+      0.0
+    ],
+    [
+      1.0,
+      1.0,
+      0.0
+    ]
+  ],
+  "analytic_cases": [
+    {
+      "id": "offset_positive",
+      "loads": [
+        {
+          "position_world_m": [
+            0.2,
+            -0.3,
+            1
+          ],
+          "force_world_N": [
+            0,
+            0,
+            -100
+          ]
+        }
+      ],
+      "models": [
+        {
+          "id": "toy",
+          "force_gravity_N": -50,
+          "force_contact_coefficients": [
+            0,
+            0,
+            1,
+            1
+          ],
+          "positive_force_hypothesis_N": 20,
+          "negative_force_hypothesis_N": 10
+        }
+      ],
+      "expected_t": 0.5,
+      "expected_conditional_feasible": true,
+      "actual": {
+        "solver_success": true,
+        "message": "Optimization terminated successfully. (HiGHS Status 7: Optimal)",
+        "conditional_normal_force_and_mapped_capacity_feasible": true,
+        "physics_accepted": false,
+        "minimum_peak_force_hypothesis_use": 0.5000000000000003,
+        "normal_reactions_N": [
+          40.0,
+          0.0,
+          25.0,
+          35.0
+        ],
+        "equilibrium_residual_N_or_Nm": 0.0,
+        "maximum_normalized_inequality_violation": 0.0,
+        "numerical_dual_certificate": {
+          "inequality_multipliers": [
+            -1.0,
+            -0.0
+          ],
+          "equality_multipliers": [
+            0.025,
+            0.025,
+            -0.0
+          ],
+          "nonnegative_variable_reduced_costs": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "lower_bound_on_peak_use": 0.5,
+          "maximum_dual_feasibility_violation": 0.0,
+          "primal_dual_gap": 3.3306690738754696e-16,
+          "valid_with_declared_float_tolerances": true,
+          "scope": "Floating-point certificate for the stated restricted LP, not rigorous interval proof or physical qualification"
+        },
+        "force_models": [
+          {
+            "id": "toy",
+            "force_gravity_N": -50,
+            "force_contact_coefficients": [
+              0,
+              0,
+              1,
+              1
+            ],
+            "positive_force_hypothesis_N": 20,
+            "negative_force_hypothesis_N": 10,
+            "force_N_at_witness": 10.0
+          }
+        ]
+      },
+      "independent_certificate": {
+        "primal_eq_max_residual": 0.0,
+        "primal_ub_max_violation": 0.0,
+        "primal_bound_max_violation": 0.0,
+        "independent_dual_lambda_max": -0.0,
+        "independent_reduced_cost_min": 0.0,
+        "independent_dual_objective": 0.5,
+        "independent_primal_dual_gap": 3.3306690738754696e-16,
+        "reported_reduced_cost_max_difference": 0.0
+      }
+    },
+    {
+      "id": "offset_negative",
+      "loads": [
+        {
+          "position_world_m": [
+            0.2,
+            -0.3,
+            1
+          ],
+          "force_world_N": [
+            0,
+            0,
+            -100
+          ]
+        }
+      ],
+      "models": [
+        {
+          "id": "toy",
+          "force_gravity_N": -80,
+          "force_contact_coefficients": [
+            0,
+            0,
+            1,
+            1
+          ],
+          "positive_force_hypothesis_N": 20,
+          "negative_force_hypothesis_N": 10
+        }
+      ],
+      "expected_t": 2.0,
+      "expected_conditional_feasible": false,
+      "actual": {
+        "solver_success": true,
+        "message": "Optimization terminated successfully. (HiGHS Status 7: Optimal)",
+        "conditional_normal_force_and_mapped_capacity_feasible": false,
+        "physics_accepted": false,
+        "minimum_peak_force_hypothesis_use": 1.9999999999999998,
+        "normal_reactions_N": [
+          40.0,
+          0.0,
+          25.0,
+          35.0
+        ],
+        "equilibrium_residual_N_or_Nm": 0.0,
+        "maximum_normalized_inequality_violation": 0.0,
+        "numerical_dual_certificate": {
+          "inequality_multipliers": [
+            -0.0,
+            -1.0
+          ],
+          "equality_multipliers": [
+            -0.05,
+            -0.05,
+            -0.0
+          ],
+          "nonnegative_variable_reduced_costs": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "lower_bound_on_peak_use": 2.0,
+          "maximum_dual_feasibility_violation": 0.0,
+          "primal_dual_gap": -2.220446049250313e-16,
+          "valid_with_declared_float_tolerances": true,
+          "scope": "Floating-point certificate for the stated restricted LP, not rigorous interval proof or physical qualification"
+        },
+        "force_models": [
+          {
+            "id": "toy",
+            "force_gravity_N": -80,
+            "force_contact_coefficients": [
+              0,
+              0,
+              1,
+              1
+            ],
+            "positive_force_hypothesis_N": 20,
+            "negative_force_hypothesis_N": 10,
+            "force_N_at_witness": -20.0
+          }
+        ]
+      },
+      "independent_certificate": {
+        "primal_eq_max_residual": 0.0,
+        "primal_ub_max_violation": 0.0,
+        "primal_bound_max_violation": 0.0,
+        "independent_dual_lambda_max": -0.0,
+        "independent_reduced_cost_min": 0.0,
+        "independent_dual_objective": 2.0,
+        "independent_primal_dual_gap": -2.220446049250313e-16,
+        "reported_reduced_cost_max_difference": 0.0
+      }
+    },
+    {
+      "id": "coupled_exist",
+      "loads": [
+        {
+          "position_world_m": [
+            0,
+            0,
+            1
+          ],
+          "force_world_N": [
+            0,
+            0,
+            -100
+          ]
+        }
+      ],
+      "models": [
+        {
+          "id": "axis1",
+          "force_gravity_N": 0,
+          "force_contact_coefficients": [
+            1,
+            0,
+            0,
+            0
+          ],
+          "positive_force_hypothesis_N": 20,
+          "negative_force_hypothesis_N": 100
+        },
+        {
+          "id": "axis2",
+          "force_gravity_N": 0,
+          "force_contact_coefficients": [
+            0,
+            -1,
+            0,
+            0
+          ],
+          "positive_force_hypothesis_N": 100,
+          "negative_force_hypothesis_N": 30
+        }
+      ],
+      "expected_t": 1.0,
+      "expected_conditional_feasible": true,
+      "actual": {
+        "solver_success": true,
+        "message": "Optimization terminated successfully. (HiGHS Status 7: Optimal)",
+        "conditional_normal_force_and_mapped_capacity_feasible": true,
+        "physics_accepted": false,
+        "minimum_peak_force_hypothesis_use": 1.0000000000000002,
+        "normal_reactions_N": [
+          20.000000000000004,
+          30.000000000000007,
+          30.0,
+          19.999999999999996
+        ],
+        "equilibrium_residual_N_or_Nm": 1.4210854715202004e-14,
+        "maximum_normalized_inequality_violation": 0.0,
+        "numerical_dual_certificate": {
+          "inequality_multipliers": [
+            -0.4,
+            -0.0,
+            -0.0,
+            -0.6
+          ],
+          "equality_multipliers": [
+            0.009999999999999998,
+            -0.01,
+            -0.0
+          ],
+          "nonnegative_variable_reduced_costs": [
+            6.938893903907228e-18,
+            3.469446951953614e-18,
+            1.734723475976807e-18,
+            1.734723475976807e-18,
+            0.0
+          ],
+          "lower_bound_on_peak_use": 0.9999999999999999,
+          "maximum_dual_feasibility_violation": 0.0,
+          "primal_dual_gap": 3.3306690738754696e-16,
+          "valid_with_declared_float_tolerances": true,
+          "scope": "Floating-point certificate for the stated restricted LP, not rigorous interval proof or physical qualification"
+        },
+        "force_models": [
+          {
+            "id": "axis1",
+            "force_gravity_N": 0,
+            "force_contact_coefficients": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "positive_force_hypothesis_N": 20,
+            "negative_force_hypothesis_N": 100,
+            "force_N_at_witness": 20.000000000000004
+          },
+          {
+            "id": "axis2",
+            "force_gravity_N": 0,
+            "force_contact_coefficients": [
+              0,
+              -1,
+              0,
+              0
+            ],
+            "positive_force_hypothesis_N": 100,
+            "negative_force_hypothesis_N": 30,
+            "force_N_at_witness": -30.000000000000007
+          }
+        ]
+      },
+      "independent_certificate": {
+        "primal_eq_max_residual": 1.7763568394002505e-14,
+        "primal_ub_max_violation": 0.0,
+        "primal_bound_max_violation": 0.0,
+        "independent_dual_lambda_max": -0.0,
+        "independent_reduced_cost_min": 0.0,
+        "independent_dual_objective": 0.9999999999999999,
+        "independent_primal_dual_gap": 3.3306690738754696e-16,
+        "reported_reduced_cost_max_difference": 0.0
+      }
+    }
+  ],
+  "domain_rejections": [
+    {
+      "id": "original_horizontal_Fx",
+      "correctly_rejected": true,
+      "message": "Normal-only coplanar gravity/contact scope exceeded"
+    },
+    {
+      "id": "horizontal_Fy",
+      "correctly_rejected": true,
+      "message": "Normal-only coplanar gravity/contact scope exceeded"
+    },
+    {
+      "id": "net_zero_horizontal_yaw_couple",
+      "correctly_rejected": true,
+      "message": "Normal-only coplanar gravity/contact scope exceeded"
+    },
+    {
+      "id": "contact_z_plane",
+      "correctly_rejected": true,
+      "message": "Normal-only coplanar gravity/contact scope exceeded"
+    }
+  ],
+  "solver_failure_case": {
+    "outside_support_loads": [
+      {
+        "position_world_m": [
+          2,
+          0,
+          1
+        ],
+        "force_world_N": [
+          0,
+          0,
+          -100
+        ]
+      }
+    ],
+    "actual": {
+      "solver_success": false,
+      "message": "The problem is infeasible. (HiGHS Status 8: model_status is Infeasible; primal_status is None)",
+      "conditional_normal_force_and_mapped_capacity_feasible": null,
+      "physics_accepted": false
+    },
+    "failure_is_unknown_not_capacity_infeasible_claim": true
+  },
+  "preview_read_only_summary": {
+    "exists": true,
+    "sha256": "b920a2169fab2da31ca4723fba678357b11168013b5110ca304a8d9688c855a1",
+    "evaluator_sha256": "3df96cdd7fcfb7a543416fc7ad3cbaf00eca3599f2f2c44f577e305cd60ef4a9",
+    "physics_accepted": false,
+    "pose_count": 4,
+    "case_count": 16,
+    "conditional_true_count": 16,
+    "valid_dual_count": 16,
+    "max_reported_dual_gap": 2.3314683517128287e-15
+  },
+  "dual_derivation": "Primal min objective\u00b7x subject A x<=b, E x=target, x>=0. lambda<=0, objective-A.T lambda-E.T y>=0 => objective\u00b7x >= b\u00b7lambda+target\u00b7y. Equality of finite primal/dual values is numerical optimality certificate; valid lower bound>1 rejects capacity-constrained t<=1 existence.",
+  "remaining_limits": [
+    "Current primal residual check omits an explicit x>=0 bound residual; the toy checks independently confirm nonnegative bounds. Add min(r.x)>=-declared tolerance for a complete recorded primal certificate.",
+    "Floating tolerance checks are not rigorous exact/interval certificates, especially at boundary t\u22481.",
+    "Finite contact/hypothesis LP proves only stated static allocation. Does not close 3D brace sharing, serial carriers, hose/cylinder mass attachment, friction, dynamics, thermal or manufactured hardware."
+  ],
+  "physics_accepted": false,
+  "current_evaluator_sha256_at_finalize": "cd5e70271a962c73168ce747823ea3af52742c3370ddc62e0dd7d07f77f8cee7",
+  "evaluator_unchanged_at_finalize": true
+}

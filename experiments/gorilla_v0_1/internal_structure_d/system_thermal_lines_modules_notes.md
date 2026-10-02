@@ -1,0 +1,17 @@
+# D thermal and routing modules — conditional native probe
+
+Source is the true C15 `appearance_c_scene.json`, SHA256 `7a1e49f45838303ca5fd86265dc9980c10cde85ed7626424136afd3863aa5886`; joint/body placement follows current `appearance_c_spec.json`, SHA256 `019bb6feee1d89432b6926bf2804c51f07dd74e87009a04169ce3bb16d7e279e`. Historical B was explicitly rejected after its grille positions differed. Actual C15 front render was inspected.
+
+The two radiator cores sit at x=0.180, y=±0.323, z=2.150 m behind the source black wells/turning plenums. Two 90 mm fan envelopes, finite four-wall inlet/shroud/rear ducts and rear collars are separately rebuildable. Rear outlets at x=-0.445 require real rear-skin openings; no shell was cut. The native source throat and proposed inlet junction may overlap and still require integration. All radiator/fan/coolant-pump ratings are unknown, not inferred from size.
+
+`modules[]` contains 299 uniquely identified finite modules: {"radiator_core": 2, "fan": 2, "sealed_air_duct": 8, "connector_fastener_plate": 20, "coolant_pump": 1, "coolant_reservoir": 1, "coolant_inventory": 1, "hydraulic_pressure_line": 58, "hydraulic_return_line": 58, "hydraulic_case_drain_line": 58, "electrical_harness": 58, "coolant_line": 14, "connector_manifold_reserve": 18}. Conditional low/nominal/high mass totals are 14.755/24.702/41.454 kg. These are explicit own hypotheses, not selected hardware mass or a replacement derived by scaling the old A budget. Every unselected item has nonzero mass.
+
+Hydraulic pressure/return/case-drain and electrical bundles run separately along both arms and both legs, including current-pose joint service-loop segments and palm/foot endpoints. Every cylinder records both endpoints, body, actual length, outer/inner diameter and dry mass per metre. Hydraulic line fill capacity is 0.752 L, excluded from mass because root owns hydraulic oil inventory. The independent coolant reservoir fill is 0.499 L; its shell and fill are separate modules. Coolant hose masses include their own coolant, radiator core mass includes its stated coolant hypothesis. No hydraulic oil tank is duplicated.
+
+Native rebuild: `box`; `cylinder`; `hollow_box` as outer box minus an X-oversized inner box, leaving four walls and open flow ends; `hollow_cylinder` subtracts a shorter inner cylinder, leaving closed endcaps. Fan/radiator/connector boxes and routing cylinders are occupancy envelopes with independent mass hypotheses, not solid-material density models.
+
+169 modules have recorded possible same-body armor AABB overlaps. This deliberately keeps footprint conflicts visible; it is a broad-phase warning, not positive-volume testing or containment proof. Parent must merge all D hardware and inspect true finite shell/frame/module intersections. Joint-crossing segments are assigned upstream only for static drawing: both-end motion, bend radius, clamp strength, pressure fatigue, bus current, continuous heat rejection and recirculation remain open.
+
+No OEM source search, full-model render, controlled-file edit, GPU or PPO run was performed. Geometry/physics/thermal acceptance remain false.
+
+Independent primitive rebuild checked all 299 entries: 0 invalid/watertight/volume failures. Rear guards were corrected to open-centre frames so their native shape does not block the exhaust. Local core/fan-versus-armor checks found 0 positive-volume pairs; results remain recorded, and parent must handle the whole assembly.
