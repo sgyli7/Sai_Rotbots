@@ -1,6 +1,6 @@
 # Gorilla 内部 C 共同设计与包装任务
 
-日期：2026-10-03，Asia/Chongqing。状态：宏观执行输入与包装分诊；**尚无内部 C 原生装配、四视或物理放行**。本页不另建当前状态入口，最终状态见 [当前决定与门禁](current_decisions.md)。内部 B 已于 `dfc4ca6f` 保存并推送至 [草稿 PR #5](https://github.com/sgyli7/Sai_Rotbots/pull/5)，保留失败源和证据；下一候选单独命名，不覆盖 B。
+日期：2026-10-03，Asia/Chongqing。状态：已产生[内部C原生拒绝探针/实渲/物理诊断](internal_structure_c_review.md)，尚非完整共同设计或物理放行。C实际证据与下一候选D的整机退出条件见该评审；本页保留包装授权及宏观工作要求。最终状态只维护在[当前决定与门禁](current_decisions.md)。内部B/C保留失败源，后续候选不覆盖。
 
 ## 最新授权与基准
 

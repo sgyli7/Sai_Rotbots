@@ -1,0 +1,198 @@
+{
+  "schema": "gorilla_internal_structure_c_spec_v1",
+  "robot_id": "gorilla_v0_1",
+  "base_scene": "experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_scene.json",
+  "previous_scene": "robots/gorilla_v0_1/cad/source/internal_structure_b_scene.json",
+  "geometry_spec": "robots/gorilla_v0_1/configs/appearance_c_spec.json",
+  "budget_layout": "robots/gorilla_v0_1/configs/internal_architecture_a_layout.json",
+  "component_references": "robots/gorilla_v0_1/hardware/compact_electric_component_references.md",
+  "base_scene_sha256": "7a1e49f45838303ca5fd86265dc9980c10cde85ed7626424136afd3863aa5886",
+  "previous_scene_sha256": "7a6186594f2a47067fe9c38e4cc52833b1c930c93568e5b215a520d195e7621f",
+  "geometry_spec_sha256": "019bb6feee1d89432b6926bf2804c51f07dd74e87009a04169ce3bb16d7e279e",
+  "budget_layout_sha256": "760d95d94219b914a954574ee378e060daa2abb5e5bd4e5752485b977faf85bc",
+  "component_references_sha256": "e1dc129ed209ce87f6689008f82d64e2060601ae47305878555ae2747f4c56f5",
+  "material": {
+    "id": "s355j2h_conditional",
+    "density_kg_m3": 7850,
+    "young_modulus_Pa": 210000000000,
+    "poisson_ratio": 0.3,
+    "minimum_yield_Pa": 355000000,
+    "candidate_wall_range_m": [
+      0.006,
+      0.01
+    ],
+    "properties_basis": "SSAB 355J2H material product, 3-12.5 mm wall; ambient elastic coefficients and density from SSAB handbook section 1.6.3. Custom bent/welded members still require material certificates and joint/HAZ qualification.",
+    "sources": [
+      "https://www.ssab.com/en/brands-and-products/ssab-domex/product-offer/tube-355-j2h",
+      "https://www.ssab.com/-/media/files/en/infra/news-and-articles/ssab-domex-tube-structural-hollow-sections-en-1993-handbook.pdf",
+      "https://steelconstruction.info/topics/design/steel-material-properties/"
+    ]
+  },
+  "gear_components": {
+    "rv_380n": {
+      "reference": "Nabtesco RV-380N component set",
+      "diameter_m": 0.295,
+      "length_m": 0.131,
+      "mass_kg": 44.0,
+      "rated_Nm": 3724.0
+    },
+    "rv_160n": {
+      "reference": "Nabtesco RV-160N component set",
+      "diameter_m": 0.238,
+      "length_m": 0.104,
+      "mass_kg": 22.1,
+      "rated_Nm": 1600.0
+    }
+  },
+  "motor_components": {
+    "qtl_230_85_n": {
+      "reference": "Tecnotion QTL-A-230-85-N electromagnetic kit",
+      "diameter_m": 0.23,
+      "height_m": 0.085,
+      "mass_kg": 9.6,
+      "Ts_Nm": 76.0,
+      "Tc_Nm": 107.0,
+      "nmax_at_Tc_and_Umax_rpm": 451,
+      "reference_loss_W": 1102,
+      "winding_C": 100,
+      "mount_C": 20,
+      "maximum_bus_V": 680
+    },
+    "qtl_230_65_n": {
+      "reference": "Tecnotion QTL-A-230-65-N electromagnetic kit",
+      "diameter_m": 0.23,
+      "height_m": 0.065,
+      "mass_kg": 6.8,
+      "Ts_Nm": 48.0,
+      "Tc_Nm": 67.0,
+      "nmax_at_Tc_and_Umax_rpm": 709,
+      "reference_loss_W": 735,
+      "winding_C": 100,
+      "mount_C": 20,
+      "maximum_bus_V": 680
+    }
+  },
+  "axis_families": {
+    "hip": {
+      "gear": "rv_380n",
+      "motor": "qtl_230_85_n",
+      "ratio": 117,
+      "gear_center_axial_bias_m": -0.025,
+      "input_side_sign": -1
+    },
+    "knee": {
+      "gear": "rv_380n",
+      "motor": "qtl_230_85_n",
+      "ratio": 117,
+      "gear_center_axial_bias_m": -0.025,
+      "input_side_sign": -1
+    },
+    "fold": {
+      "gear": "rv_160n",
+      "motor": "qtl_230_65_n",
+      "ratio": 81,
+      "gear_center_axial_bias_m": -0.05,
+      "input_side_sign": -1
+    },
+    "ankle": {
+      "gear": "rv_160n",
+      "motor": "qtl_230_65_n",
+      "ratio": 81,
+      "gear_center_axial_bias_m": 0.075,
+      "input_side_sign": 1
+    }
+  },
+  "gear_motor_interface_gap_m": 0.01,
+  "housing": {
+    "component_radial_clearance_m": 0.001,
+    "radial_wall_m": 0.01,
+    "axial_extension_m": 0.008
+  },
+  "output_flange": {
+    "radius_m": 0.1,
+    "bore_radius_m": 0.03,
+    "width_m": 0.014,
+    "gap_m": 0.014
+  },
+  "output_bridge": {
+    "radial_station_m": 0.255,
+    "width_xz_m": 0.08,
+    "thickness_y_m": 0.022
+  },
+  "auxiliary_installation_reserve": {
+    "dimensions_xyz_m": [
+      0.22,
+      0.056,
+      0.05
+    ],
+    "mass_range_kg": [
+      8.0,
+      14.0,
+      22.0
+    ],
+    "scope": "Provisional brake/driver/encoder/input/fittings remainder; not sourced or known complete. Does not close full 36mm local motor leads, tool path or cooling."
+  },
+  "candidate_pose_angles_deg": {
+    "neutral": {
+      "hip": 0,
+      "knee": 0,
+      "fold": 0,
+      "ankle": 0,
+      "torso": 0,
+      "shoulder": 0,
+      "elbow": 0
+    },
+    "crouch": {
+      "hip": -15,
+      "knee": 30,
+      "fold": -10,
+      "ankle": -5,
+      "torso": 0,
+      "shoulder": 0,
+      "elbow": 0
+    },
+    "forward_manipulation": {
+      "hip": -10,
+      "knee": 20,
+      "fold": -5,
+      "ankle": -5,
+      "torso": 10,
+      "shoulder": -60,
+      "elbow": 35
+    },
+    "deep_crouch_rejection_probe": {
+      "hip": -30,
+      "knee": 60,
+      "fold": -20,
+      "ankle": -10,
+      "torso": 10,
+      "shoulder": -45,
+      "elbow": 25
+    }
+  },
+  "pad_density_range_kg_m3_hypothesis": [
+    1100,
+    1250,
+    1500
+  ],
+  "armor_density_range_kg_m3_hypothesis": [
+    1300,
+    2000,
+    2800
+  ],
+  "gravity_m_s2": 9.80665,
+  "efficiency_sensitivity": [
+    0.55,
+    0.7,
+    0.85
+  ],
+  "output_speed_samples_rad_s": [
+    0,
+    0.25,
+    0.5
+  ],
+  "physics_accepted": false,
+  "geometry_accepted": false,
+  "stable_physical_contract": false,
+  "scope": "C first actual constituent-layout diagnostic, not complete design or selected procurement. High-load nodes use integrated OEM supports once; other axes and system have inherited A unqualified reserves. Material connections, output loads, gear input, motor gap/lead, brake and thermal remain red-line unknown."
+}
