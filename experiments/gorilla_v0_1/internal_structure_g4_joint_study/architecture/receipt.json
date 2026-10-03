@@ -1,0 +1,164 @@
+{
+  "robot_id": "gorilla_v0_1",
+  "task": "G4_ankle_read_only_architecture_exit_receipt",
+  "created_UTC": "2026-10-03T02:25:30.948720+00:00",
+  "reproduce_commands": [
+    ".venv/bin/python .scratch/gorilla_internal_g4_ankle_architecture_review/calculate_review.py",
+    ".venv/bin/python .scratch/gorilla_internal_g4_ankle_architecture_review/finalize_review.py"
+  ],
+  "source_inputs": [
+    {
+      "path": ".scratch/gorilla_internal_g3_foot_chain/b/chain_scene.json",
+      "sha256": "8fb41bd85c971d1456543c9660dd123780e3e342846c230ad2751fa5177b2fab"
+    },
+    {
+      "path": ".scratch/gorilla_internal_g3_foot_chain/b/interface.json",
+      "sha256": "b0f57af4f78797798ad8bde892da039d82e8c96ea28e079ba433cf808ae3366e"
+    },
+    {
+      "path": ".scratch/gorilla_internal_g3_foot_chain/b/armor_scene.json",
+      "sha256": "6b58717476d2e4e2b6f9938eda1b4f6361c4cf868d2a0dcaa91c4273eb9539b5"
+    },
+    {
+      "path": ".scratch/gorilla_internal_g3_foot_chain/b/final_report.json",
+      "sha256": "0e0e3107c4c233f576c3164e4179398507472a05c5a8e394220ac8c8e0b5a28c"
+    },
+    {
+      "path": ".scratch/gorilla_internal_g3_foot_chain/b/build_complete.py",
+      "sha256": "5fc24d6c2735b1044acdc12d24b121aecf4c80c3a30a9c081d5e4464d4aba97e"
+    },
+    {
+      "path": ".scratch/gorilla_internal_g3_root_mechanics/bearing_family_facts.json",
+      "sha256": "d0f33cc153d98f283a9ed4334a8a8bf53fea2432a4108dc1cae5a836c097e0f8"
+    },
+    {
+      "path": ".scratch/gorilla_internal_g3_root_mechanics/skf_tapered_metric.pdf",
+      "sha256": "65e0919bee24975b9563ca0d9adf721a9e7efcf6d0fa32c18b8d119d37b190b2"
+    },
+    {
+      "path": ".scratch/gorilla_internal_d_sources/hawe_z_pumps_d6820_en.pdf",
+      "sha256": "eb12235f90d93f9c08f1c08d7bee27427ce1338cd5429ae019420844e77307dd"
+    },
+    {
+      "path": "sai_robots_engineering_rules.md",
+      "sha256": "fa79aaf6a2b162219d363f1088f04475ec94605d73b61a07bd3ae3ff46e3a5fd"
+    },
+    {
+      "path": ".scratch/gorilla_internal_f1_system/module_templates/module_templates_spec.json",
+      "sha256": "71a8589b3e91c2613d7b3c7d299e95a6bdb761db68e8656363a6f56aeafe96cf"
+    },
+    {
+      "path": ".scratch/gorilla_internal_g4_ankle_housing_budget/housing_budget.json",
+      "sha256": "cf3f781ac5b203236b16d8d9bc574264c530cd7205b6c368718460e38dc882c7"
+    }
+  ],
+  "outputs": [
+    {
+      "path": ".scratch/gorilla_internal_g4_ankle_architecture_review/calculate_review.py",
+      "sha256": "b201bdd25d778436783cd471200d3d317f7d6c9fc6d81060cd8d684ef8fc0e51",
+      "bytes": 32622
+    },
+    {
+      "path": ".scratch/gorilla_internal_g4_ankle_architecture_review/architecture_comparison.json",
+      "sha256": "1d3e24e386132eee71f77a3eb95d1600e0593f620d84d1d857835523ee9f9420",
+      "bytes": 246541
+    },
+    {
+      "path": ".scratch/gorilla_internal_g4_ankle_architecture_review/architecture_comparison.md",
+      "sha256": "88c63e21e93652bd1c25f59889a1e15bc952856689ff3c69d070d90df3f3ffde",
+      "bytes": 10526
+    },
+    {
+      "path": ".scratch/gorilla_internal_g4_ankle_architecture_review/finalize_review.py",
+      "sha256": "366c3b1f284485f36f79f44138f5b18b4fe1f8674cc88dd8037b706bd2d5b5d4",
+      "bytes": 6034
+    }
+  ],
+  "upstream_hash_errors": [],
+  "Jacobian_finite_difference_tests": [
+    {
+      "path": "T1_proximal_inclined_pitch_pair",
+      "q_deg": -10.0,
+      "finite_difference_m_per_rad": 0.2302377904717101,
+      "virtual_work_m_per_rad": 0.23023779045997114,
+      "absolute_error": 1.1738970906449708e-11
+    },
+    {
+      "path": "T1_proximal_inclined_pitch_pair",
+      "q_deg": 0.0,
+      "finite_difference_m_per_rad": 0.22174130531738,
+      "virtual_work_m_per_rad": 0.22174130529636582,
+      "absolute_error": 2.10141903878025e-11
+    },
+    {
+      "path": "T1_proximal_inclined_pitch_pair",
+      "q_deg": 10.0,
+      "finite_difference_m_per_rad": 0.2089553659545551,
+      "virtual_work_m_per_rad": 0.2089553659433927,
+      "absolute_error": 1.1162404334186249e-11
+    },
+    {
+      "path": "T2_rolling_parent_longitudinal_pitch_pair",
+      "q_deg": -10.0,
+      "finite_difference_m_per_rad": 0.21622136694987582,
+      "virtual_work_m_per_rad": 0.2162213669504735,
+      "absolute_error": 5.97688565306953e-13
+    },
+    {
+      "path": "T2_rolling_parent_longitudinal_pitch_pair",
+      "q_deg": 0.0,
+      "finite_difference_m_per_rad": 0.21999999999522402,
+      "virtual_work_m_per_rad": 0.22,
+      "absolute_error": 4.775985162908114e-12
+    },
+    {
+      "path": "T2_rolling_parent_longitudinal_pitch_pair",
+      "q_deg": 10.0,
+      "finite_difference_m_per_rad": 0.216986840995137,
+      "virtual_work_m_per_rad": 0.21698684098437232,
+      "absolute_error": 1.0764666935614287e-11
+    },
+    {
+      "path": "common_roll_side_cylinder",
+      "q_deg": -10.0,
+      "finite_difference_m_per_rad": -0.1775033559858752,
+      "virtual_work_m_per_rad": -0.17750335597219558,
+      "absolute_error": 1.3679612997918866e-11
+    },
+    {
+      "path": "common_roll_side_cylinder",
+      "q_deg": 0.0,
+      "finite_difference_m_per_rad": -0.18000000001627825,
+      "virtual_work_m_per_rad": -0.18,
+      "absolute_error": 1.627825652050774e-11
+    },
+    {
+      "path": "common_roll_side_cylinder",
+      "q_deg": 10.0,
+      "finite_difference_m_per_rad": -0.17696143664314157,
+      "virtual_work_m_per_rad": -0.17696143660868138,
+      "absolute_error": 3.446018470576462e-11
+    }
+  ],
+  "finite_difference_step_rad": 1e-06,
+  "max_finite_difference_J_error_m_per_rad": 3.446018470576462e-11,
+  "independent_static_hold_pair_cases": 96,
+  "independent_actual_roll_cylinder_pair_cases": 36,
+  "independent_static_residual_max_N_or_Nm": 7.275957614183426e-12,
+  "independent_roll_live_residual_max_N_or_Nm": 7.275957614183426e-12,
+  "stock_mass_range_recalculated_kg": [
+    116.35477675791267,
+    181.9393061854064
+  ],
+  "mass_sum_abs_error_kg": 0.0,
+  "exact_B_worst_roll_Fr_1p5_CoPy075_span016_N": 157458.56974063246,
+  "exact_B_worst_roll_Fr_1p5_CoPy075_span028_N": 105605.80281772165,
+  "all_hypothetical_physics_release_flags_false": true,
+  "source_B_has_no_pitch_or_roll_mechanical_lock": true,
+  "no_CAD_fullmodel_training_or_canonical_changes": true,
+  "new_independent_appearance_not_received_or_adopted": true,
+  "function_stock_not_additive_with_overlapping_housing_branch": true,
+  "new_axis_offsets_do_not_inherit_frozen_B_geometry_or_physics_acceptance": true,
+  "all_final_outputs_frozen_no_next_T2_CAD_in_this_task": true,
+  "limits": "Read-only analytical comparison and bounded function-stock provisions only; no manufacturing-fit, material/contact, real staticlock, heat or walking certification. OldB rejected geometry stays rejected; no jointcapacity frombearingC0 alone."
+}

@@ -1,0 +1,95 @@
+"""Write a concise tool-only record and deterministic inventory receipt."""
+from pathlib import Path
+from datetime import datetime, timezone
+import csv
+import hashlib
+import json
+import platform
+import numpy as np
+import scipy
+import PIL
+
+P=Path(__file__).resolve().parent
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+def save(name,data):(P/name).write_text(json.dumps(data,ensure_ascii=False,indent=2,allow_nan=False)+'\n')
+
+def main():
+    r=json.loads((P/'benchmark_report.json').read_text());v=json.loads((P/'verification_supplement.json').read_text())
+    first=json.loads((P/'first_run_receipt.json').read_text())
+    arrays={}
+    for name,expected in first['array_payload_sha256'].items():
+        n=np.load(P/name);arrays[name]={k:sha_array(n[k])==h for k,h in expected.items()}
+    if not all(all(d.values()) for d in arrays.values()):raise RuntimeError('label correction changed numerical array')
+    with (P/'comparison_table.csv').open('w',newline='') as f:
+        w=csv.writer(f);w.writerow(['variant','material_area_m2','mass_kg','thickness_m','weighted_compliance_N_m','case0_max_displacement_m','case1_max_displacement_m','case0_center_VM_Pa','case1_center_VM_Pa','case0_strain_energy_J','case1_strain_energy_J'])
+        for a in r['comparison']:
+            c=a['cases'];w.writerow([a['name'],a['material_area_m2'],a['mass_kg'],a['thickness_m'],a['weighted_compliance_N_m'],c[0]['max_displacement_m'],c[1]['max_displacement_m'],c[0]['max_solid_center_VM_Pa'],c[1]['max_solid_center_VM_Pa'],c[0]['strain_energy_J'],c[1]['strain_energy_J']])
+    rows=[]
+    for a in r['comparison']:
+        c=a['cases'];rows.append(f"| {a['name']} | {a['mass_kg']:.6f} | {a['material_area_m2']:.8f} | {a['weighted_compliance_N_m']:.8f} | {max(z['max_displacement_m'] for z in c)*1e6:.3f} | {max(z['max_solid_center_VM_Pa'] for z in c)/1e6:.3f} | {sum(z['strain_energy_J']*.5 for z in c):.8f} |")
+    full5=r['comparison'][1];virtual=r['comparison'][2];binary=r['comparison'][3];equal=r['comparison'][4]
+    worst_res=max(z['free_residual_relative_norm'] for a in r['comparison'] for z in a['cases'])
+    worst_force=max(abs(t) for a in r['comparison'] for z in a['cases'] for t in z['force_balance_Fx_Fz_N'])
+    worst_moment=max(abs(z['world_Y_moment_balance_Nm']) for a in r['comparison'] for z in a['cases'])
+    diff=(virtual['weighted_compliance_N_m']/full5['weighted_compliance_N_m']-1)*100
+    gain=(1-binary['weighted_compliance_N_m']/equal['weighted_compliance_N_m'])*100
+    md=f'''# G5 synthetic Q4 topology tool benchmark
+
+This is a CPU numerical tool experiment, using no Gorilla geometry, load or contact interface. It grants no robot mass reduction, strength or manufacturing qualification. Frozen calculation inputs are `input.json` and `mesh_loads.npz`; exact solution fields are in `solution_fields.npz`. The images show actual calculated cells rather than a proposed robot appearance.
+
+The 0.30 × 0.12 m plane-stress domain uses E=210 GPa, nu=0.3, rho=7850 kg/m³, nominal thickness 10 mm and an 80 × 32 Q4 grid (3.75 mm square cells). All x=0 displacement DOFs are fixed. Two equal-weight loads act over the literal right-edge z=0.05–0.07 m interval: [Fx,Fz]=[0,+1000] and [−1000,−1000] N. Consistent linear-edge integration includes the truncated end edges, yielding z-centroid 0.06 m and global +Y moments −300/+240 N m exactly. The NPZ contains every node, BL/BR/TR/TL cell, DOF, load and fixed DOF.
+
+Cells intersecting the left 20 mm support strip and right 10 mm × central 20 mm pad remain solid and count toward total volume fraction 0.5. Cell coverage conservatively retains a 22.5 mm left strip and an 11.25 × 22.5 mm right pad: 210/2560 cells, including 18 right-pad cells. SIMP uses p=3 and Emin/E=1e−9; physical density filtering uses radius 2.5 cells, with the full filter chain rule and an OC update/move limit 0.2. This filter is not a manufacturing minimum-wall guarantee.
+
+The formulations follow the original-author DTU paper, equations 1–10 on printed pp.3–4: modified SIMP, constrained compliance, OC, weighted density filtering and the derivative chain rule. Multi-load compliance is the explicit weighted sum; passive physical-density rows are overridden to 1 and have zero derivative. Q4 stiffness is independently written from 2×2 Gauss plane-stress integration. No third-party MATLAB source was copied. [Andreassen et al., 2011, DTU author PDF](https://www.topopt.mek.dtu.dk/-/media/subsites/topopt/apps/dokumenter-og-filer-til-apps/topopt88.pdf). The cached uncorrected author PDF is local ignored research material, SHA `{sha(P/'topology_optimization_paper_cache.pdf')}`. [scikit-fem official docs](https://scikit-fem.readthedocs.io/en/stable/) identify the separate assembler used by the parent for independent comparison; this generator uses its own Q4/SciPy assembly.
+
+| Calculation | Mass kg | Material/equivalent area m² | Weighted compliance N m | Max node displacement µm | Max Q4-center VM MPa | Weighted strain energy J |
+|---|---:|---:|---:|---:|---:|---:|
+{chr(10).join(rows)}
+
+The optimized continuous density field stopped at the allowed 80 iterations, change={r['last_max_change']:.6f}, and **did not reach change<0.01**. Its physical volume fraction is {r['physical_volume_fraction']:.12f}. Its compliance is {diff:.2f}% worse than the full-planform 5 mm solid baseline; no favorable interpretation of the virtual result is substituted.
+
+The rho>0.5 hard cut keeps 1286 actual 10 mm cells: material fraction {r['binary_volume_fraction']:.8f}, mass {binary['mass_kg']:.8f} kg. It is {binary['mass_kg']-full5['mass_kg']:.8f} kg heavier than the 1.413 kg target, so a separate 5.0234375 mm full-planform plate of exactly the binary mass is included. Hard-cut compliance is {gain:.2f}% lower than that exact-mass solid plate. There is one face-connected material component, all retained regions remain present, and all material was retained in the reassembled solve. Void cells contribute zero stiffness, without Emin, deleted islands or bridge repairs. Only unused void-node DOFs are dropped: 1093 nodes / 2186 DOFs. The original first-run DOF label and broad pad flag were corrected before freeze; bytewise array comparison proves the mesh, loads, density, binary mask and history unchanged.
+
+The element has three rigid modes and five positive stiffness eigenvalues. Rigid residuals are <2.7e−17; constant-strain element energy error is 3.6e−16. A 4×3 assembled affine patch with solved interior DOFs has relative displacement error {v['assembled_affine_patch']['relative_displacement_error']:.3g}. The filtered compliance derivative matches finite differences on four variables. The weakest derivative (~8.8e−8 N m) has 2.32% relative error at h=1e−5 due to subtraction of near-equal objectives; its h=1e−3 check reduces this to 0.0216%, and all tested steps remain in `verification_supplement.json`.
+
+Across all five comparison variants, free residual norm ≤{worst_res:.3g}, force-balance component ≤{worst_force:.3g} N and moment-balance error ≤{worst_moment:.3g} N m. Support reactions are [0,−1000] and [+1000,+1000] N to numerical tolerance. Coarse40×16→fine80×32 solid-baseline weighted compliance changes +0.319%, maximum displacement about +0.21%, but center VM about +16.1%. This is not a converged peak-stress result. VM is a Q4-center diagnostic; the virtual SIMP row uses virtual E(rho), not real solid stress. Clamp/cutout stress concentration, yielding, buckling, fatigue, 3D/contact, manufacturing and actual robot interfaces remain unchecked.
+
+Reproduction from repository root:
+
+```bash
+.venv/bin/python .scratch/gorilla_internal_g5_topology_benchmark/run_benchmark.py --nx 80 --nz 32 --maxiter 80
+.venv/bin/python .scratch/gorilla_internal_g5_topology_benchmark/verify_benchmark.py
+.venv/bin/python .scratch/gorilla_internal_g5_topology_benchmark/finalize_snapshot.py
+```
+
+The final manifest inventories source and generated output hashes; regenerated timestamps/report hashes are expected to change while the NPZ array payloads and reported numerical results remain reproducible. A preliminary supplement assembly mistakenly tiled an 8×8 element matrix along columns and was singular; that local supplement producer was corrected to per-element matrix replication before these accepted patch results. It never affected the benchmark assembler or density optimization.
+'''
+    (P/'benchmark_findings.md').write_text(md)
+    receipt={'schema':'G5_tool_only_frozen_numerical_receipt','created_UTC':datetime.now(timezone.utc).isoformat(),
+             'benchmark_report_sha256':sha(P/'benchmark_report.json'),'verification_supplement_sha256':sha(P/'verification_supplement.json'),
+             'input_sha256':sha(P/'input.json'),'generator_sha256':sha(P/'run_benchmark.py'),
+             'first_vs_final_array_payload_identical':arrays,
+             'run_scope':'synthetic Q4 2D linear plane stress numerical tool; no Gorilla geometry/loads/qualification',
+             'optimizer_converged_change_lt_p01':False,'hardcut_true_void_solver_success':True,
+             'hardcut_face_connected_components':1,'all_passive_regions_present':True,
+             'hardcut_material_islands_deleted':False,'hardcut_void_Emin_used':False,
+             'Gorilla_physical_accepted':False,'manufacturing_or_strength_accepted':False,
+             'raw_output_corrected_metadata':['unused_void_nodes label split into actual nodes1093 and DOFs2186','contains_retained_load_pad tests literal right pad'],
+             'stress_diagnostic_not_qualification':True,'root_independent_comparison_final_receipt':'parent records and binds separately'}
+    save('verification_receipt.json',receipt)
+    files=[]
+    for f in sorted(P.iterdir()):
+        if f.is_file() and f.name!='manifest.json':files.append({'path':str(f.relative_to(P)),'bytes':f.stat().st_size,'sha256':sha(f),'redistribution':'unverified author PDF cache, ignored only' if f.suffix=='.pdf' else 'selfwritten source or selfgenerated numerical data'})
+    manifest={'schema':'G5_tool_only_snapshot_manifest','versions':{'python':platform.python_version(),'numpy':np.__version__,'scipy':scipy.__version__,'pillow':PIL.__version__},
+              'files':files,'manifest_self_hash_excluded':True,'commands':[
+              '.venv/bin/python .scratch/gorilla_internal_g5_topology_benchmark/run_benchmark.py --nx 80 --nz 32 --maxiter 80',
+              '.venv/bin/python .scratch/gorilla_internal_g5_topology_benchmark/verify_benchmark.py',
+              '.venv/bin/python .scratch/gorilla_internal_g5_topology_benchmark/finalize_snapshot.py'],
+              'source_PDF':{'path':'topology_optimization_paper_cache.pdf','sha256':sha(P/'topology_optimization_paper_cache.pdf'),'URL':'https://www.topopt.mek.dtu.dk/-/media/subsites/topopt/apps/dokumenter-og-filer-til-apps/topopt88.pdf','printed_pages_used':[3,4],'license_not_asserted':True},
+              'no_Git_or_canonical_robot_files_modified':True,'Gorilla_physical_accepted':False}
+    save('manifest.json',manifest)
+    print(json.dumps({'manifest_sha256':sha(P/'manifest.json'),'receipt_sha256':sha(P/'verification_receipt.json'),'report_sha256':sha(P/'benchmark_report.json'),'input_sha256':sha(P/'input.json'),'findings_sha256':sha(P/'benchmark_findings.md'),'array_payloads_identical':arrays},indent=2))
+
+def sha_array(a):return hashlib.sha256(a.tobytes()).hexdigest()
+if __name__=='__main__':main()

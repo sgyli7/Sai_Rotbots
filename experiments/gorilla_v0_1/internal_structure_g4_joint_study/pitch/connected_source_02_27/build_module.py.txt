@@ -1,0 +1,201 @@
+"""Finite Gorilla G4 ankle-pitch bench; not a selected lower-leg architecture."""
+from pathlib import Path
+import json, hashlib, math, copy
+import numpy as np
+import trimesh as tr
+import manifold3d as mf
+
+O = Path(__file__).resolve().parent
+ROOT = next(p for p in O.parents if (p/'sai_robots_engineering_rules.md').exists())
+sha = lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()
+C = np.array([-.060,.650,.300]); AY = np.array([0.,1.,0.]); DENSITY = 7850.
+parts=[];motions={};actuators=[];interfaces=[]
+def box(center,size): return mf.Manifold.cube(size,center=True).translate(center)
+def ring(center,ro,ri,length,axis=AY):
+    s=mf.Manifold.cylinder(length,ro,ro,64,center=True)
+    if ri: s=s-mf.Manifold.cylinder(length+.002,ri,ri,64,center=True)
+    rot=tr.geometry.align_vectors([0,0,1],axis)
+    return s.transform(rot[:3,:4]).translate(center)
+def net(shapes):
+    s=shapes[0]
+    for t in shapes[1:]:s=s+t
+    return s
+def arrays(m):
+    q=m.to_mesh64();return (np.array(q.vert_properties[:,:3])+C).tolist(),q.tri_verts.tolist()
+def add(name,owner,m,role='finite_steel',**extra):
+    assert m.status()==mf.Error.NoError and m.volume()>1e-10,(name,m.status(),m.volume())
+    v,f=arrays(m);p={'name':'g4_'+name,'body':owner,'role':role,'vertices_world_m':v,'faces':f,
+         'density_kg_m3':DENSITY,'material_assumption':'Conditional S355J2H7850kg/m3; no supplier/pressure/manufacturing qualification',
+         'rgba':[.22,.30,.33,1],**extra};parts.append(p);return p
+def frame(a,b,axis=AY):
+    u=(b-a)/np.linalg.norm(b-a);x=np.array(axis)-u*(axis@u);x/=np.linalg.norm(x)
+    return np.column_stack([x,np.cross(u,x),u])
+def sample(bx):
+    aa=np.array([-.080,0.,.520]);bb=np.array([bx,0.,.040]);rows=[]
+    for q in np.linspace(-25,25,121):
+        b=tr.transformations.transform_points([bb],tr.transformations.rotation_matrix(math.radians(q),AY))[0]
+        u=(b-aa)/np.linalg.norm(b-aa);jj=float(u@np.cross(AY,b))
+        rows.append({'q_deg':float(q),'eye_length_m':float(np.linalg.norm(b-aa)),'J_m_per_rad':jj})
+    lo=min(x['eye_length_m'] for x in rows);hi=max(x['eye_length_m'] for x in rows);stroke=hi-lo+.020
+    return {'B_arm_x_m':bx,'fixed_anchor_xz_m':[-.080,.520],'moving_anchor_xz_m':[bx,.040],
+            'q_range_deg':[-25,25],'samples':rows,'eye_range_m':[lo,hi],'stroke_m':stroke,
+            'custom_zero_eye_m':lo-.010,'minimum_complete_zero_eye_m':stroke+.176,
+            'J_range_m_per_rad':[min(x['J_m_per_rad'] for x in rows),max(x['J_m_per_rad'] for x in rows)]}
+A_probe=sample(.280);chosen=sample(.320)
+assert A_probe['J_range_m_per_rad'][0]<.20
+assert chosen['J_range_m_per_rad'][0]>=.20 and chosen['custom_zero_eye_m']>=chosen['minimum_complete_zero_eye_m']
+
+# Continuous finite parent back shell, dual cups, fixed cylinder eyes and central stop reaction deck.
+outer=box([-.170,0.,.280],[.100,.360,.660]);inner=box([-.170,0.,.280],[.084,.344,.644])
+parent=[outer-inner]
+deck=box([.040,0.,.285],[.360,.220,.070])-box([.040,0.,.285],[.344,.204,.054])
+parent.append(deck)
+# Finite bilateral cup-to-backbox reaction cells outside childY±.120.
+# Their walls overlap the rearboxfront by6mm, not an owner-name attachment.
+for side in [-1,1]:
+    bridge=box([-.075,side*.152,0],[.110,.056,.140])-box([-.075,side*.152,0],[.094,.040,.124])
+    parent.append(bridge)
+# Actual top bulkhead ties the two outer fixedforks into the same backbox.
+# LowerfaceZ.566 is8mm above the38mm cylindrical fixedeye radius envelope.
+parent.append(box([-.085,0.,.579],[.130,.450,.026]))
+for side in [-1,1]:
+    y=side*.145
+    parent += [ring([0,y-side*.00175,0],.069,.05505,.0355),
+               ring([0,side*.12725,0],.069,.0345,.0035)]
+    a=np.array([-.080,side*.160,.520])
+    for sg in [-1,1]: parent.append(ring(a+AY*sg*.038,.055,.02020,.014))
+parent_m=net(parent)
+parent_m=parent_m-ring([0,0,0],.03040,0,.390)
+for side in [-1,1]:parent_m=parent_m-ring([0,side*.145,0],.05510,0,.0324)
+
+# Closed wide moving carrier and two short journals, no long60mm torsion shaft.
+child=[box([.1375,0.,-.015],[.425,.240,.150])-box([.1375,0.,-.015],[.413,.228,.138])]
+for side in [-1,1]:
+    child += [ring([0,side*.1145,0],.046,.014,.016),ring([0,side*.144,0],.02995,.014,.060)]
+    b=np.array([.320,side*.160,.040])
+    for sg in [-1,1]:child.append(ring(b+AY*sg*.038,.055,.02020,.014))
+    # Broad finite front web under the circular eye swept envelope, continuous to side deck.
+    child.append(box([.320,side*.1595,-.0235],[.120,.107,.037]))
+    child.append(box([.150,side*.075,.0715],[.060,.045,.033]))
+# Defined0.10mm radial bore relief avoids repeatedcoincidentR14surfaces inCSG.
+# This is a new finiteCAD bore28.20mm, not normal/mesh repair or a gate tolerancechange.
+child_m=net(child)-ring([0,0,0],.01410,0,.400)
+
+# Actual removable cup caps/shaft keeper caps and finite bolts. Threads/preload remain unknown.
+cupcaps=[];journalcaps=[];bolt_rows=[]
+for side in [-1,1]:
+    cap=ring([0,side*.16275,0],.069,.03035,.0035)
+    keep=ring([0,side*.176,0],.043,.01410,.004)
+    for k in range(3):
+        a=2*math.pi*k/3
+        p=np.array([.061*math.cos(a),side*.1545,.061*math.sin(a)])
+        cut=ring(p,.00420,0,.035)
+        parent_m=parent_m-cut;cap=cap-cut
+        shaft=ring([p[0],side*.15425,p[2]],.004,0,.0205)
+        head=ring([p[0],side*.1665,p[2]],.007,0,.004)
+        bolt_rows.append(('cup_bolt_'+str(side)+'_'+str(k),'parent',shaft+head,'parent_bolted_cap'))
+        q=np.array([.022*math.cos(a),side*.167,.022*math.sin(a)])
+        cut=ring(q,.00315,0,.030)
+        child_m=child_m-cut;keep=keep-cut
+        shaft=ring([q[0],side*.169,q[2]],.003,0,.018)
+        head=ring([q[0],side*.180,q[2]],.005,0,.004)
+        bolt_rows.append(('journal_bolt_'+str(side)+'_'+str(k),'child',shaft+head,'child_bolted_keeper'))
+    cupcaps.append(('cup_cap_'+str(side),'parent',cap))
+    journalcaps.append(('journal_keeper_'+str(side),'child',keep))
+
+# Complete50/25finite cylinders in local frames, with actual pins and fork holes.
+for side in [-1,1]:
+    cid='pitch_'+('negative_y' if side<0 else 'positive_y')
+    aa=np.array([-.080,side*.160,.520]);bb=np.array([.320,side*.160,.040])
+    f=frame(aa,bb);T=np.eye(4);T[:3,:3]=f;T[:3,3]=aa
+    L=float(np.linalg.norm(bb-aa));stroke=chosen['stroke_m'];zero=chosen['custom_zero_eye_m'];er=.038
+    tail=zero-(stroke+.176);start=er+tail;top=start+stroke+.060;ext=L-zero
+    barrel=ring([0,0,(start-.004+top)/2],.030,0,top-start+.004,[0,0,1])
+    barrel-=ring([0,0,start+.020+(stroke+.020)/2],.025,0,stroke+.020,[0,0,1])
+    barrel-=ring([0,0,top-.010],.0125+.0004,0,.022,[0,0,1])
+    neck=box([0,0,(.020+start+.010)/2],[.034,.022,start+.010-.020])
+    eye=ring([0,0,0],er,.02020,.034,[1,0,0]);barrel=net([barrel,neck,eye])-ring([0,0,0],.02020,0,.095,[1,0,0])
+    piston=ring([0,0,start+.020+ext+.010],.0245,0,.020,[0,0,1])
+    shaft=ring([0,0,(start+.035+ext+L-er+.010)/2],.0125,0,L-er+.010-(start+.035+ext),[0,0,1])
+    rod_eye=ring([0,0,L],er,.02020,.034,[1,0,0]);rod_neck=box([0,0,L-er/2],[.032,.020,er+.006])
+    rod=net([piston,shaft,rod_eye,rod_neck])-ring([0,0,L],.02020,0,.095,[1,0,0])
+    add(cid+'_barrel',cid+'_barrel_link',barrel.transform(T[:3,:4]),'finite_actuator_barrel',motion_id=cid,motion_kind='barrel',mass_owner_body='parent')
+    add(cid+'_rod',cid+'_rod_link',rod.transform(T[:3,:4]),'finite_actuator_rod',motion_id=cid,motion_kind='rod',mass_owner_body='child')
+    for point,owner,which in [(aa,'parent','fixed'),(bb,'child','moving')]:
+        # Full length pin, two different-owner fork sleeves/eye bores, no source overlap permitted.
+        pm=ring(point,.020,0,.106)
+        add(cid+'_'+which+'_pin',owner+'_pin_'+cid,pm,'finite_pin',applied_parent_transform=owner,
+            interface='40mm pin/40.40mm eye and fork bores, fork-centre span76mm. Axial keepers/fit/lube unqualified.')
+        cut=ring(point,.02020,0,.135)
+        if owner=='parent':parent_m-=cut
+        else:child_m-=cut
+    motions[cid]={'A':aa,'B':bb,'basis':f,'L':L}
+    actuators.append({**chosen,'id':cid,'bore_m':.050,'rod_m':.025,'wall_m':.005,'pin_m':.040,
+        'A_world_m':(aa+C).tolist(),'B_world_m':(bb+C).tolist(),'barrel_neutral_frame_local':T.tolist(),
+        'fork_reaction_center_span_m':.076,'eye_width_m':.034,'fork_plate_thickness_m':.014,
+        'manufacturer_shortening':False,'pressure_duty_seal_qualified':False,'upstream_installation_qualified':False})
+
+add('parent_load_housing','parent',parent_m,connection_scope='One continuous finite backbox/cup/fork/stopdeck material candidate; upstreammount omitted, no completeleg enclosurefit')
+add('child_load_carrier','child',child_m,connection_scope='One continuous closed carrier with shortjournals and integral two-sided drive/stopwebs; no60mm longshaft torque premise')
+for n,b,m in cupcaps+journalcaps:add(n,b+'_cap_'+n,m,'finite_bolted_cap',applied_parent_transform=b,interface='Finite3bolt attachment. Thread engagement/preload/fatigue and removability under tools unknown.')
+for n,b,m,role in bolt_rows:add(n,b+'_bolt_'+n,m,'finite_bolt',applied_parent_transform=b,interface=role+'; assumedplainnominalshaft/head not threadedOEM')
+family_path=ROOT/'.scratch/gorilla_internal_g3_root_mechanics/bearing_family_facts.json'
+family=json.loads(family_path.read_text())['roller_family']['32212']
+for side in [-1,1]:
+    p=add('SKF32212_reference_'+str(side),'parent_bearing_'+str(side),ring([0,side*.145,0],.055,.030,.02975),'bearing_reference_envelope',
+        density_kg_m3=None,mass_range_kg=[family['mass_kg']]*3,rgba=[.52,.57,.60,.65],
+        source_family=family,reference_scope='Exactd/D/Tenvelopeandcatalogmass only; actualrollers/innerouterrings/preload/pressurecentres not reconstructed; C0pair notjointcapacity')
+
+# Manual compression shoes: two finite contact faces, neutral only; pullY after fullunload.
+stops=[]
+for side in [-1,1]:
+    # Childlug top .088, parentdeck lowerface .250: exactintendedcontact, no positiveintersection.
+    p=add('neutral_compression_shoe_'+str(side),'stop_'+str(side),box([.150,side*.075,.169],[.058,.043,.162]),'manual_static_stop_shoe',
+        unlock_translation_world_m=[0,side*.180,0],applied_parent_transform='stop',
+        load_path='Childlugtop -> finitecompression shoe -> parentcentraldeck -> continuousbackbox. Manual unloadedremove only, lateralretain/handle/stow hardware notqualified.')
+    stops.append({'part':p['name'],'lever_x_m':.150,'contact_area_m2':.058*.043,'neutral_contact_z_local_m':[.088,.250],
+        'unlock_translation_world_m':[0,side*.180,0],'lateral_retention_and_stow_qualified':False})
+interfaces=[{'id':'journal_pair','parent':'parent','child':'child','center_world_m':C.tolist(),'axis_world':AY.tolist(),
+    'journal_OD_ID_m':[.05990,.02820],'bearing_centers_Y_offsets_m':[-.145,.145],
+    'local_radial_load_offset_from_child_wall_m':.025,'bearing_catalogue_d_D_T_m':[.060,.110,.02975],
+    'journal_radial_clearance_hypothesis_m':.00005,'cup_radial_clearance_hypothesis_m':.00010,
+    'nominal_fit_load_contact_preload_axial_spacers_qualified':False},
+    {'id':'drive_pair','parent':'parent','child':'child','torque_path':'Each finiteeye -> ownpairfork -> continuouswide childcarrier. Journal onlyradial/bending/axialreactionreference, notfulldrivetorque.',
+    'cylinders':[a['id'] for a in actuators],'upstream_distal_housing_and_leg_enclosure_fit':False}]
+poses=[]
+for pid,q,unlocked in [('neutral_stop_closed',0,False),('neutral_stop_open',0,True),('pitch_positive_25_stop_open',25,True),('pitch_negative_25_stop_open',-25,True)]:
+    childT=tr.transformations.rotation_matrix(math.radians(q),AY,C)
+    pp=[];endpoint=[];ct={}
+    for cid,d in motions.items():
+        a=d['A']+C;b=tr.transformations.transform_points([d['B']+C],childT)[0]
+        basis=frame(a,b);rot=basis@d['basis'].T;tt=np.eye(4);tt[:3,:3]=rot;tt[:3,3]=a-rot@(d['A']+C)
+        rt=tt.copy();rt[:3,3]+=(b-a)/np.linalg.norm(b-a)*(np.linalg.norm(b-a)-d['L'])
+        ct[(cid,'barrel')]=tt;ct[(cid,'rod')]=rt
+        endpoint.append({'id':cid,'A_world_m':a.tolist(),'B_world_m':b.tolist(),'eye_length_m':float(np.linalg.norm(b-a)),
+            'barrel_transform_world':tt.tolist(),'rod_transform_world':rt.tolist()})
+    for p in parts:
+        owner=p.get('applied_parent_transform',p['body'])
+        if p.get('motion_id'):tt=ct[(p['motion_id'],p['motion_kind'])]
+        elif owner=='child':tt=childT
+        elif owner=='stop':
+            tt=np.eye(4)
+            if unlocked:tt[:3,3]=p['unlock_translation_world_m']
+        else:tt=np.eye(4)
+        row=copy.deepcopy(p);row['vertices_world_m']=tr.transformations.transform_points(p['vertices_world_m'],tt).tolist();row['applied_transform_world']=tt.tolist();pp.append(row)
+    poses.append({'id':pid,'q_deg':q,'stop_open_unloaded_only':unlocked,'parts':pp,'endpoint_transforms':endpoint,
+        'parent_transform_world':np.eye(4).tolist(),'child_transform_world':childT.tolist(),'root_shift_z_m':0})
+scene={'robot_id':'gorilla_v0_1','candidate':'G4B independent ankle-pitch bench, not selected leg/appearance',
+    'parts':parts,'pose_scenes':poses,'joint_supports':[{'id':'ankle_pitch_bench','parent_body':'parent','output_body':'child','center_world_m':C.tolist(),'axis_world':AY.tolist()}],
+    'anchor_macro_candidates':[A_probe,chosen],'selected_macro':'B40mmoutputarmdelta','actuators':actuators,'static_stop_interfaces':stops,'interfaces':interfaces,
+    'section_assumptions_m':{'parent_backbox_outer':[.100,.360,.660],'parent_wall':.008,'child_closedbox_outer':[.425,.240,.150],'child_wall':.006,
+        'bearing_housing_outer_radius':.069,'cup_catalogue_bearing_center_span':.290},
+    'load_case_scope':'29430Nupwardgroundforce CoP[.25,.65±.1,0], independentconditionalpressure; no3tcarryorwalkingclaim',
+    'material_scope':'finiteS355J2Hrho7850E210GPa/yield355MPa assumption; bearing catalogue1.15kgeach only',
+    'unknowns':['wholelegparentmount/enclosure','bearingpressurecentres/fits/preload/lubrication','threadpreload/boltedinterfaces','stoplateralretention/handle/stow','hydraulicpressuregrade/seals/holding/hose/thermal','dynamicloopSI/friction/contacts','wholemachinegravityandcontactLP'],
+    'geometry_accepted':False,'physical_accepted':False,'new_robot_axis_or_exterior_frozen':False,
+    'producer_revision_from_first_source':'SameBmacro: two realclosedcupreactioncells andfixedforkroof; journalbore+0.10mmradialrelief inCAD; novalidatorrepair. First02:17source retainedunchanged.',
+    'input_hashes':{str(family_path.relative_to(ROOT)):sha(family_path),str(Path(__file__).relative_to(ROOT)):sha(Path(__file__)),
+        '.scratch/gorilla_internal_g_material_contract/native_signed_material.py':sha(ROOT/'.scratch/gorilla_internal_g_material_contract/native_signed_material.py')}}
+(O/'module_scene.json').write_text(json.dumps(scene,indent=2)+'\n')
+(O/'interface.json').write_text(json.dumps({k:scene[k] for k in ['robot_id','candidate','joint_supports','interfaces','actuators','static_stop_interfaces','unknowns']},indent=2)+'\n')
+print('SOURCE',len(parts),sha(O/'module_scene.json'),flush=True)

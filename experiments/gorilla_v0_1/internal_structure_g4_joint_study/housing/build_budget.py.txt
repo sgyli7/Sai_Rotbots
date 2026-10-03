@@ -1,0 +1,102 @@
+from pathlib import Path
+import json,math,hashlib,numpy as np
+R=Path('/home/ethan/Projects/Sai_Rotbots');O=Path(__file__).resolve().parent
+S=R/'.scratch/gorilla_internal_g3_foot_chain/b/chain_scene.json';I=R/'.scratch/gorilla_internal_g3_foot_chain/b/interface.json';F=R/'.scratch/gorilla_internal_g3_foot_chain/b/final_report.json'
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def write(n,d):(O/n).write_text(json.dumps(d,indent=2,ensure_ascii=False)+'\n')
+s=json.loads(S.read_text());inf=json.loads(I.read_text());fr=json.loads(F.read_text());steel={'name':'S355 conditional homogeneous structural steel','rho_kg_m3':7850,'E_Pa':210e9,'nu':.30,'fy_Pa':355e6,'nominal_stress_screen_allowable_Pa':177.5e6,'allowable_is_engineering_SF2_not_material_or_code_release':True,'G_Pa':210e9/2.6,'thin_plate_material_certificate_weld_detail_residual_stress_fatigue_unknown':True}
+# Equilibrium on full child freebody, neutral, pressure external, gravity/dynamics excluded.
+# Positive cylinder axial force is extension from A toward B; negative means pull.
+loads=[]
+for jname in ['ankle_pitch','ankle_roll']:
+ j=next(j for j in inf['joints']if j['id']==jname);a=next(a for a in inf['actuators']if a['id']==jname)
+ n=np.array(j['axis'],float);c=np.array(j['c']);A=np.array(a['A_world_m']);B=np.array(a['B_world_m']);u=(B-A)/np.linalg.norm(B-A);J=float(np.dot(np.cross(B-c,u),n))
+ for lf in [1,1.5]:
+  for cy in [.55,.65,.75]:
+   cp=np.array([.25,cy,0.]);P=np.array([0.,0.,29430*lf]);tg=float(np.dot(np.cross(cp-c,P),n));fa=-tg/J;fc=fa*u;Rt=-(P+fc);Mt=np.cross(cp-c,P)+np.cross(B-c,fc)
+   assert abs(float(Mt@n))<1e-7
+   for sep in [.16,.26,.28,.30]:
+    # Half axial reaction is a geometry-only baseline; tapered induced axial loads separate.
+    rp=Rt/2+np.cross(n,Mt)/sep;rm=Rt/2-np.cross(n,Mt)/sep
+    residual=rp+rm+P+fc;moment=np.cross(n*sep/2,rp)+np.cross(-n*sep/2,rm)+Mt
+    rows=[]
+    for side,v in [('+',rp),('-',rm)]:
+     rows.append({'side':side,'reaction_world_N':v.tolist(),'radial_force_N':float(np.linalg.norm(v-n*(v@n))),'axial_half_share_N':float(v@n),'resultant_N':float(np.linalg.norm(v))})
+    maxfr=max(r['radial_force_N']for r in rows)
+    # Primary SKF Table7 special Ka=0/equal Y/no-clearance/no-preload case only.
+    induced=maxfr/(2*1.5);p0=max(maxfr,.5*maxfr+.8*induced)
+    loads.append({'joint':jname,'source_axis_center_m':c.tolist(),'CoP_world_m':cp.tolist(),'load_factor':lf,'J_neutral_m_per_rad':J,'cylinder_force_signed_N':fa,'actual_chamber_force_direction':'push'if fa>=0 else'pull','total_joint_reaction_world_N':Rt.tolist(),'perpendicular_moment_remaining_for_bearing_pair_Nm':Mt.tolist(),'geometric_seat_center_span_m':sep,'pressure_centres_not_verified_and_not_equal_to_geometric_centers':True,'seat_reactions':rows,'force_residual_absmax_N':float(max(abs(residual))),'moment_residual_absmax_Nm':float(max(abs(moment))),'special_zero_external_axial_SKF_induced_Fa_N':induced,'special_case_P0_N':p0,'C0_reference_N':160000,'conditional_special_case_s0':160000/p0,'SKF_single_pair_preload_actual_force_distribution_unknown':True})
+# New centred roll branch sensitivity does not modify original source or adopt topology.
+centred=[]
+for lf in [1,1.5]:
+ for dy in [-.1,0,.1]:centred.append({'roll_axis_y_m':.65,'CoP_y_m':.65+dy,'load_factor':lf,'roll_pressure_torque_Nm':29430*lf*dy,'broad_carrier_pitch_cross_moment_if_roll_x_stays_minus0p13_Nm':29430*lf*.38,'not_new_installed_geometry':True})
+# Static pressure hold, independent of the existing cylinder force path.
+stops=[]
+for lf in [1,1.5]:
+ for r in [.08,.12,.16]:
+  total=9711.9*lf/r
+  for share in [.5,1]:
+   f=total*share;stops.append({'load_factor':lf,'actual_stop_lever_assumed_m':r,'total_stop_force_N':total,'one_stop_force_share':share,'one_stop_force_N':f,'minimum_nominal_face_area_mm2_at177p5MPa':f/177.5e6*1e6,'nominal_face_pressure_MPa_at30x40mm':f/(.03*.04)/1e6,'nominal_face_pressure_MPa_at20x30mm':f/(.02*.03)/1e6,'reaction_route':'child full stop lug into reinforced parent stop seat, then cup bridge; contact only in held pose, unload before release','actual_stop_pose_geometry_contact_sharing_and_release_unknown':True})
+# Two and only two structural families. Width is Y, depth Z, beam/load chord X.
+def sect(b,h,t,web=0):
+ A=b*h-(b-2*t)*(h-2*t)+web*(h-2*t)
+ Iy=(b*h**3-(b-2*t)*(h-2*t)**3)/12+web*(h-2*t)**3/12
+ Iz=(h*b**3-(h-2*t)*(b-2*t)**3)/12+(h-2*t)*web**3/12
+ Am=(b-t)*(h-t);Jt=4*Am**2/(2*(b+h-2*t)/t)
+ return {'b_m':b,'h_m':h,'t_m':t,'continuous_longitudinal_internal_web_m':web,'area_m2':A,'Iy_m4':Iy,'Iz_m4':Iz,'Wy_m3':Iy/(h/2),'Wz_m3':Iz/(b/2),'mean_closed_area_m2':Am,'Jt_ideal_outer_cell_m4':Jt,'internal_symmetric_web_not_credited_in_pure_torsion_J':True,'kg_per_m':7850*A}
+My=9711.9*1.5;T=5591.7*1.5;V_hi=max(np.linalg.norm(x['total_joint_reaction_world_N'])for x in loads if x['joint']=='ankle_pitch');N=61153.455415661025*1.5
+A4=sect(.28,.18,.004,.004);A6=sect(.28,.18,.006,.004);Brail=sect(.06,.09,.008)
+def screen(sec,rails=1,split_plate=False):
+ out=[]
+ for V,case in [(44145.,'3t_ground_reaction_1p5_remote_member'),(V_hi,'complete_current_pitch_joint_resultant_1p5_conservative_component_envelope')]:
+  axial=N/(rails*sec['area_m2']);bend=My/(rails*sec['Wy_m3']);tor=T/(2*sec['mean_closed_area_m2']*sec['t_m']*rails)
+  shear=V/(rails*(2*sec['t_m']+sec['continuous_longitudinal_internal_web_m'])*(sec['h_m']-2*sec['t_m']))
+  vm=math.sqrt((axial+bend)**2+3*(shear+tor)**2)
+  twist=T*.32/(steel['G_Pa']*sec['Jt_ideal_outer_cell_m4']*rails)
+  bfree=(sec['b_m']-2*sec['t_m'])/(2 if split_plate else 1)
+  scr=4*math.pi**2*steel['E_Pa']/(12*(1-steel['nu']**2))*(sec['t_m']/bfree)**2
+  out.append({'case':case,'prismatic_member_length_m':.32,'axial_challenge_N':N,'My_challenge_Nm':My,'T_challenge_Nm':T,'V_challenge_N':V,'axial_stress_MPa':axial/1e6,'bending_stress_MPa':bend/1e6,'outer_wall_torsion_shear_MPa':tor/1e6,'ideal_direct_web_shear_MPa':shear/1e6,'conservative_same_wall_vm_MPa':vm/1e6,'nominal_yield_ratio':steel['fy_Pa']/vm,'ideal_twist_deg':math.degrees(twist),'longitudinal_plate_unbraced_width_m':bfree,'ideal_long_plate_uniform_compression_k4_cr_MPa':scr/1e6,'gross_positive_does_not_close_cup_hole_patch_load_stop_nodal_stress_or_connections':True})
+ return out
+families=[{'id':'a_continuous_wide_thin_closed_rib_shell','section_nominal_4mm':A4,'section_same_family_6mm_sensitivity':A6,'nominal_screen':screen(A4,split_plate=True),'6mm_screen':screen(A6,split_plate=True),'actual_skeletal_topology_proposal':'fixed two cup nodes tied to closed parent load shell; two short child journals directly at broad closed carrier bosses; cylinder/dual stop torque flows through wide carrier, not full60mm axle; physically separate parent/child and reserved complete swept clearance','fitting_and_cavity_scope':'prismatic equations apply only away from110mm cup bore/large opening; reinforced nodal geometry not built','native_scene_created':False},{'id':'b_existing_two_short_box_rails_with_thick_seats','rail_count':2,'rail_section':Brail,'equal_share_reference_screen':screen(Brail,rails=2),'torsion_scope':'Each closed rail takes T/2. No global coupled-frame/warping advantage credited without actual crossmember constraints.','existing_same_function_seat_reference':'two OD160/ID110/axial37 rings; current60/28 full-length shaft and collar interfaces; not automatically connected or installed','native_scene_created':False}]
+# Short journals vs continuous shaft; pure torsion is a separate challenge.
+journals=[]
+for od,idd in [(.060,.028),(.080,.040),(.090,.040)]:
+ Ip=math.pi*(od**4-idd**4)/32;Ib=Ip/2
+ for lf in [1,1.5]:
+  torque=9711.9*lf; tau=torque*(od/2)/Ip
+  journals.append({'od_m':od,'id_m':idd,'load_factor':lf,'full_pitch_pure_torque_challenge_Nm':torque,'pure_torsion_vm_MPa':math.sqrt(3)*tau/1e6,'not_actual_load_share_or_60mm_SKF_interface_adoption':True})
+short=[]
+for f in [70000,110000,150000]:
+ for e in [.02,.025,.03]:
+  d=.06;di=.028;I=math.pi*(d**4-di**4)/64;sig=f*e*(d/2)/I
+  short.append({'seat_radial_load_N':f,'actual_boss_to_bearing_pressure_center_offset_assumed_m':e,'60_28_journal_bend_MPa':sig/1e6,'no_full_pitch_torque_assigned':True,'manufacturing_groove_fit_bearing_axial_fatigue_unknown':True})
+# Current40mm pin improvement uses actual eye34 and each cheek14, not deleting cheeks.
+pins=[]
+for d in [.04,.042,.048]:
+ for span in [.049,.051,.08]:
+  sig=8*N*span/(math.pi*d**3); tau=2*N/(math.pi*d**2)
+  pins.append({'diameter_m':d,'fork_reaction_center_span_m':span,'eye_width_m':.034,'each_fork_plate_thickness_m':.014,'at_axial_load_N':N,'pin_nominal_center_load_bending_MPa':sig/1e6,'double_shear_MPa':tau/1e6,'eye_projected_pressure_MPa':N/(d*.034)/1e6,'fork_projected_pressure_MPa':N/(2*d*.014)/1e6,'conditional_geometry_only_cylinder_eye_sweep_retention_toolpath_unbuilt':True})
+# Al is an independent same-envelope stiffness sensitivity, not a third installed family.
+al=[]
+for ts in [.004,.006]:
+ goal=sect(.28,.18,ts)['Iy_m4']*210e9;lo=.0001;hi=.04
+ for _ in range(80):
+  mid=(lo+hi)/2
+  if sect(.28,.18,mid)['Iy_m4']*70e9<goal:lo=mid
+  else:hi=mid
+ ta=hi;q=sect(.28,.18,ta);asig=My/q['Wy_m3'];kscr=4*math.pi**2*70e9/(12*(1-.33**2))*(ta/(.28-2*ta))**2
+ al.append({'same_outer_dimensions_m':[.28,.18],'steel_outer_wall_m':ts,'Al_wall_m_for_equal_ideal_strong_axis_EI':ta,'Al_assumed_rho_kg_m3':2710,'Al_assumed_E_Pa':70e9,'Al_conditional_unwelded_fy_Pa_range':[160e6,260e6],'welded_HAZ_cast_or_certificate_not_inherited':True,'Al_kg_per_m':2710*q['area_m2'],'steel_kg_per_m':sect(.28,.18,ts)['kg_per_m'],'Al_nominal_bending_MPa':asig/1e6,'Al_local_uniform_plate_k4_cr_MPa':kscr/1e6,'illustrative_no_new_material_or_installed_geometry_adoption':True})
+# Geometrically finite volume allowances: unassembled budget, not a CAD union or accepted mass.
+def ringm(Do,Di,L,n=1):return math.pi/4*(Do**2-Di**2)*L*7850*n
+mass=[]
+def mrow(id,func,v,scope='parameterized finite-envelope material budget; not native CAD union',qty=1):mass.append({'id':id,'function':func,'quantity':qty,'mass_kg_range':v,'scope':scope})
+mrow('remote_parent_and_child_closed_shells','two physically different owners; totalloadpath length .30..42, b280/h180,t4..6',[A4['kg_per_m']*.30,A6['kg_per_m']*.32,A6['kg_per_m']*.42]);mrow('two_cup_bodies','bore110,OD132..144,L35..42',[ringm(.132,.11,.035,2),ringm(.136,.11,.037,2),ringm(.144,.11,.042,2)],qty=2);mrow('two_short_journals','OD60/ID28,L50..65; close load path to carrier, not full pitch torque',[ringm(.06,.028,.05,2),ringm(.06,.028,.055,2),ringm(.06,.028,.065,2)],qty=2);mrow('carrier_bosses','OD100..120/ID28,t10..16 ring budget; bearing contact uses separate69/70p5abutment limits',[ringm(.10,.028,.010,2),ringm(.11,.028,.012,2),ringm(.12,.028,.016,2)],qty=2);mrow('cup_shoulders_and_covers','rearID98 shoulder4; front keeper clearance104..108; not same material as cups',[ringm(.11,.098,.004,2)+ringm(.136,.106,.004,2),ringm(.11,.098,.005,2)+ringm(.14,.106,.004,2),ringm(.11,.095,.006,2)+ringm(.144,.104,.006,2)],qty=2);mrow('32212_pair','actual complete OEM references d60D110T29.75 C155/C0160kN mass1.15 each',[2.3]*3,'SKF exact whole components once; dimensions not actual assembly qualification',2);mrow('node_diaphragms_additional','two160x180x4..6 plates with110mm circular hole, net area; overlap with cups must be designed out',[2*(.16*.18-math.pi*.11**2/4)*.004*7850,2*(.16*.18-math.pi*.11**2/4)*.005*7850,2*(.16*.18-math.pi*.11**2/4)*.006*7850]);mrow('pin_and_clevis','one complete40..48 pin, two14 cheeks and34eye annulus',[2.1,2.7,3.5]);mrow('stop_lugs_seats_and_local_ribs','two distinct contact assemblies30x40 face,reinforcedclosedrib; not plain4mm plate',[1.0,2.0,3.5]);mrow('keepers_fasteners_seals','two cup retention, shaft axial retention, split-case tools and seals',[.8,1.3,2.0],'explicit material reserve; exact hardware geometry unresolved')
+# Native existing per-owner quantity is from current frozen rejected candidate, not qualified mass.
+existing=[]
+for row in fr['mass_rows']:
+ if row.get('id','').startswith('metal_union_')and row.get('body')in ['thigh_interface','middle','distal','ankle_carrier','arch','forefoot']:
+  existing.append({'id':row['id'],'body':row['body'],'mass_kg_range':row['mass_range_kg'],'source_part_ids':row.get('source_part_ids',[]),'physical_accepted':False,'arch_resource_rejected':row['body']=='arch','not_complete_installed_module_or_adoptable_net_weight':True})
+source_inputs={str(p.relative_to(R)):sha(p)for p in [S,R/'.scratch/gorilla_internal_g3_foot_chain/b/interface.json',F,R/'.scratch/gorilla_internal_g3_foot_chain/b/build_structure.py',R/'.scratch/gorilla_internal_g3_root_mechanics/skf_tapered_metric.pdf',O/'jrc_steel_plate_commentary_2007.pdf',Path(__file__)]}
+D={'schema':'gorilla_g4_ankle_housing_macro_budget_v1','robot_id':'gorilla_v0_1','only_two_structural_families':True,'no_CAD_or_upstream_changes':True,'materials':{'steel':steel,'Al_scope':'Independent same-envelope stiffness sensitivity, not simple density swap'},'illustration_handoff':{'new_user_design_chat_leg_foot_illustration_received':False,'new_illustration_adopted':False,'internal_modules_adaptable_no_outer_shape_or_axis_freeze':True},'external_load_scope':'3t static pressure only. Existing actuator-force path is a challenge; new real mechanical hold may bypass it. Does not delete normal self-weight walking/manipulation demand.','actual_neutral_freebody_cases':loads,'roll_axis_centering_sensitivity':centred,'static_hold_contact_cases':stops,'structural_families':families,'journal_full_torque_challenges':journals,'short_journal_bending_challenges':short,'actual_clevis_span_pin_challenges':pins,'Al_equal_stiffness_sensitivity':al,'parameterized_mechanical_assembly_budget':mass,'mechanical_assembly_mass_range_kg':[sum(x['mass_kg_range'][i]for x in mass)for i in range(3)],'full_joint_additional_scope_not_credited':['complete selected actuator(s) incl.bore/rod/fork/pin swept envelope','localholding/protection valves','hydraulic oil and water allocated from globalstock','hose/fittings/lines incl.bend/service','sensors/controllers/wiring','AA3-derived visually accepted armor','fore/heel separated composite contact bodies and pressure-compatible pad deformation'],'old_rejected_candidate_source_quantity':existing,'old_scope_318p608kg_not_all_new_mechanical_assembly_comparable':True,'complete_mechanical_node_layout_constraints':{'fixed_parent':['OD110 cup seat wall/shoulder and retention','continuous reaction shell connecting fullcup seats toA-eye/stop-support','housing splits/tool openings cannot break torsion/strain path withoutreinforcement'],'moving_child':['two60mm inner-ring journals/bosses','continuouswide torque-carrier connecting stop/cylinderB tobothbosses','full child sweep clearance fromparentcup/keeper/seal'],'cup_dimensions_mm':{'d':60,'D':110,'T':29.75,'B':28,'C':24,'d1_approx':81.9,'a_pressure_centre_from_source_reference_end':24,'da_max':69,'db_min':70.5,'Da_min_max':[95,102],'Db_min':104,'Ca_min':4,'Cb_min':5.5,'ra_max':2,'rb_max':1.5},'complete_pair_geometric_center_span_m_range':[.26,.30],'cup_body_OD_m_range':[.132,.144],'cup_body_axial_width_m_range':[.035,.042],'planned_mechanical_stack_axial_outside_m_range':[.32,.40],'actual_cup_body_side_mm_not_identical_to_complete_stack':True,'separate_removal_tool_axial_space_m_range':[.10,.15],'pressure_center_range_if_bearing_reference_center_is_T_over2_and_same_datum':[.26-2*(.024-.02975/2),.30+2*(.024-.02975/2)],'pressurecenter_range_is_conditional_not_OEM_O_X_installation_verified':True,'forefoot_and_heel_no_common_bottom_skin_across_folding_joint':True,'old_joint_positions_not_locked_by_this_budget':True},'source_inputs':source_inputs,'verification':{'equilibrium_residuals_checked':True,'continuous_motion_geometry_checked':False,'material_strength_accepted':False,'assembly_geometry_accepted':False,'bearing_preload_fits_installation_accepted':False,'whole_robot_SI_or_capability_accepted':False,'aesthetic_accepted':False}}
+write('housing_budget.json',D)
+print('mechanical reserve',D['mechanical_assembly_mass_range_kg']);print('A4',A4['kg_per_m'],screen(A4,split_plate=True));print('A6',A6['kg_per_m'],screen(A6,split_plate=True));print('B',2*Brail['kg_per_m'],screen(Brail,rails=2));print('Al',al);print('maxbearing',max(loads,key=lambda x:max(q['radial_force_N']for q in x['seat_reactions'])))

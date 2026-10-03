@@ -1,0 +1,87 @@
+"""Independent assembler check of a synthetic cantilever, not Gorilla strength."""
+from pathlib import Path
+import sys
+import json
+import hashlib
+import numpy as np
+from scipy.sparse.linalg import spsolve
+
+ROOT = next(p for p in Path(__file__).resolve().parents if (p / 'sai_robots_engineering_rules.md').exists())
+sys.path.insert(0, str(ROOT / '.scratch/gorilla_topology_runtime'))
+import skfem
+from skfem import MeshQuad, Basis, ElementVector, ElementQuad1, BilinearForm, asm
+from skfem.helpers import sym_grad, ddot, div
+
+E, NU, DENSITY = 210e9, .3, 7850.
+L, H = .30, .12
+LAMBDA = E * NU / (1 - NU ** 2)  # plane stress, not 3D Lamé lambda
+MU = E / (2 * (1 + NU))
+
+@BilinearForm
+def elasticity(u, v, w):
+    return 2 * MU * ddot(sym_grad(u), sym_grad(v)) + LAMBDA * div(u) * div(v)
+
+def solve_case(nx, nz, thickness, fx, fz):
+    mesh = MeshQuad.init_tensor(np.linspace(0, L, nx + 1), np.linspace(0, H, nz + 1))
+    basis = Basis(mesh, ElementVector(ElementQuad1()), intorder=2)
+    stiffness = asm(elasticity, basis) * thickness
+    right_nodes = np.flatnonzero(np.isclose(mesh.p[0], L))
+    right_nodes = right_nodes[np.argsort(mesh.p[1, right_nodes])]
+    load_weights = np.zeros(mesh.p.shape[1])
+    for na, nb in zip(right_nodes[:-1], right_nodes[1:]):
+        za, zb = mesh.p[1, [na, nb]]
+        lo, hi = max(za, .05), min(zb, .07)
+        if hi <= lo:
+            continue
+        rlo, rhi = (lo - za) / (zb - za), (hi - za) / (zb - za)
+        load_weights[na] += (hi - lo) * (2 - rlo - rhi) / (2 * .020)
+        load_weights[nb] += (hi - lo) * (rlo + rhi) / (2 * .020)
+    load_nodes = np.flatnonzero(load_weights > 0)
+    support_nodes = np.flatnonzero(np.isclose(mesh.p[0], 0))
+    fixed = basis.nodal_dofs[:, support_nodes].flatten()
+    free = np.setdiff1d(np.arange(basis.N), fixed)
+    force = np.zeros(basis.N)
+    force[basis.nodal_dofs[0]] = fx * load_weights
+    force[basis.nodal_dofs[1]] = fz * load_weights
+    displacement = np.zeros(basis.N)
+    displacement[free] = spsolve(stiffness[free][:, free].tocsc(), force[free])
+    reaction = stiffness @ displacement - force
+    force_xy = force[basis.nodal_dofs]
+    reaction_xy = reaction[basis.nodal_dofs]
+    moment = lambda v: float(np.sum(mesh.p[0] * v[1] - mesh.p[1] * v[0]))
+    return {
+        'nx_nz': [nx, nz], 'thickness_m': thickness,
+        'force_N': [fx, fz], 'node_count': mesh.p.shape[1],
+        'element_count': mesh.t.shape[1], 'load_node_count': len(load_nodes),
+        'mass_kg': L * H * thickness * DENSITY,
+        'compliance_J': float(force @ displacement),
+        'strain_energy_J': float(.5 * displacement @ (stiffness @ displacement)),
+        'load_patch_mean_displacement_m': np.mean(displacement[basis.nodal_dofs[:, load_nodes]], axis=1).tolist(),
+        'max_displacement_m': float(np.linalg.norm(displacement[basis.nodal_dofs], axis=0).max()),
+        'free_residual_max_N': float(np.abs(reaction[free]).max()),
+        'force_balance_N': np.sum(force_xy + reaction_xy, axis=1).tolist(),
+        'moment_balance_Nm': moment(force_xy) + moment(reaction_xy),
+        'energy_identity_abs_J': float(abs(force @ displacement - displacement @ (stiffness @ displacement))),
+    }
+
+cases = [solve_case(nx, nz, t, fx, fz)
+         for nx, nz in [(40, 16), (80, 32), (160, 64)]
+         for t in [.010, .005] for fx, fz in [(0., 1000.), (-1000., -1000.)]]
+result = {
+    'scope': 'Synthetic tool verification only; no Gorilla part geometry, mass savings, strength or release claim.',
+    'assembler': 'scikit-fem', 'version': skfem.__version__,
+    'material': {'E_Pa': E, 'nu': NU, 'rho_kg_m3': DENSITY, 'state': 'plane_stress'},
+    'left_support': 'All DOF on x=0 fixed: deliberate synthetic clamp, not actual robot pin constraint.',
+    'right_load': 'Uniform line traction on x=L and z=.05...07, consistent linear edge-shape integration.',
+    'cases': cases,
+    'all_force_energy_checks_pass': all(
+        r['free_residual_max_N'] < 1e-6 and max(abs(v) for v in r['force_balance_N']) < 1e-5
+        and abs(r['moment_balance_Nm']) < 1e-5 and r['energy_identity_abs_J'] < 1e-8
+        for r in cases),
+    'source_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+    'strength_buckling_fatigue_contact_or_manufacturing_qualified': False,
+}
+out = Path(__file__).with_name('independent_fem_baseline.json')
+out.write_text(json.dumps(result, indent=2) + '\n')
+print(json.dumps({'out': str(out), 'checks': result['all_force_energy_checks_pass'],
+                  '80x32_cases': [r for r in cases if r['nx_nz'] == [80, 32]]}, indent=2))

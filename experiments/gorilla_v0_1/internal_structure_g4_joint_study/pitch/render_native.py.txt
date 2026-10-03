@@ -1,0 +1,77 @@
+"""Native triangle orthographic z-buffer; all G4 material retained, no shape editing."""
+from pathlib import Path
+import hashlib,json,math
+import numpy as np
+from PIL import Image,ImageDraw,ImageFont
+
+O=Path(__file__).resolve().parent
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+S=O/'module_scene.json';s=json.loads(S.read_text());C=np.asarray(s['joint_supports'][0]['center_world_m'])
+W,H=900,1040;PPM=760.
+font=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',19)
+small=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',14)
+views={'front':([1.,0.,0.],[0.,0.,1.],[0.,-1.,0.]),
+       'left':([0.,1.,0.],[0.,0.,1.],[-1.,0.,0.]),
+       'rear':([-1.,0.,0.],[0.,0.,1.],[0.,1.,0.]),
+       'top':([0.,0.,1.],[1.,0.,0.],[0.,-1.,0.]),
+       'threequarter':([.85,1.2,.50],[0.,0.,1.],None)}
+
+def draw_native(po,key):
+    cam,up,right=views[key];cam=np.asarray(cam);cam/=np.linalg.norm(cam);up=np.asarray(up)
+    if right is None:
+        right=np.cross(up,cam);right/=np.linalg.norm(right);up=np.cross(cam,right)
+    else:right=np.asarray(right)
+    target=C+[.080,0.,.280] if key!='top' else C+[.115,0.,0.]
+    depth=np.full((H,W),-np.inf);rgb=np.full((H,W,3),255,np.uint8)
+    light=np.array([1.,-.5,1.4]);light/=np.linalg.norm(light)
+    for p in po['parts']:
+        v=np.asarray(p['vertices_world_m']);vv=v-target
+        q=np.column_stack([W/2+vv@right*PPM,H/2-vv@up*PPM,vv@cam])
+        triangles=np.asarray(p['faces']);coords=q[triangles]
+        normal=np.cross(v[triangles[:,1]]-v[triangles[:,0]],v[triangles[:,2]]-v[triangles[:,0]])
+        norm=np.linalg.norm(normal,axis=1);valid=norm>1e-15;normal[valid]/=norm[valid,None]
+        if p['role']=='manual_static_stop_shoe':color=np.array([223,145,38])
+        elif p['role']=='bearing_reference_envelope':color=np.array([178,172,140])
+        elif p['role'].startswith('finite_actuator'):color=np.array([148,160,168])
+        elif p['name']=='g4_child_load_carrier':color=np.array([98,134,147])
+        else:color=np.array([130,142,150])
+        for i,a in enumerate(coords):
+            if not valid[i] or normal[i]@cam<=0:continue
+            xa,ya,za=a[0];xb,yb,zb=a[1];xc,yc,zc=a[2]
+            den=(yb-yc)*(xa-xc)+(xc-xb)*(ya-yc)
+            if abs(den)<1e-9:continue
+            x0=max(0,int(math.floor(a[:,0].min())));x1=min(W-1,int(math.ceil(a[:,0].max())))
+            y0=max(80,int(math.floor(a[:,1].min())));y1=min(H-88,int(math.ceil(a[:,1].max())))
+            if x1<x0 or y1<y0:continue
+            xx,yy=np.meshgrid(np.arange(x0,x1+1)+.5,np.arange(y0,y1+1)+.5)
+            aa=((yb-yc)*(xx-xc)+(xc-xb)*(yy-yc))/den
+            bb=((yc-ya)*(xx-xc)+(xa-xc)*(yy-yc))/den;cc=1-aa-bb
+            zz=aa*za+bb*zb+cc*zc;z=depth[y0:y1+1,x0:x1+1]
+            mask=(aa>=-1e-9)&(bb>=-1e-9)&(cc>=-1e-9)&(zz>z)
+            shade=.67+.33*max(0,float(normal[i]@light));col=np.asarray(color*shade,np.uint8)
+            z[mask]=zz[mask];rgb[y0:y1+1,x0:x1+1][mask]=col
+    im=Image.fromarray(rgb);d=ImageDraw.Draw(im)
+    d.text((24,17),'GORILLA G4B / '+key.upper()+' / '+po['id'],font=font,fill=(30,39,46))
+    d.text((24,46),'Independent internal bench. Actual native triangles; no exterior proposal.',font=small,fill=(65,73,81))
+    d.text((24,H-77),'Steel: gray   Moving carrier: blue-gray   Manual shoes: orange',font=small,fill=(40,45,50))
+    d.text((24,H-53),'Bearing: catalog envelope only. No physical/installation acceptance.',font=small,fill=(40,45,50))
+    d.line((W-201,H-26,W-49,H-26),fill=(20,25,30),width=3)
+    d.text((W-180,H-49),'200 mm',font=small,fill=(20,25,30))
+    d.text((24,H-28),'Source '+sha(S)[:16]+' / same 760 px/m',font=small,fill=(40,45,50))
+    path=O/(po['id']+'_'+key+'.png');im.save(path)
+    return {'path':str(path),'sha256':sha(path),'source_sha256':sha(S),'pose':po['id'],'camera':key,
+        'camera_direction':cam.tolist(),'up':up.tolist(),'right':np.asarray(right).tolist(),'target_world_m':np.asarray(target).tolist(),
+        'pixels_per_m':PPM,'dimensions_px':[W,H],'hidden_parts':[],'projection':'native triangle z-buffer orthographic','physical_acceptance':False}
+
+outputs=[]
+neutral=s['pose_scenes'][0]
+for key in ['front','left','rear','top']:outputs.append(draw_native(neutral,key))
+for po in s['pose_scenes']:
+    if po['id']!=neutral['id']:outputs.append(draw_native(po,'threequarter'))
+im=Image.new('RGB',(W*2,H*2),'white')
+for i,p in enumerate(outputs[:4]):im.paste(Image.open(p['path']),(i%2*W,i//2*H))
+contact=O/'native_four_view.png';im.save(contact)
+outputs.append({'path':str(contact),'sha256':sha(contact),'source_sha256':sha(S),'operation':'unaltered panel assembly; no shape/color edits'})
+(O/'native_render_manifest.json').write_text(json.dumps({'robot_id':'gorilla_v0_1','source_sha256':sha(S),'renderer_sha256':sha(Path(__file__)),
+    'outputs':outputs,'source_part_count':30,'hidden_parts':[],'scope':'Internal bench source evidence, not wholeleg packaging or Cycles aesthetic review'},indent=2)+'\n')
+print('RENDERED',len(outputs),flush=True)

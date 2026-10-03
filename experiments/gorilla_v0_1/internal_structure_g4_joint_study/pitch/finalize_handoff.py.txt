@@ -1,0 +1,142 @@
+"""Source-bound optimization/interfaces receipt; no optimization or model editing."""
+from pathlib import Path
+import hashlib,json,math
+import numpy as np
+import trimesh as tr
+
+O=Path(__file__).resolve().parent
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+s=json.loads((O/'module_scene.json').read_text());r=json.loads((O/'report.json').read_text())
+assert r['source_sha256']==sha(O/'module_scene.json')
+C=np.asarray(s['joint_supports'][0]['center_world_m']);rows={p['name']:p for p in s['parts']}
+
+def boxpatch(name,body,center,size,function):
+    p=rows[body];v=np.asarray(p['vertices_world_m']);faces=np.asarray(p['faces']);center=np.asarray(center)+C;size=np.asarray(size)
+    lo=center-size/2-.0005;hi=center+size/2+.0005;inside=np.all((v>=lo)&(v<=hi),axis=1)
+    cent=v[faces].mean(1);ix=np.flatnonzero(np.any(inside[faces],axis=1)|np.all((cent>=lo)&(cent<=hi),axis=1))
+    return {'id':name,'native_part':body,'local_center_m':(center-C).tolist(),'size_m':size.tolist(),
+        'native_triangle_indices_conservative':ix.tolist(),'actual_source_bound':sha(O/'module_scene.json'),
+        'function':function,'selector_tolerance_m':.0005,'may_delete':False,
+        'scope':'Conservative preserve selector of existing material; not a qualified FEM distributed-load surface'}
+
+patches=[]
+P='g4_parent_load_housing';B='g4_child_load_carrier'
+patches.append(boxpatch('upstream_closedbox_mount_end',P,[-.170,0,.603],[.100,.360,.014],
+    'Defined source datum at upper end; actual upstream bolts/leg connection omitted and red'))
+for side in [-1,1]:
+    patches.append(boxpatch('fixed_bearing_seat_'+str(side),P,[0,side*.14325,0],[.142,.038,.142],
+        '32212 cup seat/lip and local cup-to-backbox root; preserve actual bearing pocket and bolt bores'))
+    patches.append(boxpatch('fixed_cylinder_fork_'+str(side),P,[-.080,side*.160,.520],[.114,.110,.114],
+        '40mm pin forks and continuous upper root; bearing/shear/fatigue qualification unknown'))
+    patches.append(boxpatch('stop_reaction_deck_'+str(side),P,[.150,side*.075,.254],[.070,.060,.012],
+        'Finite lower contact face accepting compression shoe, preserve force spreading into closed deck'))
+    patches.append(boxpatch('short_journal_boss_'+str(side),B,[0,side*.14025,0],[.098,.0715,.098],
+        'Short journal/continuous carrier boss; no full pitch torque applied to journal'))
+    patches.append(boxpatch('moving_cylinder_fork_'+str(side),B,[.320,side*.160,.040],[.114,.115,.114],
+        'Drive enters integral fork/web of wide carrier, preserve eye bore and root'))
+    patches.append(boxpatch('moving_stop_lug_'+str(side),B,[.150,side*.075,.0715],[.060,.045,.033],
+        'Neutral static compression contact; must unload and manually withdraw shoe before motion'))
+patches.append(boxpatch('downstream_carrier_mount_end',B,[.347,0,-.015],[.006,.240,.150],
+    'Equivalent downstream 6D port on finite front end cap; real foot-roll/foot attachment not modeled'))
+
+envelopes=[{'owner':'parent','kind':'closed_outer_box','center_local_m':[-.170,0,.280],'dimensions_m':[.100,.360,.660]},
+ {'owner':'parent','kind':'closed_outer_box','center_local_m':[.040,0,.285],'dimensions_m':[.360,.220,.070]},
+ {'owner':'parent','kind':'outer_bulkhead','center_local_m':[-.085,0,.579],'dimensions_m':[.130,.450,.026]},
+ {'owner':'child','kind':'closed_outer_box','center_local_m':[.1375,0,-.015],'dimensions_m':[.425,.240,.150]}]
+for side in [-1,1]:
+    envelopes += [{'owner':'parent','kind':'closed_outer_cup_reaction_cell','center_local_m':[-.075,side*.1425,0],'dimensions_m':[.110,.037,.140]},
+      {'owner':'parent','kind':'bearing_cup_outer','center_local_m':[0,side*.14325,0],'radius_m':.069,'axial_length_m':.0355,'axis_world':[0,1,0]},
+      {'owner':'child','kind':'drive_fork_web_outer','center_local_m':[.320,side*.1595,-.0235],'dimensions_m':[.120,.107,.037]}]
+
+ports=[]
+for c in r['pressure_static_load_cases']:
+    T=tr.transformations.rotation_matrix(math.radians(c['q_deg']),[0,1,0],C)
+    output_mount=tr.transformations.transform_points([C+[.350,0.,-.015]],T)[0]
+    force=np.asarray(c['ground_force_N']);moment=np.cross(np.asarray(c['CoP_world_m'])-output_mount,force)
+    ports.append({**{k:c[k] for k in ['q_deg','load_factor','CoP_world_m','mode','sixD_equilibrium_residual']},
+        'upstream_mount_world_m':c['upstream_mount_world_m'],
+        'upstream_required_6D_wrench_Fxyz_Mxyz':c['required_upstream_force_N']+c['required_upstream_moment_at_mount_Nm'],
+        'actual_parent_point_load_ports':[{'point_world_m':p['point_world_m'],'wrench_Fxyz_Mxyz':p['force_on_parent_N']+[0.,0.,0.]} for p in c['wrench_ports_on_parent']],
+        'actual_child_point_load_ports':[{'point_world_m':p['point_world_m'],'wrench_Fxyz_Mxyz':p['force_on_child_N']+[0.,0.,0.]} for p in c['wrench_ports_on_child']]+[
+            {'point_world_m':p['point_world_m'],'wrench_Fxyz_Mxyz':p['force_on_child_N']+[0.,0.,0.],'interface':'short_journal_radial_reaction'} for p in c['bearing_reactions']],
+        'equivalent_ground_load_at_output_mount':{'point_world_m':output_mount.tolist(),'wrench_Fxyz_Mxyz':force.tolist()+moment.tolist(),
+            'native_mount_part':B,'real_downstream_joint_not_modeled':True},
+        'interface_force_distribution_contact_friction_not_qualified':True})
+
+handoff={'robot_id':'gorilla_v0_1','source_sha256':sha(O/'module_scene.json'),'load_report_sha256':sha(O/'report.json'),
+    'scope':'Unoptimized internal ankle-pitch bench; only source finite parent/child material editable in later explicit optimization',
+    'current_material_mother_domains':[{'native_part':n,'native_volume_m3':next(p['volume_m3'] for p in r['per_piece_mass_COM_full_I'] if p['id']==n),
+        'source_mesh_reference':'module_scene.json/parts/'+n} for n in [P,B]],
+    'outer_candidate_design_envelope_primitives':envelopes,
+    'outer_envelope_limit':'These are existing finite CAD outer primitives, not a global bounding-box slab. Any future full 3D voxel/FE domain must subtract functional/sweep/tool voids and bind a new source.',
+    'non_design_native_material_selectors':patches,
+    'unchanged_non_design_parts':[p['name'] for p in s['parts'] if p['name'] not in [P,B]],
+    'required_functional_voids':[
+        {'id':'bearing_and_journal_seats','reference':'interface.json/journal_pair','preserve':True},
+        {'id':'eye_and_fork_pin_bores','diameter_m':.04040,'source_reference':'Actual native fork/eye bores; 40mm pins separate material','preserve':True},
+        {'id':'cap_and_keeper_bolt_holes','source_reference':'Existing finite 4.20/3.15mm radius holes and separate bolt layers','preserve':True},
+        {'id':'actuator_pressure_and_rod_cavities','source_reference':'barrel/rod source; bore50/rod25; no filling to reduce stress','preserve':True},
+        {'id':'moving_child_and_actuator_space','source_reference':'Four actual pose meshes, 121 signed eye/J samples','continuous_material_sweep_qualification':False},
+        {'id':'manual_shoe_release_tool_space','source_reference':'21 actual +X.280m material positions; handles/retainers/stow unknown','preserve':True},
+        {'id':'bearing_cap_tools','axial_access_budget_m':[.10,.15],'source':'Housing study conditional access reserve, not hardware','native_tool_qualified':False}],
+    'actual_6D_load_interfaces':ports,
+    'do_not_reuse_as_qualification':['No robot selfweight in current external-only FBD','No 3t carrying/walking rating',
+        'No actual bearing pressure-center/preload/contact model','No bolt preload/fatigue/pressure grade',
+        'No root whole-machine contact LP','No continuous swept collision proof','No FEM/optimization/stiffness certification'],
+    'no_weight_reduction_claim':True,'no_topology_optimization_performed':True,'physical_accepted':False}
+(O/'optimization_handoff.json').write_text(json.dumps(handoff,indent=2)+'\n')
+
+domains=[]
+for factor in [1.,1.5]:
+    for pressure in [21.,30.]:
+        for efficiency in [1.,.8]:
+            cs=[c for c in r['pressure_static_load_cases'] if c['load_factor']==factor and not c['mode'].startswith('neutral')]
+            bad=[c for c in cs if any(not p['satisfied'] for a in c['cylinder_pressure_pin_screens'] for p in a['pressure_efficiency_screens'] if p['pressure_MPa']==pressure and p['efficiency']==efficiency)]
+            domains.append({'load_factor':factor,'pressure_MPa':pressure,'efficiency':efficiency,'conditional_cases':len(cs),'rejected_cases':len(bad),
+                'scope':'Three q endpoints, three lateral CoPs, two explicit coupled reaction allocations; not certified or independent single-axis minima'})
+loadforces=[abs(p['required_signed_force_N']) for c in r['pressure_static_load_cases'] if c['load_factor']==1 for p in c['cylinder_pressure_pin_screens']]
+Jlo,Jhi=s['actuators'][0]['J_range_m_per_rad'];flow={'assumed_speed_rad_s':.5,'two_cap_flow_range_L_min':[2*math.pi*.05**2/4*j*.5*60000 for j in [Jlo,Jhi]],
+    'two_annulus_flow_range_L_min':[2*math.pi*(.05**2-.025**2)/4*j*.5*60000 for j in [Jlo,Jhi]],'pump_duty_thermal_source_qualified':False}
+summary={'robot_id':'gorilla_v0_1','source_sha256':sha(O/'module_scene.json'),'pressure_domains':domains,'maximum_nominal3t_cylinder_force_N':max(loadforces),
+    'conditional_flow':flow,'stiffness_qualification':False,
+    'finite_section_reference':{'parent_closedbox_A_m2':.360*.100-.344*.084,'parent_Iy_m4':(.360*.100**3-.344*.084**3)/12,
+      'child_closedbox_A_m2':.240*.150-.228*.138,'child_Iy_m4':(.240*.150**3-.228*.138**3)/12,
+      'scope':'Actual straight uncut rectangular section only; junction/boss/bolted/loadface stress and displacement unknown'},
+    'lame_uniform_barrel_reference':[{'pressure_MPa':p,'inner_hoop_MPa':p*(.03**2+.025**2)/(.03**2-.025**2),
+        'closed_end_axial_MPa':p*.025**2/(.03**2-.025**2),'scope':'Ideal uniform tube; seals/ports/heads/pressure qualification unknown'} for p in [21,30]],
+    'no_complete_leg_or_outer_geometry_selected':True}
+(O/'load_domain_summary.json').write_text(json.dumps(summary,indent=2)+'\n')
+
+M=r['total_declared_mass_COM_I'][1];parent=next(p for p in r['per_piece_mass_COM_full_I'] if p['id']==P);child=next(p for p in r['per_piece_mass_COM_full_I'] if p['id']==B)
+text=f'''# Gorilla G4B ankle-pitch bench — conditional interface prototype
+
+Final native source `{sha(O/'module_scene.json')}`. This is an internal single-joint bench with example world pivot [-0.060,0.650,0.300]m, not the pending leg/foot design or an adopted exterior. Geometry stopped before handoff. No Git/canonical/old source changes.
+
+## Material, interface and movement
+
+- 30/30 strong signed finite-material sources pass. Parent and output carrier each have **one actual material root** after native CSG construction; negative closed cavities are preserved. No repair, normal flipping, component composition or relaxed tolerance.
+- Every pair of all 30 actual parts checked, including separate caps/bolts/pins. Neutral closed/open and ±25° unlocked endpoints: **0 verified material intersections and 0 bearing-envelope intersections** above 1e-10m³. This is four-pose sampling, not a continuous sweep certificate.
+- Both compression shoes contact actual child lugs and parent deck at neutral with zero positive volume and zero gap. Original Y±0.180m withdrawal fails 12/21 actual positions; source cd436657 is preserved in `y_withdraw_failure_02_35/`.
+- Only the removal interface was revised: same two shoes, same Y±0.075m, unload then translate +X0.280m. **0 material intersections at 21 sampled withdrawal positions**. No automatic release, lateral retention, handles, stowage or bearing-cap tool clearance has been qualified.
+- Two short 59.9/28.2mm journals are only 25mm from the carrier wall to each bearing center, span290mm. Drive torque goes through integral paired fork/webs and wide closed output box, not a long60mm torsion shaft. Catalog32212d60/D110/T29.75 reference parts are counted1.15kg each once; actual rings/rollers/pressure centers/preload/fits are unknown.
+
+## Load and pressure domain
+
+29430N upward ground load at [0.25,0.65±0.1,0] is an external3t-pressure sensitivity, not payload or walking capacity. Six-dimensional equations retain both cylinder forces and paired radial reactions for two stated allocations, including opposite lateral offsets. No robot/module gravity, friction, contact dynamics or full-machine LP is certified here.
+
+Initial arm x0.280m gives minJ0.19258m/rad and is rejected before finite construction. One macro B arm x0.320m gives signed J{Jlo:.6f}..{Jhi:.6f}m/rad across121 q samples [-25,+25]°. Finite50/25/wall5mm cylinders have eye496.133..729.968mm, working stroke253.834mm, zeroeye486.133mm and minimum finite zero429.834mm. No manufacturer cylinder has been shortened; no selected OEM pressure rating exists.
+
+Maximum required nominal3t force over the stated q/CoP/allocation cases is {max(loadforces):.3f}N, pushing on cap side. At21MPa×0.8, available cap32986.723N leaves only0.57% worst-case nominal margin before gravity/unknowns. All18 nominal cases pass this force-only inequality; 1.5factor rejects6/18 at21MPa×0.8 and2/18 at30MPa×0.8. Full per-case signed pressure/pin/journal reactions are in `report.json`; nominal stress screens are not joint/pressure/stiffness acceptance.
+
+At neutral centerCoP with equal cylinder load: each cylinder pushes16805.484N. Actual upstream mount datum[-0.230,0.650,0.910]m must supply **F=[0,0,-29430]N and M=[0,14126.4,0]Nm**. Ground torque at pitch axis is -9123.3Nm. Cylinder fixed-eye, moving-eye, bearing and stop loads are retained separately. `optimization_handoff.json` has all exact parent6D ports, output6D equivalent at actual carrier end, native non-design face selectors, mother material references, outer design envelope primitives and functional/motion/tool voids. The actual upstream leg/downstream foot attachment is omitted and remains a red interface.
+
+## Mass, stiffness and unresolved scope
+
+Finite conditional steel net mass {M['mass_kg']-2.3:.6f}kg + catalog bearing2.300kg = **{M['mass_kg']:.6f}kg**. Parent {parent['mass_range_kg'][1]:.6f}kg, child {child['mass_range_kg'][1]:.6f}kg. This includes the long fixed bench backbox and finite stops, not the previous23.9–43.2kg housing-only planning scope; no weight reduction is claimed. Oil/valves/seals/hoses/stop retainers/tooling/upstream mounting and whole leg remain uncounted unknowns. Full per-part/all-pose COM and3×3 inertia are in `report.json`; catalog-envelope inertia is a stated approximation.
+
+Geometry/resource: sampled conditional evidence as above. **Pressure qualification, stiffness/displacement, material/process, welded/bolted/pinned interfaces, bearing load/life, maintenance and persistent hydraulic/thermal capability remain unqualified and block physical release.** Full3D topology optimization has not started. Wide mother domains may be redistributed only with preserved actual bosses/load interfaces/voids and a new bound source/load solve; density scaling or arbitrary holes are not improvement evidence.
+
+The very long eye at worldZ0.820 and entire upstream enclosure are unintegrated. Pending independent Gorilla leg/foot design must re-establish axes, carrier interfaces, mass and load allocation. No claim that AA3 must change follows from this bench.
+'''
+(O/'report.md').write_text(text)
+print('HANDOFF',sha(O/'optimization_handoff.json'),'SUMMARY',sha(O/'load_domain_summary.json'),flush=True)

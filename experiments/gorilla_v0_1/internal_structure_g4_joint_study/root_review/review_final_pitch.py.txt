@@ -1,0 +1,95 @@
+"""Independent native-geometry and equilibrium audit of G4's standalone joint."""
+from pathlib import Path
+import hashlib
+import json
+import sys
+import numpy as np
+
+ROOT = next(p for p in Path(__file__).resolve().parents if (p / 'sai_robots_engineering_rules.md').exists())
+S = ROOT / '.scratch/gorilla_internal_g4_pitch_module/module_scene.json'
+R = S.with_name('report.json')
+EXPECTED = '9a88efe894625e7ed3d3f15e544ead7b574382035594ab8d4b81f530fbb7b21a'
+sha = lambda p: hashlib.sha256(p.read_bytes()).hexdigest()
+assert sha(S) == EXPECTED
+s, reported = json.loads(S.read_text()), json.loads(R.read_text())
+assert reported['source_sha256'] == EXPECTED
+sys.path.insert(0, str(ROOT / '.scratch/gorilla_internal_g_material_contract'))
+from native_signed_material import validate_scene, kernel
+
+resource = validate_scene({'parts': s['parts']})
+ks = {p['name']: kernel(p['vertices_world_m'], p['faces']) for p in s['parts']}
+part_by_name = {p['name']: p for p in s['parts']}
+
+def intersections(parts):
+    material = {p['name']: kernel(p['vertices_world_m'], p['faces']) for p in parts}
+    boxes = {n: np.asarray(k.bounding_box()) for n, k in material.items()}
+    hits = []
+    for i, a in enumerate(parts):
+        for b in parts[i + 1:]:
+            aa, bb = boxes[a['name']], boxes[b['name']]
+            if np.any(np.minimum(aa[3:], bb[3:]) - np.maximum(aa[:3], bb[:3]) <= 1e-10):
+                continue
+            volume = float((material[a['name']] ^ material[b['name']]).volume())
+            if volume > 1e-10:
+                hits.append({'a': a['name'], 'b': b['name'], 'volume_m3': volume,
+                             'scope': 'OEM_reference_envelope' if 'bearing_reference_envelope' in [a['role'], b['role']] else 'native_material'})
+    return hits
+
+poses = [{'id': p['id'], 'positive_volume_hits': intersections(p['parts'])} for p in s['pose_scenes']]
+# Independently rebuild the two translating shoe meshes without using producer's sweep report.
+shoe_hits = []
+for fraction in np.linspace(0, 1, 21):
+    for p in s['parts']:
+        if p['role'] != 'manual_static_stop_shoe':
+            continue
+        moving = ks[p['name']].translate(np.asarray(p['unlock_translation_world_m']) * fraction)
+        ab = np.asarray(moving.bounding_box())
+        for other in s['parts']:
+            if other['name'] == p['name'] or other['role'] == 'manual_static_stop_shoe':
+                continue
+            mb = ks[other['name']]; bb = np.asarray(mb.bounding_box())
+            if np.any(np.minimum(ab[3:], bb[3:]) - np.maximum(ab[:3], bb[:3]) <= 1e-10):
+                continue
+            volume = float((moving ^ mb).volume())
+            if volume > 1e-10:
+                shoe_hits.append({'fraction': float(fraction), 'shoe': p['name'], 'other': other['name'], 'volume_m3': volume})
+
+mass = sum(float(ks[p['name']].volume()) * p['density_kg_m3']
+           if p.get('density_kg_m3') is not None else p['mass_range_kg'][1] for p in s['parts'])
+mass_error = mass - reported['total_declared_mass_COM_I'][1]['mass_kg']
+center = np.asarray(s['joint_supports'][0]['center_world_m'])
+child_residuals, parent_residuals = [], []
+for case in reported['pressure_static_load_cases']:
+    f = np.asarray(case['ground_force_N']); m = np.cross(np.asarray(case['CoP_world_m']) - center, f)
+    for p in case['wrench_ports_on_child'] + case['bearing_reactions']:
+        pf = np.asarray(p['force_on_child_N']); f = f + pf
+        m = m + np.cross(np.asarray(p['point_world_m']) - center, pf)
+    child_residuals.append({'force_N': float(np.max(np.abs(f))), 'moment_Nm': float(np.max(np.abs(m)))})
+    mount = np.asarray(case['upstream_mount_world_m'])
+    f = np.asarray(case['required_upstream_force_N']); m = np.asarray(case['required_upstream_moment_at_mount_Nm'])
+    for p in case['wrench_ports_on_parent']:
+        pf = np.asarray(p['force_on_parent_N']); f = f + pf
+        m = m + np.cross(np.asarray(p['point_world_m']) - mount, pf)
+    parent_residuals.append({'force_N': float(np.max(np.abs(f))), 'moment_Nm': float(np.max(np.abs(m)))})
+
+roots = {p['id']: p.get('material_component_count_from_nesting') for p in resource['parts']
+         if p['id'] in ['g4_parent_load_housing', 'g4_child_load_carrier']}
+assert sha(S) == EXPECTED
+result = {
+    'robot_id': 'gorilla_v0_1', 'source_sha256': EXPECTED,
+    'source_path': str(S.relative_to(ROOT)), 'producer_report_sha256': sha(R),
+    'entry_sha256': sha(Path(__file__)),
+    'native_resource_pass_count': sum(p['resource_contract_pass'] for p in resource['parts']),
+    'part_count': len(s['parts']), 'finite_main_body_material_roots': roots,
+    'pose_checks': poses, 'manual_X_withdrawal_21_position_positive_volume_hits': shoe_hits,
+    'declared_geometry_plus_catalogue_mass_kg': mass, 'mass_identity_error_kg': mass_error,
+    'child_6D_max_force_residual_N': max(r['force_N'] for r in child_residuals),
+    'child_6D_max_moment_residual_Nm': max(r['moment_Nm'] for r in child_residuals),
+    'parent_6D_max_force_residual_N': max(r['force_N'] for r in parent_residuals),
+    'parent_6D_max_moment_residual_Nm': max(r['moment_Nm'] for r in parent_residuals),
+    'case_count': len(child_residuals),
+    'scope': 'Standalone finite-material pitch bench only. Four sampled poses and 21 sampled manual X-withdrawal positions, not continuous swept proof. Catalogue bearings are envelope references; no pressure-centre, preload or joint rating. No upstream leg mount, gravity/contact/dynamic integration, durability or exterior adoption.',
+    'physical_release': False, 'whole_robot_release': False, 'mass_savings_claim': False,
+}
+Path(__file__).with_name('review_final_pitch.json').write_text(json.dumps(result, indent=2) + '\n')
+print(json.dumps(result, indent=2))

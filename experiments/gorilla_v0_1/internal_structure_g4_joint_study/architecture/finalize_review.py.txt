@@ -1,0 +1,91 @@
+"""Independent residual/finite-difference receipt; no upstream mutation."""
+from pathlib import Path
+from datetime import datetime, timezone
+import hashlib
+import json
+import math
+import numpy as np
+
+OUT=Path(__file__).resolve().parent
+ROOT=OUT.parents[1]
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+d=json.loads((OUT/'architecture_comparison.json').read_text())
+hash_errors=[]
+for row in d['source_inputs']:
+    p=ROOT/row['path']
+    if sha(p)!=row['sha256']:hash_errors.append(row['path'])
+
+# Independent central finite difference of a Rodrigues point rotation versus
+# the analytical virtual-work derivative in the other script's output.
+def rotate_point(u,q,p):
+    return p*math.cos(q)+np.cross(u,p)*math.sin(q)+u*(u@p)*(1-math.cos(q))
+J_errors=[]
+for key,p in d['kinematic_paths'].items():
+    a=np.array(p['anchor_relative_pivot_m']);b0=np.array(p['crank_relative_pivot_m'])
+    u=np.array(p['axis_parent_frame'],dtype=float);u/=np.linalg.norm(u)
+    for qdeg in [-10.,0.,10.]:
+        q=math.radians(qdeg);h=1e-6
+        Lp=np.linalg.norm(rotate_point(u,q+h,b0)-a)
+        Lm=np.linalg.norm(rotate_point(u,q-h,b0)-a)
+        finite=(Lp-Lm)/(2*h)
+        bb=rotate_point(u,q,b0);line=(bb-a)/np.linalg.norm(bb-a)
+        virtual=float(line@np.cross(u,bb))
+        J_errors.append({'path':key,'q_deg':qdeg,'finite_difference_m_per_rad':finite,
+                         'virtual_work_m_per_rad':virtual,'absolute_error':abs(finite-virtual)})
+
+static_res=[]
+for r in d['neutral_static_positive_hold_bearing_reactions']:
+    c=np.array(r['axis_center_world_m']);axis=np.array([0,1,0] if r['joint']=='pitch' else [1,0,0])
+    cop=np.array([.25,.65+r['CoP_y_offset_from_center_m'],0.]);F=np.array([0,0,r['Fz_N']])
+    M=np.cross(cop-c,F);M-=axis*(axis@M)
+    a=axis*r['pressure_center_separation_hypothesis_m']/2
+    rm=np.array(r['Rminus_world_N']);rp=np.array(r['Rplus_world_N'])
+    residual=np.r_[rm+rp+F,np.cross(-a,rm)+np.cross(a,rp)+M]
+    static_res.append(float(np.abs(residual).max()))
+
+roll_res=[]
+for r in d['neutral_live_roll_cylinder_seat_reactions']:
+    c=np.array(r['axis_center_world_m']);A=np.array(r['actual_cylinder_A_world_m']);B=np.array(r['actual_cylinder_B_world_m'])
+    F=np.array([0,0,3000*9.81*r['load_factor']]);Fhyd=(B-A)/np.linalg.norm(B-A)*r['signed_cylinder_force_N']
+    M=np.cross(np.array([.25,r['CoP_y_world_m'],0])-c,F)+np.cross(B-c,Fhyd)
+    a=np.array([r['pressure_center_separation_hypothesis_m']/2,0,0])
+    rm=np.array(r['Rminus_world_N']);rp=np.array(r['Rplus_world_N'])
+    residual=np.r_[rm+rp+F+Fhyd,np.cross(-a,rm)+np.cross(a,rp)+M]
+    roll_res.append(float(np.abs(residual).max()))
+
+mass_recalc=[sum(r['mass_range_kg'][i] for r in d['analytical_complete_ankle_function_stock_inventory']) for i in [0,1]]
+mass_error=max(abs(mass_recalc[i]-d['ankle_function_stock_sum_range_kg'][i]) for i in [0,1])
+old_worst=next(r for r in d['neutral_live_roll_cylinder_seat_reactions'] if r['version']=='exact_source_B' and r['load_factor']==1.5 and r['CoP_y_world_m']==.75 and r['pressure_center_separation_hypothesis_m']==.16)
+wide_old=next(r for r in d['neutral_live_roll_cylinder_seat_reactions'] if r['version']=='exact_source_B' and r['load_factor']==1.5 and r['CoP_y_world_m']==.75 and r['pressure_center_separation_hypothesis_m']==.28)
+assert not hash_errors
+assert max(r['absolute_error'] for r in J_errors)<1e-8
+assert max(static_res+roll_res)<1e-7
+assert mass_error<1e-10
+assert abs(old_worst['max_Fr_N']-157458.56974063246)<1e-6
+assert abs(wide_old['max_Fr_N']-105605.80281772165)<1e-6
+
+files=['calculate_review.py','architecture_comparison.json','architecture_comparison.md','finalize_review.py']
+receipt={'robot_id':'gorilla_v0_1','task':'G4_ankle_read_only_architecture_exit_receipt',
+ 'created_UTC':datetime.now(timezone.utc).isoformat(),
+ 'reproduce_commands':['.venv/bin/python .scratch/gorilla_internal_g4_ankle_architecture_review/calculate_review.py',
+                       '.venv/bin/python .scratch/gorilla_internal_g4_ankle_architecture_review/finalize_review.py'],
+ 'source_inputs':d['source_inputs'],'outputs':[{'path':str((OUT/f).relative_to(ROOT)),'sha256':sha(OUT/f),'bytes':(OUT/f).stat().st_size} for f in files],
+ 'upstream_hash_errors':hash_errors,
+ 'Jacobian_finite_difference_tests':J_errors,'finite_difference_step_rad':1e-6,
+ 'max_finite_difference_J_error_m_per_rad':max(r['absolute_error'] for r in J_errors),
+ 'independent_static_hold_pair_cases':len(static_res),'independent_actual_roll_cylinder_pair_cases':len(roll_res),
+ 'independent_static_residual_max_N_or_Nm':max(static_res),'independent_roll_live_residual_max_N_or_Nm':max(roll_res),
+ 'stock_mass_range_recalculated_kg':mass_recalc,'mass_sum_abs_error_kg':mass_error,
+ 'exact_B_worst_roll_Fr_1p5_CoPy075_span016_N':old_worst['max_Fr_N'],
+ 'exact_B_worst_roll_Fr_1p5_CoPy075_span028_N':wide_old['max_Fr_N'],
+ 'all_hypothetical_physics_release_flags_false':not d['physics_accepted'] and not d['geometry_accepted'],
+ 'source_B_has_no_pitch_or_roll_mechanical_lock':True,
+ 'no_CAD_fullmodel_training_or_canonical_changes':True,
+ 'new_independent_appearance_not_received_or_adopted':True,
+ 'function_stock_not_additive_with_overlapping_housing_branch':True,
+ 'new_axis_offsets_do_not_inherit_frozen_B_geometry_or_physics_acceptance':True,
+ 'all_final_outputs_frozen_no_next_T2_CAD_in_this_task':True,
+ 'limits':'Read-only analytical comparison and bounded function-stock provisions only; no manufacturing-fit, material/contact, real staticlock, heat or walking certification. OldB rejected geometry stays rejected; no jointcapacity frombearingC0 alone.'}
+(OUT/'receipt.json').write_text(json.dumps(receipt,ensure_ascii=False,indent=2)+'\n')
+print(json.dumps({'receipt_sha256':sha(OUT/'receipt.json'),'json_sha256':sha(OUT/'architecture_comparison.json'),'md_sha256':sha(OUT/'architecture_comparison.md'),
+ 'J_abs_error':receipt['max_finite_difference_J_error_m_per_rad'],'residual_max':max(static_res+roll_res),'mass_range_kg':mass_recalc,'inputs_unchanged':not hash_errors},indent=2))

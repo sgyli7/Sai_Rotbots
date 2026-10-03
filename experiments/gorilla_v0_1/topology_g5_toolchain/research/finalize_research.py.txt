@@ -1,0 +1,63 @@
+"""Identity checks and freeze for bounded G5 research, not physics qualification."""
+from pathlib import Path
+import datetime
+import hashlib
+import json
+import subprocess
+import sys
+
+OUT = Path(__file__).resolve().parent
+def sha(p):
+    return hashlib.sha256(p.read_bytes()).hexdigest()
+def dump(name, obj):
+    (OUT/name).write_text(json.dumps(obj, ensure_ascii=False, indent=2) + '\n')
+
+manifest = json.loads((OUT/'source_manifest.json').read_text())
+runtime = json.loads((OUT/'runtime_probe.json').read_text())
+installation = json.loads((OUT/'scikit_fem_installation_metadata.json').read_text())
+assert installation['version'] == '12.0.2'
+wheel = next(r for r in installation['wheels'] if r['filename'] == 'scikit_fem-12.0.2-py3-none-any.whl')
+assert wheel['sha256'] == '34cd891f80072c0c1eb759a2371e82f0eeec91ff7c08acab96d27b6edbbe1b05'
+assert all(sha(Path(r['path'])) == r['sha256'] for r in manifest['external_inputs'])
+assert all(sha(OUT/r['stored']) == r['sha256'] for r in manifest['sources'] if 'stored' in r)
+before = sha(OUT/'pilot_2d_arrays.npz')
+subprocess.run([sys.executable, str(OUT/'prepare_benchmark.py')], check=True, stdout=subprocess.PIPE)
+after = sha(OUT/'pilot_2d_arrays.npz')
+assert before == after
+
+browser_sources = [
+ {'id':'dtu_python_educational', 'url':'https://www.topopt.mek.dtu.dk/apps-and-software/topology-optimization-codes-written-in-python', 'verified_scope':'Educational NumPy/SciPy/Matplotlib code; multi-load/passive domains described as extensions; downloaded code licence not verified'},
+ {'id':'dtu_top88', 'url':'https://doi.org/10.1007/s00158-010-0594-7', 'verified_scope':'Bibliographic source linked by official DTU Python page; full publication not read in this research window'},
+ {'id':'scikit_fem_docs', 'url':'https://scikit-fem.readthedocs.io/en/latest/', 'verified_scope':'Pure Python3.10+, tri/quad/tet/hex, minimal installation omits optional meshio/matplotlib'},
+ {'id':'robust_projection_paper', 'url':'https://orbit.dtu.dk/en/publications/on-projection-methods-convergence-and-robust-formulations-in-topo/', 'doi':'10.1007/s00158-010-0602-y', 'correction_doi':'10.1007/s00158-022-03326-6', 'verified_scope':'Primary abstract and explicit correction notice; corrected detailed length-scale formulas not implemented or fully verified'},
+ {'id':'topopt_mit_library', 'url':'https://github.com/zfergus/topopt', 'verified_scope':'Author describes early development, minimum compliance/MMA example; full ARM installation not tested'},
+ {'id':'dolfinx_official', 'url':'https://github.com/FEniCS/dolfinx', 'verified_scope':'Owner README LGPL3-or-later, arm64 Docker support, MPI/PETSc environment dependencies'},
+ {'id':'petsc_topopt', 'url':'https://github.com/topopt/TopOpt_in_PETSc', 'verified_scope':'Owner3D Cartesian minimum-compliance code; dependency-version contradictions and licence-header scope unresolved'}
+]
+manifest['browser_primary_sources'] = browser_sources
+dump('source_manifest.json', manifest)
+
+selection = {
+ 'robot_id':'gorilla_v0_1', 'selected_first_compute':'Existing NumPy/SciPy CPU original Q4 plane-stress multi-load SIMP; root must bind actual load/support/non-design source before mechanical use',
+ 'next_3d_fem':'scikit-fem12.0.2', 'next_3d_license':'BSD-3-Clause; exact text saved',
+ 'installation': {'method':'Isolated uv pip --target under new scratch/runtime, --no-deps using existing NumPy/SciPy', 'package':'scikit-fem==12.0.2', 'wheel':wheel, 'installation_performed':False, 'import_test_performed':False, 'repository_lock_or_venv_modified':False},
+ 'available_cpu_runtime':{'machine':runtime['machine'], 'cpu_count':runtime['logical_cpu_count'], 'numpy':runtime['modules']['numpy'], 'scipy':runtime['modules']['scipy']},
+ 'tool_license_inventory':[
+  {'tool':'DTU educational Python script', 'license_scope':'Official site calls open source; script download/licence not verified; do not redistribute source on this evidence', 'selected_as_code':False},
+  {'tool':'scikit-fem', 'license':'BSD-3-Clause', 'source':'scikit_fem_license.txt', 'selected_as_next_backend':True},
+  {'tool':'zfergus/topopt', 'license':'MIT', 'source':'topopt_mit_license.txt', 'installation_status':'not installed; nlopt/cvxopt ARM dependencies not tested'},
+  {'tool':'DOLFINx', 'license':'LGPL-3.0-or-later', 'source':'dolfinx_readme.txt', 'installation_status':'not installed; Docker executable only, daemon/permissions not tested'},
+  {'tool':'DTU TopOpt_in_PETSc', 'license_scope':'LGPL2.1 document present; all-rights-reserved header language and actual application scope require reconciliation before reuse', 'source':'petsc_topopt_license_file.txt', 'installation_status':'not installed; MPI/PETSc absent'}
+ ],
+ 'optimizer_features_required':['Multi-load normalized compliance', 'Volume includes non-design solids', 'Physical-scale density filter and derivative', 'Projection with passive-solid and exact-void masks', 'Corrected robust erosion/intermediate/dilation formulation when implemented', 'Manufacturing/extrusion/tool-access constraints', 'Thresholded connected material from every load patch to support', 'Exact-void remesh and independent3D FEM'],
+ 'not_automatic':['Yield strength/unit-weight capacity', 'Buckling/contact/fatigue', 'Assembly ownership and signed mesh', 'Bearing/bolt fit/preload', 'Closed-shell torsion continuity', 'Manufacturing or whole-robot qualification'],
+ 'gpu_used':False, 'appearance_changed':False, 'physical_release':False
+}
+dump('tool_selection.json', selection)
+receipt = {'external_inputs_unchanged':True, 'captured_sources_hash_match':True, 'benchmark_reproduction_arrays_byte_identical':before == after, 'benchmark_arrays_sha256':after, 'benchmark_load_balance_receipt':'pilot_preparation_receipt.json', 'solver_or_optimization_run':False, 'actual_assembly_fe_ready':False, 'physical_release':False, 'scope':'Input preparation and bounded primary-source research only'}
+dump('research_verification.json', receipt)
+
+files = sorted(p for p in OUT.iterdir() if p.is_file() and p.name != 'snapshot_manifest.json')
+snap = {'created_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(), 'robot_id':'gorilla_v0_1', 'scope':'G5 topology/FEM tools research and deterministic benchmark inputs; no optimization/3D assembly calculation', 'input_source_manifest':'source_manifest.json', 'input_source_manifest_sha256':sha(OUT/'source_manifest.json'), 'files':[{'path':p.name, 'sha256':sha(p), 'bytes':p.stat().st_size} for p in files], 'physical_release':False, 'whole_robot_release':False, 'appearance_release':False}
+dump('snapshot_manifest.json', snap)
+print(json.dumps({'files':len(files), 'report_sha256':sha(OUT/'topology_research.md'), 'tool_selection_sha256':sha(OUT/'tool_selection.json'), 'snapshot_sha256':sha(OUT/'snapshot_manifest.json'), 'verification':receipt}, ensure_ascii=False))

@@ -1,0 +1,61 @@
+"""Read-only runtime/source capture; writes only this independent research directory."""
+from pathlib import Path
+import datetime
+import hashlib
+import importlib.util
+import json
+import os
+import platform
+import shutil
+import sys
+import urllib.request
+
+OUT = Path(__file__).resolve().parent
+ROOT = OUT.parents[1]
+
+def dump(name, obj):
+    (OUT / name).write_text(json.dumps(obj, ensure_ascii=False, indent=2) + '\n')
+
+def sha(p):
+    return hashlib.sha256(p.read_bytes()).hexdigest()
+
+modules = ['numpy', 'scipy', 'skfem', 'dolfinx', 'petsc4py', 'pyamg', 'meshio', 'gmsh', 'pyvista', 'matplotlib', 'trimesh', 'manifold3d']
+probe = {'captured_utc': datetime.datetime.now(datetime.timezone.utc).isoformat(), 'platform': platform.platform(), 'machine': platform.machine(), 'python': sys.version, 'python_executable': sys.executable, 'logical_cpu_count': os.cpu_count(), 'modules': {}, 'executables': {n: shutil.which(n) for n in ['uv', 'ccx', 'FreeCAD', 'freecad', 'gmsh', 'julia', 'docker', 'conda', 'mpirun']}, 'gpu_used': False, 'installation_performed': False}
+for name in modules:
+    found = importlib.util.find_spec(name) is not None
+    probe['modules'][name] = {'available': found}
+    if found and name in ['numpy', 'scipy']:
+        m = __import__(name)
+        probe['modules'][name]['version'] = m.__version__
+dump('runtime_probe.json', probe)
+
+sources = [
+ ('scikit_fem_pypi', 'https://pypi.org/pypi/scikit-fem/json'),
+ ('scikit_fem_license', 'https://raw.githubusercontent.com/kinnala/scikit-fem/master/LICENSE'),
+ ('topopt_mit_license', 'https://raw.githubusercontent.com/zfergus/topopt/main/LICENSE'),
+ ('topopt_requirements', 'https://raw.githubusercontent.com/zfergus/topopt/main/requirements.txt'),
+ ('dolfinx_readme', 'https://raw.githubusercontent.com/FEniCS/dolfinx/main/README.md'),
+ ('petsc_topopt_readme', 'https://raw.githubusercontent.com/topopt/TopOpt_in_PETSc/master/README.md'),
+ ('petsc_topopt_license_file', 'https://raw.githubusercontent.com/topopt/TopOpt_in_PETSc/master/lesser.txt'),
+]
+manifest = {'accessed_utc': probe['captured_utc'], 'sources': [], 'external_inputs': []}
+for name, url in sources:
+    row = {'id': name, 'url': url}
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'GorillaEngineeringResearch/1.0'})
+        raw = urllib.request.urlopen(req, timeout=20).read()
+        name_out = name + ('.json' if name.endswith('pypi') else '.txt')
+        (OUT / name_out).write_bytes(raw)
+        row.update(stored=name_out, sha256=hashlib.sha256(raw).hexdigest(), bytes=len(raw))
+        if name == 'scikit_fem_pypi':
+            d = json.loads(raw)
+            dump('scikit_fem_installation_metadata.json', {'source_url': url, 'source_sha256': row['sha256'], 'version': d['info']['version'], 'requires_python': d['info']['requires_python'], 'requires_dist': d['info']['requires_dist'], 'wheels': [{'filename': v['filename'], 'url': v['url'], 'bytes': v['size'], 'sha256': v['digests']['sha256']} for v in d['urls'] if v['packagetype'] == 'bdist_wheel'], 'install_tested': False, 'local_source_import_tested': False})
+    except Exception as e:
+        row['error'] = str(e)
+    manifest['sources'].append(row)
+
+for relative in ['.scratch/gorilla_internal_g4_ankle_housing_budget/housing_budget.md', '.scratch/gorilla_internal_g4_ankle_housing_budget/housing_budget.json', '.scratch/gorilla_internal_g4_ankle_housing_budget/snapshot_manifest.json', '.scratch/gorilla_internal_g3_foot_chain/b/chain_scene.json']:
+    p = ROOT / relative
+    manifest['external_inputs'].append({'path': str(p), 'sha256': sha(p), 'bytes': p.stat().st_size, 'read_only': True})
+dump('source_manifest.json', manifest)
+print(json.dumps({'output': str(OUT), 'source_files': len(manifest['sources']), 'failed_sources': [r['id'] for r in manifest['sources'] if 'error' in r], 'runtime': {'machine': probe['machine'], 'cpu': probe['logical_cpu_count'], 'numpy': probe['modules']['numpy'], 'scipy': probe['modules']['scipy']}}, ensure_ascii=False))

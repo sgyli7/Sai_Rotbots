@@ -1,0 +1,26 @@
+{
+  "schema": "gorilla_g5_housing_topology_scope_v1",
+  "source": {"g4_budget_path": ".scratch/gorilla_internal_g4_ankle_housing_budget/housing_budget.json", "g4_budget_sha256": "cf3f781ac5b203236b16d8d9bc574264c530cd7205b6c368718460e38dc882c7", "g3_b_path": ".scratch/gorilla_internal_g3_foot_chain/b/chain_scene.json", "g3_b_sha256": "8fb41bd85c971d1456543c9660dd123780e3e342846c230ad2751fa5177b2fab", "g3_b_accepted_geometry": false, "new_leg_appearance_received": false},
+  "initial_design_scope": "One actual internal load-carrying web/node in a wide closed housing; preserve the continuous torsion shell until a full 3D multi-load design can justify changing it",
+  "non_design_solid_features": [
+    {"feature": "bearing_cup_seat_and_abutments", "reference_dimensions_m": {"bearing_d": 0.060, "bearing_D": 0.110, "bearing_T": 0.02975, "cup_OD_range": [0.132, 0.144], "cup_axial_range": [0.035, 0.042]}, "exact_finite_geometry_ready": false},
+    {"feature": "journal_boss_and_keeper_load_paths", "reference_dimensions_m": {"journal_d": 0.060, "geometric_seat_span_range": [0.260, 0.300]}, "exact_finite_geometry_ready": false},
+    {"feature": "continuous_closed_torsion_walls_and_mount_flange", "budget_section_m": [0.280, 0.180, 0.004], "local_wall_sensitivity_range_m": [0.004, 0.006], "hole_seam_knockdown_known": false},
+    {"feature": "static_stop_faces_pin_forks_bolt_lands_and_boss_to_shell_ribs", "geometry_from_next_complete_module_required": true}
+  ],
+  "non_design_void_features": ["Actual bearing/cup bore and rotating clearances", "Independent parent/child motion sweep", "Cylinder eye/pin and extraction clearance", "Oil/water/electrical routing with explicit ownership", "Bearing removal and bolt-tool corridors", "Removable joint covers and seal seats"],
+  "load_case_requirements": [
+    {"id": "static_3t_compression", "ground_force_n": 29430.0, "cop_reference_m": [0.25, 0.65, 0.0], "lateral_cop_offset_range_m": [-0.10, 0.10], "actual_axis_and_support_frames_required": true, "scope": "Static structural challenge; no automatic 3t locomotion requirement"},
+    {"id": "current_B_actuated_static_path", "current_pitch_force_n": 61153.455, "challenge_factor": 1.5, "scope": "Rejected G3 B load path only; must regenerate from new actual eyes and Jacobian before use"},
+    {"id": "mechanical_hold_path", "pitch_moment_nm": 9711.9, "stop_arm_range_m": [0.08, 0.16], "per_stop_load_share_range": [0.5, 1.0], "scope": "Separate hypothetical stop mechanism, not existing B hardware; release/unload must be possible"},
+    {"id": "normal_self_weight_locomotion_and_operation", "actual_wrenches": null, "scope": "Required and unresolved; static 3t permission does not eliminate this case"},
+    {"id": "torsion_braking_reversal_fatigue_and_contact", "actual_wrenches": null, "scope": "Required for assembly qualification; 2D compliance does not represent these effects"}
+  ],
+  "boundary_missing": ["Actual parent/child solid topology and accepted component source", "SKF O/X pressure-centre positions, actual fits, preload and load sharing", "Mount bolt patterns/pretension and frame compliance", "Bearing and stop contact tractions rather than fully fixed arbitrary faces", "Actual actuator attachment and normal-operation force spectrum", "Material alloy/temper/thickness/joint/HAZ assumptions", "Manufacturing process and minimum member/void sizes", "Owner-specific part interfaces and maintenance exclusions"],
+  "manufacturing_options": [
+    {"route": "2_5d_machined_or_extruded_web", "constraints": ["Density constant through a declared extrusion direction", "Preserve solid boss/flange/closed-shell lands", "Enforce minimum member and cutter-accessible voids", "Allow only separately justified drilling/bolted joins"]},
+    {"route": "3d_cast_or_additive_node", "constraints": ["New material/process properties required", "Minimum member and void size", "Overhang or draw direction/tool access", "Separate support removal and post-machined bearing seats"], "adopted": false}
+  ],
+  "final_checks_required": ["Exact-void threshold reconstruction", "Watertight signed finite material meshes and actual net mass", "No disconnected material from each load patch to supports", "Independent 3D FEM on reconstructed material", "Stress/deflection and buckling mesh convergence", "Contact, bearing load/fit, joint fatigue and motion/maintenance checks", "Comparison against same-interface full-solid and G4 rib-shell baselines"],
+  "actual_3d_mesh_ready": false, "topology_optimization_run": false, "physical_release": false, "whole_robot_release": false, "appearance_release": false
+}

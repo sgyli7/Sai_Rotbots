@@ -1,0 +1,60 @@
+"""Create deterministic 2D benchmark input, not Gorilla assembly boundary conditions.
+
+This is original mesh/load preparation code; no FEM or optimization is claimed.
+SI coordinates, node-major ux/uy; Q4 nodes counterclockwise.
+"""
+from pathlib import Path
+import hashlib
+import io
+import json
+import zipfile
+import numpy as np
+
+OUT = Path(__file__).resolve().parent
+cfg = json.loads((OUT / 'pilot_2d_input.json').read_text())
+nx, ny = cfg['mesh']['elements_xy']
+lx, ly = cfg['domain']['dimensions_m']
+xs, ys = np.linspace(0, lx, nx + 1), np.linspace(-ly / 2, ly / 2, ny + 1)
+nodes = np.array([[x, y] for y in ys for x in xs])
+def n(i, j):
+    return j * (nx + 1) + i
+elements = np.array([[n(i,j), n(i+1,j), n(i+1,j+1), n(i,j+1)] for j in range(ny) for i in range(nx)], dtype=np.int64)
+centres = nodes[elements].mean(axis=1)
+keep = ((centres[:,0] <= .020) | (centres[:,0] >= lx - .020) | (np.abs(centres[:,1]) >= ly / 2 - .008))
+void = np.zeros(len(elements), dtype=bool)
+fixed_nodes = np.flatnonzero(np.isclose(nodes[:,0], 0))
+fixed_dofs = np.sort(np.r_[2*fixed_nodes, 2*fixed_nodes+1])
+right = np.isclose(nodes[:,0], lx)
+mid = np.flatnonzero(right & (np.abs(nodes[:,1]) <= .020 + 1e-12))
+up = np.flatnonzero(right & (nodes[:,1] >= .050) & (nodes[:,1] <= .070))
+down = np.flatnonzero(right & (nodes[:,1] >= -.070) & (nodes[:,1] <= -.050))
+assert len(mid) and len(up) and len(down)
+loads = np.zeros((2*len(nodes), 3))
+loads[2*mid+1,0] = -cfg['loads'][0]['force_n'] / len(mid)
+loads[2*mid,1] = cfg['loads'][1]['force_n'] / len(mid)
+dy = float(nodes[up,1].mean() - nodes[down,1].mean())
+pair_force = cfg['loads'][2]['moment_nm'] / dy
+loads[2*up,2] = -pair_force / len(up)
+loads[2*down,2] = pair_force / len(down)
+summaries = []
+for i in range(3):
+    f = loads[:,i].reshape(-1,2)
+    resultant = f.sum(axis=0)
+    moment = np.sum(nodes[:,0]*f[:,1] - nodes[:,1]*f[:,0])
+    summaries.append({'case':cfg['loads'][i]['id'], 'resultant_n':resultant.tolist(), 'moment_about_origin_nm':float(moment)})
+assert abs(summaries[2]['moment_about_origin_nm'] - cfg['loads'][2]['moment_nm']) < 1e-8
+assert np.linalg.norm(summaries[2]['resultant_n']) < 1e-8
+assert keep.mean() < cfg['optimization']['volume_fraction_of_full_domain']
+
+# Fixed ZIP dates and array-order make byte-identical input on rerun.
+arrays = {'nodes_m':nodes, 'q4_nodes':elements, 'element_centres_m':centres, 'passive_solid':keep, 'passive_void':void, 'fixed_dofs':fixed_dofs, 'load_vectors_n':loads}
+with zipfile.ZipFile(OUT / 'pilot_2d_arrays.npz', 'w', compression=zipfile.ZIP_DEFLATED) as z:
+    for key, value in sorted(arrays.items()):
+        stream = io.BytesIO()
+        np.lib.format.write_array(stream, np.asarray(value), allow_pickle=False)
+        entry = zipfile.ZipInfo(key + '.npy', date_time=(1980,1,1,0,0,0))
+        entry.compress_type = zipfile.ZIP_DEFLATED
+        z.writestr(entry, stream.getvalue())
+summary = {'scope':'artificial_plate_benchmark_only', 'nodes':len(nodes), 'elements':len(elements), 'dofs':2*len(nodes), 'fixed_dofs':len(fixed_dofs), 'passive_solid_elements':int(keep.sum()), 'passive_fraction':float(keep.mean()), 'couple_separation_m':dy, 'couple_force_n_each_side':pair_force, 'load_checks':summaries, 'actual_assembly_boundary_conditions':False, 'fem_solved':False, 'topology_optimized':False, 'physical_release':False, 'arrays_sha256':hashlib.sha256((OUT / 'pilot_2d_arrays.npz').read_bytes()).hexdigest()}
+(OUT / 'pilot_preparation_receipt.json').write_text(json.dumps(summary, indent=2) + '\n')
+print(json.dumps(summary))

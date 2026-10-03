@@ -1,0 +1,83 @@
+{
+  "robot_id": "gorilla_v0_1",
+  "selected_first_compute": "Existing NumPy/SciPy CPU original Q4 plane-stress multi-load SIMP; root must bind actual load/support/non-design source before mechanical use",
+  "next_3d_fem": "scikit-fem12.0.2",
+  "next_3d_license": "BSD-3-Clause; exact text saved",
+  "installation": {
+    "method": "Isolated uv pip --target under new scratch/runtime, --no-deps using existing NumPy/SciPy",
+    "package": "scikit-fem==12.0.2",
+    "wheel": {
+      "filename": "scikit_fem-12.0.2-py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/5b/13/d46cf943bd1b04b1b010094eb08493d6660c99c49652fa46cf7c3bf36ab5/scikit_fem-12.0.2-py3-none-any.whl",
+      "bytes": 178478,
+      "sha256": "34cd891f80072c0c1eb759a2371e82f0eeec91ff7c08acab96d27b6edbbe1b05"
+    },
+    "installation_performed": false,
+    "import_test_performed": false,
+    "repository_lock_or_venv_modified": false
+  },
+  "available_cpu_runtime": {
+    "machine": "aarch64",
+    "cpu_count": 20,
+    "numpy": {
+      "available": true,
+      "version": "2.5.3"
+    },
+    "scipy": {
+      "available": true,
+      "version": "1.18.1"
+    }
+  },
+  "tool_license_inventory": [
+    {
+      "tool": "DTU educational Python script",
+      "license_scope": "Official site calls open source; script download/licence not verified; do not redistribute source on this evidence",
+      "selected_as_code": false
+    },
+    {
+      "tool": "scikit-fem",
+      "license": "BSD-3-Clause",
+      "source": "scikit_fem_license.txt",
+      "selected_as_next_backend": true
+    },
+    {
+      "tool": "zfergus/topopt",
+      "license": "MIT",
+      "source": "topopt_mit_license.txt",
+      "installation_status": "not installed; nlopt/cvxopt ARM dependencies not tested"
+    },
+    {
+      "tool": "DOLFINx",
+      "license": "LGPL-3.0-or-later",
+      "source": "dolfinx_readme.txt",
+      "installation_status": "not installed; Docker executable only, daemon/permissions not tested"
+    },
+    {
+      "tool": "DTU TopOpt_in_PETSc",
+      "license_scope": "LGPL2.1 document present; all-rights-reserved header language and actual application scope require reconciliation before reuse",
+      "source": "petsc_topopt_license_file.txt",
+      "installation_status": "not installed; MPI/PETSc absent"
+    }
+  ],
+  "optimizer_features_required": [
+    "Multi-load normalized compliance",
+    "Volume includes non-design solids",
+    "Physical-scale density filter and derivative",
+    "Projection with passive-solid and exact-void masks",
+    "Corrected robust erosion/intermediate/dilation formulation when implemented",
+    "Manufacturing/extrusion/tool-access constraints",
+    "Thresholded connected material from every load patch to support",
+    "Exact-void remesh and independent3D FEM"
+  ],
+  "not_automatic": [
+    "Yield strength/unit-weight capacity",
+    "Buckling/contact/fatigue",
+    "Assembly ownership and signed mesh",
+    "Bearing/bolt fit/preload",
+    "Closed-shell torsion continuity",
+    "Manufacturing or whole-robot qualification"
+  ],
+  "gpu_used": false,
+  "appearance_changed": false,
+  "physical_release": false
+}
