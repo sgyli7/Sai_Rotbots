@@ -1,0 +1,156 @@
+"""Source-bound conditional dry inventory and two explicit mission sensitivities.
+
+No new geometry, whole-robot mass, task rating, bus assignment or drive limit.
+Power/efficiency/duty scenarios are design questions, not measured operation.
+"""
+from pathlib import Path
+import hashlib,json,math
+import numpy as np
+R=Path('/home/ethan/Projects/Sai_Rotbots');O=R/'.scratch/gorilla_internal_g11_functional_budget'
+S=R/'.scratch/gorilla_internal_g9_upper_load_scope/upper_load_scope.json'
+P=R/'.scratch/gorilla_internal_g9_module_placement/layout_1/moved_group_mass_positions.json'
+D=R/'.scratch/gorilla_internal_d_system/system_modules.json'
+F=R/'.scratch/gorilla_internal_g_root_macro/flow_heat_screen.json'
+G=9.81
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def write(name,a):(O/name).write_text(json.dumps(a,indent=2,allow_nan=False)+'\n')
+def run():
+ s=json.loads(S.read_text());p=json.loads(P.read_text());d=json.loads(D.read_text());flow=json.loads(F.read_text());src=s['inventory_rows']+s['structure_rows']+s['complete_reference_rows']+[s['new_A_material_row']];byid={r['id']:r for r in src};rows=[s['new_B_material_row'] if i==s['new_A_material_row']['id'] else byid[i] for i in s['conditional_diagnostic_subset_ids']]
+ fam={}
+ for r in rows:
+  name=r['functional_family_candidate'];x=fam.setdefault(name,{'row_count':0,'mass_range_kg':np.zeros(3),'nominal_mass_position_kg_m':np.zeros(3),'nominal_gravity_M_at_roll_reference_Nm':np.zeros(3),'row_ids':[]});m=np.asarray(r['mass_range_kg']);c=np.asarray(r['source_COM_world_proxy_m']);x['row_count']+=1;x['mass_range_kg']+=m;x['nominal_mass_position_kg_m']+=m[1]*c;x['nominal_gravity_M_at_roll_reference_Nm']+=np.cross(c-np.asarray(s['historical_roll_body_tree_pivot_m']),[0,0,-G*m[1]]);x['row_ids'].append(r['id'])
+ for v in fam.values():
+  v['source_nominal_proxy_COM_world_m']=(v.pop('nominal_mass_position_kg_m')/v['mass_range_kg'][1]).tolist();v['mass_range_kg']=v['mass_range_kg'].tolist();v['nominal_gravity_M_at_roll_reference_Nm']=v['nominal_gravity_M_at_roll_reference_Nm'].tolist()
+ groups=[]
+ for q in p['complete_moved_groups']:
+  dim=np.asarray(q['new_AABB_dimensions_m']);groups.append(dict(id=q['id'],complete_member_ids=q['complete_member_ids'],mass_range_kg=q['unchanged_mass_range_kg'],gross_group_AABB_volume_L=float(np.prod(dim)*1000),group_AABB_dimensions_m=dim.tolist(),source_candidate_center_world_m=q['new_group_center_world_m'],owner=q['candidate_gravity_owner'],installation_or_route_accepted=False))
+ energy=[q for q in groups if 'energy' in q['id']];pumps=[q for q in groups if 'pump' in q['id']];eb=d['sources']['battery_benchmark'];coreL=float(np.prod(eb['dims'])*1000);packL=sum(q['gross_group_AABB_volume_L'] for q in energy);pumpL=sum(q['gross_group_AABB_volume_L'] for q in pumps);packm=np.sum([q['mass_range_kg'] for q in energy],axis=0)
+ params={
+  'soc_window':{'nominal':.75,'sensitivity':[.65,.85],'status':'design reserve incl unused SOC/headroom; not OEM allowed window or regen qualification'},
+  'battery_to_bus_efficiency':{'nominal':.95,'sensitivity':[.90,.98],'status':'total stored-energy to bus efficiency incl cell/internal and DC path losses; not terminal-current conversion'},
+  'terminal_to_bus_DC_efficiency':{'nominal':.98,'sensitivity':[.90,.98],'status':'explicit BMS/cabling/converter terminal power condition; total energy efficiency already includes this loss'},
+  'pump_total_efficiency':{'nominal':.8,'sensitivity':[.765,.873],'basis':'old eta_v .90.. .97 times eta_mech .85.. .90, not measured installed maps'},
+  'motor_inverter_efficiency':{'nominal':.9,'sensitivity':[.8,.97],'status':'task sensitivity, not source continuous certification'},
+  'rotary_electromechanical_efficiency':{'nominal':.85,'sensitivity':[.75,.92],'status':'positive mechanical-motion efficiency only; static hold copper loss separately required'},
+  'valve_or_line_pressure_drop_MPa':{'nominal':1.5,'sensitivity':[.5,3.],'status':'conditional loss on commanded branch flow; return/backpressure must be real'},
+  'ambient_rise_air_K':{'nominal':15.,'sensitivity':[10.,25.]},
+  'air_density_kg_m3':1.2,'air_cp_J_kg_K':1005.,'water_cp_J_kg_K':4180.,
+  'all_motion_flow_torque_duty_inputs':'assumptions to solve with same-version mass/contact/actuator J(q); no payload or gait release'}
+ # Both choices retain autonomous biped/bimanual goals. Timing/concurrency are
+ # mission budgeting questions; no artificial capability is silently reduced.
+ scenarios=[dict(id='a_30min_deliberate_mission',duration_h=.5,description='30min budget window: move/turn25%, grasp/environment35%, supported planning/hold40%; speeds and external loads not rated',duties=[.25,.35,.4],phase_hydraulic_p_MPa=[16.,14.,0.],phase_Q_L_min=[45.,25.,0.],phase_rotary_mechanical_kW=[1.5,1.,0.],phase_hold_input_kW=[0.,0.,1.5],auxiliary_kW=.65),
+ dict(id='b_60min_high_concurrency_mission',duration_h=1.,description='60min sustained work question: move40%, bimanual manipulation40%, supported hold20%; not user-frozen duration/concurrency or accepted drive capability',duties=[.4,.4,.2],phase_hydraulic_p_MPa=[21.,18.,0.],phase_Q_L_min=[60.,40.,0.],phase_rotary_mechanical_kW=[3.,2.,0.],phase_hold_input_kW=[0.,0.,2.5],auxiliary_kW=.8)]
+ for q in scenarios:
+  duty=np.array(q['duties']);ph=np.array(q['phase_hydraulic_p_MPa'])*np.array(q['phase_Q_L_min'])/60;rot=np.array(q['phase_rotary_mechanical_kW']);hold=np.array(q['phase_hold_input_kW']);aux=q['auxiliary_kW'];eff=params['pump_total_efficiency']['nominal']*params['motor_inverter_efficiency']['nominal'];inputkw=ph/eff+rot/.85+hold+aux;valve=np.array(q['phase_Q_L_min'])*1.5/60
+  # pressure*Q is pump outlet power, not useful actuator output. Explicit
+  # valve loss is subtracted from outlet when forming heat, not double-added.
+  conversion=ph*(1/eff-1)+rot*(1/.85-1);heat=conversion+valve+hold+aux+inputkw*(1/.95-1)
+  avg=float(duty@inputkw);e=avg*q['duration_h']/(.75*.95);usable=e*.75*.95
+  lowin=ph/(.873*.97)+rot/.92+hold+aux;highin=ph/(.765*.8)+rot/.75+hold+aux
+  elo=float(duty@lowin)*q['duration_h']/(.85*.98);ehi=float(duty@highin)*q['duration_h']/(.65*.90)
+  q.update(phase_pump_outlet_hydraulic_kW=ph.tolist(),phase_bus_demand_kW=inputkw.tolist(),average_bus_demand_kW=avg,phase_battery_delivered_power_kW=(inputkw/.95).tolist(),phase_hydraulic_throttle_heat_kW=valve.tolist(),phase_conversion_and_aux_heat_kW=heat.tolist(),average_conversion_and_aux_heat_kW=float(duty@heat),peak_conversion_and_aux_heat_kW=float(max(heat)),required_nameplate_energy_kWh=e,usable_energy_kWh=usable,nameplate_energy_efficiency_SOC_sensitivity_kWh=[elo,ehi],old10_24kWh_conditional_runtime_min=60*10.24*.75*.95/avg,
+   benchmark_complete_energy_mass_range_kg=(packm*e/10.24).tolist(),benchmark_complete_energy_group_envelope_equivalent_L=packL*e/10.24,
+   custom_shape_planning_space_L=[packL*e/10.24,1.3*packL*e/10.24],custom_shape_scope='benchmark-equivalent volume plus0..30% geometry/insulation/cooling planning penalty, not true custom pack CAD/density guarantee; capacity and peak power both must close',
+   current_complete_pump_pair_diagnostic='At3000rpm old2Z16 deliver59.4..64.02Lmin only under assumed efficiency; Q and motor cooling/current maps still conditional',
+   peak_bus_current_A_at_unassigned_voltage_examples={str(v):float(max(inputkw))*1000/v for v in [100,300,500]},bus_examples_are_not_selected_topology=True,
+   holding_zero_mechanical_speed_is_not_zero_electric_or_leak_loss=True,regen_credited_in_energy_kWh=0.,task_or_installed_physical_accepted=False)
+  qheat=q['peak_conversion_and_aux_heat_kW'];grossarea=sum(a['inlet_area_m2'] for a in flow['actuator_axes'] if 'inlet_area_m2' in a) if 'actuator_axes' in flow else None
+  q['coolant_flow_L_min_for_peak_heat_at_10K']=qheat*1000/(4180*10)*60
+  q['airflow_m3_s_for_peak_heat_at_15K']=qheat*1000/(1.2*1005*15)
+  q['radiator_required_UA_W_K_at_20K']=qheat*1000/20
+  peak_battery=max(inputkw)/.98
+  q['phase_stored_energy_equivalent_input_power_kW']=q['phase_battery_delivered_power_kW']
+  q['phase_battery_delivered_power_kW']=(inputkw/.98).tolist()
+  q['phase_battery_delivered_power_scope']='terminal-to-bus DCeta=.98; energy depletion uses totaleta=.95, not summed a second time'
+  q['phase_peak_power_efficiency_sensitivity_kW']=[float(max(lowin)/.98),float(max(highin)/.90)]
+  heatlow=lowin/.98-(ph-np.asarray(q['phase_Q_L_min'])*.5/60+rot)
+  heathigh=highin/.90-(ph-np.asarray(q['phase_Q_L_min'])*3/60+rot)
+  q['peak_heat_efficiency_and_valve_loss_sensitivity_kW']=[float(max(heatlow)),float(max(heathigh))]
+  q['runtime_energy_is_not_power_qualified_pack']=True
+  q['reference1C_continuous_min_nameplate_energy_kWh']=max(e,peak_battery)
+  q['required_continuous_C_rate_if_only_runtime_sized']=peak_battery/e
+  q['reference1C_power_sized_complete_pack_envelope_equivalent_L']=packL*max(e,peak_battery)/10.24
+  # A single official cell reference for a manufacturable high-power condition,
+  # never scaling/claiming an installed complete OEM pack. Minimum energy,
+  # max dimensions/mass used together rather than typical energy density.
+  cellN=int(math.ceil(e*1000/15.5));cellvol=math.pi*(.02155/2)**2*.07015*1000
+  ie=peak_battery*1000/(cellN*2.5);inom=peak_battery*1000/(cellN*3.6)
+  q['high_power_custom_cell_budget']=dict(reference='Molicel INR21700P45B version1.4; not a selected supplier/complete pack',cell_count_energy_minimum=cellN,stored_energy_min_kWh=cellN*.0155,max_cell_mass_kg=cellN*.070,max_cell_cylindrical_envelope_L=cellN*cellvol,
+   proposed_complete_pack_space_L=[cellN*cellvol/.75*1.2,cellN*cellvol/.55*1.5],space_scope='explicit55..75% cell cylindrical-envelope packing plus20..50% package/BMS/cooling/insulation allowance; requires native layout, not guaranteed fit',
+   conditional_cell_terminal_current_at_peak_nominal_or_2_5V_A=[inom,ie],source45A_is_80C_cutoff_cell_not_pack_continuous_gate=True,
+   source_typical15mOhm_DC_loss_at_peak_nominal_or_2_5V_W=[cellN*inom**2*.015,cellN*ie**2*.015],DC_resistance_temperature_SOC_aging_current_and_cooling_still_red=True,
+   peak_cell_loss_must_replace_unverified_total_battery_efficiency_not_double_count=True,
+   mass_allowance_kg=dict(cell_max=cellN*.070,full_HV_BMS_contactors_disconnect_current_sensors_enclosure=[3.,8.],mounts_busbars_insulation_liquid_cooling_and_sensor_allowance=[max(10.,cellN*.070*.2),max(20.,cellN*.070*.45)]),
+   physical_or_installation_or_manufacturing_accepted=False)
+  q['old_two_pump_equal_share_match']=dict(required_rpm_at_etaV_0_93=(np.asarray(q['phase_Q_L_min'])/(2*.011*.93)).tolist(),required_each_motor_shaft_torque_Nm_at_etaMech_0_8_div_0_93=(np.asarray(q['phase_hydraulic_p_MPa'])*11/(2*math.pi*(.8/.93))).tolist(),running_phase_source_rpm_and_pressure_bounds_only=True,shaft_input_controller_LC_air_inlet_routes_not_qualified=True)
+  # A bounded copper-loss sensitivity, not a fresh pack sizing/claim. It shows
+  # when the provisional overall efficiency must be replaced by cell maps.
+  pw=inputkw*1000/.98;cellloss_nom=pw**2*.015/(cellN*3.6**2);cellloss_end=pw**2*.015/(cellN*2.5**2)
+  q['high_power_custom_cell_budget']['typical_DC_loss_duty_averaged_W_nominal_or_2_5V']=[float(duty@cellloss_nom),float(duty@cellloss_end)]
+  q['high_power_custom_cell_budget']['provisional_energy_kWh_from_wire_eta0_98_and_typical_DC_loss_nominal_or_2_5V']=[float((duty@inputkw/.98+duty@cellloss_nom/1000)*q['duration_h']/.75),float((duty@inputkw/.98+duty@cellloss_end/1000)*q['duration_h']/.75)]
+  # 18..27A is an explicit robot thermal-design ceiling (40..60% of the
+  # source45A cutoff current), not a new vendor continuous or safety rating.
+  segments=4 if q['id'].startswith('a_') else 8
+  n_nom=max(cellN,int(math.ceil(max(inputkw)*1000/(.98*2.5*18))))
+  nlo=max(int(math.ceil(elo*1000/15.5)),int(math.ceil(max(lowin)*1000/(.98*2.5*27))))
+  nhi=max(int(math.ceil(ehi*1000/15.5)),int(math.ceil(max(highin)*1000/(.90*2.5*18))))
+  hv=[.45*segments+2+.8,1.4*segments+6+2.2]
+  def packaged(n,upper=False):
+   cm=n*.070;extra=max(20.,cm*.45) if upper else max(10.,cm*.2)
+   return cm+extra+(hv[1] if upper else hv[0])
+  q['conditional_power_and_energy_sized_custom_pack']=dict(
+   thermal_design_cell_current_A=[18.,27.],current_ceiling_is_unverified_design_derating_not_OEM_rating=True,cell_current_power_scope='terminal-to-bus ηDC .98 nominal/.90.. .98 sensitivity; loaded cellV≥2.5 assumed; rated C/SOC/current/thermal maps remain open',
+   nominal_cell_count=n_nom,nominal_minimum_energy_kWh=n_nom*.0155,
+   full_energy_efficiency_SOC_current_sensitivity_cell_counts=[nlo,nhi],
+   conditional_energy_range_kWh=[nlo*.0155,nhi*.0155],
+   nominal_pack_complete_allowance_mass_kg=[packaged(n_nom),packaged(n_nom,True)],
+   full_sensitivity_pack_complete_allowance_mass_kg=[packaged(nlo),packaged(nhi,True)],
+   nominal_pack_complete_planning_volume_L=[n_nom*cellvol/.75*1.2,n_nom*cellvol/.55*1.5],
+   full_sensitivity_pack_complete_planning_volume_L=[nlo*cellvol/.75*1.2,nhi*cellvol/.55*1.5],
+   segmentation_candidate=segments,design_local_BMS_fuse_mass_each_kg=[.45,1.4],design_global_HV_cabinet_kg=[2.,6.],design_LV_converter_kg=[.8,2.2],HV_LV_function_mass_status='explicit finite design allowance, no new module CAD/source mass guarantee',
+   full_HV_LV_local_BMS_fuse_allowance_kg=hv,
+   mount_busbar_insulation_liquid_cooling_sensor_allowance='max(10kg,20%maxcellmass)..max(20kg,45%maxcellmass); design allowance, no supplier/design mass claim',
+   allocation_regions=(['left_lower_chest_back','right_lower_chest_back','left_pelvis','right_pelvis'] if segments==4 else ['left_lower_chest_back','right_lower_chest_back','left_mid_chest_back','right_mid_chest_back','left_pelvis','right_pelvis','left_proximal_thigh','right_proximal_thigh']),
+   equal_sector_nominal_energy_kWh=n_nom*.0155/segments,
+   equal_sector_nominal_volume_L=[n_nom*cellvol/.75*1.2/segments,n_nom*cellvol/.55*1.5/segments],
+   split_is_not_actual_CAD_or_freecavity_or_installed_gravity_owner=True,
+   physical_mass_loss_bus_SOC_thermal_hold_regen_and_pack_qualification_still_open=True)
+ # Same cell-loss sensitivity re-evaluated at power-corrected full custom N.
+  corr_loss_nom=pw**2*.015/(n_nom*3.6**2);corr_loss_end=pw**2*.015/(n_nom*2.5**2)
+  corrheat_nom=conversion+valve+hold+aux+inputkw*(1/.98-1)+corr_loss_nom/1000
+  corrheat_end=conversion+valve+hold+aux+inputkw*(1/.98-1)+corr_loss_end/1000
+  q['conditional_power_and_energy_sized_custom_pack']['typical_resistance_loss_crosscheck']={
+   'cell_typical_R_ohm':.015,'R_not_design_bound':True,
+   'peak_cell_loss_W_nominal_or_endloadedV':[float(max(corr_loss_nom)),float(max(corr_loss_end))],
+   'required_nameplate_energy_kWh_from_wireloss_and_typical_R_nominal_or_endloadedV':[float((duty@inputkw/.98+duty@corr_loss_nom/1000)*q['duration_h']/.75),float((duty@inputkw/.98+duty@corr_loss_end/1000)*q['duration_h']/.75)],
+   'peak_system_heat_kW_replacing_totaleta_with_wire_and_cell_losses':[float(max(corrheat_nom)),float(max(corrheat_end))],
+   'does_not_add_R_loss_onto_already_loss_inclusive_totaleta':True,
+   'loadV_Soc_voltagecurve_aging_parallelsharing_and_thermal_maps_open':True}
+ # Root selected integer topology for next CAD allocation; not bus/pack release.
+ a=scenarios[0];ap=np.asarray(a['phase_bus_demand_kW']);du=np.asarray(a['duties']);n=480;cellvol=math.pi*(.02155/2)**2*.07015*1000
+ terminal=ap/.98;current_minV=terminal*1000/200;current_nomV=terminal*1000/288
+ packR=80*.015/6;qlow=current_minV**2*packR/1000;qnom=current_nomV**2*packR/1000
+ a['root_selected_next_layout_integer_topology_condition']=dict(series=80,parallel=6,cells=480,modules=4,each_module_series=20,each_module_parallel=6,modules_connected_in_series=True,minimum_nameplate_energy_kWh=7.44,
+   cell_voltage_condition_V=[2.5,4.2],loaded_pack_voltage_condition_V=[200,336],nominal_pack_V=288,one_module_voltage_condition_V=[50,84],one_module_minimum_energy_kWh=1.86,
+   phase_terminal_current_A_at200V=current_minV.tolist(),phase_cell_current_A_at200V=(current_minV/6).tolist(),peak_terminal_current_A_at288V=float(max(current_nomV)),peak_cell_current_A_at288V=float(max(current_nomV/6)),
+   source_typical15mOhm_series_parallel_equivalent_R_ohm=packR,peak_cell_total_loss_kW_nominal288_or_loaded200V=[float(max(qnom)),float(max(qlow))],
+   totaleta_nominal_usable_bus_energy_kWh=7.44*.75*.95,nominal_task_bus_energy_kWh=a['usable_energy_kWh'],nominal_bus_energy_reserve_kWh=7.44*.75*.95-a['usable_energy_kWh'],nominal_totaleta_runtime_min=60*7.44*.75*.95/a['average_bus_demand_kW'],
+   required_energy_using_wire_eta_and_typical_R_at288_or200V_kWh=[float((du@terminal+du@qnom)*.5/.75),float((du@terminal+du@qlow)*.5/.75)],
+   worst_stated_efficiency_SOC_energy_requirement_kWh=a['nameplate_energy_efficiency_SOC_sensitivity_kWh'][1],worst_stated_efficiency_SOC_30min_met=False,
+   complete_function_allowance_mass_kg=[480*.070+10+4.6,480*.070+20+13.8],complete_planning_volume_L=[480*cellvol/.75*1.2,480*cellvol/.55*1.5],one_module_complete_planning_volume_L=[480*cellvol/.75*1.2/4,480*cellvol/.55*1.5/4],
+   comparison_with_18A_design_current_ceiling='loaded200V peak16.226A/cell < provisional18A, not an installed thermal rating',
+   requires_real_voltage_curve_SOC_current_R_temperature_aging_and_parallel_sharing=True,BMS_HV_fuse_contactor_coldplate_insulation_brackets_sensor_and_tool_allowances_nonzero=True,
+   regen_energy_credit_kWh=0,regen_charge_headroom_current_cell_charge_bound_DC_link_and_dump_unclosed=True,bus_drive_motor_controller_compatibility_unclosed=True,root_nextCAD_reference_not_selectedSKU_or_frozenbus_or_qualifiedpack=True)
+ # Two original inlet gross projected areas: use explicit known source values,
+ # never call these free/open finned exchanger or fan operating point.
+ area=2*.0031172453105244723
+ for q in scenarios:q['original_gross_two_throat_air_velocity_m_s_diagnostic']=q['airflow_m3_s_for_peak_heat_at_15K']/area;q['throat_freearea_fraction_sensitivity_50_to80_velocity_m_s']=[q['airflow_m3_s_for_peak_heat_at_15K']/(area*.8),q['airflow_m3_s_for_peak_heat_at_15K']/(area*.5)]
+ hydraulic=dict(old_Z16_each_displacement_cc_rev=11.,manufacturer_rpm_range=[700,3500],manufacturer_continuous_pressure_MPa=23.,old_design_pressure_MPa=21.,two_Q_at3000rpm_Lmin=[59.4,64.02],two_Q_at3500rpm_Lmin=[69.3,74.69],old18_axis_neutral_0_5rad_s_Q_Lmin=196.555,all18_0_5rad_s_at21MPa_hydraulic_kW=196.555*21/60,reason_not_new_required_performance='old J(q)/18 topology is superseded; new gait/skills must allocate actual concurrent flow',local_hold_and_stop='Full actual pressure-holding/anti-cavitation/shock relief, passive brake/stop support and unload/release path required; pump shutdown assumed only when these installed functions close',backdrive_regen='Directional throttling normally converts negative mechanical work to oil heat; hydraulic electrical recovery needs reversible pump/motor and routing not provided. Rotor regen requires DC-link/battery SOC-current-voltage limit and dump resistor/control.',idle=dict(pair_min_source_running_rpm=700,pair_flow_etaV_Lmin=[13.86,14.938],loaded_at21MPa_outlet_kW=[13.86*21/60,14.938*21/60],unloaded_at1MPa_outlet_kW=[13.86/60,14.938/60],n0_off_is_not_source_running_point=True),source_EMRAX=dict(each_continuous_torque_Nm=52,each_continuous_power_kW=34,LC_min_each_Lmin=6,inlet_max_C=50,requires_air_circulation_even_LC=True,nominal_not_joint_controller_bus_qualified=True))
+ subsetmass=np.sum([r['mass_range_kg'] for r in rows],axis=0);lever=dict(scope='diagnostic same633 dry B rows / source COM proxies only; no new whole robot COM',source_pivot_m=s['historical_roll_body_tree_pivot_m'],four_energy_nominal_mass_kg=float(packm[1]),move_whole_energy_X_forward_0_23m_changes_My_Nm=float(G*packm[1]*.23),move_whole_energy_Z_down_0_645m_changes_dry_subset_COM_z_m=float(-packm[1]*.645/subsetmass[1]),dry_subset_reference_mass_range_kg=subsetmass.tolist(),dry_subset_reference_rows=len(rows),no_actual_candidate_move_or_source_modification=True)
+ sourcefacts=dict(battery_reference=dict(source=d['sources']['battery_benchmark'],full4_core_AABB_L=4*coreL,full4_complete_group_AABB_sum_L=packL,full2_complete_pump_AABB_sum_L=pumpL,full4energy_plus2pump_AABB_sum_L=packL+pumpL,old130_6L_was_energy_plus_pumps_not_four_packs=True,full4_complete_group_mass_range_kg=packm.tolist(),capacity10_24_not_user_frozen=True,series_limit_of_actual25_6V_Victron_ref=2,old_102_4V_not_inherited=True),high_power_cell_official_reference=dict(url='https://www.molicel.com/wp-content/uploads/INR21700P45B_1.4_Product-Data-Sheet-of-INR-21700-P45B-80109.pdf',pdf_sha256=sha(O/'molicel_p45b_datasheet_1_4.pdf'),minimum_energy_Wh=15.5,minimum_capacity_Ah=4.3,max_mass_kg=.070,max_diameter_m=.02155,max_height_m=.07015,nominal_V=3.6,discharge_cutoff_V=2.5,discharge_current_A=45,discharge_cutoff_C=80,discharge_environment_C=[-40,60],charge_environment_C=[0,60],typical_DC_50percentSOC_ohm=.015,physical_pack_and_supply_not_selected=True),nine_complete_groups=groups,dry633_families=fam,conditional_dry_subset_mass_range_kg=subsetmass.tolist(),whole_robot_mass_COM_I=None,missing_upper_member_ids=s['upper_native_members_without_mass_row'],missing_mass_classes=s['missing_mass_macro_classes'],oil_inventory=dict(old_L=30,old_mass_range_kg=[24.6,26.4],global_once_not_each_line=True),water_inventory=dict(old_net_L=12.482,not_constant_heat_rejection_capacity=True),legacy_control_function_inventory=dict(directional_count=18,local_holding_count=18,count_not_required_next_architecture=True,four_holding_mount_barrel_owners_absent=True,no_function_removed_or_missing_hardware_zero_counted=True),heatpath=dict(source_two_core_mm=[35,90,195],source_two_fan_mm=[25,90,90],eight_finite_duct_groups=True,two_intake_gross_projected_area_m2=area,airflow_UA_fan_curve_and_recirculation_unknown=True))
+ evidence=[S,P,D,F,R/'robots/gorilla_v0_1/design/current_decisions.md',R/'robots/gorilla_v0_1/hardware/internal_module_research.md',R/'artifacts/gorilla_v0_1/internal_module_sources/victron_lithium_ng_25_6_manual.pdf',R/'.scratch/gorilla_internal_d_sources/hawe_z_pumps_d6820_en.pdf',O/'molicel_p45b_datasheet_1_4.pdf']
+ facts={'robot_id':'gorilla_v0_1','stage':'g11_functional_macro_budget','producer_sha256':sha(__file__),'source_hashes':{str(q):sha(q) for q in evidence},'source_facts':sourcefacts,'parameters_and_status':params,'two_conditional_macro_choices':scenarios,'hydraulic_hold_and_regen':hydraulic,'COM_and_gravity_leverage':lever,'formulas':{'Eusable':'Ename*SOCwindow*eta_battery_to_bus','mission_energy':'sum(duty*(pQ/(eta_pump*eta_motor)+positive_sum_tau_omega/eta_rotary+holdloss+aux))*duration / (SOCwindow*eta_battery_to_bus)', 'terminal_power':'Pbus/etaDC; etaDC is included in total stored-energy efficiency, not separately multiplied into mission_energy','pack_cell_count':'ceil(max(Erequired_minWh/15.5, Pterminal_peakW/(Vloaded_min*Icell_design_max))); parallel/series integer layout not yet designed','hydraulic_kW':'p_MPa*Q_Lmin/60','mechanical':'sum(tau_Nm*omega_rad_s)/1000; negative work separately to recovery/dump heat','conversion_heat':'Pbus-Ppump_outlet-Ppositive_rotary + delta_p_valve*Q/60 + Pbus*(1/eta_battery-1); hold/aux already in Pbus; external dissipative tool work excluded','water_flow':'q/(rho*cp*deltaT)','air_flow':'q/(rho_air*cp_air*deltaT)','gravity':'delta M=(delta COM) cross (0,0,-mg)'},'physical_unknown_red':['full mass/contact/J(q)/task torques/loads/duty and speed','exact pump motor controller bus cooling current match','new actual tank/lines/cavitation/backpressure and localholding','negative power/DC-link SOC absorption/dump and emergency release','actual pack cells shape insulation HV protection C-rate and thermal','real core UA fan pressure-flow free throat duct and ambient','complete connected mounting/moving coils/support/frame net material and inertia'],'task_payload_or_ton_rating_defined':False,'whole_robot_or_SI_or_Bevy_or_physical_accepted':False}
+ write('functional_budget.json',facts)
+ for q in scenarios:print(q['id'],q['average_bus_demand_kW'],q['required_nameplate_energy_kWh'],q['custom_shape_planning_space_L'],q['peak_conversion_and_aux_heat_kW'])
+ print('dry',subsetmass,'pack+pump',packL,pumpL,packL+pumpL)
+if __name__=='__main__':run()

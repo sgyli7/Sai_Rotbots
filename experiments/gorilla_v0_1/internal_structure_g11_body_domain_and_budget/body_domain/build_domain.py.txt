@@ -1,0 +1,216 @@
+#!/usr/bin/env python3
+"""G11 independent, conditional body design domain; no FEM or qualification."""
+import gzip, hashlib, json, pathlib, time
+import numpy as np
+import manifold3d as mf
+import trimesh
+from PIL import Image, ImageDraw
+from OCP.gp import gp_Pnt
+from OCP.BRepBuilderAPI import BRepBuilderAPI_MakePolygon
+from OCP.BRepOffsetAPI import BRepOffsetAPI_ThruSections
+from OCP.BRepCheck import BRepCheck_Analyzer
+from OCP.GProp import GProp_GProps
+from OCP.BRepGProp import BRepGProp
+from OCP.BRepTools import BRepTools
+from OCP.STEPControl import STEPControl_Writer, STEPControl_AsIs
+from OCP.Interface import Interface_Static
+
+ROOT=pathlib.Path(__file__).resolve().parents[2]
+OUT=pathlib.Path(__file__).resolve().parent
+INPUTS={
+ 'whole':ROOT/'.scratch/gorilla_internal_g9_whole_source/scene.json.gz',
+ 'layout1':ROOT/'.scratch/gorilla_internal_g9_module_placement/layout_1/scene.json.gz',
+ 'shoulder_b':ROOT/'.scratch/gorilla_internal_g10_shoulder_assembly/b/scene.json.gz',
+ 'shoulder_interfaces':ROOT/'.scratch/gorilla_internal_g10_shoulder_assembly/b/interfaces.json',
+ 'decisions':ROOT/'robots/gorilla_v0_1/design/current_decisions.md',
+ 'rules':ROOT/'sai_robots_engineering_rules.md',
+}
+def sha(p): return hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
+def read(p):
+ return json.load(gzip.open(p,'rt')) if str(p).endswith('.gz') else json.loads(p.read_text())
+def write(name,x): (OUT/name).write_text(json.dumps(x,ensure_ascii=False,indent=2)+'\n')
+def triangles(p,outer=False):
+ v=np.asarray(p['vertices_world_m'],float); faces=p['faces']
+ if outer and p['role']=='armor_cover':
+  n=len(v)//2; faces=[f for f in faces if max(f)<n]; v=v[:n]
+ f=np.asarray([[r[0],r[i],r[i+1]] for r in faces for i in range(1,len(r)-1)],np.uint64)
+ return v,f
+def native(m,name,role,color,extra=None):
+ a=m.to_mesh64(); p={'name':name,'body':'torso','role':role,'vertices_world_m':np.asarray(a.vert_properties)[:,:3].tolist(),'faces':np.asarray(a.tri_verts).tolist(),'rgba':color,'physical_mass_assigned':False}
+ if extra:p.update(extra)
+ return p
+def box(lo,hi,name,category):
+ lo=np.asarray(lo,float);hi=np.asarray(hi,float)
+ m=mf.Manifold.cube((hi-lo).tolist()).translate(lo.tolist())
+ return m,native(m,name,'must_empty_stock',[.94,.45,.15,.22],{'category':category,'is_installed_material':False,'AABB_is_conservative_exclusion_not_usable_cavity':True})
+def xhits(tris,y,z):
+ a=tris[:,0,1:];b=tris[:,1,1:]-a;c=tris[:,2,1:]-a
+ d=np.array([y,z])-a; det=b[:,0]*c[:,1]-b[:,1]*c[:,0]
+ ok=np.abs(det)>1e-14
+ u=np.divide(d[:,0]*c[:,1]-d[:,1]*c[:,0],det,out=np.zeros(len(det)),where=ok)
+ w=np.divide(b[:,0]*d[:,1]-b[:,1]*d[:,0],det,out=np.zeros(len(det)),where=ok)
+ ok&=(u>=-1e-9)&(w>=-1e-9)&(u+w<=1+1e-9)
+ x=tris[:,0,0]+u*(tris[:,1,0]-tris[:,0,0])+w*(tris[:,2,0]-tris[:,0,0])
+ return np.unique(np.round(x[ok],12))
+def profile(z,tri):
+ # Full loft is independent. Actual front/rear rays constrain x; side closure is NOT certified cavity.
+ ys=np.linspace(-.34,.34,17); rows=[];front=[];rear=[]
+ for y in ys:
+  h=xhits(tri,y,z); f=h[h>.02];r=h[h<-.06]
+  front.append(float(max(f)) if len(f) else np.nan)
+  rear.append(float(min(r)) if len(r) else np.nan)
+  rows.append({'z_m':float(z),'y_m':float(y),'actual_outer_x_hits_m':h.tolist(),'front_actual_hit':bool(len(f)),'rear_actual_hit':bool(len(r))})
+ def fill(a,label):
+  a=np.array(a); good=np.flatnonzero(np.isfinite(a))
+  if len(good)<2:raise RuntimeError('insufficient actual '+label+' surface')
+  return np.interp(np.arange(len(a)),good,a[good])
+ ff=fill(front,'front');rr=fill(rear,'rear')
+ for i,r in enumerate(rows):
+  r.update({'front_candidate_x_m':float(ff[i]-.025),'rear_candidate_x_m':float(rr[i]+.025),'front_minus_actual_outer_m':None if np.isnan(front[i]) else -.025,'rear_minus_actual_outer_m':None if np.isnan(rear[i]) else .025,'interpolated_open_source_unknown':bool(np.isnan(front[i]) or np.isnan(rear[i]))})
+ ring=[[float(ff[i]-.025),float(y),float(z)] for i,y in enumerate(ys)] + [[float(rr[i]+.025),float(y),float(z)] for i,y in reversed(list(enumerate(ys)))]
+ return ring,rows
+def loft_native(rings):
+ v=np.array(rings); n=v.shape[1]; v=v.reshape(-1,3);f=[]
+ # shapely ear clipping handles concave caps without a false fan.
+ from shapely.geometry import Polygon
+ from shapely.ops import triangulate
+ for ringindex in [0,len(rings)-1]:
+  poly=Polygon(np.asarray(rings[ringindex])[:,:2]); rr=np.asarray(rings[ringindex])[:,:2]
+  for t in triangulate(poly):
+   if not poly.covers(t):continue
+   q=np.array(t.exterior.coords)[:3];ids=[int(np.argmin(np.linalg.norm(rr-a,axis=1)))+ringindex*n for a in q]
+   # Explicit cap orientation; do not use a normals fixer that could alter cavities.
+   q3=v[ids]; cz=np.cross(q3[1]-q3[0],q3[2]-q3[0])[2]
+   if (ringindex==0 and cz>0) or (ringindex>0 and cz<0):ids=ids[::-1]
+   f.append(ids)
+ for k in range(len(rings)-1):
+  for i in range(n):
+   a=k*n+i;b=k*n+(i+1)%n;c=(k+1)*n+(i+1)%n;d=(k+1)*n+i
+   f.extend([[a,b,c],[a,c,d]])
+ m=mf.Manifold(mf.Mesh64(np.asarray(v),np.asarray(f,np.uint64)))
+ if str(m.status())!='Error.NoError':raise RuntimeError(str(m.status()))
+ return m
+def save_cad(rings):
+ loft=BRepOffsetAPI_ThruSections(True,True,1e-8)
+ for r in rings:
+  p=BRepBuilderAPI_MakePolygon()
+  for xyz in r:p.Add(gp_Pnt(*xyz))
+  p.Close();loft.AddWire(p.Wire())
+ loft.Build();shape=loft.Shape()
+ BRepTools.Write_s(shape,str(OUT/'design_domain_bulk.brep'))
+ # Shape numbers are SI. OCC defaults to coordinate numbers in mm; writer init
+ # resets global STEP units. Export its raw numeric coordinates, then make the
+ # exact declaration change explicit (no geometry scaling), as a SI adapter.
+ sw=STEPControl_Writer();sw.Transfer(shape,STEPControl_AsIs);sw.Write(str(OUT/'design_domain_bulk_si.step'))
+ step=OUT/'design_domain_bulk_si.step';raw=step.read_text();rawsha=hashlib.sha256(raw.encode()).hexdigest()
+ old='SI_UNIT(.MILLI.,.METRE.)';new='SI_UNIT($,.METRE.)'
+ if raw.count(old)!=1:raise RuntimeError('unexpected STEP length-unit declaration')
+ fixed=raw.replace(old,new);step.write_text(fixed)
+ write('STEP_units_receipt.json',{'raw_export_sha256':rawsha,'raw_numeric_coordinates_unit':'m','raw_declared_unit':'mm','raw_export_rejected':True,'adapted_step_sha256':sha(step),'adaptation':'exact LENGTH_UNIT declaration SI_UNIT(.MILLI.,.METRE.) to SI_UNIT($,.METRE.); no coordinate or geometry changes','explicit_SI_declaration_verified':fixed.count(new)==1 and old not in fixed,'native_or_BREP_units_changed':False})
+ prop=GProp_GProps();BRepGProp.VolumeProperties_s(shape,prop)
+ return {'valid':bool(BRepCheck_Analyzer(shape).IsValid()),'volume_m3':float(prop.Mass()),'STEP_declared_unit':'M','native_approximation':'same editable section vertices, straight native triangles versus ruled OCC loft; volume difference explicitly measured'}
+def render(parts,name,cut=False):
+ W,H=1800,1450;im=Image.new('RGB',(W,H),'#f3f2ed');draw=ImageDraw.Draw(im)
+ # Independent viewports clip native projection only; no post-drawn structure.
+ ppm=460
+ views=[('front',np.array([0,1,0]),np.array([0,0,1]),np.array([1,0,0])),('left',np.array([-1,0,0]),np.array([0,0,1]),np.array([0,1,0])),('rear',np.array([0,-1,0]),np.array([0,0,1]),np.array([-1,0,0])),('top',np.array([0,1,0]),np.array([1,0,0]),np.array([0,0,1]))]
+ for idx,(label,u,w,dep) in enumerate(views):
+  panel=Image.new('RGB',(900,700),'#f3f2ed');pd=ImageDraw.Draw(panel)
+  ox,oy=450,390;ct=np.array([0,0,2.22]);rows=[];wire=[]
+  for p in parts:
+   if cut and p['role'] in ('armor_cover','armor_surface'):continue
+   v,f=triangles(p);v=v-ct
+   if not len(f):continue
+   pts=np.stack([ox+ppm*(v@u),oy-ppm*(v@w)],axis=1)
+   color=p.get('rgba',[.5,.5,.5,1]); rgb=tuple(int(255*float(c)) for c in color[:3])
+   if p['role'] in ('armor_cover','armor_surface'):rgb=(200,205,203)
+   for t in f:
+    if np.max(np.linalg.norm(v[t],axis=1))>1.8:continue
+    if p['role'] in ('must_empty_stock','design_domain_bulk'):
+     # All exclusions are shown as outlines, never painted opaque over native machinery.
+     if p['role']=='design_domain_bulk':wc=(40,95,175)
+     elif p.get('category') in ('complete_group_gross_exclusion','failed_complete_shoulder_B_gross_challenge'):wc=(230,95,18)
+     else:wc=(207,187,166)
+     wire.append((pts[t],wc))
+    else:rows.append((float(np.mean(v[t]@dep)),pts[t],rgb))
+  for _,q,c in sorted(rows,key=lambda r:r[0]):pd.polygon([tuple(x) for x in q],fill=c)
+  for q,c in wire:pd.line([tuple(x) for x in q]+[tuple(q[0])],fill=c,width=1)
+  pd.text((25,15),label+' | same 460 px/m | actual native SI | upper-body ROI',fill='black')
+  im.paste(panel,((idx%2)*900,50+(idx//2)*700))
+ draw.text((25,15),'G11 independent design domain / ORIGINAL ARMOR UNCHANGED / NOT CAVITY CERTIFIED / NOT MANUFACTURING FRAME',fill='black')
+ draw.text((25,40),'Blue: designable remainder. Orange: complete function exclusion stock. Gray: retained source geometry.',fill='black')
+ im.save(OUT/name)
+def sections(parts):
+ im=Image.new('RGB',(1700,900),'#f3f2ed');d=ImageDraw.Draw(im);levels=[2.12,2.29,2.47,2.57]
+ for j,z in enumerate(levels):
+  panel=Image.new('RGB',(850,450),'#f3f2ed');pd=ImageDraw.Draw(panel)
+  ox=425;oy=245;ppm=340
+  for p in parts:
+   v,f=triangles(p); color=(180,185,180) if p['role'] in ('armor_cover','armor_surface') else tuple(int(255*c) for c in p.get('rgba',[.3,.4,.8,1])[:3])
+   for ids in f:
+    t=v[ids];q=[]
+    for k in range(3):
+     a,b=t[k],t[(k+1)%3]
+     if (a[2]-z)*(b[2]-z)<0:q.append(a+(b-a)*(z-a[2])/(b[2]-a[2]))
+    if len(q)==2:pd.line([(ox+ppm*a[1],oy-ppm*a[0]) for a in q],fill=color,width=2)
+  pd.text((25,15),f'Actual native plane z={z:.2f}m | same 340 px/m | no source repair',fill='black')
+  im.paste(panel,((j%2)*850,(j//2)*450))
+ im.save(OUT/'actual_sections.png')
+def main():
+ start=time.time();whole=read(INPUTS['whole']);s=read(INPUTS['layout1']);sh=read(INPUTS['shoulder_b']);by={p['name']:p for p in s['parts']}
+ armor=[by[n] for n in s['authoritative_visible_armor_ids']]
+ mainarmor=by['continuous_ivory_torso_armor_cover'];v,f=triangles(mainarmor,True);tri=v[f]
+ rings=[];samples=[]
+ for z in np.linspace(1.94,2.59,14):
+  r,rows=profile(float(z),tri);rings.append(r);samples.extend(rows)
+ bulk=loft_native(rings);cadvalid=save_cad(rings)
+ stocks=[];stockparts=[];records=[]
+ for g in s['new_complete_group_placements']:
+  lo,hi=np.asarray(g['new_AABB_world_m']);m,p=box(lo,hi,'g11_stock_'+g['id'],'complete_group_gross_exclusion');stocks.append(m);stockparts.append(p)
+  records.append({'id':g['id'],'member_ids':g['complete_member_ids'],'source':'L1 exact native complete group, unscaled','source_mass_range_kg':g['unchanged_mass_range_kg'],'gross_stock_bounds_m':[lo.tolist(),hi.tolist()],'ports_or_routes_valid':False,'stock_volume_m3':m.volume()})
+  # 20 mm explicit service reserve is OWN assumption, not OEM dimension.
+  mm,pp=box(lo-.02,hi+.02,'g11_service_'+g['id'],'own_20mm_service_reserve');stocks.append(mm);stockparts.append(pp)
+ for side in ['left','right']:
+  pp=[p for p in sh['parts'] if p['name'].startswith('g10_'+side+'_')]
+  vv=np.concatenate([np.asarray(p['vertices_world_m']) for p in pp]);lo=vv.min(0);hi=vv.max(0)
+  m,p=box(lo,hi,'g11_stock_shoulder_'+side,'failed_complete_shoulder_B_gross_challenge');stocks.append(m);stockparts.append(p)
+  records.append({'id':'shoulder_'+side,'member_ids':[p['name'] for p in pp],'source':'G10 B full functions, failed installation challenge','gross_stock_bounds_m':[lo.tolist(),hi.tolist()],'stock_volume_m3':m.volume(),'source_capacity_accepted':False})
+ ids={n for g in s['new_complete_group_placements'] for n in g['complete_member_ids']};oldshoulder=set(sh['nominated_old_shoulder_package_replacements'])
+ context=[];otherids=[];armorids=set(s['authoritative_visible_armor_ids'])
+ for p in s['parts']:
+  if p['name']==s['new_core_part_id'] or p['name'] in oldshoulder:continue
+  if p['name'] in armorids:
+   context.append(p);continue
+  vv=np.asarray(p['vertices_world_m']);lo=vv.min(0);hi=vv.max(0)
+  if hi[2]<1.74 or lo[2]>2.69 or lo[1]>.84 or hi[1]<-.84:continue
+  context.append(p)
+  # Old material shells are CONTEXT only, never hard-fixed walls.
+  if p['name'] in ids or p['role'] in ('armor_cover','armor_surface','frame','visible_mechanism') or p.get('mass_counted_elsewhere'):continue
+  if p.get('body')!='torso' and not (lo[0]<.44 and hi[0]>-.44 and lo[1]<.36 and hi[1]>-.36):continue
+  m,pp=box(lo,hi,'g11_stock_other_'+p['name'],'retained_actual_function_conservative_AABB');stocks.append(m);stockparts.append(pp);otherids.append(p['name'])
+ # Existing finite service boxes retained only where present in same source.
+ serviceids=[]
+ for ss in s['service_spaces_nonphysical']:
+  if 'vertices_world_m' not in ss:continue
+  vv=np.asarray(ss['vertices_world_m']);lo=vv.min(0);hi=vv.max(0)
+  if hi[2]<1.94 or lo[2]>2.59 or lo[1]>.44 or hi[1]<-.44:continue
+  if np.any(hi-lo<1e-8):continue
+  m,pp=box(lo,hi,'g11_service_existing_'+ss['id'],'retained_source_nonphysical_service');stocks.append(m);stockparts.append(pp);serviceids.append(ss['id'])
+ stockunion=mf.Manifold.batch_boolean(stocks,mf.OpType.Add);remaining=bulk-stockunion;inter=bulk^stockunion
+ components=remaining.decompose();blue=native(remaining,'g11_designable_remainder','designable_volume',[.16,.46,.86,1],{'not_manufacturing_material':True,'not_mass_or_inertia_qualified':True})
+ bp=native(bulk,'g11_conditional_bulk','design_domain_bulk',[.22,.53,.9,.4],{'not_certified_cavity':True})
+ nativeparts=context+sh['parts']+[blue]+stockparts
+ scene={'schema':'gorilla_g11_conditional_design_domain_v1','coordinate_frame':'world SI m Xfront Yleft Zup','source_sha256':{k:sha(p) for k,p in INPUTS.items()},'original_visible_armor_external_delta_mm':0,'visible_armor_ids':s['authoritative_visible_armor_ids'],'original_armor_bytewise_retained':True,'cavity_certified':False,'architecture_accepted':False,'parts':nativeparts,'bulk_domain_reference':bp,'complete_group_exclusion_records':records,'old_material_frames_are_context_only_not_fixed_design':True,'mass_or_full_robot_SI_claim':False}
+ (OUT/'scene.json.gz').write_bytes(gzip.compress(json.dumps(scene,separators=(',',':')).encode(),mtime=0))
+ spec={'source_sha256':scene['source_sha256'],'macro_count':1,'actual_outer_surface_source':mainarmor['name'],'actual_outer_vertex_rule':'first half of cover; only faces wholly in that half; original source unmodified','z_levels_m':[r[0][2] for r in rings],'ring_vertices_world_m':rings,'actual_curve_sample_comparison':samples,'front_and_rear_normal_inset_is_not_offset_surface':'.025m along world X, OWN candidate constraint; exact normal clearances unknown','side_constraint':'Y±.34m independent conservative cap, NOT source-certified lateral cavity','missing_hit_interpolation':'uses neighboring same-z real outer rays, explicitly unknown closure at actual open rear/window; NOT cavity proof','fixed_material':[],'interface_hints':[{'id':'waist_roll','axis_world':[1,0,0],'center_world_m':[.23,0,1.91],'conditional_output_plane_x_m':.2475,'connection_to_domain_unknown':True},{'id':'left_shoulder_pitch','axis_world':[0,1,0],'center_world_m':[-.13,.56,2.29],'fixed_B_face_y_m':.3735,'same_failed_B_complete_stock':True},{'id':'right_shoulder_pitch','axis_world':[0,-1,0],'center_world_m':[-.13,-.56,2.29],'fixed_B_face_y_m':-.3735,'same_failed_B_complete_stock':True}],'retained_function_stock_ids':otherids,'retained_source_service_ids':serviceids,'own_service_reserve_m':.02,'unknowns':['actual strict internal cavity: main cover has336openboundaryedges','lateral closing surface and rear screen opening are conditional','fixed shoulder anchors produced separately and not integrated','energy/thermal/line mounts and actual moving routes unresolved','no whole mass COM inertia force or strength acceptance','old shoulder B17resource rejects and holder/case material interference remain source challenge']}
+ write('domain_spec.json',spec)
+ report={'source_sha256':scene['source_sha256'],'source_scene_sha256':sha(OUT/'scene.json.gz'),'CAD_brep_receipt':cadvalid,'native_vs_CAD_volume_relative':(bulk.volume()-cadvalid['volume_m3'])/cadvalid['volume_m3'],'native_bulk_status':str(bulk.status()),'native_remainder_status':str(remaining.status()),'volume_m3':{'conditional_bulk':bulk.volume(),'must_empty_union':stockunion.volume(),'empty_stock_intersection_with_bulk':inter.volume(),'designable_remainder':remaining.volume()},'remaining_solid_components':len(components),'remaining_component_volumes_m3':[a.volume() for a in components],'native_domain_AABB_m':bulk.bounding_box(),'stock_rows':len(stockparts),'complete_groups':len(records),'original_visible_armor_count':len(armor),'actual_outer_ray_samples':len(samples),'front_missing':sum(not r['front_actual_hit'] for r in samples),'rear_missing':sum(not r['rear_actual_hit'] for r in samples),'usable_cavity_certified':False,'designable_remainder_is_manufacturing_frame':False,'fixed_interfaces_or_load_path_accepted':False,'all_material_and_exclusion_roots_retained':True,'mass_not_counted_as_hardware':'bulk/remainder/service only design/exclusion geometry; retained source inventory not recomputed or claimed complete','root_decision_needed':'large empty complete stock may split/eliminate room: change complete pack/drive placement and prove cavity/anchors, never shrink anonymous module or add outer armor','runtime_seconds':time.time()-start}
+ write('report.json',report)
+ render(context+sh['parts']+[blue,bp]+stockparts,'native_four_view.png')
+ render(context+sh['parts']+[blue,bp]+stockparts,'native_cutaway_four_view.png',True)
+ render(armor+[bp]+[by[n] for n in ids]+sh['parts'],'native_bulk_complete_challenge_four_view.png')
+ sections(armor+[blue]+stockparts)
+ (OUT/'README.md').write_text('# G11 主躯可重分配域（条件候选）\n\n实际C15主白甲外皮前/后射线约束独立闭口loft，保留原111甲逐值；侧封口、背屏开口、曲面内偏移与真实内腔未认证。绝不将外AABB或凸包当作可用腔。\n\n原L1完整9组33子件、G10 B完整双肩103子件及其他实际能源/热/线管功能均保留作占位挑战；肩B仍失败，旧材料框架仅历史context，旧6mm壁未固定。橙色gross AABB只作保守留空，不是OEM净材料；额外20mm服务空间是自建条件。蓝色余域尚非制造骨架，未做FEM/优化。\n\n固定节点未擅造：真实腰轴与肩B固定面仅接口提示，另分支肩anchor需同版装配后接入。原架构不是永久选型；所有未够、分断、冲突保留。无质量、惯量、整机或吨级资格主张。\n\n复现：`.venv/bin/python .scratch/gorilla_internal_g11_body_design_domain/build_domain.py`。源尺寸SI；STEP显式M声明。\n')
+ write('manifest.json',{'inputs':{k:{'path':str(p),'sha256':sha(p)} for k,p in INPUTS.items()},'outputs':{str(p.name):sha(p) for p in OUT.iterdir() if p.is_file() and p.name!='manifest.json'},'command':'.venv/bin/python .scratch/gorilla_internal_g11_body_design_domain/build_domain.py','no_optimization_or_FEM':True})
+ print(json.dumps(report,indent=2),flush=True)
+if __name__=='__main__':main()
