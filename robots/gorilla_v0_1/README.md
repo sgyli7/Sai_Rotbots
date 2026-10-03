@@ -1,11 +1,12 @@
 # Gorilla V0.1
 
-当前工作：**G19完整功能/驱动架构、电压热和整数能源候选已封存；G20开始一个完整组件关节、A350控制/保持与720完整模块的原生设计。** 首检查点和整机物理仍未达。选择探索路线不等于采用或减重；AA3上半身审美保留，新下半身仍在修图，确认后这里重建。旧腿足仅历史占位，C15已合主干，最终双足双手与自主复杂Bevy目标持续。
+当前工作：**G20完整关节/720能源/液压真实探针与实际安装失败已封存；G21改按完整包络、肩/core接口及载荷功热共同设计。** 首检查点和整机物理仍未达。模块库存不当安装净重/额定；AA3上半身审美保留，新下半身仍在修图，确认后这里重建。旧腿足仅历史占位，C15已合主干，最终双足双手与自主复杂Bevy目标持续。
 
 唯一当前状态入口：[当前决定与门禁](design/current_decisions.md)。
 
 | 资料 | 入口 |
 |---|---|
+| G20实际完整模块/安装 | [真实原生/CAD/四视、完整包络和独立复核](../../experiments/gorilla_v0_1/internal_structure_g20_native_complete_modules/README.md)；三分支A/B均拒绝，接续共同设计 |
 | G19完整功能与架构 | [实际功能账、两路线、电压热与储能/空间裁决](../../experiments/gorilla_v0_1/internal_structure_g19_function_and_actuation_architecture/README.md)；下一原生探针，未采用/物理放行 |
 | G18完整内部集成与冷却 | [实际源、原生四视、独立质量/干涉与能量范围](../../experiments/gorilla_v0_1/internal_structure_g18_full_assembly_and_cooling/README.md)；仍拒绝装配/物理/审美 |
 | G17连续主架与联合工作点 | [实际CAD/native、完整肩三轴、整组拒绝与热预算](../../experiments/gorilla_v0_1/internal_structure_g17_connected_frame_and_workpoint/README.md)；两候选仍拒绝 |

@@ -1,0 +1,60 @@
+#!/usr/bin/env python3
+"""Source-bound native/resource/mass/changed-all inspection. Never source repair or FE."""
+import pathlib,json,gzip,hashlib,importlib.util,sys,collections,time
+from importlib.machinery import SourceFileLoader
+import numpy as np,manifold3d as mf,trimesh
+R=pathlib.Path('/home/ethan/Projects/Sai_Rotbots');P=pathlib.Path(__file__).resolve().parent;D=P/sys.argv[1]
+def sha(p):return hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
+def read(p):return json.load(gzip.open(p,'rt')) if str(p).endswith('.gz') else json.loads(pathlib.Path(p).read_text())
+def wr(n,d):(D/n).write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n')
+HELP=R/'.scratch/gorilla_internal_g14_complete_thermal_colayout/geometry_helpers.py';sp=importlib.util.spec_from_file_location('g20audithelper',HELP);g=importlib.util.module_from_spec(sp);sp.loader.exec_module(g)
+SOURCE=R/'experiments/gorilla_v0_1/internal_structure_g_studies/material_contract/native_signed_material.py.txt';loader=SourceFileLoader('g20material',str(SOURCE));sp=importlib.util.spec_from_loader('g20material',loader);mat=importlib.util.module_from_spec(sp);sys.modules['g20material']=mat;loader.exec_module(mat)
+s=read(D/'scene.json.gz');by={p['name']:p for p in s['parts']};new=set(s['new_geometry_ids']);basefile=R/'.scratch/gorilla_internal_g19_root_macro/bound_g18_scene.json.gz';base=read(basefile);old={p['name']:p for p in base['parts']}
+def kind(p):
+ role=p['role'];n=p['name']
+ if role=='design_domain_bulk':return 'conditional_domain_notmaterial'
+ if 'service' in role:return 'service_afterremoval_notpermanent'
+ if 'fluid' in role or n.endswith('bounded_water_region'):return 'exclusive_fluid_inventory_alias'
+ if p.get('finite_material') is True or 'finite_installation_material' in role or p.get('density_kg_m3') is not None:return 'finite_material'
+ if role in ('armor_cover','armor_surface'):return 'visible_source_armor'
+ if any(z in role for z in ['reference','envelope','stock']):return 'protected_complete_function_reference'
+ return 'retained_unqualified_function'
+# Fullnative resourceadmission fornewsource only. No mfconversion replaces originalsource.
+physical=[by[n] for n in new if kind(by[n]) not in ['service_afterremoval_notpermanent','conditional_domain_notmaterial']];resources=mat.validate_scene({'parts':physical});wr('native_resource_receipt.json',dict(resources,source_scene_sha256=sha(D/'scene.json.gz'),scope='newenergy native originalindexedarrays only; unchangedretainedsourcephysicalqualificationNOTrechecked'))
+print('EVENT G20 resource',resources['resource_contract_pass'],len(physical),flush=True)
+# Moments only finiteownrho geometry. Cell sourcebox/component totalmass has no qualified rotor/bodydistribution.
+geom=[];totalM=0.;first=np.zeros(3);second_origin=np.zeros((3,3));rsub=[0.,0.,0.];cellcount=0
+for row in s['new_energy_mass_rows']:
+ p=by[row['id']];mr=row['mass_range_kg']
+ if '_cell_' in row['id']:cellcount+=1;continue
+ rsub=[a+v for a,v in zip(rsub,mr)]
+ if kind(p)=='finite_material' and p.get('density_kg_m3') is not None:
+  v,f=g.h.triangles(p);mm=trimesh.Trimesh(v,f,process=False).mass_properties;rho=p['density_kg_m3'];M=mm['volume']*rho;C=mm['center_mass'];I=mm['inertia']*rho;Io=I+M*((C@C)*np.eye(3)-np.outer(C,C));totalM+=M;first+=M*C;second_origin+=Io;geom.append({'id':p['name'],'signed_V_m3':mm['volume'],'own_density_kg_m3':rho,'own_nominal_material_mass_kg':M,'geometric_COM_world_m':C.tolist(),'geometric_I_COM_kgm2':I.tolist(),'scope':'ownfinite material nominalrho only; joints/mounts/fatigue/certifieddensitynotvalidated'})
+C=first/totalM;Ic=second_origin-totalM*((C@C)*np.eye(3)-np.outer(C,C));wr('mass_and_geometric_moments.json',{'scene_SHA':sha(D/'scene.json.gz'),'newcell_count':cellcount,'newcell_mass_kg':[None,None,cellcount*.07],'new_energy_noncell_mass_range_assumption_kg':rsub,'newenergy_total_mass_range_kg':[None,None,rsub[2]+cellcount*.07],'unknown_mass_low_mid_fromcellNOTfilled':True,'finiteown_geometry_subset':geom,'finiteown_subset_mass_kg':totalM,'finiteown_subset_geometricCOM_m':C.tolist(),'finiteown_subset_geometric_I_COM':Ic.tolist(),'complete_module_COM_I':None,'wholebody_M_COM_I':None,'source_referenceOEMmass_notfromenvelopevolume':True})
+# Changed×allpositivevolume, rankbroadphase only. No priorunchangedretained collisionclearanceclaim.
+objects=[by[n] for n in sorted(new) if kind(by[n]) not in ['service_afterremoval_notpermanent','conditional_domain_notmaterial']]+[p for p in s['parts'] if p['name'] not in new and kind(p) not in ['service_afterremoval_notpermanent','conditional_domain_notmaterial']];nc=sum(p['name'] in new for p in objects);lo=np.array([np.min(p['vertices_world_m'],axis=0) for p in objects]);hi=np.array([np.max(p['vertices_world_m'],axis=0) for p in objects]);cache={};hits=[];unknown=[];cand=0
+for i in range(nc):
+ js=np.flatnonzero(np.all(hi[i]>lo[i+1:]+1e-9,axis=1)&np.all(hi[i+1:]>lo[i]+1e-9,axis=1))+i+1
+ for j in js:
+  cand+=1
+  for k in [i,j]:
+   if k not in cache:cache[k]=g.mm(objects[k])
+  if any(cache[k].status()!=mf.Error.NoError for k in [i,j]):unknown.append({'a':objects[i]['name'],'b':objects[j]['name'],'kernel_unknown':True});continue
+  V=float((cache[i]^cache[j]).volume())
+  if V>1e-9:
+   samepack=objects[i]['name'].split('_')[:3]==objects[j]['name'].split('_')[:3] and objects[i]['name'].startswith('g20_pack_');hits.append({'a':objects[i]['name'],'b':objects[j]['name'],'V_m3':V,'classes':[kind(objects[i]),kind(objects[j])],'same_owner_NOwaiver':True,'same_pack':samepack,'new_vs_new':objects[j]['name'] in new})
+hits.sort(key=lambda x:-x['V_m3']);classes=collections.Counter(tuple(sorted(x['classes'])) for x in hits);wr('changed_all_collision_receipt.json',{'scene_SHA':sha(D/'scene.json.gz'),'scope':'allnewenergy finite/reference vs allpresentfinite/reference/armor/fluid except service/domain; no unchangedretainedpairs or motion','positive_volume_threshold_m3':1e-9,'AABB_candidates':cand,'positive_pairs':hits,'kernel_unknown':unknown,'classes':[{'class':list(k),'count':v} for k,v in classes.items()],'sameowner_NOwaiver':True,'allphysical_fit_accepted':False});print('EVENT G20 collisions',len(hits),'finitefinite',sum(x['classes']==['finite_material']*2 for x in hits),flush=True)
+# Exactretainedbytes and retirement accounting, noqualifiedmasscredit.
+ret=set(s['exact_probe_retired_ids']);unchanged=[n for n in by if n not in new];errors=[n for n in unchanged if n not in old or json.dumps(by[n],sort_keys=True)!=json.dumps(old[n],sort_keys=True)];originalvisible=[p['name'] for p in base['parts'] if p['role'] in ['armor_cover','armor_surface']];rec={'scene_SHA':sha(D/'scene.json.gz'),'new_geometry_IDs':sorted(new),'retired_exact_IDs':sorted(ret),'retired_all_absent':all(n not in by for n in ret),'retained_exactbytes_count':len(unchanged),'retained_identity_errors':errors,'actual_removed_vsoriginal':sorted(set(old)-set(by)),'no_retirement_reduction_credit':True,'original_visible_count':len(originalvisible),'all_original_visible_geometry_unchanged':all(n in by and json.dumps(by[n],sort_keys=True)==json.dumps(old[n],sort_keys=True) for n in originalvisible),'old_lower_only_placeholder':True,'oldfunctionalmass_UNKNOWNretained_notzero':True,'function_replacement_map':s['energy_function_replacement_map']};wr('function_and_retirement_receipt.json',rec)
+# Actualgroups geometricexposure onlynecessary rejectionbounds notcertifiedfreecavity.
+white=by['continuous_ivory_torso_armor_cover'];wv,wf=g.h.triangles(white,True);loW=wv.min(0);hiW=wv.max(0);tri=wv[wf];exposure=[]
+for q in s['complete_energy_slots']:
+ pp=[by[n] for n in q['members'] if kind(by[n])!='service_afterremoval_notpermanent'];vv=np.concatenate([np.asarray(p['vertices_world_m']) for p in pp]);loq=vv.min(0);hiq=vv.max(0);necessary=np.maximum(loW-loq,0)+np.maximum(hiq-hiW,0);sample=vv[np.linspace(0,len(vv)-1,1000).astype(int)];front=[];rear=[];miss=0
+ for point in sample:
+  h=g.h.xhits(tri,point[1],point[2])
+  if len(h)<2:miss+=1;continue
+  front.append(max(point[0]-h.max(),0));rear.append(max(h.min()-point[0],0))
+ exposure.append({'module':q['id'],'actual_group_AABB_world_m':[loq.tolist(),hiq.tolist()],'outside_original_white_AABB_necessary_xyz_m':necessary.tolist(),'actualsample_vertex_count':len(sample),'source_missing_or_nonpaired_ray_count':miss,'sampled_front_exposure_lowerbound_m':max(front) if front else None,'sampled_rear_exposure_lowerbound_m':max(rear) if rear else None,'certified_internal_cavityfit':False})
+wr('original_visible_face_exposure_receipt.json',{'scene_SHA':sha(D/'scene.json.gz'),'actualwhiteouter_AABB_m':[loW.tolist(),hiW.tolist()],'groups':exposure,'scope':'sampleactualnew nativevertices/originalvisiblefaces X-rays; missingfacesunknown, AABBoutside onlynecessaryrejection; noautomaticexteriorchange'})
+wr('audit_summary.json',{'scene_SHA':sha(D/'scene.json.gz'),'parts':len(by),'cells':cellcount,'resource_contract_pass':resources['resource_contract_pass'],'rejected_newIDs':[p['id'] for p in resources['parts'] if not p['resource_contract_pass']],'collision_positive_count':len(hits),'finite_finite_count':sum(x['classes']==['finite_material']*2 for x in hits),'all_retained_source_identical':not errors,'top10_actual_conflicts':hits[:10],'exposure':exposure,'new_energy_only_total_upper_kg':rsub[2]+cellcount*.07,'whole_M_COM_I':None,'nativeCADvalid_identity_IS_NOTphysicalqualification':True,'assembly_electrical_thermal_SI_accepted':False})
+print('EVENT G20 audit completed',sha(D/'audit_summary.json'),flush=True)

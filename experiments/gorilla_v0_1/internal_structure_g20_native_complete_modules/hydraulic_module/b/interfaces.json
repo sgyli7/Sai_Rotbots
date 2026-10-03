@@ -1,0 +1,232 @@
+{
+  "frame": "local SI m; Z cartridge axis",
+  "ports": [
+    {
+      "id": "P4",
+      "owner": "control_block",
+      "surface_m": [
+        0.035,
+        0.0,
+        -0.02845
+      ],
+      "normal": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "lumen_diameter_m": 0.009,
+      "thread": "custom G1/4 external interface assumed; actual thread not reconstructed",
+      "cavity_zone": "P4",
+      "connection_dimension_qualified": false
+    },
+    {
+      "id": "P3",
+      "owner": "control_block",
+      "surface_m": [
+        0.0,
+        0.035,
+        -0.053086
+      ],
+      "normal": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "lumen_diameter_m": 0.009,
+      "thread": "custom G1/4 external interface assumed; actual thread not reconstructed",
+      "cavity_zone": "P3",
+      "connection_dimension_qualified": false
+    },
+    {
+      "id": "P2",
+      "owner": "control_block",
+      "surface_m": [
+        -0.035,
+        0.0,
+        -0.077724
+      ],
+      "normal": [
+        -1.0,
+        0.0,
+        0.0
+      ],
+      "lumen_diameter_m": 0.009,
+      "thread": "custom G1/4 external interface assumed; actual thread not reconstructed",
+      "cavity_zone": "P2",
+      "connection_dimension_qualified": false
+    },
+    {
+      "id": "P1",
+      "owner": "control_block",
+      "surface_m": [
+        0.0,
+        -0.035,
+        -0.108
+      ],
+      "normal": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "lumen_diameter_m": 0.009,
+      "thread": "custom G1/4 external interface assumed; actual thread not reconstructed",
+      "cavity_zone": "P1",
+      "connection_dimension_qualified": false
+    },
+    {
+      "id": "C1",
+      "owner": "local_holding",
+      "surface_m": [
+        0.231,
+        0,
+        -0.08625
+      ],
+      "normal": [
+        0,
+        0,
+        -1
+      ],
+      "lumen_diameter_m": 0.006,
+      "direct_mount_to_actuator_required": true,
+      "actual_actuator_face_absent": true
+    },
+    {
+      "id": "C2",
+      "owner": "local_holding",
+      "surface_m": [
+        0.269,
+        0,
+        -0.08625
+      ],
+      "normal": [
+        0,
+        0,
+        -1
+      ],
+      "lumen_diameter_m": 0.006,
+      "direct_mount_to_actuator_required": true,
+      "actual_actuator_face_absent": true
+    },
+    {
+      "id": "V1",
+      "owner": "local_holding",
+      "surface_m": [
+        0.20400000000000001,
+        -0.0425,
+        -0.05975
+      ],
+      "normal": [
+        0,
+        -1,
+        0
+      ],
+      "thread": "G1/4 official; own fitting sizing conditional",
+      "lumen_diameter_m": 0.009
+    },
+    {
+      "id": "V2",
+      "owner": "local_holding",
+      "surface_m": [
+        0.296,
+        -0.0425,
+        -0.05975
+      ],
+      "normal": [
+        0,
+        -1,
+        0
+      ],
+      "thread": "G1/4 official; own fitting sizing conditional",
+      "lumen_diameter_m": 0.009
+    }
+  ],
+  "pressure_compensation_control_required": true,
+  "fluid_connectivity_edges": [
+    {
+      "from": "P4",
+      "to": "V1",
+      "physical_line_present": true,
+      "scope": "bench rigidtube only; aux supply/LS/filter/relief lines and actuator absent"
+    },
+    {
+      "from": "P2",
+      "to": "V2",
+      "physical_line_present": true,
+      "scope": "bench rigidtube only; aux supply/LS/filter/relief lines and actuator absent"
+    },
+    {
+      "from": "C1",
+      "to": "actuator_A_direct",
+      "physical_actuator_present": false
+    },
+    {
+      "from": "C2",
+      "to": "actuator_B_direct",
+      "physical_actuator_present": false
+    }
+  ],
+  "new_robot_routes_connected": false,
+  "services": [
+    {
+      "id": "hsp_full_cartridge_extraction",
+      "bounds_m": [
+        -0.0275,
+        -0.0375,
+        0.115,
+        0.0275,
+        0.0375,
+        0.335
+      ],
+      "function": "remove coil connectors/nut first; +Z full extraction140mm above totaltop117.7"
+    },
+    {
+      "id": "holding_left_adjust_tool",
+      "bounds_m": [
+        0.08850000000000001,
+        -0.0275,
+        -0.0875,
+        0.14350000000000002,
+        0.0275,
+        -0.032499999999999994
+      ],
+      "function": "-X tool40mm beyond leftadjust"
+    },
+    {
+      "id": "holding_right_adjust_tool",
+      "bounds_m": [
+        0.3565,
+        -0.0275,
+        -0.0875,
+        0.4115,
+        0.0275,
+        -0.032499999999999994
+      ],
+      "function": "+X tool40mm beyond rightadjust"
+    },
+    {
+      "id": "holding_bolt_access",
+      "bounds_m": [
+        0.225,
+        -0.0225,
+        -0.029500000000000002,
+        0.275,
+        0.0225,
+        0.005500000000000001
+      ],
+      "function": "+Z hex/socket access"
+    },
+    {
+      "id": "driver_plug_access",
+      "bounds_m": [
+        -0.07250000000000001,
+        0.181,
+        -0.1,
+        0.012499999999999997,
+        0.241,
+        0.0
+      ],
+      "function": "+Y hands/wireloop30mm"
+    }
+  ],
+  "owner_parent_assignments_not_robot_bodytree": true
+}

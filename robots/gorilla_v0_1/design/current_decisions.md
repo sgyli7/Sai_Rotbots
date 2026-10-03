@@ -1,6 +1,6 @@
 # Gorilla 当前决定与门禁
 
-更新：2026-10-03 20:35（Asia/Chongqing）。**首检查点/M2仍未达标，完整安装、整机物理和审美尚未放行。** G19从完整功能重新比较组件式一体关节与完整近端远传，明确绕组/电压/热耦合及720整数储能候选。选择A作G20实际原生探针，不是采用稳定本体。新下半身仍在修订，确认后由本项目重建，不移植旧腿足吨级结论。
+更新：2026-10-03 21:20（Asia/Chongqing）。**首检查点/M2仍未达标，完整安装、整机物理和审美尚未放行。** G20三个实际模块A/B已收束；720完整安装高度与原布局冲突、组件关节装配和液压源错误均明确保存。G21开始完整身体空间/肩core接口与载荷功热共同分配。新下半身仍在修订，确认后由本项目重建，不移植旧腿足吨级结论。
 
 ## 已确认方向与外形边界
 
@@ -30,16 +30,19 @@
 
 **真实电热耦合**：G18已知COM代理/组合姿态+50kg手点敏感性、ηgear=.75，QTL/N100右pitch .5rad/s需410.63V，QTR34Z/N100约65.56V但10.97Arms/100C铜损201.14W；50kg不是payload评级。若用source .17K/W和coil100C，mount≤65.81C；local水40C需mount→水≤.12829K/W，另50W热则≤.06891。有效接面/TIM/铁耗/摩擦/driver/真实冷源与完整载荷仍未知。G20已核Z接线局部5.5mm、N3.5mm，必须纳入真几何。
 
-**G20实际工作**：三个新目录独占完整component joint、A350技术控制/保持模块、720完整能源/功能分配。12:45UTC首实际native/CAD/接口与账；13:15作者硬收，root13:15–13:40至少25分钟合回同源图、实际材料/装配/空间、功率与功能范围。最多两整组宏观，不第三局部补桥、不在未装结构上FE/PPO。候选可有明确替代ID清单，只有完整功能覆盖才替代旧stock；不改稳定机器人/ABI或借未知领减重。
+**G20实际收束**：[实际native/CAD/四视与完整安装范围](../../../experiments/gorilla_v0_1/internal_structure_g20_native_complete_modules/README.md)。B组件关节110件/88强资源过，但21真实材料交、初装/核心接口仍拒；onboard56.063–58.050kg条件component库存不是安装净重，另服务托持2/4/8kg。B能源2827件/720芯，完整单包365.75×117.575×330.8mm，305层距−25.8mm、两列壳各交86.866cm³，frame/oil/PDU/compute/pump仍冲突，电返回/branch/tap/热/回馈未闭；cell50.4kg仅upper，能源103.110kg仅upper。B液压65件/5finite交/9多根、HSPgross缺2mm、C/V标签错误，完整回路与耐压未知，条件13.979–15.244kg。NoError/合法自身件/STEP回读不是安装或物理过；全机M/COM/I仍null。root独立signed moments/整数映射/选定实际交，原源与失败保留；OEM原coilCAD/direct网格及原液压全scene不再分发，43/63自建/包络精选子集明确不是完整原scene恢复。
+
+**G21实际工作**：新的三专属scratch包已13:00–13:09UTC实际派发：完整整数储能/全身体分区、组件关节core/downstream串联接口、按真实任务/吨级压撑区别做载荷—力—速—功—热—保持/回馈粗分配。首接口/space13:20；载荷13:35/几何13:40硬收，root13:40–14:05至少25分钟同源集成。integergrid与自建隐藏frame可共同重做，不默认锁15×12、原钢盒或统一18缸；最多两完整宏观，非第三G20补孔。不做未安装结构FE/PPO/新脚外观。肩接口同源合同只作搜寻/保护依据，AABB不当壳腔fit；整机安装/能力仍须真实核查。
 
 G18原失败仍约束下一验证：bodyB连续自有材料94.691083kg为7850假设，PCD270孔韧带−1.3mm；三guard漏分类已纠正并保原报告。bodyB+armB中立4合法有限材料交+1材料/流体交，肩承力/服务失败。冷却三路条件低占空改善但真实风液与高并发仍红；480minimum7.44kWh不覆盖原30min最坏9.111–9.469kWh。这些源/检查只属于旧失败候选，不能当G20借来的通过结果。
 
 ## 已保存的历史证据入口
 
-以下按各自版本读取；表中的下一步是该周期历史，不覆盖上面的G20当前选择。G19前完整决定/失败数字保存在[G18/G19接续时观察快照](../../../experiments/gorilla_v0_1/internal_structure_g19_function_and_actuation_architecture/function_architecture/current_decisions_observed.md)，不再在当前索引重复多轮过时计划。
+以下按各自版本读取；表中的下一步是该周期历史，不覆盖上面的G21当前选择。G19前完整决定/失败数字保存在[G18/G19接续时观察快照](../../../experiments/gorilla_v0_1/internal_structure_g19_function_and_actuation_architecture/function_architecture/current_decisions_observed.md)，不再在当前索引重复多轮过时计划。
 
 | 入口 | 当前结论 |
 |---|---|
+| [G20真实完整模块](../../../experiments/gorilla_v0_1/internal_structure_g20_native_complete_modules/README.md) | 三分支A/B失败保原源；真实安装高度、完整关节/控制回路和独立原生复核；接续全身体共同设计 |
 | [G18完整同源组合/冷却](../../../experiments/gorilla_v0_1/internal_structure_g18_full_assembly_and_cooling/README.md) | bodyB自有94.691083kg/1材料根与真实pack孔；三处原guard分类纠偏后仍穿cage/oil。bodyB+armB源9873e9db/2583件，中立4合法finite交+1fluid交，4新料拒绝与承力/服务未闭。整机M/COM/I为null，422未知owner显式保留；冷却分三路但风液/持续能力红，480芯30min储备欠；两肩案均停，回架构 |
 | [G17连续主架/完整工作点](../../../experiments/gorilla_v0_1/internal_structure_g17_connected_frame_and_workpoint/README.md) | 主架含两锚净95.705637kg、合法1实体；完整B2530件仍24包内finite交/1泵组包络交/两OEM肩锚参考交。肩B已完整串联，合回2562件297混合/22有限材料交，旧carrier减重credit0；35°C/200V入口超50°C、双150冷态/NPSH/case及真实风道未闭，30min储能欠。两候选均拒绝，下一整组共同重建 |
 | [G16宽厚设计域/真实接口](../../../experiments/gorilla_v0_1/internal_structure_g16_broad_domain_and_interfaces/README.md) | A/B合法主frame62.935kg、两独立native锚另30.254kg，不等于刚接或整机。B2529件/2thermal组参考交/45finite交，X=.115接面无抗Fz。完整S1冷温曲线/压头/NPSH仍红；A30min需7.475–7.757kWh超过480芯最低7.44。278项有限复核通过，安装/物理仍拒；G17解决真实连接/串联全链和联合工作点 |

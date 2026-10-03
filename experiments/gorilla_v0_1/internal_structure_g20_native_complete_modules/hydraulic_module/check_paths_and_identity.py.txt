@@ -1,0 +1,39 @@
+from pathlib import Path
+import json,gzip,hashlib,numpy as np,manifold3d as mf
+P=Path(__file__).resolve().parent
+
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def mm(p):return mf.Manifold(mf.Mesh64(np.array(p['vertices_world_m']),np.array(p['faces'])))
+def write(d,n,x):(d/n).write_text(json.dumps(x,ensure_ascii=False,indent=2)+'\n')
+for d,sn in [(P,'scene_a.json.gz'),(P/'b','scene_b.json.gz')]:
+ s=json.load(gzip.open(d/sn,'rt'));by={p['name']:p for p in s['parts']};M={n:mm(p) for n,p in by.items()};rows=[]
+ cartridge=[n for n in by if n.startswith(('hsp12_','e_coil_')) or n in ['lower_coil_washer','upper_coil_retainer']]
+ # Strict raw coil resource fails, so these intersections are diagnostic only, never resource-admitted removal.
+ kept=[n for n,p in by.items() if p['role'] not in ['service_stock','fluid_lumen_reference'] and n not in cartridge and not n.startswith(('removable_control_guard','guard_bolt_'))]
+ for dz in np.linspace(0,.14,15):
+  pairs=[]
+  for a in cartridge:
+   ma=M[a].translate([0,0,float(dz)])
+   for b in kept:
+    mb=M[b];bb=np.array(ma.bounding_box());bc=np.array(mb.bounding_box())
+    if not np.all(np.minimum(bb[3:],bc[3:])-np.maximum(bb[:3],bc[:3])>0):continue
+    v=mf.Manifold.batch_boolean([ma,mb],mf.OpType.Intersect).volume()
+    if v>1e-10:pairs.append({'moving':a,'fixed':b,'volume_m3':v})
+  rows.append({'translation_Z_m':float(dz),'positive_volume_pairs':pairs})
+ # Static service stocks are not freeair by assertion: exclude target only, require explicit disassembly mask.
+ service=[]
+ for a,p in by.items():
+  if p['role']!='service_stock':continue
+  hits=[]
+  for b,q in by.items():
+   if q['role'] in ['service_stock','fluid_lumen_reference'] or p['body']==q['body']:continue
+   bb=np.array(M[a].bounding_box());bc=np.array(M[b].bounding_box())
+   if not np.all(np.minimum(bb[3:],bc[3:])-np.maximum(bb[:3],bc[:3])>0):continue
+   v=mf.Manifold.batch_boolean([M[a],M[b]],mf.OpType.Intersect).volume()
+   if v>1e-10:hits.append({'id':b,'role':q['role'],'volume_m3':v})
+  service.append({'id':a,'hits_excluding_same_owner_target':hits,'service_not_material_or_mass':True,'same_owner_exclusion_NOT_full_disassembly_qualification':True})
+ corrected={'C2':{'surface_m':[.231,0,-.08625],'normal':[0,0,-1],'OEM_block_port_before_adapter_m':[.231,0,-.07225]},'C1':{'surface_m':[.269,0,-.08625],'normal':[0,0,-1],'OEM_block_port_before_adapter_m':[.269,0,-.07225]},'V2':{'surface_m':[.204,-.0425,-.05975],'normal':[0,-1,0]},'V1':{'surface_m':[.296,-.0425,-.05975],'normal':[0,-1,0]}}
+ hspv=np.array(by['hsp12_47c_cartridge_complete_gross']['vertices_world_m']);holdv=np.array(by['a_vbso_de_78_fc2_complete_gross']['vertices_world_m']);real=[p for p in s['parts'] if p['role'] not in ['service_stock','fluid_lumen_reference']];cv=np.concatenate([np.array(p['vertices_world_m']) for p in real if p['body']!='local_holding' and p['body']!='bench_lines']);hv=np.concatenate([np.array(p['vertices_world_m']) for p in real if p['body']=='local_holding'])
+ report={'scene_sha256':sha(d/sn),'sampled_cartridge_extraction':rows,'sample_count':15,'step_mm':10,'guard_removed_before_extraction_required':True,'raw_OEM_coil_boundary_failed_so_no_resource_admitted_extraction_PASS':True,'service_static_overlap_scope':service,'identity_correction_not_geometry_repair':{'official_RE18307_56_mapping':corrected,'original_producer_interfaces_C1/C2_and_V1/V2_left_right_swapped':True,'source_rule':'drawing blockleftX0 C2=50,C1=88,V2=23,V1=115; translated blockcenter.250','B_physical_bench_workline_A_connects':'P4→source V1(right)','B_physical_bench_workline_B_connects':'P2→source V2(left)','corrected_metadata_DOES_NOT_validate_new_lines_or_actuator_connection':True},'actual_source_dimension_audit':{'hsp_gross_upper_actual_mm':float(hspv[:,2].max()*1000),'HSP_official_upper_dimension_mm':117.7,'upper_envelope_missing_mm':float(117.7-hspv[:,2].max()*1000),'complete_upper_gross_dimension_identity_rejected':True,'actual_holding_totalX_mm':float(np.ptp(holdv[:,0])*1000),'source_holding_adjust_totalX_mm':213,'coils_historical_height_each_mm':49.530,'current2026coil_drawing_height_ref_mm':49.3,'historic_CAD_current_variant_difference_not_scaled_away_mm':.230},'actual_scope_envelopes':{'proximalcontrol_AABB_m':[cv.min(0).tolist(),cv.max(0).tolist()],'proximalcontrol_D_m':np.ptp(cv,axis=0).tolist(),'localholding_AABB_m':[hv.min(0).tolist(),hv.max(0).tolist()],'localholding_D_m':np.ptp(hv,axis=0).tolist(),'bench_separation_NOT_robot_layout':True},'fullmodule_or_SI_admission':False}
+ write(d,'paths_and_source_identity_receipt.json',report)
+ print(d.name,'extractionpositive',sum(bool(x['positive_volume_pairs']) for x in rows),'servicehits',sum(bool(x['hits_excluding_same_owner_target']) for x in service),'actualbounds',report['actual_scope_envelopes'])

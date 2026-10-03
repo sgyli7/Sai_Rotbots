@@ -1,0 +1,101 @@
+"""G20 read-only source integration; signed tetra moments independently of CAD.
+
+Component arithmetic remains conditional where components intersect. OEM gross,
+cell envelopes, fluid/service references are not homogeneous material solids.
+"""
+from pathlib import Path
+import gzip, json, hashlib, collections
+import numpy as np
+import manifold3d as mf
+
+ROOT = next(p for p in Path(__file__).resolve().parents if (p/'sai_robots_engineering_rules.md').exists())
+OUT = Path(__file__).resolve().parent
+inputs = {}
+
+def read(rel):
+    p=ROOT/rel; data=p.read_bytes(); inputs[rel]=hashlib.sha256(data).hexdigest()
+    return json.loads(gzip.decompress(data) if p.suffix=='.gz' else data)
+
+def moments(p):
+    v=np.asarray(p['vertices_world_m'],dtype=float)
+    origin=(v.min(axis=0)+v.max(axis=0))/2
+    a,b,c=(v-origin)[np.asarray(p['faces'],dtype=int)].transpose(1,0,2)
+    dv=np.einsum('ij,ij->i',a,np.cross(b,c))/6
+    vol=dv.sum(); total=a+b+c
+    first=np.einsum('i,ij->j',dv,total)/4
+    second=(np.einsum('i,ij,ik->jk',dv,total,total)
+            +np.einsum('i,ij,ik->jk',dv,a,a)
+            +np.einsum('i,ij,ik->jk',dv,b,b)
+            +np.einsum('i,ij,ik->jk',dv,c,c))/20
+    co=first/vol; rho=p.get('density_kg_m3',p.get('density_hypothesis_kg_m3'))
+    mass=vol*rho
+    inertia=rho*(np.trace(second)*np.eye(3)-second)-mass*((co@co)*np.eye(3)-np.outer(co,co))
+    return float(mass),co+origin,inertia,float(vol)
+
+def aggregate(rows):
+    mass=sum(x[0] for x in rows); com=sum(x[0]*x[1] for x in rows)/mass
+    inertia=sum(x[2]+x[0]*(((x[1]-com)@(x[1]-com))*np.eye(3)-np.outer(x[1]-com,x[1]-com)) for x in rows)
+    return dict(component_sum_kg=mass,component_sum_COM_world_m=com.tolist(),component_sum_full_I_at_COM_world_kg_m2=inertia.tolist(),qualified_assembly=False)
+
+J='.scratch/gorilla_internal_g20_component_joint/b/'
+E='.scratch/gorilla_internal_g20_energy_functional_pack/b/'
+H='.scratch/gorilla_internal_g20_hydraulic_complete_module/b/'
+joint=read(J+'scene.json.gz'); energy=read(E+'scene.json.gz'); hydra=read(H+'scene_b.json.gz')
+jgate=read(J+'native_material_gate.json'); jreport=read(J+'neutral_and_pose_report.json'); jm=read(J+'mass_inventory_report.json')
+egate=read(E+'native_resource_receipt.json'); ereport=read(E+'changed_all_collision_receipt.json'); em=read(E+'mass_and_geometric_moments.json')
+hgate=read('.scratch/gorilla_internal_g20_hydraulic_complete_module/final_admission_receipt.json')
+result={'scope':'Read-only G20 B integration, conditional individual native moments, literal full-package dimensions, selected positive queries. No new generation, full robot M/COM/I, strength or electrical admission.'}
+for label,scene in [('joint',joint),('energy',energy),('hydraulic',hydra)]:
+    names=[p['name'] for p in scene['parts']]
+    assert len(names)==len(set(names))
+    result[label+'_unique_ids']=len(names)
+
+jrows=[moments(p) for p in joint['parts'] if p['finite_material']]
+result['joint_own_independent_moments']=aggregate(jrows)
+result['joint_own_independent_moments']['mass_delta_to_CAD_component_sum_kg']=result['joint_own_independent_moments']['component_sum_kg']-jm['own_finite_component_sum_kg']
+result['joint_own_independent_moments']['COM_max_abs_delta_to_CAD_m']=float(np.max(np.abs(np.asarray(result['joint_own_independent_moments']['component_sum_COM_world_m'])-jm['own_finite_components_sum_COM_world_m'])))
+result['joint_own_independent_moments']['I_max_abs_delta_to_CAD_kg_m2']=float(np.max(np.abs(np.asarray(result['joint_own_independent_moments']['component_sum_full_I_at_COM_world_kg_m2'])-jm['own_finite_components_sum_full_I_at_COM_world_kg_m2'])))
+finite=[x for x in jreport['neutral_pairs'] if x['classification']=='finite_material']
+result['joint_actual_material_queries']={'neutral_finite_pairs':len(finite),'both_single_material_resources_valid':sum(x['finite_source_valid'] is True for x in finite),'all_same_owner_does_not_waive_interpenetration':all(x['same_owner'] for x in finite),'protected_OEM_reference_queries_not_proven_material_collision':sum(x['classification']=='protected_reference_query' for x in jreport['neutral_pairs'])}
+
+new=set(energy['new_geometry_ids']); eparts={p['name']:p for p in energy['parts']}
+own=[p for p in energy['parts'] if p['name'] in new and p.get('finite_material') and p.get('density_kg_m3') is not None]
+result['energy_own_independent_moments']=aggregate([moments(p) for p in own])
+result['energy_own_independent_moments']['own_rows']=len(own)
+cells=[p for p in energy['parts'] if p['name'] in new and p['role']=='OEM_cell_max_envelope_reference']
+assert len(cells)==720
+groups=[]; dims=[]
+for i in range(4):
+    prefix=f'g20_pack_{i}_'; partset=[p for p in energy['parts'] if p['name'].startswith(prefix) and p.get('source_local_ID') is not None]
+    # Full source parts, including candidate mounting/ports/refs; explicitly separate service.
+    partset=[p for p in partset if 'service' not in p['role']]
+    v=np.concatenate([np.asarray(p['vertices_world_m']) for p in partset])
+    subset=[p for p in cells if p['name'].startswith(prefix)]
+    count=collections.Counter(p['local_series_group'] for p in subset)
+    assert len(subset)==180 and len(count)==18 and set(count.values())=={10}
+    groups.append(dict(pack=i,source_cells=len(subset),series_groups=len(count),parallel_count=10,unique_group_parallel_pairs=len({(p['local_series_group'],p['parallel_cell']) for p in subset})))
+    dims.append(dict(pack=i,world_min_m=v.min(axis=0).tolist(),world_max_m=v.max(axis=0).tolist(),full_actual_world_XYZ_m=(v.max(axis=0)-v.min(axis=0)).tolist(),source_part_ids=[p['name'] for p in partset]))
+result['energy_integer_mapping']=groups
+result['energy_actual_full_package_bounds']=dims
+result['energy_reference_mass_upper_only_kg']=sum(p['mass_range_kg'][2] for p in cells)
+result['energy_module_reference_Wh_min']=720*15.5
+result['energy_series_raw_V']=[72*2.5,72*4.2]
+result['energy_vertical_clearance_pack0_to_pack1_m']=dims[1]['world_min_m'][2]-dims[0]['world_max_m'][2]
+assert result['energy_vertical_clearance_pack0_to_pack1_m']<0
+
+# Independent literal native kernel pairs, not CAD face recollection.
+samples=[]
+for label,parts,queries,key in [('joint',{p['name']:p for p in joint['parts']},finite[:2],'volume_m3'),('energy',eparts,[x for x in ereport['positive_pairs'] if x['classes']==['finite_material','finite_material'] and x['a'] in new and x['b'] in new][:3],'V_m3')]:
+    for q in queries:
+        a,b=(parts[q[k]] for k in ['a','b'])
+        def mesh(p): return mf.Manifold(mf.Mesh64(np.asarray(p['vertices_world_m'],dtype=np.float64),np.asarray(p['faces'],dtype=np.uint64)))
+        ma,mb=mesh(a),mesh(b); inter=ma^mb; value=float(inter.volume())
+        samples.append(dict(scope=label,a=q['a'],b=q['b'],kernel_status=str(inter.status()),actual_intersection_m3=value,delta_to_author_m3=value-q[key],source_roles=[a['role'],b['role']],both_finite=bool(a.get('finite_material') and b.get('finite_material'))))
+result['independent_selected_native_pairs']=samples
+result['physical_accepted']=False; result['whole_robot_mass_COM_fullI']=None
+result['prior_audit_scope_error']='V1 included global pack-to-PDU feed pieces by name prefix in local-package dimensions. Original result/producer kept, rejected. V2 requires explicit source_local_ID, excludes global feed and service; native geometry untouched.'
+result['CAD_vs_native_moment_difference_is_faceted_exchange_not_exact_numerical_match']=True
+result['own_joint_mass_relative_CAD_delta']=result['joint_own_independent_moments']['mass_delta_to_CAD_component_sum_kg']/jm['own_finite_component_sum_kg']
+result['inputs']=inputs
+(OUT/'independent_native_audit.json').write_text(json.dumps(result,indent=2,allow_nan=False)+'\n')
+print(json.dumps({'joint':result['joint_own_independent_moments'],'energy_own_kg':result['energy_own_independent_moments']['component_sum_kg'],'full_pack_world_dims_m':[x['full_actual_world_XYZ_m'] for x in dims],'vertical_gap_m':result['energy_vertical_clearance_pack0_to_pack1_m'],'pair_samples':samples},indent=2))

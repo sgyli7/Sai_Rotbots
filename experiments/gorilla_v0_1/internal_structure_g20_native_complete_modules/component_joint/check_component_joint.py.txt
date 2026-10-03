@@ -1,0 +1,58 @@
+"""Read original world-SI G20 finite parts; no repairs, owner exemptions or OEM mass inference."""
+from pathlib import Path
+import json,gzip,hashlib,importlib.util,sys,argparse,math
+import numpy as np,manifold3d as mf
+O=Path(__file__).resolve().parent;ROOT=next(p for p in O.parents if(p/'sai_robots_engineering_rules.md').is_file());ap=argparse.ArgumentParser();ap.add_argument('--variant',choices=['a','b'],required=True);args=ap.parse_args();D=O/args.variant
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def put(p,d):Path(p).write_text(json.dumps(d,indent=2,allow_nan=False)+'\n')
+vp=ROOT/'.scratch/gorilla_internal_g_material_contract/native_signed_material.py';sp=importlib.util.spec_from_file_location('g20validator',vp);vmod=importlib.util.module_from_spec(sp);sys.modules[sp.name]=vmod;sp.loader.exec_module(vmod)
+source=D/'scene.json.gz';s=json.loads(gzip.decompress(source.read_bytes()));ps=s['parts'];C=np.array(s['joint_interfaces'][0]['pivot_world_m']);tol=1e-10
+meshes={};gate=[]
+for p in ps:
+ m=mf.Manifold(mf.Mesh64(np.asarray(p['vertices_world_m'],dtype=np.float64),np.asarray(p['faces'],dtype=np.uint64)));meshes[p['name']]=m
+ if p['finite_material']:
+  r=vmod.validate_part(p,require_single_material_component=True);r['kernel_signed_surface_components']=len(m.decompose());r['actual_material_components_from_signed_containment']=r['material_component_count_from_nesting'];gate.append(r)
+put(D/'native_material_gate.json',{'source_sha256':sha(source),'producer_sha256':sha(Path(__file__)),'validator_sha256':sha(vp),'parts':gate,'pass_count':sum(r['resource_contract_pass']for r in gate),'reject_count':sum(not r['resource_contract_pass']for r in gate),'no_repairs':True,'physical_accepted':False})
+valid={r['id']for r in gate if r['resource_contract_pass']}
+def pairs(mm):
+ out=[];names=list(mm)
+ for i,a in enumerate(names):
+  ma=mm[a];aa=np.asarray(ma.bounding_box())
+  for b in names[i+1:]:
+   mb=mm[b];bb=np.asarray(mb.bounding_box())
+   if not(np.all(aa[3:]>bb[:3])and np.all(bb[3:]>aa[:3])):continue
+   iv=float((ma^mb).volume())
+   if iv>tol:
+    pa=next(p for p in ps if p['name']==a);pb=next(p for p in ps if p['name']==b)
+    cls='finite_material'if pa['finite_material']and pb['finite_material']else'protected_reference_query'if pa['role'].startswith('protected_OEM')or pb['role'].startswith('protected_OEM')else'other_reference_query'
+    out.append({'a':a,'b':b,'a_body':pa['body'],'b_body':pb['body'],'same_owner':pa['body']==pb['body'],'volume_m3':iv,'volume_cm3':iv*1e6,'classification':cls,'finite_source_valid':a in valid and b in valid if cls=='finite_material'else None,'material_collision_not_established_for_gross_reference':cls!='finite_material'})
+ return sorted(out,key=lambda r:r['volume_m3'],reverse=True)
+neutral=pairs(meshes);pose=[]
+for angle in [-15,15]:
+ t=math.radians(angle);Q=np.array([[math.cos(t),0,math.sin(t)],[0,1,0],[-math.sin(t),0,math.cos(t)]])
+ moving={p['name']for p in ps if p['body']in['g20_pitch_output','g20_component_FS_output']}
+ mm={n:m.transform(np.column_stack([Q,C-Q@C]))if n in moving else m for n,m in meshes.items()};rows=pairs(mm)
+ pose.append({'id':'pitch_'+str(angle),'angle_deg':angle,'scope':'output/FS display transformation only; actual gear tooth motion/internal unknown','new_transform_world':np.column_stack([Q,C-Q@C]).tolist(),'moved_names':sorted(moving),'pairs':rows})
+put(D/'neutral_and_pose_report.json',{'source_sha256':sha(source),'producer_sha256':sha(Path(__file__)),'volume_threshold_m3':tol,'neutral_pairs':neutral,'poses':pose,'no_owner_exemption':True,'gross_ref_not_net_material':True,'physical_accepted':False})
+# Component connections are explicit gap/material queries, not labels.
+interface=[]
+for a,b in [('g20_shared_closed_receiver_and_bearing_seats','g20_removable_motor_brake_wet_case'),('g20_rotor_keyed_holder','g20_WG_input_stepped_shaft'),('g20_WG_key_8JS9_candidate','g20_WG_input_stepped_shaft'),('g20_output_flange_journals_closed_carrier','g20_output_keeper_0'),('g20_removable_motor_brake_wet_case','g20_rear_removable_cover')]:
+ ma,mb=meshes[a],meshes[b];interface.append({'a':a,'b':b,'intersection_volume_m3':float((ma^mb).volume()),'native_min_gap_capped_10mm_m':float(ma.min_gap(mb,.01)),'mechanical_connection_admitted':False,'bolt_thread_preload_assembly_unknown':True})
+# Literal sequential service states: all removed pieces parked in real positions, not hidden.
+park={};rows=[];stages=[]
+coverbolts=[p['name']for p in ps if 'rear_cover_bolt_'in p['name']]
+sequence=[('unbolt_rear_cover',coverbolts,np.array([0,.08,0.])),('remove_rear_cover',['g20_rear_removable_cover'],np.array([0,.32,0.])),('brake_yoke_and_coil',['g20_brake_release_yoke','g20_brake_release_coil'],np.array([0,.48,0.])),('motor_stator_install_reverse',['g20_QTR16034Z_stator_complete_gross','g20_stator_TIM'],np.array([0,.66,0.]))]
+for stage,names,delta in sequence:
+ samples=[]
+ for alpha in np.linspace(0,1,9):
+  offsets={**park,**{n:alpha*delta for n in names}};mm={n:m.translate(offsets[n])if n in offsets else m for n,m in meshes.items()}
+  allpairs=pairs(mm);hit=[r for r in allpairs if(r['a']in names) != (r['b']in names)]
+  samples.append({'alpha':float(alpha),'pairs':hit,'finite_material_count':sum(r['classification']=='finite_material'for r in hit),'gross_and_other_query_count':sum(r['classification']!='finite_material'for r in hit)})
+ park.update({n:delta for n in names});stages.append({'id':stage,'moving_parts':names,'translation_world_m':delta.tolist(),'already_parked_positions_world_m':{n:dd.tolist()for n,dd in park.items()},'samples':samples})
+put(D/'literal_service_report.json',{'source_sha256':sha(source),'producer_sha256':sha(Path(__file__)),'sample_count_per_stage':9,'all_source_parts_remain_present_at_each_stage':True,'source_part_count':len(ps),'stages':stages,'finite_service_pass':not any(x['finite_material_count']for st in stages for x in st['samples']),'OEM_initial_full_insertion_and_qualified_order_unknown':True,'support_fixture_capacity_and_loaded_disassembly_unknown':True,'physical_accepted':False})
+cad=json.loads((D/'cad_part_manifest.json').read_text());cm={r['name']:r for r in cad};finite=[p for p in ps if p['finite_material']];mass=sum(p['mass_range_kg'][1]for p in finite);com=sum(np.array(p['exact_CAD_COM_world_m'])*p['mass_range_kg'][1]for p in finite)/mass;I=np.zeros((3,3))
+for p in finite:
+ d=np.array(p['exact_CAD_COM_world_m'])-com;I+=np.array(p['exact_CAD_full_I_at_COM_world_kg_m2'])+p['mass_range_kg'][1]*((d@d)*np.eye(3)-np.outer(d,d))
+refs=[p for p in ps if not p['finite_material']and'mass_range_kg'in p];R=np.sum([p['mass_range_kg']for p in refs],axis=0)+np.array([6.7]*3)
+put(D/'mass_inventory_report.json',{'source_sha256':sha(source),'producer_sha256':sha(Path(__file__)),'own_finite_component_sum_kg':mass,'own_finite_components_sum_COM_world_m':com.tolist(),'own_finite_components_sum_full_I_at_COM_world_kg_m2':I.tolist(),'own_intersections_rejected_no_false_union_credit':True,'reference_full_modules_range_kg':R.tolist(),'catalogue_CSG65_6p7kg_once':True,'reference_full_COM_I_unknown_not_uniform_cylinder':True,'known_conditional_component_sum_range_kg':(R+mass).tolist(),'unknown_oil_water_mountnuts_threads_releaseholder_cabling_mass_not_zero':True,'finite_CAD_native_volume_mismatch_gt0p25pct':[r['name']for r in cad if abs(r['native_CAD_volume_relative_error'])>.0025],'shared_OCC_tags':len([t for r in cad for t in r['OCC_solid_tags']])!=len(set(t for r in cad for t in r['OCC_solid_tags'])),'component_connection_queries':interface,'full_physical_mass_COM_I_accepted':False})
+print('G20CHECK',args.variant,'finite',len(gate),'reject',sum(not r['resource_contract_pass']for r in gate),'neutralFinite',sum(r['classification']=='finite_material'for r in neutral),'mass',mass,R.tolist(),flush=True)

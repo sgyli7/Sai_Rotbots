@@ -1,0 +1,18 @@
+from pathlib import Path
+import json,hashlib,datetime,gzip
+P=Path(__file__).resolve().parent
+sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+x=json.loads((P/'final_probe_report.json').read_text())
+# Non-mutating source admission checks; initial status checks retained as history.
+checks=[]
+for v in x['variants']:
+ scene=Path(v['scene_path']);s=json.load(gzip.open(scene,'rt'));names=[p['name'] for p in s['parts']];massids=[m for r in s['mass_rows'] for m in r['member_ids']]
+ checks.append({'variant':v['variant'],'source_sha256':sha(scene),'native_NoError_or_initial_edge_gate_does_not_override_single_root_or_assembly':True,'duplicate_part_ids':len(names)-len(set(names)),'duplicate_mass_member_ids':len(massids)-len(set(massids)),'mass_rows_members_missing_in_actual_source':list(set(massids)-set(names)),'finite_cross_owner_material_pairs':v['finite_material_intersections'],'multiple_positive_material_piece_ids':v['finite_multi_positive_piece_failure_ids'],'OEM_raw_coil_bad_boundary':True,'full_117_7mm_upper_envelope_missing2mm':True,'raw_C_V_labels_wrong_corrected_external_receipt_only':True,'whole_module_resource_AND_installation_admission':False,'OEM_fullI_UNKNOWN_not_fabricated':True})
+(P/'final_admission_receipt.json').write_text(json.dumps({'checks':checks,'third_geometry_attempt':False,'source_not_repaired':True,'all_physical_adoption_false':True},indent=2)+'\n')
+files={str(q.relative_to(P)):{'sha256':sha(q),'bytes':q.stat().st_size} for q in sorted(P.rglob('*')) if q.is_file() and q.name not in ['freeze_manifest.json','freeze_verification.json'] and '__pycache__' not in q.parts}
+inputs=x['variants'][0]['source_sha256']
+manifest={'created_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'robot':'gorilla_v0_1','scope':'G20 two rejected native complete-function probes, all physical/wholeSI/aesthetic admission false','original_G19_preserved':True,'final_a_scene_sha256':sha(P/'scene_a.json.gz'),'final_b_scene_sha256':sha(P/'b/scene_b.json.gz'),'final_report_sha256':sha(P/'final_probe_report.json'),'outputs':files,'producer_entrypoints':['import_official_coil.py','build_module_a.py','create_b_producer.py→build_module_b.py','audit_render_a.py','audit_render_b.py','export_cad_and_checks.py','check_paths_and_identity.py','finalize_probe.py'],'do_not_run_producers_in_frozen_directory':True,'native_images_actually_viewed':['native_module_four_view_a.png','b/native_module_four_view_b.png'],'no_third_geometry':True}
+(P/'freeze_manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+errors=[name for name,row in files.items() if sha(P/name)!=row['sha256']]
+(P/'freeze_verification.json').write_text(json.dumps({'manifest_sha256':sha(P/'freeze_manifest.json'),'files':len(files),'hash_errors':errors,'source_admission':False,'physics_admission':False,'verification_only_identity_not_geometry_repair':True},indent=2)+'\n')
+print('EVENT FROZEN',sha(P/'freeze_manifest.json'),len(files),len(errors))

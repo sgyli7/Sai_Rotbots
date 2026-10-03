@@ -1,0 +1,35 @@
+from pathlib import Path
+import json,hashlib,numpy as np
+from OCP.STEPControl import STEPControl_Reader
+from OCP.BRepMesh import BRepMesh_IncrementalMesh
+from OCP.TopExp import TopExp_Explorer
+from OCP.TopAbs import TopAbs_FACE,TopAbs_REVERSED
+from OCP.TopoDS import TopoDS
+from OCP.TopLoc import TopLoc_Location
+from OCP.BRep import BRep_Tool
+from OCP.BRepCheck import BRepCheck_Analyzer
+import manifold3d as mf
+P=Path(__file__).resolve().parent
+src=P/'official_sources/coil_10_er.stp'
+r=STEPControl_Reader();assert int(r.ReadFile(str(src)))==1;r.TransferRoots();s=r.OneShape();assert BRepCheck_Analyzer(s).IsValid()
+BRepMesh_IncrementalMesh(s,.10,False,.18,True)
+e=TopExp_Explorer(s,TopAbs_FACE);v=[];f=[];lookup={};tmap=[]
+while e.More():
+ face=TopoDS.Face_s(e.Current());loc=TopLoc_Location();tri=BRep_Tool.Triangulation_s(face,loc);ids=[]
+ for i in range(1,tri.NbNodes()+1):
+  a=tri.Node(i).Transformed(loc.Transformation());xyz=np.array([a.X(),a.Y(),a.Z()])*.001;key=tuple(np.round(xyz,12));
+  if key not in lookup:lookup[key]=len(v);v.append(xyz)
+  ids.append(lookup[key])
+ for i in range(1,tri.NbTriangles()+1):
+  q=[ids[j-1] for j in tri.Triangle(i).Get()]
+  if face.Orientation()==TopAbs_REVERSED:q=q[::-1]
+  f.append(q)
+ e.Next()
+v=np.array(v);f=np.array(f,dtype=np.int32)
+# Original STEP axis Y; mount reference is lower axial end. Rotate +Y to +Z.
+rot=np.array([[1,0,0],[0,0,-1],[0,1,0]])
+v=v@rot.T;bottom=v[:,2].min();v[:,2]-=bottom
+np.savez_compressed(P/'official_coil_native.npz',vertices_local_m=v,faces=f)
+m=mf.Manifold(mf.Mesh64(v,f));edges=np.sort(np.concatenate([f[:,[0,1]],f[:,[1,2]],f[:,[2,0]]]),axis=1);u,c=np.unique(edges,axis=0,return_counts=True)
+rec={'source':str(src),'source_sha256':hashlib.sha256(src.read_bytes()).hexdigest(),'declared_source_units':'inch conversion-based underlying millimetres; STEPReader numeric internal mm','CAD_valid':True,'native_vertices':len(v),'native_faces':len(f),'native_status':str(m.status()),'native_boundary_edge_degree_not_2':int((c!=2).sum()),'no_fix_normals_or_mesh_repair':True,'export_same_coordinate_node_indexing_round_key_m':1e-12,'mesh_deflection_mm':.10,'native_bounds_m':[v.min(0).tolist(),v.max(0).tolist()],'axis_transform':rot.tolist(),'axial_datum_normalization_m':float(bottom),'OEM_internal_material_unknown':True,'historical_STEP_2007_vs_current_2026_reference_variant_identity_not_certified':True,'mass_kg_source_current':.37,'mass_not_geometry_density':True,'fullI_unknown':True}
+(P/'official_coil_import_receipt.json').write_text(json.dumps(rec,indent=2)+'\n');print(json.dumps(rec,indent=2))
