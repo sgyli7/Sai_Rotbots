@@ -1,0 +1,43 @@
+"""Actual G13 source delta, no source mutations or assembly acceptance."""
+from pathlib import Path
+import importlib.util,json,gzip,hashlib
+import numpy as np
+P=Path(__file__).parent
+spec=importlib.util.spec_from_file_location('local_read_functions',P/'build_load_budget.py');m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
+gpath=m.R/'.scratch/gorilla_internal_g13_load_cage_colayout/scene.json.gz';g=m.read(gpath);base=m.read(P/'load_and_material_budget.json');oldsource=m.read(m.R/'.scratch/gorilla_internal_g9_module_placement/layout_1/scene.json.gz')
+by={p['name']:p for p in g['parts']};ob={p['name']:p for p in oldsource['parts']}
+old=[];missing=[];transforms=[]
+for r in base['inventory']['retained_old_rows']:
+ rr=dict(r);absent=[i for i in rr['member_ids'] if i not in by]
+ if absent:missing.append({'id':r['id'],'absent_ids':absent,'not_zero_mass_or_silent_delete':True});continue
+ if len(rr['member_ids'])==1:
+  n=rr['member_ids'][0];a=np.asarray(ob[n]['vertices_world_m']);b=np.asarray(by[n]['vertices_world_m'])
+  if a.shape==b.shape and not np.array_equal(a,b):
+   ac=a.mean(0);bc=b.mean(0);u,sv,vt=np.linalg.svd((a-ac).T@(b-bc));rot=vt.T@u.T
+   if np.linalg.det(rot)<0:vt[-1]*=-1;rot=vt.T@u.T
+   residual=float(np.max(np.abs((a-ac)@rot.T+bc-b)))
+   if residual<1e-8:
+    rr['COM_proxy_m']=((np.asarray(rr['COM_proxy_m'])-ac)@rot.T+bc).tolist();transforms.append({'id':rr['id'],'native_rigid_map_max_abs_m':residual,'source_old_COM_transformed_not_new_physical_COM':True})
+   else:missing.append({'id':rr['id'],'nonrigid_native_change_max_m':residual,'COM_unknown':True})
+  rr['body']=by[n]['body']
+ old.append(rr)
+new=[]
+for r in g['new_module_mass_rows']:
+ p=by[r['id']];c,method=m.center(p);new.append(dict(id=r['id'],member_ids=[r['id']],mass_range_kg=r['mass_range_kg'],COM_proxy_m=c,body=r['body'],COM_method=method,scope=r['source_scope'],fluid_stock='global_inventory' in r['id'],physical_accepted=False))
+sr=[];absorbed=[]
+for r in base['inventory']['new_g11_shoulder_rows']:
+ absent=[i for i in r['member_ids'] if i not in by]
+ if absent:
+  if len(absent)==len(r['member_ids']) and all(i.endswith('fixed_reaction_closed_anchor') for i in absent):absorbed.append(r)
+  else:missing.append({'id':r['id'],'absent_shoulder_members':absent,'mass_remains_unknown':True})
+ else:sr.append(r)
+rows=old+new+sr;upper=[r for r in rows if r['body']!='pelvis'];waist=[.2475,0,1.91];wp=m.wrenches(upper,waist)
+side=[]
+for q in base['main_cage_load_contract_proposal']['bilateral_shoulder_ports']:
+ a=[r for r in old+sr if r['body'].startswith(q['side']+'_')];out=dict(q);out['conditional_full_arm_and_new_shoulder_at_core_face']=m.wrenches(a,q['actual_anchor_port']['area_centroid_world_m']);out['anchor_own_weight_now_in_frame_not_external_shoulder_traction']=True;side.append(out)
+frame=next(r for r in new if r['id']=='g12_main_frame_baseline_net_material')
+fluid=[r for r in new if r['fluid_stock']];ownerproblem=[{'id':r['id'],'source_body':r['body'],'function':'oil stock inside reservoir whose shell body=pelvis','needs_same_rigid_gravity_owner':True} for r in fluid if 'oil' in r['id']]
+alt=[dict(r,body='torso') if r['id'].startswith('g12_oil_reservoir_') else r for r in rows]
+result={'schema':'gorilla_g13_actual_cage_delta_and_load_v1','source_hashes':{str(gpath):m.sha(gpath),str(P/'load_and_material_budget.json'):m.sha(P/'load_and_material_budget.json'),str(m.R/'.scratch/gorilla_internal_g13_load_cage_colayout/build_cage.py'):m.sha(m.R/'.scratch/gorilla_internal_g13_load_cage_colayout/build_cage.py')},'new_frame_row':frame,'baseline197kg_frame_removed_exact_id':'g12_main_frame_baseline_net_material in G12 B; same ID in G13 is different scoped source, not same part','G11_native_anchor_rows_absorbed_into_new_frame':absorbed,'anchor_member_mass_not_added_again_kg':np.sum([r['mass_range_kg'] for r in absorbed],0).tolist(),'retained_633_old_rows':old,'rigid_native_transform_receipts':transforms,'new_G13_actual_mass_rows':new,'remaining_G11_shoulder_rows':sr,'missing_or_partial_rows_not_zero':missing,'same633_reference_original_range_kg':base['inventory']['same633_original_B_dry_mass_range_kg'],'same633_complete_retired_range_kg':base['inventory']['retired_dry_mass_range_kg'],'candidate_functional_same_scope_not_whole_mass_range_kg':np.sum([r['mass_range_kg'] for r in rows],0).tolist(),'source_declared_body_waist_gravity':wp,'source_declared_waist_rows_count':len(upper),'source_bilateral_shoulder_external_loads':side,'whole_COM_full_I_or_capacity_or_connected_strength_accepted':False,'gravity_proxy_from_unqualified_source_only':True,'pelvis_vs_torso_source_owner_inconsistencies':ownerproblem,'alternative_all_oil_container_torso_waist_gravity':m.wrenches([r for r in alt if r['body']!='pelvis'],waist),'fluid_global_once_mass_kg':sum(r['mass_range_kg'][1] for r in fluid),'fluid_global_geometry_assigned_half_metadata_conflict':{'actual_one_oil_stock_L':30,'layout_spec_assigned_global_stock_L':15,'actual_one_water_stock_L':12.481996328832434,'layout_spec_assigned_global_stock_L_water':6.240998164416217,'needs_correction_upstream_not_changed_here':True},'macro_geometry_actual_producer':{'two_vertical_beams':{'center_X_m':.095,'center_Y_m':[-.290,.290],'center_Z_m':2.2175,'outer_section_XY_m':[.200,.090],'length_Z_m':.475,'wall_m':.004,'full_raw_hollow_area_m2':.200*.090-.192*.082},'two_cross_members':{'center_X_m':.095,'center_Z_m':[1.980,2.4725],'section_XZ_m':[.200,.090],'length_Y_m':.670,'wall_m':.004},'neck':{'outer_XY_m':[.160,.220],'wall_m':.005,'length_Z_m':.190},'waist_flange_center_world_m':[.2395,0,1.91],'waist_front_face_X_m':.2475,'waist_annulus_outer_inner_radius_m':[.105,.041],'protected_stock_material_boolean_subtractions':'actual source, residual section connectivity/holes/ligaments unqualified','absorbed_two_closed_anchors':'64.193063kg belongs to new102.719kg frame, not remaining107.743kg shoulders'},'main_cage_load_contract':base['main_cage_load_contract_proposal']['boundary_proposal'],'load_factor_1p5_max_bound_waist_wrench':(1.5*np.asarray(wp[2]['gravity_wrench_force_then_moment_SI'])).tolist(),'external_payload_question_scope':base['main_cage_load_contract_proposal']['external_payload_questions'],'foot42_not_reused':True,'physical_accepted':False}
+m.write('g13_cage_delta.json',result)
+print(json.dumps({k:result[k] for k in ['source_hashes','new_frame_row','candidate_functional_same_scope_not_whole_mass_range_kg','source_declared_body_waist_gravity','missing_or_partial_rows_not_zero','anchor_member_mass_not_added_again_kg']},indent=2))

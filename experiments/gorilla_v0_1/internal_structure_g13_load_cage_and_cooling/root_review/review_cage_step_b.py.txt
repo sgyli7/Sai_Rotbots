@@ -1,0 +1,16 @@
+from pathlib import Path
+import json,gzip,hashlib,numpy as np
+from OCP.STEPControl import STEPControl_Reader
+from OCP.GProp import GProp_GProps
+from OCP.BRepGProp import BRepGProp
+from OCP.Bnd import Bnd_Box
+from OCP.BRepBndLib import BRepBndLib
+from OCP.TopExp import TopExp_Explorer
+from OCP.TopAbs import TopAbs_SOLID,TopAbs_SHELL
+P=Path(__file__).resolve().parent;B=P.parent/'gorilla_internal_g13_load_cage_colayout/b';S=B/'scene.json.gz';C=B/'frame_baseline_si.step';p=next(v for v in json.loads(gzip.decompress(S.read_bytes()))['parts'] if v['name']=='g13_main_frame_baseline_net_material');v=np.array(p['vertices_world_m']);r=STEPControl_Reader();status=r.ReadFile(str(C));assert r.TransferRoots()>0;sh=r.OneShape();pr=GProp_GProps();BRepGProp.VolumeProperties_s(sh,pr);box=Bnd_Box();BRepBndLib.Add_s(sh,box);bounds=np.array(box.Get()).reshape(2,3)/1000;actual=pr.Mass()/1e9;expected=p['mass_range_kg'][1]/p['density_kg_m3'];cnt={}
+for typ,label in [(TopAbs_SOLID,'solids'),(TopAbs_SHELL,'shells')]:
+ exp=TopExp_Explorer(sh,typ);n=0
+ while exp.More():n+=1;exp.Next()
+ cnt[label]=n
+q=dict(source_sha256=hashlib.sha256(S.read_bytes()).hexdigest(),STEP_sha256=hashlib.sha256(C.read_bytes()).hexdigest(),actual_reader_native_length='mm',actual_volume_m3=actual,relative_volume_error=actual/expected-1,actual_AABB_m=bounds.tolist(),native_AABB_m=[v.min(0).tolist(),v.max(0).tolist()],max_AABB_difference_m=float(np.max(abs(bounds-np.array([v.min(0),v.max(0)])))),actual_CAD_counts=cnt,scope='Independent STEP readback and default-unit conversion of actual frame only. Sewing, CAD validity, joints, fit, strength, full assembly and whole SI not approved.',physical_accepted=False)
+assert abs(q['relative_volume_error'])<1e-8;assert q['max_AABB_difference_m']<1e-6;(P/'b_actual_step_readback.json').write_text(json.dumps(q,indent=2)+'\n');print(json.dumps(q,indent=2))

@@ -1,0 +1,13 @@
+from pathlib import Path
+import gzip,json,hashlib,numpy as np,manifold3d as mf
+P=Path(__file__).resolve().parent;S=P.parent/'gorilla_internal_g13_load_cage_colayout/scene.json.gz';d=json.loads(gzip.decompress(S.read_bytes()));p=next(v for v in d['parts'] if v['name']=='g12_main_frame_baseline_net_material');m=mf.Manifold(mf.Mesh64(np.array(p['vertices_world_m'],float),np.array(p['faces'],np.uint64)));rr=m.decompose();positive=[(i,x) for i,x in enumerate(rr) if x.volume()>0];negative=[]
+for i,x in enumerate(rr):
+ if x.volume()>=0:continue
+ a=x.to_mesh64();v=np.array(a.vert_properties,dtype=np.float64,order="C",copy=True)[:,:3].copy();f=np.array(a.tri_verts,dtype=np.uint64,order="C",copy=True)[:,[0,2,1]].copy();negative.append((i,mf.Manifold(mf.Mesh64(v,f))))
+rows=[]
+for j,(i,x) in enumerate(negative):
+ for k,y in negative[j+1:]:
+  z=x^y
+  if z.volume()>1e-10:rows.append(dict(boundary_indices=[i,k],inspection_copy_intersection_m3=z.volume(),original_source_modified=False))
+r=dict(source_sha256=hashlib.sha256(S.read_bytes()).hexdigest(),signed_boundary_shells=len(rr),positive_boundary_components=len(positive),negative_closed_void_boundary_components=len(negative),all_signed_components=[dict(index=i,signed_volume_m3=x.volume(),AABB_m=x.bounding_box()) for i,x in enumerate(rr)],void_boundary_relationships=rows,positive_flange_is_separate_from_main_outer_boundary=True,original_source_reoriented_or_modified=False,inspection_copy_negative_faces_reversed_only=True,scope='Manifold.decompose lists signed boundary shells, not net solids. Closed void shells are NOT extra disconnected material. Reoriented inspection copies only measure cavity intersection; raw source identity/moments retained. Cavity validity and flange interface need physical/CAD audit.',continuous_material_qualified=False)
+(P/'a_frame_material_roots.json').write_text(json.dumps(r,indent=2)+'\n');print(json.dumps({k:v for k,v in r.items() if k!='all_signed_components'},indent=2))

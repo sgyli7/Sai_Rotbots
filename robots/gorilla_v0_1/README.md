@@ -1,6 +1,6 @@
 # Gorilla V0.1
 
-当前工作：**G12完整系统/肩功能候选与真实热路筛查已封存；G13共同布局宽截面承力笼架、完整能源与冷却，并核主躯载荷和材料。** 壮硕体积用于宽厚承力与系统共同设计。用户指定「Gorilla 设计」重画腿脚，完成后通知；这里继续可适配的内部工程。C15已先提交并合主干，AA3仍为审美权威。完整质量/驱动热/稳定SI尚未放行，双足、双手与自主复杂Bevy目标继续推进。
+当前工作：**G13宽截面笼架B、独立肩干湿A与A负载分别封存；G14按完整热部件重新共同布局，并落实真实可拆壳初装。** 壮硕体积用于三维承力与系统共同设计，尚未装配或物理放行。用户指定「Gorilla 设计」重画腿脚，完成后通知；这里继续内部工程。C15已合主干，AA3为审美权威。稳定SI、双足双手与自主复杂Bevy持续推进。
 
 唯一当前状态入口：[当前决定与门禁](design/current_decisions.md)。
 
@@ -69,3 +69,5 @@ C15 将前掌、足弓与后跟分开，取消跨段连续底板；卸载端姿�
 [G11 宽厚身体域与功能预算](../../experiments/gorilla_v0_1/internal_structure_g11_body_domain_and_budget/README.md)：完整条件域/肩接面与任务预算，实际几何、单位和库存独立核；失效格栅面积推论明确撤销，整机仍未放行。
 
 当前内部检查点：[G12完整系统共同布局与热路筛查](../../experiments/gorilla_v0_1/internal_structure_g12_complete_system_colayout/README.md)已保存；安装和物理仍拒绝。G13改为宽截面承力笼架与完整系统分区，唯一当前状态见[current_decisions](design/current_decisions.md)。
+
+[G13宽截面笼架与肩干湿分区](../../experiments/gorilla_v0_1/internal_structure_g13_load_cage_and_cooling/README.md)：实际CAD/native、载荷和测量范围纠正已保存；三分支未整合或放行。当前排期只读唯一决定索引。
