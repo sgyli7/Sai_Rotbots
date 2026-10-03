@@ -1,12 +1,13 @@
 # Gorilla — V0.2 整机设计（保留 V0.1 工程历史）
 
-当前工作：**V0.2十小时整机共同设计，2026-10-04 01:03–11:03（China）**。用户已授权新版下半身大形，上半身身份沿用，长宽高以V0.2为准，最新视觉微调基本结束，正式交接包待到；胸感知与后排风按最新图接续。b7原生参考已绑定，骨架、关节、传动、能源和主动液冷／风道一起回整机。最新已保存[G24连续承力与完整系统共源](../../experiments/gorilla_v0_1/internal_structure_g24_connected_system_assembly/README.md)，3072件／720芯，安装、整机物理与审美仍拒绝；旧腿物理资格不移植。
+当前工作：**V0.2十小时整机共同设计，2026-10-04 01:03–11:03（China）**。P30正式外观已收到并核对，URI为当前全身审美基准；全部长宽高按新版重建。骨架、关节、传动、完整体内模块、能源和主动液冷／风道一起合回新全身；b7为归一化参考，不是完整制造CAD。G24/G25已阶段提交，G26输入已保存，当前新骨盆/比例、短包及腿驱动共同推进；安装与整机物理仍未放行。
 
 唯一当前状态入口：[当前决定与门禁](design/current_decisions.md)。
 
 | 资料 | 入口 |
 |---|---|
-| V0.2大形／原生下身参考 | [新版基准与b7来源](design/concepts/lower_body_redesign/source_manifest.json)；normalized源需要新整机SI与结构重建，颜色后补 |
+| V0.2正式外观交接 | [P30 URI四视](design/concepts/appearance_handoff_p30/uri_p30.png)；[来源与核对](source/appearance_handoff_p30/import_receipt.json)，b7归一化参考须新全身SI与结构重建 |
+| G26全身输入与功能 | [原生lower、完整模块比较及感知](../../experiments/gorilla_v0_1/internal_structure_g26_v0_2_source_and_functions/README.md)；原始缺口及独立纠偏保留，安装/物理未放行 |
 | G25主动风道与液冷 | [实际两风道、原厂风机曲线事实与研究](../../experiments/gorilla_v0_1/internal_structure_g25_forced_air_and_liquid_cooling/README.md)；安装与持续热未放行 |
 | G24连续承力与完整系统 | [实际共源／身份／安装／有限FK／宏观预算](../../experiments/gorilla_v0_1/internal_structure_g24_connected_system_assembly/README.md)；已保存失败候选，整机门禁未过 |
 | 先进液冷与主动散热 | [一手研究与前进／pad两侧出架构](hardware/cooling_technology_and_vent_architecture.md)；共形水套、冷板及高级路线适用边界分报 |

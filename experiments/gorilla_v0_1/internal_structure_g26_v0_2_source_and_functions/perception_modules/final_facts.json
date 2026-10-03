@@ -1,0 +1,414 @@
+{
+  "robot_id": "gorilla_v0_2",
+  "status": "primary_source_facts_with_conflicts_not_layout_or_physical_acceptance",
+  "created_utc": "2026-10-03T17:34:28.196994+00:00",
+  "sources": {
+    "oak_w": "https://checkout.luxonis.com/products/oak-d-pro-w",
+    "oak_power": "https://docs.luxonis.com/hardware/platform/deploy/usb-deployment-guide",
+    "oak_ir": "https://docs.luxonis.com/hardware/products/OAK-D%20Pro",
+    "hadron": "https://oem.flir.com/en-150/products/hadron-640/?model=70640AS32-6PARXP&segment=oem&vertical=lwir",
+    "hadron_engineering": "https://flir.netx.net/file/asset/52567/original/attachment/",
+    "flir_window": "https://oem.flir.com/support/support-center/knowledge-base/for-protection-is-a-special-window-needed-in-front-of-my-flir-camera-that-wont-interfere-with-the-thermal-imaging/",
+    "mid360": "https://www.livoxtech.com/mid-360/specs",
+    "mid_protocol": "https://livox-wiki-en.readthedocs.io/en/latest/tutorials/new_product/mid360/livox_eth_protocol_mid360.html",
+    "d405": "https://www.realsenseai.com/products/d405-series/",
+    "vn100": "https://www.vectornav.com/products/detail/vn-100",
+    "ft_wrist": "https://www.ati-ia.com/products/ft/ft_models.aspx?id=Mini45",
+    "ft_highload_reference": "https://www.ati-ia.com/products/ft/ft_models.aspx?id=Omega250+IP60",
+    "ov64b": "https://www.ovt.com/wp-content/uploads/2022/01/OV64B-PB-v1.2-WEB.pdf",
+    "boson_band": "https://oem.flir.com/en-ca/products/boson-plus/?model=23640A008",
+    "d405_family_datasheet": "https://www.realsenseai.com/download/21345/?tmstv=1778232235",
+    "ordinary_glass": "https://www.flir.com/discover/home-outdoor/can-thermal-imaging-see-through-walls/",
+    "germanium": "https://www.edmundoptics.com/f/germanium-ge-windows/13137"
+  },
+  "modules": [
+    {
+      "id": "oak_d_pro_w_ov9782",
+      "manufacturer": "Luxonis",
+      "complete_scope": "sealed camera incl RGB/2mono+IRdot/flood+processor; cable and host excluded",
+      "source_keys": [
+        "oak_w",
+        "oak_power",
+        "oak_ir"
+      ],
+      "dimensions_mm": [
+        97,
+        29.5,
+        23.1
+      ],
+      "mass_g": 91,
+      "spectrum": "RGB visible; mono visible+940nm; dot/flood940nm; NOT LWIR",
+      "hfov_deg": {
+        "RGB_OV9782": 127,
+        "stereo": 127
+      },
+      "vfov_deg": {
+        "RGB_OV9782": 79.5,
+        "stereo": 79.5
+      },
+      "depth_baseline_mm": 75,
+      "depth_range_m": {
+        "ideal": [
+          0.4,
+          6
+        ],
+        "min_at_800p": 0.37,
+        "min_extended": 0.2,
+        "maximum_effective": 12,
+        "edge_distortion_caveat": true
+      },
+      "power_W": {
+        "stream_base_range": [
+          2.5,
+          3
+        ],
+        "product_all_features_about": 7.5,
+        "Pro_family_peak_reserve": 15,
+        "dot_max": 1,
+        "flood_max": 1
+      },
+      "supply": "5V externally powered USB Yadapter; 15W-family peak caution",
+      "interface": "USB-C USB3.2 Gen1 5Gbps product; deployment generic10Gbps does not upgrade this SKU",
+      "RGB_shutter": "global OV9782 chosen, IMX378 alternative rolling",
+      "fps_max_sensors": {
+        "RGB_OV9782": 143,
+        "mono": 255
+      },
+      "chosen_fps": null,
+      "eye_class": "Class1 EN/IEC60825-1 Edition3(2014), intact certified device only",
+      "hard_sync_exposed_connector_verified": false,
+      "end_to_end_latency_ms": null,
+      "ambient_C": [
+        -20,
+        50
+      ],
+      "conflicts": "Current generic docs say baseline75cm (apparent typo vs W75mm/mechanical width97mm); do not adopt75cm. Product7.5W vs genericPro15W peak separated.",
+      "module_COM_measured_m": null,
+      "module_full_inertia_kg_m2": null,
+      "installed_Gorilla_fit_verified": false
+    },
+    {
+      "id": "hadron640r_plus_70640as32_6parxp",
+      "manufacturer": "Teledyne FLIR",
+      "complete_scope": "dual lens camera module +IMU; host processing/backplane/harness/seal excluded",
+      "source_keys": [
+        "hadron",
+        "hadron_engineering",
+        "ov64b",
+        "boson_band"
+      ],
+      "dimensions_mm_web": [
+        35,
+        49,
+        45
+      ],
+      "dimensions_mm_engineering_estimate": [
+        36,
+        50,
+        43
+      ],
+      "planning_envelope_mm": [
+        36,
+        50,
+        45
+      ],
+      "mass_g_nominal": 56,
+      "power_W": {
+        "typical_at_25C_upper": 1.8,
+        "web_max_upper": 2.9,
+        "engineering_FFC_peak_upper": 3.0
+      },
+      "supply_V": [
+        4.75,
+        5.25
+      ],
+      "thermal": "Boson+640x512 LWIR 8–14um; separate optics/window from visible and 940nm",
+      "RGB": "64.2MP module; 4laneMIPI, processing external",
+      "hfov_deg": {
+        "thermal": 32,
+        "RGB": 67
+      },
+      "fps_thermal": 60,
+      "thermal_minrange_m": null,
+      "interfaces": "LWIR USB2/3 or2laneMIPI; RGB4laneMIPI; EXT_VSYNC pin43;1.8V control",
+      "timestamp_accuracy_ms": null,
+      "latency_ms": null,
+      "thermal_heat_path": "backplate conduction is primary; seal rear forIP54",
+      "radiometry_scope": "EngineeringRev170 steady RB5±5C scene20–80C; web±5C0–100C differs; notGorilla radiometric acceptance",
+      "IMU_revision_conflict": "webICM20602 vsRev170BHI160B; serial/BOM unresolved",
+      "module_COM_measured_m": null,
+      "module_full_inertia_kg_m2": null,
+      "installed_Gorilla_fit_verified": false,
+      "RGB_rates_source_conflict": {
+        "Hadron_web_claim": "64MP EO full resolution@60Hz",
+        "OV64B_sensor_primary_max_full_array_Hz": 15,
+        "sensor_array_px": [
+          9248,
+          6944
+        ],
+        "sensor_output_bits": 10,
+        "module_mode_and_BOM_verified": false,
+        "adopt_64MP60_as_budget": false
+      },
+      "RGB_chosen_stream_mode": null
+    },
+    {
+      "id": "livox_mid360",
+      "manufacturer": "Livox",
+      "complete_scope": "intact lidar w built-inIMU; cable/isolatedrail/switch/guard excluded",
+      "source_keys": [
+        "mid360",
+        "mid_protocol"
+      ],
+      "dimensions_mm": [
+        65,
+        65,
+        60
+      ],
+      "mass_g": 265,
+      "supply_V": [
+        9,
+        27
+      ],
+      "power_W": {
+        "average": 6.5,
+        "cold_self_heating_peak": 14
+      },
+      "cold_peak_ambient_C": [
+        -20,
+        0
+      ],
+      "wavelength_nm": 905,
+      "eye_class": "Class1 IEC60825-1:2014 intact device",
+      "FOV_deg": {
+        "horizontal": 360,
+        "vertical": [
+          -7,
+          52
+        ]
+      },
+      "range_conditions": "100klx40m at10%reflectivity;70m80%; not universalrange",
+      "blind_zone_m": 0.1,
+      "reference_only_range_m": [
+        0.1,
+        0.2
+      ],
+      "near_lowreflectance_or_tiny_objects_not_guaranteed": true,
+      "points_s_first_return": 200000,
+      "frame_rate_Hz_typical": 10,
+      "data": "100BASE-TX Ethernet; nativePTPv2 IEEE1588-2008/GPS",
+      "timestamp_unit": "ns in packet, timestamp resolution is not accuracy",
+      "end_to_end_latency_ms": null,
+      "ambient_C": [
+        -20,
+        55
+      ],
+      "module_COM_measured_m": null,
+      "module_full_inertia_kg_m2": null,
+      "installed_Gorilla_fit_verified": false
+    },
+    {
+      "id": "realsense_d405",
+      "manufacturer": "RealSense",
+      "complete_scope": "USB camera incl D401/D4; cable/host excluded",
+      "source_keys": [
+        "d405",
+        "d405_family_datasheet"
+      ],
+      "dimensions_mm": [
+        42,
+        42,
+        23
+      ],
+      "mass_g": 60,
+      "ideal_range_m": [
+        0.07,
+        0.5
+      ],
+      "minZ_m": 0.07,
+      "minZ_condition": "480p; noclaimed<3cmwithoutseparatePerceptionStudio qualification",
+      "FOV_deg": [
+        87,
+        58
+      ],
+      "power_W": {
+        "depth_IR_stream": 1.55,
+        "idle": 0.035
+      },
+      "frame_Hz_max": 90,
+      "selected_stream_Hz": null,
+      "interface": "USB2/USB3.1; globalstereo; RGBfromleftimager",
+      "IMU": false,
+      "active_IR_emitter_included": false,
+      "ambient_C": [
+        0,
+        35
+      ],
+      "case_C": [
+        0,
+        55
+      ],
+      "timestamp_latency_ms": null,
+      "module_COM_measured_m": null,
+      "module_full_inertia_kg_m2": null,
+      "installed_Gorilla_fit_verified": false,
+      "passive_stereo_no_IR_projector": true,
+      "visible_lighting_or_texture_required": true,
+      "IRcut_night_projector_compatibility_unqualified": true
+    },
+    {
+      "id": "vectornav_vn100_rugged",
+      "manufacturer": "VectorNav",
+      "complete_scope": "ruggedcalibratedIMU/AHRS,cableexcluded",
+      "source_keys": [
+        "vn100"
+      ],
+      "dimensions_mm": [
+        36,
+        33,
+        9
+      ],
+      "mass_g": 15,
+      "power_W": 0.22,
+      "supply_V": [
+        4.5,
+        5.5
+      ],
+      "sample_Hz": {
+        "rawIMU_max": 800,
+        "attitude_max": 400
+      },
+      "accel_range_g": 16,
+      "gyro_range_deg_s": 2000,
+      "interface": "TTL/RS232 up921600baud;SyncIn/Out",
+      "magnetic_heading_condition": "validhardsoftiron/calibration/magneticenvironment; highcurrentsteelbodynotqualified",
+      "ambient_C": [
+        -40,
+        85
+      ],
+      "module_COM_measured_m": null,
+      "module_full_inertia_kg_m2": null,
+      "installed_Gorilla_fit_verified": false
+    },
+    {
+      "id": "ati_mini45_wrist_reference",
+      "manufacturer": "ATI",
+      "complete_scope": "standardtransducer+interfaceplates; separateAFE/cables/interfaceboxneeded",
+      "source_keys": [
+        "ft_wrist"
+      ],
+      "diameter_mm": 45,
+      "height_mm": 15.7,
+      "mass_g": 91.7,
+      "calibration_SI_580_20": {
+        "FxFy_N": 580,
+        "Fz_N": 1160,
+        "TxTyTz_Nm": 20
+      },
+      "power_W": null,
+      "sample_rate_Hz": null,
+      "interfaces": "DAQ/Net/EtherCAT/CANvariants; exactcompleteSKUunknown",
+      "combined_load_requires_fullgraph": true,
+      "not_foot_tonload_sensor": true,
+      "module_COM_measured_m": null,
+      "module_full_inertia_kg_m2": null,
+      "installed_Gorilla_fit_verified": false
+    },
+    {
+      "id": "ati_omega250_ip60_highload_reference",
+      "manufacturer": "ATI",
+      "complete_scope": "large6axisreference+standardplates;AFE/connectorsadditional",
+      "source_keys": [
+        "ft_highload_reference"
+      ],
+      "diameter_mm": 295,
+      "height_mm": 94.9,
+      "mass_g": 31800,
+      "calibration_SI_16000_2000": {
+        "FxFy_N": 16000,
+        "Fz_N": 32000,
+        "TxTyTz_Nm": 2000
+      },
+      "power_W": null,
+      "combined_loadgraph": true,
+      "not_selected_for_foot": "3t29.43kNcentric is onlyaxialmeasurementrange; eccentric.25m is7.36kNm>2kNm, no3tfootacceptance",
+      "module_COM_measured_m": null,
+      "module_full_inertia_kg_m2": null,
+      "installed_Gorilla_fit_verified": false
+    }
+  ],
+  "image_source": {
+    "path": "/tmp/codex-clipboard-1065642b-5147-4789-9a6d-d40be58c0319.png",
+    "sha256": "032280985fecd7b6a34ff1768a63f8f9f199a399afaa30a32b3ecbe780ddbd20",
+    "image_size_px": [
+      1254,
+      1254
+    ],
+    "authorized_intent": "centralchestoldlampreplacedbycamera; noSI aperture/range calibration",
+    "approx_chest_pod_pixel_bbox": [
+      303,
+      119,
+      328,
+      176
+    ],
+    "approx_pixels_not_machining_dimensions": true
+  },
+  "lower_source": {
+    "path": ".scratch/gorilla_internal_g26_v0_2_lower_source_inventory/native_lower_scene.json",
+    "sha256": "432a7db289fcb90022cdf464d76443545d3ff8b87dafe94256780835a5121041",
+    "source_blend_sha256": "b75b3f29aa0a91145ed6dacf2cd25e1caece7527155146dd00507cd70edb6beb",
+    "units": "normalized appearance units; NOT SI",
+    "lower_bounds_world_normalized": [
+      [
+        -0.2638671398162842,
+        -0.2465410679578781,
+        -0.4523000009357929
+      ],
+      [
+        0.2638671398162842,
+        0.13101036846637726,
+        0.08999999985098839
+      ]
+    ],
+    "joint_datums_normalized": {
+      "hip": [
+        0.19,
+        0.029,
+        0.061
+      ],
+      "knee": [
+        0.19,
+        -0.158,
+        -0.17
+      ],
+      "hock": [
+        0.19,
+        0.006,
+        -0.169
+      ],
+      "ankle": [
+        0.19,
+        -0.042,
+        -0.412
+      ]
+    },
+    "is_SI": false,
+    "engineering_ready": false,
+    "no_2_65m_height_inheritance": true,
+    "scope": "earlier V0.2 b7 normalized lower appearance source only; not automatically geometry of latest image"
+  },
+  "whole_sensor_mass_power_closed": false,
+  "Bevy_feedback_target_Hz": 50,
+  "world_transforms_and_actual_slots_SI": null,
+  "supersedes_first_facts_sha256": "92eafd61ffd7c19d5953abb842e2b60b6402ea63ee8d61b100253d82d836bcdd",
+  "latest_reference": {
+    "path": "/tmp/codex-remote-attachments/01a0fa4c-3989-7342-8b07-da32d3a9129f/DA3F6286-34D5-4FD8-A05E-8847F35F3F55/1-照片-1.jpg",
+    "sha256": "2e07e1a10c4655690b58c150e5d207bfc2a593c69b4287f300249b99df7f37cd",
+    "visually_inspected": true,
+    "intent": "gold-rim central camera pod; warm-ivory knees and orange ankle marks; final appearance reference, package not yet received",
+    "image_to_SI_calibration": null,
+    "central_optical_aperture_mm": null,
+    "latest_model_geometry_identity": null,
+    "previous_camera_image_preserved_in_first_facts": true
+  }
+}

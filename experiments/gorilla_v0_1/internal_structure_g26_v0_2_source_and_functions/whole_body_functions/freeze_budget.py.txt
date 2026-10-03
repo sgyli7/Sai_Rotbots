@@ -1,0 +1,16 @@
+from pathlib import Path
+from datetime import datetime,timezone
+import json,hashlib
+O=Path(__file__).resolve().parent
+def sha(p):
+ h=hashlib.sha256()
+ with Path(p).open('rb')as f:
+  for b in iter(lambda:f.read(2**20),b''):h.update(b)
+ return h.hexdigest()
+B=json.loads((O/'input_bindings.json').read_text());inputs=[]
+for k,b in B.items():inputs.append({'id':k,**b,'bytes':Path(b['path']).stat().st_size,'current_identity_matches':sha(b['path'])==b['sha256']})
+outputs=[{'path':str(p.resolve()),'sha256':sha(p),'bytes':p.stat().st_size}for p in sorted(O.rglob('*'))if p.is_file()and p.name!='freeze_manifest.json']
+manifest={'schema':'gorilla_g26_readonly_function_budget_freeze','frozen_utc':datetime.now(timezone.utc).isoformat(),'inputs':inputs,'outputs':outputs,'input_hash_errors':[x['id']for x in inputs if not x['current_identity_matches']],'reproduction_commands':['.venv/bin/python .scratch/gorilla_internal_g26_whole_body_function_budget/build_budget.py','.venv/bin/python .scratch/gorilla_internal_g26_whole_body_function_budget/verify_budget.py'], 'reproduction_scope':'read-only source/table generation; created timestamp varies. Preserve final snapshots before rerun. No source/CAD/FE/controller changes.', 'source_history':'first_table_snapshot exact producer/JSON; verification_exact_float_failure retains a float equality checking failure corrected by <=1e-12 tolerance only; no physical failure was hidden','physical_acceptance':False,'whole_M_COM_I':None}
+assert not manifest['input_hash_errors']
+(O/'freeze_manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+print(json.dumps({'manifest_sha256':sha(O/'freeze_manifest.json'),'input_count':len(inputs),'output_count':len(outputs),'errors':manifest['input_hash_errors'],'report_sha256':sha(O/'function_budget.json'),'summary_sha256':sha(O/'summary.json'),'README_sha256':sha(O/'README.md')},indent=2))

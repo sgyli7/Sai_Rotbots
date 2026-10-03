@@ -1,0 +1,34 @@
+import os,json,math,hashlib
+from pathlib import Path
+import bpy
+from mathutils import Vector
+O=Path('/home/ethan/Projects/Sai_Rotbots/.scratch/gorilla_internal_g26_v0_2_lower_source_inventory')
+bpy.context.preferences.filepaths.use_scripts_auto_execute=False
+bpy.ops.wm.open_mainfile(filepath=str(O/'source_inputs/lower_modular_components_b7.blend'),use_scripts=False)
+scene=bpy.context.scene
+for o in scene.objects:
+ o.hide_render=not(o.type=='MESH' and o.name.startswith(('L_','R_')))
+ if o.type=='MESH':
+  for m in o.modifiers:m.show_render=False
+scene.render.engine='CYCLES';scene.cycles.device='CPU';scene.cycles.samples=32;scene.cycles.use_denoising=False
+scene.render.threads_mode='FIXED';scene.render.threads=8
+scene.render.resolution_x=512;scene.render.resolution_y=512;scene.render.resolution_percentage=100
+scene.render.image_settings.file_format='PNG';scene.render.film_transparent=False
+scene.world.use_nodes=True;scene.world.node_tree.nodes['Background'].inputs[0].default_value=(.8,.8,.8,1);scene.world.node_tree.nodes['Background'].inputs[1].default_value=.5
+scene.view_settings.view_transform='Standard';scene.view_settings.look='Medium High Contrast';scene.view_settings.exposure=-2;scene.view_settings.gamma=1
+center=Vector((0,(-.2465410679578781+.13101036846637726)/2,(-.4523000009357929+.08999999985098839)/2))
+scale=.5423*1.17
+for i,pos in enumerate([(1,-1,1),(-1,-.3,.6),(0,1,1)]):
+ d=bpy.data.lights.new('g26_cpu_area_'+str(i),'AREA');d.energy=10;d.size=1
+ ob=bpy.data.objects.new(d.name,d);scene.collection.objects.link(ob);ob.location=center+Vector(pos)
+ ob.rotation_euler=(center-ob.location).to_track_quat('-Z','Y').to_euler()
+camdata=bpy.data.cameras.new('g26_native_orthographic');camdata.type='ORTHO';camdata.ortho_scale=scale
+cam=bpy.data.objects.new('g26_native_orthographic',camdata);scene.collection.objects.link(cam);scene.camera=cam
+views={'front':(0,-3,0),'left':(3,0,0),'rear':(0,3,0),'top':(0,0,3)}
+records=[]
+for name,delta in views.items():
+ cam.location=center+Vector(delta);cam.rotation_euler=(center-cam.location).to_track_quat('-Z','Y').to_euler()
+ scene.render.filepath=str(O/('native_'+name+'.png'));bpy.ops.render.render(write_still=True)
+ records.append({'name':name,'camera_world_normalized':list(cam.location),'rotation_euler':list(cam.rotation_euler),'target':list(center),'ortho_scale_normalized':scale,'file':'native_'+name+'.png'})
+ print('G26_RENDER_DONE',name,flush=True)
+(O/'render_manifest.json').write_text(json.dumps({'source_blend_sha256':hashlib.sha256((O/'source_inputs/lower_modular_components_b7.blend').read_bytes()).hexdigest(),'native_scene_sha256':hashlib.sha256((O/'native_lower_scene.json').read_bytes()).hexdigest(),'views':records,'engine':'Cycles CPU only','samples':32,'threads':8,'raw_mesh_modifiers_not_applied':True,'units':'normalized not SI','up':'source +Z','front':'candidate source -Y based on art camera/form; not new axis contract','same_scale_all_four':True,'no_source_saved_or_modified':True,'embedded_scripts_executed':False},indent=2))

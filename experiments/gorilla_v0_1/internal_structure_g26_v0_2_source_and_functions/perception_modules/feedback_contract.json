@@ -1,0 +1,93 @@
+{
+  "robot_id": "gorilla_v0_2",
+  "created_utc": "2026-10-03T17:34:28.196994+00:00",
+  "status": "proposed_feedback_contract_not_runtime_implementation",
+  "existing_timebase_source": {
+    "path": "robots/gorilla_v0_1/design/task_and_simulation_handoff.md",
+    "sha256": "f474013ab5468a1e6fec27543767fb9fff2cde70afa9587486f3f13afdd9910a",
+    "physics_Hz": 50,
+    "tick_dt_s": 0.02,
+    "native_integrations_per_tick": 1,
+    "scope": "referenced existingGorilla handoff target; no newBevy runtime test in this task"
+  },
+  "model_units": {
+    "V0_2_native_lower": "normalized appearance units, NOT SI",
+    "world_SI_contract": null,
+    "scale_to_meter": null,
+    "world_axis_mapping": null
+  },
+  "sample_envelope_required": [
+    "robot_id",
+    "model_sha256",
+    "calibration_sha256",
+    "episode_id",
+    "sensor_id",
+    "sample_sequence",
+    "sensor_frame",
+    "capture_time_ns",
+    "capture_time_source",
+    "capture_clock_offset_uncertainty_ns",
+    "exposure_start_end_ns",
+    "arrival_time_ns",
+    "processing_done_time_ns",
+    "validity",
+    "measurement_age_ns",
+    "occlusion_or_range_validity"
+  ],
+  "rates": {
+    "physics_Hz": 50,
+    "RGB_trial_Hz": [
+      30,
+      60
+    ],
+    "RGB_trial_mode_verified": false,
+    "LWIR_vendor_Hz": 60,
+    "lidar_vendor_typical_Hz": 10,
+    "IMU_vendor_raw_max_Hz": 800,
+    "force_trial_Hz": 1000,
+    "force_trial_is_design_hypothesis": true
+  },
+  "time_sources": {
+    "mid360": "PTPv2/GPS ns stamps. time_interval counts0.1us units of last-minus-first point time, withN equally spaced points: t_i=t0+i*time_interval*100ns/(N-1) forN>1. Timestamp resolution is not sync accuracy; mm->m, g->m/s2; onlyonePTPmode.",
+    "hadron": "EXT_VSYNC pin43 1.8V available in engineering datasheet; module mode/exposure/trigger-clock alignment unknown",
+    "oak_USB_W": "hardware trigger exposed not verified; device timestamps to hostclock offset/drift must measure; do not borrowPoE M8 FSYNC port",
+    "D405": "capture timestamps/calibration/realsense clock-domain alignment requires actualdevice qualification",
+    "VN100": "SyncIn/Out available; serial packet timing/bandwidth configuration must verify"
+  },
+  "filtering_policy": [
+    "asynchronous perception services cannot block native physics tick",
+    "use capture-time body/limb transform history; pointwise LiDAR deskew",
+    "do not label 10Hz lidar repeated at50Hz as fresh measurements",
+    "latest valid sample with explicit age/uncertainty; reject stale/timeout per validated stopping/interaction thresholds",
+    "reset clears queues/pose history/old inference replies; task recovery separate from safety stop"
+  ],
+  "latency_measured_ms": {
+    "p50": null,
+    "p95": null,
+    "p99": null,
+    "capture_to_perception": null,
+    "perception_to_action": null
+  },
+  "age_limits_ms": null,
+  "latency_qualification_cases": [
+    "USB shared-controller congestion",
+    "all camera+LiDAR+IMU simultaneous streams",
+    "host inference load and service timeout",
+    "time synchronization drift/reboot",
+    "rapid chest/wrist motion and rolling/global exposure differences",
+    "lossy Ethernet/USB reconnect and reset"
+  ],
+  "simulation_entry": [
+    "same-model sensor extrinsics and source hashes",
+    "engine-origin optical/range occlusion and noisy valid data, no hidden-world oracle in accepted task policy",
+    "native contact feedback for feet/grasp; wrench filters and exact SI limits versioned separately"
+  ],
+  "control_observation_action_ABI_changed": false,
+  "Bevy_native_contact_or_task_success_verified": false,
+  "timestamp_precision_correction": {
+    "changed_only_protocol_wording": true,
+    "before_path": ".scratch/gorilla_internal_g26_perception_modules/before_timestamp_precision/feedback_contract.json",
+    "before_sha256": "5f6896b19e388d3ce447108e462edc602df4dbc0587295bfa1ce8001ff3a166f",
+    "corrected_utc": "2026-10-03T17:38:32.722995+00:00"
+  }
+}
