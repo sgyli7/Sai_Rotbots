@@ -1,6 +1,6 @@
 # Gorilla V0.1
 
-当前工作：**G11宽厚条件域、肩反力接口和功能预算已封存；G12实际电芯/完整系统共同重排主躯，并闭合冷却、拆装与格栅热路。** 壮硕体积用于宽厚承力与系统共同设计。用户指定「Gorilla 设计」重画腿脚，完成后通知；这里继续可适配的内部工程。C15 已先提交并合主干，AA3仍为审美权威。完整质量/驱动热/稳定SI尚未放行，双足、双手与自主复杂Bevy目标继续推进。
+当前工作：**G12完整系统/肩功能候选与真实热路筛查已封存；G13共同布局宽截面承力笼架、完整能源与冷却，并核主躯载荷和材料。** 壮硕体积用于宽厚承力与系统共同设计。用户指定「Gorilla 设计」重画腿脚，完成后通知；这里继续可适配的内部工程。C15已先提交并合主干，AA3仍为审美权威。完整质量/驱动热/稳定SI尚未放行，双足、双手与自主复杂Bevy目标继续推进。
 
 唯一当前状态入口：[当前决定与门禁](design/current_decisions.md)。
 
@@ -67,3 +67,5 @@ C15 将前掌、足弓与后跟分开，取消跨段连续底板；卸载端姿�
 [G10 完整肩与实际三维减材](../../experiments/gorilla_v0_1/internal_structure_g10_joint_and_topology/README.md)：保留完整驱动的真实CAD/实际四视，实际401,748tet及全42工况的12步SIMP与独立数值审计；减材实体/肩安装仍拒绝，不冒称完整身体优化。
 
 [G11 宽厚身体域与功能预算](../../experiments/gorilla_v0_1/internal_structure_g11_body_domain_and_budget/README.md)：完整条件域/肩接面与任务预算，实际几何、单位和库存独立核；失效格栅面积推论明确撤销，整机仍未放行。
+
+当前内部检查点：[G12完整系统共同布局与热路筛查](../../experiments/gorilla_v0_1/internal_structure_g12_complete_system_colayout/README.md)已保存；安装和物理仍拒绝。G13改为宽截面承力笼架与完整系统分区，唯一当前状态见[current_decisions](design/current_decisions.md)。

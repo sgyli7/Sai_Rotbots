@@ -1,0 +1,78 @@
+"""Root independent native signed-surface inventory audit; no source repair."""
+from pathlib import Path
+import argparse, gzip, hashlib, json
+import numpy as np
+
+ap = argparse.ArgumentParser()
+ap.add_argument('variant', choices=['a', 'b'])
+args = ap.parse_args()
+out = Path(__file__).resolve().parent
+base = out.parent / 'gorilla_internal_g12_shoulder_functional' / args.variant
+sha = lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()
+source = base / 'scene.json.gz'
+scene = json.loads(gzip.decompress(source.read_bytes()))
+cad_path = base / 'cad_part_manifest.json'
+cad = json.loads(cad_path.read_text())
+by_id = {r['name']: r for r in cad}
+rows = []
+for p in scene['parts']:
+    n = np.asarray(p['vertices_world_m'], float)
+    f = np.asarray(p['faces'], int)
+    anchor = (n.min(0) + n.max(0)) / 2
+    a = n[f] - anchor
+    v = np.einsum('ij,ij->i', a[:, 0], np.cross(a[:, 1], a[:, 2])) / 6
+    V = v.sum()
+    s = a.sum(1)
+    com = np.einsum('e,ei->i', v, s) / (4 * V)
+    second = (np.einsum('e,ei,ej->ij', v, s, s)
+              + np.einsum('e,eki,ekj->ij', v, a, a)) / 20
+    central = second - V * np.outer(com, com)
+    edges = np.concatenate([f[:, [0, 1]], f[:, [1, 2]], f[:, [2, 0]]])
+    _, inverse, counts = np.unique(np.sort(edges, axis=1), axis=0,
+                                   return_inverse=True, return_counts=True)
+    balance = np.bincount(inverse, weights=np.where(edges[:, 0] < edges[:, 1], 1., -1.))
+    r = by_id[p['name']]
+    cv = r['exact_CAD_volume_m3']
+    finite = p.get('finite_material', False)
+    rho = p.get('density_kg_m3')
+    native_I = None if not finite else rho * (np.trace(central) * np.eye(3) - central)
+    row = dict(name=p['name'], owner=p['body'], finite_material=finite,
+               native_volume_m3=float(V), CAD_reported_volume_m3=cv,
+               native_to_reported_CAD_relative_volume=float(V / cv - 1),
+               native_COM_world_m=(com + anchor).tolist(),
+               CAD_reported_COM_world_m=r['exact_CAD_COM_world_m'],
+               COM_difference_m=(com + anchor - np.asarray(r['exact_CAD_COM_world_m'])).tolist(),
+               edge_non_two_incidence=int(np.count_nonzero(counts != 2)),
+               edge_non_opposed_orientation=int(np.count_nonzero(balance)),
+               native_source_modified=False,
+               CAD_tags=r['OCC_solid_tags'])
+    if finite:
+        ci = np.asarray(p['exact_CAD_full_I_at_COM_world_kg_m2'])
+        row.update(native_conditional_mass_kg=float(V * rho),
+                   reported_CAD_mass_range_kg=p.get('mass_range_kg'),
+                   native_full_I_at_COM_world_kg_m2=native_I.tolist(),
+                   relative_I_difference=float(np.linalg.norm(native_I - ci) / np.linalg.norm(ci)))
+    rows.append(row)
+
+bad = [r for r in rows if abs(r['native_to_reported_CAD_relative_volume']) > .0025]
+tags = {}
+for r in cad:
+    for tag in r['OCC_solid_tags']:
+        tags.setdefault(str(tag), []).append(r['name'])
+aliases = {k: v for k, v in tags.items() if len(v) > 1}
+report = dict(robot_id='gorilla_v0_1', variant=args.variant,
+              producer_sha256=sha(__file__), source_sha256=sha(source),
+              CAD_manifest_sha256=sha(cad_path),
+              native_source_producer_sha256=scene['producer_sha256'],
+              signed_surface_inventory=rows,
+              native_CAD_volume_mismatch_beyond_0p25percent_count=len(bad),
+              mismatched_names=[r['name'] for r in bad],
+              shared_Occ_entity_tags=aliases,
+              own_material_CAD_mass_inertia_identity_accepted=not bad and not aliases,
+              reference_envelopes_not_uniform_material=True,
+              geometry_assembly_strength_or_whole_robot_accepted=False,
+              scope='Independent signed triangle moment integration; chord errors retained. '
+                    'This does not test bearing/fastener joints, fit, CAD validity or physical capacity.')
+dest = out / (args.variant + '_native_inventory_review.json')
+dest.write_text(json.dumps(report, indent=2) + '\n')
+print(json.dumps({k: v for k, v in report.items() if k != 'signed_surface_inventory'}, indent=2))

@@ -1,0 +1,22 @@
+"""Original C15 facets only; depth-sorted ROI projection and source z-section."""
+from pathlib import Path
+import json,numpy as np
+from PIL import Image,ImageDraw,ImageFont
+R=Path('/home/ethan/Projects/Sai_Rotbots');O=R/'.scratch/gorilla_internal_g12_thermal_route';s=json.loads((R/'robots/gorilla_v0_1/cad/source/appearance_c_scene.json').read_text());sel=[p for p in s['parts'] if p['name'].startswith('left_radiator')];a=json.loads((O/'native_intake_diagnostic.json').read_text())['opening_measurements'][0]
+im=Image.new('RGB',(1800,950),'#f8fafc');dr=ImageDraw.Draw(im);font=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',20)
+def yz(v):return (150+(v[1]-.23)/.21*600,850-(v[2]-1.99)/.33*700)
+for p in sorted(sel,key=lambda p:np.mean(np.asarray(p['vertices_world_m'])[:,0])):
+ vv=np.asarray(p['vertices_world_m']);col=tuple(int(x*255) for x in p['rgba'][:3])
+ for face in p['faces']:dr.polygon([yz(vv[i]) for i in face],fill=col)
+pts=[yz(v) for v in a['inner_loop_0_to7_world_m']];dr.line(pts+[pts[0]],fill='#00d090',width=3)
+# Clip complete source section drawing to a panel so large outer collar cannot obscure labels.
+panel=Image.new('RGB',(770,720),'#f8fafc');pd=ImageDraw.Draw(panel)
+def xy(v):return (50+(v[0]-.20)/.19*600,700-(v[1]-.25)/.15*650)
+for p in sel:
+ vv=np.asarray(p['vertices_world_m']);col=tuple(int(x*255) for x in p['rgba'][:3])
+ for face in p['faces']:
+  poly=vv[face];hits=[]
+  for x,y in zip(poly,np.roll(poly,-1,axis=0)):
+   if (x[2]-2.15)*(y[2]-2.15)<0:hits.append(x+(y-x)*(2.15-x[2])/(y[2]-x[2]))
+  if len(hits)==2:pd.line([xy(v) for v in hits],fill=col,width=5)
+im.paste(panel,(970,150));dr.text((90,35),'Actual C15 radiator ROI | view +X / YZ projection',fill='#18263f',font=font);dr.text((90,65),'inner aperture 194.52 cm2; louvers 33.36; remaining 161.16',fill='#18263f',font=font);dr.text((990,35),'Actual native facets | section z = 2.150 m',fill='#18263f',font=font);dr.text((990,80),'Black: source throat/plenum; not a sealed new route.',fill='#18263f',font=font);dr.text((75,910),'Original vertices/faces. Projection/section diagnostic; no airflow, UA, fit or aesthetic admission.',fill='#18263f',font=font);im.save(O/'native_intake_roi_and_section.png')

@@ -1,0 +1,15 @@
+from pathlib import Path
+import json,math,hashlib
+O=Path('/home/ethan/Projects/Sai_Rotbots/.scratch/gorilla_internal_g12_thermal_route');d=json.loads((O/'thermal_route_screen.json').read_text());a=json.loads((O/'native_intake_diagnostic.json').read_text());checks=[]
+def check(k,x,y):checks.append(dict(name=k,observed=x,expected=y,error=abs(x-y),numeric_only=abs(x-y)<=1e-9*max(1,abs(y))))
+check('sum_net_open',sum(x['inner_loop_projected_area_m2']-sum(l['projected_blocked_area_m2'] for l in x['louvers']) for x in a['opening_measurements']),d['native_free_projection_area_m2']);check('original_louvers_both',sum(len(x['louvers']) for x in a['opening_measurements']),22)
+for x in d['conservation_and_curve_screens']:
+ k=x['label'];check(k+'_air_energy',1.2*1005*x['front_total_airflow_m3_s']*x['air_rise_K'],x['front_heat_kW']*1000);check(k+'_partition',x['front_heat_kW']+x['secondary_heat_kW'],x['total_heat_kW']);check(k+'_velocity',x['native_louver_free_projected_mean_speed_m_s']*d['native_free_projection_area_m2'],x['front_total_airflow_m3_s']);check(k+'_watertransport',x['water_total_heat_transport_flow_L_min_at10K']/60*4180*10,x['front_heat_kW']*1000)
+ if x['ambient25C_example_required_inlet_C'] is not None:
+  check(k+'_thermal_curve_capacity',2*x['same_reference_Q_per_initial_deltaT_each_W_K']*(x['ambient25C_example_required_inlet_C']-25),x['front_heat_kW']*1000);check(k+'_waterdelta',2*x['reference_water_each_L_min']/60*4180*(x['ambient25C_example_required_inlet_C']-x['ambient25C_example_radiator_outlet_C']),x['front_heat_kW']*1000)
+for k in ['A','B']:check(k+'_functionheat_sum',sum(d['heat_function_distribution'][k].values()),d['heat_scopes'][k+'_G11_nominal_peak_kW'] if k=='A' else d['heat_scopes']['B_sensitivity_peak_kW'])
+# Geometry source untouched and finite same function inventory. No physics certificate.
+checks.append(dict(name='geometry_source_identity',numeric_only=a['source_sha256']==d['input_hashes'][a['source_path']]))
+source=[{'path':p,'unchanged':hashlib.sha256(Path(p).read_bytes()).hexdigest()==h} for p,h in d['input_hashes'].items()]
+r={'scope':'independent SI conservation / source and native projected arithmetic only; not installed fan curve/cavity or thermal admission','checks':checks,'failed_numeric_checks':sum(not x['numeric_only'] for x in checks),'input_hash_checks':source,'changed_inputs':sum(not x['unchanged'] for x in source),'physical_and_geometry_accepted':False}
+(O/'arithmetic_verification.json').write_text(json.dumps(r,indent=2)+'\n');print(len(checks),r['failed_numeric_checks'],r['changed_inputs'])

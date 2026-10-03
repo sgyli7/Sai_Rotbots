@@ -1,0 +1,1712 @@
+{
+  "stage": "g12 bounded native intake + two conditional topology routes",
+  "producer_sha256": "f8ac98d47551b8d98cd872c14fd254d8289396d94a830d327a252b9140609eae",
+  "input_hashes": {
+    "/home/ethan/Projects/Sai_Rotbots/robots/gorilla_v0_1/cad/source/appearance_c_scene.json": "7a1e49f45838303ca5fd86265dc9980c10cde85ed7626424136afd3863aa5886",
+    "/home/ethan/Projects/Sai_Rotbots/.scratch/gorilla_internal_g11_functional_budget/functional_budget.json": "090b84b12d178e3ab0e580068fe787568348197e2fe4e54b4e35366ae82f3290",
+    "/home/ethan/Projects/Sai_Rotbots/.scratch/gorilla_internal_g_root_macro/flow_heat_screen.json": "620187d3e619036035e81e011716efa99ac9114e7a600109866bd70d8560dd37",
+    "/home/ethan/Projects/Sai_Rotbots/.scratch/gorilla_internal_d_system/thermal_lines_modules.json": "e58c86de10b873f7a2cd789dd5a6b5256a27fce0d1b71d1bb803416f8286af82",
+    "/home/ethan/Projects/Sai_Rotbots/.scratch/gorilla_internal_g12_thermal_route/ebm_dc_axial_catalog.pdf": "5c228ff9d2e743cbead15722cf7e84b425675601cda46ce4d75f742d91dd61e4",
+    "/home/ethan/Projects/Sai_Rotbots/.scratch/gorilla_internal_g12_thermal_route/boyd_4000_heat_exchangers.pdf": "30fdc68f6818abf29104e708a754a88956b383679e4a1be2b21f0b1a80897a8b",
+    "/home/ethan/Projects/Sai_Rotbots/.scratch/gorilla_internal_g12_thermal_route/boyd_4320_thermal_metric.pdf": "b7d5650011ac01f605fc42909af7106b607a56cd4297485842b0949add1baca4",
+    "/home/ethan/Projects/Sai_Rotbots/.scratch/gorilla_internal_g12_thermal_route/boyd_4320_air_pressure_curve.jpg": "cea7a0cb9aa6fd11ac88caf25a510369294ae3dc4044b4a9b4c0b37300cad6e2",
+    "/home/ethan/Projects/Sai_Rotbots/.scratch/gorilla_internal_g12_thermal_route/boyd_4320_liquid_pressure_curve.jpg": "25ec2e4a01717cf6309700f281c2bf01641122bbe2d424f0021e592e5d938caa"
+  },
+  "native_free_projection_area_m2": 0.03223204805933766,
+  "heat_scopes": {
+    "A_G11_nominal_peak_kW": 7.710655314757478,
+    "B_sensitivity_peak_kW": 12.75902992776057,
+    "A480_typical_R_replacing_totaleta_peak_kW": [
+      8.00992700557555,
+      8.99134630342733
+    ],
+    "new_fan_power_included_in_old_aux_only_if_actualallocation_closes": true,
+    "no_heat_doublecount": true
+  },
+  "heat_function_distribution": {
+    "A": {
+      "oil_estimated_pump_mech_and_throttle_kW": 4.125,
+      "pump_motor_inverter_loss_kW": 1.6666666666666674,
+      "rotary_loss_kW": 0.26470588235294124,
+      "aux_kW": 0.65,
+      "totaleta_battery_loss_kW": 1.0042827657378728
+    },
+    "B": {
+      "oil_estimated_pump_mech_and_throttle_kW": 6.75,
+      "pump_motor_inverter_loss_kW": 2.916666666666668,
+      "rotary_loss_kW": 0.5294117647058825,
+      "aux_kW": 0.8,
+      "totaleta_battery_loss_kW": 1.7629514963880268
+    }
+  },
+  "actual_legacy_function_context": [
+    {
+      "id": "d_left_radiator_core",
+      "category": "radiator_core",
+      "geometry": {
+        "kind": "box",
+        "center_world_m": [
+          0.18,
+          0.323,
+          2.15
+        ],
+        "dimensions_xyz_m": [
+          0.035,
+          0.09,
+          0.195
+        ]
+      },
+      "mass_range_kg": [
+        0.6214,
+        0.998525,
+        1.70135
+      ],
+      "function": "Liquid-to-air fin/core behind the actual C15 intake throat, upstream of fan.",
+      "state": "historical context; sizes not permanent; source paths never accepted connected"
+    },
+    {
+      "id": "d_left_radiator_fan",
+      "category": "fan",
+      "geometry": {
+        "kind": "box",
+        "center_world_m": [
+          0.13,
+          0.323,
+          2.15
+        ],
+        "dimensions_xyz_m": [
+          0.025,
+          0.09,
+          0.09
+        ]
+      },
+      "mass_range_kg": [
+        0.16,
+        0.3,
+        0.5
+      ],
+      "function": "One downstream fan per radiator, airflow direction -X.",
+      "state": "historical context; sizes not permanent; source paths never accepted connected"
+    },
+    {
+      "id": "d_left_intake_seal_duct",
+      "category": "sealed_air_duct",
+      "geometry": {
+        "kind": "hollow_box",
+        "center_world_m": [
+          0.226,
+          0.323,
+          2.15
+        ],
+        "dimensions_xyz_m": [
+          0.055,
+          0.105,
+          0.225
+        ],
+        "axis_world": [
+          1,
+          0,
+          0
+        ],
+        "wall_thickness_m": 0.0015,
+        "open_ends": [
+          "-X",
+          "+X"
+        ],
+        "rebuild_rule": "outer axis-aligned box minus inner box; inner X length exceeds outer X by 0.002m so ends stay open; four finite walls remain."
+      },
+      "mass_range_kg": [
+        0.112416,
+        0.1756785,
+        0.3013125
+      ],
+      "function": "Four sealed side walls guide air; open ends join radiator/fan or adjacent duct with gasket. This is material, not an air-filled solid.",
+      "state": "historical context; sizes not permanent; source paths never accepted connected"
+    },
+    {
+      "id": "d_left_radiator_fan_shroud",
+      "category": "sealed_air_duct",
+      "geometry": {
+        "kind": "hollow_box",
+        "center_world_m": [
+          0.1525,
+          0.323,
+          2.15
+        ],
+        "dimensions_xyz_m": [
+          0.025,
+          0.1,
+          0.215
+        ],
+        "axis_world": [
+          1,
+          0,
+          0
+        ],
+        "wall_thickness_m": 0.0015,
+        "open_ends": [
+          "-X",
+          "+X"
+        ],
+        "rebuild_rule": "outer axis-aligned box minus inner box; inner X length exceeds outer X by 0.002m so ends stay open; four finite walls remain."
+      },
+      "mass_range_kg": [
+        0.057255,
+        0.09318,
+        0.164625
+      ],
+      "function": "Four sealed side walls guide air; open ends join radiator/fan or adjacent duct with gasket. This is material, not an air-filled solid.",
+      "state": "historical context; sizes not permanent; source paths never accepted connected"
+    },
+    {
+      "id": "d_left_rear_air_duct",
+      "category": "sealed_air_duct",
+      "geometry": {
+        "kind": "hollow_box",
+        "center_world_m": [
+          -0.15375,
+          0.323,
+          2.15
+        ],
+        "dimensions_xyz_m": [
+          0.5325,
+          0.1,
+          0.1
+        ],
+        "axis_world": [
+          1,
+          0,
+          0
+        ],
+        "wall_thickness_m": 0.0015,
+        "open_ends": [
+          "-X",
+          "+X"
+        ],
+        "rebuild_rule": "outer axis-aligned box minus inner box; inner X length exceeds outer X by 0.002m so ends stay open; four finite walls remain."
+      },
+      "mass_range_kg": [
+        0.584349,
+        0.8797103,
+        1.4618063
+      ],
+      "function": "Four sealed side walls guide air; open ends join radiator/fan or adjacent duct with gasket. This is material, not an air-filled solid.",
+      "state": "historical context; sizes not permanent; source paths never accepted connected"
+    },
+    {
+      "id": "d_left_rear_exhaust_collar",
+      "category": "sealed_air_duct",
+      "geometry": {
+        "kind": "hollow_box",
+        "center_world_m": [
+          -0.445,
+          0.323,
+          2.15
+        ],
+        "dimensions_xyz_m": [
+          0.05,
+          0.105,
+          0.105
+        ],
+        "axis_world": [
+          1,
+          0,
+          0
+        ],
+        "wall_thickness_m": 0.0015,
+        "open_ends": [
+          "-X",
+          "+X"
+        ],
+        "rebuild_rule": "outer axis-aligned box minus inner box; inner X length exceeds outer X by 0.002m so ends stay open; four finite walls remain."
+      },
+      "mass_range_kg": [
+        0.07116,
+        0.113835,
+        0.198375
+      ],
+      "function": "Four sealed side walls guide air; open ends join radiator/fan or adjacent duct with gasket. This is material, not an air-filled solid.",
+      "state": "historical context; sizes not permanent; source paths never accepted connected"
+    },
+    {
+      "id": "d_right_radiator_core",
+      "category": "radiator_core",
+      "geometry": {
+        "kind": "box",
+        "center_world_m": [
+          0.18,
+          -0.323,
+          2.15
+        ],
+        "dimensions_xyz_m": [
+          0.035,
+          0.09,
+          0.195
+        ]
+      },
+      "mass_range_kg": [
+        0.6214,
+        0.998525,
+        1.70135
+      ],
+      "function": "Liquid-to-air fin/core behind the actual C15 intake throat, upstream of fan.",
+      "state": "historical context; sizes not permanent; source paths never accepted connected"
+    },
+    {
+      "id": "d_right_radiator_fan",
+      "category": "fan",
+      "geometry": {
+        "kind": "box",
+        "center_world_m": [
+          0.13,
+          -0.323,
+          2.15
+        ],
+        "dimensions_xyz_m": [
+          0.025,
+          0.09,
+          0.09
+        ]
+      },
+      "mass_range_kg": [
+        0.16,
+        0.3,
+        0.5
+      ],
+      "function": "One downstream fan per radiator, airflow direction -X.",
+      "state": "historical context; sizes not permanent; source paths never accepted connected"
+    },
+    {
+      "id": "d_right_intake_seal_duct",
+      "category": "sealed_air_duct",
+      "geometry": {
+        "kind": "hollow_box",
+        "center_world_m": [
+          0.226,
+          -0.323,
+          2.15
+        ],
+        "dimensions_xyz_m": [
+          0.055,
+          0.105,
+          0.225
+        ],
+        "axis_world": [
+          1,
+          0,
+          0
+        ],
+        "wall_thickness_m": 0.0015,
+        "open_ends": [
+          "-X",
+          "+X"
+        ],
+        "rebuild_rule": "outer axis-aligned box minus inner box; inner X length exceeds outer X by 0.002m so ends stay open; four finite walls remain."
+      },
+      "mass_range_kg": [
+        0.112416,
+        0.1756785,
+        0.3013125
+      ],
+      "function": "Four sealed side walls guide air; open ends join radiator/fan or adjacent duct with gasket. This is material, not an air-filled solid.",
+      "state": "historical context; sizes not permanent; source paths never accepted connected"
+    },
+    {
+      "id": "d_right_radiator_fan_shroud",
+      "category": "sealed_air_duct",
+      "geometry": {
+        "kind": "hollow_box",
+        "center_world_m": [
+          0.1525,
+          -0.323,
+          2.15
+        ],
+        "dimensions_xyz_m": [
+          0.025,
+          0.1,
+          0.215
+        ],
+        "axis_world": [
+          1,
+          0,
+          0
+        ],
+        "wall_thickness_m": 0.0015,
+        "open_ends": [
+          "-X",
+          "+X"
+        ],
+        "rebuild_rule": "outer axis-aligned box minus inner box; inner X length exceeds outer X by 0.002m so ends stay open; four finite walls remain."
+      },
+      "mass_range_kg": [
+        0.057255,
+        0.09318,
+        0.164625
+      ],
+      "function": "Four sealed side walls guide air; open ends join radiator/fan or adjacent duct with gasket. This is material, not an air-filled solid.",
+      "state": "historical context; sizes not permanent; source paths never accepted connected"
+    },
+    {
+      "id": "d_right_rear_air_duct",
+      "category": "sealed_air_duct",
+      "geometry": {
+        "kind": "hollow_box",
+        "center_world_m": [
+          -0.15375,
+          -0.323,
+          2.15
+        ],
+        "dimensions_xyz_m": [
+          0.5325,
+          0.1,
+          0.1
+        ],
+        "axis_world": [
+          1,
+          0,
+          0
+        ],
+        "wall_thickness_m": 0.0015,
+        "open_ends": [
+          "-X",
+          "+X"
+        ],
+        "rebuild_rule": "outer axis-aligned box minus inner box; inner X length exceeds outer X by 0.002m so ends stay open; four finite walls remain."
+      },
+      "mass_range_kg": [
+        0.584349,
+        0.8797103,
+        1.4618063
+      ],
+      "function": "Four sealed side walls guide air; open ends join radiator/fan or adjacent duct with gasket. This is material, not an air-filled solid.",
+      "state": "historical context; sizes not permanent; source paths never accepted connected"
+    },
+    {
+      "id": "d_right_rear_exhaust_collar",
+      "category": "sealed_air_duct",
+      "geometry": {
+        "kind": "hollow_box",
+        "center_world_m": [
+          -0.445,
+          -0.323,
+          2.15
+        ],
+        "dimensions_xyz_m": [
+          0.05,
+          0.105,
+          0.105
+        ],
+        "axis_world": [
+          1,
+          0,
+          0
+        ],
+        "wall_thickness_m": 0.0015,
+        "open_ends": [
+          "-X",
+          "+X"
+        ],
+        "rebuild_rule": "outer axis-aligned box minus inner box; inner X length exceeds outer X by 0.002m so ends stay open; four finite walls remain."
+      },
+      "mass_range_kg": [
+        0.07116,
+        0.113835,
+        0.198375
+      ],
+      "function": "Four sealed side walls guide air; open ends join radiator/fan or adjacent duct with gasket. This is material, not an air-filled solid.",
+      "state": "historical context; sizes not permanent; source paths never accepted connected"
+    },
+    {
+      "id": "d_coolant_circulation_pump",
+      "category": "coolant_pump",
+      "geometry": {
+        "kind": "cylinder",
+        "center_world_m": [
+          -0.02,
+          0.18,
+          1.94
+        ],
+        "axis_world": [
+          1,
+          0,
+          0
+        ],
+        "radius_m": 0.035,
+        "length_m": 0.1,
+        "radial_segments": 16
+      },
+      "mass_range_kg": [
+        0.4,
+        0.75,
+        1.2
+      ],
+      "function": "Circulate coolant through two radiator branches; package includes small motor/pump only.",
+      "state": "historical context; sizes not permanent; source paths never accepted connected"
+    },
+    {
+      "id": "d_coolant_reservoir_shell",
+      "category": "coolant_reservoir",
+      "geometry": {
+        "kind": "hollow_cylinder",
+        "center_world_m": [
+          -0.1,
+          -0.17,
+          2.04
+        ],
+        "axis_world": [
+          0,
+          0,
+          1
+        ],
+        "outer_radius_m": 0.045,
+        "inner_radius_m": 0.042,
+        "length_m": 0.13,
+        "endcap_thickness_m": 0.003,
+        "radial_segments": 20,
+        "rebuild_rule": "Outer cylinder minus internal closed cylinder with length outer length minus 2*endcap_thickness; retain two endcaps."
+      },
+      "mass_range_kg": [
+        0.2198449,
+        0.2878138,
+        0.4097673
+      ],
+      "function": "Small coolant expansion/degassing reservoir only; never hydraulic oil tank.",
+      "state": "historical context; sizes not permanent; source paths never accepted connected"
+    },
+    {
+      "id": "d_coolant_reservoir_fill",
+      "category": "coolant_inventory",
+      "geometry": {
+        "kind": "cylinder",
+        "center_world_m": [
+          -0.1,
+          -0.17,
+          2.02
+        ],
+        "axis_world": [
+          0,
+          0,
+          1
+        ],
+        "radius_m": 0.04179,
+        "length_m": 0.09,
+        "radial_segments": 16
+      },
+      "mass_range_kg": [
+        0.4738213,
+        0.5187096,
+        0.5486352
+      ],
+      "function": "Approximately 0.499L initial coolant fill inside dedicated coolant reservoir.",
+      "state": "historical context; sizes not permanent; source paths never accepted connected"
+    },
+    {
+      "id": "d_left_coolant_branch_00",
+      "category": "coolant_line",
+      "geometry": {
+        "kind": "cylinder",
+        "center_world_m": [
+          0.015,
+          0.18,
+          1.9725
+        ],
+        "axis_world": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "radius_m": 0.006,
+        "length_m": 0.06499999999999995,
+        "radial_segments": 16
+      },
+      "mass_range_kg": [
+        0.0109039,
+        0.0163979,
+        0.024394
+      ],
+      "function": "Coolant supply/return to corresponding radiator. Heat-source cold plate path is not closed.",
+      "state": "historical context; sizes not permanent; source paths never accepted connected"
+    },
+    {
+      "id": "d_left_coolant_branch_01",
+      "category": "coolant_line",
+      "geometry": {
+        "kind": "cylinder",
+        "center_world_m": [
+          0.08249999999999999,
+          0.2515,
+          2.02
+        ],
+        "axis_world": [
+          0.6786233422696047,
+          0.7188380588485443,
+          0.1508051871710245
+        ],
+        "radius_m": 0.006,
+        "length_m": 0.19893214923686925,
+        "radial_segments": 16
+      },
+      "mass_range_kg": [
+        0.0333713,
+        0.0501858,
+        0.0746577
+      ],
+      "function": "Coolant supply/return to corresponding radiator. Heat-source cold plate path is not closed.",
+      "state": "historical context; sizes not permanent; source paths never accepted connected"
+    },
+    {
+      "id": "d_left_coolant_branch_02",
+      "category": "coolant_line",
+      "geometry": {
+        "kind": "cylinder",
+        "center_world_m": [
+          0.16499999999999998,
+          0.323,
+          2.04375
+        ],
+        "axis_world": [
+          0.8637789008984326,
+          0.0,
+          0.5038710255240877
+        ],
+        "radius_m": 0.006,
+        "length_m": 0.034731109973624545,
+        "radial_segments": 16
+      },
+      "mass_range_kg": [
+        0.0058262,
+        0.0087618,
+        0.0130343
+      ],
+      "function": "Coolant supply/return to corresponding radiator. Heat-source cold plate path is not closed.",
+      "state": "historical context; sizes not permanent; source paths never accepted connected"
+    },
+    {
+      "id": "d_left_coolant_branch_03",
+      "category": "coolant_line",
+      "geometry": {
+        "kind": "cylinder",
+        "center_world_m": [
+          0.1075,
+          0.323,
+          2.26125
+        ],
+        "axis_world": [
+          -0.9824865243069564,
+          0.0,
+          0.1863336511616632
+        ],
+        "radius_m": 0.006,
+        "length_m": 0.14758472143145437,
+        "radial_segments": 16
+      },
+      "mass_range_kg": [
+        0.0247577,
+        0.0372321,
+        0.0553874
+      ],
+      "function": "Coolant supply/return to corresponding radiator. Heat-source cold plate path is not closed.",
+      "state": "historical context; sizes not permanent; source paths never accepted connected"
+    },
+    {
+      "id": "d_left_coolant_branch_04",
+      "category": "coolant_line",
+      "geometry": {
+        "kind": "cylinder",
+        "center_world_m": [
+          -0.0175,
+          0.2515,
+          2.2125
+        ],
+        "axis_world": [
+          -0.4838195975797042,
+          -0.6589162138466448,
+          -0.5759757114044097
+        ],
+        "radius_m": 0.006,
+        "length_m": 0.21702304025149036,
+        "radial_segments": 16
+      },
+      "mass_range_kg": [
+        0.0364061,
+        0.0547497,
+        0.081447
+      ],
+      "function": "Coolant supply/return to corresponding radiator. Heat-source cold plate path is not closed.",
+      "state": "historical context; sizes not permanent; source paths never accepted connected"
+    },
+    {
+      "id": "d_left_coolant_branch_05",
+      "category": "coolant_line",
+      "geometry": {
+        "kind": "cylinder",
+        "center_world_m": [
+          -0.07,
+          0.18,
+          2.045
+        ],
+        "axis_world": [
+          0.0,
+          0.0,
+          -1.0
+        ],
+        "radius_m": 0.006,
+        "length_m": 0.20999999999999996,
+        "radial_segments": 16
+      },
+      "mass_range_kg": [
+        0.035228,
+        0.052978,
+        0.0788113
+      ],
+      "function": "Coolant supply/return to corresponding radiator. Heat-source cold plate path is not closed.",
+      "state": "historical context; sizes not permanent; source paths never accepted connected"
+    },
+    {
+      "id": "d_right_coolant_branch_00",
+      "category": "coolant_line",
+      "geometry": {
+        "kind": "cylinder",
+        "center_world_m": [
+          0.015,
+          0.18,
+          1.9725
+        ],
+        "axis_world": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "radius_m": 0.006,
+        "length_m": 0.06499999999999995,
+        "radial_segments": 16
+      },
+      "mass_range_kg": [
+        0.0109039,
+        0.0163979,
+        0.024394
+      ],
+      "function": "Coolant supply/return to corresponding radiator. Heat-source cold plate path is not closed.",
+      "state": "historical context; sizes not permanent; source paths never accepted connected"
+    },
+    {
+      "id": "d_right_coolant_branch_01",
+      "category": "coolant_line",
+      "geometry": {
+        "kind": "cylinder",
+        "center_world_m": [
+          0.08249999999999999,
+          -0.07150000000000001,
+          2.02
+        ],
+        "axis_world": [
+          0.25878694627106846,
+          -0.9642209924025735,
+          0.05750821028246013
+        ],
+        "radius_m": 0.006,
+        "length_m": 0.5216646432335624,
+        "radial_segments": 16
+      },
+      "mass_range_kg": [
+        0.0875104,
+        0.1316035,
+        0.1957766
+      ],
+      "function": "Coolant supply/return to corresponding radiator. Heat-source cold plate path is not closed.",
+      "state": "historical context; sizes not permanent; source paths never accepted connected"
+    },
+    {
+      "id": "d_right_coolant_branch_02",
+      "category": "coolant_line",
+      "geometry": {
+        "kind": "cylinder",
+        "center_world_m": [
+          0.16499999999999998,
+          -0.323,
+          2.04375
+        ],
+        "axis_world": [
+          0.8637789008984326,
+          0.0,
+          0.5038710255240877
+        ],
+        "radius_m": 0.006,
+        "length_m": 0.034731109973624545,
+        "radial_segments": 16
+      },
+      "mass_range_kg": [
+        0.0058262,
+        0.0087618,
+        0.0130343
+      ],
+      "function": "Coolant supply/return to corresponding radiator. Heat-source cold plate path is not closed.",
+      "state": "historical context; sizes not permanent; source paths never accepted connected"
+    },
+    {
+      "id": "d_right_coolant_branch_03",
+      "category": "coolant_line",
+      "geometry": {
+        "kind": "cylinder",
+        "center_world_m": [
+          0.1075,
+          -0.323,
+          2.26125
+        ],
+        "axis_world": [
+          -0.9824865243069564,
+          0.0,
+          0.1863336511616632
+        ],
+        "radius_m": 0.006,
+        "length_m": 0.14758472143145437,
+        "radial_segments": 16
+      },
+      "mass_range_kg": [
+        0.0247577,
+        0.0372321,
+        0.0553874
+      ],
+      "function": "Coolant supply/return to corresponding radiator. Heat-source cold plate path is not closed.",
+      "state": "historical context; sizes not permanent; source paths never accepted connected"
+    },
+    {
+      "id": "d_right_coolant_branch_04",
+      "category": "coolant_line",
+      "geometry": {
+        "kind": "cylinder",
+        "center_world_m": [
+          -0.0175,
+          -0.07150000000000001,
+          2.2125
+        ],
+        "axis_world": [
+          -0.1985522893251686,
+          0.95116001457676,
+          -0.23637177300615309
+        ],
+        "radius_m": 0.006,
+        "length_m": 0.528827949337022,
+        "radial_segments": 16
+      },
+      "mass_range_kg": [
+        0.0887121,
+        0.1334107,
+        0.1984649
+      ],
+      "function": "Coolant supply/return to corresponding radiator. Heat-source cold plate path is not closed.",
+      "state": "historical context; sizes not permanent; source paths never accepted connected"
+    },
+    {
+      "id": "d_right_coolant_branch_05",
+      "category": "coolant_line",
+      "geometry": {
+        "kind": "cylinder",
+        "center_world_m": [
+          -0.07,
+          0.18,
+          2.045
+        ],
+        "axis_world": [
+          0.0,
+          0.0,
+          -1.0
+        ],
+        "radius_m": 0.006,
+        "length_m": 0.20999999999999996,
+        "radial_segments": 16
+      },
+      "mass_range_kg": [
+        0.035228,
+        0.052978,
+        0.0788113
+      ],
+      "function": "Coolant supply/return to corresponding radiator. Heat-source cold plate path is not closed.",
+      "state": "historical context; sizes not permanent; source paths never accepted connected"
+    },
+    {
+      "id": "d_coolant_reservoir_link_00",
+      "category": "coolant_line",
+      "geometry": {
+        "kind": "cylinder",
+        "center_world_m": [
+          -0.1,
+          -0.11000000000000001,
+          2.02
+        ],
+        "axis_world": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "radius_m": 0.005,
+        "length_m": 0.12000000000000001,
+        "radial_segments": 16
+      },
+      "mass_range_kg": [
+        0.0152233,
+        0.0227286,
+        0.0337322
+      ],
+      "function": "Reservoir branch to circulation inlet; hydraulic oil system is separate.",
+      "state": "historical context; sizes not permanent; source paths never accepted connected"
+    },
+    {
+      "id": "d_coolant_reservoir_link_01",
+      "category": "coolant_line",
+      "geometry": {
+        "kind": "cylinder",
+        "center_world_m": [
+          -0.085,
+          0.065,
+          1.98
+        ],
+        "axis_world": [
+          0.12227087189088336,
+          0.9374100178301057,
+          -0.3260556583756893
+        ],
+        "radius_m": 0.005,
+        "length_m": 0.24535688292770594,
+        "radial_segments": 16
+      },
+      "mass_range_kg": [
+        0.0311261,
+        0.0464719,
+        0.0689703
+      ],
+      "function": "Reservoir branch to circulation inlet; hydraulic oil system is separate.",
+      "state": "historical context; sizes not permanent; source paths never accepted connected"
+    }
+  ],
+  "existing_nine_complete_HX_energy_pump_compute_screen_groups": [
+    {
+      "id": "left_upper_energy",
+      "complete_member_ids": [
+        "ds_left_upper_custom_hv_pack",
+        "ds_left_upper_custom_hv_pack_bms_fuse_service",
+        "e_ds_left_upper_custom_hv_pack_coldplate"
+      ],
+      "mass_range_kg": [
+        20.041777790643316,
+        24.457530878492573,
+        30.189037054191086
+      ],
+      "gross_group_AABB_volume_L": 15.457649421176331,
+      "group_AABB_dimensions_m": [
+        0.19213039702999996,
+        0.23579532591599994,
+        0.34120248154200006
+      ],
+      "source_candidate_center_world_m": [
+        -0.23,
+        0.14,
+        2.47
+      ],
+      "owner": "torso",
+      "installation_or_route_accepted": false
+    },
+    {
+      "id": "left_lower_energy",
+      "complete_member_ids": [
+        "ds_left_lower_custom_hv_pack",
+        "ds_left_lower_custom_hv_pack_bms_fuse_service",
+        "e_ds_left_lower_custom_hv_pack_coldplate"
+      ],
+      "mass_range_kg": [
+        20.04177804276639,
+        24.457531158629322,
+        30.189037390355182
+      ],
+      "gross_group_AABB_volume_L": 15.457649421176345,
+      "group_AABB_dimensions_m": [
+        0.19213039702999996,
+        0.23579532591600016,
+        0.34120248154200006
+      ],
+      "source_candidate_center_world_m": [
+        -0.23,
+        0.14,
+        2.12
+      ],
+      "owner": "torso",
+      "installation_or_route_accepted": false
+    },
+    {
+      "id": "left_pump",
+      "complete_member_ids": [
+        "ds_left_hydraulic_input_z16_pump",
+        "ds_left_hydraulic_input_inverter",
+        "ds_left_hydraulic_input_emrax188_lc",
+        "ds_left_hydraulic_input_motor_mount_case",
+        "ds_left_hydraulic_input_return_filter",
+        "ds_left_hydraulic_input_coupling",
+        "ds_left_hydraulic_input_pump_mount"
+      ],
+      "mass_range_kg": [
+        14.099306101344142,
+        16.02145122371571,
+        19.22681402964464
+      ],
+      "gross_group_AABB_volume_L": 34.38045067783177,
+      "group_AABB_dimensions_m": [
+        0.32650000214576735,
+        0.23400000214576722,
+        0.45000000178813915
+      ],
+      "source_candidate_center_world_m": [
+        0.04,
+        0.16,
+        2.32
+      ],
+      "owner": "torso",
+      "installation_or_route_accepted": false
+    },
+    {
+      "id": "right_upper_energy",
+      "complete_member_ids": [
+        "ds_right_upper_custom_hv_pack",
+        "ds_right_upper_custom_hv_pack_bms_fuse_service",
+        "e_ds_right_upper_custom_hv_pack_coldplate"
+      ],
+      "mass_range_kg": [
+        20.041777790643312,
+        24.45753087849257,
+        30.189037054191083
+      ],
+      "gross_group_AABB_volume_L": 15.457649421176331,
+      "group_AABB_dimensions_m": [
+        0.19213039702999996,
+        0.23579532591599994,
+        0.34120248154200006
+      ],
+      "source_candidate_center_world_m": [
+        -0.23,
+        -0.14,
+        2.47
+      ],
+      "owner": "torso",
+      "installation_or_route_accepted": false
+    },
+    {
+      "id": "right_lower_energy",
+      "complete_member_ids": [
+        "ds_right_lower_custom_hv_pack",
+        "ds_right_lower_custom_hv_pack_bms_fuse_service",
+        "e_ds_right_lower_custom_hv_pack_coldplate"
+      ],
+      "mass_range_kg": [
+        20.041778042766396,
+        24.45753115862933,
+        30.189037390355193
+      ],
+      "gross_group_AABB_volume_L": 15.45764942117634,
+      "group_AABB_dimensions_m": [
+        0.19213039702999996,
+        0.23579532591599994,
+        0.3412024815420003
+      ],
+      "source_candidate_center_world_m": [
+        -0.23,
+        -0.14,
+        2.12
+      ],
+      "owner": "torso",
+      "installation_or_route_accepted": false
+    },
+    {
+      "id": "right_pump",
+      "complete_member_ids": [
+        "ds_right_hydraulic_input_motor_mount_case",
+        "ds_right_hydraulic_input_pump_mount",
+        "ds_right_hydraulic_input_inverter",
+        "ds_right_hydraulic_input_z16_pump",
+        "ds_right_hydraulic_input_return_filter",
+        "ds_right_hydraulic_input_emrax188_lc",
+        "ds_right_hydraulic_input_coupling"
+      ],
+      "mass_range_kg": [
+        14.09930610134414,
+        16.02145122371571,
+        19.226814029644636
+      ],
+      "gross_group_AABB_volume_L": 34.38045067783177,
+      "group_AABB_dimensions_m": [
+        0.32650000214576735,
+        0.23400000214576722,
+        0.45000000178813915
+      ],
+      "source_candidate_center_world_m": [
+        0.04,
+        -0.16,
+        2.32
+      ],
+      "owner": "torso",
+      "installation_or_route_accepted": false
+    },
+    {
+      "id": "HX",
+      "complete_member_ids": [
+        "e2_dual_fluid_HX_material",
+        "e2_oil_HX_out_actual_hollow_port",
+        "e2_oil_HX_in_actual_hollow_port",
+        "e2_oil_HX_water_return_actual_hollow_port",
+        "e2_oil_HX_water_supply_actual_hollow_port"
+      ],
+      "mass_range_kg": [
+        10.86617442918764,
+        12.073527143541822,
+        14.488232572250185
+      ],
+      "gross_group_AABB_volume_L": 7.466398484838055,
+      "group_AABB_dimensions_m": [
+        0.14999997615814206,
+        0.24400000274181366,
+        0.20399998873472214
+      ],
+      "source_candidate_center_world_m": [
+        0.22,
+        0.0,
+        1.9
+      ],
+      "owner": "pelvis",
+      "installation_or_route_accepted": false
+    },
+    {
+      "id": "compute",
+      "complete_member_ids": [
+        "ds_compute"
+      ],
+      "mass_range_kg": [
+        1.2,
+        2.0,
+        3.5
+      ],
+      "gross_group_AABB_volume_L": 1.7550000000000106,
+      "group_AABB_dimensions_m": [
+        0.15,
+        0.18,
+        0.06500000000000039
+      ],
+      "source_candidate_center_world_m": [
+        0.2,
+        0.0,
+        2.61
+      ],
+      "owner": "torso",
+      "installation_or_route_accepted": false
+    },
+    {
+      "id": "screen",
+      "complete_member_ids": [
+        "ds_back_screen"
+      ],
+      "mass_range_kg": [
+        1.0,
+        1.7,
+        2.7
+      ],
+      "gross_group_AABB_volume_L": 3.393,
+      "group_AABB_dimensions_m": [
+        0.030000000000000027,
+        0.29,
+        0.3899999999999997
+      ],
+      "source_candidate_center_world_m": [
+        -0.386,
+        0.0,
+        2.225
+      ],
+      "owner": "torso",
+      "installation_or_route_accepted": false
+    }
+  ],
+  "water_route_balance": {
+    "radiator_branches_parallel_each_Lmin": 7.5,
+    "total_loop_Lmin": 15,
+    "each_EMRAX_LC_source_min_Lmin": 6,
+    "minimum_two_motor_branches_total_Lmin": 12,
+    "remaining_pack_compute_oilHX_flow_requires_real_serial_parallel_solution": true,
+    "all_source_hose_radius6mm_is_outer_occupancy_not_proven_innerdiameter": true
+  },
+  "water_pressure_sensitivity": {
+    "branch_flow_Lmin": 7.5,
+    "branch_ID_m": [
+      0.008,
+      0.01
+    ],
+    "branch_velocity_m_s": [
+      2.486795985810865,
+      1.5915494309189535
+    ],
+    "Darcy_factor": 0.025,
+    "straight_hose_L_m": 1,
+    "additional_own_K": [
+      2,
+      6
+    ],
+    "formula": "f*(L/D)*(rho*v^2/2)+sumK*(rho*v^2/2)+core_deltaP; no actual waterpump rating",
+    "pump_pressureflow_qualified": false
+  },
+  "fan_references": [
+    {
+      "source": "ebm official2025-08 printed138/139 PDF121/122",
+      "model": "6314/2 TDH4P / VWEG172XKLRS 9295420011",
+      "Vnom": 24,
+      "Vrange": [
+        16,
+        36
+      ],
+      "outer_reference_mm": [
+        172,
+        172,
+        51
+      ],
+      "q_m3_h": [
+        622,
+        760,
+        861,
+        932
+      ],
+      "static_pressure_read_Pa": [
+        475,
+        350,
+        190,
+        0
+      ],
+      "pressure_read_uncertainty_Pa": [
+        30,
+        25,
+        25,
+        0
+      ],
+      "operating_power_W": [
+        215,
+        215,
+        193.7,
+        152.0
+      ],
+      "flow_and_power_table_exact_pressure_graph_manual_read": true,
+      "mass_kg": null,
+      "mass_reference_unknown_not_zero": true,
+      "full_curve_lowflow300_m3_h_static_graph_read_Pa": [
+        740,
+        50
+      ],
+      "lowflow_operating_input_W_unknown_not_in_table": true,
+      "curve_ISO5801_installation_category_A_without_guard": true
+    },
+    {
+      "source": "same official page",
+      "model": "6318/2 TDH4P / VWEG172XKLRS 9295420021",
+      "Vnom": 48,
+      "Vrange": [
+        36,
+        72
+      ],
+      "q_m3_h": [
+        663,
+        780,
+        861,
+        940
+      ],
+      "static_pressure_read_Pa": [
+        535,
+        365,
+        190,
+        0
+      ],
+      "pressure_read_uncertainty_Pa": [
+        30,
+        25,
+        25,
+        0
+      ],
+      "operating_power_W": [
+        249,
+        213.4,
+        181.2,
+        148.2
+      ],
+      "outer_reference_mm": [
+        172,
+        172,
+        51
+      ],
+      "mass_kg": null
+    }
+  ],
+  "radiator_reference": {
+    "model": "Boyd4320G10 stainless tube/copperfin reference, no selected radiator",
+    "dry_mass_kg": 6.4,
+    "internal_water_L": 0.844,
+    "overall_dimensions_m": null,
+    "dimension_source_not_closed_do_not_scale_old_core": true,
+    "pressure_test_bar": 10.3,
+    "not_robot_operating_pressure": true,
+    "thermal_coefficient_scope": "Q/(Tin_liquid-Tin_air), not UA and not extrapolated to different core geometry",
+    "airflow_m3_min": [
+      0.0,
+      2.0,
+      4.0,
+      6.0,
+      8.0,
+      10.0,
+      12.0,
+      14.0,
+      16.0
+    ],
+    "waterflow_L_min": [
+      1.8,
+      3.7,
+      7.5,
+      15.1
+    ],
+    "Q_per_initial_deltaT_W_K": {
+      "1.8": [
+        0,
+        20,
+        42,
+        60,
+        70,
+        77,
+        82,
+        86,
+        88
+      ],
+      "3.7": [
+        0,
+        26,
+        52,
+        77,
+        91,
+        100,
+        108,
+        115,
+        121
+      ],
+      "7.5": [
+        0,
+        29,
+        59,
+        86,
+        104,
+        117,
+        129,
+        139,
+        147
+      ],
+      "15.1": [
+        0,
+        31,
+        63,
+        90,
+        110,
+        127,
+        141,
+        154,
+        166
+      ]
+    },
+    "read_uncertainty_W_K": 5,
+    "air_pressure_curve_cfm": [
+      0,
+      200,
+      400,
+      600,
+      800,
+      1000,
+      1200
+    ],
+    "air_pressure_Pa": [
+      0,
+      8,
+      20,
+      37,
+      57,
+      85,
+      123
+    ],
+    "air_pressure_read_uncertainty_Pa": 5,
+    "water_pressure_source_GPM": [
+      0,
+      0.5,
+      1,
+      1.5,
+      2,
+      2.5,
+      3
+    ],
+    "water_pressure_bar": [
+      0,
+      0.035,
+      0.09,
+      0.17,
+      0.26,
+      0.36,
+      0.48
+    ],
+    "water_pressure_read_uncertainty_bar": 0.03,
+    "no_water_pressure_extrapolation_above11_356Lmin": true
+  },
+  "conservation_and_curve_screens": [
+    {
+      "label": "A_front_only_15K",
+      "total_heat_kW": 7.710655314757478,
+      "front_fraction": 1.0,
+      "front_heat_kW": 7.710655314757478,
+      "secondary_heat_kW": 0.0,
+      "air_rise_K": 15,
+      "front_total_airflow_m3_s": 0.42623854697387936,
+      "per_front_branch_airflow_m3_h": 767.2293845529829,
+      "native_louver_free_projected_mean_speed_m_s": 13.22406029518182,
+      "dynamic_pressure_Pa": 104.92546241436257,
+      "same_reference4320_air_pressure_Pa": 24.383804181855993,
+      "reference_water_each_L_min": 7.5,
+      "reference_two_cores_dry_mass_kg": 12.8,
+      "reference_two_cores_water_L": 1.688,
+      "same_reference_Q_per_initial_deltaT_each_W_K": 132.9357820460819,
+      "required_initial_liquid_air_deltaT_K": 29.001429096360962,
+      "airflow_outside_published_thermal_graph": false,
+      "ambient25C_example_required_inlet_C": 54.001429096360965,
+      "ambient25C_example_radiator_outlet_C": 46.62281157027726,
+      "not_motor_or_cell_temperature_qualification": true,
+      "core_outer_dimensions_and_world_placement_unclosed": true,
+      "water_total_heat_transport_flow_L_min_at10K": 11.067926289125566,
+      "fan_screens": {
+        "G24": {
+          "within_digitized_domain": true,
+          "available_static_Pa": 338.54750961903704,
+          "graph_uncertainty_Pa": 25.0,
+          "operating_input_W": 213.4753872180343,
+          "no_installed_curve_admission": true,
+          "total_two_fan_input_W": 426.9507744360686,
+          "max_other_losses_K_on_native_projection_at_lower_fanpressure_and_upper_corepressure": 2.7082435368736935,
+          "other_loss_K_1_to4_pressure_range_Pa": [
+            129.30926659621855,
+            444.08565383930625
+          ],
+          "filter_duct_bend_outlet_total_resistance_unknown": true
+        },
+        "H48": {
+          "within_digitized_domain": true,
+          "available_static_Pa": 383.5555950939565,
+          "graph_uncertainty_Pa": 25.545752796881075,
+          "operating_input_W": 217.28575991379324,
+          "no_installed_curve_admission": true,
+          "total_two_fan_input_W": 434.5715198275865,
+          "max_other_losses_K_on_native_projection_at_lower_fanpressure_and_upper_corepressure": 3.1319951378192443,
+          "other_loss_K_1_to4_pressure_range_Pa": [
+            129.30926659621855,
+            444.08565383930625
+          ],
+          "filter_duct_bend_outlet_total_resistance_unknown": true
+        }
+      }
+    },
+    {
+      "label": "A480_typR200V_front_only_15K",
+      "total_heat_kW": 8.99134630342733,
+      "front_fraction": 1.0,
+      "front_heat_kW": 8.99134630342733,
+      "secondary_heat_kW": 0.0,
+      "air_rise_K": 15,
+      "front_total_airflow_m3_s": 0.497034068735618,
+      "per_front_branch_airflow_m3_h": 894.6613237241124,
+      "native_louver_free_projected_mean_speed_m_s": 15.420492915020542,
+      "dynamic_pressure_Pa": 142.67496104531924,
+      "same_reference4320_air_pressure_Pa": 30.759110834779218,
+      "reference_water_each_L_min": 7.5,
+      "reference_two_cores_dry_mass_kg": 12.8,
+      "reference_two_cores_water_L": 1.688,
+      "same_reference_Q_per_initial_deltaT_each_W_K": 142.64408824827416,
+      "required_initial_liquid_air_deltaT_K": 31.516715532499873,
+      "airflow_outside_published_thermal_graph": false,
+      "ambient25C_example_required_inlet_C": 56.51671553249987,
+      "ambient25C_example_radiator_outlet_C": 47.91255639046415,
+      "not_motor_or_cell_temperature_qualification": true,
+      "core_outer_dimensions_and_world_placement_unclosed": true,
+      "water_total_heat_transport_flow_L_min_at10K": 12.906238713053583,
+      "fan_screens": {
+        "G24": {
+          "within_digitized_domain": true,
+          "available_static_Pa": 99.92040130167095,
+          "graph_uncertainty_Pa": 13.147421223904074,
+          "operating_input_W": 173.929898601472,
+          "no_installed_curve_admission": true,
+          "total_two_fan_input_W": 347.859797202944,
+          "max_other_losses_K_on_native_projection_at_lower_fanpressure_and_upper_corepressure": 0.35755306235397266,
+          "other_loss_K_1_to4_pressure_range_Pa": [
+            173.43407188009846,
+            601.4589550160562
+          ],
+          "filter_duct_bend_outlet_total_resistance_unknown": true
+        },
+        "H48": {
+          "within_digitized_domain": true,
+          "available_static_Pa": 109.04238597998275,
+          "graph_uncertainty_Pa": 14.347682365787204,
+          "operating_input_W": 167.1389407228391,
+          "no_installed_curve_admission": true,
+          "total_two_fan_input_W": 334.2778814456782,
+          "max_other_losses_K_on_native_projection_at_lower_fanpressure_and_upper_corepressure": 0.4130759339103379,
+          "other_loss_K_1_to4_pressure_range_Pa": [
+            173.43407188009846,
+            601.4589550160562
+          ],
+          "filter_duct_bend_outlet_total_resistance_unknown": true
+        }
+      }
+    },
+    {
+      "label": "B_front_only_15K",
+      "total_heat_kW": 12.75902992776057,
+      "front_fraction": 1.0,
+      "front_heat_kW": 12.75902992776057,
+      "secondary_heat_kW": 0.0,
+      "air_rise_K": 15,
+      "front_total_airflow_m3_s": 0.7053084537181078,
+      "per_front_branch_airflow_m3_h": 1269.555216692594,
+      "native_louver_free_projected_mean_speed_m_s": 21.882210290195296,
+      "dynamic_pressure_Pa": 287.29867631059733,
+      "same_reference4320_air_pressure_Pa": 51.723198926507486,
+      "reference_water_each_L_min": 7.5,
+      "reference_two_cores_dry_mass_kg": 12.8,
+      "reference_two_cores_water_L": 1.688,
+      "same_reference_Q_per_initial_deltaT_each_W_K": null,
+      "required_initial_liquid_air_deltaT_K": null,
+      "airflow_outside_published_thermal_graph": true,
+      "ambient25C_example_required_inlet_C": null,
+      "ambient25C_example_radiator_outlet_C": null,
+      "not_motor_or_cell_temperature_qualification": true,
+      "core_outer_dimensions_and_world_placement_unclosed": true,
+      "water_total_heat_transport_flow_L_min_at10K": 18.314397025493644,
+      "fan_screens": {
+        "G24": {
+          "within_digitized_domain": false,
+          "free_air_limit_exceeded": true,
+          "source_curve_exists_but_table_operating_power_not_bracketed_here": false,
+          "no_fullcurve_extrapolated_power": true
+        },
+        "H48": {
+          "within_digitized_domain": false,
+          "free_air_limit_exceeded": true,
+          "source_curve_exists_but_table_operating_power_not_bracketed_here": false,
+          "no_fullcurve_extrapolated_power": true
+        }
+      }
+    },
+    {
+      "label": "B_front_only_25K",
+      "total_heat_kW": 12.75902992776057,
+      "front_fraction": 1.0,
+      "front_heat_kW": 12.75902992776057,
+      "secondary_heat_kW": 0.0,
+      "air_rise_K": 25,
+      "front_total_airflow_m3_s": 0.42318507223086466,
+      "per_front_branch_airflow_m3_h": 761.7331300155564,
+      "native_louver_free_projected_mean_speed_m_s": 13.129326174117177,
+      "dynamic_pressure_Pa": 103.42752347181502,
+      "same_reference4320_air_pressure_Pa": 24.10883145251882,
+      "reference_water_each_L_min": 7.5,
+      "reference_two_cores_dry_mass_kg": 12.8,
+      "reference_two_cores_water_L": 1.688,
+      "same_reference_Q_per_initial_deltaT_each_W_K": 132.4777608346297,
+      "required_initial_liquid_air_deltaT_K": 48.15536527556314,
+      "airflow_outside_published_thermal_graph": false,
+      "ambient25C_example_required_inlet_C": 73.15536527556314,
+      "ambient25C_example_radiator_outlet_C": 60.94576725856738,
+      "not_motor_or_cell_temperature_qualification": true,
+      "core_outer_dimensions_and_world_placement_unclosed": true,
+      "water_total_heat_transport_flow_L_min_at10K": 18.314397025493644,
+      "fan_screens": {
+        "G24": {
+          "within_digitized_domain": true,
+          "available_static_Pa": 347.25444750010865,
+          "graph_uncertainty_Pa": 25.0,
+          "operating_input_W": 214.63449832345196,
+          "no_installed_curve_admission": true,
+          "total_two_fan_input_W": 429.26899664690393,
+          "max_other_losses_K_on_native_projection_at_lower_fanpressure_and_upper_corepressure": 2.8343095358700605,
+          "other_loss_K_1_to4_pressure_range_Pa": [
+            127.53635492433384,
+            437.8189253397789
+          ],
+          "filter_duct_bend_outlet_total_resistance_unknown": true
+        },
+        "H48": {
+          "within_digitized_domain": true,
+          "available_static_Pa": 391.54160596030266,
+          "graph_uncertainty_Pa": 25.780635469420666,
+          "operating_input_W": 218.95812454227516,
+          "no_installed_curve_admission": true,
+          "total_two_fan_input_W": 437.9162490845503,
+          "max_other_losses_K_on_native_projection_at_lower_fanpressure_and_upper_corepressure": 3.254956976032633,
+          "other_loss_K_1_to4_pressure_range_Pa": [
+            127.53635492433384,
+            437.8189253397789
+          ],
+          "filter_duct_bend_outlet_total_resistance_unknown": true
+        }
+      }
+    },
+    {
+      "label": "A_front_lowT_3kW_15K",
+      "total_heat_kW": 7.710655314757478,
+      "front_fraction": 0.38907198902514534,
+      "front_heat_kW": 3.0,
+      "secondary_heat_kW": 4.710655314757478,
+      "air_rise_K": 15,
+      "front_total_airflow_m3_s": 0.16583747927031509,
+      "per_front_branch_airflow_m3_h": 298.5074626865672,
+      "native_louver_free_projected_mean_speed_m_s": 5.145111442034841,
+      "dynamic_pressure_Pa": 15.883303050574703,
+      "same_reference4320_air_pressure_Pa": 7.027794371475955,
+      "reference_water_each_L_min": 7.5,
+      "reference_two_cores_dry_mass_kg": 12.8,
+      "reference_two_cores_water_L": 1.688,
+      "same_reference_Q_per_initial_deltaT_each_W_K": 72.16417910447761,
+      "required_initial_liquid_air_deltaT_K": 20.78593588417787,
+      "airflow_outside_published_thermal_graph": false,
+      "ambient25C_example_required_inlet_C": 45.785935884177874,
+      "ambient25C_example_radiator_outlet_C": 42.91512248704869,
+      "not_motor_or_cell_temperature_qualification": true,
+      "core_outer_dimensions_and_world_placement_unclosed": true,
+      "water_total_heat_transport_flow_L_min_at10K": 4.30622009569378,
+      "fan_screens": {
+        "G24": {
+          "within_digitized_domain": false,
+          "free_air_limit_exceeded": false,
+          "source_curve_exists_but_table_operating_power_not_bracketed_here": true,
+          "no_fullcurve_extrapolated_power": true
+        },
+        "H48": {
+          "within_digitized_domain": false,
+          "free_air_limit_exceeded": false,
+          "source_curve_exists_but_table_operating_power_not_bracketed_here": true,
+          "no_fullcurve_extrapolated_power": true
+        }
+      }
+    },
+    {
+      "label": "B_front_lowT_3kW_15K",
+      "total_heat_kW": 12.75902992776057,
+      "front_fraction": 0.2351275933190441,
+      "front_heat_kW": 3.0,
+      "secondary_heat_kW": 9.75902992776057,
+      "air_rise_K": 15,
+      "front_total_airflow_m3_s": 0.16583747927031509,
+      "per_front_branch_airflow_m3_h": 298.5074626865672,
+      "native_louver_free_projected_mean_speed_m_s": 5.145111442034841,
+      "dynamic_pressure_Pa": 15.883303050574703,
+      "same_reference4320_air_pressure_Pa": 7.027794371475955,
+      "reference_water_each_L_min": 7.5,
+      "reference_two_cores_dry_mass_kg": 12.8,
+      "reference_two_cores_water_L": 1.688,
+      "same_reference_Q_per_initial_deltaT_each_W_K": 72.16417910447761,
+      "required_initial_liquid_air_deltaT_K": 20.78593588417787,
+      "airflow_outside_published_thermal_graph": false,
+      "ambient25C_example_required_inlet_C": 45.785935884177874,
+      "ambient25C_example_radiator_outlet_C": 42.91512248704869,
+      "not_motor_or_cell_temperature_qualification": true,
+      "core_outer_dimensions_and_world_placement_unclosed": true,
+      "water_total_heat_transport_flow_L_min_at10K": 4.30622009569378,
+      "fan_screens": {
+        "G24": {
+          "within_digitized_domain": false,
+          "free_air_limit_exceeded": false,
+          "source_curve_exists_but_table_operating_power_not_bracketed_here": true,
+          "no_fullcurve_extrapolated_power": true
+        },
+        "H48": {
+          "within_digitized_domain": false,
+          "free_air_limit_exceeded": false,
+          "source_curve_exists_but_table_operating_power_not_bracketed_here": true,
+          "no_fullcurve_extrapolated_power": true
+        }
+      }
+    }
+  ],
+  "routes": [
+    {
+      "id": "route1_front_all",
+      "visible_exterior_delta_mm": 0,
+      "air_route": [
+        "both native visible grille+louver",
+        "new sealed smooth expansion plenum; hidden width>=172mm fan/largecore measured CAD still required",
+        "parallel full cores",
+        "pull fans full housing+guard+mount+power",
+        "separate rear/side sealed exhaust returns, actual outer openings not made"
+      ],
+      "liquid_route": [
+        "pump/reservoir+bleed",
+        "parallel full motor jackets >=6Lmin each/sourceLC",
+        "four complete battery coldplates+branch balance",
+        "compute/rotary controller coldplates",
+        "oil-water HX isolated oil side + lowpressurewater side",
+        "mixed return -> parallel radiators -> supply"
+      ],
+      "pipe_schema_only_not_currently_connected": true,
+      "independent_module_and_owner_ports_need_new_actual_mount": true,
+      "thermal_or_space_or_pressure_accepted": false
+    },
+    {
+      "id": "route2_front_lowT_secondary_hot",
+      "visible_front_grille_delta_mm": 0,
+      "front_route": [
+        "two original grilles",
+        "sealed low-temperature plenum/cores/fans",
+        "motor jackets + battery coldplates + compute in parallel",
+        "separate rear exhaust not recirculated"
+      ],
+      "secondary_route": [
+        "hydraulicreturn/oilcase cooling via intact oil-water HX",
+        "independent higher-temperature water loop",
+        "side/back or pelvis full secondary exchanger+fan+intake/exhaust",
+        "keep oil/drainpressure independent of coolant"
+      ],
+      "nominal_front_heat_allocation_kW": 3,
+      "secondary_A_remaining_kW": 4.710655314757478,
+      "secondary_B_remaining_kW": 9.75902992776057,
+      "480_lowSOC_cellR_may_exceed_front3kW_allocation": true,
+      "secondary_face_design_budget_m2": [
+        0.04,
+        0.1
+      ],
+      "secondary_core_depth_design_budget_m": [
+        0.04,
+        0.08
+      ],
+      "secondary_plenum_fan_guard_depth_design_budget_m": [
+        0.08,
+        0.18
+      ],
+      "core_dims_and_UA_not_verified_for_own_budget": true,
+      "new_loop_pump_HX_valves_coolant_and_hoses_nonzero_function_but_mass_unknown": true,
+      "external_exhaust_or_intake_surface_change_must_be_user_aesthetic_candidate": true,
+      "no_external_pod_or_collision_hide": true,
+      "thermal_or_space_or_pressure_accepted": false
+    }
+  ],
+  "formulas": {
+    "heat": "rho*cp*flow*deltaT",
+    "system_air_resistance": "deltaPcore(Q)+sum(K_i rho (Q/A_i)^2/2); actual patches/branch loss distinct",
+    "thermal_reference": "q=published_Hinitial(Qair,Qwater)*(Tinwater-Tinair); Hinitial!=UA",
+    "waterflow": "q/(rho cp deltaT)",
+    "equiv_UA": "q/LMTD only after temperatures/flow/crossflow correction are real",
+    "parallel": "flows sum; pressure across branches equal; distribution not automatically equal",
+    "series": "pressure drops sum, downstream air/liquid inlet is warmer"
+  },
+  "physical_unknown_red": [
+    "true front/projected normal freeflow and filters/guard blockage",
+    "native plenum sealed continuous intake/core/fan/exhaust routes and moving-frame fit",
+    "reference core exact full outer dims + ports + fanplate/maintenance",
+    "installed fanPQ and actual lossK/core partial air distribution",
+    "battery motor compute coldplate Rtheta flow and temperature limits",
+    "oilwaterHX UA actual oil/return/case pressure flow and fouling",
+    "coolantpump pressureflow efficiency anti-cavitation bleed actualbalance",
+    "air exhaust ingress recirculation noise dust shock and power allocation",
+    "secondary exchanger inlet/outlet visible surface and user acceptance if change"
+  ],
+  "thermal_geometry_whole_robot_and_aesthetic_accepted": false
+}
