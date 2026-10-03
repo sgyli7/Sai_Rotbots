@@ -1,0 +1,103 @@
+{
+  "scope": "Planning costs and explicit next route requirements, not generated FE/CAD/optimization",
+  "source_sha256": "9a88efe894625e7ed3d3f15e544ead7b574382035594ab8d4b81f530fbb7b21a",
+  "current_actual_geometry_mesh": {
+    "nodes": 2954,
+    "tetra": 12722,
+    "displacement_dofs": 8862,
+    "structural_FE_admissible": false
+  },
+  "uniform_tetra_estimates": [
+    {
+      "max_tetra_volume_m3": 1e-07,
+      "tetra_volume_lower_bound": 40736,
+      "planning_nodes_tet_over_five": 8148,
+      "planning_displacement_dofs": 24444,
+      "coo144_entries_per_tet_24bytes_lower_GB": 0.140783616,
+      "node_ratio_is_guaranteed": false,
+      "solver_factorization_memory_included": false
+    },
+    {
+      "max_tetra_volume_m3": 1e-08,
+      "tetra_volume_lower_bound": 407351,
+      "planning_nodes_tet_over_five": 81471,
+      "planning_displacement_dofs": 244413,
+      "coo144_entries_per_tet_24bytes_lower_GB": 1.407805056,
+      "node_ratio_is_guaranteed": false,
+      "solver_factorization_memory_included": false
+    },
+    {
+      "max_tetra_volume_m3": 3.1819805153394635e-09,
+      "tetra_volume_lower_bound": 1280180,
+      "planning_nodes_tet_over_five": 256036,
+      "planning_displacement_dofs": 768108,
+      "coo144_entries_per_tet_24bytes_lower_GB": 4.42430208,
+      "node_ratio_is_guaranteed": false,
+      "solver_factorization_memory_included": false
+    }
+  ],
+  "shell_solid_planning_estimates": [
+    {
+      "in_plane_step_m": 0.01,
+      "ideal_midarea_m2": 0.384156,
+      "ideal_quad_count": 3842,
+      "planning_shell_nodes_approx_quad_count": 3842,
+      "traditional_six_dof_shell_dofs": 23052,
+      "solid_boss_transition_unknown_dofs": true,
+      "exact_mesh_exists": false,
+      "solver_internal_expansion_not_included": true
+    },
+    {
+      "in_plane_step_m": 0.005,
+      "ideal_midarea_m2": 0.384156,
+      "ideal_quad_count": 15367,
+      "planning_shell_nodes_approx_quad_count": 15367,
+      "traditional_six_dof_shell_dofs": 92202,
+      "solid_boss_transition_unknown_dofs": true,
+      "exact_mesh_exists": false,
+      "solver_internal_expansion_not_included": true
+    }
+  ],
+  "routes": [
+    {
+      "id": "wide_wall_shell_local_solid",
+      "steps": [
+        "Extract trimmed real midsurfaces and thickness from actual outer/inner box geometry, preserve hardware/interface voids",
+        "Keep actual journal/fork/stop/boss locally3D",
+        "Transfer translations/rotations and full6D wrench across shell/solid coupling without duplicating volume",
+        "Implement/obtain verified3D shell element and patch bending/torsion/buckling tests; existing scikit-fem plate example is not complete mixed3D shell proof",
+        "Reanalyse full42same-source load cases before optimizing walls/ribs"
+      ],
+      "advantages": [
+        "Preserves broad membrane/bending/closed-torsion shell with lower through-thickness DOF cost",
+        "Main walls and ribs remain legitimate design variables"
+      ],
+      "open": [
+        "3D shell formulation/solver not installed and validated",
+        "Trim/coupling geometry and solid-node mesh still needed",
+        "True contact/support/upstream/gravity conditions remain unresolved"
+      ]
+    },
+    {
+      "id": "legal_cad_partition_hex_local_tet",
+      "steps": [
+        "Reconstruct analytic planes/cylinders/bores and exact gross primitive union with newsource identity",
+        "Partition6mm walls for controlled swept hex/prism through thickness and graded solid boss/tet transition",
+        "Retain exact source interfaces and full motion/hardware/tool void exclusions",
+        "Verify all cells/Jacobians/boundary markers/volume/root plus bending and mesh convergence; no fake fixed cut faces"
+      ],
+      "advantages": [
+        "Provides actual solids for arbitrary3D stress/buckling and future robust density mask",
+        "Avoids per-facet display-CSG skinny triangulations driving PLC refinement"
+      ],
+      "open": [
+        "No native BREP already supplied for this source",
+        "Current gmsh PyPI wheel lacks LinuxARM; a separate bounded tool/build choice is required",
+        "Interface/contact and appropriate full3D element formulation/mesh costs remain unresolved"
+      ]
+    }
+  ],
+  "appearance_or_axes_changed": false,
+  "alloy_material_selected": false,
+  "final_route_owner": "root"
+}

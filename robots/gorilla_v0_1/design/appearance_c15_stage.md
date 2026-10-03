@@ -2,6 +2,8 @@
 
 2026-10-02。此阶段保存现有外壳、主框架和可折叠复合脚，作为正式内部结构设计前的可回退基底。它不是外观认可、稳定物理合同、实物承载或复杂任务验收。
 
+阶段提交 `94e0e074` 完成于21:16:53，随后正式开始内部设计。经210项合并树测试、独立安装包资源检查和两次CI通过，[PR #4](https://github.com/sgyli7/Sai_Rotbots/pull/4) 于22:12:45合入主干 `00ab3773`；见[集成记录](../evidence/appearance_c15_main_integration.json)。本页补充提交事实，冻结副本和物理缺口不变；新工作见[内部架构A](internal_architecture_a_review.md)。
+
 ## 同源候选
 
 - [冻结映射](../../../experiments/gorilla_v0_1/appearance_c_round_fifteen/snapshot_manifest.json)保存参数、生成入口、原稿、原生场景、Blender/GLB、四视和三张脚部实渲及几何证据。原生场景 SHA-256：`7a1e49f45838303ca5fd86265dc9980c10cde85ed7626424136afd3863aa5886`。

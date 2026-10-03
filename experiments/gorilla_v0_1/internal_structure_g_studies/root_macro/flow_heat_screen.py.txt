@@ -1,0 +1,125 @@
+"""Architecture sensitivities from frozen E2a kinematics, not a task or thermal rating."""
+from pathlib import Path
+import hashlib, json, math
+import numpy as np
+
+ROOT = Path(__file__).resolve().parents[2]
+OUT = Path(__file__).resolve().parent
+SCENE = ROOT / '.scratch/gorilla_internal_e2a_integrated/scene.json'
+PUMP = ROOT / 'robots/gorilla_v0_1/configs/internal_structure_d_system_spec.json'
+ARMOR = ROOT / 'experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_scene.json'
+s = json.loads(SCENE.read_text())
+d = json.loads(PUMP.read_text())
+a = json.loads(ARMOR.read_text())
+pressure = 21e6
+per_actuator = []
+for x in s['actuators']:
+    samples = x['samples']
+    neutral = min(samples, key=lambda r: abs(r['q_deg']))
+    inward_sign = -1 if abs(x['angle_range_deg'][1]) < 1e-9 else 1
+    area = math.pi*x['bore_m']**2/4
+    annulus = area - math.pi*x['rod_m']**2/4
+    extension = neutral['J_m_per_rad']*inward_sign >= 0
+    # Flow entering the pressurised side, not sum of supply and return.
+    inlet_area = area if extension else annulus
+    per_actuator.append({
+        'id': x['id'], 'bore_m': x['bore_m'], 'rod_m': x['rod_m'],
+        'neutral_q_deg': neutral['q_deg'], 'neutral_J_m_per_rad': neutral['J_m_per_rad'],
+        'chosen_joint_direction': inward_sign, 'inlet_branch': 'cap' if extension else 'rod',
+        'inlet_area_m2': inlet_area,
+        'neutral_flow_L_min_per_rad_s': inlet_area*abs(neutral['J_m_per_rad'])*60000,
+        'independent_sampled_absolute_flow_bound_L_min_per_rad_s': area*max(abs(r['J_m_per_rad']) for r in samples)*60000,
+    })
+groups = {
+    'waist_pair': [r for r in per_actuator if r['id'].startswith('waist')],
+    'left_leg': [r for r in per_actuator if r['id'].startswith('left')],
+    'two_legs': [r for r in per_actuator if not r['id'].startswith('waist')],
+    'all_18': per_actuator,
+}
+flow_cases = []
+for name, rows in groups.items():
+    k0 = sum(r['neutral_flow_L_min_per_rad_s'] for r in rows)
+    kbound = sum(r['independent_sampled_absolute_flow_bound_L_min_per_rad_s'] for r in rows)
+    for speed in [.1, .25, .5]:
+        flow_cases.append({'group': name, 'actuator_count': len(rows),
+            'declared_equal_joint_speed_rad_s': speed,
+            'instantaneous_neutral_supply_L_min': k0*speed,
+            'independent_joint_sample_sum_upper_L_min': kbound*speed,
+            'neutral_ideal_supply_power_at_21MPa_kW': pressure*k0*speed/60000/1000,
+            'conservative_sum_supply_power_at_21MPa_kW': pressure*kbound*speed/60000/1000,
+            'bound_relative_to_59_4L_min': kbound*speed/59.4,
+            'flow_only_equal_speed_cap_at_59_4L_min_rad_s': 59.4/kbound,
+        })
+
+open_area_boxes = []
+for side in ['left', 'right']:
+    p = next(p for p in a['parts'] if p['name'] == side+'_radiator_black_well')
+    v = np.asarray(p['vertices_world_m'])
+    yz = v[:, 1:].max(0)-v[:, 1:].min(0)
+    open_area_boxes.append({'id': p['name'], 'projected_YZ_bbox_gross_m2': float(np.prod(yz)),
+                            'bounds_world_m': [v.min(0).tolist(),v.max(0).tolist()]})
+gross_area = sum(r['projected_YZ_bbox_gross_m2'] for r in open_area_boxes)
+# This is deliberately an optimistic area upper bound, not measured opening area.
+air = []
+for heat in [5000.,10000.,20000.,30000.]:
+    for delta in [15.,25.,40.]:
+        rho, cp = 1.2, 1005.
+        volume = heat/(rho*cp*delta)
+        velocity = volume/gross_area
+        air.append({'heat_W': heat,'air_rise_K': delta,
+                    'required_air_m3_s':volume,
+                    'minimum_mean_speed_if_full_gross_bbox_free_m_s': velocity,
+                    'ideal_dynamic_pressure_at_that_minimum_speed_Pa': .5*rho*velocity**2,
+                    'air_density_assumption_kg_m3':rho,'air_cp_assumption_J_kg_K':cp})
+
+power = []
+usable_kWh = d['battery_total_kWh']*.8
+for rpm in [3000.,3500.]:
+    for eta_v, eta_m in [(.9,.85),(.97,.9)]:
+        displacement = 11e-6
+        flow_m3_s = 2*displacement*rpm/60*eta_v
+        fluid = pressure*flow_m3_s
+        shaft = 2*pressure*displacement/(2*math.pi)/eta_m*(rpm*2*math.pi/60)
+        for eta_motor in [.9,.96]:
+            electrical = shaft/eta_motor
+            for useful_fraction in [.25,.5,.75]:
+                useful = fluid*useful_fraction
+                power.append({'rpm_each':rpm,'eta_volume_assumption':eta_v,'eta_mechanical_assumption':eta_m,
+                    'eta_motor_inverter_assumption':eta_motor,'delivered_flow_L_min':flow_m3_s*60000,
+                    'fluid_power_kW':fluid/1000,'pump_shaft_power_kW':shaft/1000,
+                    'electrical_input_kW':electrical/1000,
+                    'minimum_conversion_loss_before_valve_cylinder_kW':(electrical-fluid)/1000,
+                    'declared_fraction_of_fluid_power_as_useful_mechanical':useful_fraction,
+                    'conditional_heat_with_remaining_fluid_power_dissipated_kW':(electrical-useful)/1000,
+                    'ideal_pump_only_runtime_minutes_at_80percent_battery_energy': usable_kWh/(electrical/1000)*60,
+                    'not_whole_robot_runtime_or_task_power':True})
+
+report = {
+    'schema':'gorilla_g_architecture_flow_heat_sensitivity_v1',
+    'input_hashes':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in [SCENE,PUMP,ARMOR]},
+    'scope':'Historical E2a actuator geometry plus retained D pump/energy assumptions and C15 original throat gross projected boxes. No new G geometry or physical release.',
+    'formulas':{'v':'abs(dL/dq*qdot)','supply_flow':'inlet_area*v, choose cap or rod branch once',
+        'fluid_power':'delta_pressure*supply_flow','pump_shaft':'2*pressure*displacement/(2*pi*eta_mechanical)*omega',
+        'air_conservation':'heat=rho*cp*air_volume_flow*air_temperature_rise'},
+    'per_actuator':per_actuator,'flow_cases':flow_cases,
+    'pump_assumption':d['power_flow_screen'],'battery_total_kWh_retained_hypothesis':d['battery_total_kWh'],
+    'pump_power_and_heat_sensitivity':power,'air_gross_boxes':open_area_boxes,
+    'two_throats_gross_projected_area_upper_bound_m2':gross_area,'air_conservation_screen':air,
+    'flow_capacity_reference_not_task_success':True,'heat_balance_qualified':False,
+    'physical_accepted':False,'stable_physical_contract':False,
+    'limits':['Independent sampled J maxima need not coexist; the sum is only a conservative allocation bound.',
+        'The equal-speed neutral cases are instantaneous kinematic inputs, not gait or collision-feasible trajectories.',
+        'Actual G1 mechanisms must replace these historical lengths/J before sizing a G pump.',
+        '21MPa supply is a declared architecture point; return pressure, friction, joint forces and speed/control qualification are absent.',
+        'Pump efficiencies and motor/inverter efficiencies are sensitivity assumptions, not installed measured curves.',
+        'Useful fluid-power share is an explicit sensitivity; torque demand, throttling, regeneration and load-sensing are not proven.',
+        'Pump-only runtime excludes rotary joints, computing, cooling, reserve, battery sag and conversion; not a robot endurance promise.',
+        'Black-well YZ bounding boxes overestimate free area. Louvers, actual aperture, plenum/exit and exchangers reduce free area.',
+        'Required flow/velocity is energy conservation, not fan capability, CFD, radiator heat rejection or evidence that AA3 must change.',
+        'OEM motor windings100C/mount20C ratings are not established by an air-temperature assumption.']}
+(OUT/'flow_heat_screen.json').write_text(json.dumps(report,indent=2)+'\n')
+for r in flow_cases:
+    if r['declared_equal_joint_speed_rad_s']==.5:
+        print(r['group'],round(r['instantaneous_neutral_supply_L_min'],3),round(r['independent_joint_sample_sum_upper_L_min'],3),'L/min')
+print('gross area upper',gross_area)
+print('heat loss range kW',min(r['minimum_conversion_loss_before_valve_cylinder_kW'] for r in power),max(r['minimum_conversion_loss_before_valve_cylinder_kW'] for r in power))

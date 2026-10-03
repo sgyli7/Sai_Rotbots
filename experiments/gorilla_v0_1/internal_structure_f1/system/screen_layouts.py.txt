@@ -1,0 +1,25 @@
+from pathlib import Path
+import json,hashlib,collections,time
+import numpy as np,trimesh
+R=Path('/home/ethan/Projects/Sai_Rotbots');O=R/'.scratch/gorilla_internal_f1_system';sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();fluid={'oil_inventory_once','coolant_inventory','coolant_inventory_unknown_internal'};nonexclusive={'control_display_ui','visible_mechanism','display_module_envelope','control_display_glass'}
+def mesh(p):return trimesh.Trimesh(p['vertices_world_m'],[[f[0],f[j],f[j+1]] for f in p['faces'] for j in range(1,len(f)-1)],process=False)
+summary=[]
+for layout in [1,2]:
+ started=time.monotonic();sp=O/f'layout_{layout}_scene.json';d=json.loads(sp.read_text());groups=d['new_complete_group_records'];own={n:g['id'] for g in groups for n in g['part_ids']};parts={p['name']:p for p in d['parts'] if p.get('category') not in fluid and p.get('role') not in nonexclusive};mm={n:mesh(p) for n,p in parts.items()};ids=list(mm);low=np.array([mm[n].bounds[0] for n in ids]);high=np.array([mm[n].bounds[1] for n in ids]);hits=[];seen=set();checks=0;errors=[]
+ for n in own:
+  if n not in mm:continue
+  a=mm[n];cand=np.where(np.all(np.minimum(a.bounds[1],high)-np.maximum(a.bounds[0],low)>1e-6,axis=1))[0]
+  for k in cand:
+   other=ids[k]
+   if n==other or own.get(n)==own.get(other):continue
+   pair=tuple(sorted([n,other]))
+   if pair in seen:continue
+   seen.add(pair);checks+=1
+   try:v=float(trimesh.boolean.intersection([a,mm[other]],engine='manifold').volume)
+   except Exception as e:errors.append({'a':n,'b':other,'error':str(e)});continue
+   if v>1e-9:
+    arole=parts[n].get('role');brole=parts[other].get('role');hits.append({'a':n,'group_a':own[n],'b':other,'group_b':own.get(other),'body_b':parts[other].get('body'),'role_b':brole,'category_b':parts[other].get('category'),'positive_volume_m3':v,'reference_envelope_involved':arole in ['component_reference_envelope','component_module_envelope','complete_component_reference','bearing_reference'] or brole in ['component_reference_envelope','component_module_envelope','complete_component_reference','bearing_reference'],'finite_installation_material_vs_other_material':arole=='finite_installation_material' and brole in ['finite_frame_material','finite_actuator_material','finite_pin_material','finite_brace_material','finite_load_shell_material','finite_installation_material','armor_cover','armor_surface'],'hardware_mount_owner_of_a_present':parts[n].get('finite_cylinder_mount_owner_present',True)})
+ by=collections.defaultdict(lambda:[0,0.])
+ for h in hits:by[h['b']][0]+=1;by[h['b']][1]+=h['positive_volume_m3']
+ report={'schema':'gorilla_f1_two_system_layout_screen_v1','scene_sha256':sha(sp),'full_candidate_native_rows':len(d['parts']),'solid_exclusion_rows':len(parts),'actual_boolean_tests':checks,'positive_pair_count':len(hits),'finite_installation_material_vs_other_material_pairs':sum(h['finite_installation_material_vs_other_material'] for h in hits),'original_armor_pairs':sum(parts[h['b']].get('role') in ['armor_cover','armor_surface'] for h in hits),'positive_pairs':hits,'errors':errors,'biggest_other_modules':sorted([{'other':n,'pairs':v[0],'pair_volume_sum_m3':v[1]} for n,v in by.items()],key=lambda r:-r['pair_volume_sum_m3'])[:20],'includes_all_published_F1_375_and_remaining_stock':True,'checks_new_hold_valve_complete_groups_and_all_moved_full_groups_vs_every_other_hardware_and_each_other':True,'unchanged_rest_rest_pairs_not_retested':True,'same_template_bolt_engagement_and_intended_contact_not_external_clearance_pairs':True,'not_OEM_true_material_collision_for_reference_envelopes':True,'fluid_inventory_not_a_solid_collision':True,'fluid_inventory_spatial_after_repack_unclosed':True,'service_spaces_are_nonphysical_not_mass':True,'no_all_pose_collision_claim':True,'geometry_accepted':False,'physics_accepted':False,'installed':False,'elapsed_s':time.monotonic()-started};(O/f'layout_{layout}_screen.json').write_text(json.dumps(report,indent=2)+'\n');summary.append({k:report[k] for k in ['scene_sha256','actual_boolean_tests','positive_pair_count','finite_installation_material_vs_other_material_pairs','original_armor_pairs','errors','elapsed_s']});print('layout',layout,'pairs',len(hits),'tests',checks,'seconds',round(report['elapsed_s'],1),flush=True)
+(O/'screen_summary.json').write_text(json.dumps({'two_layouts':summary,'all_acceptance':False,'producer_sha256':sha(__file__)},indent=2)+'\n')

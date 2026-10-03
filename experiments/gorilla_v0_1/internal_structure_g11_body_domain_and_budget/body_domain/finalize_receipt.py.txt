@@ -1,0 +1,47 @@
+#!/usr/bin/env python3
+"""Freeze unchanged G11 geometry, readable native diagnostics and bounded scope."""
+import pathlib,hashlib,json,gzip,subprocess,importlib.util
+from PIL import Image,ImageDraw
+P=pathlib.Path(__file__).resolve().parent
+def sha(p):return hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
+step=(P/'design_domain_bulk_si.step').read_text()
+assert 'LENGTH_UNIT() NAMED_UNIT(*) SI_UNIT($,.METRE.)' in step
+assert 'SI_UNIT(.MILLI.,.METRE.)' not in step
+subprocess.run([str(P.parents[1]/'.venv/bin/python'),str(P/'audit_domain.py')],check=True,capture_output=True)
+s=json.load(gzip.open(P/'scene.json.gz','rt'));sp=importlib.util.spec_from_file_location('domain',P/'build_domain.py');m=importlib.util.module_from_spec(sp);sp.loader.exec_module(m)
+b=next(x for x in s['parts'] if x['name']=='g11_designable_remainder');m.render([s['bulk_domain_reference'],b],'native_domain_remainder_four_view.png')
+im=Image.open(P/'native_domain_remainder_four_view.png');d=ImageDraw.Draw(im);d.rectangle((0,0,1800,50),fill='#f3f2ed');d.text((25,10),'G11 DIAGNOSTIC SUBSET: blue=all3 remainder solids; wire=conditional bulk. Full OEM/armor challenge shown in separate native images.',fill='black');d.text((25,30),'30.185 L / not connected manufacturing frame / no source geometry repaired / no FEM or optimization.',fill='black');im.save(P/'native_domain_remainder_four_view.png')
+a=json.loads((P/'audit_receipt.json').read_text());r=json.loads((P/'report.json').read_text())
+text='''# G11 宽厚主躯设计域：条件候选封存
+
+原表面改动 **0 mm**：111件原甲、L1九完整组33子件和G10 B103件逐值保留。只构造了一套独立参数化闭口loft，没有新FEM、优化、采购或全机结论。体积338.588 L；这是实际白甲前后曲面射线及未认证开口闭合假设下的域，并非已证明可用内腔。
+
+238个外表面采样中90前向、34后向缺真实交点；此处采用同高度相邻真实射线插值并保留unknown。Y±340 mm是独立截断界，非已认证侧腔/连接面；X25 mm内缩不是严格法向偏置。原主甲336开边未修。真实STEP声明M、BRep valid；原生直三角与OCC ruled loft体积相对差−1.6382e−7，未称逐面完全一致。导出器原MM声明在SI坐标下错误，raw未采用；`STEP_units_receipt.json`记录只改长度声明为M、坐标逐字未缩放的显式适配及哈希。临时freeze d2a5a0已拒绝，以最终freeze为准。
+
+完整留空挑战切去308.403 L，剩30.185 L为3实体根（29.118462 / 1.062844 / .003801 L），不能称连通可优化主骨架。原生bulk/remainder边均degree2且无重复顶点三角；独立四面体体积与Boolean守恒误差1.74e−17 m³。只对本次新域作边界/数值检查，不替旧OEM与原甲提供资源资格。
+
+切割的互斥归因按下列顺序，改变顺序会改变边际数值；各行均是**条件gross包络/功能空域，不是已知净实材碰撞**：
+
+| 条件挑战 | 互斥切去L | 范围 |
+|---|---:|---|
+| 9完整组gross | 131.217 | 4完整能源包、2泵输入全组、HX、compute、screen |
+| 失败肩Bgross | 18.118 | 保留115mm gear/66mm motor等完整安装功能，B仍17资源拒绝 |
+| 其他474功能AABB | 153.467 | 当前模块/热线管等，斜管与旧失败摆位可能明显过预留 |
+| 维护/服务33项 | 5.601 | 24同源service+9自建20mm服务预留，非物理质量 |
+
+各类独立交域非加和：9组131.217 L、肩34.282 L、其他299.378 L、own service186.893 L、source service57.695 L。`audit_receipt.json`给完整union/互斥对账。净真实材料所占部分 **unknown**：OEM profile非净CAD、肩17资源拒绝、其他部件混有自建实材与源校准包络，不能从这些包络倒算净碰撞或质量。
+
+旧九组与肩B位置都是可变挑战，不成为永久non-design锁定；`fixed_material=[]`，没有把旧6mm壁冻住。历史`g10_torso_core_and_bilateral_case_reaction`仅失败context，不是新域固定钢材。新固定/加载界面需由另分支anchors同版装配后明确：腰X轴[.23,0,1.91]比域下界低30mm；肩B固定Y±.3735距域cap33.5mm，cap不等于mate。新anchor实际接面X=.115、Y左[.2435,.3935]/右镜像、Z[2.125,2.455]是未合并挑战，不能自动union/称连接。
+
+四视按真实native/SI统一尺度投影、实际切面z2.12/2.29/2.47/2.57m，所有518 stock/source service均在完整诊断保留。`native_domain_remainder_four_view.png`明确是仅域的诊断子集，不替整组安装图。渲染viewport只裁图，不裁模型/改甲。无制造骨架、强度、质量/COM/I、热、全机或3t能力资格；此域不能直接作为已闭合优化输入。后续先共同重排完整功能模块、实材承力节点与实际内腔，不靠补桥或匿名缩部件。
+
+复现：先运行build_domain.py（只读输入变化会改变metadata哈希），再运行finalize_receipt.py；全部位于本目录、用项目.venv。复现几何依赖固定whole07b79d/L120bc7c/B0c8206；rules/decisions仅读取时的上下文记录。未改任何冻结上游。
+'''
+(P/'final_report.md').write_text(text)
+render={'scene_sha256':sha(P/'scene.json.gz'),'native_geometry_no_post_draw_structure':True,'orthographic_views':{'front':{'screen_right':[0,1,0],'screen_up':[0,0,1],'depth':[1,0,0]},'left':{'screen_right':[-1,0,0],'screen_up':[0,0,1],'depth':[0,1,0]},'rear':{'screen_right':[0,-1,0],'screen_up':[0,0,1],'depth':[-1,0,0]},'top':{'screen_right':[0,1,0],'screen_up':[1,0,0],'depth':[0,0,1]}},'four_view_scale_px_per_m':460,'four_view_origin_world_m':[0,0,2.22],'four_view_viewport_px':[900,700],'figure_px':[1800,1450],'sections_z_m':[2.12,2.29,2.47,2.57],'section_scale_px_per_m':340,'cutaway_hides_only_original_armor_for_diagnostic':True,'all_518_stock_rows_drawn_in_complete_diagnostic':True,'remainder_only_image_explicitly_subset':True,'images':{x.name:sha(x) for x in P.glob('*.png')}}
+(P/'render_manifest.json').write_text(json.dumps(render,indent=2)+'\n')
+base=json.loads((P/'manifest.json').read_text());base['outputs']={x.name:sha(x) for x in P.iterdir() if x.is_file() and x.name not in ('manifest.json','freeze_manifest.json')};base['commands']=['.venv/bin/python .scratch/gorilla_internal_g11_body_design_domain/build_domain.py','.venv/bin/python .scratch/gorilla_internal_g11_body_design_domain/finalize_receipt.py'];base['frozen_scene_sha256']=sha(P/'scene.json.gz');base['no_upstream_writes']=True
+(P/'manifest.json').write_text(json.dumps(base,indent=2)+'\n')
+freeze={'scene_sha256':sha(P/'scene.json.gz'),'one_macro_no_new_geometry_after_first_source':True,'outputs':{x.name:sha(x) for x in P.iterdir() if x.is_file() and x.name!='freeze_manifest.json'},'input_geometry_identity':{k:v for k,v in base['inputs'].items() if k in ('whole','layout1','shoulder_b','shoulder_interfaces')},'physical_and_architecture_admission':False,'optimizer_domain_admission':False}
+(P/'freeze_manifest.json').write_text(json.dumps(freeze,indent=2)+'\n')
+print(json.dumps({'scene_sha256':freeze['scene_sha256'],'freeze_manifest_sha256':sha(P/'freeze_manifest.json'),'files':len(freeze['outputs']),'fixed_geometry':True,'domain_admission':False},indent=2))

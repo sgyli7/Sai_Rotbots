@@ -1,0 +1,614 @@
+{
+  "robot_id": "gorilla_v0_1",
+  "layout": "B frozen rejected",
+  "source_path": "/home/ethan/Projects/Sai_Rotbots/.scratch/gorilla_internal_g2_lower_chain/chain_scene.json",
+  "source_sha256": "34da78b8762abbec48a18e3dfb1c981db83aa5db9443ab04b6ec6c2ad2c875a0",
+  "native_parts": "parts",
+  "actual_pose_meshes": "pose_scenes[*].parts",
+  "joint_tree": [
+    {
+      "id": "knee",
+      "parent": "thigh_interface",
+      "child": "middle",
+      "c": [
+        -0.08,
+        0.398,
+        0.97
+      ],
+      "axis": [
+        0,
+        1,
+        0
+      ],
+      "seats": [
+        -0.115,
+        0.115
+      ],
+      "collars": [
+        -0.08,
+        0.08
+      ],
+      "shaft_outer_radius_m": 0.028,
+      "journal_bore_radius_m": 0.02835,
+      "housing_outer_radius_m": 0.048
+    },
+    {
+      "id": "fold",
+      "parent": "middle",
+      "child": "distal",
+      "c": [
+        -0.12,
+        0.47,
+        0.53
+      ],
+      "axis": [
+        0,
+        1,
+        0
+      ],
+      "seats": [
+        -0.12,
+        0.12
+      ],
+      "collars": [
+        -0.08,
+        0.08
+      ],
+      "shaft_outer_radius_m": 0.028,
+      "journal_bore_radius_m": 0.02835,
+      "housing_outer_radius_m": 0.048
+    },
+    {
+      "id": "ankle_pitch",
+      "parent": "distal",
+      "child": "ankle_carrier",
+      "c": [
+        -0.075,
+        0.5,
+        0.285
+      ],
+      "axis": [
+        0,
+        1,
+        0
+      ],
+      "seats": [
+        -0.1,
+        0.1
+      ],
+      "collars": [
+        -0.06,
+        0.06
+      ],
+      "shaft_outer_radius_m": 0.028,
+      "journal_bore_radius_m": 0.02835,
+      "housing_outer_radius_m": 0.048
+    },
+    {
+      "id": "ankle_roll",
+      "parent": "ankle_carrier",
+      "child": "arch",
+      "c": [
+        -0.125,
+        0.5,
+        0.22
+      ],
+      "axis": [
+        1,
+        0,
+        0
+      ],
+      "seats": [
+        -0.042,
+        0.042
+      ],
+      "collars": [
+        -0.019,
+        0.019
+      ],
+      "shaft_outer_radius_m": 0.025,
+      "journal_bore_radius_m": 0.02535,
+      "housing_outer_radius_m": 0.044
+    },
+    {
+      "id": "forefoot",
+      "parent": "arch",
+      "child": "forefoot",
+      "c": [
+        -0.02,
+        0.68,
+        0.115
+      ],
+      "axis": [
+        0,
+        1,
+        0
+      ],
+      "seats": [
+        -0.085,
+        0.085
+      ],
+      "collars": [
+        -0.06,
+        0.06
+      ],
+      "shaft_outer_radius_m": 0.024,
+      "journal_bore_radius_m": 0.02435,
+      "housing_outer_radius_m": 0.035
+    },
+    {
+      "id": "heel",
+      "parent": "arch",
+      "child": "heel",
+      "c": [
+        -0.195,
+        0.5,
+        0.112
+      ],
+      "axis": [
+        0,
+        1,
+        0
+      ],
+      "seats": [
+        -0.145,
+        0.145
+      ],
+      "collars": [
+        -0.095,
+        0.095
+      ],
+      "shaft_outer_radius_m": 0.024,
+      "journal_bore_radius_m": 0.02435,
+      "housing_outer_radius_m": 0.035
+    }
+  ],
+  "root_shift_z_m": 0,
+  "actuators": [
+    {
+      "id": "fold",
+      "parent_body": "middle",
+      "output_body": "distal",
+      "pivot_world_m": [
+        -0.12,
+        0.47,
+        0.53
+      ],
+      "axis_world": [
+        0,
+        1,
+        0
+      ],
+      "A_world_m": [
+        0.025,
+        0.47,
+        0.95
+      ],
+      "B_world_m": [
+        0.085,
+        0.47,
+        0.61
+      ],
+      "bore_m": 0.063,
+      "rod_m": 0.03,
+      "wall_m": 0.005,
+      "pin_m": 0.04,
+      "stroke_m": 0.08979585956049778,
+      "minimum_zero_eye_m": 0.24979585956049774,
+      "custom_zero_eye_m": 0.2654576704721436,
+      "barrel_neutral_frame_world": [
+        [
+          0.0,
+          0.9847835588179368,
+          0.17378533390904768,
+          0.025
+        ],
+        [
+          1.0,
+          -0.0,
+          0.0,
+          0.47
+        ],
+        [
+          0.0,
+          0.17378533390904768,
+          -0.9847835588179368,
+          0.95
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "id": "ankle_pitch",
+      "parent_body": "distal",
+      "output_body": "ankle_carrier",
+      "pivot_world_m": [
+        -0.075,
+        0.5,
+        0.285
+      ],
+      "axis_world": [
+        0,
+        1,
+        0
+      ],
+      "A_world_m": [
+        -0.184,
+        0.5,
+        0.665
+      ],
+      "B_world_m": [
+        -0.184,
+        0.5,
+        0.3
+      ],
+      "bore_m": 0.05,
+      "rod_m": 0.025,
+      "wall_m": 0.004,
+      "pin_m": 0.03,
+      "stroke_m": 0.039156706677811834,
+      "minimum_zero_eye_m": 0.1871567066778118,
+      "custom_zero_eye_m": 0.35500000000000004,
+      "barrel_neutral_frame_world": [
+        [
+          0.0,
+          1.0,
+          0.0,
+          -0.184
+        ],
+        [
+          1.0,
+          -0.0,
+          0.0,
+          0.5
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0,
+          0.665
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "id": "roll",
+      "parent_body": "ankle_carrier",
+      "output_body": "arch",
+      "pivot_world_m": [
+        -0.125,
+        0.5,
+        0.22
+      ],
+      "axis_world": [
+        1,
+        0,
+        0
+      ],
+      "A_world_m": [
+        -0.125,
+        0.25,
+        0.355
+      ],
+      "B_world_m": [
+        -0.125,
+        0.5,
+        0.355
+      ],
+      "bore_m": 0.04,
+      "rod_m": 0.02,
+      "wall_m": 0.004,
+      "pin_m": 0.028,
+      "stroke_m": 0.06688341631585291,
+      "minimum_zero_eye_m": 0.21488341631585287,
+      "custom_zero_eye_m": 0.21656677914069233,
+      "barrel_neutral_frame_world": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          -0.125
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          0.25
+        ],
+        [
+          0.0,
+          -1.0,
+          0.0,
+          0.355
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    }
+  ],
+  "locks": [
+    {
+      "body": "lock_forefoot_0",
+      "translation": [
+        0,
+        -0.09,
+        0
+      ]
+    },
+    {
+      "body": "lock_forefoot_1",
+      "translation": [
+        0,
+        0.09,
+        0
+      ]
+    },
+    {
+      "body": "lock_heel_0",
+      "translation": [
+        0,
+        -0.09,
+        0
+      ]
+    },
+    {
+      "body": "lock_heel_1",
+      "translation": [
+        0,
+        0.09,
+        0
+      ]
+    }
+  ],
+  "foot_true_space": [
+    {
+      "body": "forefoot",
+      "z_interval_m": [
+        0.033,
+        0.039
+      ],
+      "clearance_assumption_m": 0.002,
+      "original_armor_names": [
+        "left_ivory_artwork_sloping_toe",
+        "left_ivory_lower_toe_front_rim",
+        "left_ivory_inner_low_rail",
+        "left_ivory_outer_low_rail",
+        "left_composite_high_heel_shell"
+      ],
+      "selected_loadable_polygon_xy_m": [
+        [
+          0.5009099990129471,
+          0.3601500019431114
+        ],
+        [
+          0.5116240009665489,
+          0.8369249999523163
+        ],
+        [
+          0.46609189361333847,
+          0.8712371662259102
+        ],
+        [
+          0.46609189361333847,
+          0.8513569384813309
+        ],
+        [
+          0.4566439390182495,
+          0.8374151587486267
+        ],
+        [
+          0.4446193724870682,
+          0.8319004029035568
+        ],
+        [
+          0.4395992010831833,
+          0.8310039415955544
+        ],
+        [
+          0.43378181010484695,
+          0.8299651071429253
+        ],
+        [
+          0.33320529013872147,
+          0.8120050206780434
+        ],
+        [
+          0.30509550869464874,
+          0.81120715290308
+        ],
+        [
+          0.06334497779607773,
+          0.8043452203273773
+        ],
+        [
+          0.02499999850988388,
+          0.8031940460205078
+        ],
+        [
+          0.02499999850988388,
+          0.5302163511514664
+        ],
+        [
+          0.2837446630001068,
+          0.5487359091639519
+        ],
+        [
+          0.3048918768763542,
+          0.5503368377685547
+        ],
+        [
+          0.42674925178289413,
+          0.559058740735054
+        ],
+        [
+          0.4352094978094101,
+          0.5508628711104393
+        ],
+        [
+          0.4480251967906952,
+          0.505277968943119
+        ],
+        [
+          0.46609189361333847,
+          0.49623551219701767
+        ],
+        [
+          0.46609189361333847,
+          0.44937504082918167
+        ],
+        [
+          0.4575534015893936,
+          0.4222843497991562
+        ],
+        [
+          0.4461001008749008,
+          0.39698976278305054
+        ],
+        [
+          0.44077949970960617,
+          0.39252734184265137
+        ],
+        [
+          0.4347154498100281,
+          0.38744135946035385
+        ],
+        [
+          0.35070937126874924,
+          0.3169846385717392
+        ],
+        [
+          0.30499670654535294,
+          0.3179458901286125
+        ],
+        [
+          0.044903092086315155,
+          0.3234151527285576
+        ],
+        [
+          0.02499999850988388,
+          0.3238578140735626
+        ],
+        [
+          0.02499999850988388,
+          0.2948250025510788
+        ],
+        [
+          0.38110800087451935,
+          0.2948250025510788
+        ],
+        [
+          0.5009099990129471,
+          0.3601500019431114
+        ]
+      ],
+      "selected_area_m2": 0.15427366133321313,
+      "full_pad_area_m2": 0.285589193175,
+      "full_pressure_domain_qualified": false,
+      "blocked_source": "Exact material intersection with6mm slab projected positive fill, then2mm XY offset; no generic inset"
+    },
+    {
+      "body": "heel",
+      "z_interval_m": [
+        0.033,
+        0.039
+      ],
+      "clearance_assumption_m": 0.002,
+      "original_armor_names": [
+        "left_ivory_artwork_sloping_toe",
+        "left_ivory_lower_toe_front_rim",
+        "left_ivory_inner_low_rail",
+        "left_ivory_outer_low_rail",
+        "left_composite_high_heel_shell"
+      ],
+      "selected_loadable_polygon_xy_m": [
+        [
+          -0.14102283865213394,
+          0.29700011759996414
+        ],
+        [
+          -0.1377445012331009,
+          0.29687677323818207
+        ],
+        [
+          -0.13783395290374756,
+          0.2955726608633995
+        ],
+        [
+          -0.10499999672174454,
+          0.32199999690055847
+        ],
+        [
+          -0.10400000214576721,
+          0.6759999990463257
+        ],
+        [
+          -0.13885760307312012,
+          0.7043724656105042
+        ],
+        [
+          -0.13886327296495438,
+          0.7031168565154076
+        ],
+        [
+          -0.14199332892894745,
+          0.7029998824000359
+        ],
+        [
+          -0.371447429060936,
+          0.7041342183947563
+        ],
+        [
+          -0.4005817770957947,
+          0.6592659279704094
+        ],
+        [
+          -0.4067802429199219,
+          0.6497422084212303
+        ],
+        [
+          -0.4067803993821144,
+          0.4004495367407799
+        ],
+        [
+          -0.4067804291844368,
+          0.3482668995857239
+        ],
+        [
+          -0.3763693496584892,
+          0.3022218868136406
+        ],
+        [
+          -0.3763693496584892,
+          0.3022219017148018
+        ],
+        [
+          -0.37151283025741577,
+          0.29488539695739746
+        ],
+        [
+          -0.14102283865213394,
+          0.29700011759996414
+        ]
+      ],
+      "selected_area_m2": 0.12047963543985082,
+      "full_pad_area_m2": 0.130128,
+      "full_pressure_domain_qualified": false,
+      "blocked_source": "Exact material intersection with6mm slab projected positive fill, then2mm XY offset; no generic inset"
+    }
+  ],
+  "physical_accepted": false
+}

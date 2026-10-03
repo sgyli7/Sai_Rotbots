@@ -1,0 +1,40 @@
+from pathlib import Path
+P=Path(__file__).resolve().parent
+s=(P/'build_module_a.py').read_text()
+s=s.replace("P=Path(__file__).resolve().parent","P=Path(__file__).resolve().parent\nO=P/'b';O.mkdir(exist_ok=True)")
+s=s.replace("def write(n,x):(P/n)","def write(n,x):(O/n)")
+s=s.replace(".001],.003,.039)",".001],.003,.048)")
+s=s.replace("facez+.027],.005,.007)","facez+.028],.005,.007)")
+s=s.replace("[-.045,.065,-.053]","[.055,.130,-.053]")
+s=s.replace("[.190,.210,.008]","[.190,.230,.008]").replace("[-.045,.064,-.130]","[-.045,.054,-.130]")
+s=s.replace("plate=plate-union(holes);", "\nfor x,y in [(-.097,0),(-.100,.082),(-.025,.088),(-.030,.150)]:holes.append(cyl([x,y,-.130],.00325,.015))\nfor x in [-.036,.036]:\n for y in [-.048,.048]:holes.append(cyl([x,y,-.130],.00225,.015))\nplate=plate-union(holes);")
+s=s.replace("gu=box([0,0,-.052],[.093,.092,.149])-box([0,0,-.051],[.089,.088,.153]);gu=gu-box([0,0,-.075],[.150,.100,.095]);add", "gu=box([0,0,-.051],[.093,.092,.148])-box([0,0,-.051],[.089,.088,.153]);gu=gu-box([0,0,-.075],[.150,.100,.095]);gu=gu-cyl([.046,0,-.02845],.009,.010,'X');\nfeet=[]\nfor x in [-.036,.036]:\n for y in [-.048,.048]:feet.append(box([x,y,-.125],[.014,.008,.002])-cyl([x,y,-.125],.00225,.008))\ngu=gu+union(feet);add")
+s=s.replace("# Services explicit spaces", """# Full aux mounting path: separate finite spacers/caps/bolts, blind seal/pressure qualification stays unknown.
+for tag,cc,bottom in [('comp',ac,-.105),('filter',fc,-.099),('relief',rc,-.1075),('driver',dc,-.090)]:
+ L=bottom-(-.126);c=[cc[0],cc[1],-.126+L/2]
+ add(tag+'_mount_spacer',tube(c,.012,.00325,L),'aux_mount',rho=2700,meta={'actual_bottom_face_m':bottom,'blindfastener_seal/strength_unknown':True})
+ # Blind underside boss connects holder mechanically; does not count a fictitious robot parent.
+ cap=cyl([cc[0],cc[1],bottom+.002],.013,.004)-cyl([cc[0],cc[1],bottom+.0009],.00325,.0018)
+ add(tag+'_blind_mount_foot',cap,'aux_mount',rho=7850,meta={'pressurebody_blind_end_thread/seal_NOT_qualified':True})
+ add(tag+'_mount_bolt',cyl([cc[0],cc[1],-.129+L/2],.003,L+.006)+cyl([cc[0],cc[1],-.137],.005,.006),'aux_mount',rho=7850,meta={'thread/torque/preload_unknown':True})
+# Guard fasteners use actual plate and foot clearance holes.
+for x in [-.036,.036]:
+ for y in [-.048,.048]:add(f'guard_bolt_{x}_{y}',cyl([x,y,-.129],.002,.014)+cyl([x,y,-.121],.0035,.002),'control_guard',rho=7850,meta={'retention_thread_unknown':True})
+# Two complete bench rigid-tube route envelopes with true lumens and smooth outer joint union.
+# This connects P2/P4-to-V ports only. Real robot hoseflex, pressure/fatigue/bend standards remain open.
+def path_tube(points,ro,ri):
+ oo=[];ii=[]
+ for a,b in zip(points,points[1:]):
+  a=np.array(a);b=np.array(b);d=b-a;L=np.linalg.norm(d);ix=int(np.argmax(np.abs(d)));ax='XYZ'[ix];c=(a+b)/2;oo.append(cyl(c.tolist(),ro,L,ax));ii.append(cyl(c.tolist(),ri,L+.000002,ax))
+ for a in points[1:-1]:oo.append(mf.Manifold.sphere(ro,32).translate(a));ii.append(mf.Manifold.sphere(ri,32).translate(a))
+ outer=union(oo);inner=union(ii);return outer-inner,inner
+paths={'A':[ [.055,0,-.02845],[.065,0,-.02845],[.065,-.075,-.02845],[.296,-.075,-.02845],[.296,-.075,-.05975],[.296,-.0425,-.05975] ],'B':[ [-.055,0,-.077724],[-.065,0,-.077724],[-.065,-.095,-.077724],[.204,-.095,-.077724],[.204,-.095,-.05975],[.204,-.0425,-.05975] ]}
+for tag,pts in paths.items():
+ mat,lum=path_tube(pts,.007,.0045)
+ add('bench_workline_'+tag,mat,'bench_lines',rho=7850,meta={'not_actual_robot_hose_route':True,'centerline_points_m':pts,'pressurefatigue/bend/connector_safety_unknown':True,'assigned_pressure_target_bar':350})
+ add('bench_workline_'+tag+'_lumen',lum,'bench_lines','fluid_lumen_reference',meta={'not_global_stock_added_here':True,'true_open_lumen_L':lum.volume()*1000})
+# Services explicit spaces""")
+s=s.replace("'physical_line_present':False","'physical_line_present':True,'scope':'bench rigidtube only; aux supply/LS/filter/relief lines and actuator absent'")
+s=s.replace("(P/'scene_a.json.gz')","(O/'scene_b.json.gz')").replace("sha(P/'scene_a.json.gz')","sha(O/'scene_b.json.gz')").replace("'parameters_a.json'","'parameters_b.json'")
+s=s.replace("'_probe_a'","'_probe_b'").replace("'macro_layout_count':1","'macro_layout_count':2").replace("'new hoses/aux control lines not physically connected'","'two bench worklines present; aux supply/LS/filter/relief and robot hoses not connected'")
+(P/'build_module_b.py').write_text(s)

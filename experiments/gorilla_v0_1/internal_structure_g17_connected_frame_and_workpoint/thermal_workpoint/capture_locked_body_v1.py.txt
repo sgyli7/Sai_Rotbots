@@ -1,0 +1,10 @@
+"""Reproduce exact body capture without source mutation or mesh repairs."""
+import gzip,json,numpy as np,hashlib
+from pathlib import Path
+R=Path(__file__).resolve().parents[2];O=Path(__file__).resolve().parent
+p=R/'.scratch/gorilla_internal_g17_connected_cage_layout/b/scene.json.gz';d=json.load(gzip.open(p,'rt'));out=[]
+for x in d['parts']:
+ if any(z in x['name'].lower() for z in ['degas','tank','ewp150','172','0707','0714']) and len(out)<60:
+  vs=np.array(x['vertices_world_m']);out.append({'id':x['name'],'body':x['body'],'role':x['role'],'finite_material':x.get('finite_material'),'xyz_min_m':vs.min(0).tolist(),'xyz_max_m':vs.max(0).tolist(),'capacity_L':x.get('capacity_L'),'workingfill_L':x.get('workingfill_L'),'mass_range_kg':x.get('mass_range_kg')})
+q=O/'body_locked_capture_v1.json';q.write_text(json.dumps({'source_path':str(p.relative_to(R)),'source_sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'source_author_locked_geometry':True,'actual_new_line_routes_exist':False,'globalfluidinventory':d['globalfluidinventory'],'parts':out},indent=2)+'\n')
+print(hashlib.sha256(q.read_bytes()).hexdigest())

@@ -1,0 +1,182 @@
+"""Gorilla G3 fixed heel/arch + independent forefoot; conditional source only."""
+from pathlib import Path
+import json,hashlib,math,copy,sys
+import numpy as np,trimesh as tr,manifold3d as mf,shapely
+from shapely.geometry import Polygon,MultiPoint
+O=Path(__file__).resolve().parent
+ROOT=next(p for p in O.parents if (p/'sai_robots_engineering_rules.md').exists())
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+BASEP=ROOT/'experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_scene.json'
+BASE=json.loads(BASEP.read_text()); OLD={p['name']:p for p in BASE['parts']};RHO=7850.
+AY=np.array([0.,1.,0.]);AX=np.array([1.,0.,0.])
+R=np.array([-.125,.500,.225]);H=np.array([.040,.665,.105]);TOP=np.array([-.075,.500,.285])
+BRACE_Y=[.570,.760];parts=[];frames={b:[] for b in ['ankle_input','arch','forefoot']};braces=[];locks=[];motion={}
+def C(mesh):return mf.Manifold(mf.Mesh64(np.array(mesh.vertices,np.float64,order='C',copy=True),np.array(mesh.faces,np.uint64,order='C',copy=True)))
+def M(p):return mf.Manifold(mf.Mesh64(np.array(p['vertices_world_m'],np.float64,order='C',copy=True),np.array(p['faces'],np.uint64,order='C',copy=True)))
+def arrays(s):m=s.to_mesh64();return np.asarray(m.vert_properties[:,:3]).tolist(),np.asarray(m.tri_verts).tolist()
+def box(c,d):return mf.Manifold.cube(list(d),center=True).translate(list(c))
+def unite(ss):
+ s=mf.Manifold()
+ for x in ss:s=s+x
+ return s
+def ring(c,ro,ri,L,ax=AY):
+ mesh=tr.creation.annulus(ri,ro,L,sections=64) if ri else tr.creation.cylinder(ro,L,sections=64)
+ mesh.apply_transform(tr.geometry.align_vectors([0,0,1],ax));mesh.apply_translation(c);return C(mesh)
+def beam(a,b,w=.050,d=.060,wall=.006,solid=False):
+ a=np.asarray(a);b=np.asarray(b);u=(b-a)/np.linalg.norm(b-a);L=np.linalg.norm(b-a)
+ s=mf.Manifold.cube([w,d,L],center=True)
+ if not solid:s=s-mf.Manifold.cube([w-2*wall,d-2*wall,L+.004],center=True)
+ x=AY-u*(AY@u)
+ if np.linalg.norm(x)<1e-8:x=AX-u*(AX@u)
+ x/=np.linalg.norm(x);T=np.eye(4);T[:3,:3]=np.column_stack([x,np.cross(u,x),u]);T[:3,3]=(a+b)/2
+ return s.transform(T[:3,:4].copy())
+def path(pts,**kw):return unite([beam(a,b,**kw) for a,b in zip(pts,pts[1:])])
+def slab(poly,z,h):
+ cs=mf.CrossSection([np.array(poly.exterior.coords)[:-1]],mf.FillRule.Positive)
+ return cs.extrude(h).translate([0,0,z])
+def oriented_box(c,u,n,d):
+ T=np.eye(4);T[:3,:3]=np.column_stack([u,AY,n]);T[:3,3]=c
+ return mf.Manifold.cube(list(d),center=True).transform(T[:3,:4].copy())
+def add(name,body,s,role='finite_metal',**kw):
+ v,f=arrays(s);p={'name':'g3_'+name,'body':body,'role':role,'vertices_world_m':v,'faces':f,'density_kg_m3':RHO,'material_assumption':'S355J2H conditional geometry density, no material/connection qualification','rgba':[.20,.32,.37,1],**kw};parts.append(p);return p
+def fm(body,s):frames[body].append(s)
+def triang(p):
+ p=copy.deepcopy(p);p['faces']=[[f[0],f[k],f[k+1]] for f in p['faces'] for k in range(1,len(f)-1)];return p
+# Explicit new armor source: preserve each original outer vertex/face, reskin hidden inner returns only.
+armor=[];changes=[]
+armor_names=['left_ivory_artwork_sloping_toe','left_ivory_lower_toe_front_rim','left_ivory_inner_low_rail','left_ivory_outer_low_rail','left_composite_high_heel_shell','left_composite_ankle_front_guard']
+for name in armor_names:
+ q=copy.deepcopy(OLD[name]);v=np.array(q['vertices_world_m']);orig=v.copy()
+ if 'low_rail' in name:
+  count=(len(v)-2)//2;outer=list(range(count))+[2*count];inner=list(range(count,2*count))+[2*count+1]
+  for a,b in zip(outer,inner):v[b]=v[a]+.35*(v[b]-v[a])
+  q['nominal_visual_wall_thickness_m']=.0035
+ elif name!='left_composite_ankle_front_guard':
+  count=len(v)//2;outer=list(range(count));inner=list(range(count,len(v)))
+  gauge=.004 if 'sloping' in name else .0035;old=q['appearance_skin_thickness_range_m'][0]
+  for a,b in zip(outer,inner):v[b]=v[a]+gauge/old*(v[b]-v[a])
+  q['appearance_skin_thickness_range_m']=[gauge,gauge]
+ else:outer=list(range(len(v)));inner=[]
+ q['vertices_world_m']=v.tolist();q['g3_reconstruction']='Same original outer surface; new hidden skin/returns; process gauge unqualified'
+ q['comparison_body']='arch' if 'heel' in name else 'ankle_input' if 'ankle_front' in name else 'forefoot'
+ q['body']=q['comparison_body'];q['original_name']=name;q=triang(q);armor.append(q)
+ changes.append({'part':name,'outer_vertex_indices_retained':outer,'outer_max_displacement_m':float(np.linalg.norm(v[outer]-orig[outer],axis=1).max()),'inner_changed_vertex_indices':inner,'hidden_max_displacement_m':float(np.linalg.norm(v-orig,axis=1).max()),'old_material_volume_m3':float(M(triang(OLD[name])).volume()),'new_material_volume_m3':float(M(q).volume()),'new_skin_is_manufacturing_release':False})
+armor_source={'robot_id':'gorilla_v0_1','candidate':'G3 hidden-shell reskin','parts':armor,'source_c15_sha256':sha(BASEP),'changes':changes,'visible_outer_delta_m':0.,'aesthetic_accepted':False,'physical_accepted':False}
+(O/'armor_scene.json').write_text(json.dumps(armor_source,indent=2)+'\n')
+# Continuous fixed/output serial roll stack: finite shaft, radial clearance and independent bearing seats.
+for x in [-.179,-.071]:
+ fm('ankle_input',ring([x,R[1],R[2]],.047,.040,.018,AX))
+ add('roll_journal_'+str(x),'ankle_input',ring([x,R[1],R[2]],.040,.03535,.016,AX),'finite_journal_candidate',interface='0.35mm radial layout clearance; bearing material/preload/keeper unknown')
+fm('ankle_input',ring(TOP,.044,.029,.026,AY))
+for x in [-.179,-.071]:
+ fm('ankle_input',path([[x,.5,.265],[x,.5,.283],[-.075,.5,.285]],w=.040,d=.020,wall=.005))
+fm('arch',ring(R,.035,.018,.158,AX))
+for x in [-.145,-.105]:fm('arch',ring([x,.5,.225],.044,.0342,.014,AX))
+# Load chevrons from roll output to fixed heel and forward hinge; no material across movable forefoot.
+for y in [.430,.570]:
+ fm('arch',path([[-.125,.5,.201],[-.180,y,.140],[-.300,y,.039]],w=.045,d=.060,wall=.006))
+for y in BRACE_Y:
+ fm('arch',path([[-.125,.5,.201],[-.095,y,.195],[-.080,y,.230]],w=.050,d=.060,wall=.006))
+ fm('arch',path([[-.095,y,.195],[.010,y,.151],[H[0],y,H[2]+.040]],w=.050,d=.060,wall=.006))
+# Real forefoot shaft/bushes and collars. Compression moment is reacted by braces, not a torqued hinge.
+for y in BRACE_Y:
+ fm('arch',ring([H[0],y,H[2]],.056,.043,.020))
+ add('fore_journal_'+str(y),'arch',ring([H[0],y,H[2]],.043,.03535,.024),'finite_journal_candidate',interface='Steel-density placeholder journal; press fit/lubrication/preload/retention unresolved')
+fm('forefoot',ring(H,.035,.016,.276))
+for y in [.620,.710]:fm('forefoot',ring([H[0],y,H[2]],.044,.0342,.016))
+# Steel carriers embedded only inside each original independent pad; unchanged exterior/contact ground.
+pad_refs=[];load_domains=[]
+for group,name in [('forefoot','left_composite_forepad'),('arch','left_composite_heel_pad')]:
+ old=triang(OLD[name]);ov=np.array(old['vertices_world_m']);top=ov[np.isclose(ov[:,2],.033)];poly=MultiPoint(top[:,:2]).convex_hull
+ core=shapely.geometry.polygon.orient(poly.buffer(-.003,join_style='mitre'),sign=1.0);carrier=slab(core,.017,.006);fm(group,carrier)
+ if group=='forefoot':
+  for y in [.610,.725]:
+   fm(group,path([[H[0],y,.085],[.115,y,.060],[.350,y,.039]],w=.026,d=.040,wall=.005))
+  for y in [.420,.847]:fm(group,box([.185,y,.045],[.250,.012,.046]))
+  fm(group,box([.065,.665,.045],[.036,.205,.046]))
+ else:
+  for y in [.430,.570]:fm(group,box([-.285,y,.040],[.200,.024,.038]))
+ load_domains.append({'segment':group,'original_pad':name,'full_pad_area_m2':poly.area,'carrier_area_m2':core.area,'carrier_z_m':[.017,.023],'rubber_min_remaining_thickness_m':.017,'outer_pad_perimeter_margin_m':.003,'support_area_fraction':core.area/poly.area,'steel_core_is_hidden_new_material':True,'remaining_elastomer_and_edges_pressure_qualification':False})
+ pad_refs.append((group,old))
+# Two complete constant-material folding compression braces, including knee stops and true pin interfaces.
+for idx,y in enumerate(BRACE_Y):
+ A=np.array([-.080,y,.230]);B=np.array([.310,y,.065]);d=B-A;u=d/np.linalg.norm(d);n=np.array([u[2],0,-u[0]])
+ h=.008;half=math.sqrt((np.linalg.norm(d)/2)**2+h*h);K=(A+B)/2+n*h;lock_center=K+n*.036
+ row={'id':'brace_'+str(idx),'A_world_m':A.tolist(),'B_world_m':B.tolist(),'knee_world_m':K.tolist(),'half_link_length_m':half,'neutral_overcenter_offset_m':h,'parent_body':'arch','output_body':'forefoot','hinge_world_m':H.tolist(),'pin_diameter_m':.040,'fork_center_span_m':.070,'eye_width_m':.034,'fork_plate_thickness_m':.014,'box_width_m':.056,'box_depth_m':.044,'wall_m':.006,'lock_block_section_m':[.016,.018],'lock_lever_m':.036,'qualified':False}
+ braces.append(row)
+ for point,owner in [(A,'arch'),(B,'forefoot')]:
+  for sg in [-1,1]:
+   c=point+AY*sg*.035;fm(owner,ring(c,.050,.02035,.014))
+   target=np.array([-.080,y,.215]) if owner=='arch' else np.array([.310,y,.039])
+   fm(owner,beam(c+[0,0,-.038],target+AY*sg*.035,w=.016,d=.036,wall=.005))
+  add('brace_'+str(idx)+'_'+owner+'_pin',owner,ring(point,.020,0,.098),'finite_pin',interface='Double-shear fork/eye; current conditional pressure screen; keeper/fatigue unknown')
+ # Link1: central A-eye; outer C-fork with finite separate compression-stop portals.
+ l1=[ring(A,.046,.02035,.034),beam(A+u*.030,A+u*.065,w=.032,d=.038,wall=.005),beam(A+u*.055,K-u*.065,w=.056,d=.044,wall=.006)]
+ for sg in [-1,1]:
+  c=K+AY*sg*.035;l1.extend([ring(c,.060,.02035,.014),beam(K-u*.080+AY*sg*.023,K-u*.035+AY*sg*.035,w=.016,d=.040,wall=.005)])
+ # Link2: central C-eye and B-eye; no fork width crossing the parent side plates.
+ l2=[ring(K,.055,.02035,.034),ring(B,.046,.02035,.034),beam(K+u*.032,K+u*.072,w=.032,d=.038,wall=.005),beam(K+u*.060,B-u*.055,w=.040,d=.044,wall=.006),beam(B-u*.060,B-u*.030,w=.032,d=.038,wall=.005)]
+ hole=oriented_box(lock_center,u,n,[.0167,.160,.0187]);s1=unite(l1)-hole;s2=unite(l2)-hole
+ add('brace_'+str(idx)+'_fixed_half','brace_'+str(idx)+'_a',s1,mass_owner_body='arch',brace_id=row['id'],link_half='a')
+ add('brace_'+str(idx)+'_moving_half','brace_'+str(idx)+'_b',s2,mass_owner_body='forefoot',brace_id=row['id'],link_half='b')
+ add('brace_'+str(idx)+'_knee_pin','brace_'+str(idx)+'_a',ring(K,.020,0,.098),'finite_pin',mass_owner_body='arch',brace_id=row['id'],link_half='a')
+ add('brace_'+str(idx)+'_compression_stop','brace_'+str(idx)+'_lock',oriented_box(lock_center,u,n,[.016,.088,.018]),'finite_mechanical_stop',mass_owner_body='arch',brace_id=row['id'],link_half='lock',unlock_translation_local_world_m=[0,.060 if idx==0 else -.060,0],interface='Neutral compression strut knee-stop; 0.35mm portal layout clearance; loaded unlocking forbidden')
+ locks.append({'body':'brace_'+str(idx)+'_lock','translation':[0,.060 if idx==0 else -.060,0]})
+# A complete 40/20 finite cylinder for unloaded toe movement; not the compression load support.
+CA=np.array([-.075,.665,.230]);CB=np.array([.285,.665,.075]);samples=[]
+for q in np.linspace(-15,0,121):
+ b=tr.transformations.transform_points([CB],tr.transformations.rotation_matrix(math.radians(q),AY,H))[0];u=(b-CA)/np.linalg.norm(b-CA);J=float(u@np.cross(AY,b-H));samples.append({'q_deg':float(q),'eye_length_m':float(np.linalg.norm(b-CA)),'J_m_per_rad':J})
+lo=min(x['eye_length_m'] for x in samples);hi=max(x['eye_length_m'] for x in samples);stroke=hi-lo+.020;zero=lo-.010;minimum=stroke+.048+.020+.020+.020+.020+.020;tail=zero-minimum
+act={'id':'unloaded_forefold','A_world_m':CA.tolist(),'B_world_m':CB.tolist(),'parent_body':'arch','output_body':'forefoot','axis_world':[0,1,0],'pivot_world_m':H.tolist(),'bore_m':.040,'rod_m':.020,'wall_m':.004,'pin_m':.024,'samples':samples,'stroke_m':stroke,'minimum_zero_eye_m':minimum,'custom_zero_eye_m':zero,'zero_deficit_m':max(0.,-tail),'complete_geometry_present':tail>=0,'qualified':False,'loaded_motion_allowed':False}
+u=(CB-CA)/np.linalg.norm(CB-CA);L=np.linalg.norm(CB-CA);ear=.024;start=ear+tail+.020;ext=L-zero
+def seg(x0,x1,ro,ri=0):return ring(CA+u*(x0+x1)/2,ro,ri,x1-x0+.0002,u)
+if tail>=0:
+ barrel=[ring(CA,.031,.01235,.030),seg(ear-.005,ear,.014),seg(ear,ear+tail,.024,.0106),seg(ear+tail,start,.024),seg(start,start+stroke+.020,.024,.020),seg(start+stroke+.020,start+stroke+.040,.024,.0106),seg(start+stroke+.040,start+stroke+.060,.022,.0106)]
+ rod=[seg(start+ext,start+ext+.020,.0195),seg(start+ext+.010,L-ear,.010),seg(L-ear,L-ear+.005,.013),ring(CB,.031,.01235,.030)]
+ add('forefold_barrel','forefold_barrel_link',unite(barrel),'finite_actuator',mass_owner_body='arch',motion_kind='barrel')
+ add('forefold_rod','forefold_rod_link',unite(rod),'finite_actuator',mass_owner_body='forefoot',motion_kind='rod')
+ for point,owner in [(CA,'arch'),(CB,'forefoot')]:
+  for sg in [-1,1]:
+   fm(owner,ring(point+AY*sg*.029,.034,.01235,.014))
+   anchor=point+[0,0,-.030] if owner=='arch' else np.array([.285,.665,.049])
+   fm(owner,beam(point+AY*sg*.029+[0,0,-.028],anchor+AY*sg*.029,w=.014,d=.022,wall=.004))
+  add('forefold_'+owner+'_pin',owner,ring(point,.012,0,.082),'finite_pin')
+ bx=AY-u*(AY@u);bx/=np.linalg.norm(bx);basis=np.column_stack([bx,np.cross(u,bx),u]);motion={'basis':basis,'A':CA,'B':CB,'L':L}
+# Frame unions are produced from finite source primitives, without modifying old candidate geometry.
+net={}
+for body,ss in frames.items():
+ net[body]=unite(ss);add(body+'_load_net',body,net[body],construction_scope='New source finite CSG union; material continuity does not qualify joins or bearings')
+for body,pad in pad_refs:
+ old=M(pad);remaining=old-net[body];p=add('retained_contact_'+pad['name'],body,remaining,'new_composite_contact_pad',density_kg_m3=None,mass_range_kg=[remaining.volume()*x for x in [900,1100,1400]],rgba=[.04,.05,.055,1],retained_original_pad=name,pad_ground_and_external_vertices_preserved=True,interface='New hidden steel core; elastomer physically touches carrier with no inferred bond/fastening qualification')
+ # Identity is tied to actual local pad variable, not a stale outer-loop name.
+ p['retained_original_pad']=pad['name'];p['source_pad_sha256']=hashlib.sha256(json.dumps(pad,sort_keys=True).encode()).hexdigest()
+# Endpoint-driven transform for nonrigid brace halves and cylinder. Material arrays remain constant.
+def linkT(a0,b0,a,b):
+ uu=(b-a)/np.linalg.norm(b-a);u0=(b0-a0)/np.linalg.norm(b0-a0);rot=tr.geometry.align_vectors(u0,uu)[:3,:3];T=np.eye(4);T[:3,:3]=rot;T[:3,3]=a-rot@a0;return T
+poses=[]
+for pid,roll,q,unlocked in [('neutral',0,0,False),('unloaded_forefold',0,-15,True),('roll_positive_forefold',10,-15,True),('roll_negative_locked',-10,0,False)]:
+ TB={'ankle_input':np.eye(4),'arch':tr.transformations.rotation_matrix(math.radians(roll),AX,R)};TB['forefoot']=TB['arch']@tr.transformations.rotation_matrix(math.radians(q),AY,H)
+ localTs={};ends=[]
+ for br in braces:
+  a=np.array(br['A_world_m']);b0=np.array(br['B_world_m']);k0=np.array(br['knee_world_m']);b=tr.transformations.transform_points([b0],tr.transformations.rotation_matrix(math.radians(q),AY,H))[0]
+  v=b-a;ll=np.linalg.norm(v);uu=v/ll;nn=np.array([uu[2],0,-uu[0]]);offset=math.sqrt(max(0.,br['half_link_length_m']**2-(ll/2)**2));k=(a+b)/2+nn*offset
+  ta=linkT(a,k0,a,k);tb=linkT(k0,b0,k,b);tl=ta.copy();tl[:3,3]+=np.array([0,.060 if br['id'].endswith('0') else -.060,0]) if unlocked else 0
+  for half,tt in [('a',ta),('b',tb),('lock',tl)]:localTs[(br['id'],half)]=TB['arch']@tt
+  ends.append({'id':br['id'],'A_world_m':tr.transformations.transform_points([a],TB['arch'])[0].tolist(),'B_world_m':tr.transformations.transform_points([b],TB['arch'])[0].tolist(),'knee_world_m':tr.transformations.transform_points([k],TB['arch'])[0].tolist(),'half_length_error_m':float(max(abs(np.linalg.norm(k-a)-br['half_link_length_m']),abs(np.linalg.norm(b-k)-br['half_link_length_m']))),'fixed_half_T_world':localTs[(br['id'],'a')].tolist(),'moving_half_T_world':localTs[(br['id'],'b')].tolist()})
+ if motion:
+  b=tr.transformations.transform_points([CB],tr.transformations.rotation_matrix(math.radians(q),AY,H))[0];uu=(b-CA)/np.linalg.norm(b-CA);xx=AY-uu*(AY@uu);xx/=np.linalg.norm(xx);basis=np.column_stack([xx,np.cross(uu,xx),uu]);rot=basis@motion['basis'].T;tt=np.eye(4);tt[:3,:3]=rot;tt[:3,3]=CA-rot@CA;rt=tt.copy();rt[:3,3]+=uu*(np.linalg.norm(b-CA)-motion['L']);cTs={'barrel':TB['arch']@tt,'rod':TB['arch']@rt};ends.append({'id':act['id'],'A_world_m':tr.transformations.transform_points([CA],TB['arch'])[0].tolist(),'B_world_m':tr.transformations.transform_points([b],TB['arch'])[0].tolist(),'barrel_transform_world':cTs['barrel'].tolist(),'rod_transform_world':cTs['rod'].tolist()})
+ pp=[]
+ for p in parts:
+  qpart=copy.deepcopy(p);tt=localTs[(p['brace_id'],p['link_half'])] if p.get('brace_id') else cTs[p['motion_kind']] if p.get('motion_kind') else TB[p['body']];qpart['vertices_world_m']=tr.transformations.transform_points(p['vertices_world_m'],tt).tolist();qpart['applied_transform_world']=tt.tolist();pp.append(qpart)
+ poses.append({'id':pid,'parts':pp,'body_transforms':{k:v.tolist() for k,v in TB.items()},'joint_angles_deg':{'ankle_roll':roll,'forefoot':q},'locks_unloaded_retracted':unlocked,'endpoint_transforms':ends,'root_shift_z_m':0})
+# Actual condition-based load screen. No robot mass, shared CoP or dynamic qualification is imported.
+screens=[]
+for copx in [.05,.15,.25,.35,.45,.50]:
+ A=np.array(braces[0]['A_world_m']);B=np.array(braces[0]['B_world_m']);u=(B-A)/np.linalg.norm(B-A);lev=abs(float(np.cross(B-H,u)[1]));F=29430.;moment=F*(copx-H[0]);total=max(0.,moment/lev);hinge=-np.array([u[0]*total,0,u[2]*total+F]);per=total/2
+ I=math.pi*(.070**4-.032**4)/64;Z=I/(.070/2);bending=float(np.linalg.norm(hinge[[0,2]]))*.190/4/Z;pin_bend=(per*.070/4)/(math.pi*.040**3/32);lockforce=per*.008/.036
+ screens.append({'pure_external_pressure_N':F,'cop_x_world_m':copx,'fore_moment_Nm':moment,'brace_effective_lever_m':lev,'both_braces_compression_N':total,'per_brace_N_equal_split':per,'hinge_reaction_N_xyz':hinge.tolist(),'hinge_support_span_m':.190,'hinge_OD_ID_m':[.070,.032],'conservative_center_load_hinge_bending_Pa':bending,'brace_pin_OD_m':.040,'brace_fork_span_m':.070,'center_load_brace_pin_bending_Pa':pin_bend,'brace_lock_per_block_nominal_N':lockforce,'compression_stop_block_double_shear_Pa':lockforce/(2*.016*.018),'qualified':False,'scope':'3t single forefoot external pressure only; joint loads couple to fixed heel/arch/ankle; no selfweight or impact included'})
+(O/'pressure_path_screen.json').write_text(json.dumps({'robot_id':'gorilla_v0_1','cases':screens,'model':'Two equal 3D coplanar braces, exact neutral J cross-product; pressure-domain sensitivity, not a load rating','fixed_heel_pressure_role':'Separate pad/steel carrier→fixed arch→roll output→journal/housing→upstream ankle. No moving heel axis.','hinge_reaction_warning':'Large horizontal internal reaction must close through own fixed load cheeks and serial journal stack; main fore-axis torsion is not pressure support.','qualified':False},indent=2)+'\n')
+interface={'robot_id':'gorilla_v0_1','topology':'ankle input→roll output fixed arch+heel→independent forefoot','joint_supports':[{'id':'ankle_roll','parent_body':'ankle_input','output_body':'arch','center_world_m':R.tolist(),'axis_world':[1,0,0]},{'id':'forefoot','parent_body':'arch','output_body':'forefoot','center_world_m':H.tolist(),'axis_world':[0,1,0]}],'braces':braces,'actuators':[act],'ground_gap_x_m':[ -.104,.025],'upstream_ankle_center_world_m':TOP.tolist(),'roll_drive_scope':'Unbuilt drive/brake/holding package; interface and ±10deg kinematics only. Foot pressure qualification does not imply active roll capability.','joint_and_loop_inertia_scope':'Unknown. Nonrigid brace/barrel/rod have actual world-mesh motion, not collapsed into parent body.','physical_accepted':False}
+(O/'interface.json').write_text(json.dumps(interface,indent=2)+'\n')
+scene={'robot_id':'gorilla_v0_1','candidate':'G3 A fixed heel/arch + independent mechanically braced folding forefoot','layout_id':'A','parts':parts,'pose_scenes':poses,'armor_comparator':armor,'armor_source_path':str((O/'armor_scene.json').relative_to(ROOT)),'armor_source_sha256':sha(O/'armor_scene.json'),'armor_visible_outer_delta_m':0.,'joints':interface['joint_supports'],'actuators':[act],'braces':braces,'locks':locks,'foot_load_domains':load_domains,'pressure_path_screen_sha256':sha(O/'pressure_path_screen.json'),'physical_accepted':False,'geometry_accepted':False,'scope':'Complete finite passive foot compression/fold mechanism with forefold cylinder. Missing ankle-roll active drive/keeper/seals/fasteners and upstream knee–fold–ankle module; no full robot or SI contract qualification.','input_hashes':{str(p.relative_to(ROOT)):sha(p) for p in [BASEP,Path(__file__),ROOT/'.scratch/gorilla_internal_g_material_contract/native_signed_material.py']}}
+(O/'chain_scene.json').write_text(json.dumps(scene,indent=2)+'\n');print('G3 BUILT',len(parts),'actuator',act['complete_geometry_present'],'source',sha(O/'chain_scene.json'),flush=True)

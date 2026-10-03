@@ -1,0 +1,164 @@
+"""Read-only Gorilla G22 native interface extraction; no design or source repair.
+
+Run with .venv/bin/python. All coordinates and areas are SI. A verified geometric
+datum is not a qualified mechanical connection, bearing pressure center, or OEM
+internal material model. Source-protection meshes stay protection meshes.
+"""
+from pathlib import Path
+import argparse, collections, gzip, hashlib, json, math
+import numpy as np
+import manifold3d as mf
+
+ROOT = next(p for p in Path(__file__).resolve().parents if (p/'sai_robots_engineering_rules.md').is_file())
+OUT = Path(__file__).resolve().parent
+S = ROOT/'.scratch'
+INPUTS = {
+ 'joint_scene': S/'gorilla_internal_g21_joint_core_interface/b/scene.json.gz',
+ 'whole_scene': S/'gorilla_internal_g21_whole_body_space_allocation/b/scene.json.gz',
+ 'joint_interfaces': S/'gorilla_internal_g21_joint_core_interface/b/interfaces.json',
+ 'joint_CAD_inventory': S/'gorilla_internal_g21_joint_core_interface/b/cad_part_manifest.json',
+ 'joint_BREP': S/'gorilla_internal_g21_joint_core_interface/b/assembly.brep',
+ 'joint_STEP': S/'gorilla_internal_g21_joint_core_interface/b/assembly_si.step',
+ 'joint_producer': S/'gorilla_internal_g21_joint_core_interface/b/producer_source.py',
+ 'joint_material_gate': S/'gorilla_internal_g21_joint_core_interface/b/native_material_gate.json',
+ 'planned_interfaces': S/'gorilla_internal_g21_joint_core_interface/interface_contract.json',
+ 'installation_delta': S/'gorilla_internal_g21_joint_core_interface/actual_installation_delta.json',
+ 'function_review': S/'gorilla_internal_g21_function_review/functional_scope_review.json',
+ 'whole_replacements': S/'gorilla_internal_g21_whole_body_space_allocation/b/function_replacement_map.json',
+ 'whole_receipt': S/'gorilla_internal_g21_whole_body_space_allocation/b/function_and_retirement_receipt.json',
+ 'whole_producer': S/'gorilla_internal_g21_whole_body_space_allocation/build_b.py',
+ 'whole_primary_STEP': S/'gorilla_internal_g21_whole_body_space_allocation/primary_cage_si.step',
+ 'whole_primary_CAD_receipt': S/'gorilla_internal_g21_whole_body_space_allocation/primary_cage_CAD_receipt.json',
+}
+EXPECTED = {'joint_scene':'6652a6669b6922e74f3faaaaf96c94dcc876eb8da35c8e6fea66952ed4f2645f',
+ 'whole_scene':'683da8b329db49bdd25a36725a71619eb92b4646f090da033e3430840e0d94cb',
+ 'function_review':'a1e2f8f5406f0793328d167d18f3b445e7f51a75dcd4ac100a8682f8bcd828e2'}
+def sha(p): return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def read(p):
+ b=Path(p).read_bytes();return json.loads(gzip.decompress(b) if str(p).endswith('.gz') else b)
+def put(p,x): Path(p).write_text(json.dumps(x,indent=2,allow_nan=False)+'\n')
+def vertices(p): return np.array(p.get('vertices_world_m',p.get('vertices')),float)
+def faces(p):
+ out=[]
+ for f in p['faces']:
+  out.extend([[f[0],f[i],f[i+1]] for i in range(1,len(f)-1)])
+ return np.array(out,np.uint64)
+def bounds(p):
+ v=vertices(p);return [v.min(0).tolist(),v.max(0).tolist()]
+def kernel(p): return mf.Manifold(mf.Mesh64(vertices(p),faces(p)))
+def basis(axis):
+ a=np.array(axis,float);u=np.array([1.,0,0]) if abs(a[0])<.9 else np.array([0.,1.,0]);u-=a*(a@u);u/=np.linalg.norm(u);return a,u,np.cross(a,u)
+def cylinder_measure(p,pivot,axis):
+ a,u,v=basis(axis);vv=vertices(p);pivot=np.array(pivot);d=vv-pivot;q=d@a;uv=np.column_stack((d@u,d@v));center=(uv.min(0)+uv.max(0))/2;rad=np.linalg.norm(uv-center,axis=1)
+ return {'status':'actual_native_gross_geometry' if not p.get('finite_material') else 'actual_native_finite_geometry',
+  'source_part':p['name'],'axis_direction_sign':'source datum; axis-line geometry cannot infer encoder sign',
+  'axis_world':a.tolist(),'centerline_radial_offset_m':center.tolist(),
+  'geometric_axial_center_world_m':(pivot+a*((q.min()+q.max())/2)+u*center[0]+v*center[1]).tolist(),
+  'axial_range_from_source_pivot_m':[float(q.min()),float(q.max())],
+  'geometric_axial_length_m':float(np.ptp(q)),
+  'vertex_radial_levels_m':np.unique(np.round(rad,10)).tolist(),
+  'not_physical_COM_or_bearing_pressurecenter':True}
+def axis_planes(p,k,coord=None,tol=1e-10):
+ vv=vertices(p);ff=faces(p);tri=vv[ff];flat=np.ptp(tri[:,:,k],axis=1)<tol
+ if coord is not None:flat &= np.max(abs(tri[:,:,k]-coord),axis=1)<tol
+ cross=np.cross(tri[:,1]-tri[:,0],tri[:,2]-tri[:,0]);aa=np.linalg.norm(cross,axis=1)/2;valid=flat & (aa>1e-16)
+ records=[]
+ for x in np.unique(np.round(tri[valid,0,k],10)):
+  ii=np.flatnonzero(valid & (abs(tri[:,0,k]-x)<tol));area=aa[ii].sum();cen=np.average(tri[ii].mean(1),axis=0,weights=aa[ii]);nn=cross[ii].sum(0);nn/=np.linalg.norm(nn) if np.linalg.norm(nn) else 1
+  records.append({'source_part':p['name'],'coordinate_axis':k,'plane_coordinate_m':float(x),'actual_native_area_m2':float(area),'area_centroid_world_m':cen.tolist(),'oriented_normal_world':nn.tolist(),'source_triangle_indices':ii.tolist(),'bounds_world_m':[tri[ii].min((0,1)).tolist(),tri[ii].max((0,1)).tolist()],'contact_or_load_qualification':False})
+ return records
+def projected_planar_overlap(p1,p2,k,x1,x2):
+ from shapely.geometry import Polygon
+ from shapely.ops import unary_union
+ other=[i for i in range(3) if i!=k]
+ def poly(p,x):
+  vv=vertices(p);ff=faces(p);tri=vv[ff];ii=np.flatnonzero(np.max(abs(tri[:,:,k]-x),1)<1e-10)
+  polys=[Polygon(t[:,other]) for t in tri[ii] if np.linalg.norm(np.cross(t[1]-t[0],t[2]-t[0]))>2e-16]
+  return unary_union(polys)
+ aa,bb=poly(p1,x1),poly(p2,x2);inter=aa.intersection(bb)
+ return {'status':'actual_projected_native_surface_query_not_mate','surface_area_1_m2':float(aa.area),'surface_area_2_m2':float(bb.area),'projected_common_area_m2':float(inter.area),'axial_plane_offset_m':float(x2-x1),'nonzero_gap_or_interpenetration_requires_full_material_query':True}
+def reflected_point(x):return (np.array(x)*[1,-1,1]).tolist()
+def main(out):
+ binding={k:{'path':str(p.relative_to(ROOT)),'sha256':sha(p)} for k,p in INPUTS.items()}
+ for k,h in EXPECTED.items():assert binding[k]['sha256']==h,(k,binding[k])
+ joint=read(INPUTS['joint_scene']);whole=read(INPUTS['whole_scene']);ji=read(INPUTS['joint_interfaces']);cad=read(INPUTS['joint_CAD_inventory']);gate=read(INPUTS['joint_material_gate']);review=read(INPUTS['function_review'])
+ J={p['name']:p for p in joint['parts']};W={p['name']:p for p in whole['parts']};C={p['name']:p for p in cad};G={p['id']:p for p in gate['parts']}
+ out.mkdir(parents=True,exist_ok=True)
+ checks=[];axes=[];holegroups=[];ports=[];wg=[]
+ for j in ji['joints']:
+  stem=j['id'].split('_')[-1];pre='g21_b_'+stem;pv=j['pivot_world_m'];ax=j['axis_world'];a,u,v=basis(ax)
+  axial={s:cylinder_measure(J[pre+'_'+s],pv,ax) for s in ['CS_official_gross','FS_official_gross','WG_official_gross','input_SKF7205BEP_0','input_SKF7205BEP_1','output_SKF32212_0','output_SKF32212_1','motor_stator_complete','motor_rotor_complete','input_two_seat_stepped_shaft']}
+  inp=[axial['input_SKF7205BEP_'+str(k)]['geometric_axial_center_world_m'] for k in range(2)];op=[axial['output_SKF32212_'+str(k)]['geometric_axial_center_world_m'] for k in range(2)];spacing=float(np.linalg.norm(np.array(op[0])-op[1]))
+  axes.append({'id':j['id'],'parent_body_source_datum':j['parent_body'],'output_body_source_datum':j['output_body'],'pivot_world_m':pv,'axis_world':ax,'status':'source datum verified against native CS/FS/WG cylindrical centerlines','centerline_radial_error_m':max(np.linalg.norm(m['centerline_radial_offset_m']) for m in axial.values()),'actual_input_geometric_centers_world_m':inp,'actual_output_geometric_centers_world_m':op,'actual_input_geometric_spacing_m':float(np.linalg.norm(np.array(inp[0])-inp[1])),'actual_output_geometric_spacing_m':spacing,'planned_output_spacing_m':j['output_bearings']['geometric_spacing_m'],'planned_output_centers_world_m':j['output_bearings']['two_centers_world_m'],'pressure_centers_preload_loadsplit_unknown':True,'cylindrical_source_queries':axial,'CAD_correspondence':{k:C[pre+'_'+k] for k in axial}})
+  axes[-1]['signed_axis_authority']={'source_scene_joint_interface_axis_world':next(q['axis_world'] for q in joint['joint_interfaces'] if q['id']==j['id']),'interfaces_json_axis_matches_source_scene':next(q['axis_world'] for q in joint['joint_interfaces'] if q['id']==j['id'])==ax,'authority':'G21 source explicit design datum only; encoder/motor action sign unresolved','native_only_verifies_unsigned_axis_line':True}
+  checks.append({'test':stem+'_output_spacing_plan_vs_geometry','actual_m':spacing,'planned_m':j['output_bearings']['geometric_spacing_m'],'match':abs(spacing-j['output_bearings']['geometric_spacing_m'])<1e-10,'expected_source_discrepancy':True})
+  # Actual sixteen mount-bolt centerlines. The hole cutter radius is independently
+  # tested against vertices on the actual receiving bore, not inferred from a label.
+  rec=J['g21_b_core_fixed_receiver_continuous_candidate' if stem=='pitch' else pre+'_reaction_receiver'];rv=vertices(rec);boltrows=[]
+  for k in range(16):
+   name=pre+'_CS_mount_bolt_'+str(k);measure=cylinder_measure(J[name],pv,ax);bc=np.array(measure['geometric_axial_center_world_m']);perp=bc-np.array(pv);perp-=a*(a@perp);rr=np.linalg.norm((rv-np.array(pv)-perp)-np.outer((rv-np.array(pv)-perp)@a,a),axis=1);expected=j['official_component_set']['CS_hole_m']/2+.0002;matched=abs(rr-expected)<2e-8
+   boltrows.append({'part':name,'axis_world':ax,'centerline_point_world_m':bc.tolist(),'PCD_radius_m':float(np.linalg.norm(perp)),'native_bolt_radial_levels_m':measure['vertex_radial_levels_m'],'native_bolt_axial_range_q_m':measure['axial_range_from_source_pivot_m'],'receiving_bore_radius_source_actual_producer_m':expected,'matched_receiver_bore_vertex_count':int(matched.sum()),'receiver_bore_vertex_max_radial_residual_m':float(abs(rr[matched]-expected).max()) if matched.any() else None,'thread_preload_headseat_unknown':True})
+  holegroups.append({'joint':j['id'],'receiver_part':rec['name'],'receiver_resource_pass':G[rec['name']]['resource_contract_pass'],'actual_native_bolt_count':len(boltrows),'native_PCD_diameter_m':float(2*np.mean([r['PCD_radius_m'] for r in boltrows])),'official_PCD_m':j['official_component_set']['CS_PCD_m'],'bolts_and_bores':boltrows,'qualification':False})
+  ports.append({'joint':j['id'],'wet_void_actual_part':pre+'_water_connected_installation','wet_geometry_bounds_world_m':bounds(J[pre+'_water_connected_installation']),'actual_external_fluid_apertures_in_finite_receiver_source':None,'status':'not implemented; source explicit four_actual_ports_and_seal_CAD_not_completed=true','complete_installation_reference':pre+'_water_ports_and_loop','reference_bounds_world_m':bounds(J[pre+'_water_ports_and_loop']),'reference_box_not_four_ports_or_flowconnection':True,'driver_encoder_power_reference_ids':[pre+'_'+s for s in ['fullcontroller','dualencoder_and_connector','Zlead_powerloop']],'flow_pressure_heat_continuity':None})
+  shaft=J[pre+'_input_two_seat_stepped_shaft'];wgr=J[pre+'_WG_official_gross'];over=kernel(shaft)^kernel(wgr);L=j['official_component_set']['axial_m'];bore=j['official_component_set']['WG_bore_m'];ss=vertices(shaft)-pv;qq=ss@a;rad=np.linalg.norm(ss-np.outer(qq,a),axis=1);mask=(qq>=L-.024-1e-8)&(qq<=L+1e-8);rmax=float(rad[mask].max())
+  wg.append({'joint':j['id'],'shaft_part':shaft['name'],'WG_protected_reference_part':wgr['name'],'WG_catalogue_bore_diameter_m':bore,'actual_shaft_diameter_at_WG_axial_overlap_m':2*rmax,'radial_intrusion_m':rmax-bore/2,'shaft_query_to_WG_gross_volume_m3':float(over.volume()),'gross_query_NOT_OEM_material_collision':True,'minimum_source_fix_boundary':'Regenerate true reduced WG-engagement shaft step before union; preserve complete WG bore/key and 25mm bearing/rotor-holder seat geometry. Recheck torque/key, seat continuity, axial keeper and extraction; no change applied.'})
+ core=J['g21_b_core_fixed_receiver_continuous_candidate'];cage=W['g21_wide_closed_load_cage_net'];coreplanes=axis_planes(core,0,.115);cageplanes=[]
+ for x in [.112,.124]:cageplanes.extend(axis_planes(cage,0,x))
+ corequery={'joint_part':core['name'],'whole_part':cage['name'],'joint_actual_planes':coreplanes,'body_actual_planes':cageplanes,'planned_X_m':.115,'plane_proximity_m':{'to_body_front_or_rear_112':.003,'to_body_124':.009},'actual_material_kernel_intersection_m3':float((kernel(core)^kernel(cage)).volume()),'joint_native_resource_valid':G[core['name']]['resource_contract_pass'],'same_coordinates_or_same_body_not_connection_proof':True,'actual_projected_common_queries':[projected_planar_overlap(core,cage,0,.115,x) for x in [.112,.124]],'contact_pressure_bolted_or_welded_attachment_unknown':True}
+ cv=vertices(cage);bodyholes=[]
+ for yy in [-.30,.30]:
+  for zz in [2.28,2.40,2.52]:
+   r=np.linalg.norm(cv[:,1:]-[yy,zz],axis=1);ii=(abs(r-.008)<1e-8)&(cv[:,0]>.100)&(cv[:,0]<.130)
+   bodyholes.append({'centerline_source_datum_m':[.118,yy,zz],'axis_world':[1,0,0],'actual_radius_verified_native_m':.008,'matched_native_vertex_count':int(ii.sum()),'matched_native_vertex_axial_range_world_m':[float(cv[ii,0].min()),float(cv[ii,0].max())] if ii.any() else None,'status':'explicit body producer hole datum, verified actual native bore vertices','native_joint_X115_face_overlap':bool(.345<=yy<=.565 and 2.275<=zz<=2.535),'matching_joint_mount_hole_exists':False,'thread_fastener_preload_unknown':True})
+ corequery['body_six_actual_hole_datums_and_native_checks']=bodyholes
+ corequery['joint_X115_face_no_source_mount_holes']=True
+ corequery['valid_common_area_is_not_full_rectangle_or_sum_both_body_sides']=True
+ # Waist wafer is part of the current cage. The old roll output adapter is absent,
+ # and the fixed load shell must not be renamed into a rotating output component.
+ waistnode=whole['body_tree_candidate']['torso'];wp=[axis_planes(cage,0,x) for x in [.228,.248]]
+ shellid='f1_ds_waist_roll_gear_load_shell';shell=W[shellid]
+ waist={'source_cage_id':cage['name'],'candidate_cage_annular_datum_from_body_producer':{'center_world_m':[.238,0,1.91],'axis_world':[1,0,0],'outer_radius_m':.145,'inner_radius_m':.072,'axial_length_m':.020,'status':'explicit producer parameters independently corroborated native plane/radial boundaries; not output mate'},'actual_partial_annular_native_planes':wp,'actual_whole_torso_joint_tree_datum':waistnode,'actual_roll_output_adapter_present_ids':[n for n in W if 'waist_roll' in n and 'output_adapter' in n],'old_fixed_gear_id':'f1_ds_waist_roll_gear','old_fixed_gear_load_shell_id':shellid,'fixed_shell_body':shell['body'],'new_cage_body':cage['body'],'fixed_gear_load_shell_bounds_world_m':bounds(shell),'fixed_shell_and_new_cage_kernel_query_m3':float((kernel(shell)^kernel(cage)).volume()),'query_not_old_source_resource_or_connection_qualification':True,'actual_rotating_output_mating_patch':None,'required_boundary':'Reconstruct or identify actual OEM rotating output interface, bolt/shaft/bearing-load split, then define new core annulus connection. No fixed shell output alias or simple full-plane traction allowed.','physical_accepted':False}
+ # Exact source-present IDs only. Conditional geometry replacement is not a
+ # qualified function/mass retirement when its replacement remains a reference.
+ categories={'old_G13_pitch_complete_assembly':sorted(n for n in W if n.startswith('g13_')),
+ 'old_roll_yaw_complete_module_sets':sorted(n for n in W if any(n.startswith('ds_'+s+'_shoulder_'+d+'_') for s in ['left','right'] for d in ['roll','yaw'])),
+ 'old_pitch_roll_yaw_cooling_cases_ports':sorted(n for n in W if any(n.startswith('e_ds_'+s+'_shoulder_'+d+'_motor_cooling_case') for s in ['left','right'] for d in ['pitch','roll','yaw'])),
+ 'old_pitch_roll_transition_housings':sorted(n for n in W if any(n=='g18_'+s+'_'+d+'_compact_housing' for s in ['left','right'] for d in ['pitch_to_roll','roll_to_yaw'])),
+ 'old_roll_yaw_output_bearing_keeper_and_FS_attachment':sorted(n for n in W if any(n.startswith('g18_'+s+'_'+d+'_'+function+'_') for s in ['left','right'] for d in ['roll','yaw'] for function in ['external_bearing','keeper','output_bolt'])),
+ 'newjoint_six_placeholder_boxes':sorted(n for n in W if n.startswith('g21_') and n.endswith('_newjoint_protected_scope'))}
+ retire=sorted({n for l in categories.values() for n in l});oldarm=sorted(n for n,p in W.items() if p.get('body') in ['left_upper_arm','right_upper_arm','left_proximal_forearm','right_proximal_forearm','left_forearm','right_forearm','left_palm','right_palm'] and n not in retire)
+ mirror=np.diag([1.,-1.,1.]);sideplan=[]
+ for side in ['left','right']:
+  joints=[]
+  for j in axes:
+   p=np.array(j['pivot_world_m']);a=np.array(j['axis_world']);newp=p if side=='left' else mirror@p;newa=a if side=='left' else -mirror@a
+   joints.append({'id':side+'_'+j['id'].split('_')[-1],'pivot_world_m':newp.tolist(),'axis_world_candidate_same_angle_axialvector':newa.tolist(),'status':'left actual source; right reflection PLAN only' if side=='right' else 'actual source datum verified native','actuation_encoder_joint_sign_not_adopted':True,'parent_body':j['parent_body_source_datum'].replace('left_',side+'_'),'output_body':j['output_body_source_datum'].replace('left_',side+'_')})
+  sideplan.append({'side':side,'joints':joints,'instance_transform_plan_4x4':np.diag([1,1 if side=='left' else -1,1,1]).tolist(),'reflected_face_winding_must_reverse':side=='right','new_native_instances_present_in_whole_source_count':0})
+ sourceenv=[{'id':p['name'],'body':p['body'],'role':p['role'],'finite_material':p.get('finite_material'),'actual_native_bounds_world_m':bounds(p),'CAD_geometric_volume_m3':C[p['name']]['CAD_geometric_volume_m3'],'CAD_native_relative_volume_error':C[p['name']]['native_CAD_volume_relative_error'],'resource_contract_pass':G.get(p['name'],{}).get('resource_contract_pass'),'resource_gate_scope':'finite material only' if p.get('finite_material') else 'reference, not material admitted','source_geometry_semantics':'material' if p.get('finite_material') else 'protection_or_function_reference_not_verified_internal_material'} for p in joint['parts']]
+ fk={'old_tree_exact':{k:v for k,v in whole['body_tree_candidate'].items() if any(z in k for z in ['shoulder','upper_arm','forearm','palm'])},'new_side_joint_plans':sideplan,'new_elbow_source_plan_world_m':ji['downstream_elbow_candidate_world_m'],'downstream_rebind_source_present_ids':oldarm,'left_yaw_output_body_new_is_left_shoulder_yaw_carrier_but_old_tree_yaw_child_is_left_upper_arm':True,'required_rest_FK_entry':'Add explicit new yaw output carrier then define fixed transform to complete upper arm/elbow. Recompute all dependent meshes/body transforms/COM/inertia/wrench/limits/signs. No implicit translation or same owner graft accepted.','default_SI_changed':False}
+ outputfaces=[]
+ for j in ji['joints']:
+  stem=j['id'].split('_')[-1];p=J['g21_b_'+stem+'_output_journal_clamp_closed_ear'];datum=p['downstream_mate_world_m'];k=int(np.argmax(abs(np.array(j['axis_world']))));pp=axis_planes(p,k,datum[k]);outputfaces.append({'joint':j['id'],'source_part':p['name'],'owner':p['body'],'explicit_source_downstream_datum_world_m':datum,'actual_native_terminal_planes':pp,'source_resource_pass':G[p['name']]['resource_contract_pass'],'terminal_mount_holes_implemented_in_source':False,'FS_plane_q0_is_upstream_drive_interface_not_this_terminal_mount':True,'strength_fastening_connection_to_next_body_unknown':True})
+ fk['actual_output_terminal_interfaces']=outputfaces
+ fk['strict_direct_nextbody_owned_ids']={b:sorted(n for n,p in W.items() if p.get('body')==b and n not in retire) for b in ['left_upper_arm','right_upper_arm']}
+ fk['joint_source_yaw_output_terminals_do_not_prove_elbow_plan_installed']=True
+ inventory={'whole_native_parts':len(W),'joint_native_parts':len(J),'whole_actual_joint_native_parts_present':sorted(set(J)&set(W)),'shared_cage_id':cage['name'],'shared_cage_native_occurrence_count':sum(p['name']==cage['name'] for p in whole['parts']),'shared_cage_mass_once_kg':cage.get('mass_range_kg'),'joint_common_receiver_actual_left_only_bounds':bounds(core),'joint_common_receiver_not_bilateral_source':True,'receiver_geometry_source_single_id':core['name'],'mirrored_receiver_creates_additional_actual_material_must_not_claim_already_shared_net':'Whole cage count once; two side reaction receivers need actual regeneration/mirror plus source-specific union/overlap. Do not count the left receiver once and silently supply both shoulders.','bilateral_instance_plan':sideplan,'conditional_retired_exact_ids_by_function':categories,'conditional_geometry_probe_retire_ids':retire,'qualified_function_retire_ids':[],'retirement_blocker':'Replacement brakes/encoders/controllers/water4ports/CSFS fixers and keepers are protected envelopes or absent; no certified function or mass retirement credit.','preserve_and_rebind_whole_downstream_ids':oldarm,'whole_original_visible_armor_111_preserve_ids':whole['original_visible_armor_ids']}
+ installations=[]
+ for j in ji['joints']:
+  stem=j['id'].split('_')[-1];ids=[n for n in J if n.startswith('g21_b_'+stem+'_')]
+  if stem=='pitch':ids.append(core['name'])
+  bb=np.array([bounds(J[n]) for n in ids]);actual=[bb[:,0].min(0).tolist(),bb[:,1].max(0).tolist()];plan=j['protected_complete_installation_bounds_world_m'];direction=np.array(j['service_translation_world_m']);av=np.array(actual);swept=[np.minimum(av[0],av[0]+direction).tolist(),np.maximum(av[1],av[1]+direction).tolist()]
+  installations.append({'joint':j['id'],'native_part_ids':ids,'actual_native_principal_plus_reference_installation_bounds_world_m':actual,'planned_installation_bounds_world_m':plan,'actual_minus_plan_bound_delta_m':(av-plan).tolist(),'source_plan_extraction_translation_m':direction.tolist(),'source_plan_swept_native_bbox_world_m':swept,'swept_bbox_is_NOT_motion_collision_pass':True,'contains_unrealized_protected_function_envelopes':True})
+ preserved=out/'preserved_input_producers';preserved.mkdir(exist_ok=True)
+ for k in ['joint_producer','whole_producer']:
+  dst=preserved/(k+'.py');data=INPUTS[k].read_bytes()
+  if dst.exists():assert dst.read_bytes()==data,'Cannot replace prior producer copy'
+  else:dst.write_bytes(data)
+ sourceidentity={'scene_producer_sha256':joint['producer_sha256'],'preserved_actual_producer_sha256':sha(preserved/'joint_producer.py'),'geometry_producer_matches_scene':joint['producer_sha256']==sha(preserved/'joint_producer.py'),'material_gate_producer_is_checker_not_geometry_producer':gate['producer_sha256'],'no_error_corrections_in_preserved_producer':True}
+ result={'schema':'gorilla_g22_source_derived_interface_contract_v1','robot_id':'gorilla_v0_1','coordinate_frame':'world SI m; Xforward Yleft Zup','input_bindings':binding,'extractor_sha256':sha(__file__),'source_producer_identity':sourceidentity,'source_semantics':'actual_native refers to actual candidate geometry, not adopted engineering/physics capability','axes_and_bearing_geometry':axes,'actual_native_mount_bolt_and_bore_groups':holegroups,'actual_output_terminal_interfaces':outputfaces,'core_plane_interface':corequery,'waist_source_interface':waist,'fluid_and_electrical_ports':ports,'actual_vs_planned_installations':installations,'WG_source_fit_rejections':wg,'part_native_envelopes':sourceenv,'bilateral_replacement_contract':inventory,'downstream_FK_change_entry':fk,'current_source_resource_rejected_ids':[k for k,v in G.items() if not v['resource_contract_pass']],'original_sources_and_producers_unchanged':True,'physical_accepted':False}
+ put(out/'source_derived_interfaces.json',result)
+ checks += [{'test':'native_joint_in_whole_body_count','actual':len(set(J)&set(W)),'expected':0,'pass':not(set(J)&set(W))}, {'test':'native_resource_rejections_preserved','actual':[k for k,v in G.items() if not v['resource_contract_pass']],'no_repair':True}, {'test':'CAD_unique_part_correspondence','pass':set(J)==set(C) and set(G)=={n for n,p in J.items() if p.get('finite_material')}}, {'test':'exact_retire_ids_present_unique','pass':len(retire)==len(set(retire)) and set(retire)<=set(W)}, {'test':'all_input_hashes_unchanged_at_end','pass':all(sha(INPUTS[k])==v['sha256'] for k,v in binding.items())}]
+ put(out/'finite_validation.json',{'schema':'gorilla_g22_interface_extraction_validation_v1','input_bindings':binding,'contract_sha256':sha(out/'source_derived_interfaces.json'),'extractor_sha256':sha(__file__),'checks':checks,'plan_discrepancy_is_not_validator_failure':'Expected inconsistent plan-vs-actual fields remain explicitly false; not normalized','material_or_physics_acceptance':False})
+ print(json.dumps({'output':str(out),'contract_sha256':sha(out/'source_derived_interfaces.json'),'axis_spacings':[x['actual_output_geometric_spacing_m'] for x in axes],'WG_intrusions_m':[x['radial_intrusion_m'] for x in wg],'core_overlap_m3':corequery['actual_material_kernel_intersection_m3'],'retirement_count_conditional':len(retire),'source_parts_present_in_whole':len(set(J)&set(W))}))
+if __name__=='__main__':
+ ap=argparse.ArgumentParser();ap.add_argument('--output-dir',type=Path,default=OUT);args=ap.parse_args();main(args.output_dir.resolve())

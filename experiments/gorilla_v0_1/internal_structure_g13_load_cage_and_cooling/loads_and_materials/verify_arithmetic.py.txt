@@ -1,0 +1,38 @@
+"""Independent conservation and section checks, no producer imported."""
+from pathlib import Path
+import json,hashlib,math
+import numpy as np
+O=Path(__file__).parent
+d=json.load(open(O/'g13_cage_delta.json'));b=json.load(open(O/'load_and_material_budget.json'));eq=json.load(open(O/'equal_EI_comparison.json'));checks=[]
+def ck(name,ok,error=0.):checks.append({'name':name,'pass':bool(ok),'absolute_error':float(error)})
+rows=d['retained_633_old_rows']+d['new_G13_actual_mass_rows']+d['remaining_G11_shoulder_rows'];seen={};dups=[]
+for r in rows:
+ for n in r['member_ids']:
+  if n in seen:dups.append([n,seen[n],r['id']])
+  seen[n]=r['id']
+ck('actual_member_mass_inventory_unique',not dups)
+ck('no_partial_or_missing_row_set_silently_zero',not d['missing_or_partial_rows_not_zero'])
+calc=np.sum([r['mass_range_kg'] for r in rows],0);err=np.max(np.abs(calc-d['candidate_functional_same_scope_not_whole_mass_range_kg']));ck('member_ledger_sum_equals_report',err<1e-9,err)
+ck('source_old_shoulders_anchors_absorbed_once',len(d['G11_native_anchor_rows_absorbed_into_new_frame'])==2)
+ck('global_fluid_once_25p5_plus12p481996',abs(d['fluid_global_once_mass_kg']-37.98199632883243)<1e-9,abs(d['fluid_global_once_mass_kg']-37.98199632883243))
+upper=[r for r in rows if r['body']!='pelvis'];origin=np.array([.2475,0,1.91])
+for k in range(3):
+ F=np.zeros(3);M=np.zeros(3);mass=0;mc=np.zeros(3)
+ for r in upper:
+  m=r['mass_range_kg'][k];c=np.asarray(r['COM_proxy_m']);f=np.array([0,0,-9.81*m]);F+=f;M+=np.cross(c-origin,f);mass+=m;mc+=m*c
+ w=d['source_declared_body_waist_gravity'][k];err=np.max(np.abs(np.r_[F,M]-w['gravity_wrench_force_then_moment_SI']));ck('waist_direct_6D_'+str(k),err<1e-8,err)
+ err=np.max(np.abs(np.cross(mc/mass-origin,F)-M));ck('COM_resultant_equivalence_'+str(k),err<1e-8,err)
+for i,r in enumerate(b['section_sensitivity_rows']):
+ bb,hh=r['outer_b_h_m'];tt=r['wall_m'];A=2*tt*(bb+hh-2*tt);err=abs(A-r['A_m2']);ck('section_area_algebra_'+str(i),err<1e-14,err)
+ Am=(bb-tt)*(hh-tt);J=2*tt*Am**2/(bb+hh-2*tt);err=abs(J-r['J_Bredt_thinwall_approx_m4']);ck('Bredt_algebra_'+str(i),err<1e-14,err)
+ for k,I in enumerate([r['Ix_m4'],r['Iy_m4']]):ck('positive_I_'+str(i)+'_'+str(k),I>0)
+for i,r in enumerate(eq):
+ ts=r['Al_thickness_for_each_EI_m'];bb,hh=r['b_h_m'];target=r['target_Al_Ix_Iy_m4']
+ for j,t in enumerate(ts):
+  if t is None:continue
+  I=((bb*hh**3-(bb-2*t)*(hh-2*t)**3)/12,(hh*bb**3-(hh-2*t)*(bb-2*t)**3)/12)[j];e=abs(I-target[j]);ck('equal_EI_root_'+str(i)+'_'+str(j),e<1e-13,e)
+source_checks=[]
+for p,h in d['source_hashes'].items():
+ actual=hashlib.sha256(Path(p).read_bytes()).hexdigest();source_checks.append({'path':p,'expected':h,'actual':actual,'match':h==actual})
+out={'checks':checks,'check_count':len(checks),'fail_count':sum(not x['pass'] for x in checks),'duplicate_member_rows':dups,'source_hash_checks':source_checks,'source_hash_fail_count':sum(not x['match'] for x in source_checks),'arithmetic_only_not_resource_strength_or_Bevy_acceptance':True}
+(O/'arithmetic_verification.json').write_text(json.dumps(out,indent=2)+'\n');print({k:out[k] for k in ['check_count','fail_count','source_hash_fail_count','duplicate_member_rows']})

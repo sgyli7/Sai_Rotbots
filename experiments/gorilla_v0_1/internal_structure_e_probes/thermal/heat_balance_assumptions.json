@@ -1,0 +1,1619 @@
+{
+  "checked_utc": "2026-10-02 19:11 UTC",
+  "scope": "Independent conditional heat assumptions; no layout/source edit/model/evaluator/thermal test.",
+  "sources": [
+    {
+      "file": ".scratch/gorilla_internal_d_system/tecnotion_torque_brochure_2_5.pdf",
+      "url": "https://www.tecnotion.com/wp-content/uploads/2022/05/Torque_Brochure_EN_2-5.pdf",
+      "PDF_page": 20,
+      "printed_page": 20,
+      "sha256": "649c4d4d8a779346f7590b7b91eaf6e3856004a90397804e2d4cce3a03a13dd4",
+      "original_publication_date_not_inferred_from_URL": true
+    },
+    {
+      "file": ".scratch/gorilla_internal_c_drive/qtl210_specsheet_2_4.pdf",
+      "url": "https://www.tecnotion.com/wp-content/uploads/2025/11/QTL210_Specsheet_EN_2.4.pdf",
+      "PDF_page": 1,
+      "printed_page": null,
+      "sha256": "076168597ba2aac09287e4b0f5e2d749c2e52303b6b8b342d7fddc6a7f10c289",
+      "original_publication_date_not_inferred_from_URL": true
+    },
+    {
+      "file": ".scratch/gorilla_internal_d_sources/emrax188_v1_6.pdf",
+      "url": "https://emrax.com/wp-content/uploads/2025/03/EMRAX_188_datasheet_v1.6.pdf",
+      "PDF_page": 2,
+      "printed_page": null,
+      "sha256": "cfa72eec662495d12eec6cafb61413b71c428cf0083019c52620a009e39631fa",
+      "original_publication_date_not_inferred_from_URL": true
+    }
+  ],
+  "D_hashes": {
+    "robots/gorilla_v0_1/configs/internal_structure_d_system_spec.json": "d988ef1a248405f47f34510a4f6191f4c6ea505cc7502c62905670cab81f6ad1",
+    "robots/gorilla_v0_1/evidence/internal_structure_d_power.json": "607c30deacc34da907f9ec478a82171961f5abfc1d0dcc8e10277f0051aa211b"
+  },
+  "facts": {
+    "QTL21065N": {
+      "count": 5,
+      "Pc_W": 690,
+      "Rth_K_W": 0.116,
+      "Tc_Nm": 65,
+      "Ts_Nm": 46,
+      "Ic_Arms": 7.45,
+      "Is_Arms": 5.27,
+      "Rph25C_ohm_ex_cables": 3.18
+    },
+    "QTR16034Z": {
+      "count": 18,
+      "Pc_W": 450,
+      "Rth_K_W": 0.17,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "Ic_Arms": 16.4,
+      "Rph25C_ohm_ex_cables": 0.43,
+      "Ts_not_published_in_printed_page20": true
+    },
+    "motor_conditions": "coils100C,mount20C;QTL footnote stall or continuous,QTR continuous current; all spec\u00b110%; final bus/speed curve unassigned",
+    "EMRAX_LC": {
+      "count": 2,
+      "each_min_L_min": 6,
+      "inlet_max_C": 50,
+      "needs_air_circulation_and_must_not_be_completely_enclosed": true,
+      "peak_efficiency96percent_not_operating_efficiency": true
+    }
+  },
+  "bare_motor_catalog_Pc_sum_W": 11550,
+  "Pc_sum_not_simultaneous_task_demand_or_reachable_complete_joint_upper_bound": true,
+  "Pc_semantics": {
+    "source_label": "continuous power loss,coils100C",
+    "not_source_complete_highspeed_motor_joint_loss_model": true,
+    "conditional_hot_copper_checks_W": {
+      "QTR": 449.22438839999995,
+      "QTL": 685.5621622875001
+    },
+    "alpha_copper_own": 0.00393,
+    "classification": "Numerically consistent hot3I\u00b2R winding copper reference; no exhaustive iron/rotor/gear/cable/drive list supplied. Keep non-copper losses unknown.",
+    "manual_lookup": "old official2.2 directURL404,current2.3landingnoPDFlink; not downloaded or used for parameters"
+  },
+  "gear_conditioned_terms": [
+    {
+      "motor_id": "ds_waist_yaw_motor",
+      "gear_id": "ds_waist_yaw_gear",
+      "gear_catalog_rated_Nm": 1236,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.55,
+      "Ti_Nm": 22.47272727272727,
+      "Tc_Nm": 65,
+      "Ts_Nm": 46,
+      "I_linear_Kt_Arms": 2.5830721003134793,
+      "Ic_Arms": 7.45,
+      "Pc_W": 690,
+      "conditional_copper_W": 82.47720592694017
+    },
+    {
+      "motor_id": "ds_waist_yaw_motor",
+      "gear_id": "ds_waist_yaw_gear",
+      "gear_catalog_rated_Nm": 1236,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.7,
+      "Ti_Nm": 17.65714285714286,
+      "Tc_Nm": 65,
+      "Ts_Nm": 46,
+      "I_linear_Kt_Arms": 2.0295566502463056,
+      "Ic_Arms": 7.45,
+      "Pc_W": 690,
+      "conditional_copper_W": 50.91705059775391
+    },
+    {
+      "motor_id": "ds_waist_yaw_motor",
+      "gear_id": "ds_waist_yaw_gear",
+      "gear_catalog_rated_Nm": 1236,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.85,
+      "Ti_Nm": 14.541176470588235,
+      "Tc_Nm": 65,
+      "Ts_Nm": 46,
+      "I_linear_Kt_Arms": 1.671399594320487,
+      "Ic_Arms": 7.45,
+      "Pc_W": 690,
+      "conditional_copper_W": 34.53197895210991
+    },
+    {
+      "motor_id": "ds_waist_pitch_motor",
+      "gear_id": "ds_waist_pitch_gear",
+      "gear_catalog_rated_Nm": 611,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.55,
+      "Ti_Nm": 11.10909090909091,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 11.945259042033236,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 237.23933261523695
+    },
+    {
+      "motor_id": "ds_waist_pitch_motor",
+      "gear_id": "ds_waist_pitch_gear",
+      "gear_catalog_rated_Nm": 611,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.7,
+      "Ti_Nm": 8.72857142857143,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 9.385560675883257,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 146.45897574716167
+    },
+    {
+      "motor_id": "ds_waist_pitch_motor",
+      "gear_id": "ds_waist_pitch_gear",
+      "gear_catalog_rated_Nm": 611,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.85,
+      "Ti_Nm": 7.188235294117647,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 7.729285262492094,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 99.32857870741756
+    },
+    {
+      "motor_id": "ds_waist_roll_motor",
+      "gear_id": "ds_waist_roll_gear",
+      "gear_catalog_rated_Nm": 611,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.55,
+      "Ti_Nm": 11.10909090909091,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 11.945259042033236,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 237.23933261523695
+    },
+    {
+      "motor_id": "ds_waist_roll_motor",
+      "gear_id": "ds_waist_roll_gear",
+      "gear_catalog_rated_Nm": 611,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.7,
+      "Ti_Nm": 8.72857142857143,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 9.385560675883257,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 146.45897574716167
+    },
+    {
+      "motor_id": "ds_waist_roll_motor",
+      "gear_id": "ds_waist_roll_gear",
+      "gear_catalog_rated_Nm": 611,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.85,
+      "Ti_Nm": 7.188235294117647,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 7.729285262492094,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 99.32857870741756
+    },
+    {
+      "motor_id": "ds_left_shoulder_pitch_motor",
+      "gear_id": "ds_left_shoulder_pitch_gear",
+      "gear_catalog_rated_Nm": 1236,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.55,
+      "Ti_Nm": 22.47272727272727,
+      "Tc_Nm": 65,
+      "Ts_Nm": 46,
+      "I_linear_Kt_Arms": 2.5830721003134793,
+      "Ic_Arms": 7.45,
+      "Pc_W": 690,
+      "conditional_copper_W": 82.47720592694017
+    },
+    {
+      "motor_id": "ds_left_shoulder_pitch_motor",
+      "gear_id": "ds_left_shoulder_pitch_gear",
+      "gear_catalog_rated_Nm": 1236,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.7,
+      "Ti_Nm": 17.65714285714286,
+      "Tc_Nm": 65,
+      "Ts_Nm": 46,
+      "I_linear_Kt_Arms": 2.0295566502463056,
+      "Ic_Arms": 7.45,
+      "Pc_W": 690,
+      "conditional_copper_W": 50.91705059775391
+    },
+    {
+      "motor_id": "ds_left_shoulder_pitch_motor",
+      "gear_id": "ds_left_shoulder_pitch_gear",
+      "gear_catalog_rated_Nm": 1236,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.85,
+      "Ti_Nm": 14.541176470588235,
+      "Tc_Nm": 65,
+      "Ts_Nm": 46,
+      "I_linear_Kt_Arms": 1.671399594320487,
+      "Ic_Arms": 7.45,
+      "Pc_W": 690,
+      "conditional_copper_W": 34.53197895210991
+    },
+    {
+      "motor_id": "ds_left_shoulder_roll_motor",
+      "gear_id": "ds_left_shoulder_roll_gear",
+      "gear_catalog_rated_Nm": 611,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.55,
+      "Ti_Nm": 11.10909090909091,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 11.945259042033236,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 237.23933261523695
+    },
+    {
+      "motor_id": "ds_left_shoulder_roll_motor",
+      "gear_id": "ds_left_shoulder_roll_gear",
+      "gear_catalog_rated_Nm": 611,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.7,
+      "Ti_Nm": 8.72857142857143,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 9.385560675883257,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 146.45897574716167
+    },
+    {
+      "motor_id": "ds_left_shoulder_roll_motor",
+      "gear_id": "ds_left_shoulder_roll_gear",
+      "gear_catalog_rated_Nm": 611,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.85,
+      "Ti_Nm": 7.188235294117647,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 7.729285262492094,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 99.32857870741756
+    },
+    {
+      "motor_id": "ds_left_shoulder_yaw_motor",
+      "gear_id": "ds_left_shoulder_yaw_gear",
+      "gear_catalog_rated_Nm": 611,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.55,
+      "Ti_Nm": 11.10909090909091,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 11.945259042033236,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 237.23933261523695
+    },
+    {
+      "motor_id": "ds_left_shoulder_yaw_motor",
+      "gear_id": "ds_left_shoulder_yaw_gear",
+      "gear_catalog_rated_Nm": 611,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.7,
+      "Ti_Nm": 8.72857142857143,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 9.385560675883257,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 146.45897574716167
+    },
+    {
+      "motor_id": "ds_left_shoulder_yaw_motor",
+      "gear_id": "ds_left_shoulder_yaw_gear",
+      "gear_catalog_rated_Nm": 611,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.85,
+      "Ti_Nm": 7.188235294117647,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 7.729285262492094,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 99.32857870741756
+    },
+    {
+      "motor_id": "ds_left_elbow_pitch_motor",
+      "gear_id": "ds_left_elbow_pitch_gear",
+      "gear_catalog_rated_Nm": 611,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.55,
+      "Ti_Nm": 11.10909090909091,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 11.945259042033236,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 237.23933261523695
+    },
+    {
+      "motor_id": "ds_left_elbow_pitch_motor",
+      "gear_id": "ds_left_elbow_pitch_gear",
+      "gear_catalog_rated_Nm": 611,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.7,
+      "Ti_Nm": 8.72857142857143,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 9.385560675883257,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 146.45897574716167
+    },
+    {
+      "motor_id": "ds_left_elbow_pitch_motor",
+      "gear_id": "ds_left_elbow_pitch_gear",
+      "gear_catalog_rated_Nm": 611,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.85,
+      "Ti_Nm": 7.188235294117647,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 7.729285262492094,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 99.32857870741756
+    },
+    {
+      "motor_id": "ds_left_forearm_roll_motor",
+      "gear_id": "ds_left_forearm_roll_gear",
+      "gear_catalog_rated_Nm": 178,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.55,
+      "Ti_Nm": 3.2363636363636363,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 3.4799608993157376,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 20.134658951897077
+    },
+    {
+      "motor_id": "ds_left_forearm_roll_motor",
+      "gear_id": "ds_left_forearm_roll_gear",
+      "gear_catalog_rated_Nm": 178,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.7,
+      "Ti_Nm": 2.542857142857143,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 2.7342549923195087,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 12.430070067242585
+    },
+    {
+      "motor_id": "ds_left_forearm_roll_motor",
+      "gear_id": "ds_left_forearm_roll_gear",
+      "gear_catalog_rated_Nm": 178,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.85,
+      "Ti_Nm": 2.0941176470588236,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 2.2517394054395954,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 8.430082121728534
+    },
+    {
+      "motor_id": "ds_left_wrist_pitch_motor",
+      "gear_id": "ds_left_wrist_pitch_gear",
+      "gear_catalog_rated_Nm": 178,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.55,
+      "Ti_Nm": 3.2363636363636363,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 3.4799608993157376,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 20.134658951897077
+    },
+    {
+      "motor_id": "ds_left_wrist_pitch_motor",
+      "gear_id": "ds_left_wrist_pitch_gear",
+      "gear_catalog_rated_Nm": 178,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.7,
+      "Ti_Nm": 2.542857142857143,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 2.7342549923195087,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 12.430070067242585
+    },
+    {
+      "motor_id": "ds_left_wrist_pitch_motor",
+      "gear_id": "ds_left_wrist_pitch_gear",
+      "gear_catalog_rated_Nm": 178,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.85,
+      "Ti_Nm": 2.0941176470588236,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 2.2517394054395954,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 8.430082121728534
+    },
+    {
+      "motor_id": "ds_left_wrist_yaw_motor",
+      "gear_id": "ds_left_wrist_yaw_gear",
+      "gear_catalog_rated_Nm": 178,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.55,
+      "Ti_Nm": 3.2363636363636363,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 3.4799608993157376,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 20.134658951897077
+    },
+    {
+      "motor_id": "ds_left_wrist_yaw_motor",
+      "gear_id": "ds_left_wrist_yaw_gear",
+      "gear_catalog_rated_Nm": 178,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.7,
+      "Ti_Nm": 2.542857142857143,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 2.7342549923195087,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 12.430070067242585
+    },
+    {
+      "motor_id": "ds_left_wrist_yaw_motor",
+      "gear_id": "ds_left_wrist_yaw_gear",
+      "gear_catalog_rated_Nm": 178,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.85,
+      "Ti_Nm": 2.0941176470588236,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 2.2517394054395954,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 8.430082121728534
+    },
+    {
+      "motor_id": "ds_left_hip_yaw_motor",
+      "gear_id": "ds_left_hip_yaw_gear",
+      "gear_catalog_rated_Nm": 1236,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.55,
+      "Ti_Nm": 22.47272727272727,
+      "Tc_Nm": 65,
+      "Ts_Nm": 46,
+      "I_linear_Kt_Arms": 2.5830721003134793,
+      "Ic_Arms": 7.45,
+      "Pc_W": 690,
+      "conditional_copper_W": 82.47720592694017
+    },
+    {
+      "motor_id": "ds_left_hip_yaw_motor",
+      "gear_id": "ds_left_hip_yaw_gear",
+      "gear_catalog_rated_Nm": 1236,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.7,
+      "Ti_Nm": 17.65714285714286,
+      "Tc_Nm": 65,
+      "Ts_Nm": 46,
+      "I_linear_Kt_Arms": 2.0295566502463056,
+      "Ic_Arms": 7.45,
+      "Pc_W": 690,
+      "conditional_copper_W": 50.91705059775391
+    },
+    {
+      "motor_id": "ds_left_hip_yaw_motor",
+      "gear_id": "ds_left_hip_yaw_gear",
+      "gear_catalog_rated_Nm": 1236,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.85,
+      "Ti_Nm": 14.541176470588235,
+      "Tc_Nm": 65,
+      "Ts_Nm": 46,
+      "I_linear_Kt_Arms": 1.671399594320487,
+      "Ic_Arms": 7.45,
+      "Pc_W": 690,
+      "conditional_copper_W": 34.53197895210991
+    },
+    {
+      "motor_id": "ds_left_hip_roll_motor",
+      "gear_id": "ds_left_hip_roll_gear",
+      "gear_catalog_rated_Nm": 611,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.55,
+      "Ti_Nm": 11.10909090909091,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 11.945259042033236,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 237.23933261523695
+    },
+    {
+      "motor_id": "ds_left_hip_roll_motor",
+      "gear_id": "ds_left_hip_roll_gear",
+      "gear_catalog_rated_Nm": 611,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.7,
+      "Ti_Nm": 8.72857142857143,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 9.385560675883257,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 146.45897574716167
+    },
+    {
+      "motor_id": "ds_left_hip_roll_motor",
+      "gear_id": "ds_left_hip_roll_gear",
+      "gear_catalog_rated_Nm": 611,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.85,
+      "Ti_Nm": 7.188235294117647,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 7.729285262492094,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 99.32857870741756
+    },
+    {
+      "motor_id": "ds_left_foot_roll_motor",
+      "gear_id": "ds_left_foot_roll_gear",
+      "gear_catalog_rated_Nm": 178,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.55,
+      "Ti_Nm": 3.2363636363636363,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 3.4799608993157376,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 20.134658951897077
+    },
+    {
+      "motor_id": "ds_left_foot_roll_motor",
+      "gear_id": "ds_left_foot_roll_gear",
+      "gear_catalog_rated_Nm": 178,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.7,
+      "Ti_Nm": 2.542857142857143,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 2.7342549923195087,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 12.430070067242585
+    },
+    {
+      "motor_id": "ds_left_foot_roll_motor",
+      "gear_id": "ds_left_foot_roll_gear",
+      "gear_catalog_rated_Nm": 178,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.85,
+      "Ti_Nm": 2.0941176470588236,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 2.2517394054395954,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 8.430082121728534
+    },
+    {
+      "motor_id": "ds_right_shoulder_pitch_motor",
+      "gear_id": "ds_right_shoulder_pitch_gear",
+      "gear_catalog_rated_Nm": 1236,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.55,
+      "Ti_Nm": 22.47272727272727,
+      "Tc_Nm": 65,
+      "Ts_Nm": 46,
+      "I_linear_Kt_Arms": 2.5830721003134793,
+      "Ic_Arms": 7.45,
+      "Pc_W": 690,
+      "conditional_copper_W": 82.47720592694017
+    },
+    {
+      "motor_id": "ds_right_shoulder_pitch_motor",
+      "gear_id": "ds_right_shoulder_pitch_gear",
+      "gear_catalog_rated_Nm": 1236,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.7,
+      "Ti_Nm": 17.65714285714286,
+      "Tc_Nm": 65,
+      "Ts_Nm": 46,
+      "I_linear_Kt_Arms": 2.0295566502463056,
+      "Ic_Arms": 7.45,
+      "Pc_W": 690,
+      "conditional_copper_W": 50.91705059775391
+    },
+    {
+      "motor_id": "ds_right_shoulder_pitch_motor",
+      "gear_id": "ds_right_shoulder_pitch_gear",
+      "gear_catalog_rated_Nm": 1236,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.85,
+      "Ti_Nm": 14.541176470588235,
+      "Tc_Nm": 65,
+      "Ts_Nm": 46,
+      "I_linear_Kt_Arms": 1.671399594320487,
+      "Ic_Arms": 7.45,
+      "Pc_W": 690,
+      "conditional_copper_W": 34.53197895210991
+    },
+    {
+      "motor_id": "ds_right_shoulder_roll_motor",
+      "gear_id": "ds_right_shoulder_roll_gear",
+      "gear_catalog_rated_Nm": 611,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.55,
+      "Ti_Nm": 11.10909090909091,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 11.945259042033236,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 237.23933261523695
+    },
+    {
+      "motor_id": "ds_right_shoulder_roll_motor",
+      "gear_id": "ds_right_shoulder_roll_gear",
+      "gear_catalog_rated_Nm": 611,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.7,
+      "Ti_Nm": 8.72857142857143,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 9.385560675883257,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 146.45897574716167
+    },
+    {
+      "motor_id": "ds_right_shoulder_roll_motor",
+      "gear_id": "ds_right_shoulder_roll_gear",
+      "gear_catalog_rated_Nm": 611,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.85,
+      "Ti_Nm": 7.188235294117647,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 7.729285262492094,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 99.32857870741756
+    },
+    {
+      "motor_id": "ds_right_shoulder_yaw_motor",
+      "gear_id": "ds_right_shoulder_yaw_gear",
+      "gear_catalog_rated_Nm": 611,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.55,
+      "Ti_Nm": 11.10909090909091,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 11.945259042033236,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 237.23933261523695
+    },
+    {
+      "motor_id": "ds_right_shoulder_yaw_motor",
+      "gear_id": "ds_right_shoulder_yaw_gear",
+      "gear_catalog_rated_Nm": 611,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.7,
+      "Ti_Nm": 8.72857142857143,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 9.385560675883257,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 146.45897574716167
+    },
+    {
+      "motor_id": "ds_right_shoulder_yaw_motor",
+      "gear_id": "ds_right_shoulder_yaw_gear",
+      "gear_catalog_rated_Nm": 611,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.85,
+      "Ti_Nm": 7.188235294117647,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 7.729285262492094,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 99.32857870741756
+    },
+    {
+      "motor_id": "ds_right_elbow_pitch_motor",
+      "gear_id": "ds_right_elbow_pitch_gear",
+      "gear_catalog_rated_Nm": 611,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.55,
+      "Ti_Nm": 11.10909090909091,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 11.945259042033236,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 237.23933261523695
+    },
+    {
+      "motor_id": "ds_right_elbow_pitch_motor",
+      "gear_id": "ds_right_elbow_pitch_gear",
+      "gear_catalog_rated_Nm": 611,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.7,
+      "Ti_Nm": 8.72857142857143,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 9.385560675883257,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 146.45897574716167
+    },
+    {
+      "motor_id": "ds_right_elbow_pitch_motor",
+      "gear_id": "ds_right_elbow_pitch_gear",
+      "gear_catalog_rated_Nm": 611,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.85,
+      "Ti_Nm": 7.188235294117647,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 7.729285262492094,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 99.32857870741756
+    },
+    {
+      "motor_id": "ds_right_forearm_roll_motor",
+      "gear_id": "ds_right_forearm_roll_gear",
+      "gear_catalog_rated_Nm": 178,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.55,
+      "Ti_Nm": 3.2363636363636363,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 3.4799608993157376,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 20.134658951897077
+    },
+    {
+      "motor_id": "ds_right_forearm_roll_motor",
+      "gear_id": "ds_right_forearm_roll_gear",
+      "gear_catalog_rated_Nm": 178,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.7,
+      "Ti_Nm": 2.542857142857143,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 2.7342549923195087,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 12.430070067242585
+    },
+    {
+      "motor_id": "ds_right_forearm_roll_motor",
+      "gear_id": "ds_right_forearm_roll_gear",
+      "gear_catalog_rated_Nm": 178,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.85,
+      "Ti_Nm": 2.0941176470588236,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 2.2517394054395954,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 8.430082121728534
+    },
+    {
+      "motor_id": "ds_right_wrist_pitch_motor",
+      "gear_id": "ds_right_wrist_pitch_gear",
+      "gear_catalog_rated_Nm": 178,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.55,
+      "Ti_Nm": 3.2363636363636363,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 3.4799608993157376,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 20.134658951897077
+    },
+    {
+      "motor_id": "ds_right_wrist_pitch_motor",
+      "gear_id": "ds_right_wrist_pitch_gear",
+      "gear_catalog_rated_Nm": 178,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.7,
+      "Ti_Nm": 2.542857142857143,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 2.7342549923195087,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 12.430070067242585
+    },
+    {
+      "motor_id": "ds_right_wrist_pitch_motor",
+      "gear_id": "ds_right_wrist_pitch_gear",
+      "gear_catalog_rated_Nm": 178,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.85,
+      "Ti_Nm": 2.0941176470588236,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 2.2517394054395954,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 8.430082121728534
+    },
+    {
+      "motor_id": "ds_right_wrist_yaw_motor",
+      "gear_id": "ds_right_wrist_yaw_gear",
+      "gear_catalog_rated_Nm": 178,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.55,
+      "Ti_Nm": 3.2363636363636363,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 3.4799608993157376,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 20.134658951897077
+    },
+    {
+      "motor_id": "ds_right_wrist_yaw_motor",
+      "gear_id": "ds_right_wrist_yaw_gear",
+      "gear_catalog_rated_Nm": 178,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.7,
+      "Ti_Nm": 2.542857142857143,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 2.7342549923195087,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 12.430070067242585
+    },
+    {
+      "motor_id": "ds_right_wrist_yaw_motor",
+      "gear_id": "ds_right_wrist_yaw_gear",
+      "gear_catalog_rated_Nm": 178,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.85,
+      "Ti_Nm": 2.0941176470588236,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 2.2517394054395954,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 8.430082121728534
+    },
+    {
+      "motor_id": "ds_right_hip_yaw_motor",
+      "gear_id": "ds_right_hip_yaw_gear",
+      "gear_catalog_rated_Nm": 1236,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.55,
+      "Ti_Nm": 22.47272727272727,
+      "Tc_Nm": 65,
+      "Ts_Nm": 46,
+      "I_linear_Kt_Arms": 2.5830721003134793,
+      "Ic_Arms": 7.45,
+      "Pc_W": 690,
+      "conditional_copper_W": 82.47720592694017
+    },
+    {
+      "motor_id": "ds_right_hip_yaw_motor",
+      "gear_id": "ds_right_hip_yaw_gear",
+      "gear_catalog_rated_Nm": 1236,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.7,
+      "Ti_Nm": 17.65714285714286,
+      "Tc_Nm": 65,
+      "Ts_Nm": 46,
+      "I_linear_Kt_Arms": 2.0295566502463056,
+      "Ic_Arms": 7.45,
+      "Pc_W": 690,
+      "conditional_copper_W": 50.91705059775391
+    },
+    {
+      "motor_id": "ds_right_hip_yaw_motor",
+      "gear_id": "ds_right_hip_yaw_gear",
+      "gear_catalog_rated_Nm": 1236,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.85,
+      "Ti_Nm": 14.541176470588235,
+      "Tc_Nm": 65,
+      "Ts_Nm": 46,
+      "I_linear_Kt_Arms": 1.671399594320487,
+      "Ic_Arms": 7.45,
+      "Pc_W": 690,
+      "conditional_copper_W": 34.53197895210991
+    },
+    {
+      "motor_id": "ds_right_hip_roll_motor",
+      "gear_id": "ds_right_hip_roll_gear",
+      "gear_catalog_rated_Nm": 611,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.55,
+      "Ti_Nm": 11.10909090909091,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 11.945259042033236,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 237.23933261523695
+    },
+    {
+      "motor_id": "ds_right_hip_roll_motor",
+      "gear_id": "ds_right_hip_roll_gear",
+      "gear_catalog_rated_Nm": 611,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.7,
+      "Ti_Nm": 8.72857142857143,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 9.385560675883257,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 146.45897574716167
+    },
+    {
+      "motor_id": "ds_right_hip_roll_motor",
+      "gear_id": "ds_right_hip_roll_gear",
+      "gear_catalog_rated_Nm": 611,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.85,
+      "Ti_Nm": 7.188235294117647,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 7.729285262492094,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 99.32857870741756
+    },
+    {
+      "motor_id": "ds_right_foot_roll_motor",
+      "gear_id": "ds_right_foot_roll_gear",
+      "gear_catalog_rated_Nm": 178,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.55,
+      "Ti_Nm": 3.2363636363636363,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 3.4799608993157376,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 20.134658951897077
+    },
+    {
+      "motor_id": "ds_right_foot_roll_motor",
+      "gear_id": "ds_right_foot_roll_gear",
+      "gear_catalog_rated_Nm": 178,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.7,
+      "Ti_Nm": 2.542857142857143,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 2.7342549923195087,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 12.430070067242585
+    },
+    {
+      "motor_id": "ds_right_foot_roll_motor",
+      "gear_id": "ds_right_foot_roll_gear",
+      "gear_catalog_rated_Nm": 178,
+      "ratio": 100,
+      "eta_rotation_only_own": 0.85,
+      "Ti_Nm": 2.0941176470588236,
+      "Tc_Nm": 15.3,
+      "Ts_Nm": null,
+      "I_linear_Kt_Arms": 2.2517394054395954,
+      "Ic_Arms": 16.4,
+      "Pc_W": 450,
+      "conditional_copper_W": 8.430082121728534
+    }
+  ],
+  "conditional_copper_sum_by_eta_W": {
+    "0.55": 2945.856627402247,
+    "0.7": 1818.615570998327,
+    "0.85": 1233.3863388085535
+  },
+  "torque_gear_counts": {
+    "CSG65_1236Nm_QTL": 5,
+    "CSG50_611Nm_QTR": 10,
+    "CSG32_178Nm_QTR": 8
+  },
+  "copper_formula_scope": "Pc*(Ti/Tc)^2 only own linearKt<=Ic/hotR/commutation assumption; gear rated source lifetime/speed conditions remain unqualified; eta not stall holding efficiency",
+  "own_aux_sensitivities": {
+    "joint_driver_23_W": [
+      345,
+      920
+    ],
+    "pump_inverters_2_W": [
+      200,
+      600
+    ],
+    "compute_network_screen_W": [
+      100,
+      500
+    ],
+    "coolant_pump_fans_aux_W": [
+      100,
+      400
+    ],
+    "unclosed_iron_cable_gear_bearing_W": [
+      300,
+      2000
+    ]
+  },
+  "scenarios": [
+    {
+      "mode": "matched_speed_no_recovery",
+      "gear_rated_output_torque_fraction_own": 0.25,
+      "23_copper_W": [
+        77.0866461755346,
+        184.11603921264043
+      ],
+      "oil_heat_if_all_dissipated_W": [
+        12552.969163420925,
+        19019.787787739362
+      ],
+      "2_EMRAX_loss_eta85_to96percent_own_W": [
+        467.1953672725021,
+        2258.0570553848784
+      ],
+      "aux_own_W": [
+        1045,
+        4420
+      ],
+      "total_conditional_heat_W": [
+        14142.251176868962,
+        25881.96088233688
+      ],
+      "not_actual_task_or_verified_upper_bound": true
+    },
+    {
+      "mode": "matched_speed_no_recovery",
+      "gear_rated_output_torque_fraction_own": 0.5,
+      "23_copper_W": [
+        308.3465847021384,
+        736.4641568505617
+      ],
+      "oil_heat_if_all_dissipated_W": [
+        12552.969163420925,
+        19019.787787739362
+      ],
+      "2_EMRAX_loss_eta85_to96percent_own_W": [
+        467.1953672725021,
+        2258.0570553848784
+      ],
+      "aux_own_W": [
+        1045,
+        4420
+      ],
+      "total_conditional_heat_W": [
+        14373.511115395566,
+        26434.3089999748
+      ],
+      "not_actual_task_or_verified_upper_bound": true
+    },
+    {
+      "mode": "matched_speed_no_recovery",
+      "gear_rated_output_torque_fraction_own": 1,
+      "23_copper_W": [
+        1233.3863388085535,
+        2945.856627402247
+      ],
+      "oil_heat_if_all_dissipated_W": [
+        12552.969163420925,
+        19019.787787739362
+      ],
+      "2_EMRAX_loss_eta85_to96percent_own_W": [
+        467.1953672725021,
+        2258.0570553848784
+      ],
+      "aux_own_W": [
+        1045,
+        4420
+      ],
+      "total_conditional_heat_W": [
+        15298.55086950198,
+        28643.70147052649
+      ],
+      "not_actual_task_or_verified_upper_bound": true
+    },
+    {
+      "mode": "both3000rpm_full21MPa_no_recovery_only_if_this_mode",
+      "gear_rated_output_torque_fraction_own": 0.25,
+      "23_copper_W": [
+        77.0866461755346,
+        184.11603921264043
+      ],
+      "oil_heat_if_all_dissipated_W": [
+        27006.94701554756,
+        33400.601728793685
+      ],
+      "2_EMRAX_loss_eta85_to96percent_own_W": [
+        1069.4444444444462,
+        4795.847750865053
+      ],
+      "aux_own_W": [
+        1045,
+        4420
+      ],
+      "total_conditional_heat_W": [
+        29198.478106167542,
+        42800.56551887138
+      ],
+      "not_actual_task_or_verified_upper_bound": true
+    },
+    {
+      "mode": "both3000rpm_full21MPa_no_recovery_only_if_this_mode",
+      "gear_rated_output_torque_fraction_own": 0.5,
+      "23_copper_W": [
+        308.3465847021384,
+        736.4641568505617
+      ],
+      "oil_heat_if_all_dissipated_W": [
+        27006.94701554756,
+        33400.601728793685
+      ],
+      "2_EMRAX_loss_eta85_to96percent_own_W": [
+        1069.4444444444462,
+        4795.847750865053
+      ],
+      "aux_own_W": [
+        1045,
+        4420
+      ],
+      "total_conditional_heat_W": [
+        29429.738044694146,
+        43352.9136365093
+      ],
+      "not_actual_task_or_verified_upper_bound": true
+    },
+    {
+      "mode": "both3000rpm_full21MPa_no_recovery_only_if_this_mode",
+      "gear_rated_output_torque_fraction_own": 1,
+      "23_copper_W": [
+        1233.3863388085535,
+        2945.856627402247
+      ],
+      "oil_heat_if_all_dissipated_W": [
+        27006.94701554756,
+        33400.601728793685
+      ],
+      "2_EMRAX_loss_eta85_to96percent_own_W": [
+        1069.4444444444462,
+        4795.847750865053
+      ],
+      "aux_own_W": [
+        1045,
+        4420
+      ],
+      "total_conditional_heat_W": [
+        30354.777798800562,
+        45562.306107060984
+      ],
+      "not_actual_task_or_verified_upper_bound": true
+    }
+  ],
+  "pump_boundaries": {
+    "Qmax_L_min": 27.96764952883841,
+    "pQ_W": 9788.677335093445,
+    "negative_work_W_maxflow_cases": [
+      1340.2803488808956,
+      6224.131140558389
+    ],
+    "etaV_own": [
+      0.9,
+      0.97
+    ],
+    "etaM_own": [
+      0.85,
+      0.9
+    ],
+    "EMRAXeta_own": [
+      0.85,
+      0.96
+    ],
+    "two_pump_match_rpm_maxflow": [
+      1310.5740172838994,
+      1412.5075519615361
+    ],
+    "two_pump_match_rpm_minflow": [
+      179.77251224989527,
+      193.75481875822044
+    ],
+    "source_speed_rpm": [
+      700,
+      3500
+    ],
+    "both3000flow_sensitivity_L_min": [
+      59.4,
+      64.02
+    ],
+    "extra_L_min_atQmax": [
+      31.432350471161588,
+      36.05235047116159
+    ],
+    "idle_unload_fullflow_W_if_pressure0_2_to1MPa_own": [
+      198,
+      1067
+    ],
+    "holding_leak_pQ_W_if0_1_to2Lmin_at21MPa_own": [
+      35,
+      700
+    ],
+    "full_pressure_idle_not_default": true
+  },
+  "liquid_own_properties_SI": [
+    {
+      "id": "water_own",
+      "rho": 1000,
+      "cp": 4180
+    },
+    {
+      "id": "glycol_mix_own_unselected",
+      "rho": 1040,
+      "cp": 3500
+    }
+  ],
+  "liquid_formula": "P=rho cp Q_m3_s deltaT; Q_L_min=60000P/(rho cp deltaT)",
+  "liquid_transport_table": [
+    {
+      "fluid": "water_own",
+      "H_W": 11550,
+      "deltaT_K": 5,
+      "Q_L_min": 33.1578947368421
+    },
+    {
+      "fluid": "water_own",
+      "H_W": 11550,
+      "deltaT_K": 10,
+      "Q_L_min": 16.57894736842105
+    },
+    {
+      "fluid": "water_own",
+      "H_W": 11550,
+      "deltaT_K": 15,
+      "Q_L_min": 11.052631578947368
+    },
+    {
+      "fluid": "water_own",
+      "H_W": 30000,
+      "deltaT_K": 5,
+      "Q_L_min": 86.1244019138756
+    },
+    {
+      "fluid": "water_own",
+      "H_W": 30000,
+      "deltaT_K": 10,
+      "Q_L_min": 43.0622009569378
+    },
+    {
+      "fluid": "water_own",
+      "H_W": 30000,
+      "deltaT_K": 15,
+      "Q_L_min": 28.70813397129187
+    },
+    {
+      "fluid": "water_own",
+      "H_W": 14142.251176868962,
+      "deltaT_K": 5,
+      "Q_L_min": 40.59976414412142
+    },
+    {
+      "fluid": "water_own",
+      "H_W": 14142.251176868962,
+      "deltaT_K": 10,
+      "Q_L_min": 20.29988207206071
+    },
+    {
+      "fluid": "water_own",
+      "H_W": 14142.251176868962,
+      "deltaT_K": 15,
+      "Q_L_min": 13.533254714707141
+    },
+    {
+      "fluid": "water_own",
+      "H_W": 45562.306107060984,
+      "deltaT_K": 5,
+      "Q_L_min": 130.8008787762516
+    },
+    {
+      "fluid": "water_own",
+      "H_W": 45562.306107060984,
+      "deltaT_K": 10,
+      "Q_L_min": 65.4004393881258
+    },
+    {
+      "fluid": "water_own",
+      "H_W": 45562.306107060984,
+      "deltaT_K": 15,
+      "Q_L_min": 43.600292925417214
+    },
+    {
+      "fluid": "glycol_mix_own_unselected",
+      "H_W": 11550,
+      "deltaT_K": 5,
+      "Q_L_min": 38.07692307692308
+    },
+    {
+      "fluid": "glycol_mix_own_unselected",
+      "H_W": 11550,
+      "deltaT_K": 10,
+      "Q_L_min": 19.03846153846154
+    },
+    {
+      "fluid": "glycol_mix_own_unselected",
+      "H_W": 11550,
+      "deltaT_K": 15,
+      "Q_L_min": 12.692307692307693
+    },
+    {
+      "fluid": "glycol_mix_own_unselected",
+      "H_W": 30000,
+      "deltaT_K": 5,
+      "Q_L_min": 98.9010989010989
+    },
+    {
+      "fluid": "glycol_mix_own_unselected",
+      "H_W": 30000,
+      "deltaT_K": 10,
+      "Q_L_min": 49.45054945054945
+    },
+    {
+      "fluid": "glycol_mix_own_unselected",
+      "H_W": 30000,
+      "deltaT_K": 15,
+      "Q_L_min": 32.967032967032964
+    },
+    {
+      "fluid": "glycol_mix_own_unselected",
+      "H_W": 14142.251176868962,
+      "deltaT_K": 5,
+      "Q_L_min": 46.622806077589985
+    },
+    {
+      "fluid": "glycol_mix_own_unselected",
+      "H_W": 14142.251176868962,
+      "deltaT_K": 10,
+      "Q_L_min": 23.311403038794992
+    },
+    {
+      "fluid": "glycol_mix_own_unselected",
+      "H_W": 14142.251176868962,
+      "deltaT_K": 15,
+      "Q_L_min": 15.540935359196663
+    },
+    {
+      "fluid": "glycol_mix_own_unselected",
+      "H_W": 45562.306107060984,
+      "deltaT_K": 5,
+      "Q_L_min": 150.2054047485527
+    },
+    {
+      "fluid": "glycol_mix_own_unselected",
+      "H_W": 45562.306107060984,
+      "deltaT_K": 10,
+      "Q_L_min": 75.10270237427635
+    },
+    {
+      "fluid": "glycol_mix_own_unselected",
+      "H_W": 45562.306107060984,
+      "deltaT_K": 15,
+      "Q_L_min": 50.068468249517565
+    }
+  ],
+  "native66_5Lmin_not_selected_or_rated_transport": [
+    {
+      "fluid": "water_own",
+      "Q_L_min": 66.5,
+      "W_by_deltaT_K": {
+        "5": 23164.166666666664,
+        "10": 46328.33333333333,
+        "15": 69492.5
+      }
+    },
+    {
+      "fluid": "glycol_mix_own_unselected",
+      "Q_L_min": 66.5,
+      "W_by_deltaT_K": {
+        "5": 20171.666666666668,
+        "10": 40343.333333333336,
+        "15": 60515.0
+      }
+    }
+  ],
+  "air_formula": "Vdot=P/(rho_air cp_air deltaT);own rho1.2,cp1005;A_net=Vdot/v_face",
+  "air_table": [
+    {
+      "H_W": 11550,
+      "air_deltaT_K_own": 10,
+      "air_m3_s": 0.9577114427860697,
+      "air_m3_h": 3447.7611940298507,
+      "net_area_m2_by_velocity_m_s_own": {
+        "2": 0.47885572139303484,
+        "4": 0.23942786069651742,
+        "6": 0.15961857379767827
+      },
+      "gross_area_rule": "A_gross=A_net/phi;phi own sensitivity .5 to .7; pressure drop/fan/coreUA unverified"
+    },
+    {
+      "H_W": 11550,
+      "air_deltaT_K_own": 20,
+      "air_m3_s": 0.47885572139303484,
+      "air_m3_h": 1723.8805970149253,
+      "net_area_m2_by_velocity_m_s_own": {
+        "2": 0.23942786069651742,
+        "4": 0.11971393034825871,
+        "6": 0.07980928689883914
+      },
+      "gross_area_rule": "A_gross=A_net/phi;phi own sensitivity .5 to .7; pressure drop/fan/coreUA unverified"
+    },
+    {
+      "H_W": 11550,
+      "air_deltaT_K_own": 30,
+      "air_m3_s": 0.31923714759535654,
+      "air_m3_h": 1149.2537313432836,
+      "net_area_m2_by_velocity_m_s_own": {
+        "2": 0.15961857379767827,
+        "4": 0.07980928689883914,
+        "6": 0.05320619126589276
+      },
+      "gross_area_rule": "A_gross=A_net/phi;phi own sensitivity .5 to .7; pressure drop/fan/coreUA unverified"
+    },
+    {
+      "H_W": 30000,
+      "air_deltaT_K_own": 10,
+      "air_m3_s": 2.487562189054726,
+      "air_m3_h": 8955.223880597014,
+      "net_area_m2_by_velocity_m_s_own": {
+        "2": 1.243781094527363,
+        "4": 0.6218905472636815,
+        "6": 0.4145936981757877
+      },
+      "gross_area_rule": "A_gross=A_net/phi;phi own sensitivity .5 to .7; pressure drop/fan/coreUA unverified"
+    },
+    {
+      "H_W": 30000,
+      "air_deltaT_K_own": 20,
+      "air_m3_s": 1.243781094527363,
+      "air_m3_h": 4477.611940298507,
+      "net_area_m2_by_velocity_m_s_own": {
+        "2": 0.6218905472636815,
+        "4": 0.31094527363184077,
+        "6": 0.20729684908789384
+      },
+      "gross_area_rule": "A_gross=A_net/phi;phi own sensitivity .5 to .7; pressure drop/fan/coreUA unverified"
+    },
+    {
+      "H_W": 30000,
+      "air_deltaT_K_own": 30,
+      "air_m3_s": 0.8291873963515755,
+      "air_m3_h": 2985.0746268656717,
+      "net_area_m2_by_velocity_m_s_own": {
+        "2": 0.41459369817578773,
+        "4": 0.20729684908789386,
+        "6": 0.13819789939192925
+      },
+      "gross_area_rule": "A_gross=A_net/phi;phi own sensitivity .5 to .7; pressure drop/fan/coreUA unverified"
+    },
+    {
+      "H_W": 14142.251176868962,
+      "air_deltaT_K_own": 10,
+      "air_m3_s": 1.172657643189798,
+      "air_m3_h": 4221.5675154832725,
+      "net_area_m2_by_velocity_m_s_own": {
+        "2": 0.586328821594899,
+        "4": 0.2931644107974495,
+        "6": 0.195442940531633
+      },
+      "gross_area_rule": "A_gross=A_net/phi;phi own sensitivity .5 to .7; pressure drop/fan/coreUA unverified"
+    },
+    {
+      "H_W": 14142.251176868962,
+      "air_deltaT_K_own": 20,
+      "air_m3_s": 0.586328821594899,
+      "air_m3_h": 2110.7837577416362,
+      "net_area_m2_by_velocity_m_s_own": {
+        "2": 0.2931644107974495,
+        "4": 0.14658220539872474,
+        "6": 0.0977214702658165
+      },
+      "gross_area_rule": "A_gross=A_net/phi;phi own sensitivity .5 to .7; pressure drop/fan/coreUA unverified"
+    },
+    {
+      "H_W": 14142.251176868962,
+      "air_deltaT_K_own": 30,
+      "air_m3_s": 0.39088588106326594,
+      "air_m3_h": 1407.1891718277575,
+      "net_area_m2_by_velocity_m_s_own": {
+        "2": 0.19544294053163297,
+        "4": 0.09772147026581648,
+        "6": 0.06514764684387765
+      },
+      "gross_area_rule": "A_gross=A_net/phi;phi own sensitivity .5 to .7; pressure drop/fan/coreUA unverified"
+    },
+    {
+      "H_W": 45562.306107060984,
+      "air_deltaT_K_own": 10,
+      "air_m3_s": 3.7779689972687382,
+      "air_m3_h": 13600.688390167457,
+      "net_area_m2_by_velocity_m_s_own": {
+        "2": 1.8889844986343691,
+        "4": 0.9444922493171846,
+        "6": 0.6296614995447897
+      },
+      "gross_area_rule": "A_gross=A_net/phi;phi own sensitivity .5 to .7; pressure drop/fan/coreUA unverified"
+    },
+    {
+      "H_W": 45562.306107060984,
+      "air_deltaT_K_own": 20,
+      "air_m3_s": 1.8889844986343691,
+      "air_m3_h": 6800.344195083729,
+      "net_area_m2_by_velocity_m_s_own": {
+        "2": 0.9444922493171846,
+        "4": 0.4722461246585923,
+        "6": 0.31483074977239484
+      },
+      "gross_area_rule": "A_gross=A_net/phi;phi own sensitivity .5 to .7; pressure drop/fan/coreUA unverified"
+    },
+    {
+      "H_W": 45562.306107060984,
+      "air_deltaT_K_own": 30,
+      "air_m3_s": 1.2593229990895793,
+      "air_m3_h": 4533.5627967224855,
+      "net_area_m2_by_velocity_m_s_own": {
+        "2": 0.6296614995447897,
+        "4": 0.31483074977239484,
+        "6": 0.2098871665149299
+      },
+      "gross_area_rule": "A_gross=A_net/phi;phi own sensitivity .5 to .7; pressure drop/fan/coreUA unverified"
+    }
+  ],
+  "D_core_reference": {
+    "two_gross_face_area_m2": 0.0351,
+    "not_C15_net_grille_area": true,
+    "air_enthalpy_W_at4m_s20K_only": 3386.448
+  },
+  "red_unknowns": [
+    "ambient>20C,no refrigeration cannot guarantee20C mounts with positive losses;EMRAX50Cmax coolant does not provide Tecnotion20C mount boundary",
+    "all perbranch6Lmin EMRAX constraints,23contactR/flowPressure/balance,current histories/bus curves unclosed",
+    "QTR Ts unknown;Tc not stall allowance;holding leakage/load stop/brake/valve not qualified",
+    "negativeFv not known regen or allheat;oil-to-coolant or oil-air interface must be explicit before assigning oilheat to radiator",
+    "pressure loss/fan static pressure/coreUA/grillephi absent;rho cp transport not heat rejection rating",
+    "all totals own assumption combinations,not measured continuous duty/real bounds or architecture choice"
+  ],
+  "physics_accepted": false
+}

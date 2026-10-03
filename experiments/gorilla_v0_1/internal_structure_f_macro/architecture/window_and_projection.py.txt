@@ -1,0 +1,34 @@
+"""Gorilla F fixed candidate service window with finite perimeter load frame.
+The window is free of this NEWframe only; currentE2components still conflict.
+"""
+from pathlib import Path
+import json,hashlib,importlib.util
+import numpy as np,trimesh as tr
+from PIL import Image,ImageDraw
+O=Path(__file__).resolve().parent;ROOT=O.parents[1];read=lambda p:json.loads(Path(p).read_text());sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+sp=importlib.util.spec_from_file_location('h',ROOT/'scripts/models/build_gorilla_internal_structure.py');h=importlib.util.module_from_spec(sp);sp.loader.exec_module(h)
+def mesh(p):return tr.Trimesh(p['vertices_world_m'],[[f[0],f[i],f[i+1]] for f in p['faces'] for i in range(1,len(f)-1)],process=False)
+parts=[]
+def add(n,m):parts.append({'name':n,'body':'waist_pitch_carrier','role':'finite_frame_material','density_kg_m3':7850,'vertices_world_m':m.vertices.tolist(),'faces':m.faces.tolist()})
+for x in [.105,.390]:
+ outer=tr.creation.box([.006,.560,.420]);inner=tr.creation.box([.010,.460,.260]);m=tr.boolean.difference([outer,inner],engine='manifold');m.apply_translation([x,0,2.13]);add('f_candidate_waist_perimeter_diaph_'+str(x),m)
+for y,z in [(-.255,2.13),(.255,2.13),(0,1.945),(0,2.315)]:add('f_candidate_waist_perimeter_closed_tie_'+str(y)+'_'+str(z),h.box_tube([.103,y,z],[.392,y,z],.025,.035,.004))
+un=tr.boolean.union([mesh(p) for p in parts],engine='manifold');window=tr.creation.box([.230,.440,.240]);window.apply_translation([.255,0,2.13]);own=tr.boolean.intersection([un,window],engine='manifold');master=ROOT/'.scratch/gorilla_internal_e2a_integrated/scene.json';S=read(master);hits=[]
+for p in S['parts']:
+ m=mesh(p)
+ if np.all(m.bounds[1]>window.bounds[0]) and np.all(window.bounds[1]>m.bounds[0]):
+  q=tr.boolean.intersection([m,window],engine='manifold')
+  if q.volume>1e-10:hits.append({'part':p['name'],'role':p['role'],'occupied_window_volume_cm3':float(q.volume*1e6),'bounds_world_m':q.bounds.tolist()})
+data={'robot_id':'gorilla_v0_1','parts':parts,'window_center_world_m':[.255,0,2.13],'window_dimensions_xyz_m':[.230,.440,.240],'window_bounds_world_m':window.bounds.tolist(),'nominal_installation_direction_world':[1,0,0],'scope':'Bothmacro routesreservefrontservicebay; paired closed perimeterdiaphragms wrapbay. Demonstration has noqualifiedconnectiontowaistbearing/pelvis/shoulder; parentmustrebuildthose aroundfixedkeepout. This bayisNOTfreeinE2a.', 'finite_perimeter_frame_net_volume_m3':float(un.volume),'finite_perimeter_frame_mass_kg':float(un.volume*7850),'positive_frame_components':len([m for m in un.split(only_watertight=False) if m.volume>1e-10]),'frame_material_inside_reserved_window_m3':float(own.volume),'current_E2a_window_occupancy':sorted(hits,key=lambda x:x['occupied_window_volume_cm3'],reverse=True),'input_master_sha256':sha(master),'packaging_failure_summary_sha256':sha(ROOT/'.scratch/gorilla_internal_f_packaging/summary.json'),'candidate_rejected':True,'geometry_accepted':False,'physics_accepted':False};(O/'waist_fixed_window_native.json').write_text(json.dumps(data,indent=2)+'\n')
+# Same-scale true native polygons, no paintinggeometry.
+for name in ['integral_load_shell','paired_closed_webs']:
+ s=read(O/(name+'_native.json'));pp=s['parts'];im=Image.new('RGB',(1500,1100),'white');dr=ImageDraw.Draw(im)
+ for vi,(label,axes,depth,sign) in enumerate([('FRONT',[1,2],0,-1),('LEFT',[0,2],1,-1),('REAR',[1,2],0,1)]):
+  rows=[]
+  for p in pp:
+   v=np.array(p['vertices_world_m']);xy=np.c_[vi*500+250+sign*(v[:,axes[0]]-(.47 if axes[0]==1 else -.08))*700,980-v[:,2]*700]
+   for f in p['faces']:rows.append((float(v[f,depth].mean()),xy[f].tolist(),(83,126,153) if p.get('endpoint_driven_geometry') else (106,120,129)))
+  for _,poly,col in sorted(rows,key=lambda x:x[0]):dr.polygon([tuple(q) for q in poly],fill=col,outline=(55,65,71))
+  dr.text((vi*500+15,20),label+' | '+name,fill='black')
+ dr.text((15,1060),'Gorilla F finite sample | retained conflicts / no full-lower-body or capacity acceptance',fill=(140,30,20));im.save(O/(name+'_native_threeview.png'))
+print('WINDOW READY',data['finite_perimeter_frame_mass_kg'],data['positive_frame_components'],data['frame_material_inside_reserved_window_m3'],len(hits),[(p['part'],round(p['occupied_window_volume_cm3'],1)) for p in data['current_E2a_window_occupancy'][:6]],flush=True)

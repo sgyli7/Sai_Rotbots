@@ -1,0 +1,28 @@
+"""Restore exact raw F macro records without overwriting different bytes."""
+import argparse
+import gzip
+import hashlib
+import json
+from pathlib import Path
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--root", type=Path, required=True)
+args = parser.parse_args()
+here = Path(__file__).resolve().parent
+root = args.root.resolve()
+data = json.loads((here / "snapshot_manifest.json").read_text())
+count = 0
+for row in data["files"]:
+    stored = (here / row["stored_path"]).read_bytes()
+    assert hashlib.sha256(stored).hexdigest() == row["stored_sha256"]
+    raw = gzip.decompress(stored) if row["encoding"] == "gzip" else stored
+    assert hashlib.sha256(raw).hexdigest() == row["original_sha256"]
+    target = (root / row["original_path"]).resolve()
+    if not target.is_relative_to(root / ".scratch"):
+        raise ValueError("Snapshot target escapes scratch")
+    if target.exists() and target.read_bytes() != raw:
+        raise ValueError("Refusing changed file: " + str(target))
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(raw)
+    count += 1
+print("Restored", count, "exact F macro records")

@@ -1,0 +1,115 @@
+"""Actual E2 mass/body/contact recomputation under restricted reference hypotheses.
+
+No dynamics, friction, complete hand capacity, pressure control, continuous motor
+rating, hose deformation, true gear/rotor/oil inertia or hardware approval.
+"""
+from pathlib import Path
+import copy,hashlib,json,math
+import numpy as np
+import trimesh
+from scipy.optimize import linprog
+from sai_agent.structural_statics import resultant,normal_contacts
+
+ROOT=Path(__file__).resolve().parents[1];OUT=ROOT/'.scratch/gorilla_internal_e2_integrated'
+P=OUT/'scene.json';ST=ROOT/'.scratch/gorilla_internal_e2_structure/structure_scene.json'
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def write(p,v):Path(p).write_text(json.dumps(v,indent=2,allow_nan=False)+'\n')
+def mesh(p):return trimesh.Trimesh(p['vertices_world_m'],[[f[0],f[i],f[i+1]] for f in p['faces'] for i in range(1,len(f)-1)],process=False)
+def point(T,p):return (T@np.r_[p,1])[:3]
+def descendants(tree,b):
+ out={b};changed=True
+ while changed:
+  changed=False
+  for c,t in tree.items():
+   if t['parent'] in out and c not in out:out.add(c);changed=True
+ return out
+def lp(V,loads,models):
+ force,moment=resultant(loads,np.zeros(3));E=np.vstack([np.ones(len(V)),V[:,0],V[:,1]]);target=np.array([-force[2],moment[1],-moment[0]]);E=np.column_stack([E,np.zeros(3)]);A=[];b=[]
+ for m in models:
+  k=np.array(m['coefficient_Nm_per_N']);c=m['bias_Nm'];pos=m['positive_capacity_reference_Nm'];neg=m['negative_capacity_reference_Nm']
+  if min(pos,neg)<=0:raise ValueError('Nonpositive reference '+m['id'])
+  A.extend([np.r_[k/pos,-1],np.r_[-k/neg,-1]]);b.extend([-c/pos,c/neg])
+ A=np.asarray(A);b=np.asarray(b);cost=np.r_[np.zeros(len(V)),1.];res=linprog(cost,A_ub=A,b_ub=b,A_eq=E,b_eq=target,bounds=[(0,None)]*len(cost),method='highs')
+ out={'solver_success':bool(res.success),'message':res.message,'physical_acceptance':False}
+ if res.success:
+  lam=np.array(res.ineqlin.marginals);y=np.array(res.eqlin.marginals);rc=cost-A.T@lam-E.T@y;dual=float(b@lam+target@y)
+  err={'equality':float(abs(E@res.x-target).max()),'capacity':float(max(0,(A@res.x-b).max())),'variable_bound':float(max(0,-res.x.min())),'dual':float(max(0,lam.max(),-rc.min())),'gap':float(res.fun-dual)}
+  valid=err['equality']<1e-5 and max(err['capacity'],err['variable_bound'],err['dual'])<1e-7 and abs(err['gap'])<1e-6
+  if not valid:raise ValueError('LP certificate mismatch '+str(err))
+  out.update(reference_minimax_peak_use=float(res.fun),conditional_reference_within_hypotheses=bool(res.fun<=1+1e-7),normal_reactions_N=res.x[:-1].tolist(),numerical_errors=err,dual_certificate={'inequality_multipliers':lam.tolist(),'equality_multipliers':y.tolist(),'nonnegative_reduced_costs':rc.tolist(),'objective_lower_bound':dual,'floating_tolerances_valid':valid},models_at_common_witness=[{**m,'demand_Nm_at_common_witness':float(m['bias_Nm']+np.array(m['coefficient_Nm_per_N'])@res.x[:-1])} for m in models])
+ return out
+def main():
+ scene=json.loads(P.read_text());st=json.loads(ST.read_text());parts={p['name']:p for p in scene['parts']};ownership=scene['physical_body_ownership'];tree=scene['body_tree'];neutral={n:mesh(p) for n,p in parts.items()};catalogue={a['id'][3:]:a for a in json.loads((ROOT/'robots/gorilla_v0_1/configs/internal_structure_d_system_spec.json').read_text())['axis_order'] if a.get('gear_family')};poses=[]
+ for pz in st['pose_scenes']:
+  pid=pz['id'];T={b:np.array(t) for b,t in pz['body_transforms'].items()};pending=set(tree)-set(T)
+  while pending:
+   before=len(pending)
+   for b in list(pending):
+    node=tree[b]
+    if node['parent'] not in T:continue
+    angle=0.;jid=node['joint_id']
+    if pid=='forward_manipulation':
+     if jid.endswith('shoulder_pitch'):angle=-60 if jid.startswith('left_') else 60
+     if jid.endswith('elbow_pitch'):angle=35 if jid.startswith('left_') else -35
+    T[b]=T[node['parent']]@trimesh.transformations.rotation_matrix(math.radians(angle),node['axis_world'],node['pivot_world_m']);pending.remove(b)
+   if len(pending)==before:raise ValueError('Unresolved pose parents '+str(pending))
+  posed={p['name']:mesh(p) for p in pz['parts']};posemesh={}
+  for n,p in parts.items():
+   if n in posed:posemesh[n]=posed[n]
+   else:m=neutral[n].copy();m.apply_transform(T[ownership[n]]);posemesh[n]=m
+  cm={};actual_volume_differences=[]
+  for r in scene['mass_rows']:
+   if r.get('member_ids'):
+    ms=[posemesh[n] for n in r['member_ids']];m=trimesh.boolean.union(ms,engine='manifold') if len(ms)>1 else ms[0]
+    mn=[neutral[n] for n in r['member_ids']];m0=trimesh.boolean.union(mn,engine='manifold') if len(mn)>1 else mn[0]
+    dv=float(m.volume-m0.volume)
+    if abs(dv)>1e-8:actual_volume_differences.append({'id':r['id'],'volume_difference_m3':dv,'mass_difference_at7850_kg':dv*7850,'physical_constant_mass_qualified':False})
+    cm[r['id']]=m.center_mass
+   else:cm[r['id']]=posemesh[r['id']].center_mass
+  vv=[];cb=[]
+  for n,p in parts.items():
+   if p['role'] in ('ground_pad','contact_surface_candidate'):
+    vertices=posemesh[n].vertices
+    for v in vertices[abs(vertices[:,2])<1e-8]:vv.append(v);cb.append(ownership[n])
+  unique=sorted(set((b,*np.round(v,12)) for b,v in zip(cb,vv)));cb=[x[0] for x in unique];V=np.array([x[1:] for x in unique])
+  if not len(V):raise ValueError('No actual ground vertices '+pid)
+  allcases=[];actions=[(0,0,1.),(100,0,1.),(100,0,1.5),(0,3000,1.)] if pid!='unloaded_independent_fold' else [(0,0,1.)]
+  for mi,label in enumerate(('all_lower_bounds','diagnostic_nominal','all_upper_bounds')):
+   for payload,pressure,factor in actions:
+    loads=[{'id':r['id'],'body':r['body'],'position_world_m':cm[r['id']].tolist(),'force_world_N':[0,0,-9.81*r['mass_range_kg'][mi]*factor]} for r in scene['mass_rows']]
+    if payload:
+     for side,sgn in [('left',1),('right',-1)]:loads.append({'body':side+'_palm','position_world_m':point(T[side+'_palm'],[-.02,.84*sgn,1.105]).tolist(),'force_world_N':[0,0,-9.81*payload*.5*factor]})
+    if pressure:loads.append({'body':'torso','position_world_m':point(T['torso'],[0,0,2.45]).tolist(),'force_world_N':[0,0,-9.81*pressure]})
+    models=[];unqualified=[]
+    for j in scene['joint_supports']:
+     distal=descendants(tree,j['output_body']);parent=j['parent_body'];J=point(T[parent],j['center_world_m']);axis=T[parent][:3,:3]@np.array(j['axis_world']);force,torque=resultant([r for r in loads if r['body'] in distal],J);coef=-np.cross(V-J,[0,0,1])@axis*np.array([b in distal for b in cb]);bias=-float(torque@axis);cyl=[a for a in scene['actuators'] if a['base_body']==parent and a['output_body']==j['output_body']]
+     if cyl:
+      cap=[0.,0.];details=[]
+      for a in cyl:
+       A=point(T[parent],a['neutral_A_world_m']);B=point(T[a['output_body']],a['neutral_B_world_m']);u=(B-A)/np.linalg.norm(B-A);jac=float(u@np.cross(axis,B-J));Ab=math.pi*(a['bore_m']/2)**2;Aa=Ab-math.pi*(a['rod_m']/2)**2;fp=20.4e6*Ab-.3e6*Aa;fm=20.4e6*Aa-.3e6*Ab;cap[0]+=.9*jac*(-fm if jac>=0 else fp);cap[1]+=.9*jac*(fp if jac>=0 else -fm);details.append({'id':a['id'],'J_m_per_rad':jac,'eye_length_m':float(np.linalg.norm(B-A)),'ideal_extend_N':fp,'ideal_retract_N':fm})
+      pos=cap[1];neg=-cap[0];kind='Actual finite cylinder endpoint torque at own20.4/.3MPa and0.90friction hypothesis; pressure/strength/control not qualified'
+     elif j['id'] in catalogue:
+      pos=neg=catalogue[j['id']]['catalogue_reducer_rated_Nm'];details=[];kind='OEM gearbox L10 catalogue reference only; complete continuous motor/brake joint unknown'
+     elif j['id'].endswith(('forefoot','heel')):
+      if pid=='unloaded_independent_fold':unqualified.append(j['id']+': locks explicitly withdrawn');continue
+      side='left' if j['id'].startswith('left_') else 'right';family=j['id'].split('_',1)[1];braces=[b for b in pz['actual_foot_brace_report_left'] if '_'+family+'_brace_' in b['id']];assert len(braces)==2;gross_pin_capacity=2*2*math.pi*.016**2/4*355e6/(math.sqrt(3)*2);pos=neg=sum(abs(b['moment_arm_m'])*gross_pin_capacity for b in braces);details=braces;kind='Two brace gross double-shear lock-pin/FS2 equivalent only; sag equal-share reference, 3D load/buckling/support unknown'
+     else:unqualified.append(j['id']);continue
+     models.append({'id':j['id'],'bias_Nm':bias,'coefficient_Nm_per_N':coef.tolist(),'positive_capacity_reference_Nm':float(pos),'negative_capacity_reference_Nm':float(neg),'capacity_scope':kind,'actuator_or_brace_details':details})
+    res=lp(V,loads,models)
+    shaft_witness=[]
+    if res['solver_success']:
+     contact_loads=[{'body':body,'position_world_m':v.tolist(),'force_world_N':[0,0,f]} for v,body,f in zip(V,cb,res['normal_reactions_N'])]
+     for j in scene['joint_supports']:
+      if not any(a['base_body']==j['parent_body'] and a['output_body']==j['output_body'] for a in scene['actuators']):continue
+      distal=descendants(tree,j['output_body']);J=point(T[j['parent_body']],j['center_world_m']);axis=T[j['parent_body']][:3,:3]@np.array(j['axis_world']);F,M=resultant([r for r in loads+contact_loads if r['body'] in distal],J)
+      # Sections are the actual structure-builder moving hollow-shaft radii;
+      # this is a gross shaft-only witness screen, not interface/support FE.
+      ro,ri=(.040,.028) if j['id'].endswith('foot_roll') else (.045,.032)
+      area=math.pi*(ro**2-ri**2);I=math.pi*(ro**4-ri**4)/4;Jp=2*I;Na=float(F@axis);shear=float(np.linalg.norm(F-Na*axis));tor=float(M@axis);bend=float(np.linalg.norm(M-tor*axis));sigma=abs(Na)/area+bend*ro/I;annular_neutral_shear_factor=(ro**2+ro*ri+ri**2)/(ro**2+ri**2);tau=abs(tor)*ro/Jp+4*shear/(3*area)*annular_neutral_shear_factor;vm=math.sqrt(sigma**2+3*tau**2)
+      shaft_witness.append({'id':j['id'],'resultant_force_N':F.tolist(),'resultant_moment_Nm':M.tolist(),'shaft_outer_inner_radius_m':[ro,ri],'axial_N':Na,'transverse_N':shear,'bending_Nm':bend,'torsion_Nm':tor,'gross_axial_plus_bending_Pa':sigma,'gross_torsion_plus_transverse_Pa':tau,'annular_neutral_shear_factor':annular_neutral_shear_factor,'equivalent_distal_wrench_combined_von_mises_Pa':vm,'S355_355MPa_own_grade_sensitivity_FS2_utilization':vm/(355e6/2),'scope':'One common capacity-minimizing normal-reaction witness only; may have other load allocations. Equivalent child exterior wrench through a uniform shaft sensitivity only. Hydraulic eye forces and bearing reactions have not been allocated, so this is neither an actual shaft stress nor a bound on it. No FE/contact/bearing/weld/concentration/fatigue or certified grade; not a structural failure certificate.'})
+    allcases.append({'mass_profile':label,'payload_kg_hypothesis':payload,'separate_pressure_demand_kg':pressure,'gravity_factor_sensitivity':factor,'normal_contact':normal_contacts(V,loads),'unchanged_single_left_normal_contact':normal_contacts(V[[b.startswith('left_') for b in cb]],loads),'common_reference_LP':res,'gross_hollow_shaft_at_one_common_witness':shaft_witness,'unqualified_joint_ids':unqualified,'physical_acceptance':False})
+  poses.append({'id':pid,'body_transforms':{b:t.tolist() for b,t in T.items()},'actual_ground_vertices_world_m':V.tolist(),'contact_bodies':cb,'actual_material_union_volume_changes':actual_volume_differences,'cases':allcases})
+  print('E2 STATIC',pid,len(allcases),'t range',[round(min(c['common_reference_LP']['reference_minimax_peak_use'] for c in allcases if c['common_reference_LP']['solver_success']),4),round(max(c['common_reference_LP']['reference_minimax_peak_use'] for c in allcases if c['common_reference_LP']['solver_success']),4)] if any(c['common_reference_LP']['solver_success'] for c in allcases) else 'none',flush=True)
+ out={'robot_id':'gorilla_v0_1','candidate':'internal_structure_e2','input_hashes':{str(p.relative_to(ROOT)):sha(p) for p in (P,ST,Path(__file__).resolve())},'whole_mass_range_kg':scene['whole_mass_range_kg'],'poses':poses,'scope':'Actual E2 listed mass/serial descendants/cylinder pose meshes/original pad vertices. Restricted upward coplanar normal contact and own hydraulic gross references/gearL10 and foot-pin references. Hand capacity/friction/dynamics/lateral structural force/continuous drive/heat not proved. Fluid/component COM proxy transformed by packaging owners; cross-frame hoses do not deform. Any changing native union volume is separately flagged; nominal inventory remains conserved, does not certify constant moving material. All-low/nominal/all-high coherent profiles are not independent interval worst case. Both-foot folded posture includes full robot gravity on its remaining pad vertices without a fixture; its infeasibility does not reject a genuinely unloaded lifted-foot motion. Annular neutral-axis VQ/Ib shear replaces solid-circle4/3 alone; exterior-wrench sensitivity still excludes hydraulic eye and bearing reaction allocation.','geometry_accepted':False,'physics_accepted':False,'stable_physical_contract':False}
+ write(OUT/'statics.json',out);print('E2 statics source-bound',sha(OUT/'statics.json'))
+if __name__=='__main__':main()

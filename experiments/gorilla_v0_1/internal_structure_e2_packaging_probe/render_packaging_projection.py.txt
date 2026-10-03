@@ -1,0 +1,53 @@
+from pathlib import Path
+import json,hashlib,time
+import numpy as np
+from PIL import Image,ImageDraw,ImageFont
+R=Path('/home/ethan/Projects/Sai_Rotbots');O=R/'.scratch/gorilla_internal_e2_packaging'
+A=O/'source_appearance_c_scene.json';S=O/'gorilla_internal_e2_system_system_scene.json';U=O/'gorilla_internal_e2_upper_upper_scene.json'
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+base=json.loads(A.read_text());sys=json.loads(S.read_text());upper=json.loads(U.read_text())
+armor=[p for p in base['parts'] if p['role'] in ['armor_cover','armor_surface']];display=[p for p in base['parts'] if 'radiator_louver_' in p['name'] or (p['role']=='contact_candidate' and 'upper_edge' not in p['name']) or p['role'] in ['control_display_glass','control_display_ui']]
+native=sys['parts']+upper['parts'];structure_path=R/'.scratch/gorilla_internal_e2_structure/structure_scene.json';structure_missing=True
+if structure_path.exists():
+ # Same immutable bytes used for projection/hash. Projection excludes no native rows.
+ captured=O/'captured_structure_scene.json'
+ b=captured.read_bytes() if captured.exists() else structure_path.read_bytes()
+ if not captured.exists():captured.write_bytes(b)
+ struct=json.loads(b);native+=struct['parts'];structure_missing=False
+W=1840;H=1910;side=800;ppm=side/3.05;origins=[(70,170),(970,170),(70,1050),(970,1050)];FONT='/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'
+font=lambda n:ImageFont.truetype(FONT,n)
+views=[('FRONT +X',np.array([[0,1,0],[0,0,1.]]),np.array([1.,0,0])),('LEFT +Y',np.array([[-1.,0,0],[0,0,1.]]),np.array([0,1.,0])),('REAR -X',np.array([[0,-1.,0],[0,0,1.]]),np.array([-1.,0,0])),('TOP +Z',np.array([[0,1.,0],[1.,0,0]]),np.array([0,0,1.]))]
+for transparent in [False,True]:
+ im=Image.new('RGBA',(W,H),(250,251,252,255));dr=ImageDraw.Draw(im);dr.text((65,22),'GORILLA E2 | SOURCE-BOUND PACKAGING REVIEW',font=font(32),fill=(25,43,58));dr.text((65,68),f'Original 111 armor meshes preserved. {len(native)} captured system / upper / structure parts. Same {ppm:.3f} px/m.',font=font(22),fill=(66,77,88));dr.text((65,103),'DIAGNOSTIC PROJECTION: no new appearance authority, no physics / geometry / aesthetic acceptance.',font=font(20),fill=(143,56,44))
+ for i,(name,M,depth) in enumerate(views):
+  ox,oy=origins[i];dr.text((ox,oy-38),name,font=font(25),fill=(25,43,58));tri=[]
+  for p,kind in [(p,'armor') for p in armor]+[(p,'display') for p in display]+[(p,'native') for p in native]:
+   v=np.asarray(p['vertices_world_m']);uv=v@M.T;dep=v@depth
+   if kind=='armor':
+    rgba=p.get('rgba',[.65,.68,.72,1]);rgb=np.array(rgba[:3])*255;alpha=65 if transparent else 255
+   elif kind=='display':rgb=np.array([45,51,60]);alpha=255
+   elif p.get('category') in ['coolant_inventory','oil_inventory_once','coolant_inventory_unknown_internal']:continue
+   elif p.get('role')=='E2_finite_load_material':rgb=np.array([87,100,112]);alpha=210
+   elif p.get('category')=='oil_line_native_material':rgb=np.array([110,63,139]);alpha=200
+   elif p.get('category')=='coolant_material':rgb=np.array([46,137,162]);alpha=200
+   else:rgb=np.array([169,115,57]);alpha=205
+   if kind in ['native','display'] and not transparent and 'rgba' in p:rgb=np.array(p['rgba'][:3])*255;alpha=255
+   for f in p['faces']:
+    for j in range(1,len(f)-1):
+     ids=[f[0],f[j],f[j+1]];q=uv[ids];aa=q[1]-q[0];bb=q[2]-q[0];area=aa[0]*bb[1]-aa[1]*bb[0];
+     if abs(area)<1e-12:continue
+     # Full native faces, single camera/scale. A flat geometric projection, not a remeshed or painted shape.
+     n=np.cross(v[ids[1]]-v[ids[0]],v[ids[2]]-v[ids[0]]);norm=np.linalg.norm(n)
+     if norm<1e-12:continue
+     shade=.68+.32*abs(float(n@depth/norm));color=tuple(np.clip(rgb*shade,0,255).astype(int))+(alpha,)
+     if i==3:xy=[(ox+(u+1.525)*ppm,oy+(1.525-w)*ppm) for u,w in q]
+     else:xy=[(ox+(u+1.525)*ppm,oy+(2.87-w)*ppm) for u,w in q]
+     tri.append((float(np.mean(dep[ids])),xy,color))
+  tile=Image.new('RGBA',(W,H),(0,0,0,0));td=ImageDraw.Draw(tile)
+  for _,xy,color in sorted(tri,key=lambda x:x[0]):td.polygon(xy,fill=color)
+  im.alpha_composite(tile);dr=ImageDraw.Draw(im);dr.rectangle((ox,oy,ox+side,oy+side),outline=(159,173,187),width=2)
+ dr.text((65,H-38),f'Neutral only. Structural source missing at capture: {structure_missing}. No imagined parts / original-image paste / hidden module deletion.',font=font(18),fill=(90,96,107))
+ p=O/('native_four_view_transparent.png' if transparent else 'native_four_view_opaque.png');im.convert('RGB').save(p)
+manifest={'schema':'gorilla_e2_packaging_projection_v1','inputs':{str(p.relative_to(R)):sha(p) for p in [A,S,U]},'script_sha256':sha(__file__),'all_111_original_armor_unchanged':True,'native_part_count':len(native),'native_lower_structure_missing':structure_missing,'same_pixels_per_metre':ppm,'image_dimensions_px':[W,H],'camera_matrices':{n:M.tolist() for n,M,_ in views},'outputs':{p.name:sha(p) for p in [O/'native_four_view_transparent.png',O/'native_four_view_opaque.png']},'native_GEOMETRY_physics_and_aesthetic_accepted':False,'original_nonarmor_display_count':len(display),'complete_original_display_not_included':True,'opaque_view_uses_source_part_rgba_where_present':True,'projection_is_not_aesthetic_redesign':True}
+if not structure_missing:manifest['inputs'][str((O/'captured_structure_scene.json').relative_to(R))]=sha(O/'captured_structure_scene.json')
+(O/'projection_manifest.json').write_text(json.dumps(manifest,indent=2)+'\n');print(json.dumps(manifest,indent=2))

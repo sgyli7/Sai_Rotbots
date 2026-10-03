@@ -1,0 +1,103 @@
+from pathlib import Path
+import hashlib
+import json
+import math
+import numpy as np
+import trimesh
+
+ROOT = Path('/home/ethan/Projects/Sai_Rotbots')
+LEG = ROOT / '.scratch/gorilla_internal_e_leg'
+THERMAL = ROOT / '.scratch/gorilla_internal_e_system'
+
+def sha(p):
+    return hashlib.sha256(p.read_bytes()).hexdigest()
+
+def read(p):
+    return json.loads(p.read_text())
+
+def mesh(p):
+    fs = [[f[0], f[i], f[i + 1]] for f in p['faces'] for i in range(1, len(f) - 1)]
+    return trimesh.Trimesh(np.asarray(p['vertices_world_m']), np.asarray(fs), process=False)
+
+lm = read(LEG / 'manifest.json')
+leg_identity = {n: sha(LEG / n) == h for n, h in lm['outputs'].items()}
+leg_inputs = {n: sha(ROOT / n) == h for n, h in lm['input_hashes'].items()}
+assert all(leg_identity.values()) and all(leg_inputs.values())
+ls = read(LEG / 'e_leg_scene.json')
+resources = []
+for pose in ls['pose_scenes']:
+    bad = []
+    for p in pose['parts']:
+        m = mesh(p)
+        if not (np.isfinite(m.vertices).all() and m.is_watertight and m.is_winding_consistent and math.isfinite(m.volume) and m.volume > 0):
+            bad.append(p['name'])
+    resources.append({'pose': pose['id'], 'parts': len(pose['parts']), 'bad': bad})
+    assert not bad
+print('independent leg resource checks complete', flush=True)
+
+ts = read(THERMAL / 'thermal_route_spec.json')
+tn = read(THERMAL / 'thermal_route_scene.json')
+tr = read(THERMAL / 'inventory_pressure_heat_report.json')
+assert tn['source_spec_sha256'] == sha(THERMAL / 'thermal_route_spec.json')
+names = [p['name'] for p in tn['parts']]
+ids = [p['id'] for p in ts['modules']]
+assert len(names) == len(set(names)) == len(ids) == len(set(ids)) == 189
+assert set(names) == set(ids)
+thermal_resources = []
+fluid_L = 0.0
+for p in tn['parts']:
+    m = mesh(p)
+    ok = np.isfinite(m.vertices).all() and m.is_watertight and m.is_winding_consistent and math.isfinite(m.volume) and m.volume > 0
+    thermal_resources.append({'part': p['name'], 'resource_ok': bool(ok)})
+    assert ok, p['name']
+    if p['category'] == 'coolant_inventory':
+        fluid_L += m.volume * 1000
+# Inventory is a neutral disjoint geometry proxy, not moving fluid or actual flow.
+inventory_L = sum(p['net_volume_L'] for p in ts['net_coolant_inventory'])
+assert np.isclose(inventory_L, ts['net_drawn_coolant_volume_L'], atol=1e-8)
+if fluid_L:
+    assert np.isclose(fluid_L, inventory_L, atol=1e-7), (fluid_L, inventory_L)
+mass = np.sum([p['mass_range_kg'] for p in ts['modules']], axis=0)
+assert np.allclose(mass, ts['mass_range_kg'], atol=1e-7)
+adj = {}
+for a, b in ts['topology_edges']:
+    adj.setdefault(a, set()).add(b)
+def reach(a, b):
+    todo, seen = [a], {a}
+    while todo:
+        x = todo.pop()
+        if x == b:
+            return True
+        for y in adj.get(x, ()):
+            if y not in seen:
+                seen.add(y); todo.append(y)
+    return False
+# The probe declares these two ports as ordinary port nodes. Verify the
+# concrete declared pump ports rather than infer flow from a coolant union.
+nodes = ts['port_nodes']
+supplies = [n for n in nodes if n == 'e_coolant_pump_out']
+returns = [n for n in nodes if n == 'e_coolant_pump_in']
+assert len(supplies) == len(returns) == 1, (supplies, returns)
+topology = []
+for t in ts['thermal_targets']:
+    topology.append({'target': t['id'], 'supply': reach(supplies[0], t['supply']), 'return': reach(t['return'], returns[0])})
+assert all(x['supply'] and x['return'] for x in topology)
+air = []
+for a in tr['air_constraints']:
+    q = a['heat_W_hypothesis'] / (1.2 * 1005 * a['air_dT_K'])
+    gross = [q / 4 / .7, q / 4 / .5]
+    assert np.isclose(q, a['air_volume_m3_s']) and np.allclose(gross, a['gross_area_m2_at_phi05_07'])
+    air.append({'heat_W_hypothesis': a['heat_W_hypothesis'], 'air_m3_s': q, 'gross_m2_reference_at_4_m_s_phi_0_7_to_0_5': gross})
+report = {
+    'scope': 'Independent frozen-probe identity, all native mesh resources, listed mass/neutral liquid sum, directed cooling graph and air-energy algebra only. No rerun of all collision, structure, pressure, heat rejection or full E contact/drive LP.',
+    'inputs': {str(p.relative_to(ROOT)): sha(p) for p in [LEG/'manifest.json', LEG/'e_leg_scene.json', THERMAL/'thermal_route_spec.json', THERMAL/'thermal_route_scene.json', THERMAL/'inventory_pressure_heat_report.json']},
+    'leg_files_identity': leg_identity, 'leg_inputs_identity': leg_inputs,
+    'leg_pose_resources': resources, 'thermal_resources': thermal_resources,
+    'thermal_mass_range_kg': mass.tolist(), 'neutral_liquid_volume_L': inventory_L,
+    'native_fluid_volume_recomputed_L': fluid_L,
+    'cooling_functional_graph_only': topology, 'air_enthalpy_reference_only': air,
+    'geometry_accepted': False, 'physics_accepted': False, 'thermal_accepted': False,
+    'appearance_accepted': False, 'AA3_outer_change_required_proven': False,
+}
+(ROOT/'.scratch/gorilla_e_independent_probe_audit.json').write_text(json.dumps(report, indent=2, allow_nan=False)+'\n')
+print(json.dumps({'all_resource_identity_checks': True, 'thermal_mass_kg': mass.tolist(), 'fluid_L': inventory_L, 'thermal_targets': len(topology)}), flush=True)

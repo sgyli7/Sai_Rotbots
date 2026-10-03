@@ -1,0 +1,22 @@
+from pathlib import Path
+import json,hashlib,time,math
+O=Path(__file__).resolve().parent
+D=json.loads((O/'architecture_comparison_v2.json').read_text())
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+# Actual public fananchor; reducedspeed quantities are theory ONLY, not a measured guarded PWM point.
+q=6.5;ratio=q/(622/60);head=475*ratio**2;power=215*ratio**3
+plenumunit=.5*1.2*(q/60/(.172*.172))**2
+frontarea=.032232;front13=2*.5*1.2*(13/60/frontarea)**2
+rows=[]
+for loop,ncore,crange,rotor in [('188_fresh',2,[72,86],False),('rest_rotor_shared',2,[72,86],True),('rest_other',2,[72,86],False),('hot',1,[55,75],False)]:
+ if loop=='188_fresh':inlet=[front13,front13];rot=[0,0]
+ else:inlet=[30,30];rot=[15,75] if rotor else [0,0]
+ total=[crange[0]+plenumunit+inlet[0]+rot[0],crange[1]+3*plenumunit+inlet[1]+rot[1]]
+ rows.append({'loop_segment':loop,'core_count':ncore,'fan_count_each_core':2 if loop=='hot' else 1,'air_each_fan_m3min':6.5,'whole_segment_air_m3min':13 if loop=='hot' else ncore*6.5,'fullcore_air_dp_Pa_manual_range':crange,'own_plenum_guard_exhaust_K_range':[1,3],'own_plenum_drop_Pa_range':[plenumunit,3*plenumunit],'inlet_exhaust_own_dp_Pa_range':inlet,'rotor_parallelbranch_own_dp_Pa_range':rot,'system_dp_Pa_own_range':total,'reducedspeed_fan_head_affinity_Pa':head,'nominal_affinity_margin_Pa_range':[head-total[1],head-total[0]],'guarded_PWM_hot_air_fan_curve_unknown':True,'source_curve_head_not_actualinstalledqualification':True})
+D['stage']='G18 whole cooling architecture comparison v3 final'
+D['created_utc']=time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime());D['producer_sha256']=sha(__file__)
+D['predecessor_v2']={'path':'architecture_comparison_v2.json','sha256':sha(O/'architecture_comparison_v2.json'),'all_sourcev1v2_andproducers_preserved':True}
+D['B_proposal']['full_air_pressure_joint_ledger']={'public_6314_24V_source_anchor':{'Q_m3h':622,'dp_Pa':475,'P_W':215},'theoretical_speed_ratio':ratio,'theoretical_each_PWM_head_Pa':head,'theoretical_each_PWM_power_W_not_energycredit':power,'sixlow_andonehot_airallocation_countonce_m3min':52,'rows':rows,'front_source_projected_netproxy_m2':frontarea,'proxy_is_not_verified_currentopenlouver_throat':True,'front_freshpair_Q_m3min':13,'frontpair_required_netarea_m2_ifK2_and76p7Pa_available':13/60*math.sqrt(1.2/(head-86-3*plenumunit)),'actual_allbranchfan_operatingpoint_and_sealedgeometry_unknown':True,'two_restrotor_worstbudget_fails_nominal_affinityhead':rows[1]['nominal_affinity_margin_Pa_range'][0]<0,'this_is_not_third_architecture_or_thermalcredit':True}
+D['red_unknowns'].append('B two rest rotor-shared routes own worstair loss exceeds theoretical fanhead; real route length/section/branchK and guardedfan operatingpoint required')
+(O/'architecture_comparison_v3.json').write_text(json.dumps(D,indent=2)+'\n')
+print(json.dumps({'finalsha':sha(O/'architecture_comparison_v3.json'),'affinityhead':head,'air_screens':[(x['loop_segment'],x['system_dp_Pa_own_range'],x['nominal_affinity_margin_Pa_range']) for x in rows]},indent=2))

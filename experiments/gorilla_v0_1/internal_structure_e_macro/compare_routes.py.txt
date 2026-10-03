@@ -1,0 +1,87 @@
+"""Gorilla E macro route screen: finite analytical cylinders and common frozen-D LP."""
+from pathlib import Path
+import json,math,hashlib,numpy as np
+from scipy.optimize import linprog
+R=Path(__file__).resolve().parents[2];O=Path(__file__).resolve().parent
+read=lambda p:json.loads(p.read_text());sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+paths=[R/'.scratch/gorilla_internal_e_constraints/reference_axes.json',R/'.scratch/gorilla_e_drive_intervals.json',R/'robots/gorilla_v0_1/evidence/internal_structure_d_screen.json',R/'robots/gorilla_v0_1/configs/internal_structure_d_system_spec.json',R/'robots/gorilla_v0_1/configs/internal_structure_d_spec.json',R/'robots/gorilla_v0_1/configs/appearance_c_spec.json',R/'.scratch/gorilla_internal_e_leg/branch_summary.json',R/'.scratch/gorilla_internal_c_space/skin_sections.json',R/'.scratch/gorilla_internal_d_geometry/finite_actuator_report.json']
+cap,interval,D,sys,spec,geo,eb,skin,fd=[read(p) for p in paths]
+P={k:np.array(v,float) for k,v in geo['points_world_m'].items()};axis={x['id']:x for x in sys['axis_order']};angles=spec['candidate_pose_angles_deg'];rho=7850.;ph=20.4e6;pr=.3e6;fric=.90
+# Full high-load B scope: existing eight pitch cylinders replaced by pairs,
+# waist pitch + both hip roll + both foot roll become pairs:13 axes/26 cylinders.
+wp=np.array(axis['ds_waist_pitch']['center_world_m']);hr=np.array(axis['ds_left_hip_roll']['center_world_m']);fr=np.array(axis['ds_left_foot_roll']['center_world_m'])
+H,K,F,A=[P['left_'+x] for x in ['hip','knee','fold','ankle']]
+configs=[dict(family='waist_pitch',j=wp,axis=[0,1,0],count=1,bore=.080,rod=.040,wall=.006,pin=.030,qrange=[-25,25],pair=[(wp+[0,-.115,-.300],wp+[.230,-.115,.200]),(wp+[0,.115,-.300],wp+[-.230,.115,.200])],usable_segment_reference_m=.650,anchor_scope='parent pelvis mast down300mm; torso output eyes up200mm,cranks +/-230mm; new common waist carrier required'),dict(family='hip_roll',j=hr,axis=[1,0,0],count=2,bore=.063,rod=.030,wall=.005,pin=.025,qrange=[-12,12],pair=[(hr+[0,-.180,.300],hr+[0,-.150,-.400]),(hr+[0,.180,.300],hr+[0,.150,-.400])],usable_segment_reference_m=float(np.linalg.norm(H-K)),anchor_scope='hip parent anchor up300mm; thigh output eye down400mm; fixed carrier into pelvis/torso, not wrong thigh body'),dict(family='hip',j=H,axis=[0,1,0],count=2,bore=.063,rod=.030,wall=.005,pin=.025,qrange=[-30,0],pair=[(H+[.100,-.075,.300],H+[.160,-.075,-.200]),(H+[-.100,.075,.300],H+[-.160,.075,-.200])],usable_segment_reference_m=float(np.linalg.norm(H-K)),anchor_scope='upper hiproll carrier anchors up300mm, output into thigh down200mm'),dict(family='knee',j=K,axis=[0,1,0],count=2,bore=.080,rod=.035,wall=.006,pin=.030,qrange=[0,60],pair=[(K+(H-K)/np.linalg.norm(H-K)*.550+[0,-.085,0],K+[.180,-.085,0]),(K+(H-K)/np.linalg.norm(H-K)*.550+[0,.085,0],K+[-.180,.085,0])],usable_segment_reference_m=float(np.linalg.norm(H-K)),anchor_scope='parent thigh anchor550mm along690mm leg segment; moving cranks +/-180mm around knee'),dict(family='fold',j=F,axis=[0,1,0],count=2,bore=.063,rod=.030,wall=.005,pin=.025,qrange=[-20,0],pair=[(F+(K-F)/np.linalg.norm(K-F)*.300+[0,-.075,0],F+[.130,-.075,0]),(F+(K-F)/np.linalg.norm(K-F)*.300+[0,.075,0],F+[-.130,.075,0])],usable_segment_reference_m=float(np.linalg.norm(K-F)),anchor_scope='middle parent300mm; moving +/-130mm distal crank; carrier inner shell unknown'),dict(family='ankle',j=A,axis=[0,1,0],count=2,bore=.063,rod=.030,wall=.005,pin=.025,qrange=[-10,0],pair=[(A+(F-A)/np.linalg.norm(F-A)*.180+[0,-.070,0],A+[.120,-.070,0]),(A+(F-A)/np.linalg.norm(F-A)*.180+[0,.070,0],A+[-.120,.070,0])],usable_segment_reference_m=float(np.linalg.norm(F-A)),anchor_scope='distal parent180mm along249mm segment; output pitch crank +/-120mm; separate footroll carrier needed'),dict(family='foot_roll',j=fr,axis=[1,0,0],count=2,bore=.050,rod=.025,wall=.005,pin=.025,qrange=[-10,10],pair=[(fr+[-.055,-.050,.260],fr+[-.055,.130,.020]),(fr+[.055,.050,.260],fr+[.055,-.130,.020])],usable_segment_reference_m=float(np.linalg.norm(F-A)),anchor_scope='fixed anklepitch CHILD mast toZ.420, below fold seat; not attached to fold fixed body. +/-55mmX cylinder layers require crossing-ankle clearance')]
+def rotation(axis,q):
+ t=math.radians(q);a=np.array(axis);x,y,z=a;c=math.cos(t);s=math.sin(t);C=1-c
+ return np.array([[c+x*x*C,x*y*C-z*s,x*z*C+y*s],[y*x*C+z*s,c+y*y*C,y*z*C-x*s],[z*x*C-y*s,z*y*C+x*s,c+z*z*C]])
+def sample(c,q):
+ rr=rotation(c['axis'],q);out=[]
+ for a,b in c['pair']:
+  bb=c['j']+rr@(b-c['j']);u=(bb-a)/np.linalg.norm(bb-a);J=float(u@np.cross(c['axis'],bb-c['j']));out.append({'A_world_m':a.tolist(),'B_world_m':bb.tolist(),'eye_length_m':float(np.linalg.norm(bb-a)),'J_m_per_rad':J,'unit_direction_world':u.tolist()})
+ return out
+result=[]
+for c in configs:
+ ab=math.pi*(c['bore']/2)**2;ar=math.pi*((c['bore']/2)**2-(c['rod']/2)**2);fp=ph*ab-pr*ar;fm=ph*ar-pr*ab;ss=[{'q_deg':float(q),'cylinders':sample(c,q)} for q in np.linspace(*c['qrange'],121)];defs=[]
+ for i in range(2):
+  ls=[z['cylinders'][i]['eye_length_m'] for z in ss];lo,hi=min(ls),max(ls);S=hi-lo+.020;zmin=S+.140;tail=max(0,lo-.010-zmin);zero=zmin+tail;Rout=c['bore']/2+c['wall'];r=c['rod']/2;pin=c['pin']/2;hole=pin+.001
+  # Gross exact primitive volumes from frozen D finite formula; no arbitrary mass reduction.
+  V={'barrel':math.pi*(Rout**2-(c['bore']/2)**2)*(S+.020),'rear_cap':math.pi*Rout**2*.020,'front_and_seal_housing':math.pi*(Rout**2-(r+.0005)**2)*.040,'piston':math.pi*(c['bore']/2-.0005)**2*.020,'rod':math.pi*r*r*(S+.070),'two_eyes':2*math.pi*((pin+.012)**2-hole**2)*.030,'two_necks':math.pi*min(r,.018)**2*(2*(.020-hole-.001)+tail)}
+  defs.append({'index':i,'neutral_A_world_m':c['pair'][i][0].tolist(),'neutral_B_world_m':c['pair'][i][1].tolist(),'eye_length_range_m':[lo,hi],'design_stroke_m':S,'minimum_zero_eye_m':zmin,'allocated_custom_zero_eye_m':zero,'tail_sleeve_m':tail,'short_working_deficit_m':max(0,zmin+.010-lo),'finite_eye_interval_feasible':lo>=zmin+.010-1e-9,'maximum_complete_eye_length_m':zero+S,'outer_diameter_m':2*Rout,'material_gross_primitive_volume_m3':V,'gross_material_mass_kg_at7850':sum(V.values())*rho,'gross_mass_not_native_union':True,'vendor_zero_length_known':False,'maximum_barrel_chamber_volume_L':ab*(S+.020)*1000})
+ for ss0 in ss:
+  Js=[x['J_m_per_rad'] for x in ss0['cylinders']];ss0['ideal_active_torque_range_Nm']=[sum(J*(-fm if J>=0 else fp) for J in Js),sum(J*(fp if J>=0 else -fm) for J in Js)];ss0['derated_active_torque_range_Nm']=[x*fric for x in ss0['ideal_active_torque_range_Nm']]
+ bb=np.vstack([np.array(x['A_world_m']) for z in ss for x in z['cylinders']]+[np.array(x['B_world_m']) for z in ss for x in z['cylinders']]);rad=c['bore']/2+c['wall']+.005;bound=np.array([bb.min(axis=0)-rad,bb.max(axis=0)+rad])
+ result.append({'family':c['family'],'axis_count':c['count'],'pair_cylinders':defs,'joint_world_m':c['j'].tolist(),'axis_world':c['axis'],'angle_range_deg':c['qrange'],'bore_rod_wall_m':[c['bore'],c['rod'],c['wall']],'pressure_supply_return_Pa':[ph,pr],'ideal_extend_retract_force_N':[fp,fm],'friction_sensitivity_multiplier':fric,'sampled_J_ranges_m_per_rad':[[min(z['cylinders'][i]['J_m_per_rad'] for z in ss),max(z['cylinders'][i]['J_m_per_rad'] for z in ss)] for i in range(2)],'pair_min_abs_two_direction_torque_reference_Nm':min(min(-z['derated_active_torque_range_Nm'][0],z['derated_active_torque_range_Nm'][1]) for z in ss),'eye_to_eye_occupied_bound_plus5mm_m':bound.tolist(),'span_xyz_m':(bound[1]-bound[0]).tolist(),'usable_parent_segment_reference_m':c['usable_segment_reference_m'],'anchor_and_serial_reaction_scope':c['anchor_scope'],'complete_swept_native_installation_unknown':True,'samples':ss})
+byfam={x['family']:x for x in result}
+def route_models(case,route):
+ models=[];oldforce={x['id']:x for x in next(p for p in D['poses'] if p['id']==case['pose'])['cases'][next(i for i,c in enumerate(next(p for p in D['poses'] if p['id']==case['pose'])['cases']) if all(c[k]==case['case'][k] for k in case['case']))]['mapped_hydraulic_and_foot_pin_LP']['force_models']}
+ for m in case['models_at_joint_witness']:
+  n={k:m[k] for k in ['id','bias','coeff','plus','minus','SI_unit']};family=None
+  if route.startswith('A'):
+   if n['id']=='ds_waist_pitch':n['plus']=n['minus']=(4 if route=='A4' else 8)*1236
+   elif n['id'].endswith('hip_roll'):n['plus']=n['minus']=1236
+   elif n['id'].endswith('foot_roll'):n['plus']=n['minus']=611
+  else:
+   if n['id']=='ds_waist_pitch':family='waist_pitch';q=angles[case['pose']]['torso']
+   elif n['id'].endswith('hip_roll'):family='hip_roll';q=0
+   elif n['id'].endswith('foot_roll'):family='foot_roll';q=0
+   elif n['id'] in oldforce and oldforce[n['id']]['kind']=='hydraulic_pitch':
+    family=n['id'].split('_',1)[1];q=angles[case['pose']][family];arm=oldforce[n['id']]['effective_arm_m'];n['bias']*=-arm;n['coeff']=(np.array(n['coeff'])*-arm).tolist();n['SI_unit']='N m'
+   if family:
+    cc=next(c for c in configs if c['family']==family);Js=[x['J_m_per_rad'] for x in sample(cc,q)];fp,fm=byfam[family]['ideal_extend_retract_force_N'];mn=sum(J*(-fm if J>=0 else fp) for J in Js)*fric;mx=sum(J*(fp if J>=0 else -fm) for J in Js)*fric;n['plus']=-mn;n['minus']=mx
+  models.append(n)
+ return models
+lps=[]
+for route in ['A4','A8','B_pairs']:
+ for ca in cap['cases']:
+  models=route_models(ca,route);V=np.array(next(x for x in D['poses'] if x['id']==ca['pose'])['actual_pad_contact_vertices_world_m']);E=np.vstack([np.ones(len(V)),V[:,0],V[:,1]]);Eq=np.column_stack([E,np.zeros(3)]);target=E@np.array(ca['normal_reactions_N']);Au=[];bu=[]
+  for m in models:Au.extend([np.r_[np.array(m['coeff'])/m['plus'],-1],np.r_[-np.array(m['coeff'])/m['minus'],-1]]);bu.extend([-m['bias']/m['plus'],m['bias']/m['minus']])
+  Au=np.array(Au);bu=np.array(bu);cost=np.r_[np.zeros(len(V)),1];rr=linprog(cost,A_ub=Au,b_ub=bu,A_eq=Eq,b_eq=target,bounds=[(0,None)]*len(cost),method='highs');row={'route':route,'pose':ca['pose'],'case':ca['case'],'solver_success':bool(rr.success),'mass_contact_from_frozen_D_not_route_mass':True,'physical_acceptance':False}
+  if rr.success:
+   lam=np.array(rr.ineqlin.marginals);dual=float(bu@lam+target@rr.eqlin.marginals);row.update(reference_minimax_peak_use=float(rr.fun),normal_reactions_N=rr.x[:-1].tolist(),dual_lower_bound=dual,primal_dual_gap=float(rr.fun-dual),equality_residual=float(abs(Eq@rr.x-target).max()),models_at_common_witness=[{**m,'demand_at_common_witness':float(m['bias']+np.array(m['coeff'])@rr.x[:-1])} for m in models])
+  lps.append(row)
+flows=[]
+for qdot in [.1,.3,.5]:
+ Q=0
+ for c in configs:
+  ss=sample(c,0);Ab=math.pi*(c['bore']/2)**2;Ar=Ab-math.pi*(c['rod']/2)**2
+  Q+=c['count']*sum((Ab if z['J_m_per_rad']*qdot>=0 else Ar)*abs(z['J_m_per_rad']*qdot) for z in ss)
+ flows.append({'same_joint_speed_all13_axes_rad_s':qdot,'ideal_metered_26_cylinder_flow_L_min':Q*60000,'pump_hydraulic_kW_at21MPa':Q*21e6/1000,'return_regen_sync_not_qualified':True})
+# Actual finite support budget remains on each converted rotary axis: no bare shaft assumption.
+support=[]
+for f,count,L in [('waist_pitch',1,.400),('hip_roll',2,.320),('foot_roll',2,.240)]:
+ V=2*math.pi*(.090**2-.070**2)*.025+math.pi*(.060**2-.045**2)*L+2*(.045*.060-(.045-.012)*(.060-.012))*.300
+ support.append({'family':f,'count':count,'housing_outer_inner_radius_m':[.090,.070],'paired_housing_axial_length_m':.025,'output_shaft_outer_inner_radius_m':[.060,.045],'output_shaft_length_m':L,'two_6mm_wall45x60mm_crank_members_length_m':.300,'finite_gross_material_kg_per_axis':V*rho,'bearing_pair_complete_envelope_mass_range_per_axis_kg':[1,2,4],'whole_fixed_output_housing_interfaces_not_native_installed':True})
+newcylmass=sum(x['axis_count']*sum(z['gross_material_mass_kg_at7850'] for z in x['pair_cylinders']) for x in result);supmass=sum(x['count']*x['finite_gross_material_kg_per_axis'] for x in support)
+removedOEM=3*(8.9+1.613)+2*(3.2+1.613);deltaA4=2*(20.9+5.8-8.9-1.613)+2*(8.9-3.2)+4*(20.9+5.8)-(8.9+1.613);deltaA8=deltaA4+4*(20.9+5.8)
+newfluid=sum(x['axis_count']*sum(z['maximum_barrel_chamber_volume_L'] for z in x['pair_cylinders']) for x in result)
+# Read true inner-skin ray outputs rather than presenting AABBs as usable cavities.
+section_limits=[]
+for z in skin:
+ section_limits.append({'id':z['id'],'source_section_keys':list(z),'original_C15_not_AA3_approved':True})
+report={'robot_id':'gorilla_v0_1','candidate':'E macro A rotary vs B paired linear','input_hashes':{str(p.relative_to(R)):sha(p) for p in paths},'producer_sha256':sha(Path(__file__)),'official_source_data_reused':sys['sources'],'frozen_D_mass_range_kg':D['whole_mass_range_kg'],'critical_known_waist_pitch':{'neutral_nominal_empty_Nm':339.002682600587,'forward_nominal_empty_Nm':1915.7848412551284,'forward_nominal_100kg_Nm':2680.4,'forward_nominal_pressure3000kg_Nm':9220.5,'all_nonpressure_cases_max_Nm':4800.248704483614,'all_pressure_cases_max_Nm':9740.195972950842,'catalogue_CSG65_L10_reference_Nm':1236,'normal_reference_unit_count_lower_bound':4,'pressure_reference_unit_count_lower_bound':8,'contact_coefficients_zero_for_waist_pitch':True,'not_installed_static_hardlimit':True},'independent_axis_ranges_warning':interval['scope'],'A_route':{'keep_8_D_finite_hydraulic_pitch_and_braces':True,'other18_stock_rotary_axes_references_retained':True,'waist_pitch_CSG65_reference_units_normal_or_pressure':[4,8],'same_axis_parallel_equal_sharing_unqualified':True,'complete_CSG65_QTL210_single_pack_span_along_axis_radial1_radial2_m':[.294,.280,.280],'two_per_side_normal_array_reference_bounds_XYZ_m':[.580,.658,.280],'four_per_side_pressure_array_reference_bounds_XYZ_m':[.580,.658,.580],'array_gap_m':.020,'common_central_yoke_width_m':.070,'extra_yoke_gears_or_belts_unknown':True,'hip_roll_complete_pack_span_XYZ_m':[.294,.280,.280],'foot_roll_complete_pack_span_XYZ_m':[.28175,.210,.230],'known_OEM_gear_motor_only_delta_kg_normal':deltaA4,'known_OEM_gear_motor_only_delta_kg_pressure':deltaA8,'whole_mass_not_solved':True},'B_route':{'converted_rotary_axes':['waist_pitch','left_hip_roll','right_hip_roll','left_foot_roll','right_foot_roll'],'existing8pitch_also_rebuilt_as_pairs':True,'hydraulic_axis_count':13,'cylinder_count':26,'other18_stock_rotary_axis_references_retained':True,'finite_pairs':result,'old8_D_cylinder_material_kg_not_a_discount':37.382996,'known_removed5_OEM_gear_motor_kg':removedOEM,'new26_cylinder_gross_material_kg':newcylmass,'new_converted_axis_support_gross_kg':supmass,'axis_supports':support,'conservative_additive_D_mass_delta_kg_known_terms_only':newcylmass+supmass-37.382996-removedOEM,'old_custom_housings_and_carriers_not_subtracted_as_their_union_not_recomputed':True,'additional_independent_valve_section_count_range':[5,18],'HAWE_PSL3_reference_added_valve_mass_range_kg':[5*3.7,18*3.7],'valve_per_slice_body_XYZ_m':[.080,.0495,.096],'valve_EA_height_above_body_m':.2688,'new26_chamber_gross_fluid_capacity_L':newfluid,'flow_sensitivity':flows,'D_two_Z16_reference_actual_flow_L_min_range':[59.4,64.02],'native_installation_synchronization_fluid_return_safety_heat_unknown':True,'complete_swept_installation_accepted':False},'frozen_D_common_LP_cases':lps,'LP_scope':'All capacities changed in one common-normal-reaction LP per case. Frozen-D exact COM/contact and C15 proxy descendants retained. This tests transmission reference algebra only; new route masses/axis trees/structural reaction/drive dynamics/pressure and thermal are not solved. Individual hip/foot minAbs0 is NOT combined into a solution.','geometry_accepted':False,'physics_accepted':False,'AA3_outer_change_necessity_proved':False}
+(O/'comparison.json').write_text(json.dumps(report,indent=2,allow_nan=False)+'\n')
+for r in ['A4','A8','B_pairs']:
+ x=[v for v in lps if v['route']==r];print(r,'range',min(z['reference_minimax_peak_use'] for z in x),max(z['reference_minimax_peak_use'] for z in x),'normal_pass_references',sum(z['reference_minimax_peak_use']<=1+1e-8 and not z['case']['separate_pressure_demand_kg'] for z in x),'of36',flush=True)
+for x in result:print('PAIR',x['family'],'Lmm',[[round(v*1000,1) for v in z['eye_length_range_m']] for z in x['pair_cylinders']],'stroke',[round(z['design_stroke_m']*1000,1) for z in x['pair_cylinders']],'zero',[round(z['allocated_custom_zero_eye_m']*1000,1) for z in x['pair_cylinders']],'fails',[z['short_working_deficit_m'] for z in x['pair_cylinders']],'torque',round(x['pair_min_abs_two_direction_torque_reference_Nm'],1),flush=True)
+print('MASS',newcylmass,supmass,'Adeltas',deltaA4,deltaA8,'Bdelta',report['B_route']['conservative_additive_D_mass_delta_kg_known_terms_only'],'FLOW',flows,flush=True)

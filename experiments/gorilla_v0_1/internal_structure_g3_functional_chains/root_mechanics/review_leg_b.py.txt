@@ -1,0 +1,94 @@
+"""Independent same-source G3 B resource and compression-path checks."""
+from pathlib import Path
+import sys, json, math, hashlib
+import numpy as np
+R = Path('/home/ethan/Projects/Sai_Rotbots')
+O = Path(__file__).resolve().parent
+S = R/'.scratch/gorilla_internal_g3_root_render/leg_b_complete_01/chain_scene.json'
+sys.path.insert(0,str(R/'.scratch/gorilla_internal_g_material_contract'))
+from native_signed_material import validate_scene, kernel
+sha = lambda p: hashlib.sha256(p.read_bytes()).hexdigest()
+source_hash = sha(S)
+s = json.loads(S.read_text())
+check = validate_scene(s)
+parts = {p['name']:p for p in s['parts']}
+valid = {p['id']:p['resource_contract_pass'] for p in check['parts']}
+ks = {name:kernel(p['vertices_world_m'],p['faces']) for name,p in parts.items()}
+vol = {n:float(k.volume()) for n,k in ks.items()}
+metal = sum(vol[n]*p['density_kg_m3'] for n,p in parts.items() if p.get('density_kg_m3') is not None)
+pad = np.sum([p['mass_range_kg'] for p in parts.values() if p['role']=='new_composite_contact_pad'],axis=0)
+bearings = np.sum([p['mass_range_kg'] for p in parts.values() if p['role']=='bearing_reference_envelope'],axis=0)
+armorp = R/'.scratch/gorilla_internal_g3_root_render/leg_b_complete_01/armor_scene.json'
+armor = json.loads(armorp.read_text())
+armor_mass = np.sum([p['mass_range_kg'] for p in armor['parts']],axis=0)
+witnesses = []
+for a,b in [('g3_thigh_interface_load_net','g3_middle_load_net'),('g3_middle_load_net','g3_distal_load_net'),('g3_ankle_roll_rod','g3_ankle_carrier_load_net')]:
+    assert valid[a] and valid[b]
+    v = float((ks[a]^ks[b]).volume())
+    assert v > 1e-10
+    witnesses.append({'a':a,'b':b,'both_resource_valid':True,'positive_volume_cm3':v*1e6})
+# Ground-only external moments. Actual full descendant weight is additional and
+# compliance/loop stiffness is unresolved; this is not a multibody statics solve.
+joints = {j['id']:j for j in s['joints']}
+cp = np.array([.250,.650,0.])
+ground = np.array([0.,0.,3000*9.81])
+rows = []
+for a in s['actuators']:
+    jid = {'fold_inner':'fold','fold_outer':'fold','ankle_pitch':'ankle_pitch','ankle_roll':'ankle_roll','forefold':'forefoot'}[a['id']]
+    j = joints[jid]
+    c = np.array(j['c']); ax = np.array(j['axis'])
+    A = np.array(a['A_world_m']); B = np.array(a['B_world_m'])
+    direction = (B-A)/np.linalg.norm(B-A)
+    signed_J = float(ax @ np.cross(B-c,direction))
+    external_T = float(ax @ np.cross(cp-c,ground))
+    force_need = -external_T/signed_J
+    divisor = 2 if jid=='fold' else 1
+    area_cap = math.pi*a['bore_m']**2/4
+    area_ann = math.pi*(a['bore_m']**2-a['rod_m']**2)/4
+    active_area = area_cap if force_need>=0 else area_ann
+    rows.append({'id':a['id'],'axis':jid,'signed_J_m_per_rad':signed_J,
+        'external_ground_torque_Nm':external_T,'equal_share_actuator_count_assumption':divisor,
+        'required_signed_one_actuator_N':force_need/divisor,'required_pressure_MPa':abs(force_need/divisor)/active_area/1e6,
+        'supply_chamber':'cap_extending' if force_need>=0 else 'annulus_retracting',
+        'cap_force_at_assumed30MPa_N':area_cap*30e6,'annulus_force_at_assumed30MPa_N':area_ann*30e6,
+        'load_route':'forefold unloaded only; loaded route must be mechanical brace/stop' if jid=='forefoot' else 'conditional actuator balance; true assembly reactions unresolved',
+        'qualified':False})
+# The source has two actual folded braces. Straight axial chord is a diagnostic;
+# folded halves, knee stops and stiffness require the full linkage load solution.
+H = np.array(joints['forefoot']['c']); bu=[]; lever=[]
+for b in s['braces']:
+    A=np.array(b['A_world_m']); B=np.array(b['B_world_m']); u=(B-A)/np.linalg.norm(B-A)
+    bu.append(u);lever.append(np.cross(B-H,u))
+bracerows=[]
+for factor in [1.,1.5]:
+    for dy in [0.,-.100,.100]:
+        C=cp+np.array([0,dy,0]);F=ground*factor;M=np.cross(C-H,F)
+        LM=np.array([[l[1] for l in lever],[l[0] for l in lever]])
+        N=np.linalg.solve(LM,-M[[1,0]])
+        reaction=-F-sum(n*u for n,u in zip(N,bu))
+        bracerows.append({'load_factor':factor,'CoP_world_m':C.tolist(),
+            'brace_chord_compression_N':N.tolist(),'all_compression':bool(np.all(N>=0)),
+            'fore_hinge_force_reaction_N':reaction.tolist(),
+            'pin_40mm_80mmspan_nominal_bending_MPa':[abs(float(n))*.080/4/(math.pi*.040**3/32)/1e6 for n in N]})
+assert sha(S)==source_hash
+receipt={'robot_id':'gorilla_v0_1','source_path':str(S.relative_to(R)),'source_sha256':source_hash,
+    'entry_sha256':sha(Path(__file__)),'native_resource':{'parts':len(parts),'pass_count':sum(valid.values()),
+        'errors':[{'id':p['id'],'errors':p['errors']} for p in check['parts'] if not p['resource_contract_pass']],
+        'mechanical_connection_not_inferred':True},
+    'independent_material_witnesses':witnesses,
+    'material_body_count_from_native_kernel':{n:len(k.decompose()) for n,k in ks.items() if parts[n]['role']=='finite_metal' and n.endswith('_load_net')},
+    'scoped_mass':{'finite_metal_kg':metal,'pads_range_kg':pad.tolist(),'ten_catalog_bearings_range_kg':bearings.tolist(),
+        'six_armor_range_kg':armor_mass.tolist(),'sum_as_listed_range_kg':(metal+pad+bearings+armor_mass).tolist(),
+        'scope':'Single left lower module. Arch invalid tiny closed boundary retained. No oil/valves/hoses/end fittings, knee input/upper thigh or complete robot. Same-body overlaps are not automatic mass savings.'},
+    'ground_compression_screen':{'equivalent_compression_mass_kg':3000,'ground_force_world_N':ground.tolist(),'CoP_world_m':cp.tolist(),
+        'pressure30MPa_is_conditional_assumption_not_certified_continuous_spec':True,
+        'joint_and_frame_weight_omitted_makes_this_not_full_statics':True,'actuator_rows':rows},
+    'forefoot_brace_sensitivity':{'chord_axial_diagnostic_only':True,'brace_knee_stop_and_real_stiffness_not_solved':True,
+        'assumption':'Braces carry all pitch and roll moment; hinge carries remaining forces and yaw. Not unique without bearing/link stiffness.', 'cases':bracerows},
+    'root_visual_judgment':'Native whole FRONT/LEFT/REAR/TOP and bare/fold views inspected. New covers are flat broad slabs; aesthetic quality below authority, not adopted.',
+    'geometry_accepted':False,'physics_accepted':False,'aesthetic_accepted':False,'stable_si':False}
+(O/'review_leg_b.json').write_text(json.dumps(receipt,indent=2)+'\n')
+print('LEG_B_REVIEW',sum(valid.values()),'/',len(parts),'mass',receipt['scoped_mass']['sum_as_listed_range_kg'],flush=True)
+for r in rows: print(r['id'],r['supply_chamber'],'pressure required MPa',r['required_pressure_MPa'],flush=True)
+for r in bracerows:
+    if r['load_factor']==1 and r['CoP_world_m'][1]>=.650:print('BRACE',r['CoP_world_m'],r['brace_chord_compression_N'],r['fore_hinge_force_reaction_N'],flush=True)

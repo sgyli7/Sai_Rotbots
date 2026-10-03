@@ -1,0 +1,258 @@
+"""Source-bound diagnostic composition, function accounting and gravity handoff.
+
+No simulation/default contract or author source is modified.  OEM envelopes never
+become uniform-density material.  Numeric partial sums do not rate this robot.
+"""
+from pathlib import Path
+import argparse, copy, gzip, hashlib, itertools, json
+from collections import Counter
+import numpy as np
+import trimesh
+import manifold3d as mf
+
+R = Path('/home/ethan/Projects/Sai_Rotbots')
+O = Path(__file__).resolve().parent
+ap = argparse.ArgumentParser()
+ap.add_argument('--arm', choices=['a', 'b'], required=True)
+args = ap.parse_args()
+D = O / ('body_b_arm_' + args.arm)
+D.mkdir(parents=True, exist_ok=True)
+
+def sha(p): return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def read(p):
+    p = Path(p)
+    return json.loads(gzip.decompress(p.read_bytes()) if p.suffix == '.gz' else p.read_bytes())
+def write(name, x):
+    raw = (json.dumps(x, indent=2, allow_nan=False) + '\n').encode()
+    p = D / name
+    p.write_bytes(gzip.compress(raw, mtime=0) if p.suffix == '.gz' else raw)
+def geometry(p): return (p['vertices_world_m'], p['faces'], p.get('body'))
+def mesh(p):
+    v = np.asarray(p['vertices_world_m'], float)
+    f = np.asarray([[a[0], a[k], a[k+1]] for a in p['faces'] for k in range(1, len(a)-1)], np.uint64)
+    return trimesh.Trimesh(v, f, process=False)
+def transform(old, new, ids):
+    if not ids or any(old[n]['faces'] != new[n]['faces'] or
+            len(old[n]['vertices_world_m']) != len(new[n]['vertices_world_m']) for n in ids):
+        return {'pass': False, 'reason': 'indexed geometry changed or absent'}
+    a = np.concatenate([np.asarray(old[n]['vertices_world_m'], float) for n in ids])
+    b = np.concatenate([np.asarray(new[n]['vertices_world_m'], float) for n in ids])
+    aa, bb = a.mean(0), b.mean(0)
+    u, _, vh = np.linalg.svd((a-aa).T @ (b-bb))
+    rot = vh.T @ u.T
+    if np.linalg.det(rot) < 0:
+        vh[-1] *= -1
+        rot = vh.T @ u.T
+    off = bb - rot @ aa
+    err = float(np.max(np.linalg.norm(a @ rot.T + off - b, axis=1)))
+    T = np.eye(4); T[:3,:3] = rot; T[:3,3] = off
+    return {'pass': err < 1e-7, 'maximum_indexed_vertex_error_m': err,
+            'detR': float(np.linalg.det(rot)), 'T_world_new_from_old': T.tolist()}
+
+paths = {
+    'body_b': R/'.scratch/gorilla_internal_g18_body_codesign/b/scene.json.gz',
+    'arm': R/'.scratch/gorilla_internal_g18_shoulder_arm_codesign'/args.arm/'scene.json.gz',
+    'common_body_g17': R/'.scratch/gorilla_internal_g17_connected_cage_layout/b/scene.json.gz',
+    'mass_g15': R/'experiments/gorilla_v0_1/internal_structure_g15_function_mass_and_domain/mass_load_contract/g15_b_mass_contract.json.gz',
+    'scene_g15': R/'experiments/gorilla_v0_1/internal_structure_g15_function_mass_and_domain/body_partition/b/scene.json.gz',
+    'sixd_g15': R/'experiments/gorilla_v0_1/internal_structure_g15_function_mass_and_domain/mass_load_contract/sixd_load_contract.json',
+    'thermal_budget': R/'.scratch/gorilla_internal_g18_cooling_architecture'/('architecture_comparison_v2.json' if args.arm == 'b' else 'architecture_comparison_v1.json'),
+    'arm_static': R/'.scratch/gorilla_internal_g18_shoulder_arm_codesign'/args.arm/'first_static_gate_report.json',
+}
+captured = {}
+locked_paths = {}
+for key, p in paths.items():
+    target = D / ('bound_' + key + ('.json.gz' if p.suffix == '.gz' else '.json'))
+    if not target.exists():
+        target.write_bytes(p.read_bytes())
+    captured[key] = {'original_path': str(p), 'sha256': sha(target), 'captured_name': target.name}
+    locked_paths[key] = target
+paths = locked_paths
+body, arm, common = (read(paths[k]) for k in ['body_b','arm','common_body_g17'])
+old_scene, old_mass = read(paths['scene_g15']), read(paths['mass_g15'])
+assert sha(paths['scene_g15']) == old_mass['source']['sha256']
+bm, am, cm, old = ({p['name']: p for p in x['parts']} for x in [body, arm, common, old_scene])
+assert all(len(m) == len(x['parts']) for m, x in [(bm,body),(am,arm),(cm,common),(old,old_scene)])
+arm_changes = {n for n in am if n not in cm or geometry(am[n]) != geometry(cm[n])}
+body_changes = {n for n in bm if n not in cm or geometry(bm[n]) != geometry(cm[n])}
+conflicts = sorted(n for n in arm_changes & body_changes if n in bm and geometry(am[n]) != geometry(bm[n]))
+# An explicit conflict stops the composition instead of choosing whichever source was read last.
+assert not conflicts, ('Independent authors changed the same interface', conflicts)
+retired = set(arm['actual_retired_present_ids'])
+present = {n: copy.deepcopy(p) for n,p in bm.items() if n not in retired}
+for n in sorted(arm_changes): present[n] = copy.deepcopy(am[n])
+armor_ids = body['original_visible_armor_ids']
+assert all(present[n] == bm[n] for n in armor_ids)
+composition = {
+    'schema': 'gorilla_g18_full_composition_diagnostic_v1', 'robot_id': 'gorilla_v0_1',
+    'producer_sha256': sha(__file__), 'inputs': captured,
+    'parts': [present[n] for n in sorted(present)],
+    'body_tree_candidate': arm['body_tree_candidate'],
+    'new_joint_interfaces': arm['new_joint_interfaces'],
+    'retired_arm_own_material_ids': sorted(retired),
+    'applied_arm_change_ids': sorted(arm_changes), 'body_change_ids': sorted(body_changes),
+    'same_interface_conflict_ids': conflicts, 'visible_armor_source_preserved_not_fit': True,
+    'assembly_physical_aesthetic_or_SI_accepted': False,
+}
+write('scene.json.gz', composition)
+
+rows, decisions, absences = [], {}, []
+cache = {}
+def tm(n):
+    if n not in cache: cache[n] = mesh(present[n])
+    return cache[n]
+def bounds(ids):
+    vv = np.concatenate([np.asarray(present[n]['vertices_world_m'],float) for n in ids])
+    return [vv.min(0).tolist(), vv.max(0).tolist()]
+def add(row):
+    row['physical_mass_COM_fullI_and_connection_admitted'] = False
+    for n in row['member_ids']:
+        if n in decisions: raise ValueError('Double additive accounting: '+n)
+        decisions[n] = row['id']
+    rows.append(row)
+def unknown(ids, key, reason):
+    owners = sorted({present[n].get('body') for n in ids})
+    add({'id': key, 'member_ids':ids, 'mass_range_kg':[None]*3,
+         'owner_candidate':owners[0] if len(owners)==1 else None,
+         'COM_world_proxy_m':None, 'COM_world_geometric_bounds_m':bounds(ids),
+         'full_I_COM_kgm2':None, 'basis':reason, 'unknown_is_not_zero':True})
+
+for prev in old_mass['function_mass_rows']:
+    ids = sorted(set(prev['member_ids']) & set(present))
+    gone = sorted(set(prev['member_ids']) - set(present))
+    if not ids:
+        absences.append({'previous_row':prev['id'],'absent_member_ids':gone,
+            'old_mass_not_additive_in_new_scene':True,'functional_replacement_or_retirement_not_qualified':True})
+        continue
+    # Global fluid is separately reconciled from the new thermal inventory below.
+    if any('global_inventory' in n for n in ids):
+        unknown(ids,'g18_fluid_position_unknown:'+prev['id'],
+                'Global fluid counted in separate whole-stock budget once; actual distribution/COM not built')
+        continue
+    tr = transform(old,present,ids)
+    if not gone and tr['pass']:
+        p = copy.deepcopy(prev)
+        p['id'] = 'retained:'+prev['id']; p['member_ids']=ids
+        p['owner_candidate'] = sorted({present[n].get('body') for n in ids})
+        p['owner_candidate'] = p['owner_candidate'][0] if len(p['owner_candidate']) == 1 else None
+        p['mass_range_kg'] = p['mass_range_kg'] if p['mass_range_kg'] is not None else [None]*3
+        T = np.asarray(tr['T_world_new_from_old']); c = p.get('COM_world_proxy_m')
+        p['COM_world_proxy_m'] = (T[:3,:3]@np.asarray(c)+T[:3,3]).tolist() if c is not None else None
+        p['COM_world_geometric_bounds_m']=bounds(ids)
+        I=p.get('own_material_full_I_COM_kg_m2')
+        p['full_I_COM_kgm2']=(T[:3,:3]@np.asarray(I)@T[:3,:3].T).tolist() if I is not None else None
+        p['indexed_transform_from_g15']=tr
+        p['basis']='Exact retained historical function basis transported to current indexed geometry; historical rejects stay unknown'
+        add(p)
+    elif prev.get('source_density_kg_m3') is not None and prev.get('native_material_valid') is True:
+        # Recompute a historical same-material owner group, never divide a mass by member count.
+        kernels=[]
+        for n in ids:
+            t=tm(n); kernels.append(mf.Manifold(mf.Mesh64(t.vertices.astype(float),t.faces.astype(np.uint64))))
+        k=mf.Manifold.batch_boolean(kernels,mf.OpType.Add)
+        if any(t.status()!=mf.Error.NoError for t in kernels) or k.status()!=mf.Error.NoError or k.volume()<=0:
+            unknown(ids,'changed_rejected:'+prev['id'],'Changed retained own-material group is not valid net material')
+        else:
+            m=k.to_mesh64(); p=trimesh.Trimesh(m.vert_properties[:,:3],m.tri_verts,process=False).mass_properties
+            rho=prev['source_density_kg_m3'];owners=sorted({present[n]['body'] for n in ids})
+            add({'id':'recomputed:'+prev['id'],'member_ids':ids,'retired_previous_member_ids':gone,
+                'mass_range_kg':[p.volume*rho]*3,'owner_candidate':owners[0] if len(owners)==1 else None,
+                'COM_world_proxy_m':p.center_mass.tolist(),'COM_world_geometric_bounds_m':bounds(ids),
+                'full_I_COM_kgm2':(p.inertia*rho).tolist(),'basis':'Recomputed previous own same-material union, density remains stated hypothesis; no connection admission'})
+    else:
+        unknown(ids,'changed_unknown:'+prev['id'],'Old grouping changed or partially retired; no uniform OEM density or inherited group credit')
+
+aliases={x['id']: x for x in old_mass['excluded_aliases_not_additive']}
+exclude=[]
+reject_ids=set(read(paths['arm_static'])['new_resource_rejectIDs'])
+for n in sorted(present):
+    if n in decisions: continue
+    p=present[n]; role=p.get('role','')
+    if role in ['design_domain_bulk','service_after_shell_removal','fluid_lumen_global_alias'] or n.endswith('bounded_water_region') or n in aliases:
+        exclude.append({'id':n,'reason':aliases.get(n,{}).get('reason',role or 'global fluid geometry alias'),
+                        'not_additive_permanent_hardware':True})
+        continue
+    if role=='OEM_cell_max_envelope_reference':
+        mass=[None,None,.070]; why='P45B manufacturer maximum 70g only; nominal/lower and internal inertia unknown'
+    elif n in reject_ids:
+        unknown([n],'new_native_rejected:'+n,'Author native material gate rejects this source; positive volume alone is insufficient')
+        continue
+    elif (p.get('finite_material') or role=='E2_finite_load_material' or role.startswith('finite_')) and p.get('density_kg_m3') is not None and not any(w in role for w in ['reference','envelope','stock','budget']):
+        t=tm(n); k=mf.Manifold(mf.Mesh64(t.vertices.astype(float),t.faces.astype(np.uint64))); pr=t.mass_properties
+        if not t.is_watertight or pr.volume<=0 or k.status()!=mf.Error.NoError:
+            unknown([n],'new_native_rejected:'+n,'Independent native closed/signed material check fails')
+            continue
+        rho=p['density_kg_m3']; mass=[pr.volume*rho]*3
+        add({'id':'current_own_material:'+n,'member_ids':[n],'mass_range_kg':mass,
+            'owner_candidate':p['body'],'COM_world_proxy_m':pr.center_mass.tolist(),
+            'COM_world_geometric_bounds_m':bounds([n]),'full_I_COM_kgm2':(pr.inertia*rho).tolist(),
+            'basis':'Actual current net-material source at conditional density; distinct colliding pieces are not silently fused'})
+        continue
+    else:
+        mass=p.get('mass_range_kg'); why='Complete current source function budget, OEM/install-envelope is not material or true mass distribution'
+    if mass is None or len(mass)!=3:
+        unknown([n],'current_unknown:'+n,'Current permanent function has no qualified whole mass range')
+        continue
+    bb=bounds([n]); cc=((np.asarray(bb[0])+bb[1])/2).tolist()
+    add({'id':'current_budget:'+n,'member_ids':[n],'mass_range_kg':mass,
+         'owner_candidate':p.get('body'),'COM_world_proxy_m':cc,'COM_world_geometric_bounds_m':bb,
+         'full_I_COM_kgm2':None,'basis':why,'geometric_center_not_true_OEM_COM':True})
+
+assert set(decisions).isdisjoint({x['id'] for x in exclude})
+assert set(decisions)|{x['id'] for x in exclude}==set(present)
+partial=[]
+for level in range(3):
+    usable=[r for r in rows if r['mass_range_kg'][level] is not None and r['COM_world_proxy_m'] is not None]
+    total=sum(r['mass_range_kg'][level] for r in usable)
+    first=sum((r['mass_range_kg'][level]*np.asarray(r['COM_world_proxy_m']) for r in usable),np.zeros(3))
+    partial.append({'level':['low','nominal_range_marker','high'][level],
+        'known_and_budget_subset_mass_kg':total,'subset_geometric_COM_proxy_m':(first/total).tolist(),
+        'unknown_or_unplaced_function_rows':[r['id'] for r in rows if r not in usable],
+        'not_whole_mass_COM_or_rated_capacity':True})
+
+tree=arm['body_tree_candidate']
+def descendant(b, root):
+    visited=set()
+    while b in tree and b not in visited:
+        if b==root:return True
+        visited.add(b); b=tree[b]['parent']
+    return False
+gravity=[]
+for j in arm['new_joint_interfaces']:
+    selected=[r for r in rows if descendant(r['owner_candidate'],j['output_body'])]
+    o=np.asarray(j['pivot_world_m'], dtype=float);axis=np.asarray(j['axis_world'], dtype=float);axis/=np.linalg.norm(axis)
+    levels=[]
+    for level in range(3):
+        usable=[r for r in selected if r['mass_range_kg'][level] is not None and r['COM_world_proxy_m'] is not None]
+        F=np.zeros(3);M=np.zeros(3)
+        for r in usable:
+            f=np.array([0,0,-9.81*r['mass_range_kg'][level]])
+            F+=f; M+=np.cross(np.asarray(r['COM_world_proxy_m'])-o,f)
+        levels.append({'level':['low','nominal_range_marker','high'][level],
+            'known_subset_body_on_parent_Fxyz_Mxyz':[*F.tolist(),*M.tolist()],
+            'known_subset_gravity_torque_about_actual_axis_Nm':float(axis@M),
+            'unknown_function_rows':[r['id'] for r in selected if r not in usable],
+            'unknown_COM_bounds_no_sign_or_cancellation_guarantee':True,
+            'actuator_continuous_requirement_or_capacity_not_qualified':True})
+    gravity.append({'joint':j,'known_subset_gravity':levels})
+
+thermal=read(paths['thermal_budget'])['B_proposal']
+report={'schema':'gorilla_g18_full_function_mass_diagnostic_v1','producer_sha256':sha(__file__),
+    'source_sha256':sha(D/'scene.json.gz'),'input_bindings':captured,'function_mass_rows':rows,
+    'present_id_once_accounting':decisions,'excluded_not_additive':exclude,'absent_previous_rows':absences,
+    'partial_mass_COM_screens':partial,'actual_new_joint_known_subset_gravity':gravity,
+    'new_fluid_global_once_budget':thermal['fluid_once_proxy_candidates'],
+    'fluid_distribution_COM_and_actual_routes_unknown':True,
+    'missing_cylinder_fullfunctions_retained_as_open_redline_from_g15':True,
+    'whole_mass_kg':None,'whole_COM_m':None,'whole_full_I_kgm2':None,
+    'accounting_complete_for_present_geometry_only':True,
+    'physical_or_stable_SI_contract_admission':False}
+write('function_mass_and_actual_joint_gravity.json.gz',report)
+write('summary.json',{'source_sha256':report['source_sha256'],'input_bindings':captured,
+    'parts':len(present),'functions':len(rows),'current_once_accounting':len(decisions),
+    'excluded_aliases_or_service':len(exclude),'previous_absent_function_rows':len(absences),
+    'new_native_rejected_IDs':sorted(reject_ids),
+    'partial_mass_kg':[x['known_and_budget_subset_mass_kg'] for x in partial],
+    'unknown_or_unplaced_rows_by_level':[len(x['unknown_or_unplaced_function_rows']) for x in partial],
+    'all_physical_SI_aesthetic_admission':False})
+print(json.dumps(read(D/'summary.json'),indent=2))

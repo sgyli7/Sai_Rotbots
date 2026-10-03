@@ -1,0 +1,115 @@
+from pathlib import Path
+import json,copy,hashlib,math,sys,collections
+import numpy as np,trimesh as tm
+R=Path('/home/ethan/Projects/Sai_Rotbots');O=Path(__file__).resolve().parent;FP=R/'.scratch/gorilla_internal_f1_structure/structure_scene.json';IP=FP.parent/'interface.json';MP=R/'.scratch/gorilla_internal_e2a_integrated/scene.json';load=lambda p:json.loads(Path(p).read_text());sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();write=lambda p,d:Path(p).write_text(json.dumps(d,indent=2,allow_nan=False)+'\n');F=load(FP);I=load(IP);M=load(MP);assert sha(FP)=='90b62e0135a724fb9cb7df9909d58f3b618d40f6f5be922b516e1d83ca073ee6'
+Fpm={p['name']:p for p in F['parts']};original=[p for p in M['parts'] if p['role'] in ['armor_cover','armor_surface']];assert len(original)==111
+kitnames=['waist_yaw','waist_roll','left_hip_yaw','right_hip_yaw'];stock={k:[p for p in F['parts'] if p.get('stock_group')==k] for k in kitnames};assert all(len(v)==10 for v in stock.values())
+selectedacts=[a for a in I['actuators'] if 'waist' in a['id'] or 'hip' in a['id']];assert len(selectedacts)==8
+
+def mesh(p):return tm.Trimesh(p['vertices_world_m'],[[f[0],f[j],f[j+1]] for f in p['faces'] for j in range(1,len(f)-1)],process=False)
+def box(c,d):m=tm.creation.box(d);m.apply_translation(c);return m
+def cyl(c,r,L,axis):m=tm.creation.cylinder(radius=r,height=L,sections=32);Q=tm.geometry.align_vectors([0,0,1],axis);m.apply_transform(Q);m.apply_translation(c);return m
+def ring(c,ro,ri,L,axis):return tm.boolean.difference([cyl(c,ro,L,axis),cyl(c,ri,L+.001,axis)],engine='manifold') if ri else cyl(c,ro,L,axis)
+def diff(a,b):return tm.boolean.difference([a,b],engine='manifold')
+def tube(a,b,ro=.0499,ri=.035):a=np.array(a);b=np.array(b);u=b-a;return ring((a+b)/2,ro,ri,np.linalg.norm(u),u/np.linalg.norm(u))
+
+def build(layout):
+ name='a' if layout==1 else 'b';parts=[];interfaces=[];bearings=[];assembly=[];pitchZ=1.82 if layout==1 else 1.75;shifts={'waist_yaw':np.array([0,0,-.06 if layout==1 else -.14]),'waist_roll':np.array([.05 if layout==1 else -.10,0,0]),'left_hip_yaw':np.array([0,0,.24 if layout==1 else .27]),'right_hip_yaw':np.array([0,0,.24 if layout==1 else .27])};jo=copy.deepcopy(I['joint_supports']);
+ for j in jo:
+  if j['id']=='waist_pitch':j['center_world_m'][2]=pitchZ
+ tree={**M['body_tree'],**F['body_tree']};tree['waist_pitch_carrier']['pivot_world_m'][2]=pitchZ
+ def add(n,b,m,role='finite_module_material',**meta):
+  m.fix_normals();p={'name':'f2_'+name+'_'+n,'body':b,'material_union_group':b,'role':role,'rgba':[.25,.37,.43,1],'density_kg_m3':7850.,'vertices_world_m':m.vertices.tolist(),'faces':m.faces.tolist(),**meta};parts.append(p);return p
+ def plate(n,b,c,d,hole=None):
+  m=box(c,d)
+  if hole:m=diff(m,cyl(*hole))
+  return add(n,b,m)
+ def bearing(n,fixed,out,c,axis):
+  c=np.array(c);axis=np.array(axis,float);axis/=np.linalg.norm(axis)
+  add(n+'_seat',fixed,ring(c,.0915,.0805,.018,axis),function='bearing seat; finite own geometry, load rating unknown')
+  add(n+'_outer_race',fixed,ring(c,.0805,.0675,.014,axis),function='own bearing outer race reference; not supplier selected')
+  add(n+'_inner_race',out,ring(c,.0585,.0490,.014,axis),function='integrated inner race/reference; output shaft surface geometry, fatigue unknown')
+  # 16 rolling elements have separate real moving/contact role, no fixed/output material interpenetration required.
+  e=np.array([1.,0,0]) if abs(axis[0])<.9 else np.array([0.,1,0]);u=np.cross(axis,e);u/=np.linalg.norm(u);v=np.cross(axis,u)
+  ids=[]
+  for idx in range(16):
+   q=2*math.pi*idx/16;cc=c+.063*(math.cos(q)*u+math.sin(q)*v);p=add(n+'_roller_'+str(idx),n+'_rolling_elements',cyl(cc,.0045,.010,axis),role='bearing_rolling_element_reference',bearing_fixed_owner=fixed,bearing_output_owner=out);ids.append(p['name'])
+  bearings.append({'id':n,'fixed':fixed,'output':out,'axis_point_world_m':c.tolist(),'axis_world':axis.tolist(),'race_radial_surfaces_m':{'shaft_outer':.0499,'inner_race_outer':.0585,'outer_race_inner':.0675,'roller_pitch':.063,'roller_radius':.0045},'roller_ids':ids,'kinematic_contact_only_not_material_union_between_fixed_and_output':True,'actual_capacity_preload_lubrication_seals_and_installed_race_unknown':True})
+ for k,ps in stock.items():
+  ids=[]
+  for p0 in ps:
+   p=copy.deepcopy(p0);p['name']='f2_'+name+'_'+p0['name'][3:];p['vertices_world_m']=(np.array(p['vertices_world_m'])+shifts[k]).tolist();p['F2_unscaled_complete_stock_rigid_translation']=shifts[k].tolist();p['F1_source_part_id']=p0['name'];p['component_function_counted_once']=True;parts.append(p);ids.append(p['name'])
+  assembly.append({'id':k,'source_part_ids':[p['name'] for p in ps],'part_ids':ids,'rigid_translation_world_m':shifts[k].tolist(),'rotation_identity':True,'all_functions_kept':['gear','motor','fixed housing','cooling','input hub','output adapter','brake','feedback encoder','controller','wire/coolant connector'],'four_source_complete_kits_unscaled':True})
+ # Fixed pelvis U-shell: rear reaction walls flank the central moving assembly, no nearest-pivot diagonal bars.
+ zlow=1.385 if layout==1 else 1.305;ztop=2.255 if layout==1 else 2.285
+ plate('pelvis_low_rear_bridge','pelvis',[-.285,0,zlow+.04],[.012,1.02,.08])
+ for s in [-1,1]:
+  plate('pelvis_rear_column_'+str(s),'pelvis',[-.285,s*.385,(zlow+ztop)/2],[.008,.205,ztop-zlow])
+  plate('pelvis_column_low_tie_'+str(s),'pelvis',[-.285,s*.185,zlow+.075],[.012,.405,.012])
+  # Fixed kit gear-shell tangential mounting pads terminate outside the unscaled OEM gear core.
+  for family,cx,cy,z in [('hip',-.13,s*.35,1.94675+shifts['left_hip_yaw'][2]),('waist',0,s*.075,1.63325+shifts['waist_yaw'][2])]:
+   if family=='hip':plate('hip_case_rear_mount_'+str(s),'pelvis',[-.273,cy,z],[.025,.040,.025])
+   else:plate('waist_case_rear_mount_'+str(s),'pelvis',[-.200,s*.075,z],[.174,.010,.024])
+ # Waist yaw actual source adapter is joined by a finite coaxial output tube to a real fork base below pitch shaft.
+ wyend=1.750 if layout==1 else 1.680;wystart=1.6425+(-.08 if layout==2 else 0)
+ add('waist_yaw_output_tube','waist_yaw_carrier',tube([0,0,wystart],[0,0,wyend+.007]))
+ for jj,z in enumerate([wystart+.025,wyend-.035]):
+  bearing('waist_yaw_bearing_'+str(jj),'pelvis','waist_yaw_carrier',[0,0,z],[0,0,1]);
+  for s in [-1,1]:plate('waist_yaw_bearing_rear_tie_'+str(jj)+'_'+str(s),'pelvis',[-.175,s*.070,z],[.240,.012,.018])
+ plate('waist_yaw_fork_base','waist_yaw_carrier',[0,0,wyend],[.210,.530,.012],([0,0,wyend],.035,.05,[0,0,1]))
+ # Pitch bearing side plates carry the true fixed/rotating race stack; output shaft stays clear of yaw base in neutral.
+ add('waist_pitch_output_tube','waist_pitch_carrier',tube([0,-(.27 if layout==1 else .294),pitchZ],[0,(.27 if layout==1 else .294),pitchZ]))
+ for s in [-1,1]:
+  y=s*.235;plate('waist_pitch_fork_cheek_'+str(s),'waist_yaw_carrier',[0,y,pitchZ+.005],[.200,.012,.205],([0,y,pitchZ],.0805,.050,[0,1,0]));bearing('waist_pitch_bearing_'+str(s),'waist_yaw_carrier','waist_pitch_carrier',[0,y,pitchZ],[0,1,0])
+  # Actual waist pitch cylinder fixed eyes are above the fork; thin ear pair leaves the cylinder plane free.
+  for d in [-1,1]:
+   yy=s*.27+d*.047;plate('waist_A_ear_'+str(s)+'_'+str(d),'waist_yaw_carrier',[0,yy,(pitchZ+2.095)/2],[.095,.008,2.095-pitchZ],([0,yy,2.07],.018,.03,[0,1,0]));plate('waist_A_cross_tie_'+str(s)+'_'+str(d),'waist_yaw_carrier',[0,(yy+y)/2,pitchZ+.083],[.090,abs(yy-y)+.012,.010])
+  # Pitch output carrier closed side returns connect shaft and full roll-kit housing, and the real B eye at [0.23,+/-0.27,1.62].
+  yy=s*(.235 if layout==1 else .285)
+  sideplate=diff(box([.10,yy,(1.595+1.945)/2],[.26,.010,.350]),cyl([0,yy,pitchZ],.059,.04,[0,1,0]))
+  if layout==2:sideplate=diff(sideplate,cyl([.23,yy,1.62],.048,.05,[0,1,0]))
+  add('waist_pitch_output_cheek_'+str(s),'waist_pitch_carrier',sideplate)
+  if layout==1:plate('waist_B_mount_'+str(s),'waist_pitch_carrier',[.23,s*.27,1.62],[.080,.075,.080],([.23,s*.27,1.62],.018,.11,[0,1,0]))
+  else:
+   for e in [-1,1]:plate('waist_B_fork_ear_'+str(s)+'_'+str(e),'waist_pitch_carrier',[.23,s*.27+e*.062,1.62],[.084,.010,.084],([.23,s*.27+e*.062,1.62],.018,.030,[0,1,0]))
+   plate('waist_B_fork_return_'+str(s),'waist_pitch_carrier',[.182,s*.27,1.62],[.012,.145,.080])
+ rollshift=shifts['waist_roll'][0];rollface=.2475+rollshift;rollend=.302 if layout==1 else .242
+ add('waist_roll_output_tube','torso',tube([.2125+rollshift,0,1.91],[rollend,0,1.91]))
+ for jj,x in enumerate([rollface-.007,rollface+.023]):
+  bearing('waist_roll_bearing_'+str(jj),'waist_pitch_carrier','torso',[x,0,1.91],[1,0,0]);plate('roll_fixed_lower_cradle_'+str(jj),'waist_pitch_carrier',[x,0,1.804],[.018,.210,.030]);
+  for s in [-1,1]:plate('roll_fixed_cradle_side_'+str(jj)+'_'+str(s),'waist_pitch_carrier',[x,s*.104,1.850],[.018,.024,.13]);plate('roll_cradle_to_pitch_side_'+str(jj)+'_'+str(s),'waist_pitch_carrier',[x,s*.17,1.810],[.020,.15,.020])
+ # Real torso mating saddle terminates this module; full shoulder reaction bridge remains an explicit external function.
+ plate('torso_roll_front_saddle','torso',[rollend-.010,0,2.068],[.012,.245,.265]);plate('torso_roll_top_mating','torso',[rollend-.044,0,2.190],[.080,.245,.020]);
+ for s in [-1,1]:plate('torso_roll_saddle_corner_'+str(s),'torso',[rollend-.03,s*.100,1.99],[.075,.024,.100])
+ for side,s in [('left',1),('right',-1)]:
+  yaw=side+'_hip_yaw_carrier';rol=side+'_hip_roll_carrier';th=side+'_thigh';center=np.array([-.13,s*.35,1.86]);top=1.8775+shifts[side+'_hip_yaw'][2]
+  add(side+'_hip_yaw_output_tube',yaw,tube([-.13,s*.35,1.844],[ -.13,s*.35,top]))
+  for jj,z in enumerate([1.9,top-.051]):
+   bearing(side+'_hip_yaw_bearing_'+str(jj),'pelvis',yaw,[-.13,s*.35,z],[0,0,1]);plate(side+'_yaw_bearing_rear_mount_'+str(jj),'pelvis',[-.230,s*.35,z],[.112,.045,.025])
+  # Fixed hip-roll race supports are axially behind the pitch output shaft; axis line remains F1.
+  add(side+'_hip_roll_output_tube',rol,tube([-.255,s*.35,1.74],[-.106,s*.35,1.74]))
+  for jj,x in enumerate([-.240,-.183]):
+   bearing(side+'_hip_roll_bearing_'+str(jj),yaw,rol,[x,s*.35,1.74],[1,0,0]);plate(side+'_hip_roll_rear_cheek_'+str(jj),yaw,[x,s*.35,1.802],[.018,.190,.150],([x,s*.35,1.74],.081,.03,[1,0,0]));plate(side+'_yaw_to_roll_return_'+str(jj),yaw,[(x-.13)/2,s*.35,1.850],[abs(x+.13)+.02,.095,.018])
+  # Hip-roll input-cylinder upper eye cage connects actual A eyes to yaw output collar; lower B eyes remain explicit unsupported context.
+  for idx,sg in enumerate([-1,1]):
+   yy=s*(.35+sg*.18);plate(side+'_roll_A_mount_'+str(idx),yaw,[-.075,yy,2.04],[.065,.060,.055],([-.075,yy,2.04],.018,.09,[0,1,0]));plate(side+'_roll_A_reaction_shelf_'+str(idx),yaw,[-.105,(yy+s*.35)/2,2.025],[.090,abs(yy-s*.35)+.020,.018])
+  # Hip pitch shaft & fork form the next serial owner, ending at a finite thigh root flange.
+  add(side+'_hip_pitch_output_tube',th,tube([-.045,s*.15,1.66],[-.045,s*.47,1.66]))
+  for sg in [-1,1]:
+   yy=s*(.31+sg*.14);bearing(side+'_hip_pitch_bearing_'+str(sg),rol,th,[-.045,yy,1.66],[0,1,0]);plate(side+'_pitch_fork_cheek_'+str(sg),rol,[-.045,yy,1.678],[.205,.012,.195],([-.045,yy,1.66],.0805,.05,[0,1,0]));plate(side+'_roll_pitch_rear_return_'+str(sg),rol,[-.120,(yy+s*.35)/2,1.735],[.016,abs(yy-s*.35)+.025,.024])
+  for idx,yy in enumerate([s*.198,s*.292]):
+   plate(side+'_hip_cap_mount_ear_'+str(idx),rol,[-.045,yy,1.852],[.105,.008,.285],([-.045,yy,1.96],.021,.03,[0,1,0]))
+  plate(side+'_thigh_root_flange',th,[-.045,s*.31,1.620],[.190,.215,.024])
+ # All eight actual F1 actuator bodies/pins are retained as installation challenges, with barrel/rod motion and missing reaction mounts explicit.
+ selectedids=[]
+ for a in selectedacts:
+  aid=a['id'];ids=[]
+  for p0 in F['parts']:
+   if p0['name'].startswith('f1_'+aid+'_') and p0.get('role') in ['finite_actuator_material','finite_pin_material']:
+    p=copy.deepcopy(p0);p['name']='f2_'+name+'_context_'+p0['name'][3:];p['F1_source_part_id']=p0['name'];p['retained_actuation_context_challenge']=True;parts.append(p);ids.append(p['name'])
+  selectedids+=ids;interfaces.append({'actuator_id':aid,'base':a['base_body'],'output':a['output_body'],'A_world_m':a['neutral_A_world_m'],'B_world_m':a['neutral_B_world_m'],'source_part_ids':ids,'complete_neutral_finite_source_present':bool(ids),'source_zero_stroke_qualification_not_inherited':layout==2,'missing_reaction_bridge': 'hip_roll_pair' in aid,'force_interface_closed':False})
+ posejoints=[j for j in jo if j['id'] in ['waist_yaw','waist_pitch','waist_roll','left_hip_yaw','right_hip_yaw','left_hip_roll','right_hip_roll','left_hip','right_hip']]
+ scene={'schema':'gorilla_f2_waist_hip_module_native_v1','robot_id':'gorilla_v0_1','candidate':name,'parts':parts,'original_armor_comparator':copy.deepcopy(original),'body_tree':tree,'joint_supports':jo,'module_joint_scope':posejoints,'kit_groups':assembly,'bearing_interfaces':bearings,'hydraulic_actuation_context':interfaces,'actuator_source_definitions':selectedacts,'source_hashes':{str(FP.relative_to(R)):sha(FP),str(IP.relative_to(R)):sha(IP),str(MP.relative_to(R)):sha(MP)},'original_armor_external_delta_mm':0,'layout_note':'A retains all F1 axis lines; B changes waist pitch Z1.82->1.75 only. Complete kits translate only along own axes, actual finite coaxial shafts/clearance-bearing proposals connect outputs.','shaft_race_bearing_capacity_SEAL_lubrication_flange_bolt_and_drive_interface_unknown':True,'hiproll_lower_B_reaction_mounts_not_built_through_independent_thigh':True,'torso_output_saddle_is_not_full_new_shoulder_bridge':True,'source_existing_oil_lines_not_inherited_or_modified':True,'geometry_accepted':False,'physics_accepted':False,'SI_accepted':False,'full_module_installed':False,'aesthetic_accepted':False,'builder_sha256':sha(__file__)};out=O/f'candidate_{name}_scene.json';write(out,scene);print('built',name,len(parts),'complete kits',sum(len(g['part_ids']) for g in assembly),'8 cylcontext',len(selectedids),sha(out),flush=True)
+ return scene
+if __name__=='__main__':
+ build(int(sys.argv[1]) if len(sys.argv)>1 else 1)

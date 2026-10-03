@@ -1,0 +1,37 @@
+"""Independent export identity and nominal interface queries; no source repair."""
+from pathlib import Path
+import json,hashlib,time
+import numpy as np
+import manifold3d as mf
+import trimesh
+OUT=Path(__file__).resolve().parent;ROOT=OUT.parents[1]
+B=ROOT/'.scratch/gorilla_internal_g7_cad_carrier/coarse/carrier_boundary.npz';TET=B.with_name('carrier_tetra.npz');G4=ROOT/'.scratch/gorilla_internal_g4_pitch_module/module_scene.json';C=ROOT/'.scratch/gorilla_internal_g7_cad_carrier/cad_source_manifest.json'
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def kernel(v,f):return mf.Manifold(mf.Mesh64(np.asarray(v,dtype=np.float64,order='C'),np.asarray(f,dtype=np.uint64,order='C')))
+def dump(n,r):(OUT/n).write_text(json.dumps(r,ensure_ascii=False,indent=2,allow_nan=False)+'\n')
+start=time.monotonic();b=np.load(B);n=np.load(TET);v=b['vertices_world_m'];f=b['faces'];t=n['tetra'];tv=n['points_m']
+assert np.array_equal(v,tv) and np.array_equal(f,n['boundary_faces'])
+xyz=tv[t];det=np.linalg.det(np.stack([xyz[:,1]-xyz[:,0],xyz[:,2]-xyz[:,0],xyz[:,3]-xyz[:,0]],axis=2));vol=det/6
+induced=np.stack([t[:,[0,2,1]],t[:,[0,1,3]],t[:,[0,3,2]],t[:,[1,2,3]]],axis=1).reshape(-1,3)
+sorted_keys=np.sort(induced,axis=1);unique,idx,counts=np.unique(sorted_keys,axis=0,return_index=True,return_counts=True)
+extracted=induced[idx[counts==1]];external_keys=unique[counts==1]
+def canonical_oriented(a):
+ m=np.argmin(a,axis=1);return np.take_along_axis(a,(np.arange(3)[None,:]+m[:,None])%3,axis=1)
+ex=canonical_oriented(extracted);fo=canonical_oriented(f);lex=lambda a:a[np.lexsort(a.T[::-1])]
+identity=np.array_equal(lex(ex),lex(fo));newV=float(vol.sum());tetcom=np.einsum('i,ij->j',vol,xyz.mean(axis=1))/newV
+mesh=trimesh.Trimesh(v,f,process=False);pr=mesh.mass_properties
+sum_vertices=xyz.sum(axis=1)
+second_moment=(np.einsum('i,ijk,ijl->kl',vol/20,xyz,xyz)+np.einsum('i,ij,ik->jk',vol/20,sum_vertices,sum_vertices))
+tet_inertia_at_COM=7850*(np.trace(second_moment)*np.eye(3)-second_moment)-newV*7850*(np.dot(tetcom,tetcom)*np.eye(3)-np.outer(tetcom,tetcom))
+used=np.unique(f);source=json.loads(G4.read_text());old=next(p for p in source['parts'] if p['name']=='g4_child_load_carrier');cm=kernel(v,f);oldkernel=kernel(old['vertices_world_m'],old['faces'])
+queries=[]
+for p in source['parts']:
+ if p['role']=='bearing_reference_envelope' or p['role']=='manual_static_stop_shoe':
+  pm=kernel(p['vertices_world_m'],p['faces']);queries.append({'part':p['name'],'role':p['role'],'new_child_gap_m':float(cm.min_gap(pm,.3)),'old_child_gap_m_fresh_query':float(oldkernel.min_gap(pm,.3)),'new_child_positive_intersection_m3':float((cm^pm).volume()),'scope':'Reference bearing is envelope, shoe is finite steel; contact pressure/fit/preload unqualified'})
+cad=json.loads(C.read_text());tri=v[f];area=np.linalg.norm(np.cross(tri[:,1]-tri[:,0],tri[:,2]-tri[:,0]),axis=1)/2
+portrows=[]
+for tag in np.unique(b['boundary_physical_tags']):
+ mask=b['boundary_physical_tags']==tag;aa=area[mask];cc=tri[mask].mean(axis=1)
+ portrows.append({'physical_tag':int(tag),'triangles':int(mask.sum()),'area_m2':float(aa.sum()),'area_centroid_world_m':np.einsum('i,ij->j',aa,cc).tolist() if aa.sum()==0 else (np.einsum('i,ij->j',aa,cc)/aa.sum()).tolist(),'cad_surface_tags':np.unique(b['boundary_cad_surface_tags'][mask]).tolist()})
+r={'boundary_sha256':sha(B),'tetra_sha256':sha(TET),'CAD_manifest_sha256':sha(C),'G4_scene_sha256':sha(G4),'checker_sha256':sha(__file__),'all_tetra_positive_direct_determinant':bool(np.all(det>0)),'minimum_tetra_volume_m3':float(vol.min()),'maximum_tet_face_incidence':int(counts.max()),'unique_external_faces':int(len(extracted)),'provided_external_faces':int(len(f)),'outward_cyclic_orientation_exact_identity':identity,'vertices_same_exact_stored_array':bool(np.array_equal(v,tv)),'unused_interior_nodes_preserved':int(len(v)-len(used)),'no_fix_normals_split_merge_removal':True,'new_source_generation_not_old_source_repair':True,'positive_tet_volume_sum_m3':newV,'boundary_signed_volume_m3':float(pr.volume),'volume_formula_difference_m3':float(newV-pr.volume),'tetra_lumped_COM_world_m':tetcom.tolist(),'boundary_COM_world_m':pr.center_mass.tolist(),'COM_formula_difference_m':(tetcom-pr.center_mass).tolist(),'tetra_analytic_fullI_at_COM_kg_m2':tet_inertia_at_COM.tolist(),'boundary_fullI_at_COM_kg_m2':(pr.inertia*7850).tolist(),'fullI_formula_difference_kg_m2':(tet_inertia_at_COM-pr.inertia*7850).tolist(),'boundary_min_triangle_area_m2':float(area.min()),'nominal_axis_pad_change_m':cad['nominal_interface_geometry_changes_m'],'old_polygon_to_exact_curve_max_radial_sag_m':cad['max_radial_sag_by_feature_m'],'nominal_existing_voids_m':{'through_journal_bore_radius':.0141,'fork_pin_bore_radius':.0202,'keeper_hole_radius':.00315,'hollow_box_inner_dimensions':[.413,.228,.138]},'new_void_or_modified_axis_added':False,'void_change_scope':'True-circle CAD replaces prior 64-facet polygonal bores and outer rounds, while nominal radii and centers stay fixed; material boundary is new and rechecked','neutral_interface_queries':queries,'physical_port_surface_rows':portrows,'export_identity_qualified':bool(np.all(det>0) and counts.max()==2 and identity),'FE_or_physical_or_fullleg_qualified':False,'elapsed_s':time.monotonic()-start}
+dump('boundary_export_identity.json',r);print(json.dumps({'identity':r['export_identity_qualified'],'external':len(extracted),'unused_nodes':r['unused_interior_nodes_preserved'],'COM_formula_difference_m':r['COM_formula_difference_m'],'neutral_interfaces':queries,'elapsed_s':r['elapsed_s']}),flush=True)

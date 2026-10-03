@@ -1,0 +1,53 @@
+"""Literal source-triangle face/section diagnostics; no reconstructed design."""
+from pathlib import Path
+import gzip,json,hashlib
+import numpy as np
+from PIL import Image,ImageDraw,ImageFont
+ROOT=next(p for p in Path(__file__).resolve().parents if(p/'sai_robots_engineering_rules.md').is_file())
+D=Path(__file__).resolve().parent
+contract=json.loads((D/'source_derived_interfaces.json').read_text())
+def read(key):
+ p=ROOT/contract['input_bindings'][key]['path'];b=p.read_bytes();assert hashlib.sha256(b).hexdigest()==contract['input_bindings'][key]['sha256'];return json.loads(gzip.decompress(b))
+j={r['name']:r for r in read('joint_scene')['parts']};w={r['name']:r for r in read('whole_scene')['parts']};c=j['g21_b_core_fixed_receiver_continuous_candidate'];b=w['g21_wide_closed_load_cage_net'];yaw=j['g21_b_yaw_output_journal_clamp_closed_ear']
+im=Image.new('RGB',(1660,720),'white');dr=ImageDraw.Draw(im);font=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',15);small=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',12)
+def label(x,y,s):dr.text((x,y),s,fill='#243247',font=font)
+def mapfn(origin,ranges,wh):
+ lo,hi=np.array(ranges[0]),np.array(ranges[1]);scale=min(wh[0]/(hi[0]-lo[0]),wh[1]/(hi[1]-lo[1]));offset=np.array(origin)+[(wh[0]-scale*(hi[0]-lo[0]))/2,(wh[1]-scale*(hi[1]-lo[1]))/2]
+ return lambda p:tuple(offset+[scale*(p[0]-lo[0]),scale*(hi[1]-p[1])]),scale
+def face(p,k,x,axes,mapping,color):
+ v=np.array(p['vertices_world_m']);f=np.array(p['faces']);t=v[f];mask=np.max(abs(t[:,:,k]-x),axis=1)<1e-10
+ for tri in t[mask]:dr.polygon([mapping(p[axes]) for p in tri],fill=color)
+def section(p,z,mapping,color):
+ v=np.array(p['vertices_world_m']);f=np.array(p['faces'])
+ for t in v[f]:
+  dist=t[:,2]-z
+  if dist.min()>1e-10 or dist.max()< -1e-10:continue
+  pts=[]
+  for k in range(3):
+   a=t[k];b=t[(k+1)%3];da=dist[k];db=dist[(k+1)%3]
+   if abs(da)<1e-10:pts.append(a[:2])
+   if da*db<0:pts.append((a+(b-a)*(-da)/(db-da))[:2])
+  if len(pts)>=2:dr.line([mapping(pts[0]),mapping(pts[1])],fill=color,width=2)
+label(30,22,'Gorilla G22: actual native interface geometry / no design alteration')
+label(30,53,'YZ: body X=.112 face grey; joint X=.115 face blue')
+m,scale=mapfn((30,105),([-.42,2.22],[.60,2.58]),(500,500));face(b,0,.112,[1,2],m,'#bac4cc');face(c,0,.115,[1,2],m,'#6492bd')
+# Source-projected intersection is a strip, not a touching surface. An inset draws
+# both surfaces without covering the source image or changing their geometry.
+for yy in [-.3,.3]:
+ for zz in [2.28,2.4,2.52]:
+  xx,yyi=m([yy,zz]);r=.008*scale;dr.ellipse((xx-r,yyi-r,xx+r,yyi+r),outline='#a3292c',width=2)
+label(30,615,'Projected common strip: .0091 m², offset -3 mm')
+label(30,641,'Six body holes: R8 mm; no matching joint end-face holes')
+label(590,53,'XY: literal native Z=2.405 section')
+m2,scale=mapfn((590,105),([-.18,-.40],[.30,.66]),(500,500));section(b,2.405,m2,'#7d8992');section(c,2.405,m2,'#2c6f9d')
+label(590,615,'No same-plane mate: X=.112/.124 versus .115')
+label(590,641,'Full native material query overlap: 44.6814 cm³')
+label(1145,53,'Yaw terminal: actual Z=2.207 plane')
+m3,scale=mapfn((1145,105),([-.06,.63],[.10,.85]),(450,480));face(yaw,2,2.207,[0,1],m3,'#4e8db6')
+pp=m3([.02,.74]);dr.ellipse((pp[0]-4,pp[1]-4,pp[0]+4,pp[1]+4),fill='#b53c30')
+label(1145,615,'Plane area .01311 m²; no terminal mount holes')
+label(1145,641,'Elbow Z=1.740 remains a plan, not a connected part')
+dr.text((30,690),'Bound contract '+hashlib.sha256((D/'source_derived_interfaces.json').read_bytes()).hexdigest(),font=small,fill='#475569')
+out=D/'native_interface_faces_and_sections.png';im.save(out)
+(D/'native_section_manifest.json').write_text(json.dumps({'contract_sha256':hashlib.sha256((D/'source_derived_interfaces.json').read_bytes()).hexdigest(),'input_bindings':contract['input_bindings'],'producer_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'output':out.name,'output_sha256':hashlib.sha256(out.read_bytes()).hexdigest(),'method':'Literal triangle patches at X planes and triangle/plane intersection Z2.405; marks are source-verified hole datums. No retouching, hidden source adjustment or accepted exterior.','geometric_or_physical_acceptance':False},indent=2)+'\n')
+print(out)

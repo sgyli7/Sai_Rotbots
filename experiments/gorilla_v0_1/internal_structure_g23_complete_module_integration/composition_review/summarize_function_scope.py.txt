@@ -1,0 +1,15 @@
+"""Postprocess independently captured composition into explicit missing-owner scope."""
+from pathlib import Path
+import json,gzip,collections,hashlib
+O=Path(__file__).resolve().parent;p=O/'composition_review.json';r=json.loads(p.read_text())
+for v,row in r['variants'].items():
+ s=json.loads(gzip.decompress((Path.cwd()/'.scratch/gorilla_internal_g23_root_assembly'/v/'scene.json.gz').read_bytes()));ps=s['parts'];ownership=[]
+ for n in row['parts_owners_not_in_candidate_tree']:
+  ids=[p['name']for p in ps if p['body']==n]
+  if n.startswith('waist_pitch_pair_'):category='retained_waist_hydraulic_context_current_architecture_incompatible_unknown'
+  elif n.startswith('mixed'):category='required_bearing_input_output_dynamic_split_unknown'
+  elif n.endswith('forearm'):category='retained_arm_appearance_or_hardware_owner_alias_unqualified'
+  else:category='old_lower_body_historical_source_not_new_leg_design'
+  ownership.append({'owner':n,'member_count':len(ids),'exact_member_IDs':ids,'category':category,'not_zero_mass_or_deleted':True})
+ row['missing_owner_function_categories']=ownership;row['missing_owner_category_counts']=dict(collections.Counter(x['category']for x in ownership));row['module_logical_wiring']='source18s10p+19nets, four series would72s10p; external wiring topology unimplemented';row['legacy80s9p_bus_not_inherited']=True;row['complete_module_component_class_example']=row['modules'][0]['component_class_counts'];row['composition_metadata_only_not_physical_scope_validated']=True
+r['conditional_energy_scope']={'per_module_integer_topology':[18,10],'four_series_candidate_only_topology':[72,10],'external_series_connections_not_implemented':True,'mincell_energy_Wh':15.5,'720cell_minenergy_Wh':11160,'does_not_close_terminal_SOC_duty_thermal_or_runtime':True,'voltage_protection_insulation_and_driver_compatibility_new_required':True,'bus_not_inherited_from_old80s_domain':True};r['scope_postprocessor_sha256']=hashlib.sha256(Path(__file__).read_bytes()).hexdigest();p.write_text(json.dumps(r,indent=2,allow_nan=False)+'\n')

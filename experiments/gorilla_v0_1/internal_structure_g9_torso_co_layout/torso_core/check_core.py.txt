@@ -1,0 +1,65 @@
+"""Source-bound raw CAD/material/whole-context intersections; no repair or pose/strength release."""
+from pathlib import Path
+import argparse,gzip,hashlib,json,sys,time
+import numpy as np
+import manifold3d as mf
+from OCP.STEPControl import STEPControl_Reader
+from OCP.IFSelect import IFSelect_RetDone
+from OCP.BRepCheck import BRepCheck_Analyzer
+from OCP.TopExp import TopExp_Explorer
+from OCP.TopAbs import TopAbs_SOLID
+O=Path(__file__).resolve().parent;ROOT=next(p for p in O.parents if (p/'sai_robots_engineering_rules.md').is_file())
+sys.path.insert(0,str(ROOT/'.scratch/gorilla_internal_g_material_contract'));import native_signed_material as gate
+ap=argparse.ArgumentParser();ap.add_argument('--variant',choices=['a','b'],required=True);a=ap.parse_args();D=O/a.variant
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();start=time.monotonic()
+CONTEXT=ROOT/'.scratch/gorilla_internal_g9_whole_source/scene.json.gz';s=json.loads(gzip.decompress(CONTEXT.read_bytes()));cad=json.loads((D/'cad_manifest.json').read_text())
+allocation=json.loads((ROOT/'.scratch/gorilla_internal_g8_system_allocation/whole_system_allocation.json').read_text())
+group={n:r['id'] for r in allocation['actual_F1_nine_moved_group_bounds'] for n in r['exact_member_ids']}
+data=np.load(D/'mesh/torso_core_tetra.npz');v=data['points_m'];f=data['boundary_faces'];used=np.unique(f);ind=np.full(len(v),-1,dtype=np.int64);ind[used]=np.arange(len(used));v=v[used];f=ind[f]
+np.savez_compressed(D/'torso_core_native.npz',vertices_world_m=v,faces=f,original_tetra_node_indices=used)
+part={'name':'g9_torso_core_'+a.variant,'body':'torso','role':'finite_main_load_material','density_kg_m3':7850.,'rgba':[.27,.33,.36,1.],'vertices_world_m':v.tolist(),'faces':f.tolist()}
+contract=gate.validate_part(part,require_single_material_component=True)
+new=mf.Manifold(mf.Mesh64(np.asarray(v,dtype=np.float64,order='C'),np.asarray(f,dtype=np.uint64,order='C')));assert new.status()==mf.Error.NoError
+r=STEPControl_Reader();assert r.ReadFile(str(D/'torso_core.step'))==IFSelect_RetDone;r.TransferRoots();shape=r.OneShape();ex=TopExp_Explorer(shape,TopAbs_SOLID);n=0
+while ex.More():n+=1;ex.Next()
+cad_valid=BRepCheck_Analyzer(shape).IsValid()
+source_gate=json.loads((ROOT/'.scratch/gorilla_internal_g9_whole_source/native_resource_contract.json').read_text())
+sg=source_gate.get('contract',source_gate)
+invalid={p.get('id',p.get('name')) for p in sg.get('parts',[]) if not p.get('resource_contract_pass',False)}
+bb=np.array([v.min(0),v.max(0)]);rows=[];unknown=[];queried=0
+for p in s['parts']:
+    if p['name'] in cad['replaced_part_names']:continue
+    vv=np.asarray(p['vertices_world_m'],dtype=float);pb=np.array([vv.min(0),vv.max(0)])
+    if not np.all(bb[1]>=pb[0]) or not np.all(pb[1]>=bb[0]):continue
+    faces=p['faces'];ff=np.asarray([[face[0],face[i],face[i+1]] for face in faces for i in range(1,len(face)-1)],dtype=np.uint64)
+    other=mf.Manifold(mf.Mesh64(np.asarray(vv,dtype=np.float64,order='C'),np.asarray(ff,dtype=np.uint64,order='C')))
+    if other.status()!=mf.Error.NoError:
+        unknown.append({'part':p['name'],'role':p.get('role'),'kernel_status':str(other.status()),'source_gate_rejected':p['name'] in invalid});continue
+    queried+=1;iv=float((new^other).volume())
+    if iv<=1e-10:continue
+    role=p.get('role','');kind=('retained_old_shoulder_bridge_challenge' if p['name']=='e2_upper_net_torso' else
+      'original_armor_material_probe' if role in ('armor_cover','armor_surface') else
+      'service_space_nonphysical' if role=='holding_mount_window' else
+      'catalogue_bearing_reference_envelope' if 'bearing_reference' in role else
+      'fluid_content_or_service_diagnostic' if 'fluid' in role else
+      'complete_module_gross_reference' if role in ('component_module_envelope','display_module_envelope','stock_motor_reference','stock_gear_reference') else
+      'retained_actual_finite_geometry_probe')
+    rows.append({'part':p['name'],'owner':p.get('body'),'role':role,'group_nine':group.get(p['name']),'classification':kind,
+      'intersection_m3':iv,'intersection_cm3':iv*1e6,'original_part_bounds_world_m':pb.tolist(),'source_native_gate_rejected':p['name'] in invalid,
+      'source_polygon_query_triangulation':'Exact original vertex fan with original winding, no normal correction, smoothing, deletion or hull replacement','physical_interference_qualified':False})
+receipt={'robot_id':'gorilla_v0_1','variant':a.variant,'source_context_stored_sha256':sha(CONTEXT),'new_CAD_BREP_sha256':sha(D/'torso_core.brep'),'new_CAD_STEP_sha256':sha(D/'torso_core.step'),
+ 'CAD_manifest_sha256':sha(D/'cad_manifest.json'),'native_boundary_sha256':sha(D/'torso_core_native.npz'),'tetra_sha256':sha(D/'mesh/torso_core_tetra.npz'),'checker_sha256':sha(__file__),
+ 'raw_OCCT_valid':cad_valid,'actual_CAD_solid_count':n,'new_native_material_contract':contract,'source_context_gate_rejected_member_count':len(invalid),
+ 'bbox_used_only_to_skip_disjoint_candidates_not_define_available_cavity':True,'candidate_mesh_bounds_world_m':bb.tolist(),
+ 'whole_context_kernel_queries':queried,'positive_intersections':sorted(rows,key=lambda p:-p['intersection_m3']),'unknown_kernel_queries':unknown,
+ 'nine_complete_groups_intersection_counts':{r['id']:sum(x['group_nine']==r['id'] for x in rows) for r in allocation['actual_F1_nine_moved_group_bounds']},
+ 'original_armor_delta_mm':0,'retained_four_missing_drives':s['missing_physical_cylinders'],'actual_air_wall_geometry_checked':True,
+ 'air_lumen_flow_capacity_hose_bend_tools_not_closed':True,'new_core_added_to_whole_context':True,'no_wholebody_mass_release':True,
+ 'candidate_geometry_accepted':False,'strength_or_material_or_full_assembly_accepted':False,'elapsed_s':time.monotonic()-start}
+(D/'context_intersections.json').write_text(json.dumps(receipt,indent=2)+'\n')
+new_scene={'robot_id':'gorilla_v0_1','candidate':'g9_new_torso_core_'+a.variant,'parts':[part],
+ 'source_context_stored_sha256':sha(CONTEXT),'replaced_part_names':cad['replaced_part_names'],'retained_old_shoulder_challenge_id':'e2_upper_net_torso','historical_interfaces':cad['interface_hypotheses'],'physical_accepted':False,'new_exterior_proposed':False}
+encoded=json.dumps(new_scene,separators=(',',':')).encode()
+with (D/'core_scene.json.gz').open('wb') as raw:
+    with gzip.GzipFile(filename='',mode='wb',fileobj=raw,mtime=0) as gz:gz.write(encoded)
+print('CHECK',a.variant,'newgate',contract['resource_contract_pass'],'CAD',cad_valid,n,'positivepairs',len(rows),'nine',receipt['nine_complete_groups_intersection_counts'],'unknown',len(unknown),flush=True)

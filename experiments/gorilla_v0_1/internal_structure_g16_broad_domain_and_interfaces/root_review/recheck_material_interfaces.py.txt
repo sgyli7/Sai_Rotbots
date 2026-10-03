@@ -1,0 +1,27 @@
+from pathlib import Path
+import json,gzip,hashlib
+import numpy as np,manifold3d as mf
+R=Path.cwd(); O=Path(__file__).resolve().parent; D=R/'.scratch/gorilla_internal_g16_body_domain_partition'
+def sha(p): return hashlib.sha256(p.read_bytes()).hexdigest()
+allchecks=[]
+for macro in ['a','b']:
+    d=D/macro; s=json.loads(gzip.decompress((d/'scene.json.gz').read_bytes())); by={p['name']:p for p in s['parts']}; cache={}
+    def native(n):
+        if n not in cache:
+            p=by[n]; v=np.asarray(p['vertices_world_m']); f=np.asarray([[q[0],q[k],q[k+1]] for q in p['faces'] for k in range(1,len(q)-1)],np.uint64); cache[n]=mf.Manifold(mf.Mesh64(v,f))
+        return cache[n]
+    author=json.loads((d/'changed_all_collision_receipt.json').read_bytes()); finite=[q for q in author['positive_pairs'] if q['class_a']==q['class_b']=='finite_material']
+    for q in finite[:4]:
+        a,b=native(q['a']),native(q['b']); v=(a^b).volume()
+        allchecks.append(dict(macro=macro,scene_sha256=sha(d/'scene.json.gz'),a=q['a'],b=q['b'],scope='actual finite material with no source repair or body-owner waiver',volume_m3=v,author_volume_m3=q['V_m3'],pass_=a.status()==b.status()==mf.Error.NoError and v>1e-9 and abs(v-q['V_m3'])<1e-11))
+    frame='g16_native_cage_CAD_parameter_mapping'; bv=np.asarray(by[frame]['vertices_world_m'])
+    for word in ['left','right']:
+        n='g13_'+word+'_fixed_reaction_closed_anchor'; a,b=native(frame),native(n); v=(a^b).volume(); av=np.asarray(by[n]['vertices_world_m']); gap=bv[:,0].min()-av[:,0].max()
+        allchecks.append(dict(macro=macro,scene_sha256=sha(d/'scene.json.gz'),a=frame,b=n,scope='new source frame versus retained actual shoulder fixed anchor',volume_m3=v,nominal_touch_X_gap_m=float(gap),pass_=bool(a.status()==b.status()==mf.Error.NoError and abs(v)<1e-12 and abs(gap)<1e-12),
+             zero_volume_does_not_prove_installed_rigid_connection=True,normal_axis_world=[1,0,0],gravity_direction_world=[0,0,-1],
+             required_attachment='Source holes, bolt/head/washer/threads and assembly access plus bearing/shear seat or qualified friction preload; a contacting X plane cannot by itself provide gravity shear.',
+             unqualified_clamp_relation='For shear resultant F_parallel, qualified preload N must satisfy mu*N >= |F_parallel| with validated mu, bolt stress, separation and moment distribution; current full-plane area alone provides none of these inputs.',
+             actual_new_frame_bolt_or_preload_acceptance=False))
+out=dict(check_count=len(allchecks),checks=allchecks,all_diagnostic_checks_pass=all(q['pass_'] for q in allchecks),unchanged_retained_pairs_not_completely_reaudited=True,physical_or_assembly_acceptance=False)
+(O/'independent_material_interfaces.json').write_text(json.dumps(out,indent=2,allow_nan=False)+'\n')
+print(json.dumps(dict(check_count=len(allchecks),failed=[q for q in allchecks if not q['pass_']])))

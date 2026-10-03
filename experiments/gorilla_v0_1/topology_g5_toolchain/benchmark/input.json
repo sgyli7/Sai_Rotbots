@@ -1,0 +1,60 @@
+{
+  "schema": "synthetic_G5_numerical_tool_only",
+  "geometry_m": {
+    "L": 0.3,
+    "H": 0.12,
+    "thickness": 0.01
+  },
+  "E_Pa": 210000000000.0,
+  "nu": 0.3,
+  "density_kg_m3": 7850.0,
+  "mesh": {
+    "nx": 80,
+    "nz": 32,
+    "node_order": "z rows, x fastest",
+    "Q4_order": "BL BR TR TL",
+    "DOF_order": "2node=ux,2node+1=uz"
+  },
+  "loads_N": [
+    [
+      0,
+      1000
+    ],
+    [
+      -1000,
+      -1000
+    ]
+  ],
+  "case_weights": [
+    0.5,
+    0.5
+  ],
+  "fixed": "all ux/uz at x0",
+  "load_rule": "right xL uniform line traction over literal z.05..07; consistent linearedge shape integral including truncated edge intersections; equivalentcenterz.06",
+  "retained_rule": "cells intersecting left20mmband OR right10mm x central20mm pad are forced physicalrho1; all retained mass counts toward .5",
+  "retained_elements": 210,
+  "retained_fraction": 0.08203125,
+  "volume_fraction": 0.5,
+  "SIMP": {
+    "p": 3.0,
+    "Emin_over_E": 1e-09
+  },
+  "density_filter_radius_cell_units": 2.5,
+  "OC_move_limit": 0.2,
+  "stop_change": 0.01,
+  "max_iterations": 80,
+  "density_filter_not_manufacturing_minimum_wall": true,
+  "sources": [
+    {
+      "url": "https://www.topopt.mek.dtu.dk/-/media/subsites/topopt/apps/dokumenter-og-filer-til-apps/topopt88.pdf",
+      "authors": "Andreassen et al.2011",
+      "used": "equations1–10 densitySIMP/filter/chainrule/OC; selfwritten implementation, no copiedsourcecode"
+    },
+    {
+      "url": "https://scikit-fem.readthedocs.io/en/stable/",
+      "used": "assembler scope/version reference; root performs independent assemblercomparison"
+    }
+  ],
+  "generator_sha256": "5001e445bd1f993d2764876714e399992e993c5c6d7631f868ad77487c503ef5",
+  "created_UTC": "2026-10-03T02:40:55.758505+00:00"
+}

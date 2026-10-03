@@ -1,0 +1,51 @@
+from pathlib import Path
+O=Path(__file__).resolve().parent;s=(O/'a/build_chain.py').read_text();s=s.replace("ROOT=O.parents[1]","ROOT=next(p for p in O.parents if (p/'sai_robots_engineering_rules.md').exists())")
+s=s.replace("PF=np.array([-.020,.650,.115])","PF=np.array([-.020,.680,.115])").replace("child='forefoot',c=PF,axis=[0,1,0],seats=[-.100,.100],collars=[-.060,.060]","child='forefoot',c=PF,axis=[0,1,0],seats=[-.085,.085],collars=[-.060,.060]")
+s=s.replace("fm('thigh_interface',beam(K+[-.040,-.115,.042],K+[-.040,.115,.042],.038,.034))", "fm('thigh_interface',beam(K+[-.085,-.115,.045],K+[-.085,.115,.045],.038,.030))\nfor sg in [-1,1]:fm('thigh_interface',beam(K+[-.043,sg*.115,.020],K+[-.085,sg*.115,.045],.016,.020,.004))")
+s=s.replace("[-.040,fy,.890],[.155,fy,.760],[.180,fy,.650]","[-.040,.380 if sg<0 else .550,.890],[.135,.380 if sg<0 else .550,.760],[.150,.380 if sg<0 else .550,.650]")
+s=s.replace("forkoff=.026 if bore<=.050 else .032", "forkoff=bore/2+wall+.006+.002").replace("ring(aa,pin/2,0,.090,ax)","ring(aa,pin/2,0,2*(forkoff+.006)+.008,ax)").replace("ring(bb,pin/2,0,.090,ax)","ring(bb,pin/2,0,2*(forkoff+.006)+.008,ax)")
+s=s.replace("beam(root,p,.016,.024,.004,solid=True)","beam(root,p,.020,.010 if id=='roll' else .020,.004,solid=True)")
+# Rebuild moving arch as a center web leaving fixed bearing axial planes clear until outside OD.
+beg=s.index('# Roll-output arch,');end=s.index('def action(',beg)
+s=s[:beg]+'''# Center roll web expands only after clearing fixed bearing outer radius.
+fm('arch',ring(R,.035,.0242,.016,[1,0,0]))
+for sg in [-1,1]:
+ y0=.435 if sg<0 else .565
+ fm('arch',path([[R[0],.5+sg*.026,.201],[R[0],y0,.162]],w=.018,d=.016,wall=.004))
+ fm('arch',path([[R[0],y0,.162],[PF[0]-.006,PF[1]+sg*.085,PF[2]+.030]],w=.018,d=.024,wall=.004))
+ fm('arch',path([[R[0],y0,.162],[PH[0]-.005,PH[1]+sg*.145,PH[2]+.030]],w=.020,d=.024,wall=.004))
+''' +s[end:]
+s=s.replace("[.350,y,.057]","[.350,y,.053]").replace("[.175,.650,.095],[.060,.130,.024]","[.175,.650,.095],[.060,.130,.024]")
+# No old slider/roof obstructs the rotating segments: paired flanged axial dogs in double shear.
+beg=s.index('# Long-arm segment stops,');end=s.index('# Local pressure holding reserve',beg)
+new='''# Complete paired segment stop flanges and real retractable dogs. Passive unloaded folding only.
+locks=[];stop_interfaces=[]
+for body,pivot in [('forefoot',PF),('heel',PH)]:
+ fore=body=='forefoot';outer=.110 if fore else .080;moving=.105 if fore else .077;axis=np.array([0,1,0]);centers=[pivot[1]-.060,pivot[1]+.060] if fore else [pivot[1]-.095,pivot[1]+.095]
+ offset=np.array([.070,0,.028]) if fore else np.array([-.060,0,0]);dogsize=[.024,.074,.030];hole=[.0247,.120,.0307]
+ cutter_bottom=box([pivot[0],pivot[1],-.478],[.6,1.2,1.040]);cutter_top=box([pivot[0],pivot[1],.600],[.6,1.2,.880]) if not fore else mf.Manifold()
+ for n,yy in enumerate(centers):
+  cc=pivot.copy();cc[1]=yy;hc=cc+offset
+  # Moving output ring/spokes and its square dog portal, all actual geometry.
+  out=ring(cc,moving,.032,.012,axis)-cutter_bottom-cutter_top
+  spokes=[]
+  for ang in [0,math.pi/2,math.pi,3*math.pi/2]:
+   rr=np.array([math.cos(ang),0,math.sin(ang)]);spokes.append(beam(cc+rr*.023,cc+rr*.042,.014,.018,.004,solid=True))
+  out=unite([out]+spokes)-box(hc,hole);fm(body,out)
+  pp=[]
+  for sg in [-1,1]:
+   pc=cc+axis*sg*.013;plate=ring(pc,outer,.033,.009,axis)-cutter_bottom-cutter_top-box(hc,hole);fm('arch',plate);pp.append(pc)
+  # Rear axial bridge outside moving OD. A named finite connection, not grouping inference.
+  rearx=pivot[0]-outer+.0015
+  fm('arch',box([rearx,yy,pivot[2]+.015],[.005,.038,.060]))
+  # Connect this stop fork to the existing fixed journal annulus via same-owner radial material.
+  fixed_y=pivot[1]+(-.085 if n==0 else .085) if fore else pivot[1]+(-.145 if n==0 else .145)
+  fm('arch',beam([rearx,yy,pivot[2]+.015],[pivot[0]-.026,fixed_y,pivot[2]+.022],.012,.012,.003))
+  dog=box(hc,dogsize);name=body+'_load_dog_'+str(n);withdraw=[0,-.090 if n==0 else .090,0]
+  add(name,'lock_'+body+'_'+str(n),dog,unlock_translation_world_m=withdraw,role='finite_lock_dog',contact_scope='0.35mm per-face portal clearance. Double-shear stop interface, actuator/retention/preload/impact unknown')
+  locks.append({'body':'lock_'+body+'_'+str(n),'translation':withdraw});stop_interfaces.append({'segment':body,'center_world_m':hc.tolist(),'hinge_world_m':pivot.tolist(),'lever_radius_m':float(np.linalg.norm(offset)),'parent_fork_reaction_span_m':.026,'parent_plate_thickness_m':.009,'moving_plate_thickness_m':.012,'dog_section_xz_m':[.024,.030],'dog_bearing_scope':'Pressure/robot wrench must recompute; nominal shear/bending only; geometry gates separate'})
+'''
+s=s[:beg]+new+s[end:];s=s.replace("'foot_free_space':free_space","'foot_free_space':free_space,'segment_stop_interfaces':stop_interfaces,'layout_id':'B'")
+# Source explicitly retains OEM envelopes as reference candidates, not material steel.
+s=s.replace("mass_range_kg=[1.0,2.0,4.0],density_kg_m3=None","mass_range_kg=[1.0,2.0,4.0],density_kg_m3=None,rgba=[.85,.42,.12,.35]")
+(O/'build_chain.py').write_text(s);print('B PREPARED')

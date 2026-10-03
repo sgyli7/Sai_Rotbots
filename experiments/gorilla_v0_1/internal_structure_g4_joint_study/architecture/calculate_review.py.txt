@@ -1,0 +1,423 @@
+"""Read-only G4 analytical architecture exit screen; creates no CAD or scene."""
+from pathlib import Path
+import hashlib
+import json
+import math
+import numpy as np
+
+ROOT = Path(__file__).resolve().parents[2]
+OUT = Path(__file__).resolve().parent
+B = ROOT / '.scratch/gorilla_internal_g3_foot_chain/b'
+FACTS = ROOT / '.scratch/gorilla_internal_g3_root_mechanics/bearing_family_facts.json'
+
+def sha(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+def load(path):
+    return json.loads(path.read_text())
+
+scene = load(B / 'chain_scene.json')
+interface = load(B / 'interface.json')
+old_report = load(B / 'final_report.json')
+bearing = load(FACTS)
+template_path=ROOT / '.scratch/gorilla_internal_f1_system/module_templates/module_templates_spec.json'
+templates=load(template_path)
+input_paths = [B / 'chain_scene.json', B / 'interface.json', B / 'armor_scene.json',
+               B / 'final_report.json', B / 'build_complete.py', FACTS,
+               ROOT / '.scratch/gorilla_internal_g3_root_mechanics/skf_tapered_metric.pdf',
+               ROOT / '.scratch/gorilla_internal_d_sources/hawe_z_pumps_d6820_en.pdf',
+               ROOT / 'sai_robots_engineering_rules.md',template_path]
+housing_review_path=ROOT / '.scratch/gorilla_internal_g4_ankle_housing_budget/housing_budget.json'
+input_paths.append(housing_review_path)
+inputs = [{'path': str(p.relative_to(ROOT)), 'sha256': sha(p)} for p in input_paths]
+initial_hashes = {p: sha(p) for p in input_paths}
+
+def rot(axis, q):
+    u = np.array(axis, dtype=float)
+    u /= np.linalg.norm(u)
+    c, s = math.cos(q), math.sin(q)
+    K = np.array([[0, -u[2], u[1]], [u[2], 0, -u[0]], [-u[1], u[0], 0]])
+    return c * np.eye(3) + (1-c) * np.outer(u, u) + s * K
+
+def cylinder_path(anchor, crank, axis, q_range_deg):
+    a, b0 = np.array(anchor), np.array(crank)
+    rows = []
+    for q in np.linspace(*q_range_deg, 121):
+        b = rot(axis, math.radians(q)) @ b0
+        L = np.linalg.norm(b-a)
+        u = (b-a)/L
+        J = float(u @ np.cross(axis, b))
+        rows.append({'q_deg': float(q), 'eye_length_m': float(L), 'J_m_per_rad': J,
+                     'moving_eye_relative_pivot_m': b.tolist()})
+    lengths = [r['eye_length_m'] for r in rows]
+    js = [r['J_m_per_rad'] for r in rows]
+    stroke = max(lengths)-min(lengths)+.020
+    zero = min(lengths)-.010
+    # G3 own construction provision, not a manufacturer cylinder drawing.
+    minimum_zero = stroke + .176
+    return {'anchor_relative_pivot_m': list(anchor), 'crank_relative_pivot_m': list(crank),
+            'axis_parent_frame': list(axis), 'q_range_deg': q_range_deg, 'sample_count': 121,
+            'eye_length_range_m': [min(lengths), max(lengths)],
+            'signed_J_range_m_per_rad': [min(js), max(js)],
+            'minimum_abs_J_m_per_rad': min(abs(j) for j in js),
+            'stroke_with_10mm_each_end_reserve_m': stroke,
+            'custom_zero_eye_m': zero, 'own_minimum_complete_zero_eye_m': minimum_zero,
+            'own_zero_eye_margin_m': zero-minimum_zero,
+            'own_zero_eye_rule_condition_met': zero >= minimum_zero,
+            'manufacturer_drawing_qualified': False,
+            'own_zero_rule_scope': '40mm eye pin, 38mm eye radius, own100mm caps/gland/overlap sum; not proof of seal, guidance, manufacture or stroke.'}
+
+paths = {
+    'T1_proximal_inclined_pitch_pair': cylinder_path([-.18, 0, .45], [.20, 0, .12], [0,1,0], [-10,10]),
+    'T2_rolling_parent_longitudinal_pitch_pair': cylinder_path([-.34, 0, .22], [0,0,.22], [0,1,0], [-10,10]),
+    'common_roll_side_cylinder': cylinder_path([0,-.32,.18], [0,0,.18], [1,0,0], [-10,10])}
+extended_paths = {
+    'T1_pitch_pm15_sensitive': cylinder_path([-.18, 0, .45], [.20, 0, .12], [0,1,0], [-15,15]),
+    'T2_pitch_pm15_sensitive': cylinder_path([-.34, 0, .22], [0,0,.22], [0,1,0], [-15,15])}
+
+# Parent-FK point/line corridors only, NOT CAD, a closed body, or a collision
+# proof. Add an explicit55mm eye/fork reserve rather than plotting bare center
+# lines as complete hardware. Fittings and service sweeps remain unknown.
+fk_corridors=[]
+for topo in ['T1','T2']:
+    pc=np.array([-.025,.65,.31 if topo=='T1' else .18])
+    rc=np.array([-.025,.65,.215 if topo=='T1' else .31])
+    pitch_key='T1_proximal_inclined_pitch_pair' if topo=='T1' else 'T2_rolling_parent_longitudinal_pitch_pair'
+    pa=np.array(paths[pitch_key]['anchor_relative_pivot_m'])
+    pb=np.array(paths[pitch_key]['crank_relative_pivot_m'])
+    ra=np.array(paths['common_roll_side_cylinder']['anchor_relative_pivot_m'])
+    rb=np.array(paths['common_roll_side_cylinder']['crank_relative_pivot_m'])
+    pts={'pitch_pair':[],'roll_cylinder':[]}
+    smallest=1e99
+    for qp in [-10.,0.,10.]:
+        for qr in [-10.,0.,10.]:
+            Rp=rot([0,1,0],math.radians(qp));Rr=rot([1,0,0],math.radians(qr))
+            for side in [-1,1]:
+                lane=np.array([0,side*(.1 if topo=='T1' else .15),0])
+                if topo=='T1':
+                    aa=pc+pa+lane;bb=pc+Rp@(pb+lane)
+                else:
+                    aa=rc+Rr@(pc-rc+pa+lane);bb=rc+Rr@(pc-rc+Rp@(pb+lane))
+                pts['pitch_pair'].extend([aa,bb])
+            if topo=='T1':
+                aa=pc+Rp@(rc-pc+ra);bb=pc+Rp@(rc-pc+Rr@rb)
+                orientation=np.column_stack([[0,1,0],Rp@np.array([1,0,0])])
+            else:
+                aa=rc+ra;bb=rc+Rr@rb
+                orientation=np.column_stack([[1,0,0],Rr@np.array([0,1,0])])
+            smallest=min(smallest,float(np.linalg.svd(orientation,compute_uv=False).min()))
+            pts['roll_cylinder'].extend([aa,bb])
+    fk_corridors.append({'topology':topo,'nine_parent_FK_angle_pairs_deg':'pitch,roll in{-10,0,10}',
+      'two_rotation_axes_min_orientation_sigma':smallest,
+      'separate_parent_to_direct_child_cylinder_length_Jacobian_rank':2,
+      'cross_length_derivatives_zero_only_for_stated_direct_parent_mounts':True,
+      'corridors':[{'id':k,'end_and_line_corridor_world_aabb_m':[(np.min(v,axis=0)-.055).tolist(),(np.max(v,axis=0)+.055).tolist()],
+                   'included_eye_fork_radial_reserve_m':.055,'fittings_installation_service_route_unknown':True,
+                   'not_native_material_geometry_or_collision_acceptance':True} for k,v in pts.items()]})
+
+F3 = 3000 * 9.81
+old_contact = []
+for factor in [1., 1.5]:
+    for dy in [-.1,0,.1]:
+        cop = np.array([.25,.65+dy,0.])
+        old_contact.append({'load_factor': factor, 'Fz_N': F3*factor,
+                            'CoP_world_m': cop.tolist(),
+                            'torque_Nm': {j['id']: float(np.array(j['axis']) @ np.cross(cop-j['c'], [0,0,F3*factor]))
+                                          for j in interface['joints'] if j['id'] in ['ankle_pitch','ankle_roll']}})
+proposal_pitch_x = -.025
+proposal_axis_y = .65
+pitch_arm = .25-proposal_pitch_x
+
+force_rows = []
+pressure_requirements = []
+actual_min_J_pressure_requirements=[]
+for bore_mm, rod_mm in [(50,25),(60,30),(63,32)]:
+    D, d = bore_mm/1000, rod_mm/1000
+    Ac, Aa = math.pi*D*D/4, math.pi*(D*D-d*d)/4
+    for P in [14.,17.,20.4,21.]:
+        for Pb in [0.,1.,2.]:
+            force_rows.append({'bore_rod_mm':[bore_mm,rod_mm], 'supply_MPa':P,'return_MPa':Pb,
+                               'ideal_push_N':P*1e6*Ac-Pb*1e6*Aa,
+                               'ideal_pull_N':P*1e6*Aa-Pb*1e6*Ac})
+    for x in [-.08, proposal_pitch_x]:
+        for factor in [1.,1.5]:
+            T = F3*factor*(.25-x)
+            for J in [.20,.22]:
+                for direction in ['push','pull']:
+                    A_supply, A_return = (Ac,Aa) if direction=='push' else (Aa,Ac)
+                    pressure_requirements.append({'bore_rod_mm':[bore_mm,rod_mm], 'pitch_axis_x_m':x,
+                      'load_factor':factor,'target_pitch_torque_Nm':T,'number_cylinders':2,
+                      'minimum_effective_J_m_per_rad':J,'direction':direction,
+                      'ideal_each_force_N':T/(2*J),
+                      'required_supply_MPa_zero_return':T/(2*J*A_supply)/1e6,
+                      'required_supply_MPa_at_1MPa_return':(T/(2*J)+1e6*A_return)/A_supply/1e6,
+                      'pressure_duty_or_design_pass':False})
+    for topo,key in [('T1','T1_proximal_inclined_pitch_pair'),('T2','T2_rolling_parent_longitudinal_pitch_pair')]:
+        J=paths[key]['minimum_abs_J_m_per_rad']
+        for factor in [1.,1.5]:
+            T=F3*factor*pitch_arm
+            for direction in ['push','pull']:
+                A_supply,A_return=(Ac,Aa) if direction=='push' else (Aa,Ac)
+                for Pb in [1.,2.]:
+                    actual_min_J_pressure_requirements.append({'topology':topo,'bore_rod_mm':[bore_mm,rod_mm],
+                      'neutral_contact_torque_envelope_Nm':T,'load_factor':factor,
+                      'sampled_min_J_m_per_rad':J,'direction':direction,'return_MPa':Pb,
+                      'required_supply_MPa':(T/(2*J)+Pb*1e6*A_return)/A_supply/1e6,
+                      'scope':'fixed neutral torque envelope over sampled cylinder geometry; not tilted-foot contact or full-body pose equilibrium',
+                      'duty_or_motion_pass':False})
+
+lock_rows = []
+for x in [-.08, proposal_pitch_x]:
+    for factor in [1.,1.5]:
+        for axis, T, radius in [('pitch',F3*factor*(.25-x),.20),('roll',F3*factor*.10,.15)]:
+            lock_rows.append({'pitch_axis_x_m':x,'load_factor':factor,'axis':axis,
+             'torque_Nm':T,'own_stop_radius_m':radius,
+             'single_one_sided_stop_force_N':T/radius,
+             'each_force_of_two_equal_opposed_stop_couple_N':T/(2*radius),
+             'pair_force_couple_zero_net_force_is_hypothesis':True,
+             'locks_exist_in_frozen_B':False,
+             'qualification':False})
+
+def seat_radial_reactions(axis, S, Fext, Mext):
+    """Two radial seats separated by pressure-center S, no preload/axial force."""
+    u = np.array(axis, dtype=float)
+    if abs(float(u@Mext)) > 1e-6:
+        raise ValueError('free-axis torque must first be supported by stated actuator/lock')
+    # R1+R2=-F; S/2*u x(Rplus-Rminus)=-Mperp.
+    delta = 2 * np.cross(u, Mext) / S
+    Rplus, Rminus = (-Fext+delta)/2, (-Fext-delta)/2
+    residual_F = Rplus+Rminus+Fext
+    residual_M = np.cross(u*S/2,Rplus)+np.cross(-u*S/2,Rminus)+Mext
+    radial = [float(np.linalg.norm(r-u*(u@r))) for r in [Rminus,Rplus]]
+    return Rminus, Rplus, radial, float(np.abs(np.r_[residual_F,residual_M]).max())
+
+bearing_rows = []
+for topo in ['T1_pitch_parent_roll_child','T2_roll_parent_pitch_child']:
+    centers = {'pitch':[-.025,.65,.31 if topo.startswith('T1') else .18],
+               'roll':[-.025,.65,.215 if topo.startswith('T1') else .31]}
+    for factor in [1.,1.5]:
+        for dy in [-.1,0.,.1]:
+            cop = np.array([.25,.65+dy,0.]); F = np.array([0.,0,F3*factor])
+            for axis_name,axis in [('pitch',[0,1,0]),('roll',[1,0,0])]:
+                axis=np.array(axis);c=np.array(centers[axis_name]);M=np.cross(cop-c,F)
+                drive_torque=float(axis@M);Mperp=M-axis*drive_torque
+                for S in [.16,.26,.28,.30]:
+                    rr1,rr2,Fr,res = seat_radial_reactions(axis,S,F,Mperp)
+                    # SKF table7 Ka=0, identical Y=1.5, no preload/zero clearance;
+                    # single-bearing P0, not the matched-set formula.
+                    Fa=max(Fr)/(2*1.5)
+                    P0=[max(fr,.5*fr+.8*Fa) for fr in Fr]
+                    bearing_rows.append({'topology':topo,'joint':axis_name,'axis_center_world_m':c.tolist(),
+                      'load_factor':factor,'CoP_y_offset_from_center_m':dy,'Fz_N':float(F[2]),
+                      'pressure_center_separation_hypothesis_m':S,
+                      'external_axis_torque_to_lock_Nm':drive_torque,
+                      'each_lock_assumed_opposed_couple_no_added_resultant':True,
+                      'Rminus_world_N':rr1.tolist(),'Rplus_world_N':rr2.tolist(),'Fr_each_N':Fr,
+                      'conditional_induced_Fa_each_N':Fa,'conditional_single_bearing_P0_each_N':P0,
+                      'conditional_C0_over_P0_each':[160000/p for p in P0 if p>0],
+                      'equilibrium_max_abs_residual_N_or_Nm':res,
+                      'not_actual_FK_pose_or_preloaded_pair_rating':True})
+
+# Explicit neutral live-cylinder reactions, independent vector equations. These
+# are NOT the reactions of an unloaded-stop static mode or a qualified pressure.
+live_reactions=[]
+for topo,key in [('T1','T1_proximal_inclined_pitch_pair'),('T2','T2_rolling_parent_longitudinal_pitch_pair')]:
+    path=paths[key];a=np.array(path['anchor_relative_pivot_m']);b=np.array(path['crank_relative_pivot_m'])
+    u=(b-a)/np.linalg.norm(b-a);J=float(u@np.cross([0,1,0],b))
+    for factor in [1.,1.5]:
+        for dy in [-.1,0.,.1]:
+            F=np.array([0,0,F3*factor]);M=np.cross([pitch_arm,dy,-.31 if topo=='T1' else -.18],F)
+            fc=-M[1]/(2*J);Fwhole=F+2*fc*u;Mwhole=M+2*np.cross(b,fc*u)
+            rm,rp,fr,res=seat_radial_reactions(np.array([0,1,0]),.28,Fwhole,Mwhole)
+            live_reactions.append({'topology':topo,'load_factor':factor,'dy_m':dy,
+              'each_pitch_cylinder_force_N':float(fc),'each_force_direction':'push' if fc>0 else 'pull',
+              'actual_neutral_J_m_per_rad':J,'actual_neutral_force_axis_world':u.tolist(),
+              'pitch_Rminus_N':rm.tolist(),'pitch_Rplus_N':rp.tolist(),'pitch_Fr_each_N':fr,
+              'equilibrium_residual_N_or_Nm':res,'scope':'neutral pitch subtree + two equal cylinder forces; roll internal loads cancel at subtree boundary; no selfweight/friction/preload'})
+
+roll_live_reactions=[]
+old_roll_j=next(j for j in interface['joints'] if j['id']=='ankle_roll')
+old_roll_a=next(a for a in interface['actuators'] if a['id']=='ankle_roll')
+for version in ['exact_source_B','centered_T1','centered_T2']:
+    if version=='exact_source_B':
+        c=np.array(old_roll_j['c']);a=np.array(old_roll_a['A_world_m']);b=np.array(old_roll_a['B_world_m'])
+    else:
+        c=np.array([-.025,.65,.215 if version.endswith('T1') else .31])
+        a=c+np.array([0,-.32,.18]);b=c+np.array([0,0,.18])
+    u=(b-a)/np.linalg.norm(b-a);J=float(u@np.cross([1,0,0],b-c))
+    for factor in [1.,1.5]:
+        for cop_y in [.55,.65,.75]:
+            F=np.array([0.,0,F3*factor]);M=np.cross(np.array([.25,cop_y,0])-c,F)
+            fc=-M[0]/J
+            Fwhole=F+fc*u;Mwhole=M+np.cross(b-c,fc*u)
+            for S in [.16,.28]:
+                rm,rp,fr,res=seat_radial_reactions(np.array([1.,0,0]),S,Fwhole,Mwhole)
+                roll_live_reactions.append({'version':version,'load_factor':factor,'CoP_y_world_m':cop_y,
+                 'actual_cylinder_A_world_m':a.tolist(),'actual_cylinder_B_world_m':b.tolist(),
+                 'axis_center_world_m':c.tolist(),'J_neutral_m_per_rad':J,'signed_cylinder_force_N':float(fc),
+                 'pressure_center_separation_hypothesis_m':S,'Rminus_world_N':rm.tolist(),'Rplus_world_N':rp.tolist(),
+                 'Fr_each_N':fr,'max_Fr_N':max(fr),'external_and_cylinder_remaining_moment_Nm':Mwhole.tolist(),
+                 'equilibrium_residual_N_or_Nm':res,'not_pressure_or_assembly_acceptance':True})
+
+flows=[]
+for bore_mm,rod_mm in [(50,25),(60,30),(63,32)]:
+    Ac=math.pi*(bore_mm/1000)**2/4;Aa=math.pi*((bore_mm/1000)**2-(rod_mm/1000)**2)/4
+    roll_Ac=math.pi*.05**2/4;roll_Aa=math.pi*(.05**2-.025**2)/4
+    for rate in [.1,.3]:
+        for J in [.20,.22]:
+            cap=2*(2*Ac*J+roll_Ac*.18)*rate*60000
+            ann=2*(2*Aa*J+roll_Aa*.18)*rate*60000
+            flows.append({'pitch_bore_rod_mm':[bore_mm,rod_mm],'roll_bore_rod_mm':[50,25],
+             'pitch_abs_J_m_per_rad':J,'roll_abs_J_m_per_rad':.18,'each_axis_abs_qdot_rad_s':rate,
+             'two_ankles_four_pitch_two_roll_cylinders_all_cap_inlet_L_min':cap,
+             'same_all_annulus_inlet_L_min':ann,
+             'hypothetical_all_21MPa_cap_inlet_hydraulic_kW':cap*21/60,
+             'all_axes_equal_pressure_motion_not_claimed':True})
+
+op_rows=[]
+for Fz in [5000.,10000.,15000.,20000.]:
+    op_rows.append({'conditional_one_foot_normal_reaction_N':Fz,
+      'pitch_torque_Nm_at_x_minus025_CoPx025':Fz*.275,
+      'roll_torque_Nm_at_centered_CoP_pm100mm':Fz*.10,
+      'net_robot_selfweight_requires_common_contact_distribution':True,
+      'extra_50_or_100kg_two_hand_payload_normal_force_if_equal_two_feet_N':[50*9.81/2,100*9.81/2],
+      'extra_payload_COM_fullbody_wrench_not_modeled':True})
+
+source_b_dimensions=[]
+for p in scene['parts']:
+    if p['name'] in ['g3_distal_load_net','g3_ankle_carrier_load_net','g3_arch_load_net',
+                      'g3_forefoot_load_net','g3_new_left_composite_forepad','g3_new_left_composite_heel_pad']:
+        v=np.array(p['vertices_world_m']);source_b_dimensions.append({'id':p['name'],'body':p['body'],
+         'aabb_m':[v.min(0).tolist(),v.max(0).tolist()],
+         'aabb_size_m':np.ptp(v,axis=0).tolist(),'not_free_usable_cavity':True})
+
+# Transparent analytical hardware stock inventory. No mass comes from an OEM
+# envelope volume. Custom-stock figures are own gauge/length hypotheses, NOT
+# a proven minimum or a manufacturable complete assembly or new scene.
+rho=7850.
+def annulus_mass(od,id_,length):return math.pi/4*(od*od-id_*id_)*length*rho
+def rhs_mass(w,h,t,L):return (w*h-(w-2*t)*(h-2*t))*L*rho
+mass_inventory = [
+ {'id':'four_32212','function':'two separated bearing pairs','basis':'SKF catalogue actual complete bearing mass, not envelope volume',
+  'mass_range_kg':[4.6,4.6]},
+ {'id':'four_short_output_journal_stub_stock','function':'4×60mmjournals with28–36mmbore, L70–100mmeach; unsupportedoffset target20–30mm',
+  'mass_range_kg':[annulus_mass(.060,.036,.28),annulus_mass(.060,.028,.40)],
+  'basis':'own four separated annularsteelstubstock; carrierboss/retention/strength/motionunknown; mainactuator/locktorque mustpass broadmovingcarrier andreactionbridge, not assumed full60mmthroughshaft'},
+ {'id':'four_seat_cups','function':'OD132–144/ID110/L35–42mm',
+  'mass_range_kg':[4*annulus_mass(.132,.110,.035),4*annulus_mass(.144,.110,.042)],'basis':'own seat stock assumes steel; seat fit/shoulders not qualified'},
+ {'id':'four_keeper_caps','function':'OD132–144/ID65/T6–10mm',
+  'mass_range_kg':[4*annulus_mass(.132,.065,.006),4*annulus_mass(.144,.065,.010)],'basis':'own finite annular steel caps; bolting and pull channel unknown'},
+ {'id':'pitch_crank_four_stock_plates','function':'4×280×100mm plates, gauge10–14mm',
+  'mass_range_kg':[4*.28*.1*.01*rho,4*.28*.1*.014*rho],
+  'basis':'own rectangular stock upper material provision before holes, not demonstrated strength or finished crank'},
+ {'id':'two_carrier_bridge_rib_stock','function':'2m combined80×60mm RHS gauge6–8mm',
+  'mass_range_kg':[rhs_mass(.080,.060,.006,2),rhs_mass(.080,.060,.008,2)],
+  'basis':'own explicit section/length stock; topology endpoints/union/weld/strength unbuilt'},
+ {'id':'two_pitch_cylinders_complete_reserve','function':'full tube/caps/gland/rod/piston/two eyes/seals/guidance',
+  'mass_range_kg':[12.,22.], 'basis':'own non-OEM reserve calibrated against frozen B 50/25pitch metal4.839006kg each; longer97mm stroke/larger60–63mm bore and seals not exact source; not manufacture-qualified'},
+ {'id':'one_roll_cylinder_complete_reserve','function':'full50/25 or60/30, own~83mmstroke',
+  'mass_range_kg':[5.,9.], 'basis':'own non-OEM bounded reserve vs frozenB 50/25roll metal4.172250kg; source seal/guidance unknown'},
+ {'id':'six_eye_pins_keepers_fasteners','function':'6×40mm pins L~60–100mm plus retention/bolts',
+  'mass_range_kg':[6*annulus_mass(.04,0,.06)+1.,6*annulus_mass(.04,0,.10)+3.],
+  'basis':'own finite solid pin stock+explicit fastener reserve; fit/contact/fatigue unknown'},
+ {'id':'two_axis_positive_lock_complete_reserve','function':'both pitch and roll sectors/pairedstops/anchors/unload sensor/release',
+  'mass_range_kg':[12.,24.], 'basis':'own bounded full-function reserve, no built lock/catalogue capacity; not a weight-reduction credit'},
+ {'id':'three_cylinder_hold_and_main_valve_installations','function':'3independent inlinehold +3electrical direction valves +block fittingsbracketsplugs',
+  'mass_range_kg':[3*(templates['templates']['holding']['listed_mass_range_kg'][0]+templates['templates']['directional']['listed_mass_range_kg'][0]),3*(templates['templates']['holding']['listed_mass_range_kg'][2]+templates['templates']['directional']['listed_mass_range_kg'][2])],
+  'basis':'exact earlier F1 native installation-template inventory including OEM3.5/2.9kg cores plus finite additions; dimension/duty/pressure tuning/installed fit not qualified',
+  'complete_template_dimensions_range_m':{k:v['physical_dimensions_range_m'] for k,v in templates['templates'].items()}},
+ {'id':'sensing_hose_motion_junctions','function':'3pressure/position loops, movinghose supplyreturn, strainrelief/guards',
+  'mass_range_kg':[4.,9.], 'basis':'ownexplicit reserve, no routed dynamic hose or sensors installed'},
+ ]
+mass_total=[sum(r['mass_range_kg'][i] for r in mass_inventory) for i in [0,1]]
+
+result={
+ 'robot_id':'gorilla_v0_1','task':'G4_read_only_ankle_architecture_exit_review',
+ 'geometry_created':False,'frozen_inputs_modified':False,'source_inputs':inputs,
+ 'load_scope':'One-foot29.430kN upstream compression balanced by upward ground reaction;1.5 is sensitivity. No3t carried load, walking load, dynamic joint/whole-robot qualification. New staticlocks only proposals.',
+ 'source_B_rejections':{'union_steel_kg':old_report['same_rigid_owner_union_metal_kg'],
+    'total_declared_nominal_kg_before_unknown':old_report['complete_submodule_with_new_armor_before_unknowns']['range'][1]['mass_kg'],
+    'arch_source_rejected':True,'geometry_accepted':False,'aesthetic_accepted':False,'physical_accepted':False,
+    'neutral_ankle_carrier_arch_raw_overlap_cm3':137.32812446238464,
+    'forefoot_max_conditional_brace_compression_N':max(max(r['brace_compression_N']) for r in old_report['3t_forefoot_brace_hinge_cases']),
+    'source_B_pitch_lock_exists':False,'source_B_forefoot_brace_lock_not_pitch_lock':True},
+ 'source_B_geometry':source_b_dimensions,
+ 'source_B_axis_and_3t_wrenches':old_contact,
+ 'shared_proposal_variables':{'pitch_x_m':proposal_pitch_x,'pitch_y_m':proposal_axis_y,
+    'pitch_delta_from_B_xy_m':[.055,.13],'roll_delta_y_from_B_m':.09,
+    'roll_y_coincident_pressure_center_condition':True,
+    'whole_leg_abduction_body_FK_and_support_polygon_requires_rebuild':True,
+    'pitch_min_effective_J_target_m_per_rad':[.20,.22],
+    'neutral_bearing_pressure_center_target_separation_m':[.26,.30],
+    'source_B_fold_pitch_center_distance_m':float(np.linalg.norm(np.array(interface['joints'][1]['c'])-interface['joints'][2]['c'])),
+    'no_frozen_new_axis_or_SI_contract':True},
+ 'new_appearance_status':'User has delegated new visible lowerleg/ankle/foot artwork to independent Gorilla design chat. No new artwork received/read/adopted here; no crosschat messaging/polling. B is rejected diagnostic geometry only. All newaxis/corridor values remain internal adaptation variables.',
+ 'topology_1':{'name':'double_supported_pitch_parent_with_nested_roll',
+    'body_order':'distal -> pitch_carrier -> foot_roll_arch -> optional forefoot',
+    'pitch_center_proposal_m':[-.025,.65,.31],'roll_center_proposal_m':[-.025,.65,.215],
+    'cylinder_path_key':'T1_proximal_inclined_pitch_pair',
+    'force_path':'pads/lockedforefoot ->rollarch/broadcarrierboss ->two60mmrolljournalstubs/taperpairs ->pitchcarrier/broadboss ->two60mmpitchjournalstubs/taperpairs ->distalstructuralhousing ->fold. Actuatorandstaticlocktorque closes through widecarriers/reactionbridges, not an assumed60mmfulldriveaxle.',
+    'two_pitch_cylinder_parent':'distal housing','pitch_cylinder_children':'pitch carrier separated cranks',
+    'roll_cylinder_parent':'pitch carrier','roll_cylinder_child':'roll arch',
+    'static_hold_path':'each axis needs opposed compression faces or positive sector/lockpin reacted into that axis parent plus a qualified bearing/frame path; forefootbrace remains separate',
+    'space_burden':'pairedinclined eyes~464–541mm, strokepm10~97mm; pitchA atz.76 abovefoldz.55, therefore intrudes upstream owner region and is not confined within247mmfold-pitch link. Cylindercrank forward fork reaches~x.248; oldivory xmax.17 is insufficient.',
+    'mass_burden':'pitchbarrels/inlineholding stay proximal to both ankle rotations; roll support and foot still move through pitch. Requires wide interleaved parentandchild carrier, no extra independent thinring attributed as bearing.',
+    'exit':'If same-version housing and fold motion cannot clear the long fixed-parent cylinders/carrier, exit this topology rather than grow armor around unresolved owners.'},
+ 'topology_2':{'name':'wide_roll_parent_arch_with_underhung_pitch_foot',
+    'body_order':'distal -> rolling_yoke -> pitch_foot -> optional forefoot',
+    'roll_center_proposal_m':[-.025,.65,.31],'pitch_center_proposal_m':[-.025,.65,.18],
+    'cylinder_path_key':'T2_rolling_parent_longitudinal_pitch_pair',
+    'force_path':'pads/lockedforefoot ->pitchfoot/broadboss ->two60mmpitchjournalstubs/taperpairs ->rollingyoke/broadboss ->two60mmrolljournalstubs/taperpairs ->distalhousing ->fold. Mainactuator/holdtorque closes throughwidecarrier/reactionbridge. Twofore-aft pitch cylinders mount to rollingyoke, react on independentpitchcranks; rollactuator mounts distal->rollingyoke.',
+    'two_pitch_cylinder_parent':'rolling yoke','pitch_cylinder_children':'pitch foot separated cranks',
+    'roll_cylinder_parent':'distal housing','roll_cylinder_child':'rolling yoke',
+    'static_hold_path':'pitchfeet positiveholds react into rollingyoke; roll positivehold reacts rollingyoke into distal. Both hold torques and complete load return required.',
+    'space_burden':'pairedfore-aft eyes~302–378mm atpm10, strokereq~96mm and ownzero-eye~292mm; twoYlanes±.15 within~605mmforefootwidth beforebodywall/tools. qpm15 fails owncompletezerolength provision (36.7mm deficit); not an unchanged30degree range.',
+    'mass_burden':'twofull pitch cylinder barrel/hold bodies now roll with the foot; estimated extra roll-moving hardware is the two barrel/control inventories, not an assumed lighter ankle. Foot lift inertia, unsprung impact mass, floor sweep and same-version COM must be rechecked.',
+    'proximal_remote_option':'If cylinders remain fixed in distal and eyesattach downstream pitchfoot, the lengths depend on roll andpitch; must construct full2x2 lengthJacobian/forceallocation plusjointcrossinghoses, or an actual shaft/cable transmission. No remote path is currently dimensioned or qualified.',
+    'exit':'Exit if cylinders/locks exceed permitted footvolumetric outline or leverarm decreases in core poses; do not attach remote cylinder by ownerstring or omit full installation.'},
+ 'kinematic_paths':paths,'extended_range_sensitivity':extended_paths,'parent_FK_line_corridor_diagnostics':fk_corridors,
+ 'cylinder_force_pressure_scenarios':force_rows,'pitch_pressure_requirements':pressure_requirements,
+ 'actual_sampled_min_J_pressure_requirements':actual_min_J_pressure_requirements,
+ 'pressure_scope':'14/17/20.4/21MPa are own chamber-pressure scenarios, not certified continuous customcylinder duty. Ideal force includes return pressure, usesnoefficiency factor toreducepressureproofload. Seals/guidance, heat, leakage, returnline and oscillatory holdtuning remain red.',
+ 'proposed_static_hold_loads':lock_rows,
+ 'SKF_support_scope':{'SKU':'32212','d_D_T_mm':[60,110,29.75],'B_C_a_mm':[28,24,24],
+    'C_C0_kN':[155,160],'catalogue_mass_kg':1.15,'e_Y_Y0':[.4,1.5,.8],
+    'abutments_mm':{'da_max':69,'db_min':70.5,'Da_min':95,'Da_max':102,'Db_min':104,'Ca_min':4,'Cb_min':5.5,'ra_max':2,'rb_max':1.5},
+    'catalogue_printed_pages':[700,701,680,681,682,107],
+    'single_P0_formula':'max(Fr,0.5Fr+Y0Fa)',
+    'Ka0_identical_two_single_bearing_Fa_condition':'FaA=FaB=max(FrA,FrB)/(2Y), table7zero-clearance/no-preload; radialloads at actualpressurecentres; no matchedset substitute',
+    'static_safety_scope':'SKF rollerlow-certainty peak: infrequentmotion/deformationallowed >=2; continuousmotion/noaccepteddeformation>=4. Choice is requirements-dependent, not universalrobot acceptance.',
+    'catalogue_values_do_not_certify_total_joint_or_3t_load':True,
+    'source_B_ID60p7_not_real_fit':True,
+    'own_support_installation_window':'OD132–144cup,35–42mmaxialeach; Sseat.26–.30 yields full~.33–.40m withkeepers; additional.10–.15m pull/toolwindow nothardware. Cupfixedparent, true60journal/innerrotatingchild.',
+    'pressurecenter_location_preload_fit_thermal_life_bolting_certification_unknown':True},
+ 'neutral_static_positive_hold_bearing_reactions':bearing_rows,
+ 'neutral_live_pitch_cylinder_seat_reactions':live_reactions,
+ 'neutral_live_roll_cylinder_seat_reactions':roll_live_reactions,
+ 'dynamic_operation_parametric_domain':op_rows,
+ 'hydraulic_flow_sensitivity_two_ankles':flows,
+ 'pump_reference':{'source_SKU':'existingHAWEZ16referenceonly','displacement_cc_rev':11,
+    'two_pumps_at_3000rpm_ideal_L_min':66,'own_volumetric_eta_range':[.9,.97],
+    'two_pumps_reference_delivery_range_L_min':[59.4,64.02],
+    'OEM_p1_continuous_MPa':23,'OEM_speed_range_rpm':[700,3500],
+    'OEM_conditions':'D6820-EN11-2022:100%duty/oil−20to80C/viscosity12–90mm2s/siz2maxshaft65Nm; fullmotorinverter/cooling/systemreturnunknown',
+    'not_selected_G4_power_unit':True},
+ 'heat_energy_scope':'Independentstaticmechanicalholds may remove the largechamberload fromtheactivehydraulic path, but wholemachine aux/leakage/idlepower notzero. Positivejointpower needs supply; negativework requiresmeteredreturn heat or provenpump/motorinverterregen. No default allflow@fullpressure or inheritedelectricalbus.',
+ 'analytical_complete_ankle_function_stock_inventory':mass_inventory,
+ 'ankle_function_stock_sum_range_kg':mass_total,
+ 'stock_mass_scope':'Twoanklejoints+3cylinderreserve+dualpositiveholds+3hold/mainvalveinstallations. NoCAD, nofullmaterialunion, not aprovenminimal/manufacturablemassrange. Commonfootcores/elastomer/forefoothinge/braces/upstreamdistal/fold/torsofluidstock notincluded; mustadduniqueledgerrows. Neither old318.6kg stock nor thisrange is claimed completewholeleg.',
+ 'journal_torque_path_challenge':{'OD_ID_mm':[60,28],'VM_from_pure_torsion_formula':'sqrt(3)*16*T*D/(pi*(D^4-d^4))',
+    'oldx_1p5_14p568kNm_VM_MPa':math.sqrt(3)*16*(F3*1.5*.33)*.06/(math.pi*(.06**4-.028**4))/1e6,
+    'newx_1p5_12p140kNm_VM_MPa':math.sqrt(3)*16*(F3*1.5*.275)*.06/(math.pi*(.06**4-.028**4))/1e6,
+    'scope':'only a puretorque grosssection challenge, not actualstubstress or materialcertification; widecarrier must carrytorque, shaftstuboverhang/contactandbossconnections stillunqualified'},
+ 'fluid_inventory_scope':'Dry inventory only. Cylinderchambers/newhoses/valveexternalvoids mustdraw fromonecentraloilstock; frozen F1template externalvoids alone do not include OEMinternaloil. Newstock notyetclosed and cannot be declared zero.',
+ 'recommended_next_topology':'T2_as_primary_macro_probe_with_centered_axes_and_pm10_pitch_initial_kinematic_scope',
+ 'recommendation_reason':'Real~247mmfold-pitch axislink cannot house T1~0.5meye-distance drivewithoutcrossingfoldowner space; T2 can use existing~0.94mfootfore-aft span with~0.30–0.38meye-distance routes, while keepingthree-dimensionaltorquepaths/separatepositiveholds. This is a conditionallayoutpriority, not capability or aestheticapproval.',
+ 'rejection_conditions':['Two_axismechanicalstaticlocks unbuilt/unreleased safely','Original3toperation not activewalkdomain','Nativecarrier/shaft/bearing seat/livecylinder conflicts or resourceboundaryinvalid','Wholeleg outwardabduction/FK and fullfootfloorpose notrebuilt','Allpressurecenter/preload/P0/contact/structure/weld/stroke/seal/thermalconditions open','Commonforefootbrace carries up to64.47kN historicalsensitivity; cannotremovefunction or mass by declaringarchsolid','Sharedpumpflow/negativework/electricalbus/thermalcontinuity notclosed'],
+ 'geometry_accepted':False,'physics_accepted':False,'whole_robot_or_walking_tonne_load_accepted':False,
+ 'all_loaded_inputs_unchanged_at_end':all(sha(p)==h for p,h in initial_hashes.items()),
+ 'script_sha256':sha(Path(__file__))}
+(OUT/'architecture_comparison.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')
+print(json.dumps({'output':'architecture_comparison.json','sha256':sha(OUT/'architecture_comparison.json'),
+ 'T1_path':paths['T1_proximal_inclined_pitch_pair'],'T2_path':paths['T2_rolling_parent_longitudinal_pitch_pair'],
+ 'stock_mass_range_kg':mass_total,'inputs_unchanged':result['all_loaded_inputs_unchanged_at_end']},ensure_ascii=False,indent=2))

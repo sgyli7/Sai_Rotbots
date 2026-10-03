@@ -1,0 +1,78 @@
+"""Finalize independent numerical audit receipts; upstream files remain read only."""
+from pathlib import Path
+import hashlib,json,platform
+import numpy as np
+OUT=Path(__file__).resolve().parent;ROOT=OUT.parents[1]
+RFEM=ROOT/'.scratch/gorilla_internal_g8_root_fem';LOAD=ROOT/'.scratch/gorilla_internal_g8_load_envelope'
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def save(p,d):Path(p).write_text(json.dumps(d,indent=2,ensure_ascii=False,allow_nan=False)+'\n')
+
+def main():
+    records=[];inputs=set();admissions=[]
+    for name,prefix in [('g7','g7_coarse_full42'),('a','g8_a_full42'),('b','g8_b_full42')]:
+        auditpath=OUT/(name+'_field_audit.json');a=json.loads(auditpath.read_text())
+        rootpath=RFEM/(name+'_envelope_baseline.json');r=json.loads(rootpath.read_text());lrpath=LOAD/(prefix+'_report.json');lr=json.loads(lrpath.read_text())
+        fieldpath=RFEM/(name+'_basis_fields.npz');admissionpath=ROOT/'.scratch/gorilla_internal_g7_root_fem/coarse_mesh_admission.json' if name=='g7' else RFEM/(name+'_mesh_admission.json')
+        admission=json.loads(admissionpath.read_text())
+        checks={'all_selected_numeric_checks':a['all_numeric_checks_pass'],'same_root_report':a['source_hashes']['root_report']==sha(rootpath),
+                'same_actual_root_fields':a['source_hashes']['root_basis_fields']==sha(fieldpath),
+                'same_independent_verifier':a['source_hashes']['independent_verifier']==sha(OUT/'audit_envelope_fields.py'),
+                'admission_hash_matches_root_report':r['mesh_admission_sha256']==sha(admissionpath),
+                'admission_hash_matches_actual_mesh':admission['mesh_sha256']==r['mesh_sha256']==sha(lr['mesh_path']),
+                'root_admission_flag_structural_FE_admissible':admission['structural_FE_admissible'] is True}
+        if not all(checks.values()):raise ValueError('stale actual-field/admission receipt: '+str(checks))
+        admissions.append({'name':name,'path':str(admissionpath.resolve()),'sha256':sha(admissionpath),'checks':checks,
+                           'scope':'Existing root mesh-admission identity only; not a new independent geometry/mesh qualification.'})
+        paths=[rootpath,fieldpath,lrpath,LOAD/(prefix+'_loads.npz'),LOAD/(prefix+'_gauge.npz'),Path(lr['mesh_path']),Path(lr['CAD_source_path']),Path(lr['physicalgroup_report_path']),admissionpath]
+        if name=='g7':paths.append(ROOT/'.scratch/gorilla_internal_g7_root_fem/coarse_elastic_fields.npz')
+        inputs.update(paths);records.append((name,prefix,a))
+    inputs.update([RFEM/'solve_load_envelope.py',ROOT/'.scratch/gorilla_internal_g6_root_fem/verify_tet_elasticity.py',LOAD/'manifest.json',LOAD/'full_load_reference.json'])
+    metadata={'schema':'G8_envelope_audit_admission_identity_receipt','root_admission_identities':admissions,
+              'producer_sha256':sha(Path(__file__)),'geometry_or_mesh_admission_independently_reexecuted':False,
+              'no_new_FE_solve':True,'physical_accepted':False}
+    save(OUT/'admission_identity_receipt.json',metadata)
+    table=[];selected=[]
+    for name,prefix,a in records:
+        table.append(f"| {name} | {a['worst_VM_all42_case_index']} | {a['worst_VM_all42_Pa']/1e6:.6f} | {a['worst_compliance_all42_case_index']} | {a['worst_compliance_all42_J']:.6f} |")
+        for row in a['independent_selected_actual_field_checks']:
+            selected.append(f"| {name} | {row['case_index']} | {row['independent_stress_relative_error']:.4g} | {row['independent_VM_relative_error']:.4g} | {row['independent_internal_force_original_load_relative_residual']:.4g} | {row['canonical_integral_gauge_max']:.4g} |")
+    doc='''# G8 actual envelope numerical audit
+
+All three root FEM datasets use the exact source-bound load files, eight actual original case columns and their own unchanged coefficient arrays. All 42 original case indices, factors, CoP, poses and allocations are present. The complete original force matrix reconstructs to the frozen load-envelope tolerance. No basis-only maximum is substituted for the original envelope: every reported VM maximum, VM p99, maximum displacement, compliance, peak tetrahedron index and centroid is recomputed from all 42 reconstructed stored fields and matches the root report.
+
+| Mesh | Worst VM original case | All42 maximum VM diagnostic MPa | Worst compliance original case | Compliance J |
+|---|---:|---:|---:|---:|
+'''+ '\n'.join(table)+'''
+
+These coarse-mesh VM values are numerical diagnostics under prescribed generic traction. They are not physical stress allowables, contact solutions, converged singularity values or robot strength decisions.
+
+The selected independent field checks use isolated scikit-fem 12.0.2 scalar MeshTet/P1 gradients on exact source nodes and tetrahedra. Root strain/stress/assembly/solver functions are not imported. Gradient → symmetric small strain → uniform isotropic 3D stress is evaluated with E=210 GPa, ν=0.3, and tensor/Voigt components xx/yy/zz/xy/yz/zx. VM is independently evaluated from those stresses. Internal nodal forces are independently scattered from volume·σ·∇N and compared with the complete original external force array; no stiffness matrix is assembled and no new solve runs.
+
+| Mesh | Independently checked original case | Stress field relative error | VM field relative error | Internal force vs original external F relative residual | Integral canonical gauge maximum |
+|---|---:|---:|---:|---:|---:|
+'''+ '\n'.join(selected)+'''
+
+Independent gradient evaluation covers G7 cases18/20 and A/B case20. Other cases' summary verification reconstructs the stored root stress/displacement basis; it is not an independent gradient evaluation of every one of the 42 states. G7 selected fields also agree with the previously solved direct G7 cases: displacement relative difference ≤4.57e−11 and stress relative difference ≤8.63e−11.
+
+The root solver uses a QR-selected set of exactly six algebraic displacement DOFs to remove six rigid modes, then removes the volume-weighted rigid displacement from the solution. It does not directly solve the exported integral-gauge KKT system. For a connected compatible linear elastic free body with only six rigid null modes and balanced original loads, these are displacement-gauge choices rather than physical supports. The independent canonical integral gauge has rank6 and near-zero weighted residual; independent internal-force checks retain the original full external loads. Root's original-K basis residual and tiny six-DOF reaction diagnostics are retained in each receipt. No journal circumference is clamped as a real bearing support.
+
+The source declares no force projection, gravity, real contact, dynamics or fatigue, and no physical/whole-robot acceptance. Uniform density is a material inventory datum; it does not add selfweight here. Real bearing pressure bands/preload/clearance, pin load sharing, stop engagement, mounting bolts, material strength, mesh stress convergence and whole-robot loading remain outside this numerical audit. Existing root mesh-admission file identity and flag are checked separately, not reexecuted or promoted to contact/strength qualification.
+
+Reproduce with OPENBLAS_NUM_THREADS=1 .venv/bin/python audit_envelope_fields.py --name g7 --prefix g7_coarse_full42 --cases 18 20, then corresponding --name a/b --prefix g8_a_full42/g8_b_full42 --cases 20. Run freeze_audit.py last. The manifest records absolute inputs, all hashes and exact repository commands. Frozen G8 load envelopes and every upstream CAD/mesh/FEM file remain read only.
+'''
+    (OUT/'numerical_audit_review.md').write_text(doc)
+    outputs=[p for p in sorted(OUT.iterdir()) if p.is_file() and p.name!='manifest.json']
+    commands=['OPENBLAS_NUM_THREADS=1 .venv/bin/python .scratch/gorilla_internal_g8_envelope_audit/audit_envelope_fields.py --name g7 --prefix g7_coarse_full42 --cases 18 20',
+              'OPENBLAS_NUM_THREADS=1 .venv/bin/python .scratch/gorilla_internal_g8_envelope_audit/audit_envelope_fields.py --name a --prefix g8_a_full42 --cases 20',
+              'OPENBLAS_NUM_THREADS=1 .venv/bin/python .scratch/gorilla_internal_g8_envelope_audit/audit_envelope_fields.py --name b --prefix g8_b_full42 --cases 20',
+              '.venv/bin/python .scratch/gorilla_internal_g8_envelope_audit/freeze_audit.py']
+    manifest={'schema':'G8_independent_actual_envelope_numerical_audit_frozen','frozen':True,
+              'inputs':[{'path':str(p.resolve()),'sha256':sha(p)} for p in sorted(inputs)],
+              'outputs':[{'path':str(p.resolve()),'sha256':sha(p),'bytes':p.stat().st_size} for p in outputs],
+              'python_version':platform.python_version(),'numpy_version':np.__version__,'scikit_fem_version':'12.0.2',
+              'reproduction_commands':commands,'actual_source_case_count_each_mesh':42,'no_new_FE_solve_or_stiffness_assembly':True,
+              'physical_or_contact_or_robot_accepted':False}
+    save(OUT/'manifest.json',manifest)
+    mismatch=[p['path'] for kind in ['inputs','outputs'] for p in manifest[kind] if sha(p['path'])!=p['sha256']]
+    print(json.dumps({'manifest_sha256':sha(OUT/'manifest.json'),'inputs':len(inputs),'outputs':len(outputs),'hash_mismatches':mismatch,'review_sha256':sha(OUT/'numerical_audit_review.md')},indent=2))
+if __name__=='__main__':main()

@@ -1,0 +1,46 @@
+# Gorilla G15 同工况热域与实际液体分配
+
+本轮只读G11/G14冻结输入，并绑定G15 B **27141a30dd2533516558d177ed784067b42cbe5d5626b2c897ae13f467739221** 的锁定几何。没有改CAD、原甲、主轴、控制契约或旧冻结字节。两完整4320、四完整172参考和两个水泵只是本轮共同布局输入；安装、持续热与整机能力均未放行。
+
+## 同一功率与热账
+
+原A是30分钟、移动25%/操作35%/hold40%；B是高并发60分钟40%/40%/20%敏感性，均是任务设计问题。液压出口pQ、泵η.8、电机/逆变η.9、rotaryη.85、terminal→busη.98仍是G11条件假设。480颗80s6p、loaded288/200V、typical packR=.2Ω的I²R替换原ηtotal电池损耗，不能再叠原ηtotal损耗。
+
+| 同工况，中aux1.48kW | A 30min | B 高并发 |
+|---|---:|---:|
+| low平均kW（288–200V） | 2.550–2.936 | 5.312–7.033 |
+| low移动连续峰kW | 3.893–4.962 | 7.636–10.784 |
+| hot平均kW | 1.820 | 4.360 |
+| hot移动连续峰kW | 4.185 | 6.810 |
+| SOC75%条件所需nameplate kWh | 6.998–7.256 | 32.976–35.270 |
+
+`same_condition_heat_budget.csv`逐phase列oil泵损/节流、water电机/rotary/hold、DC、cellR和完整aux分配。mid aux=四fan .86＋两pump .12＋compute/sensing/screen .25＋18valve coil .10＋LV转换 .05＋brake release .10 kW，替换旧.65/.8，不能重复加。coil/compute/brake是自定非零范围，hold原1.5/2.5kW完整保留。fan热分给空气、pump输入保守全变液热，water热与fan不重复。新增辅机功率不是保证供得出实际流量；fan .86是4×215W，24V variant在622/760m³h、475/350Pa的公开table点；4×249W另属于48V variant。四fan合.4kW低值只是自定敏感，不是现货能力。每芯热图16m³min是整芯总风，两fan各480m³h时功耗table未给，不能拼零压流量与高压额定。
+
+## 温度与流量门禁
+
+仅作乐观纯水公开最大点H166W/K、water15.1L/min、**每整芯合16m³/min**筛查。H=Q/(入水−入风)，不是UA。若每芯.43kW fan热全部位于上游，入口风温增加1.337°C。A冷供在25°C环境平均39.28–41.23°C、移动峰46.09–51.51°C；35°C则平均49.28–51.23°C、峰56.09–61.51°C。B在25°C平均53.29–62.02°C，已越EMRAX50°C入口条件；不能把8–9kW峰当永久稳态，也不能用平均掩峰。油热路A移动峰对应hot-water radiator Tin约51.55/61.55°C（25/35环境），B约67.36/77.36°C；70°C只是自定设计筛查，不是油/泵/HX许可。
+
+`route_analysis.json`保留两工况、两环境、两voltage、有效C=15/45/90kJ/K、六phase排序的48组解析瞬态。方程C*dTin/dt=Q−H*(Tin−Tair)，用瞬时实际散热H*(Tin−Tair)计算出口温度，不把热源Q直接当储热中的散热量；初始均ambient是自定冷启动条件。A25°C低温供水全范围37.11–51.42°C，A35°C47.11–61.42°C；这些仅说明热容量/排序敏感，不能认证warmstart、真实分支或额定。C不是整机质量，也没有把钢架全部借作热容。
+
+- QTL210/QTR160的Tc来自20°C安装面、100°C winding条件；25/35°C环境的普通散热无法维持20°C mount。需要明确主动制冷或另有实证的扭矩降额，不能以50°C冷却水替代额定条件。
+- 两EMRAX各≥6L/min且入口≤50°C来自原厂，液冷也需空气流动。其余18rotary共36、compute/power3、pack2L/min为旧custom假设，分出hot-HX后low共53；可重新分配，不能默默删目标。一个15.1L/min core图不覆盖53L/min全串，旁路/混水/额外泵必须显式建账。
+- 新肩4mm流口在custom3.3L/min下约4.377m/s，光入口/出口K敏感就19–77kPa；参考EWP80在全59附近约24kPa，尚未加芯、线、滤器。两独立泵必须各自闭Q/Δp/NPSH，不能把.12kW当已供给。
+- Boyd H纯水rho1000/cp4180，与肩腔rho1050/cp3700和全局water质量rho1000不是同一已选配方。glycol曲线修正、cell/compute温度与contactR、oil-HX UA/LMTD/隔离、regen均红。
+
+## 锁定B真实空间的液体账
+
+B原生管路线中心线体积预算：水77.249m/5.664268L，油58.459m/5.236931L。圆管中心线量不是已连接的网络union；端口交叠、真实腔体、运动软管和所有残留旧管替代映射需重核。水26个实际target IDs全部保存在`body_fluid_capture.json`。
+
+旧两104×59×264mm集流腔3.239808L已明确退休，不能继续计active。新两header Ri9mm，**ID18mm**，长.81m，合.412240L（已含于5.664268L水管账）；不是ID9mm。旧E2缩放低中高库存保留为历史敏感，不能直接当当前G15库存。
+
+当前已知或保留候选设备腔4.560408L（双芯1.688、HX.923904、新肩.251378、pack.009869、旧16watercase1.109113、compute/power.578144），加新管5.664268和body cold working4.5，得**14.724676L**。body全库存12.481996L不足**2.242679L**；再加中值未知EMRAX/pump/filters/ports1.5L，则16.224676L、差**3.742679L**。水套/compute为对应旧有限腔候选，仍需确认active native IDs及端口union，不能声称所有器件已真实灌满。没有将未知当零，也没有把外部液体加到已once全库存而双计质量。若保留完整这些功能，需要重分global stock或实际重建腔/管/fill；本轮未替body改形或减fill。
+
+油箱cap19.787184L、cold fill18L，30L全库存在自定4%膨胀下余气仅.587184L（约3%）。all18数学rod swing1.108353L、return脱气/倾斜与suction尚需分配；不能据此称现油箱合格。按自定hot-air27.5%仅fill18+exp1.2需cap26.483L，这不是制造商最低要求，也不必通过放大外甲解决。
+
+若全旧管被新管确实替换、采用较小workingfill且未知腔按非零低中高分配，当前新管条件全水约11.02/12.32/14.92L，全油13.81/16.36/20.61L；其中水fill.3/.6/1.2与油fill2.608/4.108/6.608L是自定敏感，**不等同当前body4.5/18L可自动减掉**。对应water vessel aggregate.513/1.253/2.765L、oil tank3.606/6.569/12.069L仍缺分路膨胀、NPSHr、真实回油脱气时间、accumulator容量与柔性路由。低中高不是第三整机布局。
+
+## 复算与边界
+
+在项目根依次执行`compute_domain.py`、`analyze_routes.py`、`capture_body_fluid.py`、`write_summary.py`。读取的G11/G14及实际B/producer均绑定SHA；当前B几何锁定，源审核输出后续完成不改变本次热推导。59项独立代数/能量/aux/未知volume检查0失败不代表设备额定、几何通过或真实物理闭环。未更改任何原图或输出审美替身。本单元无法替代整机双足/双手/复杂Bevy任务的持续功率、接触、稳定性与控制验证。
+
+官方资料复用G14冻结捕获： [Boyd4320热图](https://info.boydcorp.com/hubfs/Thermal/Liquid-Cooling/Boyd-4320-Heat-Exchanger-Graph-Metric.pdf)、[Boyd完整系列](https://info.boydcorp.com/hubfs/Thermal/Liquid-Cooling/Boyd-Stainless-Steel-Tube-Fin-Heat-Exchangers.pdf)、[ebm完整风机目录](https://www.ebmpapst.com/content/dam/ebm-papst/products/compact-fans/axial-compact-fans/DC_axial_compact_fans_catalog.pdf)、[Davies Craig完整泵目录](https://daviescraig.com.au/media/2576/1688618225.CatalogueV8Small6-July-2023.pdf)。历史Lytron full584×305×64尺寸沿用G14制造商出版物镜像，不称现版正式公差CAD。没有新采购选型或新资料海搜。

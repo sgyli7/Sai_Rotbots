@@ -1,0 +1,46 @@
+from pathlib import Path
+import json, hashlib, shutil, datetime
+R=Path('/home/ethan/Projects/Sai_Rotbots')
+sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+write=lambda p,v:p.write_text(json.dumps(v,ensure_ascii=False,indent=2)+'\n')
+src=Path('/tmp/codex-remote-attachments/01a0fa4c-3989-7342-8b07-da32d3a9129f/DA3F6286-34D5-4FD8-A05E-8847F35F3F55/1-照片-1.jpg')
+ref=R/'robots/gorilla_v0_1/design/concepts/lower_body_redesign'
+dst=ref/'user_reference_20261004_v0_2_refined.jpg'
+if dst.exists() and sha(dst)!=sha(src):raise RuntimeError('Source would overwrite different bytes')
+shutil.copyfile(src,dst)
+ap=R/'robots/gorilla_v0_1/source/appearance_authority.json';a=json.loads(ap.read_text())
+a['prior_v0_2_camera_image']={'path':a['image_path'],'sha256':a['image_sha256']}
+a.update(image_path='design/concepts/lower_body_redesign/'+dst.name,image_sha256=sha(dst),
+ recorded_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),
+ user_instruction='V0.2外观微调基本结束，以最新图为当前基准，正式交接包待用户提供；暖白膝甲、胸前金边camera、踝部橙点、pad侧排气以及洁净top按此版接续。',
+ final_color_details_pending=False,formal_handoff_package_received=False,
+ upper_identity_scope='AA3 identity retained with latest V0.2 refined camera/vents/clean crown finish; image does not establish dimensional CAD authority')
+write(ap,a)
+mp=ref/'source_manifest.json';m=json.loads(mp.read_text())
+m.update(current_reference=dst.name,current_reference_sha256=sha(dst),
+ latest_user_message='微调已经基本结束，稍后提供交接包。',color_finalization_pending=False,
+ formal_handoff_package_received=False)
+m['reference_history'].append({'path':dst.name,'sha256':sha(dst),'scope':'Latest user refined V0.2 image; formal native package pending. Image is visual reference, not physical/SI qualification.'})
+m['functional_perception_intent']['latest_refined_reference']=dst.name
+m['functional_perception_intent']['latest_refined_sha256']=sha(dst)
+write(mp,m)
+cd=R/'robots/gorilla_v0_1/design/current_decisions.md';s=cd.read_text()
+s=s.replace('更新：2026-10-04 01:28','更新：2026-10-04 01:33')
+s=s.replace('颜色细节稍后同步。G24','用户最新说明外观微调基本结束，正式交接包待到。G24',1)
+old='- **最新胸前感知授权：**'
+insert='- **当前微调基准与交接：**[最新V0.2四视](concepts/lower_body_redesign/user_reference_20261004_v0_2_refined.jpg)为当前视觉权威：暖白膝甲、胸前金边Camera、踝部橙色点缀、pad两侧排气与洁净上罩。用户说明微调基本结束，正式包稍后来；收到后先核来源、单位、层级和同源四视。现在继续全身内部模块/传动/宏观核算，几何配准和尺寸留候选；不把待包设成持续工作暂停条件、不自行跨chat催促。先前Camera图和色版留历史，不作并列当前权威。\n'
+s=s.replace(old,insert+old)
+s=s.replace('**下一实际方向G25：**','**已保存G25散热方向：**')
+s=s.replace('随后用户已批准V0.2大形并供b7原生lower，G26将其纳入全身，不再只做上身。','G24于17:16UTC实际提交e69cf4652。G25受控源[snapshot](../../../experiments/gorilla_v0_1/internal_structure_g25_forced_air_and_liquid_cooling/README.md)SHA `d69ae2e6…`已保存；两个风道原型每30优先外部查询19正体积、3自身甲交仍拒绝。用户已批准V0.2大形并供b7原生lower，G26已完整提取，G27在源绑定全身配准，不再只做上身。')
+cd.write_text(s)
+rp=R/'robots/gorilla_v0_1/README.md';s=rp.read_text()
+s=s.replace('颜色细节稍后同步。','最新视觉微调基本结束，正式交接包待到；胸感知与后排风按最新图接续。',1)
+s=s.replace('| G24连续承力与完整系统 |','| G25主动风道与液冷 | [实际两风道、原厂风机曲线事实与研究](../../experiments/gorilla_v0_1/internal_structure_g25_forced_air_and_liquid_cooling/README.md)；安装与持续热未放行 |\n| G24连续承力与完整系统 |',1)
+rp.write_text(s)
+ledger=R/'experiments/ledger.jsonl'
+record={'experiment_id':'internal_structure_g25_forced_air_and_liquid_cooling','robot_id':'gorilla_v0_1','design_revision':'gorilla_v0_2_transition',
+ 'saved_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'path':'experiments/gorilla_v0_1/internal_structure_g25_forced_air_and_liquid_cooling',
+ 'snapshot_sha256':sha(R/'experiments/gorilla_v0_1/internal_structure_g25_forced_air_and_liquid_cooling/snapshot_manifest.json'),
+ 'scope':'Two real front-intake/rear-pad-side forced-air prototypes; primary liquid cooling and active blower facts; installed/continuous/whole-body physical rejected or unverified. V0.2 whole-body source registration next.'}
+with ledger.open('a') as f:f.write(json.dumps(record,ensure_ascii=False)+'\n')
+print(json.dumps({'latest_refined_sha256':sha(dst),'g25_saved_snapshot':record['snapshot_sha256']}))

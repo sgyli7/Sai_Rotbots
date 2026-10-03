@@ -1,0 +1,1475 @@
+{
+  "source_sha256": "7425523c9b5cb2f82df22dccfe01c00cc4616eaf68f0e2f0ba23bdc53b609c61",
+  "producer_sha256": "a4b43967a5813f32b37b07f57a597e0925e6ecde9e1997a2129104fc93c50ac0",
+  "new_axes_tree": [
+    {
+      "id": "left_pitch",
+      "parent_body": "torso",
+      "output_body": "left_shoulder_pitch_carrier",
+      "pivot_world_m": [
+        -0.13,
+        0.56,
+        2.29
+      ],
+      "axis_world": [
+        0,
+        1,
+        0
+      ],
+      "SI_contract_admission": false
+    },
+    {
+      "id": "left_roll",
+      "parent_body": "left_shoulder_pitch_carrier",
+      "output_body": "left_shoulder_roll_carrier",
+      "pivot_world_m": [
+        -0.105,
+        0.695,
+        2.305
+      ],
+      "axis_world": [
+        1.0,
+        -0.0,
+        -0.0
+      ],
+      "SI_contract_admission": false
+    },
+    {
+      "id": "left_yaw",
+      "parent_body": "left_shoulder_roll_carrier",
+      "output_body": "left_upper_arm",
+      "pivot_world_m": [
+        -0.105,
+        0.755,
+        2.025
+      ],
+      "axis_world": [
+        -0.08002445120533554,
+        0.3501069740233429,
+        -0.9332851621822257
+      ],
+      "SI_contract_admission": false
+    },
+    {
+      "id": "left_elbow_pitch",
+      "parent_body": "left_upper_arm",
+      "output_body": "left_proximal_forearm",
+      "pivot_world_m": [
+        -0.125,
+        0.835,
+        1.807
+      ],
+      "axis_world": [
+        0,
+        1,
+        0
+      ],
+      "SI_contract_admission": false
+    },
+    {
+      "id": "right_pitch",
+      "parent_body": "torso",
+      "output_body": "right_shoulder_pitch_carrier",
+      "pivot_world_m": [
+        -0.13,
+        -0.56,
+        2.29
+      ],
+      "axis_world": [
+        0,
+        -1,
+        0
+      ],
+      "SI_contract_admission": false
+    },
+    {
+      "id": "right_roll",
+      "parent_body": "right_shoulder_pitch_carrier",
+      "output_body": "right_shoulder_roll_carrier",
+      "pivot_world_m": [
+        -0.105,
+        -0.695,
+        2.305
+      ],
+      "axis_world": [
+        1.0,
+        -0.0,
+        -0.0
+      ],
+      "SI_contract_admission": false
+    },
+    {
+      "id": "right_yaw",
+      "parent_body": "right_shoulder_roll_carrier",
+      "output_body": "right_upper_arm",
+      "pivot_world_m": [
+        -0.105,
+        -0.755,
+        2.025
+      ],
+      "axis_world": [
+        -0.08002445120533554,
+        -0.3501069740233429,
+        -0.9332851621822257
+      ],
+      "SI_contract_admission": false
+    },
+    {
+      "id": "right_elbow_pitch",
+      "parent_body": "right_upper_arm",
+      "output_body": "right_proximal_forearm",
+      "pivot_world_m": [
+        -0.125,
+        -0.835,
+        1.807
+      ],
+      "axis_world": [
+        0,
+        -1,
+        0
+      ],
+      "SI_contract_admission": false
+    }
+  ],
+  "full52body_tree_candidate": {
+    "pelvis": {
+      "parent": null
+    },
+    "waist_yaw_carrier": {
+      "parent": "pelvis",
+      "joint_id": "waist_yaw",
+      "pivot_world_m": [
+        0,
+        0,
+        1.72
+      ],
+      "axis_world": [
+        0,
+        0,
+        1
+      ]
+    },
+    "waist_pitch_carrier": {
+      "parent": "waist_yaw_carrier",
+      "joint_id": "waist_pitch",
+      "pivot_world_m": [
+        0,
+        0,
+        1.82
+      ],
+      "axis_world": [
+        0,
+        1,
+        0
+      ]
+    },
+    "torso": {
+      "parent": "waist_pitch_carrier",
+      "joint_id": "waist_roll",
+      "pivot_world_m": [
+        0.23,
+        0,
+        1.91
+      ],
+      "axis_world": [
+        1,
+        0,
+        0
+      ]
+    },
+    "left_hip_yaw_carrier": {
+      "parent": "pelvis",
+      "joint_id": "left_hip_yaw",
+      "pivot_world_m": [
+        -0.13,
+        0.35,
+        1.86
+      ],
+      "axis_world": [
+        0,
+        0,
+        1
+      ]
+    },
+    "left_hip_roll_carrier": {
+      "parent": "left_hip_yaw_carrier",
+      "joint_id": "left_hip_roll",
+      "pivot_world_m": [
+        -0.075,
+        0.35,
+        1.74
+      ],
+      "axis_world": [
+        1,
+        0,
+        0
+      ]
+    },
+    "left_thigh": {
+      "parent": "left_hip_roll_carrier",
+      "joint_id": "left_hip",
+      "pivot_world_m": [
+        -0.045,
+        0.31,
+        1.66
+      ],
+      "axis_world": [
+        0,
+        1,
+        0
+      ]
+    },
+    "left_middle_shank": {
+      "parent": "left_thigh",
+      "joint_id": "left_knee",
+      "pivot_world_m": [
+        -0.08,
+        0.398,
+        0.97
+      ],
+      "axis_world": [
+        0,
+        1,
+        0
+      ]
+    },
+    "left_distal_shank": {
+      "parent": "left_middle_shank",
+      "joint_id": "left_fold",
+      "pivot_world_m": [
+        -0.12,
+        0.47,
+        0.53
+      ],
+      "axis_world": [
+        0,
+        1,
+        0
+      ]
+    },
+    "left_ankle_pitch_carrier": {
+      "parent": "left_distal_shank",
+      "joint_id": "left_ankle",
+      "pivot_world_m": [
+        -0.075,
+        0.5,
+        0.365
+      ],
+      "axis_world": [
+        0,
+        1,
+        0
+      ]
+    },
+    "left_foot_roll_arch": {
+      "parent": "left_ankle_pitch_carrier",
+      "joint_id": "left_foot_roll",
+      "pivot_world_m": [
+        -0.075,
+        0.5,
+        0.21
+      ],
+      "axis_world": [
+        1,
+        0,
+        0
+      ]
+    },
+    "left_forefoot_display": {
+      "parent": "left_foot_roll_arch",
+      "joint_id": "left_forefoot",
+      "pivot_world_m": [
+        -0.077,
+        0.5,
+        0.124
+      ],
+      "axis_world": [
+        0,
+        1,
+        0
+      ]
+    },
+    "left_heel_display": {
+      "parent": "left_foot_roll_arch",
+      "joint_id": "left_heel",
+      "pivot_world_m": [
+        -0.131,
+        0.5,
+        0.124
+      ],
+      "axis_world": [
+        0,
+        1,
+        0
+      ]
+    },
+    "right_hip_yaw_carrier": {
+      "parent": "pelvis",
+      "joint_id": "right_hip_yaw",
+      "pivot_world_m": [
+        -0.13,
+        -0.35,
+        1.86
+      ],
+      "axis_world": [
+        0,
+        0,
+        1
+      ]
+    },
+    "right_hip_roll_carrier": {
+      "parent": "right_hip_yaw_carrier",
+      "joint_id": "right_hip_roll",
+      "pivot_world_m": [
+        -0.075,
+        -0.35,
+        1.74
+      ],
+      "axis_world": [
+        1,
+        0,
+        0
+      ]
+    },
+    "right_thigh": {
+      "parent": "right_hip_roll_carrier",
+      "joint_id": "right_hip",
+      "pivot_world_m": [
+        -0.045,
+        -0.31,
+        1.66
+      ],
+      "axis_world": [
+        0,
+        1,
+        0
+      ]
+    },
+    "right_middle_shank": {
+      "parent": "right_thigh",
+      "joint_id": "right_knee",
+      "pivot_world_m": [
+        -0.08,
+        -0.398,
+        0.97
+      ],
+      "axis_world": [
+        0,
+        1,
+        0
+      ]
+    },
+    "right_distal_shank": {
+      "parent": "right_middle_shank",
+      "joint_id": "right_fold",
+      "pivot_world_m": [
+        -0.12,
+        -0.47,
+        0.53
+      ],
+      "axis_world": [
+        0,
+        1,
+        0
+      ]
+    },
+    "right_ankle_pitch_carrier": {
+      "parent": "right_distal_shank",
+      "joint_id": "right_ankle",
+      "pivot_world_m": [
+        -0.075,
+        -0.5,
+        0.365
+      ],
+      "axis_world": [
+        0,
+        1,
+        0
+      ]
+    },
+    "right_foot_roll_arch": {
+      "parent": "right_ankle_pitch_carrier",
+      "joint_id": "right_foot_roll",
+      "pivot_world_m": [
+        -0.075,
+        -0.5,
+        0.21
+      ],
+      "axis_world": [
+        1,
+        0,
+        0
+      ]
+    },
+    "right_forefoot_display": {
+      "parent": "right_foot_roll_arch",
+      "joint_id": "right_forefoot",
+      "pivot_world_m": [
+        -0.077,
+        -0.5,
+        0.124
+      ],
+      "axis_world": [
+        0,
+        1,
+        0
+      ]
+    },
+    "right_heel_display": {
+      "parent": "right_foot_roll_arch",
+      "joint_id": "right_heel",
+      "pivot_world_m": [
+        -0.131,
+        -0.5,
+        0.124
+      ],
+      "axis_world": [
+        0,
+        1,
+        0
+      ]
+    },
+    "left_shoulder_pitch_carrier": {
+      "parent": "torso",
+      "pivot_world_m": [
+        -0.13,
+        0.56,
+        2.29
+      ],
+      "axis_world": [
+        0,
+        1,
+        0
+      ],
+      "joint_id": "left_pitch",
+      "status": "G18 explicit candidate rest/FK"
+    },
+    "left_shoulder_roll_carrier": {
+      "parent": "left_shoulder_pitch_carrier",
+      "pivot_world_m": [
+        -0.105,
+        0.695,
+        2.305
+      ],
+      "axis_world": [
+        1.0,
+        -0.0,
+        -0.0
+      ],
+      "joint_id": "left_roll",
+      "status": "G18 explicit candidate rest/FK"
+    },
+    "left_upper_arm": {
+      "parent": "left_shoulder_roll_carrier",
+      "pivot_world_m": [
+        -0.105,
+        0.755,
+        2.025
+      ],
+      "axis_world": [
+        -0.08002445120533554,
+        0.3501069740233429,
+        -0.9332851621822257
+      ],
+      "joint_id": "left_yaw",
+      "status": "G18 explicit candidate rest/FK"
+    },
+    "left_proximal_forearm": {
+      "parent": "left_upper_arm",
+      "pivot_world_m": [
+        -0.125,
+        0.835,
+        1.807
+      ],
+      "axis_world": [
+        0,
+        1,
+        0
+      ],
+      "joint_id": "left_elbow_pitch",
+      "status": "G18 explicit candidate rest/FK"
+    },
+    "left_distal_forearm": {
+      "parent": "left_proximal_forearm",
+      "pivot_world_m": [
+        -0.0731909532648678,
+        0.8499999999999999,
+        1.5419701475750385
+      ],
+      "axis_world": [
+        -0.17364817766693033,
+        0.0,
+        0.984807753012208
+      ],
+      "joint_id": "left_forearm_roll",
+      "status": "Candidate serial carrier; complete mechanical joint unqualified"
+    },
+    "left_wrist_pitch_carrier": {
+      "parent": "left_distal_forearm",
+      "pivot_world_m": [
+        0.06957010734142027,
+        0.8499999999999999,
+        1.3082089883236183
+      ],
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "joint_id": "left_wrist_pitch",
+      "status": "Candidate serial carrier; complete mechanical joint unqualified"
+    },
+    "left_palm": {
+      "parent": "left_wrist_pitch_carrier",
+      "pivot_world_m": [
+        0.17787491778577508,
+        0.8749999999999999,
+        1.1546835245248974
+      ],
+      "axis_world": [
+        -0.17364817766693033,
+        0.0,
+        0.984807753012208
+      ],
+      "joint_id": "left_wrist_yaw",
+      "status": "Candidate serial carrier; complete mechanical joint unqualified"
+    },
+    "left_finger_1_distal_link": {
+      "parent": "left_finger_1_proximal_link",
+      "pivot_world_m": [
+        0.36565789101484664,
+        0.7557223899999999,
+        1.0638555749801246
+      ],
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "joint_id": "left_finger_1_distal_link_flexion",
+      "status": "Original finger-axis volume hypothesis; finite selected hand drive/link path absent"
+    },
+    "left_finger_1_proximal_link": {
+      "parent": "left_palm",
+      "pivot_world_m": [
+        0.29542735184133795,
+        0.772269715,
+        1.130071325878205
+      ],
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "joint_id": "left_finger_1_proximal_link_flexion",
+      "status": "Original finger-axis volume hypothesis; finite selected hand drive/link path absent"
+    },
+    "left_finger_2_distal_link": {
+      "parent": "left_finger_2_proximal_link",
+      "pivot_world_m": [
+        0.3220477796600969,
+        0.805951925,
+        1.0263417391562244
+      ],
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "joint_id": "left_finger_2_distal_link_flexion",
+      "status": "Original finger-axis volume hypothesis; finite selected hand drive/link path absent"
+    },
+    "left_finger_2_proximal_link": {
+      "parent": "left_palm",
+      "pivot_world_m": [
+        0.24694362216131877,
+        0.8252888299999999,
+        1.102381503959131
+      ],
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "joint_id": "left_finger_2_proximal_link_flexion",
+      "status": "Original finger-axis volume hypothesis; finite selected hand drive/link path absent"
+    },
+    "left_finger_3_distal_link": {
+      "parent": "left_finger_3_proximal_link",
+      "pivot_world_m": [
+        0.26691728862987857,
+        0.8633646149999998,
+        1.0052486585648666
+      ],
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "joint_id": "left_finger_3_distal_link_flexion",
+      "status": "Original finger-axis volume hypothesis; finite selected hand drive/link path absent"
+    },
+    "left_finger_3_proximal_link": {
+      "parent": "left_palm",
+      "pivot_world_m": [
+        0.19534417567199286,
+        0.8806856799999999,
+        1.0741423072565954
+      ],
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "joint_id": "left_finger_3_proximal_link_flexion",
+      "status": "Original finger-axis volume hypothesis; finite selected hand drive/link path absent"
+    },
+    "left_thumb_distal_link": {
+      "parent": "left_thumb_proximal_link",
+      "pivot_world_m": [
+        0.34884877975380957,
+        0.7216043049999998,
+        1.2070143367080826
+      ],
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "joint_id": "left_thumb_distal_link_flexion",
+      "status": "Original finger-axis volume hypothesis; finite selected hand drive/link path absent"
+    },
+    "left_thumb_proximal_link": {
+      "parent": "left_palm",
+      "pivot_world_m": [
+        0.28056039953914313,
+        0.75366431,
+        1.2637807330416864
+      ],
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "joint_id": "left_thumb_proximal_link_flexion",
+      "status": "Original finger-axis volume hypothesis; finite selected hand drive/link path absent"
+    },
+    "right_shoulder_pitch_carrier": {
+      "parent": "torso",
+      "pivot_world_m": [
+        -0.13,
+        -0.56,
+        2.29
+      ],
+      "axis_world": [
+        0,
+        -1,
+        0
+      ],
+      "joint_id": "right_pitch",
+      "status": "G18 explicit candidate rest/FK"
+    },
+    "right_shoulder_roll_carrier": {
+      "parent": "right_shoulder_pitch_carrier",
+      "pivot_world_m": [
+        -0.105,
+        -0.695,
+        2.305
+      ],
+      "axis_world": [
+        1.0,
+        -0.0,
+        -0.0
+      ],
+      "joint_id": "right_roll",
+      "status": "G18 explicit candidate rest/FK"
+    },
+    "right_upper_arm": {
+      "parent": "right_shoulder_roll_carrier",
+      "pivot_world_m": [
+        -0.105,
+        -0.755,
+        2.025
+      ],
+      "axis_world": [
+        -0.08002445120533554,
+        -0.3501069740233429,
+        -0.9332851621822257
+      ],
+      "joint_id": "right_yaw",
+      "status": "G18 explicit candidate rest/FK"
+    },
+    "right_proximal_forearm": {
+      "parent": "right_upper_arm",
+      "pivot_world_m": [
+        -0.125,
+        -0.835,
+        1.807
+      ],
+      "axis_world": [
+        0,
+        -1,
+        0
+      ],
+      "joint_id": "right_elbow_pitch",
+      "status": "G18 explicit candidate rest/FK"
+    },
+    "right_distal_forearm": {
+      "parent": "right_proximal_forearm",
+      "pivot_world_m": [
+        -0.1669609692050102,
+        -0.8499999999999999,
+        1.540233665798369
+      ],
+      "axis_world": [
+        0.17364817766693033,
+        0.0,
+        0.984807753012208
+      ],
+      "joint_id": "right_forearm_roll",
+      "status": "Candidate serial carrier; complete mechanical joint unqualified"
+    },
+    "right_wrist_pitch_carrier": {
+      "parent": "right_distal_forearm",
+      "pivot_world_m": [
+        -0.11276047920885662,
+        -0.8499999999999999,
+        1.2717428710135628
+      ],
+      "axis_world": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "joint_id": "right_wrist_pitch",
+      "status": "Candidate serial carrier; complete mechanical joint unqualified"
+    },
+    "right_palm": {
+      "parent": "right_wrist_pitch_carrier",
+      "pivot_world_m": [
+        -0.06349604917125812,
+        -0.8749999999999999,
+        1.0904336987881331
+      ],
+      "axis_world": [
+        0.17364817766693033,
+        0.0,
+        0.984807753012208
+      ],
+      "joint_id": "right_wrist_yaw",
+      "status": "Candidate serial carrier; complete mechanical joint unqualified"
+    },
+    "right_finger_1_distal_link": {
+      "parent": "right_finger_1_proximal_link",
+      "pivot_world_m": [
+        0.08189723676005847,
+        -0.7557223899999999,
+        0.9408577854218683
+      ],
+      "axis_world": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "joint_id": "right_finger_1_distal_link_flexion",
+      "status": "Original finger-axis volume hypothesis; finite selected hand drive/link path absent"
+    },
+    "right_finger_1_proximal_link": {
+      "parent": "right_palm",
+      "pivot_world_m": [
+        0.03854923795747481,
+        -0.772269715,
+        1.0271004969945543
+      ],
+      "axis_world": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "joint_id": "right_finger_1_proximal_link_flexion",
+      "status": "Original finger-axis volume hypothesis; finite selected hand drive/link path absent"
+    },
+    "right_finger_2_distal_link": {
+      "parent": "right_finger_2_proximal_link",
+      "pivot_world_m": [
+        0.028086649423162385,
+        -0.805951925,
+        0.9205218472567749
+      ],
+      "axis_world": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "joint_id": "right_finger_2_distal_link_flexion",
+      "status": "Original finger-axis volume hypothesis; finite selected hand drive/link path absent"
+    },
+    "right_finger_2_proximal_link": {
+      "parent": "right_palm",
+      "pivot_world_m": [
+        -0.01648104191244186,
+        -0.8252888299999999,
+        1.0176629878404477
+      ],
+      "axis_world": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "joint_id": "right_finger_2_proximal_link_flexion",
+      "status": "Original finger-axis volume hypothesis; finite selected hand drive/link path absent"
+    },
+    "right_finger_3_distal_link": {
+      "parent": "right_finger_3_proximal_link",
+      "pivot_world_m": [
+        -0.030933324625273553,
+        -0.8633646149999998,
+        0.9195565735192033
+      ],
+      "axis_world": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "joint_id": "right_finger_3_distal_link_flexion",
+      "status": "Original finger-axis volume hypothesis; finite selected hand drive/link path absent"
+    },
+    "right_finger_3_proximal_link": {
+      "parent": "right_palm",
+      "pivot_world_m": [
+        -0.07462703511870172,
+        -0.8806856799999999,
+        1.0087748731659578
+      ],
+      "axis_world": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "joint_id": "right_finger_3_proximal_link_flexion",
+      "status": "Original finger-axis volume hypothesis; finite selected hand drive/link path absent"
+    },
+    "right_thumb_distal_link": {
+      "parent": "right_thumb_proximal_link",
+      "pivot_world_m": [
+        0.11506501915061398,
+        -0.7216043049999998,
+        1.0811320720611555
+      ],
+      "axis_world": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "joint_id": "right_thumb_distal_link_flexion",
+      "status": "Original finger-axis volume hypothesis; finite selected hand drive/link path absent"
+    },
+    "right_thumb_proximal_link": {
+      "parent": "right_palm",
+      "pivot_world_m": [
+        0.07031018318757043,
+        -0.75366431,
+        1.157831037392949
+      ],
+      "axis_world": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "joint_id": "right_thumb_proximal_link_flexion",
+      "status": "Original finger-axis volume hypothesis; finite selected hand drive/link path absent"
+    }
+  },
+  "actual_complete_resttransforms": [
+    {
+      "side": "left",
+      "roll_old_center_m": [
+        -0.12,
+        0.675,
+        2.19
+      ],
+      "roll_new_center_m": [
+        -0.105,
+        0.695,
+        2.305
+      ],
+      "roll_fullgroup_R": [
+        [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "yaw_old_center_m": [
+        -0.1,
+        0.64,
+        1.955
+      ],
+      "yaw_new_center_m": [
+        -0.105,
+        0.755,
+        2.025
+      ],
+      "yaw_fullgroup_R": [
+        [
+          0.9984322141241495,
+          0.014198815579412322,
+          -0.05414339696851659
+        ],
+        [
+          -0.008216304989676118,
+          0.9939906936236003,
+          0.10915582129227336
+        ],
+        [
+          0.055367916083822015,
+          -0.10853982967471404,
+          0.9925489908527029
+        ]
+      ],
+      "elbow_old_center_m": [
+        -0.205,
+        0.8,
+        1.79
+      ],
+      "elbow_new_center_m": [
+        -0.125,
+        0.835,
+        1.807
+      ],
+      "all_complete_descendant_rest_R": [
+        [
+          0.984807753012208,
+          0.0,
+          -0.17364817766693033
+        ],
+        [
+          0.0,
+          1.0,
+          0.0
+        ],
+        [
+          0.17364817766693033,
+          0.0,
+          0.984807753012208
+        ]
+      ],
+      "visible_outer_surfaces_compared_at0mm": true
+    },
+    {
+      "side": "right",
+      "roll_old_center_m": [
+        -0.12,
+        -0.675,
+        2.19
+      ],
+      "roll_new_center_m": [
+        -0.105,
+        -0.695,
+        2.305
+      ],
+      "roll_fullgroup_R": [
+        [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "yaw_old_center_m": [
+        -0.1,
+        -0.64,
+        1.955
+      ],
+      "yaw_new_center_m": [
+        -0.105,
+        -0.755,
+        2.025
+      ],
+      "yaw_fullgroup_R": [
+        [
+          0.9984322141241495,
+          -0.014198815579412322,
+          -0.05414339696851659
+        ],
+        [
+          0.008216304989676118,
+          0.9939906936236003,
+          -0.10915582129227336
+        ],
+        [
+          0.055367916083822015,
+          0.10853982967471404,
+          0.9925489908527029
+        ]
+      ],
+      "elbow_old_center_m": [
+        -0.205,
+        -0.8,
+        1.79
+      ],
+      "elbow_new_center_m": [
+        -0.125,
+        -0.835,
+        1.807
+      ],
+      "all_complete_descendant_rest_R": [
+        [
+          0.984807753012208,
+          0.0,
+          0.17364817766693033
+        ],
+        [
+          0.0,
+          1.0,
+          0.0
+        ],
+        [
+          -0.17364817766693033,
+          0.0,
+          0.984807753012208
+        ]
+      ],
+      "visible_outer_surfaces_compared_at0mm": true
+    }
+  ],
+  "ports": [
+    {
+      "id": "left_pitch_A",
+      "part_id": "g18_left_pitch_to_roll_compact_housing",
+      "plane_axis": 1,
+      "plane_world_m": 0.48,
+      "normal_world": [
+        0,
+        -1,
+        0
+      ],
+      "annular_Router_Rinner_m": [
+        0.1,
+        0.0141
+      ],
+      "PCD110_eight_bore_diameter_m": 0.0175,
+      "source_own_Aface_notOEM_Arecess_admission": true,
+      "originalG13fixedB_PC236_andsupportPC270_unchanged": true,
+      "originalpitch_journal_OD_ID_m": [
+        0.0599,
+        0.0282
+      ],
+      "originalpitch_two_bearing_centers_world_m": [
+        [
+          -0.13,
+          0.5255,
+          2.29
+        ],
+        [
+          -0.13,
+          0.5855,
+          2.29
+        ]
+      ],
+      "circle_tessellation_old64_new96_separate_source_identity": true
+    },
+    {
+      "id": "left_roll",
+      "center_world_m": [
+        -0.105,
+        0.695,
+        2.305
+      ],
+      "axis_world": [
+        1.0,
+        -0.0,
+        -0.0
+      ],
+      "parent_body": "left_shoulder_pitch_carrier",
+      "output_body": "left_shoulder_roll_carrier",
+      "actual_reference_bearing_centers_m": [
+        [
+          -0.021999999999999992,
+          0.695,
+          2.305
+        ],
+        [
+          0.019000000000000003,
+          0.695,
+          2.305
+        ]
+      ],
+      "SKF32212_reference_d_D_T_m": [
+        0.06,
+        0.11,
+        0.02975
+      ],
+      "candidate_bore_diameter_m": 0.1103,
+      "candidate_journal_OD_ID_m": [
+        0.0599,
+        0.0282
+      ],
+      "candidate_output_face_world_m": [
+        -0.053799999999999994,
+        0.695,
+        2.305
+      ],
+      "candidate_fixedB_face_world_m": [
+        -0.1545,
+        0.695,
+        2.305
+      ],
+      "candidate_output_PCD_m": 0.09,
+      "candidate_eight_M10_borediam_m": 0.0106,
+      "completeCSG50_true_OEMmatingdrawing_orfixture_notobtained": true,
+      "gear_case_Aface_Bface_fromlegacy_source_geometry_only": true,
+      "pressurecenter_preload_thread_keeper_andshaftqual_unknown": true
+    },
+    {
+      "id": "left_yaw",
+      "center_world_m": [
+        -0.105,
+        0.755,
+        2.025
+      ],
+      "axis_world": [
+        -0.08002445120533554,
+        0.3501069740233429,
+        -0.9332851621822257
+      ],
+      "parent_body": "left_shoulder_roll_carrier",
+      "output_body": "left_upper_arm",
+      "actual_reference_bearing_centers_m": [
+        [
+          -0.11164202945004284,
+          0.7840588788439374,
+          1.947537331538875
+        ],
+        [
+          -0.1149230319494616,
+          0.7984132647788945,
+          1.909272639889404
+        ]
+      ],
+      "SKF32212_reference_d_D_T_m": [
+        0.06,
+        0.11,
+        0.02975
+      ],
+      "candidate_bore_diameter_m": 0.1103,
+      "candidate_journal_OD_ID_m": [
+        0.0599,
+        0.0282
+      ],
+      "candidate_output_face_world_m": [
+        -0.10909725190171318,
+        0.7729254770699951,
+        1.97721579969627
+      ],
+      "candidate_fixedB_face_world_m": [
+        -0.10103878966533589,
+        0.7376697047858445,
+        2.0711976155280203
+      ],
+      "candidate_output_PCD_m": 0.09,
+      "candidate_eight_M10_borediam_m": 0.0106,
+      "completeCSG50_true_OEMmatingdrawing_orfixture_notobtained": true,
+      "gear_case_Aface_Bface_fromlegacy_source_geometry_only": true,
+      "pressurecenter_preload_thread_keeper_andshaftqual_unknown": true
+    },
+    {
+      "id": "left_elbow_pitch",
+      "center_world_m": [
+        -0.125,
+        0.835,
+        1.807
+      ],
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "parent_body": "left_upper_arm",
+      "output_body": "left_proximal_forearm",
+      "actual_reference_bearing_centers_m": [
+        [
+          -0.125,
+          0.9179999999999999,
+          1.807
+        ],
+        [
+          -0.125,
+          0.959,
+          1.807
+        ]
+      ],
+      "SKF32212_reference_d_D_T_m": [
+        0.06,
+        0.11,
+        0.02975
+      ],
+      "candidate_bore_diameter_m": 0.1103,
+      "candidate_journal_OD_ID_m": [
+        0.0599,
+        0.0282
+      ],
+      "candidate_output_face_world_m": [
+        -0.125,
+        0.8862,
+        1.807
+      ],
+      "candidate_fixedB_face_world_m": [
+        -0.125,
+        0.7855,
+        1.807
+      ],
+      "candidate_output_PCD_m": 0.09,
+      "candidate_eight_M10_borediam_m": 0.0106,
+      "completeCSG50_true_OEMmatingdrawing_orfixture_notobtained": true,
+      "gear_case_Aface_Bface_fromlegacy_source_geometry_only": true,
+      "pressurecenter_preload_thread_keeper_andshaftqual_unknown": true
+    },
+    {
+      "id": "right_pitch_A",
+      "part_id": "g18_right_pitch_to_roll_compact_housing",
+      "plane_axis": 1,
+      "plane_world_m": -0.48,
+      "normal_world": [
+        0,
+        1,
+        0
+      ],
+      "annular_Router_Rinner_m": [
+        0.1,
+        0.0141
+      ],
+      "PCD110_eight_bore_diameter_m": 0.0175,
+      "source_own_Aface_notOEM_Arecess_admission": true,
+      "originalG13fixedB_PC236_andsupportPC270_unchanged": true,
+      "originalpitch_journal_OD_ID_m": [
+        0.0599,
+        0.0282
+      ],
+      "originalpitch_two_bearing_centers_world_m": [
+        [
+          -0.13,
+          -0.5255,
+          2.29
+        ],
+        [
+          -0.13,
+          -0.5855,
+          2.29
+        ]
+      ],
+      "circle_tessellation_old64_new96_separate_source_identity": true
+    },
+    {
+      "id": "right_roll",
+      "center_world_m": [
+        -0.105,
+        -0.695,
+        2.305
+      ],
+      "axis_world": [
+        1.0,
+        -0.0,
+        -0.0
+      ],
+      "parent_body": "right_shoulder_pitch_carrier",
+      "output_body": "right_shoulder_roll_carrier",
+      "actual_reference_bearing_centers_m": [
+        [
+          -0.021999999999999992,
+          -0.695,
+          2.305
+        ],
+        [
+          0.019000000000000003,
+          -0.695,
+          2.305
+        ]
+      ],
+      "SKF32212_reference_d_D_T_m": [
+        0.06,
+        0.11,
+        0.02975
+      ],
+      "candidate_bore_diameter_m": 0.1103,
+      "candidate_journal_OD_ID_m": [
+        0.0599,
+        0.0282
+      ],
+      "candidate_output_face_world_m": [
+        -0.053799999999999994,
+        -0.695,
+        2.305
+      ],
+      "candidate_fixedB_face_world_m": [
+        -0.1545,
+        -0.695,
+        2.305
+      ],
+      "candidate_output_PCD_m": 0.09,
+      "candidate_eight_M10_borediam_m": 0.0106,
+      "completeCSG50_true_OEMmatingdrawing_orfixture_notobtained": true,
+      "gear_case_Aface_Bface_fromlegacy_source_geometry_only": true,
+      "pressurecenter_preload_thread_keeper_andshaftqual_unknown": true
+    },
+    {
+      "id": "right_yaw",
+      "center_world_m": [
+        -0.105,
+        -0.755,
+        2.025
+      ],
+      "axis_world": [
+        -0.08002445120533554,
+        -0.3501069740233429,
+        -0.9332851621822257
+      ],
+      "parent_body": "right_shoulder_roll_carrier",
+      "output_body": "right_upper_arm",
+      "actual_reference_bearing_centers_m": [
+        [
+          -0.11164202945004284,
+          -0.7840588788439374,
+          1.947537331538875
+        ],
+        [
+          -0.1149230319494616,
+          -0.7984132647788945,
+          1.909272639889404
+        ]
+      ],
+      "SKF32212_reference_d_D_T_m": [
+        0.06,
+        0.11,
+        0.02975
+      ],
+      "candidate_bore_diameter_m": 0.1103,
+      "candidate_journal_OD_ID_m": [
+        0.0599,
+        0.0282
+      ],
+      "candidate_output_face_world_m": [
+        -0.10909725190171318,
+        -0.7729254770699951,
+        1.97721579969627
+      ],
+      "candidate_fixedB_face_world_m": [
+        -0.10103878966533589,
+        -0.7376697047858445,
+        2.0711976155280203
+      ],
+      "candidate_output_PCD_m": 0.09,
+      "candidate_eight_M10_borediam_m": 0.0106,
+      "completeCSG50_true_OEMmatingdrawing_orfixture_notobtained": true,
+      "gear_case_Aface_Bface_fromlegacy_source_geometry_only": true,
+      "pressurecenter_preload_thread_keeper_andshaftqual_unknown": true
+    },
+    {
+      "id": "right_elbow_pitch",
+      "center_world_m": [
+        -0.125,
+        -0.835,
+        1.807
+      ],
+      "axis_world": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "parent_body": "right_upper_arm",
+      "output_body": "right_proximal_forearm",
+      "actual_reference_bearing_centers_m": [
+        [
+          -0.125,
+          -0.9179999999999999,
+          1.807
+        ],
+        [
+          -0.125,
+          -0.959,
+          1.807
+        ]
+      ],
+      "SKF32212_reference_d_D_T_m": [
+        0.06,
+        0.11,
+        0.02975
+      ],
+      "candidate_bore_diameter_m": 0.1103,
+      "candidate_journal_OD_ID_m": [
+        0.0599,
+        0.0282
+      ],
+      "candidate_output_face_world_m": [
+        -0.125,
+        -0.8862,
+        1.807
+      ],
+      "candidate_fixedB_face_world_m": [
+        -0.125,
+        -0.7855,
+        1.807
+      ],
+      "candidate_output_PCD_m": 0.09,
+      "candidate_eight_M10_borediam_m": 0.0106,
+      "completeCSG50_true_OEMmatingdrawing_orfixture_notobtained": true,
+      "gear_case_Aface_Bface_fromlegacy_source_geometry_only": true,
+      "pressurecenter_preload_thread_keeper_andshaftqual_unknown": true
+    }
+  ],
+  "original4_G13fixedloadsupport_IDs": [
+    "g13_left_load_support_lower",
+    "g13_left_load_support_upper",
+    "g13_right_load_support_lower",
+    "g13_right_load_support_upper"
+  ],
+  "fourfixedsupport_source_geometry_unchanged_andnotretired": true,
+  "core_receiver_Xdatum_m": 0.115,
+  "body_current_source_hash_notG18newreceiver": "52eb6bb53bb84cfacf24fbe4f2f4f4e35b4a97d4cef90729fc3ff9f0382c2756",
+  "physical_path_map": [
+    "torso->G13Bfixedcase/independentfixedsupports",
+    "G13Aoutput->newpitchbearingcase",
+    "rollmovingoutput->newyawfixedcase",
+    "yawmovingoutput->newcontinuousupperarm/elbowfixedcase",
+    "elbowmovingoutput->newforearmrollloadcase->retainedfullforearm/wrist/palm"
+  ],
+  "no_sameowner_weld_or_nakedshaft_capacity_claim": true,
+  "new_finite_assembly_unknowns": [
+    "materialroot islands inloadpath",
+    "originalsource_tinytrianglefailedparts",
+    "mechanicalfork/boltweldinterfaces/keepergrooves",
+    "OEMhousing pressurecenter andjointcapacity",
+    "completeinitialassembly/bearingcup removability/realtoolparking",
+    "continuousdrive thermal/wire_hosemove",
+    "original111visiblegeometryfit",
+    "oldlegfootisplaceholdernotnewlowerbodyartsource"
+  ],
+  "non_design_protect": [
+    "actualcase/bore/journal/keepersPCDfaces",
+    "completeOEMmotorrotor/stator stock",
+    "drive/brake/controller/encoder/inputcouplers",
+    "actualcoolingwall/ports/movingservicecorridors"
+  ],
+  "material_design_domain": "Broad6mmclosedskins/finite3Dnodes are own editable material andcould be redistributed AFTER interfaces/assembly closure; no FEM/SIMP or certified reduction.",
+  "oldG15_loads_notreused": true,
+  "stableSI_accepted": false
+}

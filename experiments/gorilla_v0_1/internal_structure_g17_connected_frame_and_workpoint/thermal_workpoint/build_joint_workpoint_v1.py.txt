@@ -1,0 +1,85 @@
+"""Bounded source-bound joint workpoint; no prior source or CAD mutation."""
+from pathlib import Path
+import json,math,hashlib,time
+O=Path(__file__).resolve().parent; R=O.parents[1]
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def read(p):return json.loads(Path(p).read_text())
+def save(n,d):(O/n).write_text(json.dumps(d,indent=2)+'\n')
+g16p=R/'.scratch/gorilla_internal_g16_compact_thermal_scope/compact_module_scope.json'; g16=read(g16p)
+g15p=R/'.scratch/gorilla_internal_g15_thermal_operating_domain/operating_domain.json';g15=read(g15p)
+sourcepaths=[g16p,g15p,O/'emrax_users_manual_v1_6.pdf',O/'fan_faq.html',O/'davies_series_pumps.html',O/'rectangular_friction_primary.pdf',R/'.scratch/gorilla_internal_g12_thermal_route/ebm_dc_axial_catalog.pdf',R/'.scratch/gorilla_internal_g16_compact_thermal_scope/lytron2003_es_publication_mirrored.pdf',R/'.scratch/gorilla_internal_g16_compact_thermal_scope/dowtherm_sr1_properties_mirrored.pdf',R/'.scratch/gorilla_internal_g14_thermal_complete_inventory/davies_craig_2023_catalog.pdf',R/'.scratch/gorilla_internal_c_drive/qtl210_specsheet_2_4.pdf',R/'.scratch/gorilla_internal_d_system/tecnotion_torque_brochure_2_5.pdf']
+sources={str(p.relative_to(R)):sha(p) for p in sourcepaths}
+def lerp(x,xs,ys):
+ for a,b,c,d in zip(xs,xs[1:],ys,ys[1:]):
+  if a<=x<=b:return c+(d-c)*(x-a)/(b-a)
+ return None
+props=g16['DOW_SR1_2002_50volEG_typical_properties']; pumpdp=lerp(59,g16['pump150_manual_Q_L_min'],g16['pump150_manual_dp_Pa'])
+def pipe(Q,D,L,K,rho,mu):
+ v=Q/60000/(math.pi*D*D/4);Re=rho*v*D/mu;f=64/Re if Re<2300 else .3164/Re**.25
+ return {'Q_L_min':Q,'ID_m':D,'L_m':L,'sumK_own':K,'Re':Re,'Darcy_f_conditional':f,'dp_Pa':rho*v*v/2*(f*L/D+K),'lumen_L':math.pi*D*D/4*L*1000,'friction_scope':'laminar64/Re or smooth Blasius; transition/roughness/fittings require measured correction'}
+# Full curve point is not max zero-P flow; theoretical fan affinity is explicit.
+fan_anchor={'Q_m3_min':622/60,'dp_Pa':475,'P_W':215,'variant':'6314/2TDH4P 24V','source_pdf_pages':[121,122],'source_dp_uncertainty_Pa':30}
+fan=[]
+for q in [6,6.5,7]:
+ n=q/fan_anchor['Q_m3_min']; fan.append({'Q_each_m3_min':q,'speed_ratio':n,'dp_Pa_affinity':475*n*n,'P_W_affinity':215*n**3,'P_W_own_electronic_loss_allowance':[5,15],'non_OEM_new_PWM_point':True})
+qair=6.5; fp=fan[1]; frontfree=.032232
+front=[]
+for count in [2,4]:
+ v=count*qair/60/frontfree;front.append({'low_fan_count_on_original_front':count,'known_projected_front_net_reference_m2':frontfree,'velocity_m_s':v,'K_own':2,'dp_Pa_at_rho1p2':1.2*v*v,'actual_louver_open_throat_turn_and_pressure_not_qualified':True})
+air={'fan_source_anchor':fan_anchor,'fan_affinity_trials':fan,'low_whole_Q_m3_min':26,'hot_whole_Q_m3_min':13,'hot_two_fans_parallel_each_m3_min':6.5,'front_screens':front,'two_front_low_segment_pair_min_net_area_m2_for_K2_50Pa':2*qair/60*math.sqrt(1.2/50),'complete_required_air_routes':['two low front cores pair actual sealed intake/exhaust','two low independent rear/side intake/exhaust','one hot two-parallel-fan core independent intake/exhaust','two EMRAX rotor air paths and particle protection'],'full_core_air_reference_dp_low_Pa':[72,86],'hot_Pa':[55,75],'guard_adapter_plenum_K_own':[1,3],'K_area_reference_m2':.172*.172,'front_allfour_rejected_on_nominal_pressure':True,'actual_body_duct_free_throat_and_recirc_map_pending':True,'upstream_fan_heat_fraction_range':[0,1],'total_all_six_Paffinity_W':6*fp['P_W_affinity'],'six_fan_power_with_own_electronics_W':[6*(fp['P_W_affinity']+5),6*(fp['P_W_affinity']+15)],'six_source_electrical_upper_W':1290,'affinity_power_cannot_be_adopted_for_battery_until_fullsealed_PQ_validated':True}
+# One or two complete pumps; same 59Q branches. No free reduction of EMRAX ports.
+branches=[{'id':'18_custom_rotary_coldplates','count':18,'Q_each_L_min':2,'OEM_minimum':False,'ports_new_custom_ID_m':.008},{'id':'2_EMRAX188','count':2,'Q_each_L_min':6,'source_min_max_L_min':[6,11],'source_dp_at6_Pa':20000,'source_coolant_each_L':.080,'source_hose_ID_m':.010,'max_inlet_gauge_Pa':200000,'particle_max_um':50},{'id':'4_pack_coldplates','count':4,'Q_each_L_min':2,'OEM_minimum':False,'geometry_dp_and_cellT_unknown':True},{'id':'compute','count':1,'Q_each_L_min':3,'OEM_minimum':False,'geometry_dp_and_T_unknown':True}]
+pressure=[]
+for T in [35,40,50]:
+ p=props[str(T)];rho=p['rho_kg_m3'];mu=p['mu_mPa_s']/1000;main=pipe(59,.032,2,3,rho,mu);emraxhose=pipe(6,.010,1.0,3,rho,mu)
+ corr=next(x for x in g16['cold_fluid_sensitivity'] if x['T_C']==T)
+ # Graph re-read at Q=14.75L/min, narrow manual 26..34kPa, not data guarantee.
+ for regime,scale in [('smooth_turbulent',corr['sameQ_smooth_turbulent_dp_ratio_conditional']),('laminar',corr['sameQ_laminar_dp_ratio'])]:
+  dpmin=26000*scale+20000+emraxhose['dp_Pa']+main['dp_Pa']+5000; dpmax=34000*scale+20000+emraxhose['dp_Pa']+main['dp_Pa']+12000
+  for count in [1,2]:pressure.append({'candidate':'A_one150' if count==1 else 'B_two150_series','T_C':T,'conditional_ES_internal_regime':regime,'ES_core_cold_dp_multiplier':scale,'main':main,'critical_EMRAX_hose':emraxhose,'other_filter_balance_allowance_Pa':[5000,12000],'system_dp_Pa_range':[dpmin,dpmax],'source_pump_head_Pa_samefluid_not_proven':count*pumpdp,'nominal_head_margin_Pa':[count*pumpdp-dpmax,count*pumpdp-dpmin],'EMRAX20kPa_own_cold_correction_not_proven':True,'max_other_custom_branch_dp_unknown':True,'cold150_curve_NPSHr_case_workingpressure_unknown':True,'physical_admission':False})
+# A source-warm optimistic lower bound is already greater than a single150 nominal head.
+warm=pipe(59,.032,2,3,1050,.0012);warmhose=pipe(6,.010,1,3,1050,.0012);lower=26000+20000+warm['dp_Pa']+warmhose['dp_Pa']+5000
+npsh=[]
+for T in [35,50]:
+ p=props[str(T)];r=p['rho_kg_m3'];
+ for gas in [0,30000]:
+  for h in [-.3,.3]:
+   suction=pipe(59,.032,.7,2,r,p['mu_mPa_s']/1000);npsh.append({'T_C':T,'tank_gas_gauge_Pa_own':gas,'fill_above_pump_m_own':h,'pvap_absolute_Pa_own_range':[2000,20000],'NPSHa_m_range':[(101325+gas-pv)/(r*9.81)+h-suction['dp_Pa']/(r*9.81) for pv in [20000,2000]],'stage2_inlet_gauge_Pa_if_stage1_sourcecurve':[gas+r*9.81*h-suction['dp_Pa']+pumpdp-2000,gas+r*9.81*h-suction['dp_Pa']+pumpdp],'NPSHr_unknown_no_clearance':True,'case_pressure_not_equal_burst_pressure':True})
+# Finite annular plate proposal, standalone parameter design not current actual shoulder.
+cpgeom={'custom_new_candidate_not_original_OEM_or_native_CAD':True,'material':'machined Al thermal k130..180W/mK assumed; grade and pressure fatigue not qualified','mean_channel_radius_m':.115,'parallel_square_channels_count_total':32,'channels_each_half':16,'square_channel_side_m':.003,'axial_span_m':.063,'rib_thickness_m':.001,'radial_inner_outer_wall_m':[.003,.003],'circumferential_path_length_each_m':math.pi*.115,'port_ID_m':.008,'in_out_header_own_ID_m':.010,'seal_vent_drain_fasteners_mount_tool_required':True,'full_outer_D_m':.242,'axial_hardware_span_m':.069,'full_plate_plus_ports_budget_xyz_m':[.275,.100,.275],'port_and_axial_scope_not_joint_fit':True,'volume_channels_L':32*.003**2*math.pi*.115*1000,'wall_ribs_mass_estimate_kg':(2*math.pi*.115*.063*.006+2*15*.001*.003*math.pi*.115)*2710,'endheaders_port_fastener_guard_mass_own_kg':[.3,.6,1.0],'added_coldplate_scope_replaces_current_custom_plate_only_when_actual_fit':True}
+plate=[]
+for T in [35,50]:
+ p=props[str(T)]; q=2/32/60000;v=q/.003**2;Re=p['rho_kg_m3']*v*.003/(p['mu_mPa_s']/1000);f=56.91/Re;dp=f*math.pi*.115/.003*.5*p['rho_kg_m3']*v*v
+ for Nu in [2,3.61]:
+  h=Nu*p['k_W_mK']/.003;mf=math.sqrt(2*h/(130*.001));eta=math.tanh(mf*.003)/(mf*.003);heated=32*math.pi*.115*.003*(1+2*eta)
+  film=1/(h*heated);port=pipe(2,.008,.05,4,p['rho_kg_m3'],p['mu_mPa_s']/1000)
+  plate.append({'T_C':T,'Re':Re,'Darcy_f_square':f,'channel_dp_Pa':dp,'two_port_losses_Pa':2*port['dp_Pa'],'nu_own_boundary_sensitivity':Nu,'h_W_m2K':h,'rib_fin_eta':eta,'assumed_effective_onebase_two_ribs_area_m2':heated,'film_Rth_K_W':film,'TIM_plus_contact_Rth_own_K_W':[.005,.02],'mount_to_water_Rth_K_W_range':[film+.005,film+.02],'source_square_laminar_correlation_scope':'Darcy fRe56.91; actual annular curvature/entry/manifold/oneheatedwall Nu require benchmark','pressure_and_heat_qualification':False})
+# Source torque matching, not fictitious 65Nm continuously applied at every joint.
+torque=[]
+for name,outT,ratio,motorTc,Pc,Rth in [('65gear_Tr',1236,100,65,690,.116),('65waist_gravity_sensitivity',1570,100,65,690,.116),('50gear_Tr',611,100,15.3,450,.17)]:
+ for eta in [.75,.90]:
+  Tin=outT/(ratio*eta);loss=Pc*(Tin/motorTc)**2
+  for Tw in [50,60]:
+   Rt=[x['mount_to_water_Rth_K_W_range'][1] for x in plate if x['T_C']==50][0]
+   coil=Tw+loss*(Rth+Rt);torque.append({'load_scope':name,'output_Nm':outT,'gear_eta_own':eta,'motor_input_Nm':Tin,'copper_W_conditional':loss,'water_C':Tw,'own_total_Rcoil_to_water_K_W':Rth+Rt,'coil_C_conditional':coil,'coil100C_condition':coil<=100,'speed_ironloss_inverter_brake_holding_peak_and_RMS_unknown':True,'not_OEM_new_rating_or_whole_joint_admission':True})
+# Retain total task heat. Copper task model is local cross-check, no credit to global motor loss.
+auxcases=[('source_upper',1290,260,97.5),('fan_affinity_exploratory',air['six_fan_power_with_own_electronics_W'][1],260,97.5)]
+budgets=[]
+for d in g15['two_physical_budget_domains']:
+ for auxname,fanW,lowpumpW,hotpumpW in auxcases:
+  aux=(fanW+lowpumpW+hotpumpW+500)/1000;ps=[]
+  for p in d['phases']:
+   bus=p['Pbus_kW']-p['legacy_aux_low_or_air_unallocated_kW']+aux;dc=bus/.98-bus;cells=[(bus*1000/.98/V)**2*.2/1000 for V in [288,200]]
+   low=[p['motor_inverter_low_kW']+p['rotary_loss_low_kW']+p['hold_copper_or_electrical_low_kW']+.5+lowpumpW/1000+dc+c for c in cells]
+   ps.append({'phase':p['phase'],'duty':p['duty'],'Pbus_kW':bus,'Icell_A_288_200':[bus*1000/.98/V/6 for V in [288,200]],'cell_R_kW_288_200':cells,'low_liquid_kW_288_200':low,'hot_liquid_kW':p['oil_total_kW']+hotpumpW/1000,'fan_air_kW':fanW/1000})
+  avginput=[sum(p['duty']*(p['Pbus_kW']/.98+p['cell_R_kW_288_200'][k]) for p in ps) for k in range(2)]
+  req=[x*d['duration_h']/.75 for x in avginput];timecap={str(res):[60*7.44*.75*(1-res)/x for x in avginput] for res in [0,.05,.10]}
+  budgets.append({'domain':d['id'],'aux_scope':auxname,'aux_kW':aux,'phases':ps,'nameplate_required_kWh_SOC75_288_200':req,'480_min7p44_time_cap_min_with_reserve_fraction':timecap,'average_low_kW_288_200':[sum(p['duty']*p['low_liquid_kW_288_200'][k] for p in ps) for k in range(2)],'peak_low_kW_288_200':[max(p['low_liquid_kW_288_200'][k] for p in ps) for k in range(2)],'average_hot_kW':sum(p['duty']*p['hot_liquid_kW'] for p in ps),'peak_hot_kW':max(p['hot_liquid_kW'] for p in ps),'fan_affinity_not_adoptable_runtime':auxname!='source_upper','local_motor_model_no_global_heat_credit':True})
+fluid=[]
+for old in g16['new_fluid_global_candidates']:
+ oil=old['oil_external_stock_L']+7;frac={'low':.02,'middle':.04,'high':.06}[old['id']];airfrac={'low':.2,'middle':.275,'high':.35}[old['id']]
+ fluid.append({'id':old['id'],'water_global_L_pre_newroute_proxy':old['water_total_global_stock_L'],'water_low_hot_working_L':[1.2,.8],'water_vessel_capacity_L':[2.2,1.5],'water_expansion_L_own':old['water_total_expansion_L_own'],'oil_external_L_pre_newroute_proxy':old['oil_external_stock_L'],'oil_coldworking_L':7,'oil_global_L_pre_newroute_proxy':oil,'oil_expansion_L_own':frac*oil,'oil_required_tankcap_L_own':(7+frac*oil)/(1-airfrac),'oil_hot_air_fraction_own':airfrac,'actual_G17_routes_not_constructed_no_global_rating':True,'all_stock_counted_once':True})
+out={'robot':'Gorilla V0.1','stage':'G17 thermal joint workpoint v1','created_utc':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'producer_sha256':sha(__file__),'source_hashes':sources,'source_urls':{'EMRAXmanual':'https://emrax.com/wp-content/uploads/2025/03/EMRAX_Users_Manual_v1.6.pdf','fanFAQ':'https://www.ebmpapst.com/us/en/support/faq.html','pumpseriesFAQ':'https://daviescraig.com.au/blog/davies-craig-electric-water-pumps-common-questions-answered','rectangularfriction':'https://www2.egr.uh.edu/~dli9/Publications/JTHT%20Pressure.pdf'},'source_EMRAX188_cooling':{'flow_each_L_min':[6,11],'dp20kPa_at6Lmin_fluid_and_temperature_unspecified':True,'volume_each_L':.080,'maxinlet_gauge_Pa':200000,'hose_ID_m':.010,'printed_pages':[17,18],'liquid_inlet_at_datasheetpower_max_C':50,'LC_approx_air_heat_fraction':1/3,'required_air_m3min_per_kWoutput':.4,'surrounding_air_max_C':60,'CC_requires_AC_and_LC':'do not infer LC from legacymass','two_motor_airrenewal_at_total15kW_m3min':6,'air_fraction_not_credited_to_global_heat_without_variant_and_route':True},'air_joint_workpoint':air,'complete_59Lmin_branches':branches,'core_parallel_Q_each_L_min':14.75,'pressure_two_candidates':pressure,'warm_optimistic_system_dp_Pa':lower,'one150_source_nominal_head_Pa':pumpdp,'one150_warm_nominal_margin_Pa':pumpdp-lower,'series_NPSH_and_case_pressure_conditions':npsh,'series_secondary_suction_max_pressure_unknown':True,'source_upper_3pump_W':357.5,'source_upper_2pump_W_if_A':227.5,'custom_coldplate_parameter_source':cpgeom,'custom_coldplate_film_pressure_screens':plate,'task_torque_TIM_conditional':torque,'same_task_heat_energy_budgets':budgets,'fluid_new7L_working_sensitivity':fluid,'complete_hardware_inventory_readonly_g16':{'core_segments':g16['S1_source_bound_segments'],'aux_functions':g16['S1_aux_complete_functions'],'new_actual_G17_body_installs2low150':{'path':'.scratch/gorilla_internal_g17_connected_cage_layout/b/scene.json.gz','sha256':'52eb6bb53bb84cfacf24fbe4f2f4f4e35b4a97d4cef90729fc3ff9f0382c2756','scope':'2530parts geometry locked author; not pressure/thermal/volume or collisions admission'},'G16_body_did_not_install2low150':True},'open_red':['Cold ES channel regime/temperature pressure and H; DOW fluid is not exact legacyES test fluid','Full sealed fan/guard/plenum/core measuredP/Q and recirculation; theoretical PWM power not rated point','EWP150 cold curve/NPSHr/seriescaseworkingpressure/secondstage suctionpressure','Custom plates measured film/contact R and fittings/manifold/pressure fatigue; OEM188max2bar protection','Each battery/compute inlet limit and branchdp; task RMS/ironloss/gearη/holding','OilHX UA/flowpressure/separatedtemperature domains; actual new hoses and missing4 cylinders','480SOC/hotR/loadedbus/time reserve; 30min sourceupper exceeds minenergy','Globalflow, radiatoruniformface and actual collar-toolspace not passed'], 'simulation_physical_or_hardware_or_appearance_or_wholebody_admission':False}
+save('joint_workpoint_v1.json',out)
+save('formula_checks_v1.json',{'output_sha256':sha(O/'joint_workpoint_v1.json'),'checks':{'branch_sum59':abs(sum(x['count']*x['Q_each_L_min'] for x in branches)-59)<1e-12,'onepump_warm_margin_negative':pumpdp<lower,'core4parallel59':4*14.75==59,'hot2fans13':2*6.5==13,'stockonce':all(abs(x['oil_global_L_pre_newroute_proxy']-x['oil_external_L_pre_newroute_proxy']-7)<1e-12 for x in fluid)},'bookkeeping_not_physical_rating':True})
+print(json.dumps({'sha':sha(O/'joint_workpoint_v1.json'),'warm_lower':lower,'one150':pumpdp,'fan_each':fp,'sourceA_energy_time':[b for b in budgets if b['domain'].startswith('a') and b['aux_scope']=='source_upper'][0]['480_min7p44_time_cap_min_with_reserve_fraction'],'fluid':fluid},indent=2))

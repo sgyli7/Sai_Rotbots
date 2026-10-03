@@ -1,0 +1,144 @@
+#!/usr/bin/env python3
+"""Gorilla D finite custom-design actuator lower bounds and C15 intersections."""
+from pathlib import Path
+import json,math,hashlib,importlib.util
+import numpy as np
+import trimesh
+from PIL import Image,ImageDraw
+ROOT=Path(__file__).resolve().parents[2];OUT=Path(__file__).resolve().parent
+C2=ROOT/'.scratch/gorilla_internal_c_space/c2_macro_constraints.json';BASE=ROOT/'experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_scene.json';GEO=ROOT/'robots/gorilla_v0_1/configs/appearance_c_spec.json';SCREEN=ROOT/'robots/gorilla_v0_1/evidence/internal_structure_c_screen.json';HELPER=ROOT/'scripts/evaluation/evaluate_gorilla_internal_structure.py'
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def write(p,d):p.write_text(json.dumps(d,indent=2,allow_nan=False)+'\n')
+assert sha(C2)=='e96f9b39c62362f7ffb989473b83b8e02ea81cffb04b4273850ea41557ea7c9b'
+assert sha(BASE)=='7a1e49f45838303ca5fd86265dc9980c10cde85ed7626424136afd3863aa5886'
+c2=json.loads(C2.read_text());base=json.loads(BASE.read_text());geo=json.loads(GEO.read_text());screen=json.loads(SCREEN.read_text());points=geo['points_world_m']
+assert sha(SCREEN)==c2['input_sha256'][str(SCREEN.relative_to(ROOT))]
+definition=importlib.util.spec_from_file_location('d_pose',HELPER);h=importlib.util.module_from_spec(definition);definition.loader.exec_module(h)
+params={'hip':{'bore':.050,'rod':.025,'wall':.005,'pin':.018},'knee':{'bore':.080,'rod':.035,'wall':.006,'pin':.025},'fold':{'bore':.063,'rod':.030,'wall':.005,'pin':.022},'ankle':{'bore':.063,'rod':.030,'wall':.005,'pin':.022}}
+P=21e6;ear=.020;rearcap=.020;frontcap=.020;seal=.020;pistonw=.020;rod_min=.020;margin=.010
+# Three versions: frozen C2; one coordinated anchor/crank rearrangement; one bounded offset/reach rearrangement.
+variants=[{'id':'d0_frozen_c2','hip_a':.20,'knee_b':.11,'ankle_a':.16,'Y_bias_outward_m':0.,'rearrangement':0},
+          {'id':'d1_hip300_knee150','hip_a':.30,'knee_b':.15,'ankle_a':.16,'Y_bias_outward_m':0.,'rearrangement':1},
+          {'id':'d2_ankle180_offset','hip_a':.30,'knee_b':.15,'ankle_a':.18,'Y_bias_outward_m':-.065,'rearrangement':2}]
+
+def tm(part):
+ v=np.asarray(part['vertices_world_m']);f=np.asarray([[q[0],q[i],q[i+1]] for q in part['faces'] for i in range(1,len(q)-1)])
+ return trimesh.Trimesh(v,f,process=False)
+def pose_material(p,T):
+ m=tm(p);m.apply_transform(T[h.canonical(p['body'])]);return m
+selected=[p for p in base['parts'] if p['role'] in ['armor_cover','armor_surface'] or p['role'].startswith('primary_structure')]
+posed_base={}
+for pose in screen['poses']:
+ T={k:np.array(v) for k,v in pose['body_transforms'].items()};posed_base[pose['id']]=[(p,pose_material(p,T)) for p in selected]
+
+def shape_cylinder(r,L,center,axis,inner=0):
+ m=trimesh.creation.annulus(r_min=inner,r_max=r,height=L,sections=48) if inner>0 else trimesh.creation.cylinder(radius=r,height=L,sections=48)
+ m.apply_transform(trimesh.geometry.align_vectors([0,0,1],axis));m.apply_translation(center);return m
+
+def definitions(variant):
+ defs=[]
+ for src in c2['candidate_2d_linear_links']:
+  f=src['family'];J=np.array(src['pivot_world_m']);A=np.array(src['neutral_base_world_m']);B=np.array(src['neutral_output_world_m']);up=(A-J)/np.linalg.norm(A-J)
+  if f=='hip':A=J+up*variant['hip_a']
+  if f=='knee':B=J+[variant['knee_b'],0,0]
+  if f=='ankle':A=J+up*variant['ankle_a']
+  A[1]+=variant['Y_bias_outward_m'];B[1]+=variant['Y_bias_outward_m']
+  vals=[]
+  for q in np.linspace(*src['angle_range_deg'],121):
+   b=h.transformed(h.rotation(J,float(q)),B);L=np.linalg.norm(b-A);arm=float(((b-A)/L)@np.cross([0,1,0],b-J));vals.append({'angle_deg':float(q),'length_m':float(L),'effective_arm_m':arm})
+  low=min(x['length_m'] for x in vals);high=max(x['length_m'] for x in vals);stroke=high-low+2*margin
+  min_zero=stroke+2*ear+rearcap+frontcap+seal+pistonw+rod_min
+  # Retraction cannot be less than the complete finite lower bound. A positive
+  # custom tail sleeve allocates extra mounting reach; never shorten OEM geometry.
+  desired_zero=low-margin;tail=max(0.,desired_zero-min_zero);zero=min_zero+tail
+  defs.append({'family':f,'neutral_A_world_m':A.tolist(),'neutral_B_world_m':B.tolist(),'pivot_world_m':J.tolist(),'base_body':src['base_body'],'output_body':src['output_body'],'sampled_geometry':vals,'sampled_pin_length_range_m':[low,high],'actual_stroke_design_m':stroke,'complete_minimum_zero_extension_eye_length_m':min_zero,'allocated_custom_zero_extension_eye_length_m':zero,'additional_fixed_tail_sleeve_m':tail,'working_range_eye_length_m':[zero+margin,zero+stroke-margin],'short_working_length_deficit_m':max(0.,zero+margin-low),'long_working_length_deficit_m':max(0.,high-(zero+stroke-margin)),'full_working_eye_interval_feasible':bool(low>=zero+margin-1e-9 and high<=zero+stroke-margin+1e-9),'minimum_sampled_effective_arm_m':min(abs(x['effective_arm_m']) for x in vals),'vendor_zero_stroke_length_known':False,'vendor_geometry_modified':False,'params':params[f]})
+ return defs
+
+def assembly(defn,side,pose):
+ f=defn['family'];sign=1 if side=='left' else -1;A=np.array(defn['neutral_A_world_m']);B=np.array(defn['neutral_B_world_m']);J=np.array(defn['pivot_world_m']);A[1]*=sign;B[1]*=sign;J[1]*=sign
+ basebody=defn['base_body'].replace('left_',side+'_');outbody=defn['output_body'].replace('left_',side+'_');T={k:np.array(v) for k,v in pose['body_transforms'].items()};a=h.transformed(T[basebody],A);b=h.transformed(T[outbody],B);j=h.transformed(T[basebody],J);axis=T[basebody][:3,:3]@np.array([0,1,0]);axis=axis/np.linalg.norm(axis);u=(b-a)/np.linalg.norm(b-a);targetL=float(np.linalg.norm(b-a));q_actual=targetL-defn['allocated_custom_zero_extension_eye_length_m'];extension=float(np.clip(q_actual,0,defn['actual_stroke_design_m']));Lactual=defn['allocated_custom_zero_extension_eye_length_m']+extension;actual_b=a+u*Lactual
+ p=defn['params'];R=p['bore']/2+p['wall'];r=p['rod']/2;pinr=p['pin']/2;tail=defn['additional_fixed_tail_sleeve_m'];S=defn['actual_stroke_design_m'];s_rear=ear+tail;s_tube=s_rear+rearcap;s_gland=s_tube+S+pistonw;s_seal=s_gland+frontcap;s_rodout=s_seal+seal
+ mats=[];parts=[]
+ def add(name,kind,radius,s0,s1,inner=0,motion='fixed'):
+  m=shape_cylinder(radius,s1-s0,a+u*((s0+s1)/2),u,inner);emit(name,kind,m,motion)
+ def emit(name,kind,m,motion):
+  assert m.is_watertight and m.is_winding_consistent and m.volume>0
+  n=side+'_'+f+'_'+name;part={'name':n,'body':basebody if motion=='fixed' else outbody,'role':'finite_actuator_material_design_probe','vertices_world_m':m.vertices.tolist(),'faces':m.faces.tolist(),'rgba':[.20,.38,.55,1.] if motion=='fixed' else [.65,.70,.73,1.], 'actuator_family':f,'actuator_side':side,'motion_group':motion,'part_kind':kind,'assumed_density_kg_m3':7850.,'body_field_is_display_mass_owner_not_frozen_rigid_body_contract':True,'actual_barrel_base_eye_hinge_and_rod_prismatic_topology_not_implemented':True,'manufacturing_and_material_accepted':False,'volume_m3':float(m.volume)};parts.append(part);mats.append((part,m))
+ eyeR=pinr+.012;eyeW=.030;hole=pinr+.001
+ emit('fixed_eye','ear',shape_cylinder(eyeR,eyeW,a,axis,hole),'fixed')
+ add('fixed_neck','ear_to_shoulder',min(r,.018),hole+.001,ear+tail)
+ add('rear_cap','blind_rear_cap',R,s_rear,s_tube)
+ add('barrel','finite_barrel_wall',R,s_tube,s_gland,inner=p['bore']/2)
+ add('front_cap','front_gland_cover',R,s_gland,s_seal,inner=r+.0005)
+ add('seal_housing','separate_seal_pack_housing',R,s_seal,s_rodout,inner=r+.0005)
+ piston_start=s_tube+extension
+ add('piston','piston_disk',p['bore']/2-.0005,piston_start,piston_start+pistonw,motion='rod')
+ # Actual untrimmed rod attaches within the piston and extends to moving shoulder.
+ add('rod','solid_rod',r,piston_start+.010,Lactual-ear,motion='rod')
+ add('moving_neck','moving_shoulder_to_eye',min(r,.018),Lactual-ear,Lactual-hole-.001,motion='rod')
+ emit('moving_eye','ear',shape_cylinder(eyeR,eyeW,actual_b,axis,hole),'rod')
+ arm=float(((b-a)/targetL)@np.cross(axis,b-j));forces=[]
+ for case in c2['same_LP_witness_cases']:
+  if case['pose']!=pose['id']:continue
+  ext=next(x['signed_pitch_torque_Nm_at_same_LP_witness'] for x in case['joint_witnesses'] if x['id']==side+'_'+f);F=-ext/arm;area=math.pi*((p['bore']/2)**2-(p['rod']/2)**2) if F<0 else math.pi*(p['bore']/2)**2
+  forces.append({'payload_kg':case['payload_kg'],'pressure_kg':case['pressure_kg'],'gravity_factor':case['gravity_factor_sensitivity'],'source_LP_drive_hypotheses_feasible':case['recorded_contact_drive_hypotheses_feasible'],'same_C2_witness_external_pitch_Nm':ext,'signed_extension_force_N':F,'effective_arm_m':arm,'additional_Y_offset_bending_magnitude_Nm':abs(F)*abs(defn['neutral_A_world_m'][1]-points['left_'+f][1]),'ideal_pressure_required_Pa':abs(F)/area,'exceeds_21MPa_ideal_pressure_hypothesis':abs(F)/area>P,'no_capacity_qualification':True})
+ union_by_motion={}
+ for motion in ['fixed','rod']:
+  union=trimesh.boolean.union([m for p,m in mats if p['motion_group']==motion],engine='manifold');union_by_motion[motion]={'net_material_volume_m3':float(union.volume),'mass_kg_if_7850kg_m3':float(union.volume)*7850,'positive_volume_components_above_1e_minus10_m3':sum(float(x.volume)>1e-10 for x in union.split(only_watertight=False)),'tiny_signed_boolean_islands_below_1e_minus10_m3':len([x for x in union.split(only_watertight=False) if abs(float(x.volume))<=1e-10]),'union_is_watertight':bool(union.is_watertight),'coplanar_interface_boolean_numeric_fragments_do_not_prove_connections':True,'material_connectivity_is_not_connection_qualification':True}
+ return parts,mats,{'family':f,'side':side,'pose':pose['id'],'A_world_m':a.tolist(),'B_requested_world_m':b.tolist(),'B_untrimmed_geometry_world_m':actual_b.tolist(),'eye_endpoint_error_m':float(np.linalg.norm(actual_b-b)),'target_eye_length_m':targetL,'unclipped_extension_m':q_actual,'actual_geometry_extension_m':extension,'working_margin_failure':not(margin-1e-9<=q_actual<=S-margin+1e-9),'same_LP_force_cases':forces,'net_union_material_by_motion':union_by_motion,'fixed_eye_force_reaction_path':'Ear -> finite neck/tail -> rear cap/barrel; eye pin/bushing to parent carrier must be rebuilt by root. Geometry contact/overlap is not a qualified connection.','moving_eye_force_reaction_path':'Piston/rod -> moving neck/eye -> output crank and bearing carrier at unchanged joint; root must add continuous carrier, reaction and off-axis bending path.','Y_offset_added_m':float(A[1]-sign*points['left_'+f][1]),'carrier_additional_lateral_bending_rule':'M_offset=F*Y_bias; real local force vector and bearing spread required, not absorbed by armor.'}
+
+def hits(mats,posed):
+ results=[]
+ for p,m in mats:
+  for old,n in posed:
+   if np.any(m.bounds[0]>=n.bounds[1]) or np.any(n.bounds[0]>=m.bounds[1]):continue
+   try:
+    x=trimesh.boolean.intersection([m,n],engine='manifold');vol=float(x.volume) if len(x.faces) else 0.
+    if vol>1e-10:results.append({'actuator_part':p['name'],'existing_C15_part':old['name'],'existing_role':old['role'],'existing_body':old['body'],'intersection_volume_m3':vol,'intersection_bounds_world_m':x.bounds.tolist()})
+   except Exception as exc:results.append({'actuator_part':p['name'],'existing_C15_part':old['name'],'boolean_unresolved':str(exc)})
+ return results
+
+reports=[];export_scenes=[]
+for variant in variants:
+ defs=definitions(variant);variant_report={'variant':variant,'definitions':defs,'poses':[]};print('starting',variant['id'],flush=True)
+ for pose in screen['poses']:
+  allparts=[];allmats=[];assemblies=[]
+  for side in ['left','right']:
+   for df in defs:
+    parts,mats,r=assembly(df,side,pose);allparts+=parts;allmats+=mats;assemblies.append(r)
+  coll=hits(allmats,posed_base[pose['id']]);pair_coll=[]
+  for i,(p,m) in enumerate(allmats):
+   for q,n in allmats[i+1:]:
+    if p['actuator_side']==q['actuator_side'] and p['actuator_family']==q['actuator_family']:continue
+    if np.any(m.bounds[0]>=n.bounds[1]) or np.any(n.bounds[0]>=m.bounds[1]):continue
+    x=trimesh.boolean.intersection([m,n],engine='manifold');vol=float(x.volume) if len(x.faces) else 0.
+    if vol>1e-10:pair_coll.append({'parts':[p['name'],q['name']],'intersection_volume_m3':vol,'bounds_world_m':x.bounds.tolist()})
+  r={'pose':pose['id'],'assemblies':assemblies,'actual_material_intersections':coll,'between_distinct_actuator_material_intersections':pair_coll,'armor_hit_count':sum(x.get('existing_role') in ['armor_cover','armor_surface'] for x in coll),'frame_hit_count':sum(x.get('existing_role','').startswith('primary_structure') for x in coll),'boolean_unresolved_count':sum('boolean_unresolved' in x for x in coll),'geometry_accepted':False};variant_report['poses'].append(r)
+  export_scenes.append({'variant':variant['id'],'pose':pose['id'],'base_pose_transforms':pose['body_transforms'],'parts':allparts,'source_C15_geometry_is_referenced_unchanged':True});print(variant['id'],pose['id'],'armor',r['armor_hit_count'],'frame',r['frame_hit_count'],flush=True)
+ reports.append(variant_report)
+# Actual native triangle side projections, with source skin/structure edges and
+# no raster inpainting. X points right/Z up, not an AA3 four-view aesthetic board.
+im=Image.new('RGB',(1800,1800),'white');draw=ImageDraw.Draw(im)
+for ci,variant in enumerate(variants):
+ for ri,pose in enumerate(screen['poses']):
+  x0=ci*600;y0=ri*450;scale=135.;
+  def xy(v):return(x0+300+float(v[0])*scale,y0+415-float(v[2]) *scale)
+  for old,m in posed_base[pose['id']]:
+   if old['body'].startswith('right') or old['body'] not in ['pelvis','torso','left_thigh','left_middle_shank','left_distal_shank','left_foot','left_forefoot_display','left_heel_display']:continue
+   color=(194,202,209) if old['role'].startswith('primary_structure') else (158,173,187)
+   # Native edges actually projected; these overlaps are not the collision test.
+   for edge in m.edges_unique:
+    a,b=m.vertices[edge];draw.line([xy(a),xy(b)],fill=color,width=1)
+  scene=next(s for s in export_scenes if s['variant']==variant['id'] and s['pose']==pose['id'])
+  for p in scene['parts']:
+   if p['actuator_side']!='left':continue
+   color=(35,107,174) if p['motion_group']=='fixed' else (205,89,47)
+   for f in p['faces']:
+    draw.line([xy(p['vertices_world_m'][i]) for i in [*f,f[0]]],fill=color,width=1)
+  draw.text((x0+10,y0+7),variant['id']+' / '+pose['id'],fill=(20,20,20));draw.text((x0+10,y0+25),'Native X/Z projection; blue=fixed, orange=rod',fill=(25,25,25))
+im.save(OUT/'finite_actuator_side_projections.png')
+inputs={str(p.relative_to(ROOT)):sha(p) for p in [C2,BASE,GEO,SCREEN,HELPER,Path(__file__)]}
+write(OUT/'finite_actuator_scene.json',{'robot_id':'gorilla_v0_1','schema':'gorilla_native_finite_actuator_probe_v1','input_hashes':inputs,'base_scene':str(BASE.relative_to(ROOT)),'base_scene_sha256':sha(BASE),'native_pose_scenes':export_scenes,'physics_accepted':False,'geometry_accepted':False})
+write(OUT/'finite_actuator_report.json',{'robot_id':'gorilla_v0_1','input_hashes':inputs,'pressure_Pa_hypothesis':P,'nominal_parameters_m':params,'dead_budget_m':{'each_ear_pin_to_shoulder':ear,'rear_cap':rearcap,'front_cover':frontcap,'separate_seal_pack':seal,'piston_axial_design_assumption':pistonw,'minimum_exposed_rod':rod_min,'working_travel_margin_each_end':margin},'formula':'S=sampled_eye_range+2*10mm; mechanical_zero_min=S+140mm; short_working_min=mechanical_zero_min+10mm. Positive custom tail sleeve only lengthens, never clips; no vendor zero-stroke source or CAD is known.','variants':reports,'topology_scope':'Every new native material part is watertight/winding-consistent/positive; union volumes avoid overlapping-material mass double count. This does not approve connection, pressure-wall, seal, buckling or carrier.','finite_curve_discretization':'Native 48-sided circular material probes; nominal radii at vertices, maximum radial chord sagitta below 0.10mm for 46mm outer radius. Ideal hydraulic force uses nominal analytic circular area, no manufacturing tolerance acceptance.','collision_scope':'Actual C15 armor_cover/armor_surface and primary_structure* native materials, posed via same source C2 body transforms; old visible-mechanism drive proxies excluded. No collision-free whole leg or complete multi-axis installation claim.','rearrangement_count':2,'all_same_LP_loads_are_C_mass_not_recomputed_D_mass':True,'AA3_external_change_necessity_proved':False,'vendor_zero_stroke_length_known':False,'geometry_accepted':False,'physics_accepted':False})
+write(OUT/'manifest.json',{'robot_id':'gorilla_v0_1','input_hashes':inputs,'output_sha256':{n:sha(OUT/n) for n in ['finite_actuator_scene.json','finite_actuator_report.json','finite_actuator_side_projections.png']},'geometry_accepted':False,'physics_accepted':False,'AA3_external_change_necessity_proved':False})
+print('complete',flush=True)

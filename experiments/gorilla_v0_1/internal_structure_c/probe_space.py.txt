@@ -1,0 +1,194 @@
+#!/usr/bin/env python3
+"""Gorilla C15 skin-plane/ray and closed-cylinder space probes (no acceptance)."""
+from pathlib import Path
+import argparse,json,hashlib,math,sys
+import numpy as np
+import trimesh
+from PIL import Image,ImageDraw
+ROOT=Path(__file__).resolve().parents[2]
+DEFAULT_SCENE=ROOT/'experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_scene.json'
+DEFAULT_SPEC=ROOT/'robots/gorilla_v0_1/configs/appearance_c_spec.json'
+BASE_SHA='7a1e49f45838303ca5fd86265dc9980c10cde85ed7626424136afd3863aa5886'
+SPEC_SHA='019bb6feee1d89432b6926bf2804c51f07dd74e87009a04169ce3bb16d7e279e'
+sys.path.insert(0,str(ROOT/'scripts/evaluation'))
+from check_gorilla_composite_foot import mesh,triangles
+
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def ref(p):
+ p=Path(p).resolve();return str(p.relative_to(ROOT)) if p.is_relative_to(ROOT) else str(p)
+def write(p,d):Path(p).write_text(json.dumps(d,indent=2,allow_nan=False)+'\n')
+def skin_surface(p,which):
+ v=np.asarray(p['vertices_world_m']);n=len(v)//2
+ faces=[f for f in p['faces'] if (max(f)<n if which=='outer' else min(f)>=n)]
+ f=[[q[0],q[i],q[i+1]] for q in faces for i in range(1,len(q)-1)]
+ return trimesh.Trimesh(v,f,process=False)
+def ray_hits(surfaces,origin,direction,max_distance=.8):
+ hits=[];d=np.asarray(direction)
+ for name,t in surfaces:
+  if not len(t):continue
+  a=t[:,0];e1=t[:,1]-a;e2=t[:,2]-a
+  h=np.cross(d,e2);det=np.einsum('ij,ij->i',e1,h);ok=abs(det)>1e-11;inv=np.zeros(len(det));inv[ok]=1/det[ok]
+  q=np.asarray(origin)-a;u=inv*np.einsum('ij,ij->i',q,h);c=np.cross(q,e1);v=inv*np.einsum('ij,j->i',c,d);dist=inv*np.einsum('ij,ij->i',e2,c)
+  m=ok&(u>=-1e-8)&(v>=-1e-8)&(u+v<=1+1e-8)&(dist>1e-7)&(dist<=max_distance)
+  for value in dist[m]:hits.append((float(value),name))
+ hits.sort();return hits[0] if hits else None
+
+def cylinder(center,axis,diameter,length,clearance):
+ # Circumscribed 128gon conservatively contains the true outer circle.
+ radius=(diameter/2+clearance)/math.cos(math.pi/128)
+ m=trimesh.creation.cylinder(radius=radius,height=length+2*clearance,sections=128)
+ m.apply_transform(trimesh.geometry.align_vectors([0,0,1],axis));m.apply_translation(center);return m
+
+def collisions(probe,parts,cache,threshold=1e-10):
+ lo,hi=probe.bounds;out=[]
+ for p in parts:
+  m=cache[p['name']]
+  if np.any(m.bounds[1]<lo-1e-8) or np.any(m.bounds[0]>hi+1e-8):continue
+  try:
+   hit=trimesh.boolean.intersection([probe,m],engine='manifold');volume=float(hit.volume)
+   if volume>threshold:out.append({'part':p['name'],'body':p['body'],'role':p['role'],'volume_m3':volume,
+              'intersection_bounds_world_m':hit.bounds.tolist(),'status':'positive_material_or_envelope_overlap'})
+  except Exception as exc:out.append({'part':p['name'],'status':'boolean_unresolved','error':str(exc)})
+ return out
+
+def pose_parts(parts,site,angle,pivot):
+ t=math.radians(angle);R=np.array([[math.cos(t),0,math.sin(t)],[0,1,0],[-math.sin(t),0,math.cos(t)]]);result=[]
+ moving=['left_upper_arm','left_forearm','left_palm','left_finger','left_thumb'] if site=='shoulder' else ['left_middle_shank','left_distal_shank','left_foot','left_forefoot_display','left_heel_display']
+ for p in parts:
+  q=p.copy()
+  if any(p['body'].startswith(x) for x in moving):q['vertices_world_m']=((np.asarray(p['vertices_world_m'])-pivot)@R.T+pivot).tolist()
+  result.append(q)
+ return result
+
+def sections_report(armor):
+ # Seeds are diagnostics, not manufacturing axes or proof of closed containment.
+ queries=[('chest_upper',[.02,0,2.45],[0,0,1],[1,0,0],[0,1,0],['torso']),
+          ('chest_back_main',[.02,0,2.30],[0,0,1],[1,0,0],[0,1,0],['torso']),
+          ('chest_lower',[.02,0,2.10],[0,0,1],[1,0,0],[0,1,0],['torso']),
+          ('left_shoulder_axis',[-.13,.56,2.29],[0,1,0],[1,0,0],[0,0,1],['torso','left_upper_arm']),
+          ('left_upper_arm_mid',[-.1675,.685,2.0435],[0,0,1],[1,0,0],[0,1,0],['left_upper_arm']),
+          ('left_forearm_mid',[-.1485,.8125,1.506],[0,0,1],[1,0,0],[0,1,0],['left_forearm']),
+          ('left_thigh_main',[.025,.354,1.40],[0,0,1],[1,0,0],[0,1,0],['left_thigh']),
+          ('left_knee_axis',[-.08,.398,.97],[0,1,0],[1,0,0],[0,0,1],['left_thigh','left_middle_shank']),
+          ('left_middle_main',[-.10,.434,.75],[0,0,1],[1,0,0],[0,1,0],['left_middle_shank'])]
+ output=[]
+ for name,origin,normal,u,v,bodies in queries:
+  selected=[p for p in armor if p['body'] in bodies and p.get('cover_construction')=='outer_skin_inner_skin_boundary_returns_open_cavity']
+  layer_segments={};surfaces={}
+  for layer in ('outer','inner'):
+   layer_segments[layer]=[];surfaces[layer]=[]
+   for p in selected:
+    m=skin_surface(p,layer);edges=trimesh.intersections.mesh_plane(m,normal,origin)
+    if len(edges):layer_segments[layer].append({'part':p['name'],'world_segments_m':edges.tolist()})
+    surfaces[layer].append((p['name'],m.triangles))
+  lines=[]
+  for label,direction in [('u',u),('v',v)]:
+   pos=ray_hits(surfaces['inner'],origin,direction);neg=ray_hits(surfaces['inner'],origin,-np.asarray(direction))
+   lines.append({'axis':label,'direction_world':direction,'positive_inner_hit':pos,'negative_inner_hit':neg,
+      'paired_inner_wall_distance_m':None if pos is None or neg is None else pos[0]+neg[0],
+      'negative_clearance_from_seed_m':None if neg is None else neg[0], 'positive_clearance_from_seed_m':None if pos is None else pos[0],
+      'uncapped_if_either_hit_missing':pos is None or neg is None})
+  output.append({'id':name,'plane_origin_world_m':origin,'normal_world':normal,'u_world':u,'v_world':v,
+     'queried_bodies':bodies,'outer_inner_face_identity':'Serialized cover uses first N outer vertices and last N inner vertices; only same-half faces selected, actual returns retained in material collision mesh.',
+     'actual_skin_sections':layer_segments,'nearest_inner_wall_line_limits':lines,
+     'shell_thickness_ranges_m':{p['name']:p['appearance_skin_thickness_range_m'] for p in selected},
+     'scope':'Actual skin-plane polylines and four directional rays. Open directions are unbounded by this sampled skin, not unlimited usable space; wall ordering/seed inside/containment still require complete assembly checks.'})
+ return output
+
+def radial_limits(armor,pivot,length,clearance):
+ surfaces=[(p['name'],skin_surface(p,'inner').triangles) for p in armor if p.get('cover_construction')=='outer_skin_inner_skin_boundary_returns_open_cavity']
+ rows=[]
+ for offset in (-length/2,0,length/2):
+  origin=np.asarray(pivot)+[0,offset,0];directions=[]
+  for theta in np.arange(32)*2*math.pi/32:
+   hit=ray_hits(surfaces,origin,[math.cos(theta),0,math.sin(theta)],.45)
+   directions.append({'angle_rad':float(theta),'nearest_inner_radius_m':None if hit is None else hit[0],
+                      'limiting_part':None if hit is None else hit[1]})
+  values=[v['nearest_inner_radius_m'] for v in directions if v['nearest_inner_radius_m'] is not None]
+  rows.append({'axial_offset_Y_m':offset,'directions':directions,'finite_ray_count':len(values),
+      'minimum_observed_inner_radius_m':min(values) if values else None,
+      'conditional_diameter_from_finite_min_ray_minus_clearance_m':None if not values else max(0,2*(min(values)-clearance)),
+      'complete_enclosure_proved':False})
+ return rows
+
+def section_image(rows,path):
+ selected=[rows[i] for i in (1,3,4,5,6,8)];size=(1800,1240);im=Image.new('RGB',size,'white');draw=ImageDraw.Draw(im)
+ for index,q in enumerate(selected):
+  col=index%3;row=index//3;x0=col*600;y0=row*610;origin=np.array(q['plane_origin_world_m']);u=np.array(q['u_world']);v=np.array(q['v_world']);scale=400
+  def point(p):
+   t=np.array(p)-origin;return (x0+300+float(t@u)*scale,y0+300-float(t@v)*scale)
+  for layer,color in [('outer',(24,118,190)),('inner',(205,79,60))]:
+   for p in q['actual_skin_sections'][layer]:
+    for edge in p['world_segments_m']:
+     a,b=point(edge[0]),point(edge[1]);draw.line([a,b],fill=color,width=2)
+  x,y=point(origin);draw.line([(x-6,y),(x+6,y)],fill=(15,15,15));draw.line([(x,y-6),(x,y+6)],fill=(15,15,15))
+  draw.text((x0+14,y0+12),q['id'],fill=(25,30,35));draw.text((x0+14,y0+30),'blue=outer / red=inner | 400 px/m',fill=(25,30,35))
+  for i,line in enumerate(q['nearest_inner_wall_line_limits']):
+   val=line['paired_inner_wall_distance_m'];label='open ray' if val is None else f'paired inner line {val*1000:.1f} mm'
+   draw.text((x0+14,y0+550+i*18),line['axis']+': '+label,fill=(25,30,35))
+ draw.text((14,1220),'GORILLA C15 native skin section diagnostic; no appearance, containment, actuation or physical acceptance.',fill=(15,20,25));im.save(path)
+
+def main():
+ parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--scene',type=Path,default=DEFAULT_SCENE);parser.add_argument('--spec',type=Path,default=DEFAULT_SPEC);parser.add_argument('--output-dir',type=Path,default=Path(__file__).resolve().parent);parser.add_argument('--clearance',type=float,default=.005);args=parser.parse_args()
+ if sha(args.scene)!=BASE_SHA or sha(args.spec)!=SPEC_SHA:raise ValueError('Frozen C15 input identity changed')
+ out=args.output_dir.resolve()
+ if not out.is_relative_to(ROOT/'.scratch/gorilla_internal_c_space'):raise ValueError('This task writes only its owned ignored scratch directory')
+ out.mkdir(parents=True,exist_ok=True);scene=json.loads(args.scene.read_text());spec=json.loads(args.spec.read_text());points=spec['points_world_m']
+ armor=[p for p in scene['parts'] if p['role'] in ('armor_cover','armor_surface')];stock=[p for p in scene['parts'] if p['role'].startswith('primary_structure')];cache={p['name']:mesh(p) for p in armor+stock}
+ topology=[]
+ for p in armor+stock:
+  m=cache[p['name']];topology.append({'name':p['name'],'body':p['body'],'role':p['role'],'is_watertight':bool(m.is_watertight),'is_winding_consistent':bool(m.is_winding_consistent),'signed_volume_m3':float(m.volume),'finite_vertices':bool(np.isfinite(m.vertices).all()),'native_vertex_count':len(p['vertices_world_m']),'native_face_count':len(p['faces'])})
+ write(out/'material_topology.json',{'base_scene_sha256':BASE_SHA,'checked_actual_material_mesh_count':len(topology),'not_watertight':[r['name'] for r in topology if not r['is_watertight']],'nonpositive_volume':[r['name'] for r in topology if r['signed_volume_m3']<=0],'inconsistent_winding':[r['name'] for r in topology if not r['is_winding_consistent']],'nonfinite':[r['name'] for r in topology if not r['finite_vertices']],'parts':topology,'scope':'Topology only; no manufacture, containment or physics acceptance.'})
+ axis_refs=[]
+ for site,key,prefix in [('shoulder','left_shoulder','left_shoulder'),('knee','left_knee','left_knee')]:
+  actual=np.asarray(points[key]);legacy=[j for j in spec['joints'] if j['name'].startswith(prefix)]
+  axis_refs.append({'site':site,'probe_anchor_world_m':actual.tolist(),'anchor_source':'C15 points_world_m appearance node, not approved physical joint','probe_axis_world_assumption':[0,1,0],'legacy_spec_joints':[dict(j,delta_from_probe_anchor_world_m=(np.asarray(j['position_world_m'])-actual).tolist(),distance_from_probe_anchor_m=float(np.linalg.norm(np.asarray(j['position_world_m'])-actual))) for j in legacy],'accepted_SI_joint_contract':False})
+ write(out/'axis_reference_conflicts.json',axis_refs)
+ rows=sections_report(armor);section_image(rows,out/'native_skin_sections.png');write(out/'skin_sections.json',rows)
+ print('skin sections complete',flush=True)
+ components=[('rv160_main_body',.238,.104),('rv380_main_body',.295,.131),('qtl230_stator_65',.230,.065),('qtl230_stator_85',.230,.085)]
+ probes=[];boundaries=[];poses=[]
+ for site,key in [('shoulder','left_shoulder'),('knee','left_knee')]:
+  pivot=np.asarray(points[key]);window=[p for p in armor if p['body'] in (['torso','left_upper_arm'] if site=='shoulder' else ['left_thigh','left_middle_shank'])]
+  for id_,diameter,length in components:
+   for margin in (0,args.clearance):
+    probe=cylinder(pivot,[0,1,0],diameter,length,margin)
+    hit=collisions(probe,armor,cache);frames=collisions(probe,stock,cache)
+    probes.append({'site':site,'component':id_,'center_world_m':pivot.tolist(),'axis_world':[0,1,0],'diameter_m':diameter,'length_m':length,'assumed_clearance_m':margin,
+         'armor_intersections':hit,'existing_C15_stock_intersections':frames,'armor_material_collision_free':not hit,'inside_shell_proved':False,'complete_assembly_tested':False,
+         'QTL_36mm_local_lead_envelope_tested':False if id_.startswith('qtl') else None})
+   print(site,id_,'probed',flush=True)
+  for length in (.104,.131):
+   for axial in (-.060,0,.060):
+    center=pivot+[0,axial,0];low,high=.010,.450;line_hit=collisions(cylinder(center,[0,1,0],low,length,args.clearance),armor,cache)
+    if line_hit:largest=0.;status='even_10mm_axis_tube_hits_skin_at_this_axial_station';last=line_hit
+    else:
+     high_hit=collisions(cylinder(center,[0,1,0],high,length,args.clearance),armor,cache)
+     if not high_hit:largest=high;status='material_search_not_bounded_at_450mm_cutoff';last=[]
+     else:
+      last=high_hit
+      for _ in range(8):
+       mid=(low+high)/2;hit=collisions(cylinder(center,[0,1,0],mid,length,args.clearance),armor,cache)
+       if hit:high=mid;last=hit
+       else:low=mid
+      largest=low;status='bounded_material_clearance_search'
+    boundaries.append({'site':site,'center_world_m':center.tolist(),'axis_world':[0,1,0],'axial_center_offset_m':axial,
+       'fixed_component_length_m':length,'assumed_clearance_m':args.clearance,'largest_sampled_collision_free_diameter_m':largest,'diameter_bracket_resolution_m':.440/256,
+       'search_status':status,'first_rejected_or_axis_obstruction_parts':last,'radial_skin_rays':radial_limits(window,center,length,args.clearance) if axial==0 else None,
+       'complete_cylinder_checked':True,'closed_shell_containment_proved':False,'all_complete_modules_compatible':False})
+    print(site,'boundary',length,axial,largest,status,flush=True)
+  for angle in ([-30,0,30] if site=='shoulder' else [0,30,60]):
+   posed=pose_parts(armor,site,angle,pivot);posedcache={p['name']:mesh(p) for p in posed}
+   for id_,diameter,length in components[:2]:
+    hit=collisions(cylinder(pivot,[0,1,0],diameter,length,args.clearance),posed,posedcache)
+    poses.append({'site':site,'isolated_pitch_angle_deg':angle,'component':id_,'clearance_m':args.clearance,'armor_intersections':hit,
+                  'pose_scope':'Only downstream C15 display groups rotate about original local +Y node; cylinder stays on that axis. No ground/contact feasibility, complete multi-axis topology or continuous path approval.'})
+ write(out/'component_probes.json',{'axis_basis':'Actual C15 points_world_m appearance nodes and assumed local +Y cylinder; legacy display-group joint coordinates differ, see axis_reference_conflicts.json. No SI physical joint approval.', 'probe_input_basis':'Parent-supplied component dimensions only; no SKU capability/CAD approval. QTL local 36mm lead direction/section not instantiated. Bolt/input shaft/bearings/brake/driver/thermal/cables/mount interfaces not complete.', 'components':components,'nominal_and_margin_probes':probes,'complete_cylinder_placement_boundaries':boundaries,'local_pose_samples':poses})
+ sources={ref(args.scene):sha(args.scene),ref(args.spec):sha(args.spec),ref(Path(__file__)):sha(Path(__file__)),ref(ROOT/'scripts/evaluation/check_gorilla_composite_foot.py'):sha(ROOT/'scripts/evaluation/check_gorilla_composite_foot.py')}
+ files={p.name:sha(p) for p in [out/'skin_sections.json',out/'component_probes.json',out/'native_skin_sections.png',out/'material_topology.json',out/'axis_reference_conflicts.json']}
+ write(out/'manifest.json',{'robot_id':'gorilla_v0_1','base_scene_sha256':BASE_SHA,'spec_sha256':SPEC_SHA,'input_hashes':sources,'outputs_sha256':files,'nominal_skin_part_count':len(armor),'physical_stock_part_count':len(stock),'clearance_assumption_m':args.clearance,
+  'positive_volume_rejection_threshold_m3':1e-10,'cylinder_approximation':'Closed circumscribed 128gon, max radial excess before clearance below 46 micrometres for RV380; conservative finite probe, not vendor CAD.',
+  'poses':{'shoulder_local_Y_pitch_deg':[-30,0,30],'knee_local_Y_pitch_deg':[0,30,60]},'section_representation':'Actual serialized inner/outer skins; no AABB cavity claim. Bounding boxes only prefilter actual manifold intersection.',
+  'manufacturing_thickness_accepted':False,'appearance_accepted':False,'full_assembly_fit_accepted':False,'physics_accepted':False,'original_artwork_must_change':False})
+ print(json.dumps({'output_dir':ref(out),'probes':len(probes),'boundaries':len(boundaries),'local_pose_component_tests':len(poses)}),flush=True)
+if __name__=='__main__':main()

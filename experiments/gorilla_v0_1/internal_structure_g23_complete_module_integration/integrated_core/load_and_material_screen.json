@@ -1,0 +1,607 @@
+{
+  "producer_sha256": "9b43a88f37427e150613c34532facdf01fbc2b58ebcd2bec2849e605583ae43a",
+  "formulas": {
+    "area": "b*h-(b-2t)*(h-2t)",
+    "Ix": "(b*h^3-(b-2t)*(h-2t)^3)/12",
+    "Iy": "(h*b^3-(h-2t)*(b-2t)^3)/12",
+    "Jthin_closed": "4Am^2/sum(ds/t)",
+    "wrench": "M=r cross F",
+    "stress": "N/A+M/W, ideal two-rail split only",
+    "Euler": "pi^2 E Imin/(K L)^2, K=1 assumed",
+    "plate_buckling": "k pi^2 E/[12(1-nu^2)] (t/bflat)^2, k4 nu.33 assumed"
+  },
+  "literal_main_rail_geometry_m": {
+    "b": 0.2,
+    "h": 0.08,
+    "t": 0.005,
+    "L": 0.6,
+    "span_y": 0.42,
+    "A": 0.0026999999999999993,
+    "Ix": 3.102500000000001e-06,
+    "Iy": 1.3322500000000005e-05,
+    "Japprox": 7.921875e-06
+  },
+  "material_ranges": {
+    "Al_rho": 2700,
+    "Al_E_Pa": 69000000000.0,
+    "Al_yield_assumption_not_sourcequalification_Pa": [
+      80000000.0,
+      240000000.0
+    ],
+    "steel_rho": 7850,
+    "steel_E_Pa": 200000000000.0,
+    "steel_yield_assumption_not_fastenergrade_Pa": 235000000.0
+  },
+  "sections": [
+    {
+      "material_hypothesis": "Al unqualified design assumption",
+      "factor": 1.0,
+      "input_Fxyz_N": [
+        0,
+        0,
+        -29430.0
+      ],
+      "input_Mxyz_at_waist_Nm": [
+        -2943.0,
+        9711.9,
+        0
+      ],
+      "not_body_selfweight_or_hand_payload_rating": true,
+      "two_rail_loadsplit_assumption_N": [
+        7707.857142857142,
+        21722.14285714286
+      ],
+      "local_M_y_per_rail_assumed_Nm": 4855.95,
+      "N_plus_bending_proxy_Pa": 44494478.10274418,
+      "pin_pin_Euler_minaxis_N": 5868919.133756117,
+      "flatwall_elastic_localbuckling_k4_Pa": 176414364.4748695,
+      "mass_per_rail_kg": 4.373999999999999,
+      "ideal_beam_tip_deflection_M_y_m": 0.0009508497393262455,
+      "does_not_bridge_disconnected_waist": true
+    },
+    {
+      "material_hypothesis": "Al unqualified design assumption",
+      "factor": 1.5,
+      "input_Fxyz_N": [
+        0,
+        0,
+        -44145.0
+      ],
+      "input_Mxyz_at_waist_Nm": [
+        -4414.5,
+        14567.85,
+        0
+      ],
+      "not_body_selfweight_or_hand_payload_rating": true,
+      "two_rail_loadsplit_assumption_N": [
+        11561.785714285714,
+        32583.214285714286
+      ],
+      "local_M_y_per_rail_assumed_Nm": 7283.925,
+      "N_plus_bending_proxy_Pa": 66741717.15411627,
+      "pin_pin_Euler_minaxis_N": 5868919.133756117,
+      "flatwall_elastic_localbuckling_k4_Pa": 176414364.4748695,
+      "mass_per_rail_kg": 4.373999999999999,
+      "ideal_beam_tip_deflection_M_y_m": 0.0014262746089893686,
+      "does_not_bridge_disconnected_waist": true
+    },
+    {
+      "material_hypothesis": "steel same literal section comparison only",
+      "factor": 1.0,
+      "input_Fxyz_N": [
+        0,
+        0,
+        -29430.0
+      ],
+      "input_Mxyz_at_waist_Nm": [
+        -2943.0,
+        9711.9,
+        0
+      ],
+      "not_body_selfweight_or_hand_payload_rating": true,
+      "two_rail_loadsplit_assumption_N": [
+        7707.857142857142,
+        21722.14285714286
+      ],
+      "local_M_y_per_rail_assumed_Nm": 4855.95,
+      "N_plus_bending_proxy_Pa": 44494478.10274418,
+      "pin_pin_Euler_minaxis_N": 17011359.807988744,
+      "flatwall_elastic_localbuckling_k4_Pa": 511345983.985129,
+      "mass_per_rail_kg": 12.716999999999995,
+      "ideal_beam_tip_deflection_M_y_m": 0.00032804316006755473,
+      "does_not_bridge_disconnected_waist": true
+    },
+    {
+      "material_hypothesis": "steel same literal section comparison only",
+      "factor": 1.5,
+      "input_Fxyz_N": [
+        0,
+        0,
+        -44145.0
+      ],
+      "input_Mxyz_at_waist_Nm": [
+        -4414.5,
+        14567.85,
+        0
+      ],
+      "not_body_selfweight_or_hand_payload_rating": true,
+      "two_rail_loadsplit_assumption_N": [
+        11561.785714285714,
+        32583.214285714286
+      ],
+      "local_M_y_per_rail_assumed_Nm": 7283.925,
+      "N_plus_bending_proxy_Pa": 66741717.15411627,
+      "pin_pin_Euler_minaxis_N": 17011359.807988744,
+      "flatwall_elastic_localbuckling_k4_Pa": 511345983.985129,
+      "mass_per_rail_kg": 12.716999999999995,
+      "ideal_beam_tip_deflection_M_y_m": 0.0004920647401013322,
+      "does_not_bridge_disconnected_waist": true
+    }
+  ],
+  "node_bolt_pattern_center_yz_m": [
+    0.4775,
+    2.4050000000000002
+  ],
+  "node_bolt_cases": [
+    {
+      "external_mass_design_question_kg": 10,
+      "factor": 1.5,
+      "reference_hand_offset_from_node_m": [
+        0.33,
+        0.1,
+        -0.55
+      ],
+      "node_external_force_N": [
+        0.0,
+        0.0,
+        -147.15
+      ],
+      "node_external_moment_Nm": [
+        -14.715000000000002,
+        48.55950000000001,
+        0.0
+      ],
+      "proxy_solidshank12mm_not_threadstress_Pa": 819507.8252798958,
+      "not_total_shoulder_wrench": true,
+      "additional_actual_arm_and_motor_mass_dynamic_wrench_unclosed": true,
+      "thread_preload_prying_bearing_slip_unknown": true
+    },
+    {
+      "external_mass_design_question_kg": 50,
+      "factor": 1.5,
+      "reference_hand_offset_from_node_m": [
+        0.33,
+        0.1,
+        -0.55
+      ],
+      "node_external_force_N": [
+        0.0,
+        0.0,
+        -735.75
+      ],
+      "node_external_moment_Nm": [
+        -73.575,
+        242.7975,
+        0.0
+      ],
+      "proxy_solidshank12mm_not_threadstress_Pa": 4097539.1263994784,
+      "not_total_shoulder_wrench": true,
+      "additional_actual_arm_and_motor_mass_dynamic_wrench_unclosed": true,
+      "thread_preload_prying_bearing_slip_unknown": true
+    },
+    {
+      "external_mass_design_question_kg": 100,
+      "factor": 1.5,
+      "reference_hand_offset_from_node_m": [
+        0.33,
+        0.1,
+        -0.55
+      ],
+      "node_external_force_N": [
+        0.0,
+        0.0,
+        -1471.5
+      ],
+      "node_external_moment_Nm": [
+        -147.15,
+        485.595,
+        0.0
+      ],
+      "proxy_solidshank12mm_not_threadstress_Pa": 8195078.252798957,
+      "not_total_shoulder_wrench": true,
+      "additional_actual_arm_and_motor_mass_dynamic_wrench_unclosed": true,
+      "thread_preload_prying_bearing_slip_unknown": true
+    }
+  ],
+  "raw_native_inventory_by_variant": {
+    "a": {
+      "source_sha256": "83df0bd4426bb111641868518c16cb8fb86dd5248ba8666f0c0281a0e22db751",
+      "rows": [
+        {
+          "id": "g23_a_common_cage_and_bilateral_fixed_receiver_net",
+          "declared_rho": 2700,
+          "raw_native_volume_m3": 0.02846834714678095,
+          "declared_individual_mass_kg": 76.86453729630857,
+          "same_geometry_Al2700_kg": 76.86453729630857,
+          "same_geometry_steel7850_kg": 223.47652510223045,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        }
+      ],
+      "individual_inventory_sum_kg": 76.86453729630857,
+      "same_geometry_Al_kg": 76.86453729630857,
+      "same_geometry_steel_kg": 223.47652510223045
+    },
+    "b": {
+      "source_sha256": "17f5ac0650c3c546314fd2cd8bacb15ce783cc2c4e9ca7dda396b727d43316ca",
+      "rows": [
+        {
+          "id": "g23_b_left_M12_bolt_0",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 1.0754660351589752e-05,
+          "declared_individual_mass_kg": 0.08442408375997955,
+          "same_geometry_Al2700_kg": 0.02903758294929233,
+          "same_geometry_steel7850_kg": 0.08442408375997955,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_left_M12_washer_0",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 3.786684214915075e-07,
+          "declared_individual_mass_kg": 0.002972547108708334,
+          "same_geometry_Al2700_kg": 0.0010224047380270702,
+          "same_geometry_steel7850_kg": 0.002972547108708334,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_left_M12_bolt_1",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 1.0754660351589745e-05,
+          "declared_individual_mass_kg": 0.0844240837599795,
+          "same_geometry_Al2700_kg": 0.029037582949292314,
+          "same_geometry_steel7850_kg": 0.0844240837599795,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_left_M12_washer_1",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 3.7866842149149847e-07,
+          "declared_individual_mass_kg": 0.002972547108708263,
+          "same_geometry_Al2700_kg": 0.001022404738027046,
+          "same_geometry_steel7850_kg": 0.002972547108708263,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_left_M12_bolt_2",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 1.0754660351589745e-05,
+          "declared_individual_mass_kg": 0.0844240837599795,
+          "same_geometry_Al2700_kg": 0.029037582949292314,
+          "same_geometry_steel7850_kg": 0.0844240837599795,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_left_M12_washer_2",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 3.786684214915075e-07,
+          "declared_individual_mass_kg": 0.002972547108708334,
+          "same_geometry_Al2700_kg": 0.0010224047380270702,
+          "same_geometry_steel7850_kg": 0.002972547108708334,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_left_M12_bolt_3",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 1.0754660351589752e-05,
+          "declared_individual_mass_kg": 0.08442408375997955,
+          "same_geometry_Al2700_kg": 0.02903758294929233,
+          "same_geometry_steel7850_kg": 0.08442408375997955,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_left_M12_washer_3",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 3.7866842149149847e-07,
+          "declared_individual_mass_kg": 0.002972547108708263,
+          "same_geometry_Al2700_kg": 0.001022404738027046,
+          "same_geometry_steel7850_kg": 0.002972547108708263,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_left_M12_bolt_4",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 1.0754660351589745e-05,
+          "declared_individual_mass_kg": 0.0844240837599795,
+          "same_geometry_Al2700_kg": 0.029037582949292314,
+          "same_geometry_steel7850_kg": 0.0844240837599795,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_left_M12_washer_4",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 3.7866842149150297e-07,
+          "declared_individual_mass_kg": 0.0029725471087082983,
+          "same_geometry_Al2700_kg": 0.001022404738027058,
+          "same_geometry_steel7850_kg": 0.0029725471087082983,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_left_M12_bolt_5",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 1.0754660351589749e-05,
+          "declared_individual_mass_kg": 0.08442408375997953,
+          "same_geometry_Al2700_kg": 0.02903758294929232,
+          "same_geometry_steel7850_kg": 0.08442408375997953,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_left_M12_washer_5",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 3.786684214915075e-07,
+          "declared_individual_mass_kg": 0.002972547108708334,
+          "same_geometry_Al2700_kg": 0.0010224047380270702,
+          "same_geometry_steel7850_kg": 0.002972547108708334,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_left_M12_bolt_6",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 1.0754660351589749e-05,
+          "declared_individual_mass_kg": 0.08442408375997953,
+          "same_geometry_Al2700_kg": 0.02903758294929232,
+          "same_geometry_steel7850_kg": 0.08442408375997953,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_left_M12_washer_6",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 3.786684214915075e-07,
+          "declared_individual_mass_kg": 0.002972547108708334,
+          "same_geometry_Al2700_kg": 0.0010224047380270702,
+          "same_geometry_steel7850_kg": 0.002972547108708334,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_left_M12_bolt_7",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 1.0754660351589745e-05,
+          "declared_individual_mass_kg": 0.0844240837599795,
+          "same_geometry_Al2700_kg": 0.029037582949292314,
+          "same_geometry_steel7850_kg": 0.0844240837599795,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_left_M12_washer_7",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 3.786684214915075e-07,
+          "declared_individual_mass_kg": 0.002972547108708334,
+          "same_geometry_Al2700_kg": 0.0010224047380270702,
+          "same_geometry_steel7850_kg": 0.002972547108708334,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_left_output_steel_bearing_seat_0",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 0.00013344245192566453,
+          "declared_individual_mass_kg": 1.0475232476164666,
+          "same_geometry_Al2700_kg": 0.36029462019929426,
+          "same_geometry_steel7850_kg": 1.0475232476164666,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_left_output_steel_bearing_seat_1",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 0.00013344245192566453,
+          "declared_individual_mass_kg": 1.0475232476164666,
+          "same_geometry_Al2700_kg": 0.36029462019929426,
+          "same_geometry_steel7850_kg": 1.0475232476164666,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_left_Al_fixed_receiver",
+          "declared_rho": 2700,
+          "raw_native_volume_m3": 0.0068871672697552,
+          "declared_individual_mass_kg": 18.595351628339042,
+          "same_geometry_Al2700_kg": 18.595351628339042,
+          "same_geometry_steel7850_kg": 54.064263067578324,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_right_M12_bolt_0",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 1.0754660351589752e-05,
+          "declared_individual_mass_kg": 0.08442408375997955,
+          "same_geometry_Al2700_kg": 0.02903758294929233,
+          "same_geometry_steel7850_kg": 0.08442408375997955,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_right_M12_washer_0",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 3.786684214915075e-07,
+          "declared_individual_mass_kg": 0.002972547108708334,
+          "same_geometry_Al2700_kg": 0.0010224047380270702,
+          "same_geometry_steel7850_kg": 0.002972547108708334,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_right_M12_bolt_1",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 1.0754660351589745e-05,
+          "declared_individual_mass_kg": 0.0844240837599795,
+          "same_geometry_Al2700_kg": 0.029037582949292314,
+          "same_geometry_steel7850_kg": 0.0844240837599795,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_right_M12_washer_1",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 3.7866842149149847e-07,
+          "declared_individual_mass_kg": 0.002972547108708263,
+          "same_geometry_Al2700_kg": 0.001022404738027046,
+          "same_geometry_steel7850_kg": 0.002972547108708263,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_right_M12_bolt_2",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 1.0754660351589745e-05,
+          "declared_individual_mass_kg": 0.0844240837599795,
+          "same_geometry_Al2700_kg": 0.029037582949292314,
+          "same_geometry_steel7850_kg": 0.0844240837599795,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_right_M12_washer_2",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 3.786684214915075e-07,
+          "declared_individual_mass_kg": 0.002972547108708334,
+          "same_geometry_Al2700_kg": 0.0010224047380270702,
+          "same_geometry_steel7850_kg": 0.002972547108708334,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_right_M12_bolt_3",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 1.0754660351589752e-05,
+          "declared_individual_mass_kg": 0.08442408375997955,
+          "same_geometry_Al2700_kg": 0.02903758294929233,
+          "same_geometry_steel7850_kg": 0.08442408375997955,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_right_M12_washer_3",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 3.7866842149149847e-07,
+          "declared_individual_mass_kg": 0.002972547108708263,
+          "same_geometry_Al2700_kg": 0.001022404738027046,
+          "same_geometry_steel7850_kg": 0.002972547108708263,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_right_M12_bolt_4",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 1.0754660351589745e-05,
+          "declared_individual_mass_kg": 0.0844240837599795,
+          "same_geometry_Al2700_kg": 0.029037582949292314,
+          "same_geometry_steel7850_kg": 0.0844240837599795,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_right_M12_washer_4",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 3.7866842149150297e-07,
+          "declared_individual_mass_kg": 0.0029725471087082983,
+          "same_geometry_Al2700_kg": 0.001022404738027058,
+          "same_geometry_steel7850_kg": 0.0029725471087082983,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_right_M12_bolt_5",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 1.0754660351589749e-05,
+          "declared_individual_mass_kg": 0.08442408375997953,
+          "same_geometry_Al2700_kg": 0.02903758294929232,
+          "same_geometry_steel7850_kg": 0.08442408375997953,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_right_M12_washer_5",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 3.786684214915075e-07,
+          "declared_individual_mass_kg": 0.002972547108708334,
+          "same_geometry_Al2700_kg": 0.0010224047380270702,
+          "same_geometry_steel7850_kg": 0.002972547108708334,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_right_M12_bolt_6",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 1.0754660351589749e-05,
+          "declared_individual_mass_kg": 0.08442408375997953,
+          "same_geometry_Al2700_kg": 0.02903758294929232,
+          "same_geometry_steel7850_kg": 0.08442408375997953,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_right_M12_washer_6",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 3.786684214915075e-07,
+          "declared_individual_mass_kg": 0.002972547108708334,
+          "same_geometry_Al2700_kg": 0.0010224047380270702,
+          "same_geometry_steel7850_kg": 0.002972547108708334,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_right_M12_bolt_7",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 1.0754660351589745e-05,
+          "declared_individual_mass_kg": 0.0844240837599795,
+          "same_geometry_Al2700_kg": 0.029037582949292314,
+          "same_geometry_steel7850_kg": 0.0844240837599795,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_right_M12_washer_7",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 3.786684214915075e-07,
+          "declared_individual_mass_kg": 0.002972547108708334,
+          "same_geometry_Al2700_kg": 0.0010224047380270702,
+          "same_geometry_steel7850_kg": 0.002972547108708334,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_right_output_steel_bearing_seat_0",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 0.00013344245192566453,
+          "declared_individual_mass_kg": 1.0475232476164666,
+          "same_geometry_Al2700_kg": 0.36029462019929426,
+          "same_geometry_steel7850_kg": 1.0475232476164666,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_right_output_steel_bearing_seat_1",
+          "declared_rho": 7850,
+          "raw_native_volume_m3": 0.00013344245192566453,
+          "declared_individual_mass_kg": 1.0475232476164666,
+          "same_geometry_Al2700_kg": 0.36029462019929426,
+          "same_geometry_steel7850_kg": 1.0475232476164666,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_right_Al_fixed_receiver",
+          "declared_rho": 2700,
+          "raw_native_volume_m3": 0.0068871672697551995,
+          "declared_individual_mass_kg": 18.59535162833904,
+          "same_geometry_Al2700_kg": 18.59535162833904,
+          "same_geometry_steel7850_kg": 54.06426306757832,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        },
+        {
+          "id": "g23_b_Al_closed_cage_with_actual_node_holes",
+          "declared_rho": 2700,
+          "raw_native_volume_m3": 0.014149098039245855,
+          "declared_individual_mass_kg": 38.20256470596381,
+          "same_geometry_Al2700_kg": 38.20256470596381,
+          "same_geometry_steel7850_kg": 111.07041960807996,
+          "resource_gate_separate_must_not_credit_as_qualified_net_mass": true
+        }
+      ],
+      "individual_inventory_sum_kg": 80.98170704700676,
+      "same_geometry_Al_kg": 77.31540624643618,
+      "same_geometry_steel_kg": 224.78738482760147
+    }
+  },
+  "scope": "section and assembly design bounds only. Literal disconnected waist and rejected native cannot support this load. No source OEM split I used; no purchase certificate gating.",
+  "unknowns": [
+    "actual waist rotating output/drive/holding",
+    "waist13.4mm assembly gap",
+    "A aluminum output bearing fit/contact/wear",
+    "B seat actual retention",
+    "full shoulder OEM bracket reaction and hole bearing",
+    "joint body inventory/6D dynamics",
+    "fatigue weld temper stress concentrations torsional beam participation",
+    "real temperature-dependent modulus/yield",
+    "joint stiffness and full core FE"
+  ],
+  "physical_accepted": false
+}

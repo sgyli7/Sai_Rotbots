@@ -1,0 +1,73 @@
+"""G23 two bounded actual core architectures. Original sources untouched; explicit hypothesis."""
+from pathlib import Path
+import json,gzip,hashlib,math,copy,argparse
+import numpy as np,manifold3d as mf,trimesh
+R=Path.cwd();O=Path(__file__).resolve().parent;N=96;sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();ap=argparse.ArgumentParser();ap.add_argument('--shoulder');ap.add_argument('--variant',choices=['a','b','frame_probe'],required=True);args=ap.parse_args();D=O/args.variant;D.mkdir(exist_ok=True);parts=[];own=[];metadata=[]
+def put(n,x):(D/n).write_text(json.dumps(x,indent=2,allow_nan=False)+'\n')
+def bx(c,d):return mf.Manifold.cube(d,True).translate(c)
+def cy(c,r,L,axis=[1,0,0]):
+ a=np.array(axis,float);u=np.array([0.,1,0])if abs(a[0])>.9 else np.array([1.,0,0]);u-=a*(a@u);u/=np.linalg.norm(u);v=np.cross(a,u);return mf.Manifold.cylinder(L,r,r,N,True).transform(np.column_stack([u,v,a,np.array(c)]))
+def ring(c,ro,ri,L,axis=[1,0,0]):return cy(c,ro,L,axis)-cy(c,ri,L+.004,axis)
+def cb(c,d,t):return bx(c,d)-bx(c,(np.array(d)-2*t).tolist())
+def ker(p):return mf.Manifold(mf.Mesh64(np.array(p['vertices_world_m'],float),np.array(p['faces'],np.uint64)))
+def add(n,m,rho=2700,body='torso',role='finite_new_material',**kw):
+ assert m.status()==mf.Error.NoError and m.volume()>1e-10,(n,str(m.status()),m.volume());me=m.to_mesh64();p={'name':n,'body':body,'role':role,'vertices_world_m':np.array(me.vert_properties)[:,:3].tolist(),'faces':np.array(me.tri_verts).tolist(),'finite_material':True,'density_kg_m3':rho,'rgba':[.52,.65,.71,1.],'physical_connection_admitted':False,**kw};tm=trimesh.Trimesh(p['vertices_world_m'],p['faces'],process=False);pr=tm.mass_properties;p.update(mass_range_kg=[pr.volume*rho]*3,own_COM_world_m=pr.center_mass.tolist(),own_full_I_at_COM_world_kg_m2=(pr.inertia*rho).tolist());parts.append(p);own.append(n);return p
+# New macro: broad inboard closed rails rather than cutting sockets in the previous shoulder rail.
+f=cb([.025,-.21,2.24],[.20,.080,.60],.005)+cb([.025,.21,2.24],[.20,.080,.60],.005)
+for zz in [1.965,2.490]:f=f+cb([.025,0,zz],[.20,.50,.060],.005)
+# A genuine open-center lower neck supports a real annular end face; not a solid block filling the bore.
+neck=cb([.125,0,1.950],[.30,.160,.100],.008);f=f+neck
+waist=ring([.238,0,1.910],.145,.072,.020)
+f=f+waist
+# Cut real common bore and behind-mate annular clearance across the neck. New upstream output still absent.
+f=f-cy([.238,0,1.910],.072,.400)
+f=f-ring([.216,0,1.910],.147,.072,.024)
+for i in range(8):
+ a=i*math.pi/4;y=.110*math.cos(a);z=1.910+.110*math.sin(a);f=f-cy([.238,y,z],.0075,.090)
+metadata.append({'id':'waist_new_output_face','X_m':.228,'Y_Z_center_m':[0.,1.910],'R_inner_outer_m':[.072,.145],'PCD_m':.220,'eight_clearance_D_m':.015,'upstream_actual_output_source_missing':True,'not_fixedgear_alias':True})
+# Two wide nodes and closed load transitions remain editable3D material domains, not permanently fixed skins.
+for side,sg in [('left',1),('right',-1)]:
+ plate=bx([.143,sg*.455,2.405],[.056,.220,.260])
+ for zz in [2.310,2.500]:plate=plate+cb([.143,sg*.3675,zz],[.056,.395,.060],.006)
+ f=f+plate
+metadata.append({'id':'main_section','rail_outer_XY_m':[.200,.080],'rail_inner_XY_m':[.190,.070],'rail_centers_Y_m':[-.21,.21],'top_tie_Z_m':2.490,'waist_pitch_axis_not_redesigned':True,'frame_hidden_form_newmacro_not_G22_local_socket_patch':True})
+inputs={'.scratch/gorilla_internal_g22_root_assembly/scene.json.gz':sha(R/'.scratch/gorilla_internal_g22_root_assembly/scene.json.gz')}
+shoulder=None
+if args.shoulder:
+ sp=Path(args.shoulder);shoulder=json.loads(gzip.decompress(sp.read_bytes()));inputs[str(sp.relative_to(R)if sp.is_absolute()else sp)]=sha(sp);fixed=next(p for p in shoulder['parts']if p['name'].endswith('core_fixed_receiver_continuous_candidate'));fixed0=ker(fixed);recs={side:fixed0 if sg==1 else fixed0.mirror([0,1,0])for side,sg in [('left',1),('right',-1)]}
+ # Full complete pitch controller/connector/water/power installation stocks are actual source-bound subtractive exclusions in own frame only.
+ for side,sg in [('left',1),('right',-1)]:
+  for p in shoulder['parts']:
+   if 'pitch_'in p['name']and any(k in p['name']for k in ['fullcontroller','dualencoder','water_ports_and_loop','Zlead_powerloop']):
+    m=ker(p)if sg==1 else ker(p).mirror([0,1,0]);f=f-m
+ if args.variant=='a':
+  f=f+recs['left']+recs['right'];add('g23_a_common_cage_and_bilateral_fixed_receiver_net',f,one_true_native_material_union_once=True,source_fixed_receiver_ID=fixed['name'],hypothesis_Al2700_E69GPa_not_manufacturing_rating=True,allnode_M12bolts_removed_from_function_because_onepiece_not_hidden=True,fullCS_mount_gear_bolts_still_retained=True)
+ else:
+  # Explicit bolted architecture. Real clearances, backing bosses, and front seating washers; no sameowner waiver.
+  pat=[(.365,2.295),(.455,2.295),(.545,2.295),(.365,2.515),(.455,2.515),(.545,2.515),(.545,2.345),(.545,2.465)]
+  for side,sg in [('left',1),('right',-1)]:
+   rr=recs[side]
+   for i,(yy,z)in enumerate(pat):
+    y=sg*yy;f=f-cy([.143,y,z],.0065,.160);rr=rr+cy([.101,y,z],.013,.028);rr=rr-cy([.101,y,z],.0061,.036)
+    add('g23_b_'+side+'_M12_bolt_'+str(i),cy([.131,y,z],.0058,.084)+cy([.176,y,z],.010,.006),7850,thread_preload_grade_and_contact_unknown=True)
+    add('g23_b_'+side+'_M12_washer_'+str(i),ring([.172,y,z],.010,.0063,.002),7850,seat_X_m=.171)
+   # Independent true steel bearing-seat material partition: exact intersection with original actual receiver material. No extra overlap credit.
+   pivot=np.array(shoulder['joint_interfaces'][0]['pivot_world_m']);axis=np.array(shoulder['joint_interfaces'][0]['axis_world']);pivot[1]*=sg;axis[1]*=sg
+   for k,q in enumerate([-.050,-.110]):
+    center=pivot+axis*q;region=ring(center,.065,.0551,.03575,axis);seat=rr^region;rr=rr-seat
+    if seat.volume()>1e-10:add('g23_b_'+side+'_output_steel_bearing_seat_'+str(k),seat,7850,source_part_ID=fixed['name'],nominal_fit_interface_not_retaining_qualification=True,pressure_center_preload_unknown=True)
+   add('g23_b_'+side+'_Al_fixed_receiver',rr,2700,source_part_ID=fixed['name'],actual_boss_and_matched_minor_holes=True,steel_seat_retaining_complete_geometry_unknown=True)
+  add('g23_b_Al_closed_cage_with_actual_node_holes',f,2700,realnode_face_X_m=.115,realbolt_frontseat_X_m=.171,hypothesis_Al2700_E69GPa_not_rating=True)
+ # Keep complete source actual gear/motor/brake/controller/cable/wet scopes. Fixed receiver replaced exactID once each; independent core-frame source owns no OEM split.
+ for side,sg in [('left',1),('right',-1)]:
+  for p0 in shoulder['parts']:
+   if p0['name']==fixed['name']:continue
+   p=copy.deepcopy(p0);p['source_original_name']=p0['name'];p['source_scene_sha256']=sha(sp);p['source_scope']='Unchanged actual forward serial shoulder fullfunction source; fixed receiver replaced only'
+   if sg<0:
+    p['name']='g23_right_context_'+p0['name'];v=np.array(p['vertices_world_m']);v[:,1]*=-1;p['vertices_world_m']=v.tolist();p['faces']=np.array(p['faces'])[:,[0,2,1]].tolist();p['body']=p['body'].replace('left_','right_');p['explicit_mirrored_export']=True
+   parts.append(p)
+else:add('g23_frame_probe_actual_inboard_closed_cage',f,onlyframe_material_not_full_receiverassembly=True)
+scene={'robot_id':'gorilla_v0_1','candidate':'g23_'+args.variant,'parts':parts,'new_member_ids':own,'inputs':inputs,'interfaces':metadata,'complete_shoulder_bound':args.shoulder is not None,'visible_original_armor_changed_mm':0,'newcore_and_receivers_once':True,'whole_robot_M_COM_I':None,'physical_accepted':False,'waist_rotating_output_absent':True,'manufacturing_and_interface_contact_not_qualified':True}
+with gzip.GzipFile(filename='',fileobj=(D/'scene.json.gz').open('wb'),mode='wb',mtime=0)as z:z.write(json.dumps(scene,separators=(',',':'),allow_nan=False).encode())
+put('parameters.json',{'source_scene_sha256':sha(D/'scene.json.gz'),'producer_sha256':sha(Path(__file__)),'new_parts':own,'own_individual_material_inventory_kg':sum(p['mass_range_kg'][0]for p in parts if p['name']in own),'geometry_boolean_integration_not_connection_qualification':True,'material_hypotheses':{'Al':{'rho':2700,'E_Pa':69e9,'yield_design_assumption_range_Pa':[80e6,240e6],'unwelded_cast_machined_welded_state_not_selected':True},'steel_seats_bolts':{'rho':7850,'E_Pa':200e9,'yield_assumption_Pa':235e6,'fastener_grade_not_selected':True}},'main_rail_slots_vs_whole_functions_to_be_queried':True})
+print(json.dumps({'variant':args.variant,'source_sha256':sha(D/'scene.json.gz'),'parts':len(parts),'own':len(own),'new_material_kg':sum(p['mass_range_kg'][0]for p in parts if p['name']in own),'shoulder_complete_bound':args.shoulder is not None}),flush=True)

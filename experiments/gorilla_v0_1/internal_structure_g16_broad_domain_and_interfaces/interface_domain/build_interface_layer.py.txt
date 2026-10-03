@@ -1,0 +1,83 @@
+"""Gorilla G16 native interface/source layer, no source geometry edits or FE."""
+from pathlib import Path
+import gzip,json,hashlib,copy,math,time,itertools
+import numpy as np,trimesh,manifold3d as mf
+R=Path(__file__).resolve().parents[2];O=Path(__file__).resolve().parent
+FILES={'current':R/'.scratch/gorilla_internal_g15_mass_load_contract/bound_g15_b_scene.json.gz','mass':R/'.scratch/gorilla_internal_g15_mass_load_contract/g15_b_mass_contract.json','load':R/'.scratch/gorilla_internal_g15_mass_load_contract/sixd_load_contract.json','patches':R/'.scratch/gorilla_internal_g15_mass_load_contract/actual_native_interface_patches.json','g13':R/'.scratch/gorilla_internal_g13_shoulder_cooling_zones/a/scene.json.gz','service':R/'.scratch/gorilla_internal_g13_shoulder_cooling_zones/a/functional_report.json','g9':R/'.scratch/gorilla_internal_g9_whole_source/scene.json.gz','gate':R/'.scratch/gorilla_internal_g15_thorax_functional_colayout/b/native_resource_receipt.json','e2':R/'.scratch/gorilla_internal_e2_upper/upper_scene.json'}
+EXPECTED='27141a30dd2533516558d177ed784067b42cbe5d5626b2c897ae13f467739221'
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def read(p):return json.loads(gzip.decompress(Path(p).read_bytes())if str(p).endswith('.gz')else Path(p).read_bytes())
+def put(n,d):(O/n).write_text(json.dumps(d,ensure_ascii=False,indent=2,allow_nan=False)+'\n')
+def gz(n,d):
+ with (O/n).open('wb')as ff:
+  with gzip.GzipFile(filename='',mode='wb',fileobj=ff,mtime=0)as f:f.write(json.dumps(d,separators=(',',':'),allow_nan=False).encode())
+def v(p):return np.asarray(p.get('vertices_world_m',p.get('vertices')),float)
+def f(p):return np.asarray([[q[0],q[k],q[k+1]]for q in p['faces']for k in range(1,len(q)-1)],np.uint64)
+def geo(p):vv=v(p);return {'native_world_bounds_m':[vv.min(0).tolist(),vv.max(0).tolist()],'native_sha256':hashlib.sha256(json.dumps({'v':vv.tolist(),'f':f(p).tolist()},separators=(',',':')).encode()).hexdigest()}
+cache={}
+def kernel(p):
+ if p['name']not in cache:cache[p['name']]=mf.Manifold(mf.Mesh64(v(p),f(p)))
+ return cache[p['name']]
+def planar(p,axis,x,tol=2e-8,region=None):
+ tri=v(p)[f(p)];mask=np.all(np.abs(tri[:,:,axis]-x)<tol,1);c=tri.mean(1)
+ if region is not None:mask&=region(c)
+ ix=np.flatnonzero(mask);t=tri[ix];cross=np.cross(t[:,1]-t[:,0],t[:,2]-t[:,0])if len(t)else np.empty((0,3));ar=np.linalg.norm(cross,axis=1)/2;return {'source_part_id':p['name'],'triangle_indices':ix.tolist(),'area_m2':float(ar.sum()),'centroid_world_m':(np.sum(c[ix]*ar[:,None],0)/ar.sum()).tolist()if len(t)and ar.sum()>0 else None,'plane_axis':axis,'plane_value_m':x,'source_vertex_tolerance_m':tol,'patch_means_native_exposed_surface_NOT_confirmed_contact':True}
+def cylpatch(p,c,axis,r,lo,hi,tol=2e-7):
+ tri=v(p)[f(p)];c=np.asarray(c);axis=np.asarray(axis,float);d=tri-c;q=d@axis;rad=np.linalg.norm(d-q[:,:,None]*axis,axis=2);ix=np.flatnonzero(np.all(np.abs(rad-r)<tol,axis=1));clipped=[];source=[];bary=[]
+ for i in ix:
+  poly=[(tri[i,j],np.eye(3)[j])for j in range(3)]
+  for bound,sign in [(lo,1),(hi,-1)]:
+   out=[]
+   for j in range(len(poly)):
+    A,wa=poly[j-1];B,wb=poly[j];da=sign*((A-c)@axis-bound);db=sign*((B-c)@axis-bound);ina=da>=-1e-12;inb=db>=-1e-12
+    if ina!=inb:
+     t=da/(da-db);out.append((A+t*(B-A),wa+t*(wb-wa)))
+    if inb:out.append((B,wb))
+   poly=out
+   if not poly:break
+  for j in range(1,len(poly)-1):
+   pts=np.array([poly[k][0]for k in [0,j,j+1]]);area=np.linalg.norm(np.cross(pts[1]-pts[0],pts[2]-pts[0]))/2
+   if area>1e-16:clipped.append(pts);source.append(int(i));bary.append([poly[k][1].tolist()for k in [0,j,j+1]])
+ tt=np.asarray(clipped);ar=np.linalg.norm(np.cross(tt[:,1]-tt[:,0],tt[:,2]-tt[:,0]),axis=1)/2 if len(tt)else np.array([])
+ return {'source_part_id':p['name'],'triangle_indices':sorted(set(source)),'clipped_triangle_source_indices':source,'clipped_patch_triangles_world_m':tt.tolist(),'source_triangle_barycentric_weights':bary,'area_m2':float(ar.sum()),'centroid_world_m':np.average(tt.mean(1),axis=0,weights=ar).tolist()if len(tt)else None,'axis_point_world_m':c.tolist(),'axis_world':axis.tolist(),'native_vertex_radius_m':r,'axial_range_m':[lo,hi],'source_radius_tolerance_m':tol,'method':'source cylinder-chord triangles clipped exactly by axial query planes; no mesh/source repair','truecircle_contact_geometry_NOT_certified':True}
+def checkpair(a,b,kind):
+ A=kernel(a);B=kernel(b);out={'a':a['name'],'b':b['name'],'classification':kind,'owner_a':a['body'],'owner_b':b['body'],'source_material_kernel_status':[str(A.status()),str(B.status())]}
+ if A.status()==B.status()==mf.Error.NoError:
+  Q=A^B;out['positive_volume_m3']=float(Q.volume());out['positive_volume_cm3']=float(Q.volume()*1e6);out['above_1e_10_m3']=bool(Q.volume()>1e-10);out['intersection_native_world_bounds_m']=geo({'name':'temp','vertices_world_m':np.asarray(Q.to_mesh64().vert_properties)[:,:3].tolist(),'faces':np.asarray(Q.to_mesh64().tri_verts).tolist()})['native_world_bounds_m'] if Q.volume()>1e-10 else None
+ return out
+
+def main():
+ t=time.time();src={k:read(p)for k,p in FILES.items()};s=src['current'];pm={p['name']:p for p in s['parts']};old={p['name']:p for p in src['g9']['parts']};sh={p['name']:p for p in src['g13']['parts']};frame=pm['g15_chest_shoulder_waist_net_cage'];assert sha(FILES['current'])==EXPECTED
+ ids={frame['name']}|{n for n in pm if n.startswith('g13_')}|{n for n in pm if n.startswith(('e2_upper_net_left_shoulder','e2_upper_net_right_shoulder','ds_left_shoulder_roll_','ds_right_shoulder_roll_','ds_left_shoulder_yaw_','ds_right_shoulder_yaw_'))};layer=[]
+ for n in sorted(ids):
+  p=copy.deepcopy(pm[n]);p['g16_source_part_id']=n;p['g16_source_part_unchanged']=True
+  if n==frame['name']:cl='current_own_finite_body_material_designable_except_interfaces'
+  elif 'CSG65_complete_reference'in n or 'QTL210_complete_reference'in n:cl='OEM_complete_protected_reference_not_density_material'
+  elif 'load_support'in n or 'independent_load_bearing'in n:cl='independent_radial_load_support_or_its_real_mount'
+  elif 'output_flange'in n or 'A_output'in n or 'journal_axial'in n:cl='moving_pitch_output_journals_flange_keeper_nondesign_interfaces'
+  elif n.startswith('e2_upper_net_'):cl='retained_serial_carrier_challenged_not_automatic_replacement'
+  elif n.startswith('ds_'):cl='complete_downstream_roll_yaw_function_not_replaced_by_pitch'
+  else:cl='complete_input_brake_feedback_cooling_function_keepout'
+  p['g16_interface_classification']=cl;layer.append(p)
+ gz('native_interface_scene.json.gz',{'robot_id':'gorilla_v0_1','schema':'g16_unchanged_current_native_interface_layer','source_sha256':EXPECTED,'producer_sha256':sha(__file__),'parts':layer,'original_native_fields_unchanged':True,'new_accepted_geometry_or_SI':False})
+ interfaces=[];pairs=[]
+ for side,sg in [('left',1),('right',-1)]:
+  out=pm['g13_'+side+'_output_flange_journals_closed_arm_carrier'];pitch=pm['e2_upper_net_'+side+'_shoulder_pitch_carrier'];roll=pm['e2_upper_net_'+side+'_shoulder_roll_carrier'];up=pm['g13_'+side+'_load_support_upper'];dn=pm['g13_'+side+'_load_support_lower'];case=pm['g13_'+side+'_fixed_motor_cooling_brake_case'];axis=np.array([0,sg,0.]);origin=np.array([-.13,sg*.3735,2.29]);face=planar(frame,0,.115,region=lambda c:(c[:,1]*sg>=.24)&(c[:,1]*sg<=.4)&(c[:,2]>=2.12)&(c[:,2]<=2.46))
+  interfaces.append({'id':side+'_core_anchor_reference','functional_roles':['parent_core_resultant_application','core_design_nondesign_attachment_datum'],'body_candidate':'torso','source_part_id':frame['name'],'patch':face,'axis_or_normal_world':[1,0,0],'load_origin_world_m':face['centroid_world_m'],'mate_or_preload_accepted':False})
+  interfaces.append({'id':side+'_support_split_parent_mount','functional_roles':['external_bearing_housing_to_anchor'],'source_part_ids':[frame['name'],up['name'],dn['name']],'parent_plane_patches':[planar(frame,1,sg*.3985)],'detachable_mount_patches':[planar(up,1,sg*.3985),planar(dn,1,sg*.3985)],'PCD_m':.270,'bolt_count':8,'hole_radius_m':.0043,'bolt_primitive_radius_m':.00395,'washer_primitive_ID_m':.0086,'actual_thread_preload_split_gap_unknown':True,'pressure_bearing_paths_not_solid_union':True})
+  interfaces.append({'id':side+'_OEM_B_fixed_case','functional_roles':['fixed_gear_torque_reaction_to_anchor','motorcase_mount'],'source_part_ids':[frame['name'],case['name'],'g13_'+side+'_CSG65_complete_reference'],'fixed_datum_world_m':origin.tolist(),'reference_axis_world':axis.tolist(),'own_receiver_face_patch':planar(frame,1,sg*.3735),'own_motorcase_mate_patch':planar(case,1,sg*.3605),'PCD_m':.236,'bolt_count':8,'bolt_nominal_M12_hypothesis_not_thread_geometry':True,'OEM_internal_B_mating_face_not_available':True,'OEM_envelope_not_contact_mesh':True})
+  interfaces.append({'id':side+'_OEM_A_moving_output','functional_roles':['gear_output_torque_to_moving_flange'],'source_part_id':out['name'],'native_face_patch':planar(out,1,sg*.480),'candidate_datum_world_m':[-.13,sg*.480,2.29],'reference_overall_output_outerY_m':sg*.482,'unverified_OEM_recess_m':.002,'axis_world':axis.tolist(),'PCD_m':.110,'bolt_count':8,'nominal_8M16_depth24_hypothesis':True,'torque_vs_integral_external_bearing_split_unknown':True})
+  for i,q in enumerate([.152,.212]):
+   bearing=pm['g13_'+side+'_independent_load_bearing_'+str(i)];mid=origin+axis*q;seat=[]
+   for h in [up,dn]:seat.append(cylpatch(h,mid,axis,.05515,-.017875,.017875))
+   journal=cylpatch(out,mid,axis,.02995,-.014875,.014875)
+   interfaces.append({'id':side+'_external_bearing_'+str(i),'functional_roles':['radial_overturn_load_to_detachable_halfhousing'],'catalogue_scope':'SKF32212 d60/D110/T29.75 fullreference; pressurecentre/preload/axialcapacity unknown','source_part_ids':[out['name'],up['name'],dn['name'],bearing['name'],'g13_'+side+'_journal_axial_keeper_'+str(i)],'centre_world_m':mid.tolist(),'axis_world':axis.tolist(),'journal_patch':journal,'housing_seat_patches':seat,'bearing_internal_pressurecentre_NOT_known':True,'journal_OD_m':.0599,'bearing_ID_m':.060,'housing_bore_m':.1103,'bearing_OD_m':.110,'radial_nominal_clearances_m':[.00005,.00015],'clearance_is_producer_design_NOT_actual_fit_qualification':True})
+  interfaces.append({'id':side+'_pitch_to_downstream_roll_transition','functional_roles':['moving_pitch_carrier_to_roll_fixed_module'],'source_part_ids':[out['name'],pitch['name'],'ds_'+side+'_shoulder_roll_gear'],'source_current_candidate_axisXZ_m':[-.13,2.29],'legacy_joint_axisXZ_m':[-.13,2.36],'legacy_misalignment_Z_m':.070,'old_body_label_is_not_material_connection':True,'surface_connection_and_fastening_qualified':False,'new_pitch_output_does_NOT_include_complete_roll_drive':True})
+  interfaces.append({'id':side+'_roll_to_downstream_yaw_transition','functional_roles':['moving_roll_output_to_next_yaw_fixed_module'],'source_part_ids':[roll['name'],'ds_'+side+'_shoulder_roll_hollow_output_adapter','ds_'+side+'_shoulder_yaw_gear'],'pitch_module_cannot_replace_roll_DOF_or_yaw_mount':True,'samebody_owner_NOT_interface_proof':True})
+  for a,b,kind in [(out,pitch,'same_motion_owner overlap still requires explicit weld/bolt, not rigid-label proof'),(out,roll,'different_serial_owner material collision'),(pitch,roll,'serial_owner interface vs collision unresolved'),(out,frame,'moving_output versus current_fixed_core'),(pitch,frame,'old_moving_pitch carrier versus new_fixed_core'),(up,frame,'detachable_fixed_support/anchor expected zero-volume seatedcontact'),(dn,frame,'detachable_fixed_support/anchor expected zero-volume seatedcontact'),(case,frame,'own_fixedmotorcase versus anchor finite material'),(pitch,pm['ds_'+side+'_shoulder_roll_gear'],'old_roll_fixedgear protectedOEM reference probe, not material'),(out,pm['ds_'+side+'_shoulder_roll_gear'],'new_pitchcarrier versus stillrequiredrollgear OEM reference probe')]:pairs.append(checkpair(a,b,kind))
+ # Actual waist output datum, not the full exposed plane presumed to mate.
+ interfaces.append({'id':'waist_core_output','source_part_id':frame['name'],'source_adapter_merged_once':s['parts'][next(i for i,p in enumerate(s['parts'])if p['name']==frame['name'])]['sourceadapter_exact_union_once'],'candidate_axis_world':[1,0,0],'candidate_axis_point_world_m':[.2475,0,1.91],'native_surface_patch':planar(frame,0,.2475,region=lambda c:np.hypot(c[:,1],c[:,2]-1.91)<=.081),'real_bearing_pressurecentre_mate_bolt_distribution_unknown':True,'waist_fixeddrive_interface_required_before_FE':True})
+ put('interface_contract.json',{'robot_id':'gorilla_v0_1','source_sha256':EXPECTED,'producer_sha256':sha(__file__),'G13_190_current_retained_ids':sorted(n for n in pm if n.startswith('g13_')),'two_anchors_are_current_frame_union_not_extra_meshes':True,'interfaces':interfaces,'new_interfaces_or_SI_accepted':False,'input_files':{k:{'path':str(p),'sha256':sha(p)}for k,p in FILES.items()}})
+ put('connection_queries.json',{'source_sha256':EXPECTED,'producer_sha256':sha(__file__),'pairs':pairs,'positive_volume_threshold_m3':1e-10,'no_source_repair_or_sameowner_exemption':True,'OEM_reference_pairs_not_physical_material_intersections':True,'connections_or_physical_accepted':False})
+ print('FIRST_NATIVE_SOURCE',sha(O/'native_interface_scene.json.gz'),len(layer),'INTERFACES',len(interfaces),'ELAPSED',time.time()-t,flush=True)
+if __name__=='__main__':main()

@@ -1,0 +1,51 @@
+from pathlib import Path
+import json,runpy,math
+import numpy as np
+from PIL import Image,ImageDraw
+B=Path(__file__).resolve().parent;n=runpy.run_path(str(B/'build_forearm_hand.py'),run_name='selected_check_helpers');native=n['native'];mani=n['mani'];sha=n['sha'];s=json.loads((B/'selected_installation_scene.json').read_text());ps={p['name']:p for p in s['parts']};records=[]
+def overlaps(m,p):
+ q=native(p)
+ if np.any(np.minimum(m.bounds[1],q.bounds[1])-np.maximum(m.bounds[0],q.bounds[0])<=1e-8):return 0.
+ return (mani(m)^mani(q)).volume()
+for k in range(1,6):
+ pre=f'g2_hand_{k}';moving=[ps[pre+x] for x in ['_nut_carriage','_complete_nut_with_flat_seat','_nut_axial_retainer','_carriage_guide_bush_-1','_carriage_guide_bush_1']];fixed=[p for id,p in ps.items() if id.startswith(pre+'_') and p not in moving and not id.endswith(('_sheath','_tendon'))];hits=[];unknown=[]
+ for dz in np.linspace(-.180,0,21):
+  for p in moving:
+   m=native(p);m.apply_translation([0,0,dz])
+   for q in fixed:
+    try:
+     v=overlaps(m,q)
+     if v>1e-9:hits.append({'moving':p['name'],'fixed':q['name'],'stroke_offset_from_neutral_m':float(dz),'volume_m3':v})
+    except Exception as e:unknown.append([p['name'],q['name'],str(e)])
+ records.append({'channel':pre,'stroke_m':.180,'sample_positions':21,'actual_moving_native_parts':5,'positive_hits':hits,'unknown':unknown,'guide_radial_clearance_m':.0001,'bush_seat_radial_clearance_m':.0001,'frame_xy_side_clearance_m':[.001,.002],'nutID_to_screwmajor_radial_clearance_m':.0001,'scope':'actual material movingprototype againstsamechannel fullfixedstock at21 positions, notcontinuous certified sweep oradjacentwholehand; threads/retainerstrength/guidewear unqualified'})
+controllers=[]
+for key in ['forearm_roll','wrist_pitch','wrist_yaw']:
+ pre='g2_'+key;new=[ps[pre+x] for x in ['_controller','_controller_bay','_controller_mount_link']];oem=[p for id,p in ps.items() if id.startswith(pre+'_') and p not in new];hits=[]
+ for p in new:
+  for q in oem:
+   v=overlaps(native(p),q)
+   if v>1e-9:hits.append({'new':p['name'],'retained_stock':q['name'],'volume_m3':v,'interface_class':'conditional customfixedmount/bay interface ONLY if actualknownface andsameowner; othersunexplained'})
+ controllers.append({'kit':pre,'controller_fullfunction_preserved':True,'checked_new_parts':3,'retained_complete_stock':len(oem),'positive_pairs':hits,'controller_into_gear_hits':[h for h in hits if h['new'].endswith('_controller') and h['retained_stock'].endswith('_gear')],'scope':'owncomplete wristkit only; all neighboringhandstock andarmor remain unaccepted'})
+bridges=[]
+for id,p in ps.items():
+ if id.startswith('g2_pitch_yaw_external_bridge_'):
+  for target in ['g2_wrist_pitch_gear','g2_wrist_yaw_gear','g2_wrist_pitch_motor','g2_wrist_yaw_motor']:
+   v=overlaps(native(p),ps[target])
+   if v>1e-9:bridges.append({'bridge':id,'OEM_reference':target,'volume_m3':v,'classification':'unexplained OEMinstallation interpenetration, notsuppressed'})
+r={'source_sha256':sha(B/'selected_installation_scene.json'),'original_A_sha256':sha(B/'scene_a.json'),'original_B_sha256':sha(B/'scene_b.json'),'carriage_prototype_checks':records,'controller_kit_checks':controllers,'external_bridge_vs_OEM_hits':bridges,'macro_arm_accepted':False,'still_required':['wholehandadjacentparts/armor/pose collision','realnut/retainer/bearing/shaft ratings','completecarriage-to-tendonandforcefeedback loadpath','actualbracket/boltinterfaces','originalmissingfingerloadmaterial','thermal andSI']}
+(B/'selected_installation_checks.json').write_text(json.dumps(r,indent=2)+'\n');print('CHECK_READY','carriagehits',[len(x['positive_hits']) for x in records],'controllergearhits',[len(x['controller_into_gear_hits']) for x in controllers],'bridgeOEMhits',len(bridges),flush=True)
+# Exact finitecarriage prototype projections at three actualstroke positions; no newproduct geometry.
+im=Image.new('RGB',(1400,850),'white');d=ImageDraw.Draw(im);d.text((20,12),'Selected A actual finite carriage / guide / nut prototype; unqualified strength, threads and tendon termination.',fill='black')
+for idx,dz in enumerate([0,-.090,-.180]):
+ org=(250+idx*430,770);scale=2150;sc=np.array(next(x['center_world_m'] for x in s['motion_keepouts'] if x['id']=='g2_hand_1_carriage_sweep'))
+ for p in [p for id,p in ps.items() if id.startswith('g2_hand_1_') and id in ['g2_hand_1_load_frame','g2_hand_1_guide_-1','g2_hand_1_guide_1','g2_hand_1_screw','g2_hand_1_nut_carriage','g2_hand_1_complete_nut_with_flat_seat','g2_hand_1_nut_axial_retainer','g2_hand_1_carriage_guide_bush_-1','g2_hand_1_carriage_guide_bush_1','g2_hand_1_finite_thrust_bearing_seat_-1','g2_hand_1_finite_thrust_bearing_seat_1']]:
+  m=native(p)
+  if p in [ps['g2_hand_1'+x] for x in ['_nut_carriage','_complete_nut_with_flat_seat','_nut_axial_retainer','_carriage_guide_bush_-1','_carriage_guide_bush_1']]:m.apply_translation([0,0,dz])
+  v=np.array(m.vertices)
+  for f in m.faces:
+   points=[(org[0]+(v[j,0]-sc[0])*scale,org[1]-(v[j,2]-(sc[2]-.145))*scale) for j in f]
+   # Framewire lets trueinternal finiteparts be examined; frameisnotremovedfromchecks.
+   if p['name'].endswith('_load_frame'):d.line(points+[points[0]],fill=(161,176,187),width=1)
+   else:d.polygon(points,fill=(118,135,142) if 'carriage' in p['name'] else (167,122,65),outline=(45,57,62))
+ d.text((idx*430+90,60),f'Exact neutral offsets {dz*1000:g} mm; same2150px/m',fill='black')
+im.save(B/'selected_carriage_prototype.png')

@@ -1,0 +1,60 @@
+"""Source-bound finite material, interfaces, pose and parked service query. No repair."""
+from pathlib import Path
+import sys,json,gzip,hashlib,argparse,time,copy
+import numpy as np,trimesh,manifold3d as mf
+ROOT=next(p for p in Path(__file__).resolve().parents if(p/'sai_robots_engineering_rules.md').is_file());sys.path.insert(0,str(ROOT/'.scratch/gorilla_internal_g_material_contract'));from native_signed_material import validate_part
+O=Path(__file__).resolve().parent;ap=argparse.ArgumentParser();ap.add_argument('--variant',choices=['a','b'],required=True);ap.add_argument('--early',action='store_true');a=ap.parse_args();D=O/a.variant;sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();s=json.loads(gzip.decompress((D/'scene.json.gz').read_bytes()));pm={p['name']:p for p in s['parts']};V=lambda p:np.array(p.get('vertices_world_m',p.get('vertices')));F=lambda p:np.array([[q[0],q[k],q[k+1]]for q in p['faces']for k in range(1,len(q)-1)],np.uint64)
+def kernel(p):return mf.Manifold(mf.Mesh64(V(p),F(p)))
+cache={p['name']:kernel(p)for p in s['parts']};new=[p for p in s['parts']if p['name'].startswith('g17_')];gates=[]
+for p in new:
+ r=validate_part(p);r['actual_material_component_count']=r.get('material_component_count_from_nesting');r['raw_decompose_signed_volumes_m3']=[float(z.volume())for z in cache[p['name']].decompose()];gates.append(r)
+failed_new_ids={r['id']for r in gates if not r['resource_contract_pass']}
+pairs=[]
+def check(items,pose):
+ for i,(p,A)in enumerate(items):
+  for q,B in items[i+1:]:
+   if not(p['name'].startswith('g17_')or q['name'].startswith('g17_')):continue
+   aa=np.array(A.bounding_box());bb=np.array(B.bounding_box())
+   if np.any(aa[3:]<=bb[:3])or np.any(bb[3:]<=aa[:3]):continue
+   if A.status()!=mf.Error.NoError or B.status()!=mf.Error.NoError:continue
+   C=A^B;v=C.volume()
+   if v>1e-10:pairs.append({'pose':pose,'a':p['name'],'b':q['name'],'owner_a':p['body'],'owner_b':q['body'],'positive_volume_cm3':v*1e6,'query_class':'actual_finite_material'if bool(p.get('finite_material'))and bool(q.get('finite_material')) else'protectedOEM_or_other_reference_scope_unknown_not_material','same_owner_not_exempted':True,'new_source_pair_material_gate_pass':p['name']not in failed_new_ids and q['name']not in failed_new_ids,'invalid_source_boolean_values_are_diagnostics_not_verified_material_intersections':p['name']in failed_new_ids or q['name']in failed_new_ids})
+items=[(p,cache[p['name']])for p in s['parts']if not p.get('g17_context_only')or p['name'].startswith('g15_')];check(items,'neutral')
+put=lambda n,d:(D/n).write_text(json.dumps(d,indent=2,allow_nan=False)+'\n')
+put('early_material_collision_report.json',{'source_sha256':sha(D/'scene.json.gz'),'producer_sha256':sha(__file__),'gate_reports':gates,'new_finite_gate_failed_ids':[r['id']for r in gates if not r['resource_contract_pass']],'new_multiple_material_roots':[{'id':r['id'],'count':r['actual_material_component_count']}for r in gates if r['actual_material_component_count']is not None and r['actual_material_component_count']>1],'neutral_pairs':pairs,'sameowner_not_exempted':True,'collision_threshold_m3':1e-10,'physical_accepted':False})
+print('EARLY',a.variant,'gatefailed',sum(not r['resource_contract_pass']for r in gates),'roots',[(r['id'],r['actual_material_component_count'])for r in gates if r['actual_material_component_count']is not None and r['actual_material_component_count']>1],'actualneutralpairs',sum(p['query_class']=='actual_finite_material'for p in pairs),'largest',sorted(pairs,key=lambda p:-p['positive_volume_cm3'])[:3],flush=True)
+if a.early:raise SystemExit(0)
+# New candidate FK uses actual source axis lines, not legacy body tags.
+def R(axis,q):
+ ax=np.array(axis,float);ax/=np.linalg.norm(ax);K=np.array([[0,-ax[2],ax[1]],[ax[2],0,-ax[0]],[-ax[1],ax[0],0]]);return np.eye(3)+math.sin(q)*K+(1-math.cos(q))*(K@K)
+import math
+poses=[{'id':'neutral','q_rad':[0,0,0]},{'id':'pitch_20','q_rad':[math.radians(20),0,0]},{'id':'roll_15','q_rad':[0,math.radians(15),0]},{'id':'yaw_20','q_rad':[0,0,math.radians(20)]},{'id':'combined','q_rad':[math.radians(15),math.radians(10),math.radians(-15)]}];poseinfo=[]
+for pose in poses[1:]:
+ bodyT={'torso':np.eye(4)}
+ for side in ['left','right']:
+  for j,q in zip(['pitch','roll','yaw'],pose['q_rad']):
+   z=next(x for x in s['joint_interfaces']if x['id']==side+'_'+j);r=R(z['axis_world'],q);p=np.array(z['pivot_world_m']);T=np.eye(4);T[:3,:3]=r;T[:3,3]=p-r@p;bodyT[z['output_body']]=bodyT[z['parent_body']]@T
+ moved=[]
+ for p,k in items:
+  T=bodyT.get(p['body'],np.eye(4));moved.append((p,k.transform(T[:3,:])))
+ check(moved,pose['id']);poseinfo.append({'id':pose['id'],'q_rad':pose['q_rad'],'body_transforms_world':{k:T.tolist()for k,T in bodyT.items()},'all_material_moved_rigid_no_pose_cut':True})
+put('pose_collision_report.json',{'source_sha256':sha(D/'scene.json.gz'),'producer_sha256':sha(__file__),'poses':poseinfo,'collision_pairs':pairs,'new_FK_not_old70mm_axis_inherited':True,'root_shifts_m':[0,0,0],'armor_motions_not_rebuilt_here':True,'physical_accepted':False})
+# Individual complete drive extraction, previous moved objects stay parked. All local source objects present.
+service=[]
+for side,sg in [('left',1),('right',-1)]:
+ for stage,j,move in [(0,'roll',np.array([.35,0,0.])),(1,'yaw',np.array([-.12,sg*.40,0.]))]:
+  mids=[p for p in s['parts']if p['name'].startswith('ds_'+side+'_shoulder_'+j+'_')];midnames={p['name']for p in mids};obs=[p for p in s['parts']if p['name']not in midnames and p['name'].startswith(('g13_'+side,'g17_'+side,'ds_'+side,'g15_'))];samples=[]
+  for t in np.linspace(0,1,21):
+   bad=[]
+   for p in mids:
+    A=cache[p['name']].translate(move*t)
+    for q in obs:
+     B=cache[q['name']];aa=np.array(A.bounding_box());bb=np.array(B.bounding_box())
+     if np.any(aa[3:]<=bb[:3])or np.any(bb[3:]<=aa[:3]):continue
+     if A.status()!=mf.Error.NoError or B.status()!=mf.Error.NoError:continue
+     v=(A^B).volume()
+     if v>1e-10:bad.append({'moving':p['name'],'obstacle':q['name'],'positive_volume_cm3':v*1e6,'reference_vs_actual_scope_must_remain_distinct':True})
+   samples.append({'fraction':float(t),'pairs':bad})
+  service.append({'side':side,'module':j,'ids':list(midnames),'translation_world_m':move.tolist(),'samples':samples,'partial_removal_only_not_complete_assembly_order':True,'all_obstacles_present':True,'actual_fasteners_tools_keepers_must_be_released_not_yetqualified':True})
+put('service_collision_report.json',{'source_sha256':sha(D/'scene.json.gz'),'producer_sha256':sha(__file__),'candidate_staged_tests':service,'full_initial_assembly_sequence_unknown':True,'physical_accepted':False})
+print('FULL_REPORTS',len(pairs),len(service),flush=True)

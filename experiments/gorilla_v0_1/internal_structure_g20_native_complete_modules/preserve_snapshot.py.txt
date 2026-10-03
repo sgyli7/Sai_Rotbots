@@ -1,0 +1,80 @@
+from pathlib import Path
+import json, hashlib, gzip, datetime, os, shutil
+
+R=Path.cwd()
+O=R/'experiments/gorilla_v0_1/internal_structure_g20_native_complete_modules'
+assert not (O/'snapshot_manifest.json').exists()
+O.mkdir(parents=True,exist_ok=True)
+roots={
+ 'component_joint':R/'.scratch/gorilla_internal_g20_component_joint',
+ 'hydraulic_module':R/'.scratch/gorilla_internal_g20_hydraulic_complete_module',
+ 'energy_module':R/'.scratch/gorilla_internal_g20_energy_functional_pack',
+ 'root_review':R/'.scratch/gorilla_internal_g20_root_review',
+}
+sha=lambda b:hashlib.sha256(b).hexdigest()
+files,excluded,checks,inputs=[],[],[],{}
+dedup,reuse={},{}
+for p in sorted((R/'experiments/gorilla_v0_1').glob('*/snapshot_manifest.json')):
+ if p.parent==O:continue
+ rows=json.loads(p.read_text()).get('files',[])
+ if not isinstance(rows,list):continue
+ for z in rows:
+  if isinstance(z,dict) and all(k in z for k in ['original_sha256','stored_path','stored_sha256','encoding','stored_bytes']) and z['encoding']!='gzip_chunks':reuse[z['original_sha256']]=(p.parent,z)
+
+def excluded_download(p):
+ return (p.suffix in ['.pdf','.html','.stp','.zip','.bin'] or 'cache' in p.parts or 'official_sources' in p.parts or p.name=='official_coil_native.npz'
+         or 'gorilla_internal_g20_hydraulic_complete_module' in p.parts and p.name in ['scene_a.json.gz','scene_b.json.gz'])
+def omit(p,why):
+ if not any(x['original_path']==str(p.relative_to(R)) for x in excluded):excluded.append(dict(original_path=str(p.relative_to(R)),original_sha256=sha(p.read_bytes()),reason=why))
+def check(p,h,scope):
+ p=Path(p);p=p if p.is_absolute() else R/p
+ actual=sha(p.read_bytes());checks.append(dict(path=str(p.relative_to(R)),expected_sha256=h,actual_sha256=actual,scope=scope,pass_=actual==h));assert actual==h,str(p)
+def save(p,rel):
+ p=Path(p)
+ if any(x['original_path']==str(p.relative_to(R)) for x in files):return
+ data=p.read_bytes();h=sha(data);rel=Path(rel)
+ if h in reuse:
+  prior,z=reuse[h];source=(prior/z['stored_path']).resolve();assert sha(source.read_bytes())==z['stored_sha256']
+  files.append(dict(original_path=str(p.relative_to(R)),original_sha256=h,original_bytes=len(data),stored_path=os.path.relpath(source,O),stored_sha256=z['stored_sha256'],stored_bytes=z['stored_bytes'],encoding=z['encoding'],reused_controlled_dependency=True));return
+ if rel.suffix=='.py':rel=rel.with_suffix('.py.txt')
+ encoding,b='identity',data
+ if rel.suffix in ['.step','.brep'] or rel.suffix=='.json' and len(data)>500000:rel=Path(str(rel)+'.gz');b=gzip.compress(data,mtime=0);encoding='gzip'
+ assert len(b)<100000000
+ if sha(b) in dedup:rel=dedup[sha(b)]
+ else:
+  dest=O/rel;dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(b);dedup[sha(b)]=rel
+ files.append(dict(original_path=str(p.relative_to(R)),original_sha256=h,original_bytes=len(data),stored_path=str(rel),stored_sha256=sha(b),stored_bytes=len(b),encoding=encoding))
+def input_rows(obj):
+ if isinstance(obj,dict):
+  for key,v in obj.items():
+   if isinstance(v,str):yield key,v
+   elif isinstance(v,dict) and 'path' in v:yield v['path'],v.get('sha256_expected',v.get('sha256',v.get('SHA256')))
+ else:
+  for v in obj:
+   if isinstance(v,dict) and 'path' in v:yield v['path'],v.get('sha256_expected',v.get('sha256',v.get('SHA256')))
+
+for label,d in roots.items():
+ if label!='root_review':
+  name='manifest.json' if label=='component_joint' else 'freeze_manifest.json';m=json.loads((d/name).read_text());outputs=m.get('outputs',m.get('files',[]))
+  rows=[dict(path=k,sha256=v if isinstance(v,str) else v['sha256']) for k,v in outputs.items()] if isinstance(outputs,dict) else outputs
+  for z in rows:
+   q=Path(z['path']);q=q if q.is_absolute() else (d/q if (d/q).is_file() else R/q);check(q,z.get('sha256',z.get('SHA256')),'author_frozen_output')
+  for p,h in input_rows(m.get('inputs',{})):inputs[Path(p)]=h
+ for p in sorted(d.rglob('*')):
+  if not p.is_file():continue
+  if '__pycache__' in p.parts or p.suffix in ['.pyc','.log'] or excluded_download(p):omit(p,'Downloaded publication/vendor CAD/direct OEM mesh or enclosing scene/runtime cache excluded; engineering identities and explicit selected subsets retained.');continue
+  save(p,Path(label)/p.relative_to(d))
+
+# Actual extra functional-facts dependency consumed by the frozen allocation producer.
+for rel in ['.scratch/gorilla_internal_g_material_contract/native_signed_material.py','.scratch/gorilla_internal_g19_drive_architecture/low_Ke_cooling_budget.json','.scratch/gorilla_internal_g14_complete_thermal_colayout/geometry_helpers.py','.scratch/gorilla_internal_g19_root_macro/bound_g18_scene.json.gz']:
+ p=R/rel;inputs[p]=sha(p.read_bytes())
+for p,h in inputs.items():
+ p=p if p.is_absolute() else R/p;check(p,h,'bound_upstream_dependency')
+ if excluded_download(p):omit(p,'Original vendor/publication or enclosing imported-CAD scene cached locally, not bundled or claimed restored.');continue
+ rel=p.relative_to(R);rel=Path(*rel.parts[1:]) if rel.parts[0]=='.scratch' else rel;save(p,Path('input_dependencies')/rel)
+
+manifest=dict(robot_id='gorilla_v0_1',freeze_UTC=datetime.datetime.now(datetime.timezone.utc).isoformat(),scope='G20 two actual complete component/energy/hydraulic probes, all rejected; own CAD/native, literal installation/query reports and independent source integration. Original imported OEM coil scenes deliberately excluded, exact selected own subsets preserved instead.',files=files,upstream_frozen_identity_checks=checks,excluded_original_artifact_identities=excluded,storage_deduplicated_by_exact_stored_hash=True,unchanged_controlled_inputs_reused=True,original_producers_and_failed_diagnostics_retained=True,root_choice_is_next_common_interface_and_space_allocation=True,new_lower_art_pending_user_acceptance_and_engineering_rebuild=True,whole_generation_replayed=False,physical_aesthetic_or_stable_si_accepted=False,runtime_required='Selected-byte restoration only. Imported vendor CAD and original hydraulic scenes are NOT bundled or restored; publications/runtime not bundled. Producer entrypoints remain experimental, required tool/runtime not reinstalled or replayed.')
+(O/'snapshot_manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+shutil.copyfile(R/'experiments/gorilla_v0_1/internal_structure_g18_full_assembly_and_cooling/restore_snapshot.py.txt',O/'restore_snapshot.py.txt')
+shutil.copyfile(Path(__file__),O/'preserve_snapshot.py.txt')
+print(json.dumps(dict(selected_original_files=len(files),new_unique_stored_files=len(dedup),new_unique_stored_bytes=sum((O/p).stat().st_size for p in dedup.values()),reused_mappings=sum(bool(x.get('reused_controlled_dependency')) for x in files),identity_checks=len(checks),manifest_sha256=sha((O/'snapshot_manifest.json').read_bytes()))))

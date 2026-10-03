@@ -1,0 +1,35 @@
+#!/usr/bin/env python3
+import pathlib,json,gzip,hashlib,collections,itertools,math
+import numpy as np,manifold3d as mf
+from PIL import Image,ImageDraw
+D=pathlib.Path(__file__).resolve().parent;S=D/'module_scene.json.gz';sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest();s=json.load(gzip.open(S,'rt'));parts=s['parts'];mats=[p for p in parts if p.get('finite_material')];refs=[p for p in parts if not p.get('finite_material') and p['role']!='service_after_shell_removal'];mm={p['name']:mf.Manifold(mf.Mesh64(np.array(p['vertices_world_m']),np.array(p['faces'],np.uint64))) for p in parts};bounds={p['name']:np.array([np.min(p['vertices_world_m'],0),np.max(p['vertices_world_m'],0)]) for p in parts};pairs=[];refhits=[];threshold=1e-12
+for i,a in enumerate(mats):
+ for b in mats[i+1:]:
+  ba,bb=bounds[a['name']],bounds[b['name']]
+  if not np.all(ba[1]-bb[0]>1e-12) or not np.all(bb[1]-ba[0]>1e-12):continue
+  V=(mm[a['name']]^mm[b['name']]).volume()
+  if V>threshold:pairs.append({'a':a['name'],'b':b['name'],'classes':[a['component_class'],b['component_class']],'actual_V_m3':V})
+ for b in refs:
+  ba,bb=bounds[a['name']],bounds[b['name']]
+  if not np.all(ba[1]-bb[0]>1e-12) or not np.all(bb[1]-ba[0]>1e-12):continue
+  V=(mm[a['name']]^mm[b['name']]).volume()
+  if V>threshold:refhits.append({'a':a['name'],'b':b['name'],'classes':[a['component_class'],b['component_class']],'actual_V_m3':V,'reference_scope_not_known_solidcollision':True})
+Cu=[p for p in mats if p['component_class']=='complete_potential_Cu'];diel=[p for p in mats if 'dielectric' in p['component_class'] or p['component_class'] in ['PCB_or_dielectric_stack','BMS_substrate','BMS_pin_isolation']];CuCu=[q for q in pairs if q['classes']==['complete_potential_Cu','complete_potential_Cu']];CuD=[q for q in pairs if 'complete_potential_Cu' in q['classes'] and any('dielectric' in x or x in ['PCB_or_dielectric_stack','BMS_substrate','BMS_pin_isolation'] for x in q['classes'])];roots=[];mass=[]
+for p in mats:
+ m=mm[p['name']];roots.append({'id':p['name'],'kernel_components':len(m.decompose()),'status':str(m.status()),'signedV_m3':m.volume()});v=np.array(p['vertices_world_m']);f=np.array(p['faces']);t=v[f];V=np.einsum('ij,ij->i',t[:,0],np.cross(t[:,1],t[:,2])).sum()/6;mass.append({'id':p['name'],'signed_integral_V_m3':float(V),'rho':p['density_kg_m3'],'mass_once_kg':float(V*p['density_kg_m3']),'producer_difference_kg':float(V*p['density_kg_m3']-p['mass_once_kg'])})
+VV=np.concatenate([p['vertices_world_m'] for p in parts if p['role']!='service_after_shell_removal']);bbox=[VV.min(0).tolist(),VV.max(0).tolist()];record={'source_SHA':sha(S),'own_finite_pair_hits':pairs,'own_finite_vs_reference_hits':refhits,'Cu_vs_Cu_potential_hits':CuCu,'Cu_vs_dielectric_hits':CuD,'kernel_roots_diagnostic_not_native_resource':roots,'independent_signed_mass_once':mass,'own_finite_mass_kg':sum(q['mass_once_kg'] for q in mass),'prototype_mounted_AABB_m':bbox,'prototype_mounted_dimensions_m':(VV.max(0)-VV.min(0)).tolist(),'cells':len([p for p in parts if p['component_class']=='max_cell_reference']),'19_complete_Cu_count':len(Cu),'resource_native_file':'native_material_resource.json','notwholepack_electrical_thermal_or_installed_admission':True}
+(D/'actual_module_audit.json').write_text(json.dumps(record,indent=2)+'\n');print('EVENT G23 actual audit finitehits',len(pairs),'referencehits',len(refhits),'CuCu',len(CuCu),'CuD',len(CuD),'dims',record['prototype_mounted_dimensions_m'],flush=True)
+# Source triangles only; each panel same orthographic scale. Copper-only cutaway declares all otherparts withdrawn.
+views=[('XZ',np.array([1,0,0]),np.array([0,0,1]),np.array([0,-1,0])),('XY',np.array([1,0,0]),np.array([0,1,0]),np.array([0,0,1])),('YZ',np.array([0,1,0]),np.array([0,0,1]),np.array([1,0,0])),('threequarter',np.array([1,-1,0])/np.sqrt(2),np.array([1,1,2])/np.sqrt(6),np.array([-1,-1,1])/np.sqrt(3))]
+for cut,name in [(False,'actual_module_four_view.png'),(True,'actual_all19_Cu_cutaway_four_view.png')]:
+ im=Image.new('RGB',(1700,1100),'#f4f3ec');dr=ImageDraw.Draw(im);dr.text((20,12),'G23 source '+sha(S)[:12]+' / actual180 maximum cells +19nets / no electrical-thermal-installation qualification',fill='black');dr.text((20,30),'Cu CUTAWAY: other materials/reference stocks withdrawn explicitly' if cut else 'Actual finite/complete function geometry; service reserve withheld; no postpainted structure',fill='black')
+ for k,(label,x,y,z) in enumerate(views):
+  ox=425+850*(k%2);oy=290+520*(k//2);tri=[]
+  for p in parts:
+   if p['role']=='service_after_shell_removal' or cut and p['component_class']!='complete_potential_Cu':continue
+   v=np.array(p['vertices_world_m']);f=np.array(p['faces']);v2=np.column_stack([v@x*1000+ox,-v@y*1000+oy]);dep=v[f].mean(1)@z;rgb=tuple(int(c*255) for c in p.get('rgba',[.5,.5,.5,1])[:3])
+   for ids,zz in zip(f,dep):tri.append((zz,[tuple(v2[i]) for i in ids],rgb))
+  for _,xy,c in sorted(tri,key=lambda t:t[0]):dr.polygon(xy,fill=c)
+  dr.text((20+850*(k%2),60+520*(k//2)),label+' / same1000px per metre',fill='black')
+ im.save(D/name)
+print('EVENT G23 rendered actual native',flush=True)

@@ -1,0 +1,32 @@
+from pathlib import Path
+import json,math,runpy
+import numpy as np
+B=Path(__file__).resolve().parent;n=runpy.run_path(str(B/'screen_forearm_hand.py'),run_name='receipt_helpers');old=n['old'];base=n['base'];mani=n['mani'];native=n['native'];sha=n['sha'];box=n['box']
+
+def extras(s,l):
+ rows={r['id']:r for r in s['modules']};ps={p['name']:p for p in s['parts']};results=[]
+ for k in range(1,6):
+  id=f'g2_hand_{k}';ko=next(x for x in s['motion_keepouts'] if x['id']==id+'_carriage_sweep');C=mani(box(ko['center_world_m'],ko['dimensions_xyz_m']));hits=[]
+  targets=[p for p in s['parts'] if p['name']!=id+'_nut_carriage' and not p['name'].endswith(('_sheath','_tendon'))]
+  for p in targets:
+   m=native(p)
+   if np.any(np.minimum(C.bounding_box()[3:6],m.bounds[1])-np.maximum(C.bounding_box()[:3],m.bounds[0])<=1e-8):continue
+   v=(C^mani(m)).volume()
+   if v>1e-9:hits.append({'id':p['name'],'volume_m3':v,'scope':'swept carriage envelope includes functional screw/nut center and guide seats; uncut guideholes and independent interference remain realunknowns'})
+  results.append({'channel':id,'carriage_sweep_m':.180,'positive_sweep_pairs':len(hits),'hits':sorted(hits,key=lambda x:x['volume_m3'],reverse=True),'real_linear_tendon_attachment':'UNBUILT: sheath outlet is fixed to loadframe, while carriage/inlinecell is not physically connected to tendon. No completed force path or commanded tendon travel is asserted.'})
+ # Keep C15 full visible hand/forearm reference separately: E2a had replaced nonarmor sources.
+ # This is an explicit historical geometry screening, not hidden additional SI inventory.
+ original=[p for p in base['parts'] if p['body'].startswith(('left_forearm','left_palm','left_finger','left_thumb'))]
+ original_collision=n['collision'](s,'neutral',original,checknew=False);original_collision['scope']='all541 newparts vs full originalC15 leftforearm/palm/finger/thumb: historical appearance and mechanism reference only. Originalmech substitutions/mass unresolved; no newnew orwholemachine scope here.'
+ (B/f'original_c15_reference_collision_{l}.json').write_text(json.dumps(original_collision,indent=2)+'\n')
+ routes=n['pose_routes'](s);budget=n['drive_budget']();elastic=[]
+ for k in range(1,5):
+  ch=f'left_finger_{k}' if k<4 else 'left_thumb_flexion';r=next(r for r in budget if r['channel']==ch and r['payload_sensitivity_kg']==50 and r['contact_mu']==.35 and r['route_eta_assumed']==.5 and r['screw_eta_assumed']==.5 and r['tendon_speed_m_s']==.025)
+  rt=next(x for x in s['routes'] if x['id']==f'g2_hand_{k}_route_-1');L=rt['length_m'];F=r['screw_force_N'];A=math.pi*.004**2/4;dynamic=max(x['delta_m'] for x in routes if x['route'].startswith(f'g2_hand_{k}_route_'));travel=(.040 if k==4 else .038)*math.pi/2
+  dx={str(E):F*L/(E*1e9*A) for E in [20,50,100]}
+  elastic.append({'channel':ch,'screw_force_N':F,'nominal_geometric_tendon_area_m2':A,'nominal_full_area_stress_Pa':F/A,'stress_by_effective_area_fraction_Pa':{str(f):F/(A*f) for f in [.4,.7,1]},'route_length_m':L,'extension_m_by_effective_E_GPa':dx,'finger_only_travel_m':travel,'max_sample_positive_route_change_m':dynamic,'180stroke_remaining_before_preload_m_by_E_GPa':{E:.180-travel-dynamic-d for E,d in dx.items()},'scope':'necessary allocation sensitivity, excludes antagonistic takeup, preload, sheath compression, termination flexibility, safety travel and actual nonlinear route. Nominal full area is not cable rating.'})
+ return {'scene_sha256':sha(B/f'scene_{l}.json'),'carriage_sweeps':results,'tendon_elasticity_and_stroke':elastic,'original_context_hits':original_collision['positive_hits'],'original_context_reference_parts':len(original),'scope':'additional boundedsource geometry and workpointreceipt, no source edits and no physical acceptance'}
+
+if __name__=='__main__':
+ for l in ['a','b']:
+  s=json.loads((B/f'scene_{l}.json').read_text());r=extras(s,l);(B/f'complete_scope_receipt_{l}.json').write_text(json.dumps(r,indent=2)+'\n');print('ADDITIONAL_SCOPE_READY',l,'C15pairs',r['original_context_hits'],flush=True)

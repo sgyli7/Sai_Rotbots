@@ -1,0 +1,134 @@
+"""Gorilla G15 source-ID mass closure prototype. No geometry, FE or repairs."""
+from pathlib import Path
+import gzip,json,hashlib,collections,time
+import numpy as np,trimesh,manifold3d as mf
+R=Path(__file__).resolve().parents[2];O=Path(__file__).resolve().parent
+FILES={'current':R/'.scratch/gorilla_internal_g14_complete_thermal_colayout/b/scene.json.gz','present':R/'.scratch/gorilla_internal_g14_complete_thermal_colayout/b/complete_present_inventory.json','g9scene':R/'.scratch/gorilla_internal_g9_whole_source/scene.json.gz','g9mass':R/'.scratch/gorilla_internal_g9_whole_source/mass_inventory.json','g9registry':R/'.scratch/gorilla_internal_g9_whole_source/part_registry.json','g9gate':R/'.scratch/gorilla_internal_g9_whole_source/native_resource_contract.json','g9polygon':R/'.scratch/gorilla_internal_g9_whole_source/polygon_query_adapter_receipt.json','old633':R/'.scratch/gorilla_internal_g9_upper_load_scope/upper_load_scope.json','g13source':R/'.scratch/gorilla_internal_g13_shoulder_cooling_zones/a/scene.json.gz','g13inventory':R/'.scratch/gorilla_internal_g13_shoulder_cooling_zones/a/inventory_scope.json','g13check':R/'.scratch/gorilla_internal_g13_shoulder_cooling_zones/a/check_report.json','g13load':R/'.scratch/gorilla_internal_g13_loads_and_materials/load_and_material_budget.json','frame':R/'.scratch/gorilla_internal_g14_complete_thermal_colayout/b/frame_geometry_mass_COM_I.json','domain':R/'.scratch/gorilla_internal_g14_root_topology_review/report.json'}
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def read(p):return json.loads(gzip.decompress(p.read_bytes()) if str(p).endswith('.gz') else p.read_bytes())
+def write(n,x):(O/n).write_text(json.dumps(x,ensure_ascii=False,indent=2,allow_nan=False)+'\n')
+def geom(p):
+ v=np.array(p.get('vertices_world_m',p.get('vertices')),float);f=np.array([[q[0],q[k],q[k+1]] for q in p['faces'] for k in range(1,len(q)-1)],np.uint64);return v,f
+M_cache={}
+def kernel(p):
+ n=p['name']
+ if n not in M_cache:
+  v,f=geom(p);M_cache[n]=mf.Manifold(mf.Mesh64(v,f))
+ return M_cache[n]
+def prop(p):
+ v,f=geom(p);m=trimesh.Trimesh(v,f,process=False)
+ return m.mass_properties
+
+def fit(before,after):
+ a,fa=geom(before);b,fb=geom(after)
+ if a.shape!=b.shape or not np.array_equal(fa,fb):return {'same_indexed_geometry':False,'proper_rigid_transform_verified':False}
+ ca=a.mean(0);cb=b.mean(0);u,ss,vh=np.linalg.svd((a-ca).T@(b-cb));rot=vh.T@u.T
+ err=float(np.linalg.norm((a-ca)@rot.T+cb-b,axis=1).max());T=np.eye(4);T[:3,:3]=rot;T[:3,3]=cb-rot@ca
+ return {'same_indexed_geometry':True,'proper_rigid_transform_verified':bool(err<2e-8 and np.linalg.det(rot)>.999999),'max_vertex_error_m':err,'det_rotation':float(np.linalg.det(rot)),'world_T_current_from_source':T.tolist(),'shape_scale_not_changed':bool(err<2e-8)}
+
+def run():
+ t=time.time();src={k:read(p) for k,p in FILES.items()};s=src['current'];old=src['g9scene'];pm={p['name']:p for p in s['parts']};om={p['name']:p for p in old['parts']};sh={p['name']:p for p in src['g13source']['parts']}
+ if sha(FILES['current'])!=src['present']['scene_sha256']:raise ValueError('current inventory mismatch')
+ if len(pm)!=3108:raise ValueError('scope expects3108')
+ (O/'bound_current_scene.json.gz').write_bytes(FILES['current'].read_bytes())
+ coverage={n:[] for n in pm};rows=[];excluded=[];transforms={};warnings=[]
+ g9ok={p['id']:p['resource_contract_pass'] for p in src['g9gate']['contract']['parts']};g9ok.update({p['id']:p['resource_contract_pass'] for p in src['g9polygon']['rows']});shok={p['name']:p['resource_contract']['resource_contract_pass'] for p in src['g13check']['parts']}
+ alias={'rear_control_screen_module_envelope','g13_left_bounded_water_region','g13_right_bounded_water_region'}
+ alias.update(n for n in pm if n.startswith('rear_control_screen_') and n!='rear_control_screen_module_envelope')
+ service={n for n,p in pm.items() if p['role'] in ['service_after_shell_removal','holding_mount_window']}
+ def position(ids,finite=False,source_com=None,T=None):
+  vv=np.concatenate([geom(pm[n])[0] for n in ids]);lo=vv.min(0);hi=vv.max(0);c=(lo+hi)/2;method='current source gross AABB-center proxy; true complete OEM COM unknown'
+  if finite and len(ids)==1:
+   q=prop(pm[ids[0]])
+   if q.volume>0 and np.isfinite(q.center_mass).all():c=q.center_mass;method='actual signed finite geometry uniform-material COM hypothesis'
+  if source_com is not None and T is not None:
+   c=np.array(T)[:3,:3]@np.array(source_com)+np.array(T)[:3,3];method='source finite-material COM rigidly transported, conditional density; not measured component COM'
+  return {'COM_world_proxy_m':c.tolist(),'COM_world_geometric_bounds_m':[lo.tolist(),hi.tolist()],'COM_method':method,'true_OEM_COM_or_full_I_accepted':False}
+ def add(id,ids,mass,body,basis,finite=False,extra=None):
+  if set(ids)-set(pm):raise ValueError('absent scope:'+id)
+  rr={'id':id,'member_ids':ids,'mass_range_kg':mass,'gravity_owner_candidate':body,'mass_basis':basis,'finite_material_basis':finite,'physical_owner_connection_or_mass_accepted':False,'full_assembly_I_unknown':True};rr.update(position(ids,finite) if ids else {'COM_world_proxy_m':None,'COM_world_geometric_bounds_m':None,'COM_method':'no spatial source'});rr.update(extra or {})
+  rows.append(rr)
+  for n in ids:coverage[n].append(id)
+  return rr
+ # All3108 IDs must have exactly one accounting decision. Aliases/windows are
+ # decisions, not extra physical mass and not deleted geometry.
+ for n in sorted(alias&pm.keys()):excluded.append({'id':n,'reason':'same display function or bounded jacket-water geometry alias; global display/fluid counted once','parent_mass_function':'ds_back_screen' if n.startswith('rear_control_screen') else 'g14_water_global_inventory_reference','geometry_retained':True});coverage[n].append('alias_not_additive')
+ for n in sorted(service):excluded.append({'id':n,'reason':'explicit empty service/install window, not installed hardware','geometry_retained':True});coverage[n].append('empty_service_not_mass')
+ # Retained source inventory rows, using original complete-component mass basis.
+ for rr in src['g9mass']['present_rows']:
+  ids=rr.get('native_member_ids',rr.get('member_ids',[rr.get('part_name',rr['id'])]));present=[n for n in ids if n in pm and not coverage[n]]
+  if not present:
+   excluded.append({'id':rr['id'],'reason':'old mass row absent, alias, or replaced; not subtracted as new mass credit','source_mass_range_kg':rr.get('mass_range_kg')});continue
+  if len(present)!=len(ids):
+   add('partial_legacy_'+rr['id'],present,None,rr.get('gravity_mass_owner',rr.get('body')),'partial old functional row requires explicit split; old total not reused',extra={'old_unsplit_mass_range_kg':rr.get('mass_range_kg')});continue
+  valid=[]
+  for n in present:
+   tr=fit(om[n],pm[n]) if n in om else {'proper_rigid_transform_verified':False};transforms[n]=tr;valid.append(tr['proper_rigid_transform_verified'])
+  finite=rr.get('density_kg_m3') is not None and rr.get('category') not in ['directional_complete_oem_valve']
+  resource_ok=all(g9ok.get(n,False) for n in present)
+  mass=rr.get('mass_range_kg') if all(valid) and (not finite or resource_ok) else None
+  q=add('legacy_inventory:'+rr['id'],present,mass,rr.get('gravity_mass_owner',rr.get('body')),'retained G9 complete-function inventory; source range and actual proper rigid-transform identity',finite,{'source_ledger_row_id':rr['id'],'source_native_material_valid':resource_ok if finite else None,'resource_or_transform_rejected_mass_is_not_zero':mass is None,'historical_range_not_adopted_if_rejected':rr.get('mass_range_kg') if mass is None else None,'catalogue_or_whole_component_I_unknown':not finite,'old_owner_unknown':rr.get('gravity_mass_owner') in ['UNINSTALLED_CANDIDATE_OWNER_UNKNOWN','spatial_distribution_unknown']})
+  if finite and all(valid) and resource_ok and rr.get('COM_world_m') is not None and len(present)==1:q.update(position(present,True,rr['COM_world_m'],transforms[present[0]]['world_T_current_from_source']))
+ # Actual remaining material-group unions, not copied old total when retired.
+ for g in old['structure_material_group_ledger']['material_groups']:
+  ids=[n for n in g['member_ids'] if n in pm and not coverage[n]]
+  if not ids:continue
+  trs=[fit(om[n],pm[n]) for n in ids]
+  for n,tr in zip(ids,trs):transforms[n]=tr
+  okay=all(g9ok.get(n,False) and tr['proper_rigid_transform_verified'] for n,tr in zip(ids,trs))
+  extra={'old_group_member_ids':g['member_ids'],'retired_members':[n for n in g['member_ids'] if n not in pm],'source_density_kg_m3':g['density_kg_m3'],'old_group_mass_not_reused':True,'native_material_valid':okay,'historical_nonqualified_group_mass_kg':g['mass_kg']}
+  if okay:
+   mats=[kernel(pm[n]) for n in ids];okay=all(m.status()==mf.Error.NoError for m in mats)
+   if okay:
+    union=mf.Manifold.batch_boolean(mats,mf.OpType.Add);a=union.to_mesh64();pr=trimesh.Trimesh(np.array(a.vert_properties)[:,:3],np.array(a.tri_verts),process=False).mass_properties;rho=g['density_kg_m3'];mass=[pr.volume*rho]*3;extra.update({'actual_union_volume_m3':pr.volume,'COM_world_proxy_m':pr.center_mass.tolist(),'own_material_full_I_COM_kg_m2':(pr.inertia*rho).tolist(),'actual_material_weld_or_bolt_connection_not_proved':True})
+   else:mass=None
+  else:mass=None
+  add('legacy_structure_group:'+g['group'],ids,mass,g['mass_owner_body'],'actual retained same-source finite-material union at stated conditional density; failed source gives null',True,extra)
+ for rr in old['structure_material_group_ledger']['complete_reference_mass_rows']:
+  n=rr['id']
+  if n in pm and not coverage[n]:
+   tr=fit(om[n],pm[n]);transforms[n]=tr;add('legacy_reference:'+n,[n],rr['mass_range_kg'] if tr['proper_rigid_transform_verified'] else None,rr['body'],'complete OEM mass counted once; actual current native bounds, internal mass/rotor split unknown')
+ # G13 A finite shoulder excluding anchors already merged into currentframe.
+ si=src['g13inventory']
+ for ix,g in enumerate(si['own_source_native_diagnostic_union_by_owner_and_density']):
+  ids=[n for n,p in sh.items() if p.get('finite_material') and p['body']==g['body'] and p.get('density_kg_m3')==g['density_kg_m3'] and n in pm and not coverage[n]]
+  if not ids:continue
+  same=all(pm[n]==sh[n] and shok.get(n,False) for n in ids);oldids=[n for n,p in sh.items() if p.get('finite_material') and p['body']==g['body'] and p.get('density_kg_m3')==g['density_kg_m3']]
+  if same and len(ids)==len(oldids):mass=[g['mass_kg']]*3;extra={'COM_world_proxy_m':g['COM_world_m'],'own_material_full_I_COM_kg_m2':g.get('full_I_COM_world_kg_m2'),'source_group_exact':True}
+  else:mass=None;extra={'source_group_exact':False,'actual_absent_ids':[n for n in oldids if n not in pm]}
+  add('g13_shoulder_material:'+str(ix),ids,mass,g['body'],'G13 A same actual member union/density; absent anchor not counted a second time',True,extra)
+ for rr in si['reference_complete_component_ranges']:
+  n=rr['name']
+  if n in pm and not coverage[n]:add('g13_shoulder_reference:'+n,[n],rr['mass_range_kg'],pm[n]['body'],'unchanged complete OEM/function reference, internal COM/I/split unknown')
+ # Complete four batteries are one functional row per package, not cell OEM
+ # internals inferred from meshes. Only70g maximum known; low/nom remain null.
+ newmap={rr['id']:rr for rr in s['new_module_mass_rows']}
+ for pack in s['new_pack_info']:
+  name=pack['id'];ids=[n for n in newmap if n.startswith(name+'_') and n in pm and not coverage[n]];cells=[n for n in ids if pm[n]['role']=='OEM_cell_max_envelope_reference'];other=[n for n in ids if n not in cells]
+  mr=np.array([newmap[n]['mass_range_kg'] for n in other]).sum(0).tolist();q=add(name+':complete_pack',ids,[None,None,mr[2]+len(cells)*.07],'torso','complete120cell pack full own coldplate/insulation/bus/BMS/vent/function budget; source70g is MAX not known nominal',False,{'mass_formula':'m_own(level) +120*m_cell','own_function_range_kg':mr,'cell_count':len(cells),'cell_single_mass_range_kg':[None,None,.07],'unresolved_parameter':name+'_m_cell_kg','cell_mass_not_zero':'catalogue only upper bound; no unsupported lower or nominal','pack_center_world_m':pack['center_world_m'],'source_rigid_rotation_world':pack['rotation_world_from_source'],'actual_cell_pose_geometry_uniform_I_NOT_used':True,'complete_function_subrow_members':[{'id':n,'source_mass_range_kg':newmap[n]['mass_range_kg']} for n in other]})
+  for n in ids:
+   before=pm[n].get('source_before_move_id')
+   transforms[n]={'source_before_move_id':before,'source_pack_sha256':pack['source_pack_sha256'],'rotation_world_from_source':pack['rotation_world_from_source'],'source_function_is_complete_not_scaled':True}
+
+ for n,rr in newmap.items():
+  if n not in pm or coverage[n]:continue
+  pp=pm[n];finite=bool(pp.get('finite_material'))
+  extra={'source_new_mass_row':rr,'world_position_bound_to_current_vertices':True}
+  if n=='g14_cage_anchor_output_adapter_net_material':
+   ff=src['frame'];extra.update({'COM_world_proxy_m':ff['COM_world_m'],'own_material_full_I_COM_kg_m2':ff['I_about_COM_kg_m2'],'included_anchor_ids_once':pp['source_anchors_unioned_once_ids'],'included_adapter_id_once':pp['source_adapter_id_replaced_once']})
+  if pp['role']=='global_fluid_inventory_reference':extra.update({'global_inventory_once':True,'operating_distribution_COM_and_body_split_unknown':True,'neutral_static_reservoir_pose_is_a_declared_sensitivity_only':True})
+  add('g14_current_function:'+n,[n],rr['mass_range_kg'],rr['body'],'current full-function source row; own finite nominal or complete-module budget, not OEM density inference',finite,extra)
+ # Every remaining physical mesh is a gap, not an invented zero. Appearance
+ # strips/louvres and displaced hardware must be assigned or included in a
+ # documented complete function before a whole ledger can close.
+ for n,p in pm.items():
+  if coverage[n]:continue
+  add('unresolved_present:'+n,[n],None,p['body'],'present native item has no unambiguous functional mass allocation; unknown not zero',False,{'unresolved_parameter':'m_'+n,'source_role':p['role'],'source_declared_mass_range_unadopted':p.get('mass_range_kg')})
+ # Four missing actual cylinders retain parameterized nonzero-demand function.
+ for a in old['missing_physical_cylinders']:
+  add('unresolved_missing_function:'+a['function'],[],None,None,'actual finite cylinder absent, held valve does not replace actuator; unknown not zero',False,{'function':a,'unresolved_parameter':'m_required_'+a['function']})
+ duplicate={n:v for n,v in coverage.items() if len(v)!=1}
+ doc={'robot_id':'gorilla_v0_1','schema':'g15_current_function_mass_contract_candidate_v1','sources':{k:{'path':str(p),'sha256':sha(p)} for k,p in FILES.items()},'producer_sha256':sha(Path(__file__)),'current_present_id_count':len(pm),'function_mass_rows':rows,'present_id_accounting_decisions':coverage,'excluded_rows_not_additive':excluded,'actual_rigid_transform_identity':transforms,'coverage_zero_or_multiple':duplicate,'no_every_mesh_OEM_volume_times_density':True,'whole_robot_mass_range_kg':None,'whole_robot_COM_world_m':None,'whole_robot_full_I_kg_m2':None,'physical_accepted':False,'new_pose_contract_accepted':False,'load_resultants_pending_current_ledger_only':True,'elapsed_s':time.time()-t}
+ write('mass_contract.json',doc);good=[x for x in rows if x['mass_range_kg'] is not None and all(q is not None for q in x['mass_range_kg'])];bad=[x for x in rows if x not in good]
+ summary={'source_sha256':sha(FILES['current']),'ledger_sha256':sha(O/'mass_contract.json'),'current_present_ids':len(pm),'functional_rows':len(rows),'complete_numeric_range_rows':len(good),'null_or_partial_rows':len(bad),'known_subset_range_kg_NOTwhole':np.array([r['mass_range_kg'] for r in good]).sum(0).tolist(),'unknown_present_members':sum(len(x['member_ids']) for x in bad),'coverage_zero_or_multiple':duplicate,'wholemass_NOTclosed':True};write('first_report.json',summary);print(json.dumps(summary),flush=True)
+if __name__=='__main__':run()

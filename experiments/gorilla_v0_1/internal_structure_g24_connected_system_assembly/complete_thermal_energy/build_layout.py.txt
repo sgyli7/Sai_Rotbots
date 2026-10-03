@@ -1,0 +1,36 @@
+from pathlib import Path
+import gzip,json,hashlib,copy,argparse
+import numpy as np
+R=Path.cwd();O=Path(__file__).resolve().parent;sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();ap=argparse.ArgumentParser();ap.add_argument('variant',choices=['a','b']);arg=ap.parse_args();D=O/arg.variant;D.mkdir(exist_ok=True);S=R/'.scratch/gorilla_internal_g23_root_assembly/b/scene.json.gz';input_sha=sha(S);s=json.loads(gzip.decompress(S.read_bytes()));ps={p['name']:p for p in s['parts']};parts=[];groups=[];used=set()
+def ownput(n,x):(D/n).write_text(json.dumps(x,indent=2,allow_nan=False)+'\n')
+def group(n,ids,Q,physicalcenter=None,T=None,function='',waterports=None):
+ ids=list(ids);src=[ps[i]for i in ids];hard=[p for p in src if'service'not in p.get('role','')and'fluid'not in p.get('role','')];vv=np.concatenate([np.array(p['vertices_world_m'])@Q.T for p in hard]);cc=(vv.min(0)+vv.max(0))/2
+ if T is None:T=np.array(physicalcenter)-cc
+ else:T=np.array(T)
+ for p0 in src:
+  p=copy.deepcopy(p0);p['vertices_world_m']=(np.array(p['vertices_world_m'])@Q.T+T).tolist();p['g24_original_source_name']=p0['name'];p['g24_source_sha256']=input_sha;p['g24_complete_group']=n;p['g24_world_R']=Q.tolist();p['g24_world_T_m']=T.tolist();mom=[k for k in p if'COM'in k or'full_I'in k or'exact_CAD'in k];p['upstream_moments_unadmitted']={k:p.pop(k)for k in mom};p['new_moving_ports_not_connected_by_old_route']=True;parts.append(p);used.add(p['name'])
+ vv=np.concatenate([np.array(p['vertices_world_m'])for p in parts if p['name']in ids and'service'not in p.get('role','')and'fluid'not in p.get('role','')]);g={'id':n,'function':function,'exact_member_IDs':ids,'world_R':Q.tolist(),'world_T_m':T.tolist(),'hardware_bounds_world_m':[vv.min(0).tolist(),vv.max(0).tolist()],'complete_service_members':[p['name']for p in src if'service'in p.get('role','')],'old_lines_invalid_after_complete_move':True};groups.append(g);return g
+I=np.eye(3);prefixes=[('low_'+str(i),('g16_'if i<4 else'g18_')+'low_es0707_segment_'+str(i)+'_')for i in range(6)]
+for i,(name,pref)in enumerate(prefixes):
+ ids=[n for n in ps if n.startswith(pref)];hard=[ps[n]for n in ids if'service'not in ps[n].get('role','')]
+ if arg.variant=='a':Q=I;center=[-.02,(-1 if i%2==0 else 1)*.46,[1.52,1.81,2.10][i//2]]
+ else:
+  core=np.array(next(p for p in hard if'fullcore'in p['name'])['vertices_world_m']).mean(0);pl=np.array(next(p for p in hard if'full_plenum'in p['name'])['vertices_world_m']).mean(0);dir=np.sign(core[1]-pl[1]);Q=np.array([[0,dir,0],[-dir,0,0],[0,0,1.]]) # old flow +/−Y to new −X
+  if (Q@np.array([0,dir,0]))[0]>0:Q=-Q;Q[2,2]=1 # preserve proper rotation, desired rearward air
+  center=[-.020,(-1 if i%2==0 else 1)*.145,[1.92,2.19,2.46][i//2]]
+ group(name,ids,Q,center,function='whole ES0707+172fan+plenum+connector+guard/mount+service; no OEM scaling')
+hotids=[n for n in ps if n.startswith('g16_hot_es0714_complete_reference_')];Q=np.array([[0,0,-1],[0,1,0],[1,0,0.]]) # old +Z airflow to −X
+group('hot_0714',hotids,Q,[-.020,0,1.61]if arg.variant=='b'else[-.020,0,1.83],function='whole ES0714+two172fans+plenum+ports+guards/service')
+other=[('HX',[n for n in ps if n.startswith('e2_')and('HX_'in n or'HX_material'in n)],[-.07,0,1.96]),('pump_rest',[n for n in ps if n.startswith('g18_WP32_full_pump_1')or n in ['g16_low_filter_regulator_isolation','g16_low_pump_controller']],[.015,.31,1.91]),('pump_188',[n for n in ps if n.startswith('g18_WP32_full_pump_0')or n in ['g18_188_WP32_controller_LV','g18_188_filter_sensor_isolation']],[.015,-.31,1.91]),('pump_hot',[n for n in ps if n.startswith('g16_hot_')and('EWP80'in n or'filter_regulator'in n or'pump_'in n)],[.015,0,1.78]),('degas_rest',[n for n in ps if n.startswith('g16_low_water_working')or n=='g16_degas_return_guard_service'],[-.07,.31,2.20]),('degas_hot',[n for n in ps if n.startswith('g16_hot_water_working')],[-.07,-.31,2.20]),('degas_188',[n for n in ps if n.startswith('g18_188_degas')],[-.07,0,2.58]),('oil_reservoir',[n for n in ps if n.startswith('g16_oil_working')or n=='e2_shared_unload_relief_accumulator_reserve'],[.015,0,1.66])]
+for n,ids,c in other:group(n,ids,I,c if arg.variant=='b'else np.array(c)+[0,0,.10],function='complete original function, fluid fill aliases once; vent/sensor/pump qualification open')
+E=np.array([[0,1,0],[0,0,1],[1,0,0.]])
+for i in range(4):
+ ids=[n for n in ps if n.startswith('g23_pack_'+str(i)+'_')];oldQ=np.array([[0,-1,0],[1,0,0],[0,0,1.]])
+ Q=E@oldQ.T if arg.variant=='b'else I
+ group('energy_'+str(i),ids,Q,[.25 if i<2 else-.25,.145 if i%2==0 else-.145,2.20]if arg.variant=='b'else None,T=None if arg.variant=='b'else[0,0,0],function='complete180cell18s10p/19net pack + all aux/service, four external series72s10p unconnected')
+obj={'robot_id':'gorilla_v0_1','candidate':'g24_thermoenergy_'+arg.variant,'parts':parts,'complete_groups':groups,'source_sha256':input_sha,'whole_context_source':str(S.relative_to(R)),'visible_shell_changed_mm':0,'all_original_function_ids_once':len(used)==len(parts),'original_core_A_bound_is_context_only_newB_core_pending':True,'fullbody_M_COM_I':None,'physical_accepted':False,'all_moved_interfaces_require_new_routes':True,'old_global_fluid_hypotheses_not_final_stock':True}
+with gzip.GzipFile(filename='',fileobj=(D/'scene.json.gz').open('wb'),mode='wb',mtime=0)as z:z.write(json.dumps(obj,separators=(',',':'),allow_nan=False).encode())
+pack=[]
+for i in range(4):
+ g=next(q for q in groups if q['id']=='energy_'+str(i));Q=np.array(g['world_R']);T=np.array(g['world_T_m']);oldpl=s['module_placements'][i];ports=[{**p,'world_lug_center_m':(Q@np.array(p['world_lug_center_m'])+T).tolist()}for p in oldpl['new_HV_ports']];pack.append({'index':i,'group':g,'HV_ports':ports,'actual_local_module_to_world_R':(Q@np.array(oldpl['rotation'])).tolist(),'actual_local_module_to_world_T_m':(Q@np.array(oldpl['center_world_m'])+T).tolist()})
+ownput('placements.json',{'source_sha256':sha(D/'scene.json.gz'),'groups':groups,'packs':pack,'OEM_ports_exact_unspecified_except_actual_energyHV':True,'72s10p_external_electrical_interconnect_absent':True});print(json.dumps({'variant':arg.variant,'parts':len(parts),'groups':len(groups),'source_sha256':sha(D/'scene.json.gz'),'all_R_det':[round(float(np.linalg.det(np.array(g['world_R']))),3)for g in groups],'pack_placements':[{k:p[k]for k in ['index','actual_local_module_to_world_R','actual_local_module_to_world_T_m']}for p in pack]},indent=2),flush=True)

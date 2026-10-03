@@ -1,0 +1,46 @@
+"""Read-only finite-source review of frozen G2 modules. No geometry repair."""
+from pathlib import Path
+import hashlib,json,sys,math
+import numpy as np
+R=Path('/home/ethan/Projects/Sai_Rotbots'); O=Path(__file__).resolve().parent
+sys.path.insert(0,str(R/'.scratch/gorilla_internal_g_material_contract'))
+from native_signed_material import validate_scene,kernel
+sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+reviews=[]; bindings=[]
+for group,filenames,scene in [('rotary_waist',['manifest.json'],'scene.json'),('lower_chain',['manifest.json'],'chain_scene.json'),('hand_allocation',['manifest.json','selected_installation_manifest.json'],'selected_installation_scene.json')]:
+ base=R/'.scratch'/('gorilla_internal_g2_'+group)
+ for fn in filenames:
+  f=base/fn;d=json.loads(f.read_text());rows=d.get('files',d.get('outputs',[]));bad=[]
+  for x in rows:
+   p=Path(x['path']);p=p if p.is_absolute() else base/p
+   if not p.is_file() or sha(p)!=x['sha256']:bad.append(str(p))
+  assert not bad,bad
+  bindings.append({'manifest_path':str(f.relative_to(R)),'sha256':sha(f),'listed_files':len(rows),'hash_mismatches':bad})
+ p=base/scene;before=sha(p);d=json.loads(p.read_text());check=validate_scene(d)
+ assert sha(p)==before
+ reviews.append({'scope':group,'source_path':str(p.relative_to(R)),'source_sha256':before,'parts':len(d['parts']),'resource_contract_pass':check['resource_contract_pass'],'duplicate_ids':check['duplicate_ids'],'failed_parts':[{'id':x['id'],'errors':x['errors']} for x in check['parts'] if not x['resource_contract_pass']]})
+ print(group,len(d['parts']),'resource',check['resource_contract_pass'],flush=True)
+# Independent direct Mesh64 witness for the retained bridge intrusion.
+h=json.loads((R/'.scratch/gorilla_internal_g2_hand_allocation/selected_installation_scene.json').read_text());ps={x['name']:x for x in h['parts']}
+ks={n:kernel(p['vertices_world_m'],p['faces']) for n,p in ps.items()}
+witness=float((ks['g2_pitch_yaw_external_bridge_3']^ks['g2_wrist_yaw_motor']).volume())
+assert math.isclose(witness,1.4697209812421645e-6,rel_tol=1e-9,abs_tol=1e-12)
+# A complete real carriage channel at the stated 21 positions, same finite parts.
+pre='g2_hand_1';ids=[pre+x for x in ['_nut_carriage','_complete_nut_with_flat_seat','_nut_axial_retainer','_carriage_guide_bush_-1','_carriage_guide_bush_1']]
+fixed=[n for n in ps if n.startswith(pre+'_') and n not in ids and not n.endswith(('_sheath','_tendon'))]
+hits=[];operations=0
+for dz in np.linspace(-.180,0,21):
+ for a in ids:
+  m=ks[a].translate([0,0,float(dz)]);ab=np.asarray(m.bounding_box())
+  for b in fixed:
+   bb=np.asarray(ks[b].bounding_box())
+   if np.any(np.minimum(ab[3:],bb[3:])-np.maximum(ab[:3],bb[:3])<=1e-8):continue
+   v=float((m^ks[b]).volume());operations+=1
+   if v>1e-9:hits.append({'a':a,'b':b,'offset_m':float(dz),'volume_m3':v})
+assert not hits
+# Independently check the pure-torsion pressure sensitivity, not an assembly loadpath.
+P=3000*9.81;T=P*(.250-(-.020));J=math.pi*(.048**4-.028**4)/32
+vm=math.sqrt(3)*T*.024/J/1e6
+assert math.isclose(vm,716.8117593527845,rel_tol=1e-12)
+receipt={'robot_id':'gorilla_v0_1','entry_sha256':sha(Path(__file__)),'validator_sha256':sha(R/'.scratch/gorilla_internal_g_material_contract/native_signed_material.py'),'resource_reviews':reviews,'manifest_bindings':bindings,'independent_bridge_witness_volume_cm3':witness*1e6,'independent_one_channel':{'channel':pre,'positions':21,'stroke_m':.180,'positive_hits':hits,'kernel_intersection_operations':operations,'sampled_scope_only':True},'forefoot_3t_pure_torsion_sensitivity':{'force_N':P,'CoP_x_m':.250,'hinge_x_m':-.020,'torque_Nm':T,'OD_ID_m':[.048,.028],'von_mises_MPa':vm,'pure_torsion_not_qualified_reaction_allocation':True},'visual_review':['final 44part waist/original armor same-source four-view; limbs omitted','final lower B original armor LEFT','actual selected hand carriage three stroke positions'],'all_module_installation_accepted':False,'physics_accepted':False,'aesthetic_accepted':False,'stable_si':False,'original_AA3_or_C15_source_modified':False,'software_ci':{'commit':'298bf1c1636fc625ec03c8fb1d0e27b7aa098814','runs':[37081902757,37081896275],'conclusion':'success','scope':'software/build/existingrobot, not Gorilla physical qualification'}}
+(O/'independent_review.json').write_text(json.dumps(receipt,indent=2)+'\n');print('review saved',flush=True)

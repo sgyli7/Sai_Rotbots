@@ -1,0 +1,116 @@
+"""Gorilla G23 physically reoriented complete three-axis component-family candidate, limited own finite prototype."""
+from pathlib import Path
+import json,gzip,hashlib,math,argparse
+import numpy as np,manifold3d as mf,gmsh
+O=Path(__file__).resolve().parent;ROOT=next(p for p in O.parents if(p/'sai_robots_engineering_rules.md').is_file());sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();put=lambda p,d:Path(p).write_text(json.dumps(d,indent=2,allow_nan=False)+'\n');ap=argparse.ArgumentParser();ap.add_argument('--variant',choices=['a','b'],required=True);arg=ap.parse_args();D=O/('native_only_'+arg.variant);D.mkdir(exist_ok=False);(D/'producer_source.py').write_bytes(Path(__file__).read_bytes());contract=json.loads((O/'interface_contract.json').read_text())[arg.variant]
+class DummyOCC:
+ def __init__(self):self.n=0
+ def tag(self):self.n+=1;return self.n
+ def addCylinder(self,*a):return self.tag()
+ def addCone(self,*a):return self.tag()
+ def addBox(self,*a):return self.tag()
+ def affineTransform(self,*a):pass
+ def copy(self,ds):return[(3,self.tag())for d,t in ds]
+ def fuse(self,a,b,**kw):return([(3,self.tag())],{})
+ def cut(self,a,b,**kw):return([(3,self.tag())],{})
+oc=DummyOCC();N=96;parts=[];cad=[];ledger=[];C=np.zeros(3);AX=np.array([0.,1,0]);U=np.array([1.,0,0]);V=np.array([0.,0,-1]);rho=2700
+class Shape:
+ def __init__(self,m,t):self.m=m;self.t=t
+ def op(self,b,op):
+  tt,_=getattr(oc,'fuse'if op=='add'else'cut')([(3,t)for t in self.t],[(3,t)for t in b.t],removeObject=True,removeTool=True);return Shape(self.m+b.m if op=='add'else self.m-b.m,[t for d,t in tt if d==3])
+ def __add__(self,b):return self.op(b,'add')
+ def __sub__(self,b):return self.op(b,'sub')
+ def copy(self):return Shape(self.m,[t for d,t in oc.copy([(3,t)for t in self.t])if d==3])
+def p(q,x=0,z=0):return C+AX*q+U*x+V*z
+def cy(q,r,L,x=0,z=0):
+ c=p(q,x,z);a=c-AX*L/2;return Shape(mf.Manifold.cylinder(L,r,r,N,True).transform(np.column_stack([U,V,AX,c])),[oc.addCylinder(*a,*(AX*L),r)])
+def ring(q,ro,ri,L,x=0,z=0):return cy(q,ro,L,x,z)-cy(q,ri,L+.004,x,z)
+def worldbox(c,di):
+ c=np.array(c);di=np.array(di);return Shape(mf.Manifold.cube(di,True).translate(c),[oc.addBox(*(c-di/2),*di)])
+def closedbox(c,di,t):return worldbox(c,di)-worldbox(c,np.array(di)-2*t)
+def localbox(q,dx,L,dz,x=0,z=0):
+ c=p(q,x,z);m=mf.Manifold.cube([dx,dz,L],True).transform(np.column_stack([U,V,AX,c]));tag=oc.addBox(-dx/2,-dz/2,-L/2,dx,dz,L);oc.affineTransform([(3,tag)],np.vstack([np.column_stack([U,V,AX,c]),[0,0,0,1]]).reshape(-1).tolist());return Shape(m,[tag])
+def bolt(seat,r,L,rh,Lh,x,z,dr=1):return cy(seat+dr*(.0001-L)/2,r,L+.0001,x,z)+cy(seat+dr*Lh/2,rh,Lh,x,z)
+def add(name,s,body,role,density=rho,mass=None,**extra):
+ assert s.m.status()==mf.Error.NoError and s.m.volume()>1e-10,(name,s.m.status());me=s.m.to_mesh64();tags=[t for d,t in oc.copy([(3,t)for t in s.t])if d==3];name='g23_'+arg.variant+'_'+name;row={'name':name,'body':body,'role':role,'vertices_world_m':np.array(me.vert_properties)[:,:3].tolist(),'faces':np.array(me.tri_verts).tolist(),'finite_material':density is not None,'density_kg_m3':density,'rgba':[.24,.38,.43,1.]if density else[.75,.6,.3,.2],'physical_connection_admitted':False,'same_owner_not_connection_proof':True,**extra}
+ if mass is not None:row['mass_range_kg']=mass
+ if density is None:row.update(OEM_net_material_unknown=True,full_COM_I_unknown=True,reference_volume_not_mass_inertia=True)
+ parts.append(row);cad.append({'name':name,'OCC_solid_tags':tags,'density_kg_m3':density,'native_volume_m3':s.m.volume()});return row
+# Actual complete component/supported shaft stack, with all undeveloped functions protected explicitly.
+reaction_parts={};output_parts={};moving=[]
+for j in contract['joints']:
+ id=j['id'].split('_')[-1];C=np.array(j['pivot_world_m']);AX=np.array(j['axis_world']);U=np.array(j['basis_u_world']);V=np.array(j['basis_v_world']);g=j['official_component_set'];L=g['axial_m'];H=j['complete_motor']['stator_H_m'];parent=j['parent_body'];output=j['output_body'];inputbody='g23_'+id+'_input';first=L+.015;second=first+H+.030;mq=first+.015+H/2;R=max(g['OD_m']/2+.018,.108);ri=max(g['OD_m']/2+.002,.087);rofs=g['FS_OD_m']/2;fsh=g['FS_closed_axial_m'];csH=.0305 if id=='pitch'else.023
+ add(id+'_CS_official_gross',ring(L-csH/2,g['OD_m']/2,rofs-.002,csH),parent,'protected_OEM_component_gross_reference',density=None,CS_fixed_plane_q_m=L,official_dimensions_gross_not_net=True)
+ add(id+'_FS_official_gross',ring(fsh/2,rofs,g['FS_bore_m']/2,fsh),output,'protected_OEM_component_gross_reference',density=None,FS_output_plane_q_m=0,official_dimensions_gross_not_net=True)
+ add(id+'_WG_official_gross',ring(L-.016,rofs-.004,g['WG_bore_m']/2,.032),inputbody,'protected_OEM_component_gross_reference',density=None,WG_OD_internal_profile_unknown=True)
+ ledger.append({'id':id+'_CSG_serialized_set_once','mass_range_kg':[g['mass_kg']]*3,'members':['g23_'+arg.variant+'_'+id+'_'+k+'_official_gross'for k in['CS','FS','WG']],'actual_CS_FS_WG_mass_split_COM_fullI_unknown':True})
+ # Reaction shell all CS fix/input seats/output load seats are actual finite material.
+ # Continuous finite loadcase with independent actual bearing-seat branches.
+ receiver=ring((-.130+second+.058)/2,R,ri,second+.188)
+ receiver=receiver+ring(L+.006,R,rofs-.002,.012)
+ for oq in[-.050,-.110]:receiver=receiver+ring(oq,R,.0551,.008)+ring(oq,.065,.0551,.03575)
+ for iq in[first,second]:receiver=receiver+ring(iq,.036,.02605,.023)+ring(iq,R,.036,.008)
+ receiver=receiver+ring((L+second+.044)/2,.098,.091,second+.044-L)
+ # Water motor mount sleeve and finite isolating skins; known geometry but hydraulic/thermal function unknown.
+ sleeve=ring(mq,.091,.0801,H+.004);wet=ring(mq,.087,.083,max(H-.010,.005));sleeve=sleeve-wet.copy();receiver=receiver+sleeve
+ for k in range(16):
+  t=k*math.pi/8;x=g['CS_PCD_m']/2*math.cos(t);z=g['CS_PCD_m']/2*math.sin(t);receiver=receiver-cy(L+.005,g['CS_hole_m']/2+.0002,.032,x,z)
+  if arg.variant=='b':receiver=receiver-cy(L+.0145,.0067,.007,x,z)
+  add(id+'_CS_mount_bolt_'+str(k),bolt(L+.012,g['CS_hole_m']/2-.0005,.028,.0065,.005,x,z),parent,'finite_seat_derived_mount_bolt',density=7850,thread_preload_seatunknown=True)
+ reaction_parts[id]=receiver
+ out=ring(-.006,.052 if id=='pitch'else.040,.020 if id=='pitch'else.014,.012)+ring(-.024,.0249 if id=='pitch'else.0199,.020 if id=='pitch'else.014,.038)+ring(-.085,.02995,.020 if id=='pitch'else.014,.110)+ring(-.149,.075,.020 if id=='pitch'else.014,.024)
+ # A closed output load ear has overlap to annular load ring, no shaft blanket torque assumption.
+ out=out+localbox(-.166,.095,.022,.138)-localbox(-.166,.079,.006,.122)
+ for k in range(8):
+  t=k*math.pi/4;x=g['FS_PCD_m']/2*math.cos(t);z=g['FS_PCD_m']/2*math.sin(t);out=out-cy(-.006,g['FS_hole_m']/2+.0002,.018,x,z)
+ output_parts[id]=out
+ for k,oq in enumerate([-.050,-.110]):add(id+'_output_SKF32212_'+str(k),ring(oq,.055,.030,.02975),'mixed_bearing_races','catalogue_complete_bearing_gross_reference',density=None,mass=[1.15]*3,real_pressure_center_preload_moment_unknown=True)
+ # True reduced WG engagement, finite shoulder transition, then full bearing shaft.
+ engagement_r=g['WG_bore_m']/2-.00005;small_a=L-.036;small_b=L+.002;main_a=L+.006;main_b=second+.018
+ shaft=cy((small_a+small_b)/2,engagement_r,small_b-small_a+.00010)
+ cc=p((small_b+main_a)/2);aa=cc-AX*(main_a-small_b)/2
+ shaft=shaft+Shape(mf.Manifold.cylinder(main_a-small_b,engagement_r,.01245,N,True).transform(np.column_stack([U,V,AX,cc])),[oc.addCone(*aa,*(AX*(main_a-small_b)),engagement_r,.01245)])
+ shaft=shaft+cy((main_a+main_b)/2,.01245,main_b-main_a+.00010)
+ add(id+'_input_two_seat_stepped_shaft',shaft,inputbody,'finite_input_stepped_shaft',density=7850,WG_key_transfer_and_input_axial_hold_unknown=True)
+ for k,iq in enumerate([first,second]):add(id+'_input_SKF7205BEP_'+str(k),ring(iq,.026,.0125,.015),'mixed_bearing_races','catalogue_complete_bearing_gross_reference',density=None,mass=[.125,.13,.13],DB_hypothesis_pressurecenter_preload_unknown=True)
+ add(id+'_motor_stator_complete',ring(mq,.080,.0705,H),parent,'protected_OEM_motor_gross_reference',density=None,mass=[j['complete_motor']['stator_mass_kg']]*3,official_H_OD_used_other_internalgeometry_unknown=True)
+ add(id+'_motor_rotor_complete',ring(mq,.066,.0555,j['complete_motor']['rotor_H_m']),inputbody,'protected_OEM_motor_gross_reference',density=None,mass=[j['complete_motor']['rotor_mass_kg']]*3,rotor_OD_profile_assumed_not_OEM_material=True,polar_I_only_kg_m2=j['complete_motor']['rotor_polar_I_kg_m2'])
+ add(id+'_rotor_holder_spider',ring(mq,.0554,.048,j['complete_motor']['rotor_H_m'])+ring(mq-j['complete_motor']['rotor_H_m']/2+.002,.0554,.01245,.004),inputbody,'finite_input_rotor_holder',density=2700,actualrotor_jointunknown=True)
+ add(id+'_TIM',ring(mq,.0801,.080,H),parent,'finite_TIM_contact_hypothesis',density=1800,thermal_contact_k_pressureunknown=True)
+ add(id+'_water_connected_installation',wet,parent,'water_functional_void_reference',density=None,four_actual_ports_and_seal_CAD_not_completed=True,wet_wall_pressure_flow_thermalunknown=True)
+ add(id+'_dry_brake_complete',ring(second+.036,.086,.028,.044),parent,'complete_brake_function_protected_reference',density=None,mass=[1.5,2.8,4.5],complete_rotor_liners_plate_springs_yoke_coil_release_unknown=True,not_actual_finite_brake_CAD=True)
+ add(id+'_dualencoder_and_connector',localbox(second+.015,.035,.060,.045,x=.095),parent,'complete_feedback_power_reference',density=None,mass=[.12,.30,.55],input_output_encoder_loops_full_envelope_not_selected_SKUs=True)
+ add(id+'_fullcontroller',localbox(mq,.045,.105,.075,x=R+.040),parent,'complete_driver_reference',density=None,mass=[.7,1.1,1.8],actual_driver_bus_thermalunknown=True)
+ add(id+'_water_ports_and_loop',localbox(mq,.024,H+.055,.024,z=R+.013),parent,'complete_water_ports_hose_reference',density=None,mass=[.10,.22,.40],fitting_bendradius_flowunknown=True)
+ add(id+'_Zlead_powerloop',localbox(mq-H/2-.00275,.040,.0555,.035,z=-R-.02),parent,'complete_power_wire_reference',density=None,mass=[.10,.22,.40],realZ_projection_m=.0055,motorandencoders_fullwiremass_not0=True)
+ j.update(input_pair_world_m=[p(q).tolist()for q in[first,second]],output_pair_world_m=[p(q).tolist()for q in[-.05,-.11]],output_pair_spacing_m=.060,output_stack_actual_q_min_m=-.177,protected_installation_updated_due_headjournal_clearance=True,actual_complete_detail_CAD=False)
+# Common fixed pitch receiver and exact new candidate core face. Single actual material design.
+pitch=contract['joints'][0];C=np.array(pitch['pivot_world_m']);AX=np.array(pitch['axis_world']);U=np.array(pitch['basis_u_world']);V=np.array(pitch['basis_v_world'])
+R=max(pitch['official_component_set']['OD_m']/2+.018,.108);boxlo=C[0]+R-.007;boxhi=.115
+center=[(boxlo+boxhi)/2,C[1]-.060,C[2]];dims=[boxhi-boxlo,.220,.260]
+core=closedbox(center,dims,.008)+reaction_parts['pitch']
+add('core_fixed_receiver_continuous_candidate',core,'torso','finite_joint_core_shared_loadcase',density=rho,core_mate_plane_x_m=.115,actual_holes_on_core_plane_not_completed=True,material_grade_E_yield_fatigue_unknown=True)
+# Each moving transfer is one newly generated continuous loadcase, with terminal and downstream case seats.
+for a,b in[(0,1),(1,2)]:
+ ja,jb=contract['joints'][a],contract['joints'][b];ident=ja['id'].split('_')[-1];nident=jb['id'].split('_')[-1]
+ pc=np.array(ja['pivot_world_m'])+np.array(ja['axis_world'])*(-.166)
+ Rb=max(jb['official_component_set']['OD_m']/2+.018,.108)
+ bc=np.array(jb['pivot_world_m'])+np.array(jb['axis_world'])*(jb['official_component_set']['axial_m']+.006)+np.array(jb['basis_u_world'])*(Rb-.006)
+ mid=(pc+bc)/2;dim=np.maximum(np.abs(pc-bc)+np.array([.065,.065,.060]),[.100,.080,.100]);sh=closedbox(mid,dim,.008)
+ # Functional case void must be real, not opaque interstage steel.
+ C=np.array(jb['pivot_world_m']);AX=np.array(jb['axis_world']);U=np.array(jb['basis_u_world']);V=np.array(jb['basis_v_world'])
+ sh=sh-cy((-.130+jb['official_component_set']['axial_m']+.120)/2,Rb-.021,jb['official_component_set']['axial_m']+.250)
+ carrier=output_parts[ident]+sh+reaction_parts[nident]
+ add(ident+'_moving_loadcase_and_'+nident+'_fixed_receiver',carrier,ja['output_body'],'finite_monolithic_serial_transfer_loadcase',density=rho,source_function_components=[ident+'_output_journal',ident+'_closed_transfer',nident+'_case_support'],actual_boolean_material_roots_must_be_checked=True,upstream_FS_and_downstream_CS_bolted_connections_not_qualified=True,downstream_case_axis_world=jb['axis_world'])
+yaw=contract['joints'][2];C=np.array(yaw['pivot_world_m']);AX=np.array(yaw['axis_world']);U=np.array(yaw['basis_u_world']);V=np.array(yaw['basis_v_world'])
+add('yaw_output_journal_and_arm_terminal',output_parts['yaw'],yaw['output_body'],'finite_output_load_carrier',density=7850,downstream_mate_world_m=p(-.177).tolist(),new_upper_arm_adapter_not_completed=True)
+# Actual native geometry preview; CAD producer runs independently, CAD properties UNKNOWN here.
+for row in parts:
+ if row['finite_material']:
+  row['mass_range_kg']=None
+  row['CAD_identity_pending']=True
+scene={'robot_id':'gorilla_v0_1','candidate':'g23_'+arg.variant+'_native_preview','producer_sha256':sha(D/'producer_source.py'),'paired_native_CAD_producer_sha256':sha(O/'build_forward_serial_b.py'),'parts':parts,'joint_interfaces':contract['joints'],'whole_component_mass_rows':ledger,'original_armor_change_mm':0,'CAD_preview_not_a_BREP':True,'physical_accepted':False}
+with(D/'scene.json.gz').open('wb')as f:
+ with gzip.GzipFile(filename='',mode='wb',fileobj=f,mtime=0)as z:z.write(json.dumps(scene,separators=(',',':'),allow_nan=False).encode())
+put(D/'interfaces.json',contract)
+print('G23_ACTUAL_NATIVE_PREVIEW',arg.variant,len(parts),sha(D/'scene.json.gz'),flush=True)

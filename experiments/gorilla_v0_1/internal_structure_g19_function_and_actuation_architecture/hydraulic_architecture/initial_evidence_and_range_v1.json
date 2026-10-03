@@ -1,0 +1,72 @@
+{
+  "schema": "gorilla_g19_hydraulic_initial_evidence_v1",
+  "created_utc": "2026-10-03T11:57:00Z",
+  "architecture_admission": false,
+  "scope": "bounded research; not complete assembled hardware, rating, or whole-body mass",
+  "baseline_complete_18holding_18directional_kg": 213.05891107156788,
+  "baseline_source": ".scratch/gorilla_internal_f1_system/module_templates/module_templates_spec.json",
+  "baseline_source_sha256": "71a8589b3e91c2613d7b3c7d299e95a6bdb761db68e8656363a6f56aeafe96cf",
+  "A_low_pressure_candidate": {
+    "holding_reference": {
+      "model": "A-VBSO-DE-78-FC2",
+      "complete_OEM_mass_kg": 1.2,
+      "full_reference_dims_m": [
+        0.213,
+        0.045,
+        0.0245
+      ],
+      "maximum_pressure_bar": 350,
+      "maximum_flow_Lmin": 40,
+      "setting_minimum_load_multiple": 1.3,
+      "ports": "V1/V2 G1/4; C1/C2 gasket \u00d86mm",
+      "pilot_ratio": 4.1,
+      "counterbalance_backpressure_additive": true
+    },
+    "directional_reference": {
+      "model": "SP10-47C",
+      "bare_cartridge_mass_kg": 0.27,
+      "full_D_coils_drawing_projection_dims_m": [
+        0.1948,
+        0.0635,
+        0.0318
+      ],
+      "dims_scope": "194.8=112.2 above mount+82.6 linebody; drawing excludes full mating plugs/fittings/guard; coil DR radial appendix may govern width",
+      "maximum_pressure_bar": 250,
+      "maximum_flow_Lmin": 22.7,
+      "neutral_leak_Lmin_at207bar": 0.31,
+      "continuous_solenoid_not_complete_thermal_rating": true
+    },
+    "coil_reference": {
+      "model": "10-DR 12V or24V",
+      "per_coil_mass_kg": 0.304,
+      "coils_per_directional": 2,
+      "initial_power_per_energized_coil_W": 20,
+      "controlled_SP12V_current_A": 1.2,
+      "room12V_resistance_ohm": 7.2
+    },
+    "bare_plus_OEM_holding_per_axis_kg": 2.078,
+    "complete_custom_package_mass_kg": "pending explicit full budget; bare subtotal not credit"
+  },
+  "B_complete_EHA_reference": {
+    "model": "Moog S EPU019ADxxS0C, RevL February2026",
+    "pump_motor_unit_mass_kg": 50.1,
+    "length_m": 0.546,
+    "radial_complete_envelope": "not yet fully determined; use installation drawings, not scaled raster",
+    "displacement_m3_rev": 1.9e-05,
+    "maximum_flow_Lmin": 85,
+    "maximum_operating_pressure_bar": 350,
+    "continuous_stall_torque_Nm": 40,
+    "rated_torque_Nm": 22,
+    "rated_speed_rpm": 3000,
+    "performance_voltage_Vdc": 565,
+    "18_unit_mass_before_hold_etc_kg": 901.8000000000001,
+    "complete_drive_manifold_charge_hold_cooling_not_included": true
+  },
+  "current_unknowns": [
+    "current hydraulic axis family/force/J(q) and continuous duty",
+    "complete local manifold pressure/port geometry/installation",
+    "load control under overrun/cold viscosity/return pressure",
+    "EHA low pressure/case drain/charge/cooling/inverter and80s compatibility",
+    "all new physical acceptance false; yellow only supply"
+  ]
+}

@@ -1,0 +1,76 @@
+"""Root independent audit: geometry preservation does not mean FE quality."""
+from pathlib import Path
+import hashlib
+import json
+import itertools
+from fractions import Fraction
+import numpy as np
+from scipy.sparse import coo_matrix
+from scipy.sparse.csgraph import connected_components
+
+ROOT = Path(__file__).resolve().parents[2]
+DOMAIN = ROOT / '.scratch/gorilla_internal_g6_3d_domain_review'
+SOURCE = ROOT / '.scratch/gorilla_internal_g4_pitch_module/module_scene.json'
+MESH = DOMAIN / 'geometry_tetra.npz'
+sha = lambda p: hashlib.sha256(p.read_bytes()).hexdigest()
+if sha(SOURCE) != '9a88efe894625e7ed3d3f15e544ead7b574382035594ab8d4b81f530fbb7b21a':
+    raise ValueError('Frozen source mismatch')
+source = json.loads(SOURCE.read_text())
+part = next(p for p in source['parts'] if p['name']=='g4_child_load_carrier')
+native_nodes = np.asarray(part['vertices_world_m'])
+native_faces = np.asarray(part['faces'])
+data = np.load(MESH)
+nodes, cells = data['points_m'], data['tetra']
+faces, markers = data['boundary_faces'], data['native_face_markers_1based']
+p = nodes[cells]
+signed = np.einsum('ij,ij->i', np.cross(p[:,1]-p[:,0], p[:,2]-p[:,0]), p[:,3]-p[:,0])/6
+volume = np.abs(signed)
+length_squared = np.stack([np.sum((p[:,a]-p[:,b])**2, axis=1) for a,b in itertools.combinations(range(4),2)], axis=1)
+quality = 12*np.cbrt((3*volume)**2)/length_squared.sum(axis=1)
+edges = np.vstack([cells[:,[a,b]] for a,b in itertools.combinations(range(4),2)])
+adjacency = coo_matrix((np.ones(len(edges)), (edges[:,0],edges[:,1])), shape=(len(nodes),len(nodes))).tocsr()
+roots, labels = connected_components(adjacency, directed=False)
+area = lambda points, fs: np.linalg.norm(np.cross(points[fs[:,1]]-points[fs[:,0]], points[fs[:,2]]-points[fs[:,0]]), axis=1)/2
+native_area = area(native_nodes,native_faces)
+mesh_area = np.bincount(markers-1, weights=area(nodes,faces), minlength=len(native_faces))
+if len(mesh_area)!=len(native_area):
+    raise ValueError('Unexpected native boundary markers')
+native_tri = native_nodes[native_faces]
+native_volume = float(np.einsum('ij,ij->i',native_tri[:,0],np.cross(native_tri[:,1],native_tri[:,2])).sum()/6)
+exact_small = []
+for index in np.flatnonzero(volume<=1e-20):
+    # Exact rational arithmetic on the stored IEEE coordinates, not a repair.
+    q = [[Fraction.from_float(float(v)) for v in row] for row in p[index]]
+    a, b, c = [[row[j]-q[0][j] for j in range(3)] for row in q[1:]]
+    determinant = a[0]*(b[1]*c[2]-b[2]*c[1])-a[1]*(b[0]*c[2]-b[2]*c[0])+a[2]*(b[0]*c[1]-b[1]*c[0])
+    exact_small.append({'tet_index':int(index), 'exact_stored_coordinate_sign':(determinant>0)-(determinant<0),
+                        'exact_rational_volume_rounded_m3':float(determinant/6),
+                        'cross_dot_float_volume_m3':float(signed[index])})
+report = {
+    'source_sha256': sha(SOURCE), 'mesh_sha256': sha(MESH),
+    'nodes':len(nodes), 'tetrahedra':len(cells), 'boundary_faces':len(faces),
+    'material_node_graph_roots':int(roots),
+    'unused_nodes':int(len(nodes)-len(np.unique(cells))),
+    'native_signed_volume_m3':native_volume,
+    'tetra_volume_m3':float(volume.sum()),
+    'relative_volume_error':float(abs(volume.sum()-native_volume)/native_volume),
+    'negative_or_zero_signed_tet_count':int(np.sum(signed<=0)),
+    'minimum_tetra_volume_m3':float(volume.min()),
+    'maximum_tetra_volume_m3':float(volume.max()),
+    'maximum_tetra_edge_m':float(np.sqrt(length_squared.max())),
+    'mean_ratio_quality_quantiles':np.quantile(quality,[0,.01,.05,.5,.95,1]).tolist(),
+    'tetra_quality_below_0_01':int(np.sum(quality<.01)),
+    'tetra_volume_below_root_assembler_guard_1e_20':int(np.sum(volume<=1e-20)),
+    'near_degenerate_stored_coordinate_exact_predicate':exact_small,
+    'near_degenerate_exact_negative_or_zero_count':sum(v['exact_stored_coordinate_sign']<=0 for v in exact_small),
+    'max_native_boundary_facet_area_error_m2':float(abs(mesh_area-native_area).max()),
+    'geometry_volume_boundary_and_connectivity_limited_pass':bool(roots==1 and abs(volume.sum()-native_volume)/native_volume<1e-10 and abs(mesh_area-native_area).max()<1e-12),
+    'structural_FE_admissible':False,
+    'actual_robot_FE_solved':False,
+    'decision':'Reject stiffness/stress/optimization use: severe sliver tetrahedra and inadequate global sizing; geometry-only evidence.',
+    'physical_release':False,
+    'producer_sha256':sha(Path(__file__)),
+}
+out=Path(__file__).with_suffix('.json')
+out.write_text(json.dumps(report,indent=2)+'\n')
+print(json.dumps(report,indent=2))

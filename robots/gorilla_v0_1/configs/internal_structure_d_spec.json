@@ -1,0 +1,238 @@
+{
+  "robot_id": "gorilla_v0_1",
+  "candidate": "internal_structure_d",
+  "schema": "gorilla_distributed_layout_spec_v1",
+  "material": {
+    "id": "s355j2h_conditional",
+    "density_kg_m3": 7850,
+    "young_modulus_Pa": 210000000000,
+    "poisson_ratio": 0.3,
+    "minimum_yield_Pa": 355000000,
+    "candidate_wall_range_m": [
+      0.006,
+      0.01
+    ],
+    "properties_basis": "SSAB 355J2H material product, 3-12.5 mm wall; ambient elastic coefficients and density from SSAB handbook section 1.6.3. Custom bent/welded members still require material certificates and joint/HAZ qualification.",
+    "sources": [
+      "https://www.ssab.com/en/brands-and-products/ssab-domex/product-offer/tube-355-j2h",
+      "https://www.ssab.com/-/media/files/en/infra/news-and-articles/ssab-domex-tube-structural-hollow-sections-en-1993-handbook.pdf",
+      "https://steelconstruction.info/topics/design/steel-material-properties/"
+    ]
+  },
+  "armor_density_range_kg_m3_hypothesis": [
+    1300,
+    2000,
+    2800
+  ],
+  "pad_density_range_kg_m3_hypothesis": [
+    1100,
+    1250,
+    1500
+  ],
+  "candidate_pose_angles_deg": {
+    "neutral": {
+      "hip": 0,
+      "knee": 0,
+      "fold": 0,
+      "ankle": 0,
+      "torso": 0,
+      "shoulder": 0,
+      "elbow": 0
+    },
+    "crouch": {
+      "hip": -15,
+      "knee": 30,
+      "fold": -10,
+      "ankle": -5,
+      "torso": 0,
+      "shoulder": 0,
+      "elbow": 0
+    },
+    "forward_manipulation": {
+      "hip": -10,
+      "knee": 20,
+      "fold": -5,
+      "ankle": -5,
+      "torso": 10,
+      "shoulder": -60,
+      "elbow": 35
+    },
+    "deep_crouch_rejection_probe": {
+      "hip": -30,
+      "knee": 60,
+      "fold": -20,
+      "ankle": -10,
+      "torso": 10,
+      "shoulder": -45,
+      "elbow": 25
+    }
+  },
+  "gravity_m_s2": 9.80665,
+  "actuator_definitions": [
+    {
+      "id": "left_hip",
+      "A_neutral_world_m": [
+        -0.045,
+        0.245,
+        1.96
+      ],
+      "B_neutral_world_m": [
+        0.05500000000000001,
+        0.245,
+        1.66
+      ],
+      "bore_m": 0.05,
+      "rod_m": 0.025,
+      "stroke_design_m": 0.07165263491037897,
+      "zero_eye_design_m": 0.254575131106459,
+      "source": "D2 finite custom probe, not an OEM two-eye product or force rating"
+    },
+    {
+      "id": "left_knee",
+      "A_neutral_world_m": [
+        -0.06581533821449737,
+        0.333,
+        1.249640475199909
+      ],
+      "B_neutral_world_m": [
+        0.06999999999999999,
+        0.333,
+        0.97
+      ],
+      "bore_m": 0.08,
+      "rod_m": 0.035,
+      "stroke_design_m": 0.12315790721454505,
+      "zero_eye_design_m": 0.3008771485078137,
+      "source": "D2 finite custom probe, not an OEM two-eye product or force rating"
+    },
+    {
+      "id": "left_fold",
+      "A_neutral_world_m": [
+        -0.09827142094979555,
+        0.40499999999999997,
+        0.7690143695522489
+      ],
+      "B_neutral_world_m": [
+        -0.03499999999999999,
+        0.40499999999999997,
+        0.53
+      ],
+      "bore_m": 0.063,
+      "rod_m": 0.03,
+      "stroke_design_m": 0.04940132193699549,
+      "zero_eye_design_m": 0.20784580456089774,
+      "source": "D2 finite custom probe, not an OEM two-eye product or force rating"
+    },
+    {
+      "id": "left_ankle",
+      "A_neutral_world_m": [
+        -0.10751727365909984,
+        0.435,
+        0.4620384899217659
+      ],
+      "B_neutral_world_m": [
+        0.0,
+        0.435,
+        0.285
+      ],
+      "bore_m": 0.063,
+      "rod_m": 0.03,
+      "stroke_design_m": 0.03163739183696136,
+      "zero_eye_design_m": 0.1854920146915781,
+      "source": "D2 finite custom probe, not an OEM two-eye product or force rating"
+    },
+    {
+      "id": "right_hip",
+      "A_neutral_world_m": [
+        -0.045,
+        -0.245,
+        1.96
+      ],
+      "B_neutral_world_m": [
+        0.05500000000000001,
+        -0.245,
+        1.66
+      ],
+      "bore_m": 0.05,
+      "rod_m": 0.025,
+      "stroke_design_m": 0.07165263491037897,
+      "zero_eye_design_m": 0.254575131106459,
+      "source": "D2 finite custom probe, not an OEM two-eye product or force rating"
+    },
+    {
+      "id": "right_knee",
+      "A_neutral_world_m": [
+        -0.06581533821449737,
+        -0.333,
+        1.249640475199909
+      ],
+      "B_neutral_world_m": [
+        0.06999999999999999,
+        -0.333,
+        0.97
+      ],
+      "bore_m": 0.08,
+      "rod_m": 0.035,
+      "stroke_design_m": 0.12315790721454505,
+      "zero_eye_design_m": 0.3008771485078137,
+      "source": "D2 finite custom probe, not an OEM two-eye product or force rating"
+    },
+    {
+      "id": "right_fold",
+      "A_neutral_world_m": [
+        -0.09827142094979555,
+        -0.40499999999999997,
+        0.7690143695522489
+      ],
+      "B_neutral_world_m": [
+        -0.03499999999999999,
+        -0.40499999999999997,
+        0.53
+      ],
+      "bore_m": 0.063,
+      "rod_m": 0.03,
+      "stroke_design_m": 0.04940132193699549,
+      "zero_eye_design_m": 0.20784580456089774,
+      "source": "D2 finite custom probe, not an OEM two-eye product or force rating"
+    },
+    {
+      "id": "right_ankle",
+      "A_neutral_world_m": [
+        -0.10751727365909984,
+        -0.435,
+        0.4620384899217659
+      ],
+      "B_neutral_world_m": [
+        0.0,
+        -0.435,
+        0.285
+      ],
+      "bore_m": 0.063,
+      "rod_m": 0.03,
+      "stroke_design_m": 0.03163739183696136,
+      "zero_eye_design_m": 0.1854920146915781,
+      "source": "D2 finite custom probe, not an OEM two-eye product or force rating"
+    }
+  ],
+  "hydraulic_pump_pressure_Pa_hypothesis": 21000000.0,
+  "hydraulic_cylinder_supply_pressure_Pa_hypothesis": 20400000.0,
+  "hydraulic_return_pressure_Pa_hypothesis": 300000.0,
+  "hydraulic_pressure_scope": "Own diagnostic21MPa pump minus assumed0.6MPa metering;0.3MPa return. Not qualified pressure/held load/thermal capacity. Geometry D2 custom cyl uses independently stated21MPa design hypothesis.",
+  "physics_accepted": false,
+  "geometry_accepted": false,
+  "stable_physical_contract": false,
+  "base_scene": "experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_scene.json",
+  "base_scene_sha256": "7a1e49f45838303ca5fd86265dc9980c10cde85ed7626424136afd3863aa5886",
+  "geometry_spec": "robots/gorilla_v0_1/configs/appearance_c_spec.json",
+  "geometry_spec_sha256": "019bb6feee1d89432b6926bf2804c51f07dd74e87009a04169ce3bb16d7e279e",
+  "leg_scene": "robots/gorilla_v0_1/cad/source/internal_structure_d_leg_scene.json",
+  "leg_scene_sha256": "d016145fb438555ca7a5f4a47f9c42c553f311997bc7543c3d97920b5fa660e5",
+  "foot_scene": "robots/gorilla_v0_1/cad/source/internal_structure_d_foot_scene.json",
+  "foot_scene_sha256": "76f5194e8751103bb0e1dee17c916bd1ca0333acba8f093ba631af42bc7ce813",
+  "system_scene": "robots/gorilla_v0_1/cad/source/internal_structure_d_system_scene.json",
+  "system_scene_sha256": "70304549783e75e1116cd1b6d83e0942a86f2a5fb8edd6cdaa5747daeac57a57",
+  "system_spec": "robots/gorilla_v0_1/configs/internal_structure_d_system_spec.json",
+  "system_spec_sha256": "d988ef1a248405f47f34510a4f6191f4c6ea505cc7502c62905670cab81f6ad1",
+  "component_references": "robots/gorilla_v0_1/hardware/distributed_internal_component_references.md",
+  "component_references_sha256": "9fc82c4dcfd13e8e3a8a2fee53c29b8408c41da17170407d4386493f72388596"
+}

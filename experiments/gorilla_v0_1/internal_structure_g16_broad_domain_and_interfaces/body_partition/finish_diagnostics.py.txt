@@ -1,0 +1,62 @@
+#!/usr/bin/env python3
+import pathlib,json,gzip,hashlib,importlib.util,inspect,collections,sys
+import numpy as np,manifold3d as mf
+from PIL import Image,ImageDraw
+from OCP.BRep import BRep_Builder
+from OCP.TopoDS import TopoDS_Shape
+from OCP.BRepTools import BRepTools
+from OCP.BRepCheck import BRepCheck_Analyzer
+from OCP.TopAbs import TopAbs_FACE,TopAbs_EDGE,TopAbs_WIRE,TopAbs_SHELL,TopAbs_SOLID
+from OCP.TopExp import TopExp_Explorer
+from OCP.BRepGProp import BRepGProp
+from OCP.GProp import GProp_GProps
+from OCP.STEPControl import STEPControl_Writer,STEPControl_AsIs,STEPControl_Reader
+P=pathlib.Path(__file__).resolve().parent;R=P.parents[1]
+def sha(p):return hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
+def read(p):return json.load(gzip.open(p,'rt')) if str(p).endswith('.gz') else json.load(open(p))
+def wr(d,n,x):(d/n).write_text(json.dumps(x,indent=2,ensure_ascii=False)+'\n')
+sp=importlib.util.spec_from_file_location('g16finishhelpers',R/'.scratch/gorilla_internal_g14_complete_thermal_colayout/geometry_helpers.py');g=importlib.util.module_from_spec(sp);sp.loader.exec_module(g)
+# BoundedsameG15 invalidCAD inspection, no sourcewriting/repair.
+path=R/'.scratch/gorilla_internal_g15_thorax_functional_colayout/b/frame_baseline.brep';shape=TopoDS_Shape();builder=BRep_Builder();loaded=BRepTools.Read_s(shape,str(path),builder);an=BRepCheck_Analyzer(shape);stats=[]
+for label,typ in [('face',TopAbs_FACE),('edge',TopAbs_EDGE),('wire',TopAbs_WIRE),('shell',TopAbs_SHELL),('solid',TopAbs_SOLID)]:
+ ex=TopExp_Explorer(shape,typ);counts=collections.Counter();total=0;invalid=0;messages=[]
+ while ex.More():
+  sub=ex.Current();total+=1
+  try:
+   status=an.Result(sub).Status();names=[str(q) for q in status]
+  except Exception as e:names=['status_api_unknown:'+str(e)]
+  counts.update(names)
+  if not an.IsValid(sub):invalid+=1
+  ex.Next()
+ stats.append({'type':label,'count':total,'invalid_subshapes':invalid,'reportedstatus_counts':dict(counts)})
+old=read(R/'.scratch/gorilla_internal_g15_thorax_functional_colayout/b/scene.json.gz');p=next(p for p in old['parts'] if p['name']=='g15_chest_shoulder_waist_net_cage');vv,ff=g.h.triangles(p);edges=np.sort(np.concatenate([ff[:,[0,1]],ff[:,[1,2]],ff[:,[2,0]]]),axis=1);edges=np.unique(edges,axis=0);L=np.linalg.norm(vv[edges[:,0]]-vv[edges[:,1]],axis=1)
+wr(P,'previous_G15_CAD_failure_diagnosis.json',{'readonly_source_path':str(path),'source_sha256':sha(path),'OCC_loaded':bool(loaded),'sourceCAD_valid':bool(an.IsValid()),'original_triangle_soup_sewing_tol_m':1e-8,'subshape_diagnostics':stats,'native_distinct_edge_count':len(L),'minimum_native_edge_m':float(L.min()),'native_edges_below_sewing_tol':int((L<1e-8).sum()),'actual_diagnosis_scope':'inspect oldOCC failures and native tinyedges; no source/topology/normal repair or assumed sourcequalification','newG16_modeling_choice':'analytic primitiveOCC Cut/Fuse primaryCAD independent sameparameter nativefacet model; not triangle-soup sewing','thisdoesnotprove_oldinvalidcausedonlybytolerance':True})
+for lab in ['a','b']:
+ d=P/lab;s=read(d/'scene.json.gz');by={p['name']:p for p in s['parts']};domain=g.mm(by['g16_calculation_domain_with_explicit_caps']);frame=g.mm(by['g16_native_cage_CAD_parameter_mapping']);armor=set(s['original_visible_armor_ids']);afterservice=[p for p in s['parts'] if p['role']=='service_after_shell_removal'];fixed=[];fixedIDs=[];conditional=[];unknown=[]
+ # Currentcomplete functions exclude originalappearance and redoableowncage; oldmaterial carriers retained as specific pendingfunctional challenges, not permanentdesignwalls.
+ for p in s['parts']:
+  n=p['name'];r=p['role'];v=np.array(p['vertices_world_m']);lo=v.min(0);hi=v.max(0);db=np.array(domain.bounding_box()).reshape(2,3)
+  if n in armor or r in ['design_domain_bulk','service_after_shell_removal'] or n=='g16_native_cage_CAD_parameter_mapping':continue
+  if not np.all(hi>db[0]+1e-9) or not np.all(db[1]>lo+1e-9):continue
+  mk=g.mm(p)
+  if mk.status()!=mf.Error.NoError:unknown.append({'id':n,'status':str(mk.status()),'unknownnotempty':True});continue
+  # Nativeframe/carrier geometry remainsfunctionallyprovisional, not structurallyfrozen materialconstraint.
+  if any(q in n for q in ['load_shell_piece','carrier','net_stock']) and not 'g16_pack' in n:conditional.append((n,mk))
+  else:fixed.append(mk);fixedIDs.append(n)
+ fu=mf.Manifold.batch_boolean(fixed,mf.OpType.Add);cu=mf.Manifold.batch_boolean([m for n,m in conditional],mf.OpType.Add) if conditional else mf.Manifold();remain=domain-fu;remainwithold=remain-cu;service=mf.Manifold.batch_boolean([g.mm(p) for p in afterservice],mf.OpType.Add)
+ raw=g.nat(remain,'g16_computational_remaining_current_function_profiles','torso','designable_calculation_volume',[.2,.5,.85,.4],{'source_scene_SHA':sha(d/'scene.json.gz'),'not_material/not_mass/notcavityqualified':True,'old_carriers_NOTpermanent_non_designsolid':True});wr(d,'calculation_remaining_native.json',raw)
+ wr(d,'calculation_partition_receipt.json',{'scene_SHA':sha(d/'scene.json.gz'),'explicitcappedconditionaldomain_m3':domain.volume(),'complete_fixed_functionprofile_IDs':fixedIDs,'fixed_native_reference_union_inside_domain_m3':float((fu^domain).volume()),'conditionallegacy_carrierchallenge_IDs':[n for n,m in conditional],'conditional_carrier_union_inside_domain_m3':float((cu^domain).volume()),'calculation_remaining_WITHOUTlockingoldcarriers_m3':remain.volume(),'remaining_ifliteral_currentoldcarriers_kept_m3':remainwithold.volume(),'newcandidateframe_material_inside_calculation_m3':float((frame^domain).volume()),'afterremoval_service_union_volume_m3':service.volume(),'service_intersection_with_currentfunctions_m3':float((service^fu).volume()),'afterremoval_sharedservice_NOTpermanent_subtracted':True,'nativeKernel_unknown_notempty':unknown,'remaining_roots_NOT_mechanicalconnected_frame':'sourcewouldneed signednesting admission, no structural or cavityqualification','unknownmotion_andport/tool_routes_notzero':True,'nexttopoptallowedonlyafterrealfunctionalinterfaceandloadcontractclosed':False})
+ # Cadclosedengineeringdomain export literalSI(readback), no repairoriginalarmor.
+ ds=TopoDS_Shape();BRepTools.Read_s(ds,str(d/'computational_domain.brep'),BRep_Builder());pr=GProp_GProps();BRepGProp.VolumeProperties_s(ds,pr);w=STEPControl_Writer();w.Transfer(ds,STEPControl_AsIs);w.Write(str(d/'computational_domain_si.step'));step=d/'computational_domain_si.step';txt=step.read_text();step.write_text(txt.replace('SI_UNIT(.MILLI.,.METRE.)','SI_UNIT($,.METRE.)'));rd=STEPControl_Reader();rd.ReadFile(str(step));rd.TransferRoots();rp=GProp_GProps();BRepGProp.VolumeProperties_s(rd.OneShape(),rp);wr(d,'calculation_domain_SI_receipt.json',{'source_sha':sha(d/'scene.json.gz'),'CAD_valid':bool(BRepCheck_Analyzer(ds).IsValid()),'nativeCADnumericcoords_m_explicit_decl_m':True,'rawdefaultmm_declaration_rejectedsha':hashlib.sha256(txt.encode()).hexdigest(),'adaptedstep_sha':sha(step),'primaryV_m3':pr.Mass(),'readbackV_m3':rp.Mass()/1e9,'relative_V_error':(rp.Mass()/1e9-pr.Mass())/pr.Mass(),'computedclosure_NOT_realarmor':True})
+ # Unobscurednativephysicalviews no computationalwire; hardware and retainedgeometry allsame.
+ g.h.OUT=d;g.h.render([p for p in s['parts'] if p['role']!='design_domain_bulk'],'native_installation_four_view.png');g.h.render([p for p in s['parts'] if p['role']!='design_domain_bulk'],'native_installation_cutaway_four_view.png',True)
+ # Wholebody same-source projection specificallyshows distributedvalves, no CADpaint/geometrypatch.
+ code=inspect.getsource(g.h.render).replace('def render(', 'def render_whole(').replace('ppm=460','ppm=225').replace('ox,oy=450,390','ox,oy=450,355').replace('ct=np.array([0,0,2.22])','ct=np.array([0,0,1.35])').replace('>1.8','>3.5').replace('same 460 px/m','same225px/m').replace('upper-body ROI','wholebody nativeprojection');ns={'Image':Image,'ImageDraw':ImageDraw,'np':np,'triangles':g.h.triangles,'OUT':d};exec(code,ns);ns['render_whole']([p for p in s['parts'] if p['role']!='design_domain_bulk'],'native_whole_four_view.png')
+ for name in ['native_installation_four_view.png','native_installation_cutaway_four_view.png','native_whole_four_view.png']:
+  im=Image.open(d/name);dd=ImageDraw.Draw(im);dd.rectangle((0,0,1800,50),fill='#f3f2ed');dd.text((25,10),'G16 '+lab.upper()+' NATIVE COMPLETE FUNCTION PARTITION / SAME SOURCE / '+('WHOLEBODY' if 'whole' in name else 'NO COMPUTATIONAL WIRE OVERLAY'),fill='black');dd.text((25,30),'Original visible faces retained; hardware exposure or collisions are failures, not adopted package changes; all ratings unknown',fill='black');im.save(d/name)
+ # Everyactualrow partialsources/unknownCOM ratherthan imitatingwholeSI.
+ nr={r['id']:r for r in s['new_module_mass_rows']};inventory=[]
+ for p in s['parts']:
+  n=p['name'];r=p['role'];v=np.array(p['vertices_world_m']);inventory.append({'id':n,'body':p['body'],'role':r,'candidate_motionowner':p.get('candidate_installed_motion_owner'),'mass_range_source_kg':nr[n]['mass_range_kg'] if n in nr else p.get('mass_range_kg'),'mass_unknownNOTzero':not (n in nr or p.get('mass_range_kg')),'COM_fullI':'rotors/gear/fluids/bodydistributionunknown','AABB_m':[v.min(0).tolist(),v.max(0).tolist()],'caseowner_samebodyNOTcollisionwaiver':True})
+ wr(d,'present_function_inventory.json',{'source_SHA':sha(d/'scene.json.gz'),'rows':inventory,'retired_IDs':s['proposed_retired_ids'],'global_inventory_rows':[r for r in s['new_module_mass_rows'] if r['geometry_role']=='globalfluid_logicalinventory_no_geometry'],'physicalfluidlumenaliases_globalonce':True,'movingfullmoduleCOM/rotorpartition_unknown':True})
+ print('EVENT diagnostics '+lab+' currentfunctionremaining '+str(remain.volume())+' unknown '+str(len(unknown)),flush=True)

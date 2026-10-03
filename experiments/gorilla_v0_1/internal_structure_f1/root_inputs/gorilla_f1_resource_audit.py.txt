@@ -1,0 +1,29 @@
+"""Independent raw F1 source/GLB display audit, never a physical release."""
+from pathlib import Path
+import hashlib,json,struct
+import numpy as np
+import trimesh
+from scipy.spatial import cKDTree
+ROOT=Path(__file__).resolve().parents[1];OUT=ROOT/'.scratch/gorilla_internal_f1_integrated'
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def main():
+ src=OUT/'scene.json';rp=OUT/'exports/internal_structure_f1_render_manifest.json';scene=json.loads(src.read_text());render=json.loads(rp.read_text());assert render['scene_sha256']==sha(src)
+ checks=[]
+ for row in [*render['images'],*render['exports'],*render['manifests'].values(),render['review_board']]:
+  p=ROOT/row['path'];assert sha(p)==row['sha256'];checks.append(row)
+ for p,v in render['input_hashes'].items():assert sha(ROOT/p)==v,p
+ sm=json.loads((ROOT/render['manifests']['source']['path']).read_text());assert sm['retained_mesh_identity_before']==sm['retained_mesh_identity_after']
+ glb=next(ROOT/r['path'] for r in render['exports'] if r['path'].endswith('.glb'));b=glb.read_bytes();n,t=struct.unpack_from('<II',b,12);assert t==0x4e4f534a;g=json.loads(b[20:20+n]);mp={}
+ for node in g['nodes']:
+  if 'mesh' not in node:continue
+  sname=node.get('extras',{}).get('source_part_name',node['name']);assert sname not in mp;mp[sname]=node['name']
+ assert set(mp)=={p['name'] for p in scene['parts']}
+ exported=trimesh.load(glb,force='scene',process=False);assert set(mp.values())==set(exported.graph.nodes_geometry)
+ to_source=np.array([[1,0,0,0],[0,0,-1,0],[0,1,0,0],[0,0,0,1]]);added=set(sm['added_native_part_names']);meshchecks=[]
+ for part in scene['parts']:
+  if part['name'] not in added:continue
+  T,gn=exported.graph[mp[part['name']]];m=exported.geometry[gn].copy();m.apply_transform(to_source@T);v=np.array(part['vertices_world_m']);err=float(max(cKDTree(m.vertices).query(v)[0].max(),cKDTree(v).query(m.vertices)[0].max()));assert err<3e-7,(part['name'],err)
+  meshchecks.append({'source_id':part['name'],'export_id':mp[part['name']],'bidirectional_vertex_error_m':err})
+ report={'robot_id':'gorilla_v0_1','candidate':'F1 rejected diagnostic','input_hashes':{str(p.relative_to(ROOT)):sha(p) for p in [src,rp,Path(__file__).resolve()]},'source_part_count':len(scene['parts']),'export_part_count':len(mp),'retained_source_geometry_material_transform_identity_equal':True,'native_export_checks':meshchecks,'explicit_full_source_ID_to_Blender_safe_export_ID':mp,'file_checks':checks,'resource_identity_checks_passed':True,'missing_physical_cylinders':4,'mass_ledger_correction_is_separate_receipt':True,'scope':'Hash/display/raw new-native vertices only. Original retained bevels are unchanged original C15 display assets. Nonphysical holding windows are separately hidden and every physical candidate remains visible. No installed net mass, connection, true inertia, actuation, thermal, contact, native-engine task, manufacturing or aesthetic release.','geometry_accepted':False,'physics_accepted':False,'stable_physical_contract':False}
+ p=OUT/'resource_audit.json';p.write_text(json.dumps(report,indent=2,allow_nan=False)+'\n');print({'parts':len(mp),'new_native_meshes_checked':len(meshchecks),'max_vertex_error_m':max(x['bidirectional_vertex_error_m'] for x in meshchecks),'resource_identity':'passed','physics_accepted':False})
+if __name__=='__main__':main()

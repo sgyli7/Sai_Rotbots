@@ -1,0 +1,62 @@
+{
+  "schema": "gorilla_module_diagnostic_gates_v1",
+  "robot_id": "gorilla_v0_1",
+  "stage": "F2 rejected modules",
+  "appearance_authority": "robots/gorilla_v0_1/design/concepts/aa3/user_confirmed_four_view.jpg",
+  "original_armor_change_mm": 0,
+  "whole_robot_integrated": false,
+  "first_checkpoint_accepted": false,
+  "aesthetic_accepted": false,
+  "physical_accepted": false,
+  "stable_SI_accepted": false,
+  "Bevy_or_real_contact_tested": false,
+  "simulation_qualification": false,
+  "physical_hardware_qualification": false,
+  "red_lines": [
+    {
+      "id": "material_and_inventory",
+      "status": "failed",
+      "evidence": ["lower_module/closed_cavity_receipt.json", "waist_hip_module/resource_identity_and_mass_receipt.json", "root_audit/f1_native_boundary_nesting.json", "root_audit/e2a_inherited_foot_boundary_warning.json"],
+      "scope": "Lower A/B source has reversed closed-cavity semantics; waist/hip A/B has16 duplicated rows; F1/E2a four inherited trays have positive inner boundaries. Earlier source statistics are not qualified physical inventories.",
+      "close_when": "Single-source finite material preserves signed cavities, every physical member has a unique identity and counted functional ownership, net material/COM/inertia are independently recomputed. No absent-member union mass rows or unsupported dedup credits."
+    },
+    {
+      "id": "assembly_and_motion",
+      "status": "failed",
+      "evidence": ["lower_module/normalized_scope_checks.json", "waist_hip_module/signed_surface_resource_audit_v3.json", "waist_hip_module/module_interface_and_rejection_summary.json"],
+      "scope": "Corrected critical material intersections remain positive. Zero-eye deficit improvement does not establish assembly. Waist/hip B moves axis without matched cylinder stroke eligibility.",
+      "close_when": "A complete fixed/output/bearing/actuator chain has legal nonintersecting material, actual assembly interfaces, full stroke and continuous sweep inside declared shell limits."
+    },
+    {
+      "id": "force_path_and_structure",
+      "status": "failed_and_unqualified",
+      "evidence": ["lower_module/closed_cavity_receipt.json", "waist_hip_module/module_interface_and_rejection_summary.json", "pressure_pin/report.md"],
+      "scope": "5mm lower arch discontinuity, missing four low hip-roll-eye reaction bridges and complete shoulder bridge. Pressure tube/pin/rod analytic sensitivities do not qualify connections, guide stability, fatigue or true contact.",
+      "close_when": "Actual independent serial force paths and connections exist; task-consistent reactions, pressure extremes, material/heat treatment, bearing/contact, buckling, stiffness and fatigue are qualified within declared scope."
+    },
+    {
+      "id": "whole_mass_drive_power_and_thermal",
+      "status": "not_qualified",
+      "evidence": ["README.md", "pressure_pin/final_receipt.json"],
+      "scope": "No complete F2 robot, new force distribution, continuous drive, installed fluid routes, whole mass/inertia, power/regeneration or thermal working point. Gross chamber force is not a joint or robot rating.",
+      "close_when": "Installable modules reconnect to whole body and actual system inventory; same-version task loads, speed/pressure/flow, continuous drive, electrical/return energy and heat close before SI handoff."
+    }
+  ],
+  "yellow_lines": [
+    {
+      "id": "custom_modules_and_supply",
+      "status": "open",
+      "scope": "Custom load shells, cylinders, bearing installation and electrical/hydraulic supply remain unselected. Procurement may remain open; physical evidence may not.",
+      "close_when": "Declare credible complete size/mass/output/thermal ranges and pass their physical checks; selecting a procurement model is deferred."
+    }
+  ],
+  "packaging_rule": {
+    "internal_reordering_first": true,
+    "verified_residual_red_line_needed_for_shell_proposal": true,
+    "delegate_exploration_without_reasking": true,
+    "deliver_same_source_same_scale_four_views_and_change_budget": true,
+    "user_aesthetic_acceptance_before_replacing_AA3": true,
+    "current_AA3_must_change_proof": false,
+    "new_shell_proposal_produced": false
+  }
+}

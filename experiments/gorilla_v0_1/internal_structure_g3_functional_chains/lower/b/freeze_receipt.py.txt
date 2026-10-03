@@ -1,0 +1,63 @@
+"""Bind immutable Gorilla G3 B source and final rejected diagnostic receipt."""
+from pathlib import Path
+import hashlib, json, sys, platform
+from importlib.metadata import version
+from datetime import datetime, timezone
+import numpy as np
+
+O = Path(__file__).resolve().parent
+ROOT = next(p for p in O.parents if (p / 'sai_robots_engineering_rules.md').exists())
+sha = lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()
+scene = json.loads((O / 'chain_scene.json').read_text())
+report = json.loads((O / 'final_report.json').read_text())
+images = json.loads((O / 'native_full_view_manifest.json').read_text())
+expected_history = {
+    '.scratch/gorilla_internal_g3_foot_chain/b/chain_scene.json': '8fb41bd85c971d1456543c9660dd123780e3e342846c230ad2751fa5177b2fab',
+    '.scratch/gorilla_internal_g3_foot_chain/b/armor_scene.json': '6b58717476d2e4e2b6f9938eda1b4f6361c4cf868d2a0dcaa91c4273eb9539b5',
+    '.scratch/gorilla_internal_g3_foot_chain/b/interface.json': 'b0f57af4f78797798ad8bde892da039d82e8c96ea28e079ba433cf808ae3366e',
+    '.scratch/gorilla_internal_g3_foot_chain/a/chain_scene.json': '48c5a82399ae7ba11f6fff3a9cca66cc74e08cb691d7285c5d3e490837314f51',
+    '.scratch/gorilla_internal_g3_foot_chain/a/manifest.json': '395bdff58d4383e3956935d48e0537b7bc37f549aa4957a3a091a76c10f439e1',
+    '.scratch/gorilla_internal_g2_lower_chain/chain_scene.json': '34da78b8762abbec48a18e3dfb1c981db83aa5db9443ab04b6ec6c2ad2c875a0',
+    '.scratch/gorilla_internal_g2_lower_chain/manifest.json': 'aaf1b7962db97c6c187cd570bbbc3e63b0dea468724f026d995daedd2be8a7e1',
+    '.scratch/gorilla_internal_g1_lower_chain/chain_scene.json': 'bf3f81c5dd813a79b51c7557dfd16e81e2a73d8505a0954ce758dd8b0215e460',
+    'experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_scene.json': '7a1e49f45838303ca5fd86265dc9980c10cde85ed7626424136afd3863aa5886',
+    '.scratch/gorilla_internal_g_material_contract/native_signed_material.py': 'e531ae21a9e81aa7fc5186ee739fc19fe0e39efb9444a58a2e136410763c2fb8'}
+checks = []
+for path, digest in (expected_history | scene['input_hashes']).items():
+    got = sha(ROOT / path)
+    checks.append({'path': path, 'expected_sha256': digest, 'observed_sha256': got, 'exact_match': got == digest})
+assert all(r['exact_match'] for r in checks)
+assert report['source_sha256'] == images['source_sha256'] == expected_history['.scratch/gorilla_internal_g3_foot_chain/b/chain_scene.json']
+assert report['review_entry_sha256'] == sha(O / 'final_review.py')
+assert images['render_entry_sha256'] == sha(O / 'render_native_full.py')
+assert len(images['images']) == 11
+for row in images['images']:
+    assert sha(O / row['path']) == row['sha256'] and row['uncropped']
+assert report['resource_rejected_ids'] == ['g3_arch_load_net']
+assert len(report['collision_receipt']) == 4 and len(report['body_mass_inertia_neutral']) == 22
+assert all(x['sample_count'] == 121 and x['geometry_present'] and x['no_J_zero_in_samples'] for x in report['actuator_121point_screens'])
+for q in report['complete_submodule_with_new_armor_before_unknowns']['range']:
+    i = np.array(q['inertia_at_com_world_kg_m2'])
+    ev = np.linalg.eigvalsh(i)
+    assert np.allclose(i, i.T, atol=1e-10) and ev.min() > 0 and ev.max() <= ev.sum() - ev.max() + 1e-9
+pose_masses = [p['complete_declared_mass_inertia_before_unknowns']['range'][1]['mass_kg'] for p in report['pose_mass_inertia']]
+assert max(pose_masses) - min(pose_masses) < 1e-6
+paths = [p for p in O.iterdir() if p.is_file() and p.name != 'freeze_manifest.json']
+files = [{'path': str(p.relative_to(ROOT)), 'sha256': sha(p), 'size_bytes': p.stat().st_size} for p in sorted(paths)]
+out = {'robot_id': 'gorilla_v0_1', 'checkpoint': 'G3 B source locked, final rejected receipt',
+       'generated_utc': datetime.now(timezone.utc).isoformat(), 'entry_sha256': sha(Path(__file__)),
+       'source_sha256': report['source_sha256'], 'final_report_sha256': sha(O / 'final_report.json'),
+       'final_markdown_sha256': sha(O / 'final_report.md'), 'native_view_manifest_sha256': sha(O / 'native_full_view_manifest.json'),
+       'history_exact_checks': checks, 'files': files,
+       'runtime': {'python': platform.python_version(), 'numpy': version('numpy'), 'trimesh': version('trimesh'), 'manifold3d': version('manifold3d'), 'Pillow': version('Pillow')},
+       'image_review': {'all11_full_native_images_actually_viewed': True, 'AA3_reference_actually_viewed': True,
+                        'aesthetic_result': 'Rejected broad blue/white plates and blocked mechanical organization; no new visual authority.',
+                        'old_small_images_retained_as_cropped_history': True},
+       'two_macro_candidates_only': ['A', 'B'], 'third_geometry_created': False, 'geometry_sources_modified_after_lock': False,
+       'geometry_accepted': False, 'physical_accepted': False, 'aesthetic_accepted': False,
+       'resource_binding_pass_only': True, 'whole_robot_mass_or_inertia': False,
+       'report_precedence': 'final_report classifies rawreport and corrects scope/mass. It does not modify frozen geometry or turn conditional archBoolean into verifiedmaterial.'}
+(O / 'freeze_manifest.json').write_text(json.dumps(out, indent=2) + '\n')
+print('FROZEN_MANIFEST_SHA256', sha(O / 'freeze_manifest.json'))
+print('FINAL_REPORT_SHA256', sha(O / 'final_report.json'))
+print('FINAL_MD_SHA256', sha(O / 'final_report.md'))

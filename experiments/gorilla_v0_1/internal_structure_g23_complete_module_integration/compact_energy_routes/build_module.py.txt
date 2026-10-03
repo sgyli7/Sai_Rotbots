@@ -1,0 +1,117 @@
+#!/usr/bin/env python3
+"""Complete own 180-cell / 18s10p typed energy-module geometry. No electrical release."""
+import pathlib,json,gzip,hashlib,importlib.util,math,ast,sys,collections,itertools
+import numpy as np,manifold3d as mf
+from importlib.machinery import SourceFileLoader
+R=pathlib.Path('/home/ethan/Projects/Sai_Rotbots');D=pathlib.Path(__file__).resolve().parent;sha=lambda p:hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
+H=R/'.scratch/gorilla_internal_g14_complete_thermal_colayout/geometry_helpers.py';sp=importlib.util.spec_from_file_location('g23geom',H);g=importlib.util.module_from_spec(sp);sp.loader.exec_module(g)
+ORIG=R/'.scratch/gorilla_internal_g22_typed_routes/build_typed_route.py';nodes=ast.parse(ORIG.read_text()).body;safe=[n for n in nodes if isinstance(n,ast.FunctionDef) and n.name in ['cylseg','fillet','trim_path','sweep_union']];exec(compile(ast.Module(body=safe,type_ignores=[]),str(ORIG),'exec'),globals())
+MAT=R/'experiments/gorilla_v0_1/internal_structure_g_studies/material_contract/native_signed_material.py.txt';loader=SourceFileLoader('g23_signed',str(MAT));sp=importlib.util.spec_from_loader('g23_signed',loader);mat=importlib.util.module_from_spec(sp);sys.modules['g23_signed']=mat;loader.exec_module(mat)
+def wr(n,o):(D/n).write_text(json.dumps(o,indent=2,allow_nan=False)+'\n')
+# Analytic integer macro comparison only; no cell shrink. Selected broad-thin 30x6 gets actual full geometry.
+macro=[]
+for nx,nz in [(10,18),(30,6)]:
+ gx=(nx-1)*.0225+.02155;gz=(nz-1)*.0225+.02155
+ macro.append({'grid_XZ':[nx,nz],'cells':nx*nz,'groups':[nx//5,nz//2],'each_parallel5x2':10,'series':18,'cell_array_XYZ_m':[gx,.07015,gz],'full_own_case_XYZ_estimate_m':[gx+.01495,.158,gz+.04695],'side_BMS_stock_XYZ_m':[.065,.145,.063],'mounted_minimum_Xwidth_with_BMS_m':gx+.0885,'maintain180_and18s10p':True,'macro_qualification':False})
+wr('integer_macro_comparison.json',{'source':'own geometry formula, same max21.55x70.15mm / pitch22.5mm','macros':macro,'selected':[30,6],'reason':'wide/thin module lowers installed height relative10x18; whole720/body fit not checked, width tradeoff retained','two_macro_limit':True})
+NX,NZ=30,6;pitch=.0225;gx=(NX-1)*pitch+.02155;gz=(NZ-1)*pitch+.02155;parts=[];geoms={};massrows=[];mapping=[];ports=[];wire_data=[]
+def add(m,n,cls,rho=None,mr=None,metadata=None,col=None):
+ assert m.status()==mf.Error.NoError,(n,str(m.status()));role='finite_typed_module_material' if rho else 'complete_custom_function_reference' if mr else 'OEM_cell_max_envelope_reference';meta={'component_class':cls,'finite_material':rho is not None,'source_or_assumption':'G23 own bounded material/function and routing design; source max-cell reference, not OEM terminal/CAD','physical_rating_accepted':False};meta.update(metadata or {})
+ if rho:meta.update(density_kg_m3=rho,mass_once_kg=float(m.volume()*rho))
+ elif mr:meta['mass_range_kg']=mr
+ p=g.nat(m,n,'pack_local_candidate',role,col or [.5,.6,.65,1],meta);parts.append(p);geoms[n]=m
+ if rho:massrows.append({'id':n,'scope':'own finite material','rho_kg_m3':rho,'V_m3':m.volume(),'mass_low_nominal_upper_kg':[m.volume()*rho]*3})
+ elif mr:massrows.append({'id':n,'scope':'complete bounded custom function or cellreference','mass_low_nominal_upper_kg':mr,'COM_I_distribution':None})
+ return m
+for rz in range(NZ//2):
+ for cx in range(NX//5):
+  seq=cx if rz%2==0 else NX//5-1-cx;group=rz*(NX//5)+seq
+  for iz in range(2):
+   for ix in range(5):mapping.append({'grid_X':cx*5+ix,'grid_Z':rz*2+iz,'series_group':group,'parallel_cell':iz*5+ix,'positive_end_Y_sign_own_hypothesis':1 if group%2==0 else -1})
+logic={(q['grid_X'],q['grid_Z']):q for q in mapping};centers=[]
+for k in range(18):
+ mm=[q for q in mapping if q['series_group']==k];centers.append(np.array([np.mean([(q['grid_X']-(NX-1)/2)*pitch for q in mm]),0,np.mean([(q['grid_Z']-(NZ-1)/2)*pitch for q in mm])]))
+for ix in range(NX):
+ for iz in range(NZ):
+  m=g.cyl([(ix-(NX-1)/2)*pitch,0,(iz-(NZ-1)/2)*pitch],.010775,.07015,'Y',32);rec=logic[ix,iz];add(m,f'g23_cell_{ix:02}_{iz:02}','max_cell_reference',mr=[None,None,.07],metadata=dict(rec,reference_MAX21p55x70p15mm=True,source_min_energy_Wh=15.5,actual_can_polarity_vent_contact_geometry_unknown=True),col=[.26,.58,.35,1])
+def collector(k,pos):
+ c=centers[k].copy();c[1]=(1 if k%2==0 else -1)*(1 if pos else -1)*.035475;return g.bx(c,[.110,.0008,.034]),c
+nets={};anchors={};links=[]
+for net in range(19):
+ if net==0:m,a=collector(0,False);link={'potential_net':0,'terminals':['g0_negative'],'role':'module_negative'}
+ elif net==18:m,a=collector(17,True);link={'potential_net':18,'terminals':['g17_positive'],'role':'module_positive'}
+ else:
+  m,a=collector(net-1,True);v,b=collector(net,False);delta=b-a;axis=0 if abs(delta[0])>.0001 else 2;dd=[.008,.0008,.008];dd[axis]=abs(delta[axis])+.003;m=m+v+g.bx((a+b)/2,dd);link={'potential_net':net,'terminals':[f'g{net-1}_positive',f'g{net}_negative'],'bridge_same_endplane':True}
+ nets[net]=m;anchors[net]=a;links.append(link)
+for net,a in anchors.items():
+ row=int(round((a[2]+.045)/.045));a[0]+=(row-1)*.010
+# Actual literal coldplate channel, kept separate as water exclusion, no fluid density credit.
+px=-gx/2+.0235;pz=gz/2-.035
+channel=g.bx([0,-.043075,pz],[gx-.01055,.0025,.007])+g.bx([0,-.043075,-pz],[gx-.01055,.0025,.007])+g.bx([gx/2-.009,-.043075,0],[.007,.0025,2*pz+.007])
+plate_stock=g.bx([0,-.043075,0],[gx+.00045,.008,gz+.00095]);plate=plate_stock-channel
+for z in [-pz,pz]:
+ plate=plate+g.cyl([px,-.052575,z],.006,.019,'Y',32)
+ ch=g.bx([px,-.043075,z],[.014,.004,.010])+g.cyl([px,-.049075,z],.0035,.019,'Y',32);channel=channel+ch;plate=plate-ch
+# True typed routed branch spacing. Two end faces; unique lane center pitch = 2 outer radii + own gap.
+rc,ro,rb,gap=.00016,.0004,.003,.001;lane_pitch=2*ro+gap;faces={-1:[],1:[]}
+for net,a in anchors.items():faces[1 if a[1]>0 else -1].append(net)
+wire_outer={};wirecore={};wireins={};feedbores=[];bushings=[];xboard=gx/2+.054
+for sg,ids in faces.items():
+ for rank,net in enumerate(ids):
+  a=anchors[net];ylane=sg*((.054 if sg<0 else .043)+rank*lane_pitch);ztrack=-gz/2-.004-rank*lane_pitch;end=np.array([gx/2+.021,ylane,ztrack]);raw=[a,np.array([a[0],ylane,a[2]]),np.array([a[0],ylane,ztrack]),end];path,info=fillet(raw,rb);core=sweep_union(path,rc);outside=sweep_union(trim_path(path,.002,.001),ro);pin=g.cyl([gx/2+.039,ylane,ztrack],.00025,.036,'X',48);pad=g.cyl([xboard,ylane,ztrack],.0008,.00008,'X',48);nets[net]=nets[net]+core+pin+pad;wirecore[net]=core;wire_outer[net]=outside;wire_data.append({'potential_net':net,'face_sign':sg,'lane_rank':rank,'coreR_m':rc,'outerR_m':ro,'own_bend_R_m':rb,'lane_pitch_m':lane_pitch,'own_surface_gap_m':gap,'centerline_m':path.tolist(),'raw_waypoints_m':[v.tolist() for v in raw],'arc_diagnostics':info,'BMS_pin_X_axis_center_m':[gx/2+.039,ylane,ztrack],'BMS_pad_plane_X_m':xboard,'input_interface_is_real19separatepins_notOEMrated_BMS':True,'core_to_source_collector_positive_V_m3':(core^nets[net]).volume()})
+  # Actual penetration through skins/coldplate/TIM; holes stay explicit, no same-owner waiver.
+  h=g.cyl([a[0],sg*.054,a[2]],.0011,.080,'Y',64);feedbores.append((net,sg,h));sl=.012 if sg<0 else .003;sm=-.043 if sg<0 else .0375;bush=g.cyl([a[0],sm,a[2]],.00095,sl,'Y',64)-g.cyl([a[0],sm,a[2]],.0006,sl+.004,'Y',64);bushings.append((f'sense_{net:02}',net,bush))
+# Two real HV terminal branches straight through own stack, with no arbitrary tiny bend. R50 next cable/service is explicit outside scope.
+HV={};HVouter={};HVanchors={}
+for net in [0,18]:
+ a=anchors[net].copy();a[0]+=(-.015 if net==0 else .015);HVanchors[net]=a;end=a.copy();end[1]=-.088;path=np.array([a,end]);core=sweep_union(path,.00335);outer=sweep_union(trim_path(path,.002,.001),.005);lug=g.bx([a[0],-.093,a[2]],[.016,.014,.018])-g.cyl([a[0],-.093,a[2]],.0032,.026,'Z',48);nets[net]=nets[net]+core+lug;HV[net]=core;HVouter[net]=outer;h=g.cyl([a[0],-.054,a[2]],.0066,.110,'Y',64);feedbores.append((net,-1,h));bushings.append((f'HV_stack_{net:02}',net,g.cyl([a[0],-.043,a[2]],.0063,.012,'Y',64)-g.cyl([a[0],-.043,a[2]],.0052,.016,'Y',64)));bushings.append((f'HV_case_{net:02}',net,g.cyl([a[0],-.079,a[2]],.0063,.004,'Y',64)-g.cyl([a[0],-.079,a[2]],.0052,.008,'Y',64)));ports.append({'net':net,'HV_lug_center_m':[a[0],-.093,a[2]],'outer_cable_R_m':.005,'source_contact_and_current_rating_unknown':True,'next_service_bend_R_m_reference':.05,'service_is_not_full_installed_external_HV_route':True})
+# Complete-net union must be finished before any jacket subtraction.
+for net in range(19):
+ add(nets[net],f'g23_Cu_potential_net_{net:02}','complete_potential_Cu',8960,metadata=dict(links[net],includes_collector_sense_branch_BMS_pin_and_HV_when_endpoint=True,joining_weld_crimp_contact_heat_unqualified=True),col=[.73,.42,.17,1])
+ add((wire_outer[net]+HVouter[net] if net in HVouter else wire_outer[net])-nets[net],f'g23_sense_net_{net:02}_jacket','sense_dielectric',1200,metadata={'potential_net':net,'generation':'complete outerUnion minus complete same-potential CuUnion; no other-net subtraction'},col=[.36,.57,.75,1])
+# Endpoint jacket includes both complete same-potential outer branches, counted once; no separate positive overlapping HV-jacket ID.
+for tag,net,m in bushings:add(m,f'g23_feedthrough_{tag}_dielectric','feedthrough_dielectric',1200,metadata={'potential_net':net,'sleeve_pressure_seal_creepage_mount_unknown':True},col=[.72,.67,.36,1])
+# Real dielectric skins/TIM/coldplate bores. These are new editable own material, not frozen source repair.
+negative=g.bx([0,-.036475,0],[gx+.00045,.0012,gz+.00095]);positive=g.bx([0,.036475,0],[gx+.00045,.0012,gz+.00095]);tim=g.bx([0,-.038075,0],[gx+.00045,.002,gz+.00095]);negpcb=g.bx([0,-.050,0],[gx+.001,.0016,gz+.001]);pospcb=g.bx([0,.040,0],[gx+.001,.0016,gz+.001]);water_check=[]
+for net,sg,h in feedbores:
+ if sg<0:
+  negative=negative-h;tim=tim-h;plate=plate-h;negpcb=negpcb-h;water_check.append({'potential_net':net,'bore_R_m':.0066 if net in [0,18] else .0011,'positive_bore_vs_literal_water_channel_V_m3':float((h^channel).volume()),'gap_m':channel.min_gap(h,.02)})
+ else:positive=positive-h;pospcb=pospcb-h
+for z in [-pz,pz]:negpcb=negpcb-g.cyl([px,-.052575,z],.0064,.040,'Y',64)
+for n,m,rho in [('negative_skin',negative,1200),('positive_skin',positive,1200),('TIM',tim,2500),('coldplate',plate,2700),('negative_thin_PCB_dielectric_support',negpcb,1850),('positive_thin_PCB_dielectric_support',pospcb,1850)]:add(m,'g23_'+n,'coldplate' if n=='coldplate' else 'PCB_or_dielectric_stack',rho,metadata={'actual_mating_source_geometry_only':True,'PCB_voltage_thermal_balance_contact_unknown':True},col=[.26,.57,.68,1] if n=='coldplate' else [.64,.68,.47,1])
+lattice=g.bx([-(NX-2)/2*pitch,0,0],[.0004,.069,gz+.00095])
+for ix in range(1,NX-1):lattice=lattice+g.bx([(ix-(NX-2)/2)*pitch,0,0],[.0004,.069,gz+.00095])
+for iz in range(NZ-1):lattice=lattice+g.bx([0,0,(iz-(NZ-2)/2)*pitch],[gx+.00045,.069,.0004])
+add(lattice,'g23_intercell_insulation_lattice','cell_insulation_carrier',1200,metadata={'radial_clearance_to_maxcell_m':.000275,'stress_insulation_temperature_certificate_unknown':True})
+# Case clearances and source-group actual mounting; finite holes for outward sense routes at side X.
+dm=np.array([gx+.01495,.158,gz+.04695]);case=g.bx([0,0,0],dm)-g.bx([0,0,0],dm-.004)
+for z in [-pz,pz]:case=case-g.cyl([px,-.062,z],.0064,.080,'Y',64)
+for net in [0,18]:a=HVanchors[net];case=case-g.cyl([a[0],-.078,a[2]],.0066,.080,'Y',64)
+for d in wire_data:case=case-g.cyl([gx/2+.01,d['BMS_pin_X_axis_center_m'][1],d['BMS_pin_X_axis_center_m'][2]],.0011,.040,'X',64)
+for x in [-gx/2+.018,gx/2-.018]:
+ for z in [-dm[2]/2-.003,dm[2]/2+.003]:
+  tab=g.bx([x,0,z],[.035,.085,.016])-g.cyl([x,0,z],.0033,.030,'Z',48);case=case+tab
+  bolt=g.cyl([x,0,z],.003,.024,'Z',48)+g.cyl([x,0,z+.012],.005,.004,'Z',48);add(bolt,f'g23_mount_bolt_{x}_{z}','mount_bolt',7850,metadata={'preload_matingcarrier_certificate_unknown':True})
+for x in [-gx/2+.018,gx/2-.018]:
+ for z in [-dm[2]/2-.003,dm[2]/2+.003]:case=case-g.cyl([x,0,z],.0033,.045,'Z',48)
+case=case-g.bx([0,0,dm[2]/2],[.050,.040,.025])
+vc=np.array([0,0,dm[2]/2+.004]);case=case+(g.bx(vc,[.06,.05,.012])-g.bx(vc,[.05,.04,.018]))
+add(case,'g23_Al_enclosure_mount_tabs','finite_module_case',2700,metadata={'own2mmAl_notOEM_firesafe':True},col=[.63,.69,.72,1])
+# BMS19 isolated input pads on real substrate + hollow enclosure and balanced function stocks.
+bc=np.array([gx/2+.056,0,-gz/2-.008]);bd=np.array([.065,.155,.063]);bcase=g.bx(bc,bd)-g.bx(bc,bd-.003);board=g.bx([xboard,0,bc[2]],[.0016,.150,.054]);bank=g.bx([gx/2+.0225,0,bc[2]],[.012,.150,.054])
+for d in wire_data:
+ y,z=d['BMS_pin_X_axis_center_m'][1:];h=g.cyl([gx/2+.04,y,z],.0011,.100,'X',64);bcase=bcase-h;board=board-h;bank=bank-h
+bcase=bcase-g.bx([gx/2+.0245,0,bc[2]],[.007,.151,.055])
+add(bcase,'g23_18s_BMS_hollow_case','BMS_case',2700,col=[.35,.43,.53,1]);add(board,'g23_18s_BMS_real19pad_substrate','BMS_substrate',1850,col=[.35,.54,.29,1]);add(bank,'g23_19pin_dielectric_interface_bank','BMS_pin_isolation',1200,metadata={'19actual_input_holes':'real geometry; measurement/balance circuit and isolation unknown'},col=[.58,.67,.42,1])
+add(g.bx([gx/2+.076,0,bc[2]],[.012,.105,.025]),'g23_18s_sensing_balancing_control_function','complete_BMS_electronics',mr=[.25,.45,.85],metadata={'function':['19 potential inputs','18 differential cell-group measurements','balancing','temperature','openwire diagnostics','isolated communication'],'measurement_0to75p6V_float_to302p4Vplus_transient_unknown':True,'pinout_analoginputs_are_actual_separate_ports_not_active_rated_circuit':True},col=[.23,.38,.53,1])
+add(g.bx([gx/2+.076,0,bc[2]+.020],[.012,.105,.012]),'g23_local_fuse_current_HVIL_isolatedcomms_function','local_protection_function',mr=[.20,.4,.8],metadata={'faultinterrupt_dc_overvoltage_SAFEstop_notrated':True})
+# Vent is actual empty throat + finiteguard, not a cell vent alignment claim.
+vc=np.array([0,0,dm[2]/2+.004]);casevent=g.bx(vc,[.06,.05,.012])-g.bx(vc,[.05,.04,.018]);# Finite throat was net-unioned into own case after true open slot; no duplicate overlapping wall stock.
+add(g.bx([0,0,dm[2]/2+.020],[.055,.045,.020]),'g23_vent_filter_relief_reference','vent_relief_function',mr=[.1,.2,.4],metadata={'ventcapacity_notrated':True})
+# Latched HV covers and visible service reserves remain functional stock, not fabricated exact components.
+for net in [0,18]:a=HVanchors[net];add(g.bx([a[0],-.101,a[2]],[.026,.030,.030])-g.bx([a[0],-.101,a[2]],[.022,.034,.026]),f'g23_HV_terminal_{net:02}_touch_guard','HV_touch_guard',1200,metadata={'contactbolt_tool_space_andterminalinsulation_notrated':True})
+service=g.bx([0,-.15,0],[dm[0]+.065,.11,dm[2]+.065]);pp=g.nat(service,'g23_removed_cover_initial_service','pack_local_candidate','service_after_shell_removal',[1,.6,.2,.15],{'finite_material':False,'mass_counted':False,'not_permanent_solid_exclusion':True});parts.append(pp)
+scene={'schema':'gorilla_g23_complete180cell_typed_module_v1','coordinate_frame':'LOCAL SI m Xarraylong Ycellaxis Zheight; do not assume worldplacement','selected_grid_XZ':[NX,NZ],'declared_units':'m','parts':parts,'logical_18s10p_mapping':mapping,'potential_19_net_terminal_mapping':links,'actual_19_sense_ports':wire_data,'HV_ports':ports,'macro_compare_source':str(D/'integer_macro_comparison.json'),'producer_sha256':sha(__file__),'source_paths':{str(x):sha(x) for x in [ORIG,H,MAT,R/'.scratch/gorilla_internal_g19_root_macro/bound_cell_source_facts.json',R/'sai_robots_engineering_rules.md']},'mass_once_rows':massrows,'cell_lower_nominal_mass_unknown_upper12p6kg':True,'whole720routes_electrical_thermal_installation_accepted':False,'physical_total_M_COM_I':None}
+(D/'module_scene.json.gz').write_bytes(gzip.compress(json.dumps(scene,separators=(',',':')).encode(),mtime=0));wr('water_channel_and_feedthrough_review.json',{'scene_SHA':sha(D/'module_scene.json.gz'),'literal_channel_volume_L':channel.volume()*1000,'bore_channel':water_check,'pressure_thinwall_flowseal_materialtemp_unqualified':True});wr('ports_and_nets.json',{'scene_SHA':sha(D/'module_scene.json.gz'),'mapping':mapping,'links':links,'sense19':wire_data,'HVports':ports,'pin_coordinate_frame':'modulelocalSI','wire_lane_pitch_m':lane_pitch,'derived_from_outer_radii_plus_gap':True,'positive_andnegative_cellphysicalterminalunknown':True})
+print('EVENT G23 source',sha(D/'module_scene.json.gz'),'parts',len(parts),'cells',180,'actualnets',19,flush=True)
+resource=mat.validate_scene({'parts':[q for q in parts if q['role']=='finite_typed_module_material']});wr('native_material_resource.json',dict(resource,scene_SHA=sha(D/'module_scene.json.gz')));print('EVENT G23 own signed resource',resource['resource_contract_pass'],len(resource['parts']),flush=True)

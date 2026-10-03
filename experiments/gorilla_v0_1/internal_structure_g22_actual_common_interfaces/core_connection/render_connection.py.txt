@@ -1,0 +1,47 @@
+from pathlib import Path
+import numpy as np,json,gzip,math,hashlib
+from PIL import Image,ImageDraw,ImageFont
+O=Path(__file__).resolve().parent;D=O;S=D/'module_scene.json.gz';s=json.loads(gzip.decompress(S.read_bytes()));C=np.array([0.,0.,2.20]);sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();font=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',14);small=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',11)
+class ARG: variant='connection'
+arg=ARG()
+for p in s['parts']:
+ if p.get('density_kg_m3') is not None and 'finite_'in p['role']:p['finite_material']=True
+W,H=640,700;PPM=350.;views={'front':([1,0,0],[0,0,1],[0,-1,0]),'left':([0,1,0],[0,0,1],[-1,0,0]),'rear':([-1,0,0],[0,0,1],[0,1,0]),'top':([0,0,1],[1,0,0],[0,-1,0])};outputs=[]
+def draw(parts,key,mode,scale):
+ cam,up,right=[np.asarray(v,dtype=float)for v in views[key]];depth=np.full((H,W),-np.inf);rgb=np.full((H,W,3),255,np.uint8)
+ for p in parts:
+  if not p.get('finite_material'):continue
+  v=np.asarray(p['vertices_world_m']);f=np.asarray(p['faces']);q=np.column_stack([W/2+(v-np.array([0.,0.,2.20]))@right*scale,H/2-(v-np.array([0.,0.,2.20]))@up*scale,(v-C)@cam]);tri=q[f];n=np.cross(v[f[:,1]]-v[f[:,0]],v[f[:,2]]-v[f[:,0]]);nn=np.linalg.norm(n,axis=1);n/=np.maximum(nn[:,None],1e-16)
+  col=np.asarray(p.get('rgba',[.24,.36,.41,1])[:3])*255 if p.get('is_context_armor')else np.asarray([94,132,144]if p.get('density_kg_m3')!=2710 else[178,185,190])
+  if 'TIM'in p['name']:col=np.array([160,100,180])
+  for j,t in enumerate(tri):
+   if nn[j]<1e-15 or n[j]@cam<=0:continue
+   xa,ya,za=t[0];xb,yb,zb=t[1];xc,yc,zc=t[2];den=(yb-yc)*(xa-xc)+(xc-xb)*(ya-yc)
+   if abs(den)<1e-10:continue
+   x0=max(0,int(math.floor(t[:,0].min())));x1=min(W-1,int(math.ceil(t[:,0].max())));y0=max(64,int(math.floor(t[:,1].min())));y1=min(H-57,int(math.ceil(t[:,1].max())))
+   if x1<x0 or y1<y0:continue
+   xx,yy=np.meshgrid(np.arange(x0,x1+1)+.5,np.arange(y0,y1+1)+.5);a=((yb-yc)*(xx-xc)+(xc-xb)*(yy-yc))/den;b=((yc-ya)*(xx-xc)+(xa-xc)*(yy-yc))/den;cc=1-a-b;zz=a*za+b*zb+cc*zc;z=depth[y0:y1+1,x0:x1+1];m=(a>=0)&(b>=0)&(cc>=0)&(zz>z);z[m]=zz[m];rgb[y0:y1+1,x0:x1+1][m]=(col*(.72+.28*max(0,n[j]@np.array([.5,-.4,.75])))).astype(np.uint8)
+ im=Image.fromarray(rgb);dr=ImageDraw.Draw(im)
+ for p in parts:
+  if p.get('finite_material'):continue
+  v=np.asarray(p['vertices_world_m']);f=np.asarray(p['faces']);q=np.column_stack([W/2+(v-np.array([0.,0.,2.20]))@right*scale,H/2-(v-np.array([0.,0.,2.20]))@up*scale]);n=np.cross(v[f[:,1]]-v[f[:,0]],v[f[:,2]]-v[f[:,0]]);n/=np.maximum(np.linalg.norm(n,axis=1)[:,None],1e-16);edges={}
+  for j,ff in enumerate(f):
+   for a,b in zip(ff,np.roll(ff,-1)):edges.setdefault(tuple(sorted((a,b))),[]).append(j)
+  for(a,b),adj in edges.items():
+   if len(adj)!=2 or n[adj[0]]@n[adj[1]]<.7 or (n[adj[0]]@cam)*(n[adj[1]]@cam)<=0:
+    xy=[tuple(q[a]),tuple(q[b])]
+    if all(-W<x<2*W and 64<y<H-57 for x,y in xy):dr.line(xy,fill=(187,142,66),width=1)
+ dr.text((14,14),'GORILLA G22 '+arg.variant.upper()+' / '+mode+' / '+key,font=font,fill='black');dr.text((14,36),'Finite material + OEM gross wire; candidate rejected, no acceptance.',font=small,fill='black');dr.text((14,H-45),'Source '+sha(S)[:16]+' / same-scale '+str(scale)+' px/m',font=small,fill='black');dr.line((W-158,H-24,W-18,H-24),fill='black',width=2);dr.text((W-159,H-42),str(round(140/scale*1000))+' mm',font=small,fill='black');out=D/(mode+'_'+key+'.png');im.save(out);outputs.append({'file':str(out),'sha256':sha(out),'source_sha256':sha(S),'camera':key,'PPM':scale,'parts_drawn':[p['name']for p in parts],'OEM_wire_is_not_material_or_freecavity':True})
+for mode,parts,scale in [('native_connection',s['parts'],PPM)]:
+ for key in views:draw(parts,key,mode,scale)
+ im=Image.new('RGB',(W*2,H*2),'white')
+ for i,key in enumerate(views):im.paste(Image.open(D/(mode+'_'+key+'.png')),(i%2*W,i//2*H))
+ out=D/(mode+'_four_view.png');im.save(out);outputs.append({'file':str(out),'sha256':sha(out),'source_sha256':sha(S),'operation':'literal panel assembly'})
+
+sections=json.loads((O/'literal_sections.json').read_text()); im=Image.new('RGB',(1400,1200),'white');dr=ImageDraw.Draw(im)
+for i,r in enumerate(sections['sections']):
+ ox=(i%3)*465;oy=(i//3)*540;dr.text((ox+8,oy+12),'G22 literal '+r['axis']+'='+str(r['value_m'])+'m',font=font,fill='black');dr.text((ox+8,oy+35),'A='+str(round(r['area_m2']*1e6,2))+' mm2',font=small,fill='black')
+ for loop in r['polygons_m']:
+  q=np.array(loop);cx=.0 if r['axis']=='X'else .025;cy=2.23 if r['axis']=='X'else .0; scale=350.;xy=[(ox+235+(a-cx)*scale,oy+285-(b-cy)*scale)for a,b in q];dr.line(xy+[xy[0]],fill=(35,70,95),width=2)
+dr.text((10,1150),'Actual source '+sha(S)[:16]+'; source-derived material slice, not approved connection.',font=font,fill='black');im.save(O/'literal_sections.png')
+(O/'native_render_manifest.json').write_text(json.dumps({'source_sha256':sha(S),'renderer_sha256':sha(Path(__file__)),'outputs':outputs,'literal_section_source_sha256':sha(O/'literal_sections.json'),'section_png_sha256':sha(O/'literal_sections.png'),'all_251_members_retained':True,'no_armor_or_aesthetic_authority':'local mechanical bench; no external shell redesign','physical_accepted':False},indent=2)+'\n')

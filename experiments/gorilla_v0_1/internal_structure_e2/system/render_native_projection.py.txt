@@ -1,0 +1,79 @@
+"""CPU polygon projection of actual native faces; no drawn replacement structure."""
+from pathlib import Path
+import json,hashlib,math
+import numpy as np
+from PIL import Image,ImageDraw,ImageFont
+ROOT=Path('/home/ethan/Projects/Sai_Rotbots');OUT=ROOT/'.scratch/gorilla_internal_e2_system'
+sp=OUT/'system_spec.json';cp=OUT/'system_scene.json';bp=ROOT/'robots/gorilla_v0_1/cad/source/appearance_c_scene.json'
+s=json.loads(sp.read_text());scene=json.loads(cp.read_text());base=json.loads(bp.read_text())
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+assert scene['source_spec_sha256']==sha(sp)
+FONT='/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'
+def font(n):return ImageFont.truetype(FONT,n)
+W=2920;H=1260;canvas=Image.new('RGBA',(W,H),(250,251,252,255));draw=ImageDraw.Draw(canvas)
+draw.text((50,22),'GORILLA E2 | ACTUAL NATIVE SYSTEM / OIL + WATER ROUTES',font=font(34),fill=(20,35,48))
+draw.text((50,70),'Same scale in all views. Original AA3/C15 armor is uncut and shown transparent. Diagnostic only; no aesthetic revision.',font=font(23),fill=(65,75,88))
+draw.text((50,105),f"{len(scene['parts'])} native system parts + 111 unchanged armor + 22 original grille louvers; actual interface neutral only. Motion unverified.",font=font(21),fill=(65,75,88))
+panels=[('FRONT | looking from +X',0,np.array([[0,1,0],[0,0,1]]),np.array([1,0,0])),('LEFT SIDE | looking from +Y',1,np.array([[-1,0,0],[0,0,1]]),np.array([0,1,0])),('REAR | looking from -X',2,np.array([[0,-1,0],[0,0,1]]),np.array([-1,0,0]))]
+square=860;originY=208;originsX=[80,1030,1980];span=2.9;ppm=square/span
+armor=[p for p in base['parts'] if p['role'] in ['armor_cover','armor_surface']]
+louvers=[p for p in base['parts'] if '_radiator_louver_' in p['name']]
+def style(p,layer):
+ if layer=='armor':return (167,175,184,36),(105,117,130,65)
+ if layer=='grille':return (216,158,48,230),(107,73,15,210)
+ cat=p['category'];n=p['name']
+ if cat in ['coolant_inventory','oil_inventory_once']:return (54,185,189,32),None
+ if cat=='coolant_inventory_unknown_internal':return (200,119,192,85),(130,58,137,145)
+ if cat=='coolant_material':
+  return ((39,119,217,205),(14,72,144,95)) if '_supply_' in n or 'pump_to_cold' in n or 'core_to_pump' in n else ((219,70,55,190),(134,49,37,100))
+ if cat=='oil_line_native_material':return (118,57,148,195),(68,27,97,160)
+ if cat=='oil_water_HX_native_material':return (226,139,63,195),(157,80,30,160)
+ if cat=='motor_cooling_case':return (45,122,127,150),(20,79,89,150)
+ if cat=='radiator_native_material':return (182,137,31,210),(97,72,19,165)
+ if cat in ['sealed_duct','fan_complete_reserve']:return (55,160,92,75),(19,105,54,170)
+ if cat=='coolant_reservoir':return (158,111,194,200),(88,55,128,160)
+ return (84,113,141,130),(44,65,82,140)
+def raster(parts,layer,M,depth,ox):
+ tris=[]
+ for p in parts:
+  vs=np.asarray(p['vertices_world_m']);uv=vs@M.T;zz=vs@depth;fill,edge=style(p,layer)
+  for f in p['faces']:
+   for i in range(1,len(f)-1):
+    ii=[f[0],f[i],f[i+1]];q=uv[ii];xy=[(ox+(u+1.45)*ppm,originY+(2.82-v)*ppm) for u,v in q]
+    # Faces are exactly triangulated from source polygons; only zero projected area is omitted.
+    a=q[1]-q[0];b=q[2]-q[0]
+    if abs(a[0]*b[1]-a[1]*b[0])<1e-12:continue
+    tris.append((float(np.mean(zz[ii])),xy,fill,edge))
+ tile=Image.new('RGBA',(W,H),(0,0,0,0));td=ImageDraw.Draw(tile)
+ for _,xy,col,edge in sorted(tris,key=lambda x:x[0]):td.polygon(xy,fill=col)
+ # Native polygon face boundaries, never a fabricated linkage or tube centerline.
+ if layer=='armor':
+  for p in parts:
+   v=np.asarray(p['vertices_world_m'])@M.T
+   for f in p['faces']:
+    xy=[(ox+(v[i,0]+1.45)*ppm,originY+(2.82-v[i,1])*ppm) for i in f];td.line(xy+[xy[0]],fill=(105,117,130,35),width=1)
+ canvas.alpha_composite(tile)
+for title,idx,M,dep in panels:
+ ox=originsX[idx];draw.text((ox,160),title,font=font(25),fill=(25,42,58))
+ for z in np.arange(0,2.76,.25):
+  y=originY+(2.82-z)*ppm;draw.line((ox,y,ox+square,y),fill=(228,233,237),width=1)
+  if abs(z*2-round(z*2))<1e-8:draw.text((ox-48,y-12),f'{z:.1f}',font=font(16),fill=(125,133,145))
+ for u in np.arange(-1.0,1.01,.5):
+  x=ox+(u+1.45)*ppm;draw.line((x,originY,x,originY+square),fill=(235,238,241),width=1);draw.text((x-24,originY+square+12),f'{u:+.1f}',font=font(16),fill=(125,133,145))
+ raster(armor,'armor',M,dep,ox);raster(scene['parts'],'native',M,dep,ox);raster(louvers,'grille',M,dep,ox)
+ draw.rectangle((ox,originY,ox+square,originY+square),outline=(174,187,198),width=2)
+ # Exact projected dimensions are provided as text; no virtual cut or geometry is drawn.
+ draw.text((ox+35,originY+20),'Reference armor: no cut',font=font(19),fill=(92,102,116))
+ draw.text((ox+35,originY+47),'Solid colors: projected source mesh faces',font=font(17),fill=(92,102,116))
+ draw.text((ox+520,originY+square-30),'metres | 0.5 m grid labels',font=font(16),fill=(70,86,103))
+draw=ImageDraw.Draw(canvas)
+legend=[('Supply hose', (39,119,217)),('Return hose',(219,70,55)),('Native cores / original louvers',(182,137,31)),('Open ducts / new rear openings',(55,160,92)),('Joint channels',(45,122,127)),('Oil routes / reservoirs',(158,111,194))]
+x=70;y=1140
+for label,col in legend:
+ draw.rectangle((x,y,x+26,y+22),fill=col);draw.text((x+36,y-1),label,font=font(18),fill=(45,58,73));x+=int(font(18).getlength(label))+82
+draw.text((70,1190),'Rear core face = 0.203 m2; rear exhaust gross openings = 0.216 m2; supplemental side intake gross = 0.210 m2. These are distinct quantities.',font=font(20),fill=(45,58,73))
+draw.text((70,1222),'Geometry rejected: native oil/coolant route crossings and many unchanged armor overlaps. Exact scope/counts are in limited_system_screen.json.',font=font(18),fill=(134,55,44))
+image_path=OUT/'native_thermal_path_orthographic.png';canvas.convert('RGB').save(image_path)
+manifest={'renderer':'Pillow CPU orthographic polygon rasterization of exact source faces, depth sorted per view, no added structure','script_sha256':sha(__file__),'inputs':{str(p.relative_to(ROOT)):sha(p) for p in [sp,cp,bp]},'font_file':FONT,'font_file_sha256':sha(FONT),'image_sha256':sha(image_path),'image_dimensions_px':[W,H],'same_pixels_per_metre':ppm,'view_matrices':{t:M.tolist() for t,_,M,_ in panels},'plot_limits_m':{'horizontal':[-1.45,1.45],'vertical':[-.08,2.82]},'native_system_part_count':len(scene['parts']),'armor_count':len(armor),'grille_louver_count':len(louvers),'original_armor_modified':False,'not_aesthetic_redesign':True,'interpretation':'Transparent original armor is a diagnostic overlay; all native E2 system geometry is projected, no physical cut is implied.'}
+(OUT/'native_projection_manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+print(json.dumps({'image':str(image_path),'image_sha256':sha(image_path),'scale_px_per_m':ppm,'actual_native_parts':len(scene['parts'])},indent=2))

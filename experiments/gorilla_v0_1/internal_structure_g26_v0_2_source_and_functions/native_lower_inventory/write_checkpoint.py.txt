@@ -1,0 +1,17 @@
+import json,hashlib,shutil,datetime,numpy as np
+from pathlib import Path
+O=Path(__file__).resolve().parent;inv=json.loads((O/'inventory_and_interfaces.json').read_text());scene=json.loads((O/'native_lower_scene.json').read_text())
+for row in inv['metadata_targeted_reads']:
+ p=Path(row['path']);d=O/'source_inputs'/p.name;shutil.copy2(p,d);row['captured_file']=str(d.relative_to(O));assert hashlib.sha256(d.read_bytes()).hexdigest()==row['sha256']
+axes={r['source_locator_id']:r for r in inv['actual_appearance_locators']};lengths=[]
+for side in ['L','R']:
+ for a,b in [('thigh','return'),('return','shank'),('shank','foot')]:
+  p=np.array(axes[side+'_'+a+'_pitch']['origin_normalized']);q=np.array(axes[side+'_'+b+'_pitch']['origin_normalized']);lengths.append({'from':side+'_'+a+'_pitch','to':side+'_'+b+'_pitch','length_normalized':float(np.linalg.norm(q-p)),'SI_formula':'length_m = s_m_per_normalized_unit * length_normalized; s unassigned'})
+inv['actual_locator_distance_inventory']=lengths
+inv['foot_contact_region_inventory']=[{'id':p['source_id'],'source_parent_id':p['source_parent_id'],'world_bounds_normalized':p['actual_vertices_world_bounds_normalized'],'same_foot_owner_not_separate_folding_DOF':True,'ground_normal_force_friction_unqualified':True} for p in inv['parts'] if '_sole_contact_' in p['source_id']]
+(O/'inventory_and_interfaces.json').write_text(json.dumps(inv,indent=2))
+geo=[]
+for p in sorted(O.rglob('*')):
+ if p.is_file() and (p.suffix=='.npz' or p.name in ['native_lower_scene.json','source_capture.json','render_manifest.json'] or (p.suffix=='.png' and p.parent==O)):
+  geo.append({'file':str(p.relative_to(O)),'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'bytes':p.stat().st_size})
+(O/'geometry_lock.json').write_text(json.dumps({'locked_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'source_geometry_unchanged':True,'normalized_not_SI':True,'rawmesh_negative_mirror_not_repaired':True,'geometry_outputs':geo},indent=2))

@@ -1,0 +1,17 @@
+from pathlib import Path
+import json,hashlib,datetime
+O=Path(__file__).resolve().parent
+h=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+scene=json.loads((O/'native_lower_scene.json').read_text());inv=json.loads((O/'inventory_and_interfaces.json').read_text());render=json.loads((O/'render_manifest.json').read_text());lock=json.loads((O/'geometry_lock.json').read_text());checks=[]
+for m in scene['meshes']:checks.append({'scope':'raw mesh','file':m['file'],'expected':m['sha256'],'actual':h(O/m['file']),'match':m['sha256']==h(O/m['file'])})
+for r in lock['geometry_outputs']:checks.append({'scope':'geometry lock','file':r['file'],'expected':r['sha256'],'actual':h(O/r['file']),'match':r['sha256']==h(O/r['file'])})
+checks += [{'scope':'scene to inventory','match':inv['native_scene_sha256']==h(O/'native_lower_scene.json')},{'scope':'scene to render','match':render['native_scene_sha256']==h(O/'native_lower_scene.json')},{'scope':'captured Blend to source JSON','match':scene['source_json_matches_captured_blend']},{'scope':'captured Blend actual','match':h(O/'source_inputs/lower_modular_components_b7.blend')==scene['source_blend_sha256']},{'scope':'captured author JSON actual','match':h(O/'source_inputs/lower_modular_components_b7.json')==scene['source_json_sha256']}]
+(O/'identity_check.json').write_text(json.dumps({'checks':checks,'identity_pass':all(c['match'] for c in checks),'geometry_engineering_gate':False,'appearance_user_gate_not_decided_here':False,'native_resource_gate_not_independently_qualified':False,'images_actually_inspected':['native_normalized_four_view.png'],'original_appearance_gray_preserved':True,'geometry_lock_utc':lock['locked_utc']},indent=2))
+inputs=[]
+for r in [{'path':'/home/ethan/Projects/Sai_Art/docs/uri_style/gorilla_v0_2/source/lower_modular_components_b7.blend','captured':'source_inputs/lower_modular_components_b7.blend'},{'path':'/home/ethan/Projects/Sai_Art/docs/uri_style/gorilla_v0_2/lower_modular_components_b7.json','captured':'source_inputs/lower_modular_components_b7.json'}]+[{'path':r['path'],'captured':r['captured_file']} for r in inv['metadata_targeted_reads']]:
+ p=Path(r['path']);c=O/r['captured'];inputs.append({**r,'captured_sha256':h(c),'original_sha256_at_freeze':h(p),'original_still_matches_capture':h(c)==h(p),'bytes':c.stat().st_size})
+outs=[]
+for p in sorted(O.rglob('*')):
+ if p.is_file() and p.name!='freeze_manifest.json' and '__pycache__' not in p.parts:outs.append({'file':str(p.relative_to(O)),'sha256':h(p),'bytes':p.stat().st_size,'failure_historical_only':('render_initial' in p.parts or 'incomplete' in p.name or 'initial' in p.name or p.name in ['extraction_stdout.txt','extraction_corrected_runtime_stdout.txt','extraction_stdlib_corrected_stdout.txt'])})
+manifest={'scope':'V0.2 normalized lower raw appearance source capture/extraction and actual four views; NOT SI/load/whole-body qualification','frozen_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'inputs':inputs,'outputs':outs,'identity_checks_pass':all(c['match'] for c in checks),'source_geometry_not_repaired':True,'source_material_not_physical_properties':True,'old_V01_dimensions_not_used':True,'GPU_used':False,'controlled_source_or_Git_changed':False}
+(O/'freeze_manifest.json').write_text(json.dumps(manifest,indent=2));print('G26_FREEZE',h(O/'freeze_manifest.json'),'inputs',len(inputs),'outputs',len(outs),'identity_errors',sum(not c['match'] for c in checks));print('inventory',h(O/'inventory_and_interfaces.json'));print('fourview',h(O/'native_normalized_four_view.png'))

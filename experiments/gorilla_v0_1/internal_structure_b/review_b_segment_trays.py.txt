@@ -1,0 +1,175 @@
+#!/usr/bin/env python3
+"""Read-only native foot-path and local force review of the latest Gorilla B."""
+import json,hashlib,pathlib,sys
+import numpy as np
+import trimesh
+ROOT=pathlib.Path(__file__).resolve().parents[2]
+OUT=pathlib.Path(__file__).resolve().parent/'segment_tray_review'
+sys.path[:0]=[str(ROOT/'src'),str(ROOT/'scripts/evaluation')]
+from check_gorilla_composite_foot import mesh,relation
+from sai_agent.structural_statics import contact_extreme_allocations
+
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+def transform(matrix,p):return (np.asarray(matrix)@np.r_[p,1])[:3]
+inputs=json.loads((OUT/'input_manifest.json').read_text())
+paths={k:OUT/('input_'+k+'.json') for k in ('scene','spec','statics')}
+data={k:json.loads(p.read_bytes()) for k,p in paths.items()};hashes={k:sha(p) for k,p in paths.items()}
+spec=data['spec'];scene=data['scene'];statics=data['statics']
+assert statics['scene_sha256']==hashes['scene'] and statics['spec_sha256']==hashes['spec']
+assert all(sha(OUT/('input_'+k+'.json'))==v for k,v in inputs['sha256'].items())
+parts={p['name']:p for p in scene['parts']}
+candidate_path=OUT/'input_foot_candidate.json';candidate=json.loads(candidate_path.read_text())
+assert sha(candidate_path)==spec['foot_candidate_sha256']
+oldparts={p['name']:p for p in candidate['new_parts']}
+relationships=[]
+for side in ('left','right'):
+ arch=parts['isb_'+side+'_foot_net_frame'];fore=parts['isb_'+side+'_forefoot_display_net_frame'];heel=parts['isb_'+side+'_heel_display_net_frame']
+ for group,frame,name in [('forefoot',fore,'_composite_forepad'),('heel',heel,'_composite_heel_pad')]:
+  pad=parts[side+name];v=np.asarray(pad['vertices_world_m']);u=np.asarray(frame['vertices_world_m'])
+  relationships.append({'side':side,'relation':'ground pad to '+group+' steel frame','parts':[pad['name'],frame['name']],
+                        'strict_Z_axis_gap_lower_bound_m':float(u[:,2].min()-v[:,2].max()),
+                        'native_relation':relation(pad,frame),'load_bridge_qualified':False})
+ for flank in ('negative_y','positive_y'):
+  for group,frame,key in [('forefoot',fore,'fore'),('heel',heel,'heel')]:
+   rotor=parts[side+'_composite_'+flank+'_'+key+'_rotor']
+   rel=relation(rotor,frame)
+   relationships.append({'side':side,'relation':group+' rotor to moving net frame','native_relation':rel,
+                         'note':'Material overlap/contact is geometry evidence only, not a qualified weld/bolt interface.'})
+  guide=parts[side+'_composite_'+flank+'_forefoot_lock_guide']
+  points=np.asarray(guide['vertices_world_m'])
+  _,dist,_=trimesh.proximity.closest_point_naive(mesh(arch),points)
+  relationships.append({'side':side,'relation':'forefoot lock guide to fixed net frame','native_relation':relation(guide,arch),
+                        'guide_vertex_to_frame_distance_min_max_m':[float(dist.min()),float(dist.max())],
+                        'distance_scope':'Distances at guide vertices; native triangle crossing/containment checks entire surfaces.',
+                        'attachment_qualified':False})
+  for group,key in [('forefoot','fore'),('heel','heel')]:
+   stop=oldparts[side+'_composite_'+flank+'_'+group+'_neutral_stop']
+   rotor=parts[side+'_composite_'+flank+'_'+key+'_rotor']
+   remaining=trimesh.boolean.difference([mesh(stop),mesh(arch)],engine='manifold')
+   relationships.append({'side':side,'relation':group+' stop material retained in fixed union',
+                         'stop_name':stop['name'],'stop_material_outside_union_m3':0.0 if remaining is None else float(remaining.volume),
+                         'rotor_stop_native_relation':relation(rotor,stop),
+                         'attachment_qualified':False})
+ print(side,'geometry reviewed',flush=True)
+
+# Mesh evidence independent of source's connectivity declaration.
+from check_gorilla_composite_foot import ray_values
+tray_proofs=[];endpoint_overlap=[];tray_sections={}
+for side,sign in (('left',1),('right',-1)):
+ arch=mesh(parts['isb_'+side+'_foot_net_frame'])
+ pivot=np.array(parts[side+'_composite_arch_pin']['composite_foot_pivot_world_m'])
+ for group,body_suffix,pad_suffix,x0,x1,yc,target in (
+     ('forefoot','forefoot_display','_composite_forepad',.065,.345,sign*.620,.046),
+     ('heel','heel_display','_composite_heel_pad',-.335,-.194,sign*.500,.051)):
+  part=parts['isb_'+side+'_'+body_suffix+'_net_frame'];material=mesh(part)
+  sections=[]
+  for z in (.034,.036,.038):
+   edges=trimesh.intersections.mesh_plane(material,[0,0,1],[0,0,z])
+   sections.append({'z_m':z,'segment_count':len(edges),'min_x_m':float(edges[:,:,0].min()),
+                    'max_x_m':float(edges[:,:,0].max())})
+  tray_sections[(side,group)]=sections
+  rib_samples=[]
+  for yy in (yc-.1195,yc+.1195):
+   for xx in (x0+(x1-x0)*.25,(x0+x1)/2,x0+(x1-x0)*.75):
+    hits=ray_values(part,[[xx,yy,0]],[0,0,1])[0]
+    intervals=[[float(hits[i]),float(hits[i+1])] for i in range(0,len(hits)-1,2)]
+    contiguous=any(abs(lo-.033)<1e-7 and hi>=target-1e-7 for lo,hi in intervals)
+    rib_samples.append({'XY_world_m':[xx,yy],'material_intervals_Z_m':intervals,
+                        'one_continuous_material_interval_from_pad_top_through_rib_target':contiguous})
+  shells=material.split(only_watertight=False)
+  positive=[q for q in shells if q.volume>1e-10]
+  tray_proofs.append({'side':side,'group':group,'body':part['body'],'native_mesh_watertight':bool(material.is_watertight),
+                      'native_mesh_consistent_winding':bool(material.is_winding_consistent),
+                      'positive_material_components_independently_computed':len(positive),
+                      'thin_tray_sections':sections,'sampled_contiguous_rib_columns':rib_samples,
+                      'pad_metal_interface_plane_Z_m':.033,'pad_role':parts[side+pad_suffix]['role'],
+                      'tray_material_mass_qualified':False,'physical_interface_qualified':False})
+  for label,angle in (('neutral',0),('unloaded_endpoint',-15 if group=='forefoot' else 10)):
+   posed=material.copy();t=np.deg2rad(angle);R=np.array([[np.cos(t),0,np.sin(t)],[0,1,0],[-np.sin(t),0,np.cos(t)]])
+   T=np.eye(4);T[:3,:3]=R;T[:3,3]=pivot-R@pivot;posed.apply_transform(T)
+   intersection=trimesh.boolean.intersection([arch,posed],engine='manifold')
+   endpoint_overlap.append({'side':side,'group':group,'pose':label,'angle_deg':angle,
+      'fixed_arch_vs_segment_positive_volume_m3':float(intersection.volume),
+      'intersection_bounds_m':intersection.bounds.tolist() if len(intersection.vertices) else [],
+      'scope':'Actual net steel fixed/moving meshes only; excludes retained visual/armor and shaft proxies. Full-volume root checker remains separate.'})
+ gaps=[]
+ for i,z in enumerate((.034,.036,.038)):
+  fore=tray_sections[(side,'forefoot')][i];heel=tray_sections[(side,'heel')][i]
+  gaps.append({'z_m':z,'gap_X_m':fore['min_x_m']-heel['max_x_m'],
+               'fore_min_X_m':fore['min_x_m'],'heel_max_X_m':heel['max_x_m']})
+ print(side,'tray sections/rib paths/gaps/endpoints',gaps,flush=True)
+ for q in tray_proofs:
+  if q['side']==side:q['independent_fore_heel_tray_gaps']=gaps
+
+budget=json.loads((OUT/'input_budget_spec.json').read_text());g=budget['gravity_m_s2']
+rows=statics['material_mass_rows']+statics['complete_module_allocation_rows']
+force_cases=[]
+for pose in statics['poses']:
+ matrices={k:np.asarray(v) for k,v in pose['body_rest_world_to_pose_transforms'].items()}
+ padrows=[]
+ for side in ('left','right'):
+  for body,ending in [(side+'_forefoot_display','_composite_forepad'),(side+'_heel_display','_composite_heel_pad')]:
+   for v in parts[side+ending]['vertices_world_m']:
+    if abs(v[2])<1e-8:padrows.append((body,transform(matrices[body],v)))
+ padrows=sorted({(b,tuple(np.round(v,12))) for b,v in padrows});vertices=np.asarray([v for b,v in padrows]);bodies=[b for b,v in padrows]
+ for case in pose['cases']:
+  multiplier=case['load_multiplier_hypothesis'];loads=[]
+  for row in rows:
+   loads.append({'body':row['body'],'position_world_m':transform(matrices[row['body']],row['position']).tolist(),
+                 'force_world_N':[0,0,-row['mass_range_kg'][1]*g*multiplier]})
+  for side in ('left','right'):
+   if case['payload_kg_hypothesis']:
+    points=json.loads((OUT/'input_geometry_spec.json').read_text())['points_world_m']
+    loads.append({'body':side+'_palm','position_world_m':transform(matrices[side+'_palm'],points[side+'_palm']).tolist(),
+                  'force_world_N':[0,0,-case['payload_kg_hypothesis']/2*g*multiplier]})
+  if case['external_pressure_demand_kg']:
+   loads.append({'body':'torso','position_world_m':transform(matrices['torso'],[0,0,2.45]).tolist(),
+                 'force_world_N':[0,0,-case['external_pressure_demand_kg']*g*multiplier]})
+  allocations=contact_extreme_allocations(vertices,loads)
+  assert len(allocations)==case['extreme_contact_allocation_count']
+  for side in ('left','right'):
+   pivot=transform(matrices[side+'_foot'],parts[side+'_composite_arch_pin']['composite_foot_pivot_world_m'])
+   for group in ('forefoot','heel'):
+    body=side+('_forefoot_display' if group=='forefoot' else '_heel_display')
+    mask=np.array([b==body for b in bodies]);segment_loads=[r for r in loads if r['body']==body]
+    gravity_force=sum((np.array(r['force_world_N']) for r in segment_loads),np.zeros(3))
+    gravity_moment=sum((np.cross(np.array(r['position_world_m'])-pivot,r['force_world_N']) for r in segment_loads),np.zeros(3))
+    moment_y=gravity_moment[1]+allocations[:,mask]@np.cross(vertices[mask]-pivot,[0,0,1])[:,1]
+    ground_force=allocations[:,mask].sum(1)
+    centers=[np.asarray(oldparts[side+'_composite_'+f+'_'+group+'_neutral_stop']['vertices_world_m']).mean(0) for f in ('negative_y','positive_y')]
+    stop_center=transform(matrices[side+'_foot'],np.mean(centers,axis=0))
+    normal=matrices[side+'_foot'][:3,:3]@np.array([0,0,-1.])
+    arm=np.cross(stop_center-pivot,normal)[1]
+    R=-moment_y/arm
+    peak=int(np.argmax(R));reverse=int(np.argmin(R))
+    pin_force_z=-(ground_force+gravity_force[2]+R*normal[2])
+    force_cases.append({'pose':pose['id'],'side':side,'group':group,'payload_kg':case['payload_kg_hypothesis'],
+      'external_pressure_kg':case['external_pressure_demand_kg'],'multiplier':multiplier,
+      'actual_extreme_allocation_count':len(allocations),'effective_stop_pitch_arm_m':float(arm),
+      'total_required_compressive_stop_force_min_max_N':[float(R.min()),float(R.max())],
+      'conditional_equal_pair_stop_force_peak_N':float(R.max()/2),
+      'required_reverse_holding_pitch_torque_max_Nm':float(max(0,-R.min()*abs(arm))),
+      'low_axis_pin_vertical_reaction_min_max_N':[float(pin_force_z.min()),float(pin_force_z.max())],
+      'pin_vertical_reaction_at_peak_stop_N':float(pin_force_z[peak]),
+      'segment_ground_normal_min_max_N':[float(ground_force.min()),float(ground_force.max())],
+      'moving_segment_gravity_force_z_N':float(gravity_force[2]),
+      'peak_stop_actual_ground_contact_allocation':[{'body':bodies[i],'position_world_m':vertices[i].tolist(),'normal_force_N':float(allocations[peak,i])}
+                                                   for i in np.flatnonzero(allocations[peak]>1e-7)],
+      'scope':'All actual finite unilateral whole-robot B allocations; segment self-weight included. Negative stop demands need lock/reverse holding. Equal pair division is conditional; transverse shaft/support distribution is unresolved.'})
+ print(pose['id'],'forces reviewed',flush=True)
+assert hashes=={k:sha(p) for k,p in paths.items()},'B source changed while reviewing'
+report={'robot_id':'gorilla_v0_1','source_paths':{k:inputs['original_paths'][k] for k in paths},
+        'source_sha256':hashes,'candidate_sha256':sha(candidate_path),'conditional_robot_mass_range_kg':statics['conditional_robot_mass_range_kg'],
+        'native_relationships':relationships,'actual_B_local_stop_force_cases':force_cases,
+        'separated_tray_native_proofs':tray_proofs,'fixed_vs_segment_endpoint_volume_checks':endpoint_overlap,
+        'snapshot_manifest_sha256':sha(OUT/'input_manifest.json'),
+        'input_material_pad_density_range_kg_m3':spec['pad_density_range_kg_m3_hypothesis'],
+        'explicit_pad_mass_rows':[q for q in statics['material_mass_rows'] if q['id'].endswith(('_composite_forepad','_composite_heel_pad'))],
+        'checker_sha256':sha(pathlib.Path(__file__)),
+        'physical_acceptance':False,'joint_connection_and_material_qualification':False,
+        'scope':'Read-only B endpoint material/contact review and affine local free-body demands; no geometry/strength acceptance, independent sweep or engine validation.'}
+(OUT/'whole_review.json').write_text(json.dumps(report,indent=2)+'\n')
+print('PRESSURE neutral')
+for r in force_cases:
+ if r['pose']=='neutral' and r['external_pressure_kg']==3000:print(r['side'],r['group'],r['total_required_compressive_stop_force_min_max_N'],r['conditional_equal_pair_stop_force_peak_N'])
+print('MAX_ALL',max(r['conditional_equal_pair_stop_force_peak_N'] for r in force_cases))

@@ -1,0 +1,7 @@
+from pathlib import Path
+O=Path(__file__).resolve().parent
+s=(O/'check_forward_serial.py').read_text().replace('D=O/arg.variant','D=O/(\'native_only_\'+arg.variant)')
+s=s[:s.index('# Whole own')]+"\nprint('G23_NATIVE_EARLY',arg.variant,'reject',len(gates)-len(valid),'neutralFinite',sum(r['classification']=='finite_material'for r in neutral),flush=True)\n"
+(O/'check_native_preview.py').write_text(s)
+s=(O/'render_forward_serial.py').read_text().replace('D=O/arg.variant','D=O/(\'native_only_\'+arg.variant)')
+(O/'render_native_preview.py').write_text(s)

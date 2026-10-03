@@ -1,0 +1,77 @@
+"""G22 one common-frame/receiver candidate. SI native real material; no source repair."""
+from pathlib import Path
+import gzip,json,hashlib,copy,math,sys,importlib.util
+import numpy as np,manifold3d as mf,trimesh
+from OCP.BRepPrimAPI import BRepPrimAPI_MakeBox,BRepPrimAPI_MakeCylinder
+from OCP.BRepAlgoAPI import BRepAlgoAPI_Fuse,BRepAlgoAPI_Cut
+from OCP.gp import gp_Pnt,gp_Dir,gp_Ax2
+from OCP.BRepCheck import BRepCheck_Analyzer
+from OCP.BRepGProp import BRepGProp
+from OCP.GProp import GProp_GProps
+from OCP.STEPControl import STEPControl_Writer,STEPControl_AsIs
+from OCP.BRepTools import BRepTools
+R=Path.cwd();O=Path(__file__).resolve().parent;N=64;sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();put=lambda n,x:(O/n).write_text(json.dumps(x,indent=2,allow_nan=False)+'\n')
+J=R/'.scratch/gorilla_internal_g21_joint_core_interface/b/scene.json.gz';B=R/'.scratch/gorilla_internal_g21_whole_body_space_allocation/b/scene.json.gz';DELTA=R/'.scratch/gorilla_internal_g21_joint_core_interface/actual_installation_delta.json'
+js=json.loads(gzip.decompress(J.read_bytes()));bs=json.loads(gzip.decompress(B.read_bytes()));jp={p['name']:p for p in js['parts']};bp={p['name']:p for p in bs['parts']};parts=[];new=[];holes=[];inputs={str(p.relative_to(R)):sha(p)for p in[J,B,DELTA,R/'sai_robots_engineering_rules.md']}
+def kernel(p):return mf.Manifold(mf.Mesh64(np.array(p['vertices_world_m'],float),np.array(p['faces'],np.uint64)))
+def op(fn,a,b):x=fn(a,b);x.Build();assert x.IsDone();return x.Shape()
+class Pair:
+ def __init__(self,n,o):self.n=n;self.o=o
+ def __add__(self,b):return Pair(self.n+b.n,op(BRepAlgoAPI_Fuse,self.o,b.o))
+ def __sub__(self,b):return Pair(self.n-b.n,op(BRepAlgoAPI_Cut,self.o,b.o))
+def bx(c,d):return Pair(mf.Manifold.cube(d,True).translate(c),BRepPrimAPI_MakeBox(gp_Pnt(*(np.array(c)-np.array(d)/2)),*map(float,d)).Shape())
+def cy(c,r,L,axis='X'):
+ a={'X':np.array([1.,0,0]),'Y':np.array([0.,1,0]),'Z':np.array([0.,0,1])}[axis];u=np.array([0.,1,0])if axis=='X'else np.array([1.,0,0]);v=np.cross(a,u);T=np.column_stack([u,v,a,np.array(c)]);return Pair(mf.Manifold.cylinder(L,r,r,N,True).transform(T),BRepPrimAPI_MakeCylinder(gp_Ax2(gp_Pnt(*(np.array(c)-a*L/2)),gp_Dir(*a)),r,L).Shape())
+def cb(c,d,t):return bx(c,d)-bx(c,(np.array(d)-2*t).tolist())
+def add(n,m,body='torso',rho=7850,role='finite_new_material',**kw):
+ assert m.status()==mf.Error.NoError and m.volume()>1e-10,(n,str(m.status()),m.volume());me=m.to_mesh64();p={'name':n,'body':body,'role':role,'vertices_world_m':np.array(me.vert_properties)[:,:3].tolist(),'faces':np.array(me.tri_verts).tolist(),'finite_material':True,'density_kg_m3':rho,'rgba':[.44,.54,.61,1.],'physical_connection_admitted':False,**kw};tm=trimesh.Trimesh(p['vertices_world_m'],p['faces'],process=False);pr=tm.mass_properties;p.update(mass_range_kg=[pr.volume*rho]*3,own_COM_world_m=pr.center_mass.tolist(),own_full_I_at_COM_world_kg_m2=(pr.inertia*rho).tolist());parts.append(p);new.append(n);return p
+# Same broad G21 RHS geometry, but actual matched node plates rather than the failed Y=.30 strip.
+f=None
+for yy in [-.30,.30]:
+ q=bx([.025,yy,2.25],[.20,.080,.65])-bx([.025,yy,2.25],[.19,.070,.652]);f=q if f is None else f+q
+for zz in [1.94,2.54]:f=f+(bx([.025,0,zz],[.20,.68,.080])-bx([.025,0,zz],[.19,.682,.070]))
+f=f+bx([.11,0,1.93],[.32,.16,.12]);f=f+(cy([.238,0,1.91],.145,.020)-cy([.238,0,1.91],.072,.026))
+# Real end face + support above and below controller. No opaque stock treated as a cavity.
+pattern=[(.365,2.295),(.455,2.295),(.545,2.295),(.365,2.515),(.455,2.515),(.545,2.515),(.545,2.345),(.545,2.465)]
+core0=kernel(jp['g21_b_core_fixed_receiver_continuous_candidate']);receiver_sets={}
+for side,sg in [('left',1),('right',-1)]:
+ plate=bx([.127,sg*.455,2.405],[.024,.220,.260])
+ for zz in [2.310,2.500]:plate=plate+cb([.142,sg*.395,zz],[.054,.340,.060],.006)
+ # The full existing controller is physically reserved; removing own wall does not certify the controller.
+ controller=jp['g21_b_pitch_fullcontroller'];vv=np.array(controller['vertices_world_m']);lo,hi=vv.min(0),vv.max(0);lo[1]*=sg;hi[1]*=sg;lo,hi=np.minimum(lo,hi),np.maximum(lo,hi);window=bx((lo+hi)/2,(hi-lo)+.004);plate=plate-window
+ core=core0 if sg==1 else core0.mirror([0,1,0]);core=core-window.n
+ for i,(yy,zz) in enumerate(pattern):
+  y=sg*yy;plate=plate-cy([.127,y,zz],.0065,.060);core=core+cy([.101,y,zz],.013,.028).n;core=core-cy([.101,y,zz],.0061,.034).n
+  holes.append({'id':side+'_shoulder_'+str(i),'axis_world':[1,0,0],'center_yz_m':[y,zz],'nominal_mate_X_m':.115,'node_clearance_D_m':.013,'receiver_thread_minor_proxy_D_m':.0122,'thread_profile_not_CAD':True,'boss_outer_D_m':.026,'boss_X_m':[.087,.115],'end_face_nodes_X_m':[.115,.139]})
+  bolt=cy([.115,y,zz],.0058,.052).n+cy([.144,y,zz],.010,.006).n
+  add('g22_'+side+'_shoulder_M12_proxy_'+str(i),bolt,thread_preload_property_class_and_contact_unknown=True,shaft_threads_not_resolved=True)
+ f=f+plate;receiver_sets[side]=core
+# Waist: clear actual cage face X=.228. New finite output mating flange is conditional; no old fixed shell is renamed output.
+for i in range(8):
+ a=i*math.pi/4;y=.110*math.cos(a);z=1.91+.110*math.sin(a);f=f-cy([.238,y,z],.0075,.040)
+ holes.append({'id':'waist_'+str(i),'axis_world':[1,0,0],'center_yz_m':[y,z],'nominal_mate_X_m':.228,'clearance_D_m':.015,'bolt_PCD_m':.220,'conditional_output_X_m':[.215,.228]})
+ add('g22_waist_M14_proxy_'+str(i),cy([.235,y,z],.0068,.036).n+cy([.256,y,z],.012,.006).n,body='torso',thread_preload_and_rotating_output_unknown=True)
+out=cy([.2215,0,1.91],.145,.013)-cy([.2215,0,1.91],.072,.017)
+for h in holes:
+ if h['id'].startswith('waist_'):out=out-cy([.2215,*h['center_yz_m']],.0071,.024)
+frame=add('g22_common_core_load_cage_net',f.n,old_cage_replaced_source_id='g21_wide_closed_load_cage_net',source_RHS200x80x5_preserved=True,shoulder_loadpath='receiver endwall -> real matched plate -> two closed transverse 54x60x6 bridges -> bilateral 200x80x5 rails -> lower crossbeam/neck -> annular waist face',zero_gap_nominal_not_preload_or_connection_qualification=True)
+for side,m in receiver_sets.items():add('g22_'+side+'_derived_fixed_pitch_receiver',m,source_part_id='g21_b_core_fixed_receiver_continuous_candidate',source_scene_sha256=sha(J),source_visible_shell_change_mm=0,controller_clearance_window_and_actual_backing_bosses_added=True)
+add('g22_conditional_waist_rotating_output_mate',out.n,body='unresolved_new_waist_output_owner',actual_existing_rotating_output_hardware_absent=True,not_old_fixedgear_shell_alias=True,upstream_connection_not_implemented=True)
+# Complete 110-part source preserved; only exact finite fixed receiver replaced. Left source untouched; right is explicit reflection-derived source.
+for side,sg in [('left',1),('right',-1)]:
+ for p0 in js['parts']:
+  if p0['name']=='g21_b_core_fixed_receiver_continuous_candidate':continue
+  p=copy.deepcopy(p0);p['role']='retained_joint_context__'+p['role'];p['source_original_name']=p0['name'];p['source_scene_sha256']=sha(J);p['source_scope']='G21 unqualified complete functional joint source context, not changed hardware'
+  if sg<0:
+   p['name']=p['name'].replace('g21_b_','g22_right_context_');v=np.array(p['vertices_world_m']);v[:,1]*=-1;p['vertices_world_m']=v.tolist();p['faces']=np.array(p['faces'])[:,[0,2,1]].tolist();p['body']=p['body'].replace('left_','right_');p['explicit_reflection_export_changes_handedness_and_face_order_not_repair']=True
+  parts.append(p)
+# Relevant original waist material context remains sourcebound, not a promoted output installation.
+waist_ids=['f1_ds_waist_roll_gear_load_shell','f1_ds_waist_roll_gear','f1_ds_waist_roll_motor','f1_ds_waist_roll_motor_cooling_case','f1_ds_waist_roll_input_hub_reserve']
+for n in waist_ids:
+ p=copy.deepcopy(bp[n]);p['role']='unqualified_existing_waist_context__'+p['role'];p['source_scene_sha256']=sha(B);p['source_original_name']=n;parts.append(p)
+scene={'robot_id':'gorilla_v0_1','candidate':'g22_core_connection_one_layout','parts':parts,'new_member_ids':new,'inputs':inputs,'old_frame_reference_not_active':'g21_wide_closed_load_cage_net','actual_joint_full_function_context':'left and explicitly mirrored right110; replaced fixed receiver once each; OEM mass split/inertia remain unknown','whole_robot_M_COM_I':None,'physical_accepted':False,'visible_armor_change_mm':0,'waist_actual_rotating_output_absent':True}
+with gzip.GzipFile(filename='',fileobj=(O/'module_scene.json.gz').open('wb'),mode='wb',mtime=0)as z:z.write(json.dumps(scene,separators=(',',':'),allow_nan=False).encode())
+put('interfaces.json',{'source_scene_sha256':sha(O/'module_scene.json.gz'),'holes':holes,'shoulder_endface_m':'actual new modified receiver X=.115 and matched frame node X=.115','waist_face':'actual cage X=.228 and conditional new output flange X=.228; existing roll output missing','support_and_preload_not_inferred_from_zero_gap':True,'new_inventory_once':new,'interface_unknown':['threadminor actualM12/M14 geometry','preload/contact/friction','steel/material/manufacture/fatigue','conditional waist upstream output and retaining hardware','service and moving sweeps']})
+assert BRepCheck_Analyzer(f.o).IsValid();pr=GProp_GProps();BRepGProp.VolumeProperties_s(f.o,pr);w=STEPControl_Writer();w.Transfer(f.o,STEPControl_AsIs);w.Write(str(O/'common_core_numeric_m.step'));BRepTools.Write_s(f.o,str(O/'common_core_numeric_m.brep'))
+put('cad_scope_receipt.json',{'scene_sha256':sha(O/'module_scene.json.gz'),'core_native_m3':f.n.volume(),'core_exact_OCP_m3':pr.Mass(),'OCP_valid':True,'OCP_STEP_numeric_coordinates_in_m':'writer_default_mm_label_not_accepted_as_SI_export_until_declaration/readback','new_receiver_native_only':'source-derived original native with explicit finite bosses/holes/window; not OEM or invented manufacturing CAD','source_all_parts_qualified':False})
+print(json.dumps({'source':str(O/'module_scene.json.gz'),'sha256':sha(O/'module_scene.json.gz'),'parts':len(parts),'new':len(new),'core_kg':frame['mass_range_kg'][0],'waist_absent':True}),flush=True)

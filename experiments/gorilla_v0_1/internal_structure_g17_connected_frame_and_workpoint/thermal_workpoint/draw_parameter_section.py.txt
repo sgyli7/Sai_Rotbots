@@ -1,0 +1,30 @@
+"""Exact-dimensional parameter cross-section, NOT native CAD or accepted exterior."""
+from pathlib import Path
+import json,hashlib
+from PIL import Image,ImageDraw,ImageFont
+O=Path(__file__).resolve().parent; p=O/'joint_workpoint_v3.json';d=json.loads(p.read_text());g=d['custom_coldplate_parameter_source']
+I=Image.new('RGB',(1500,880),'#f5f7fa');D=ImageDraw.Draw(I)
+font='/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'
+f=ImageFont.truetype(font,22);sm=ImageFont.truetype(font,18);lg=ImageFont.truetype(font,30)
+D.text((35,25),'GORILLA G17 | finite parameter section + joint workpoint',font=lg,fill='#15324f')
+D.text((35,73),'Diagnostic design input. No new AA3 appearance / CAD / installed rating.',font=f,fill='#994431')
+x,y,s=65,180,12;W=.069*1000*s;H=.009*1000*s
+D.rectangle((x,y,x+W,y+H),fill='#8595a2',outline='#253745',width=2)
+for i in range(16):
+ a=x+(3+4*i)*s;D.rectangle((a,y+3*s,a+3*s,y+6*s),fill='#56bed3',outline='#173c56',width=1)
+D.text((65,126),'Axial cross-section: 16 parallel 3 x 3 mm channels per half-turn',font=f,fill='#15324f')
+D.text((65,315),'Inner span 63 mm = 16 x 3 + 15 x 1; covers 3 mm each -> 69 mm',font=sm,fill='#15324f')
+D.text((65,345),'Radial wall 3 + channel 3 + wall 3 = 9 mm; two semicircle paths',font=sm,fill='#15324f')
+D.text((65,375),'Mean R115 mm; inner D221 / outer D239 mm; each path L361.28 mm',font=sm,fill='#15324f')
+D.text((65,405),'8 mm custom ports + 10 mm headers, seals/vent/drain/fasteners still required',font=sm,fill='#15324f')
+D.text((65,455),'Same whole low-loop flow: 18x2 + 2x6 + 4x2 + 3 = 59 L/min',font=f,fill='#15324f')
+D.text((65,490),'Radiators: four whole ES0707 in parallel, 14.75 L/min each',font=f,fill='#15324f')
+D.text((65,525),'EMRAX OEM: hose ID10 mm; 20 kPa @6 L/min each; inlet <=2 bar(g)',font=sm,fill='#15324f')
+D.text((65,575),'Airflow ownership: each rear-low core 6.5 m3/min total',font=f,fill='#15324f')
+D.text((65,610),'A: motor 3 + bypass 3.5; B: motor 5.25 + bypass 1.25',font=f,fill='#15324f')
+D.text((65,645),'Motor branch -> rejoin -> complete ES0707; same fan, no repeated flow',font=sm,fill='#15324f')
+D.text((65,690),'Actual G17 body has no built rotor duct or new hose route.',font=f,fill='#a54a32')
+D.text((65,740),'QTL-size annulus only: QTR plate not built. Nu / curvature / contact / pressure RED.',font=sm,fill='#a54a32')
+D.text((65,795),'Source-bound geometry assumptions; no thin-wall/coldplate/whole robot acceptance.',font=sm,fill='#a54a32')
+q=O/'parameter_section_diagnostic.png';I.save(q)
+(O/'parameter_section_manifest.json').write_text(json.dumps({'input_sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'producer_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'output_sha256':hashlib.sha256(q.read_bytes()).hexdigest(),'design_parameters_drawn':g,'not_CAD_or_appearance_authority':True},indent=2)+'\n')

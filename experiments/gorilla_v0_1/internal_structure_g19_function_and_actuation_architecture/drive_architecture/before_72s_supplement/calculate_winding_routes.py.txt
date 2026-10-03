@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+"""G19 bounded winding/ratio comparison. Steady sinusoidal dq sensitivity, not a drive rating."""
+import argparse, gzip, hashlib, importlib.util,json,math
+from pathlib import Path
+import numpy as np
+HERE=Path(__file__).resolve().parent
+ROOT=HERE.parents[1]
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+def dump(p,d):p.write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n')
+def main():
+ ap=argparse.ArgumentParser();ap.add_argument('--output-dir',type=Path,default=HERE);a=ap.parse_args();out=a.output_dir;out.mkdir(exist_ok=True,parents=True)
+ r=json.loads((HERE/'requirements.json').read_text());spec=importlib.util.spec_from_file_location('requirements_producer',HERE/'calculate_architecture_requirements.py');mod=importlib.util.module_from_spec(spec);spec.loader.exec_module(mod);mot=mod.MOTORS.copy()
+ # These values are literal vendor table data. Separate SKU, not a hypothetical rewind of QTL210.
+ mot['QTR160_17_Z']={'source_url':'https://www.tecnotion.com/wp-content/uploads/2022/05/Torque_Brochure_EN_2-5.pdf','catalogue_total_kg_ex_cables':.665,'stator_OD_m':.16,'stator_Hmax_m':.0175,'Tc_Nm':4.2,'Kt_Nm_per_Arms':.31,'Ke_LL_rms_V_krpm':19,'R_phase_25C_ohm':.25,'L_phase_H':.00052,'Ic_Arms':13.4,'Umax_Vdc':325,'Pc_W':175,'poles':36,'motor_full_I_unknown':True}
+ for k in mot:mot[k].update({'poles':26 if k.startswith('QTL') else 36,'specification_tolerance_not_propagated_percent':10})
+ mot['QTR160_34_Z'].update({'stator_OD_m':.160,'stator_Hmax_m':.0345,'Ic_Arms':16.4})
+ gear={('pitch',100):{'family':'CSG65','ratio':100,'component_mass_kg':6.7,'housed_mass_kg':20.9,'L10_reference_Nm':1236},('pitch',80):{'family':'CSG65','ratio':80,'component_mass_kg':6.7,'housed_mass_kg':20.9,'L10_reference_Nm':969},('small',100):{'family':'CSG50','ratio':100,'component_mass_kg':3.2,'housed_mass_kg':8.9,'L10_reference_Nm':611},('small',80):{'family':'CSG50','ratio':80,'component_mass_kg':3.2,'housed_mass_kg':8.9,'L10_reference_Nm':484},('yaw',100):{'family':'CSG40','ratio':100,'component_mass_kg':1.7,'housed_mass_kg':None,'L10_reference_Nm':345,'component_OD_m':.135,'component_axial_m':.053}}
+ # Core choices differ by actual joint demand. Every choice still requires all support/hold/electronics/cooling/assembly functions.
+ choices={
+ 'pitch':[('baseline_QTL_N_ratio100','QTL210_65_N',100,'pitch'),('baseline_QTL_N_ratio80','QTL210_65_N',80,'pitch'),('low_Ke_distinct_QTR_Z_ratio100','QTR160_34_Z',100,'pitch')],
+ 'roll':[('baseline_QTR_N_ratio100','QTR160_34_N',100,'small'),('low_Ke_QTR_Z_ratio100','QTR160_34_Z',100,'small'),('low_Ke_QTR_Z_ratio80','QTR160_34_Z',80,'small')],
+ 'yaw':[('baseline_QTR_N_ratio100','QTR160_34_N',100,'small'),('low_Ke_QTR_Z_ratio80','QTR160_34_Z',80,'small'),('distinct_smaller_component_and_QTR17Z_ratio100','QTR160_17_Z',100,'yaw')],
+ 'elbow_pitch':[('baseline_QTR_N_ratio100','QTR160_34_N',100,'small'),('low_Ke_QTR_Z_ratio100','QTR160_34_Z',100,'small'),('low_Ke_QTR_Z_ratio80','QTR160_34_Z',80,'small')]}
+ screens=[]
+ def volts(m,tin,rpm):
+  I=tin/m['Kt_Nm_per_Arms'];iqpk=math.sqrt(2)*I;Rh=m['R_phase_25C_ohm']*(1+.00393*75);we=(m['poles']/2)*rpm*2*math.pi/60
+  eq=m['Ke_LL_rms_V_krpm']*rpm/1000*math.sqrt(2/3);vq=eq+Rh*iqpk;vd=we*m['L_phase_H']*iqpk
+  return math.sqrt(3)*math.hypot(vq,vd),{'current_Arms':I,'R_phase_100C_ohm_assumed_copper':Rh,'phase_peak_back_EMF_V':eq,'phase_peak_IR_V':Rh*iqpk,'phase_peak_omegaL_V':vd,'phase_peak_voltage_norm_V':math.hypot(vq,vd)}
+ for pose in r['poses']:
+  for j in pose['joint_screens']:
+   axis=j['joint_id'].split('_',1)[1]
+   for label,mkey,N,gkey in choices[axis]:
+    m=mot[mkey];g=gear[(gkey,N)]
+    for level in j['known_subset_levels']:
+     for payload in [0,50,100]:
+      tout=abs(level['axis_torque_Nm']+payload*level['hand_gravity_sensitivity_Nm_per_kg'])
+      for eta in [.6,.75,.9]:
+       tin=tout/(N*eta)
+       for Vbus in [200,268,336]:
+        # 10% voltage headroom. Terminal PWM/DC insulation and regeneration still separately unresolved.
+        available=.9*min(Vbus,m['Umax_Vdc']);lo=0.;hi=20000.
+        for _ in range(65):
+         mid=(lo+hi)/2
+         if volts(m,tin,mid)[0]<=available:lo=mid
+         else:hi=mid
+        qmax=lo*2*math.pi/(60*N);v0,e=volts(m,tin,0);v_at,e_at=volts(m,tin,.5*N*60/(2*math.pi));cu=3*e['R_phase_100C_ohm_assumed_copper']*e['current_Arms']**2
+        screens.append({'pose':pose['id'],'joint_id':j['joint_id'],'candidate':label,'motor':mkey,'gear':g,'level':level['level'],'external_hand_mass_kg_sensitivity':payload,'eta_gear_assumed':eta,'Vbus_assumed_V':Vbus,'known_subset_output_torque_abs_Nm':tout,'motor_input_torque_Nm':tin,'motor_current_Arms_linear_assumption':e['current_Arms'],'catalogue_Tc_utilization_known_subset':tin/m['Tc_Nm'],'catalogue_L10_utilization_reference_not_static_hardlimit':tout/g['L10_reference_Nm'],'model_qmax_rad_s_voltage_only_with_10pct_margin':qmax,'steady_qdot_p5_required_Vdc_including_10pct_margin':v_at/.9,'qdot_p5_motor_terminal_phase_terms':e_at,'catalogue_Tc_magnitude_exceeded_even_by_known_subset':tin>m['Tc_Nm'],'qdot_p5_voltage_model_rejected':v_at>available,'bus_exceeds_motor_catalogue_Umax_requires_real_PWM_insulation_solution':Vbus>m['Umax_Vdc'],'hot_copper_loss_known_subset_W':cu,'Pc_vendor_condition_W':m['Pc_W'],'complete_dynamic_422_unknown_owner_continuous_fit_accepted':False})
+ # Preserve literal joint/FK source and two-hand load application, rather than summing nested downstream loads twice.
+ reactions=[]
+ for pose in r['poses']:
+  byid={j['joint_id']:j for j in pose['joint_screens']};ref=np.array([.23,0,1.91])
+  for li in range(3):
+   for active in [['left'],['right'],['left','right']]:
+    for mass in [0,50,100]:
+     W=np.zeros(6)
+     for side in ['left','right']:
+      j=byid[f'{side}_pitch'];w=np.array(j['known_subset_levels'][li]['known_subset_proxy_gravity_Fxyz_Mxyz'])
+      if side in active:w+=mass*np.array(j['unit_hand_gravity_kg_wrench_Fxyz_Mxyz'])
+      W[:3]+=w[:3];W[3:]+=w[3:]+np.cross(np.array(j['pivot_world_m'])-ref,w[:3])
+     reactions.append({'pose':pose['id'],'level':r['poses'][0]['joint_screens'][0]['known_subset_levels'][li]['level'],'active_hands':active,'mass_each_active_hand_kg':mass,'waist_query_point_world_m':ref.tolist(),'two_pitch_subtrees_only_not_whole_torso_body_on_parent_Fxyz_Mxyz':W.tolist(),'nested_roll_yaw_elbow_not_summed_again':True,'unknown_422_and_fixed_OEM_torso_mass_not_included':True,'receiver_or_waist_interface_or_contact_accepted':False})
+ # Actual four-joint-specific chain, retain motor/gear mass intact; no discount or native layout produced.
+ output={'schema':'gorilla_g19_differentiated_motor_ratio_voltage_v1','requirements_sha256':sha(HERE/'requirements.json'),'producer_sha256':sha(Path(__file__)),'motor_facts':mot,'gear_ratio_reference_facts':list(gear.values()),'joint_candidate_choices':choices,'screens':screens,'two_hand_torso_query_screens':reactions,'model':'steady id=0 sinusoidal dq; iq_peak=sqrt(2)*I_RMS, vq=Ke*rpm*sqrt(2/3)+R100*iq_peak; vd=omega_e*L*iq_peak; sqrt(3)*|vphase_peak|<=0.9*min(Vbus,Umax). Motoring branch only. No field weakening, core/friction/PWM/regen map or actual driver certification.','QTL210_low_Ke_winding_verified':False,'QTR_Z_distinct_SKU_not_QTL_rewind':True,'mass_credit_or_speed_target_changed':False,'AA3_armor_delta_m':0,'whole_assembly_and_SI_accepted':False}
+ dump(out/'winding_ratio_voltage.json',output)
+ summaries=[]
+ for jid in [j['joint_id'] for j in r['poses'][0]['joint_screens']]:
+  for lab,_,_,_ in choices[jid.split('_',1)[1]]:
+   ss=[x for x in screens if x['joint_id']==jid and x['candidate']==lab and x['pose']=='combined_reach_conditional' and x['level']=='nominal_range_marker' and x['external_hand_mass_kg_sensitivity']==50 and x['eta_gear_assumed']==.75]
+   summaries.append({'joint_id':jid,'candidate':lab,'motor':ss[0]['motor'],'gear':ss[0]['gear'],'input_torque_Nm':ss[0]['motor_input_torque_Nm'],'current_Arms':ss[0]['motor_current_Arms_linear_assumption'],'catalogue_Tc_fraction_not_qualification':ss[0]['catalogue_Tc_utilization_known_subset'],'known_only_L10_fraction_not_qualification':ss[0]['catalogue_L10_utilization_reference_not_static_hardlimit'],'Vdc_p5_with_10pct_margin_V':ss[0]['steady_qdot_p5_required_Vdc_including_10pct_margin'],'qmax_model_at_200_268_336_V':[x['model_qmax_rad_s_voltage_only_with_10pct_margin'] for x in ss],'known_only_hot_copper_W':ss[0]['hot_copper_loss_known_subset_W'],'joint_specific_candidate_accepted':False})
+ dump(out/'winding_summary.json',{'producer_sha256':sha(Path(__file__)),'source_full_sha256':sha(out/'winding_ratio_voltage.json'),'scope':'combined G18 pose, known nominal proxy gravity plus 50kg per active hand, eta .75 only; not a task recommendation/rating','summary':summaries})
+ print(json.dumps({'screen_count':len(screens),'summaries':len(summaries),'sha256':sha(out/'winding_summary.json')},indent=2))
+if __name__=='__main__':main()

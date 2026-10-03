@@ -1,0 +1,31 @@
+"""Restore selected exact G6 records without overwriting changed scratch bytes."""
+import argparse
+import gzip
+import hashlib
+import json
+from pathlib import Path
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--root', type=Path, required=True)
+args = parser.parse_args()
+root = args.root.resolve()
+here = Path(__file__).resolve().parent
+data = json.loads((here / 'snapshot_manifest.json').read_text())
+count = 0
+for row in data['files']:
+    stored_path = (here / row['stored_path']).resolve()
+    if not stored_path.is_relative_to(here):
+        raise ValueError('Stored path escapes snapshot')
+    stored = stored_path.read_bytes()
+    assert hashlib.sha256(stored).hexdigest() == row['stored_sha256']
+    raw = gzip.decompress(stored) if row['encoding'] == 'gzip' else stored
+    assert hashlib.sha256(raw).hexdigest() == row['original_sha256']
+    target = (root / row['original_path']).resolve()
+    if not target.is_relative_to(root / '.scratch'):
+        raise ValueError('Restore target escapes scratch')
+    if target.exists() and target.read_bytes() != raw:
+        raise ValueError('Refuse overwriting changed file: ' + str(target))
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(raw)
+    count += 1
+print('Restored', count, 'exact G6 records')

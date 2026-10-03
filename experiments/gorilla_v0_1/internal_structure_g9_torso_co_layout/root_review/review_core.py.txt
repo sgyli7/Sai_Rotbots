@@ -1,0 +1,62 @@
+"""Independent signed tetra geometry audit, without FEM or physical qualification."""
+from pathlib import Path
+import argparse,hashlib,itertools,json
+import numpy as np
+from scipy.sparse import coo_matrix
+from scipy.sparse.csgraph import connected_components
+
+ap=argparse.ArgumentParser();ap.add_argument('variant',choices=['a','b']);args=ap.parse_args()
+HERE=Path(__file__).resolve().parent
+BASE=HERE.parent/'gorilla_internal_g9_torso_core'/args.variant
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+cp=BASE/'cad_manifest.json';cad=json.loads(cp.read_text())
+mp=BASE/'mesh/torso_core_tetra.npz';mr=json.loads((BASE/'mesh/mesh_receipt.json').read_text())
+z=np.load(mp);n=z['points_m'];t=z['tetra'];f=z['boundary_faces'];p=n[t]
+signed=np.einsum('ij,ij->i',np.cross(p[:,1]-p[:,0],p[:,2]-p[:,0]),p[:,3]-p[:,0])/6
+assert np.all(signed>0),'Refuse invalid mesh, without changing the source'
+edges=np.vstack([t[:,[i,j]] for i,j in itertools.combinations(range(4),2)])
+graph=coo_matrix((np.ones(len(edges)),(edges[:,0],edges[:,1])),shape=(len(n),len(n))).tocsr()
+roots,_=connected_components(graph,directed=False)
+v=float(signed.sum());rho=cad['density_kg_m3_hypothesis']
+com=np.einsum('e,ei->i',signed,p.mean(1))/v
+d=p-com;s=d.sum(1)
+second=(np.einsum('e,ei,ej->ij',signed,s,s)+np.einsum('e,eki,ekj->ij',signed,d,d))/20
+I=rho*(np.trace(second)*np.eye(3)-second)
+tri=n[f];sv=float(np.einsum('ij,ij->i',tri[:,0],np.cross(tri[:,1],tri[:,2])).sum()/6)
+surface_edges=np.concatenate([f[:,[0,1]],f[:,[1,2]],f[:,[2,0]]])
+undirected=np.sort(surface_edges,axis=1)
+edge_keys,edge_inverse,edge_counts=np.unique(undirected,axis=0,return_inverse=True,return_counts=True)
+edge_balance=np.bincount(edge_inverse,weights=np.where(surface_edges[:,0]<surface_edges[:,1],1.,-1.))
+e2=np.stack([((p[:,i]-p[:,j])**2).sum(1) for i,j in itertools.combinations(range(4),2)],1)
+q=12*np.cbrt((3*signed)**2)/e2.sum(1)
+flags={
+ 'brep_matches_manifest':sha(BASE/'torso_core.brep')==cad['CAD_files']['brep'],
+ 'step_matches_manifest':sha(BASE/'torso_core.step')==cad['CAD_files']['step'],
+ 'mesh_matches_receipt':sha(mp)==mr['mesh_sha256'],
+ 'cad_manifest_matches_mesh_receipt':sha(cp)==mr['cad_source_manifest_sha256'],
+ 'one_material_node_root':roots==1,'all_nodes_used':len(np.unique(t))==len(n),
+ 'strict_positive_native_tetra':bool(np.all(signed>0)),
+ 'native_boundary_exactly_two_faces_per_edge':bool(np.all(edge_counts==2)),
+ 'native_boundary_opposed_edge_orientation':bool(np.all(edge_balance==0)),
+ 'minimum_mean_ratio_above_0p05':bool(q.min()>.05),
+ 'tetra_and_outward_boundary_volume_match':abs(v-sv)/v<1e-10,
+ 'linear_chord_CAD_volume_difference_under_0p1_percent':abs(v-cad['actual_volume_m3'])/cad['actual_volume_m3']<.001,
+}
+report={'robot_id':'gorilla_v0_1','variant':args.variant,'producer_sha256':sha(__file__),
+ 'source_manifest_sha256':sha(cp),'mesh_sha256':sha(mp),'nodes':len(n),'tetra':len(t),
+ 'boundary_faces':len(f),'material_node_graph_roots':int(roots),'volume_m3':v,
+ 'boundary_non_two_incidence_edges':int(np.count_nonzero(edge_counts!=2)),
+ 'boundary_non_two_incidence_edge_coordinates_world_m':n[edge_keys[edge_counts!=2]].tolist(),
+ 'signed_boundary_volume_m3':sv,'conditional_density_kg_m3':rho,'conditional_mass_kg':v*rho,
+ 'COM_world_m':com.tolist(),'full_I_at_COM_world_kg_m2':I.tolist(),
+ 'CAD_volume_relative_difference':(v-cad['actual_volume_m3'])/cad['actual_volume_m3'],
+ 'CAD_COM_difference_m':(com-np.asarray(cad['COM_world_m'])).tolist(),
+ 'CAD_inertia_relative_frobenius_difference':float(np.linalg.norm(I-np.asarray(cad['full_I_at_COM_world_kg_m2']))/np.linalg.norm(cad['full_I_at_COM_world_kg_m2'])),
+ 'mean_ratio_quantiles':np.quantile(q,[0,.01,.5,.99,1]).tolist(),
+ 'geometry_checks':{k:bool(x) for k,x in flags.items()},'conditional_geometry_admission':all(flags.values()),
+ 'current_uniform_through_wall_resolution_proven':False,'FE_or_topology_optimization_run':False,
+ 'actual_support_contact_fit_or_capacity_qualified':False,'whole_robot_accepted':False,
+ 'interface_scope':'All coplanar tagged faces are candidates, not certified contact patches. Waist historical adapter has radius80/30mm; new boss100/40mm. Annular overlap maximum is pi*(.08**2-.04**2), not the full tagged face area; installation/fasteners/pressure remain unknown.',
+ 'maximum_geometric_waist_annular_common_area_m2':float(np.pi*(.08**2-.04**2))}
+(HERE/(args.variant+'_core_review.json')).write_text(json.dumps(report,indent=2)+'\n')
+print(json.dumps(report,indent=2))

@@ -1,0 +1,36 @@
+"""Frozen source maintenance/release/connection probes, no source edit or owner exemptions."""
+from pathlib import Path
+import gzip,json,hashlib,math,numpy as np,manifold3d as mf
+O=Path(__file__).resolve().parent;D=O/'b';sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest();S=D/'scene.json.gz';s=json.loads(gzip.decompress(S.read_bytes()));p=s['parts'];by={q['name']:q for q in p};M={q['name']:mf.Manifold(mf.Mesh64(np.array(q['vertices_world_m']),np.array(q['faces'],np.uint64))) for q in p}
+def hits(moving,fixed,T):
+ out=[]
+ for q in moving:
+  a=M[q['name']].translate(T)
+  for r in fixed:
+   b=M[r['name']];v=float((a^b).volume())
+   if v>1e-10:out.append({'a':q['name'],'b':r['name'],'volume_cm3':v*1e6,'finite_material_pair':bool(q.get('finite_material') and r.get('finite_material'))})
+ return out
+rows=[];portrows=[];isolation=[]
+for side,sg in [('left',1),('right',-1)]:
+ ps=[q for q in p if q['name'].startswith('g11_'+side+'_')];anchor=[q for q in ps if q['role']=='finite_shoulder_to_core_anchor'];out=[q for q in ps if q['body']==side+'_shoulder_pitch_carrier'];inputset=[q for q in ps if q not in anchor and q not in out and 'CSG65' not in q['name'] and 'independent_load_bearing' not in q['name']]
+ fixedcase=[q for q in ps if q.get('finite_material') and q not in out]
+ for kind,moving,fixed,direction in [('input_complete_module_inward',inputset,anchor+out,[0,-sg,0]),('moving_output_carrier_outward',out,[q for q in ps if q not in out],[0,sg,0])]:
+  samples=[]
+  for delta in np.linspace(0,.240,21):samples.append({'translation_m':float(delta),'actual_pairs':hits(moving,fixed,np.array(direction)*delta)})
+  rows.append({'side':side,'operation':kind,'source_module_ids':[q['name'] for q in moving],'assumption':'Unloaded; B/A mount bolts removed or travel with complete subassembly; actuator/cable/hoses disconnected. No handles/fixture/drain/control qualification','samples':samples,'finite_material_positive_samples':sum(any(r['finite_material_pair'] for r in x['actual_pairs']) for x in samples),'gross_reference_hits_are_not_certified_OEM_net_material':True})
+ release=[q for q in ps if q['body']==side+'_brake_release_plate'];fixed=[q for q in ps if q not in release]
+ samples=[{'backwards_release_m':float(d),'actual_pairs':hits(release,fixed,[0,-sg*d,0])} for d in np.linspace(0,.001,9)]
+ rows.append({'side':side,'operation':'pressure_plate_plus_rear_lining_1mm_release','samples':samples,'force_stroke_magnetic_guides_and_friction_unknown':True,'expected_closed_contacts_q_m':[-.127,-.126,-.120,-.119],'expected_released_yoke_stop_q_m':-.133})
+ # Source port proof by actual planar triangle integral; no full rectangle presumed inside a hole.
+ q=anchor[0];v=np.array(q['vertices_world_m']);f=np.array(q['faces']);tri=v[f];ar=np.linalg.norm(np.cross(tri[:,1]-tri[:,0],tri[:,2]-tri[:,0]),axis=1)/2;mask=np.all(abs(tri[:,:,0]-.115)<1e-10,axis=1);area=float(ar[mask].sum());center=(ar[mask,None]*tri[mask].mean(1)).sum(0)/area
+ portrows.append({'side':side,'anchor_id':q['name'],'core_candidate_surface':'actual outer flat anchor wall, NOT existing future-core mate','plane_X_m':.115,'normal_world':[1,0,0],'true_source_triangle_area_m2':area,'area_centroid_world_m':center.tolist(),'YZ_boundary_rect_m':[[sg*.2435,2.125],[sg*.3935,2.455]],'wall_thickness_m':.006,'source_triangle_ids':np.flatnonzero(mask).tolist(),'future_core_material_connection_unknown':True,'Yp340_is_section_not_existing_mating_surface':True})
+ # Coolant drill pierces the nominal inner jacket wall: explicit physical unknown retained.
+ case=next(q for q in ps if q['role']=='finite_fixed_motor_case');m=M[case['name']]
+ origin=np.array([-.13,sg*.3735,2.29]);center=origin+[.107,-sg*.052,0];control=center+[0,sg*.010,0]
+ sph=mf.Manifold.sphere(.00025,24);V=sph.volume();at=float((m^sph.translate(center)).volume());away=float((m^sph.translate(control)).volume())
+ isolation.append({'side':side,'part':case['name'],'nominal_inner_wall_R_m':[.1051,.109],'drilled_port_tool_radial_interval_m':[.101,.127],'fitting_radial_interval_m':[.111,.127],'port_center_inner_wall_probe_world_m':center.tolist(),'off_port_control_probe_world_m':control.tolist(),'sphere_volume_m3':V,'actual_case_material_at_port_inner_wall_m3':at,'actual_case_material_at_off_port_control_m3':away,'coolant_isolation_accepted':False,'reason':'Current radial drill removes inner jacket wall toward motor cavity; no separate sleeve/inner seal exists in source. Valid mesh is not coolant pressure isolation.'})
+report={'robot_id':'gorilla_v0_1','source_sha256':sha(S),'producer_sha256':sha(Path(__file__)),'pair_volume_threshold_m3':1e-10,'actual_material_and_reference_checks':rows,'true_core_candidate_ports':portrows,'coolant_inner_wall_isolation_diagnostic':isolation,'physical_or_maintenance_accepted':False,'geometry_unchanged':True,'expected_bolted_contact_graph':[{'case_to_anchor':'actual q=-.013 annular coplanar mate, 8 PCD236 M12 candidates, thread/preload unknown'},{'case_to_yoke':'six independent finite spacers q[-.185,-.161] plus actual guide/through bolts; independent parts not unioned'},{'inputshaft_to_holder':'8mm keyed coupling, actual slot faces; retention/strength unknown'},{'moving_journals_to_external_support':'catalogue SKF bearing envelopes; race distribution/preload/keeper thread unknown'},{'core_to_anchor':'actual X=.115 face only; new main core is separate unknown domain'}]}
+(D/'service_and_ports_report.json').write_text(json.dumps(report,indent=2)+'\n')
+print('SERVICE_REPORT',sha(D/'service_and_ports_report.json'))
+for r in rows:print(r['side'],r['operation'],r.get('finite_material_positive_samples'),[len(x['actual_pairs']) for x in r['samples']])
+print('ports',[(r['side'],r['true_source_triangle_area_m2']) for r in portrows]);print('coolantInnerWall',[(r['actual_case_material_at_port_inner_wall_m3'],r['actual_case_material_at_off_port_control_m3']) for r in isolation])

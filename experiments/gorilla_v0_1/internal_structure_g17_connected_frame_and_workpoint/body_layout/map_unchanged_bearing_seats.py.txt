@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+"""Actual radius+axial-band selection on current unchanged seats, no old facet IDs or FE assertion."""
+import pathlib,json,gzip,hashlib,importlib.util,numpy as np
+P=pathlib.Path(__file__).resolve().parent;R=P.parents[1]
+def sha(p):return hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
+def read(p):return json.load(gzip.open(p,'rt')) if str(p).endswith('.gz') else json.loads(pathlib.Path(p).read_text())
+sp=importlib.util.spec_from_file_location('g17seathelpers',R/'.scratch/gorilla_internal_g14_complete_thermal_colayout/geometry_helpers.py');g=importlib.util.module_from_spec(sp);sp.loader.exec_module(g)
+def clip(poly,c,axis,bound,keep_ge):
+ out=[]
+ for a,b in zip(poly,poly[1:]+poly[:1]):
+  ha=(a-c)@axis;hb=(b-c)@axis;ain=ha>=bound-1e-14 if keep_ge else ha<=bound+1e-14;bin=hb>=bound-1e-14 if keep_ge else hb<=bound+1e-14
+  if ain:out.append(a)
+  if ain!=bin:out.append(a+(b-a)*(bound-ha)/(hb-ha))
+ return out
+for vname in ['a','b']:
+ D=P/vname;s=read(D/'scene.json.gz');by={p['name']:p for p in s['parts']};source=read(D/'source_interface_contract.json');rows=[]
+ for rec in source['interfaces']:
+  if '_external_bearing_' not in rec['id']:continue
+  cc=[]
+  for patch in [rec['journal_patch']]+rec['housing_seat_patches']:
+   n=patch['source_part_id'];p=by[n];v,f=g.h.triangles(p);t=v[f];c=np.array(patch['axis_point_world_m']);axis=np.array(patch['axis_world']);r=float(patch['native_vertex_radius_m']);band=patch['axial_range_m'];a=t-c;h=a@axis;rad=np.linalg.norm(a-h[:,:,None]*axis,axis=2);mask=(np.max(np.abs(rad-r),axis=1)<2e-7)&(h.max(1)>band[0]-2e-8)&(h.min(1)<band[1]+2e-8);ids=np.flatnonzero(mask);clipped=[];used=[]
+   for i in ids:
+    poly=clip(list(t[i]),c,axis,band[0],True);poly=clip(poly,c,axis,band[1],False)
+    for j in range(1,len(poly)-1):clipped.append([poly[0],poly[j],poly[j+1]]);used.append(int(i))
+   tt=np.array(clipped);ar=np.linalg.norm(np.cross(tt[:,1]-tt[:,0],tt[:,2]-tt[:,0]),axis=1)/2;Area=float(ar.sum());cent=(tt.mean(1)*ar[:,None]).sum(0)/Area
+   cc.append({'actual_part_id':n,'actual_geometry_sha':hashlib.sha256(json.dumps({'vertices_world_m':p['vertices_world_m'],'faces':p['faces']},sort_keys=True,separators=(',',':')).encode()).hexdigest(),'source_SHA':sha(D/'scene.json.gz'),'actual_new_source_face_indices':used,'new_clipped_triangles_world_m':tt.tolist(),'actual_chord_surface_area_m2':Area,'historical_chord_surface_area_m2':patch['area_m2'],'delta_area_m2':Area-patch['area_m2'],'centroid_world_m':cent.tolist(),'axis_point_world_m':c.tolist(),'axis_world':axis.tolist(),'native_vertex_radius_m':r,'axial_range_m':band,'actual_radius_max_error_m':float(np.max(np.abs(rad[ids]-r))),'new_selection_NOTusinghistorical_faceids':True,'real_contact_pressure/preload/fitNOTqualified':True})
+  rows.append({'functional_interface_id':rec['id'],'new_radius_axial_source_selection':cc})
+ out={'source_SHA':sha(D/'scene.json.gz'),'four_bearing_functional_interfaces':rows,'scope':'actualcurrent native curvedchord patches clipped by literalworldaxial planes; not pressurebearingwrench/FE prescription or truecirclecontact qualification','missing_current_geometric_patch':False};(D/'current_bearing_seat_queries.json').write_text(json.dumps(out,ensure_ascii=False,indent=2)+'\n');print('EVENT bearing patches',vname,len(rows),max(abs(x['delta_area_m2']) for r in rows for x in r['new_radius_axial_source_selection']))

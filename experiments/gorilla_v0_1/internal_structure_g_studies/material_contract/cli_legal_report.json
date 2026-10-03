@@ -1,0 +1,119 @@
+{
+  "schema": "gorilla_native_signed_material_contract_prototype_v1",
+  "robot_id": "gorilla_v0_1",
+  "declared_units": "metres; vertices_world_m",
+  "duplicate_ids": [],
+  "parts": [
+    {
+      "id": "legal_hollow",
+      "tolerances_si": {
+        "min_boundary_volume_m3": 1e-10,
+        "min_triangle_area_m2": 1e-16,
+        "containment_abs_volume_m3": 1e-12,
+        "containment_rel_volume": 1e-08,
+        "containment_bbox_m": 1e-09,
+        "minimum_parent_boundary_gap_m": 1e-08,
+        "native_kernel_volume_difference_m3": 1e-08
+      },
+      "errors": [],
+      "boundaries": [
+        {
+          "boundary_index": 0,
+          "signed_volume_m3": 0.0010000000000000005,
+          "native_faces": 12,
+          "source_sign": 1,
+          "parent": null,
+          "depth": 0,
+          "bounds_world_m": [
+            [
+              -0.05,
+              -0.05,
+              -0.05
+            ],
+            [
+              0.05,
+              0.05,
+              0.05
+            ]
+          ],
+          "expected_source_sign": 1,
+          "classification": "outer_material_boundary"
+        },
+        {
+          "boundary_index": 1,
+          "signed_volume_m3": -0.00012500000000000006,
+          "native_faces": 12,
+          "source_sign": -1,
+          "parent": 0,
+          "depth": 1,
+          "bounds_world_m": [
+            [
+              -0.025,
+              -0.025,
+              -0.025
+            ],
+            [
+              0.025,
+              0.025,
+              0.025
+            ]
+          ],
+          "minimum_parent_boundary_gap_query_m": 2e-08,
+          "parent_gap_query_cap_m": 2e-08,
+          "outside_kernel_status": "Error.NoError",
+          "expected_source_sign": -1,
+          "classification": "closed_void_boundary"
+        }
+      ],
+      "containment_queries": [
+        {
+          "a": 0,
+          "b": 1,
+          "intersection_volume_m3": 0.00012500000000000003,
+          "a_in_b": false,
+          "b_in_a": true,
+          "abs_tol_m3": 1e-12,
+          "rel_tol": 1e-08
+        }
+      ],
+      "resource_contract_pass": true,
+      "source_modified": false,
+      "physical_accepted": false,
+      "full_material_geometry_acceptance": false,
+      "source_geometry_sha256": "dbc825a81982df0ef9b0fa1ae03d319803eff8faf84711854b89ca37d841ccce",
+      "native_vertices": 16,
+      "native_triangles": 24,
+      "diagnostic_continued_after_invalid_small_triangles": false,
+      "kernel_status": "Error.NoError",
+      "native_signed_volume_m3": 0.0008750000000000002,
+      "kernel_signed_volume_m3": 0.0008750000000000002,
+      "geometric_root_boundary_indices": [
+        0
+      ],
+      "material_component_count_from_nesting": 1,
+      "closed_void_count": 1,
+      "require_single_material_component": false,
+      "parity_diagnostic": {
+        "scope": "DIAGNOSTIC_ONLY_UNACCEPTED; assumes nesting parity solely to show possible semantic correction, never changes input or verdict",
+        "volume_m3": 0.0008750000000000002,
+        "source_volume_delta_m3": 0.0,
+        "method": "Boolean positive root minus positive odd-depth void plus positive even-depth island; no compose"
+      }
+    }
+  ],
+  "resource_contract_pass": true,
+  "source_modified": false,
+  "physical_accepted": false,
+  "limits": [
+    "Contract proves only listed finite/topology/nested-boundary predicates under source tolerances.",
+    "Within-one-connected-boundary self-intersections are not comprehensively tested; Mesh64 NoError alone cannot certify embedding.",
+    "Touching or tolerance-ambiguous boundaries reject rather than guess.",
+    "Materials connected topologically are not a bearing/joint/assembly/strength/contact qualification.",
+    "No parent-body rigid-connection inference, no automatic normal or winding repair."
+  ],
+  "source_file": "/home/ethan/Projects/Sai_Rotbots/.scratch/gorilla_internal_g_material_contract/cli_legal_fixture.json",
+  "source_file_sha256": "fbc79955f3fa5c9895cae532016f218deba73b45168b9153c1e6e9130bfe9c92",
+  "validator_sha256": "e531ae21a9e81aa7fc5186ee739fc19fe0e39efb9444a58a2e136410763c2fb8",
+  "entrypoint_sha256": "34715bb7c8178d5707583ef8000890efb334aaa9590c4d5f8f7797cbb3c0893f",
+  "source_file_unchanged": true
+}

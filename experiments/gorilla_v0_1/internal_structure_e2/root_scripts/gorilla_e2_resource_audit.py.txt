@@ -1,0 +1,38 @@
+"""Independent source/GLB/actual-endpoint checks for the rejected E2 candidate."""
+from pathlib import Path
+import hashlib,json
+import numpy as np
+import trimesh
+from scipy.spatial import cKDTree
+
+ROOT=Path(__file__).resolve().parents[1];OUT=ROOT/'.scratch/gorilla_internal_e2_integrated'
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def point(T,p):return (np.array(T)@np.r_[p,1])[:3]
+def main():
+ src=OUT/'scene.json';rp=OUT/'exports/internal_structure_e2_render_manifest.json';sp=OUT/'statics.json';scene,render,stat=[json.loads(p.read_text()) for p in (src,rp,sp)]
+ assert render['scene_sha256']==sha(src)==stat['input_hashes'][str(src.relative_to(ROOT))]
+ checks=[]
+ for row in [*render['images'],*render['exports'],*render['manifests'].values(),render['review_board']]:
+  p=ROOT/row['path'];assert sha(p)==row['sha256'],str(p);checks.append(row)
+ for name,v in render['input_hashes'].items():assert sha(ROOT/name)==v,name
+ sm=json.loads((ROOT/render['manifests']['source']['path']).read_text());assert sm['retained_mesh_identity_before']==sm['retained_mesh_identity_after']
+ glb=next(ROOT/r['path'] for r in render['exports'] if r['path'].endswith('.glb'));exported=trimesh.load(glb,force='scene',process=False)
+ assert set(exported.graph.nodes_geometry)=={p['name'] for p in scene['parts']}
+ to_source=np.array([[1,0,0,0],[0,0,-1,0],[0,1,0,0],[0,0,0,1]]);added=set(sm['added_native_part_names']);meshchecks=[]
+ for part in scene['parts']:
+  if part['name'] not in added:continue
+  T,gn=exported.graph[part['name']];m=exported.geometry[gn].copy();m.apply_transform(to_source@T);v=np.array(part['vertices_world_m']);err=float(max(cKDTree(m.vertices).query(v)[0].max(),cKDTree(v).query(m.vertices)[0].max()))
+  assert err<3e-7,(part['name'],err)
+  meshchecks.append({'id':part['name'],'bidirectional_vertex_error_m':err})
+ jac=[];eps=1e-6
+ for p in stat['poses']:
+  T=p['body_transforms']
+  for a in scene['actuators']:
+   parent=a['base_body'];A=point(T[parent],a['neutral_A_world_m']);B=point(T[a['output_body']],a['neutral_B_world_m']);J=point(T[parent],a['pivot_world_m']);axis=np.array(T[parent])[:3,:3]@np.array(a['axis_world']);v=(B-A)/np.linalg.norm(B-A);analytic=float(v@np.cross(axis,B-J));length=[]
+   for angle in (-eps,eps):
+    R=trimesh.transformations.rotation_matrix(angle,axis)[:3,:3];length.append(np.linalg.norm(J+R@(B-J)-A))
+   numeric=float((length[1]-length[0])/(2*eps));err=abs(numeric-analytic);assert err<1e-7,(p['id'],a['id'],err)
+   jac.append({'pose':p['id'],'id':a['id'],'analytic_J_m_per_rad':analytic,'finite_difference_J_m_per_rad':numeric,'error_m_per_rad':err})
+ report={'robot_id':'gorilla_v0_1','candidate':'internal_structure_e2','input_hashes':{str(p.relative_to(ROOT)):sha(p) for p in (src,rp,sp,Path(__file__).resolve())},'source_part_count':len(scene['parts']),'export_part_count':len(exported.graph.nodes_geometry),'retained_source_bound_geometry_material_fingerprints_equal':True,'new_native_export_checks':meshchecks,'independent_endpoint_virtual_work_checks':jac,'file_checks':checks,'resource_identity_checks_passed':True,'scope':'Source/hash/display and new-native GLB vertices, formal endpoint length derivative only. Retained original bevels remain exactly as original C15; they are not raw manufacturing control mesh. Does not certify geometry/installability/constant mass/rigid transmission/inertia/drive/heat/contact/manufacturing or beauty.','geometry_accepted':False,'physics_accepted':False,'stable_physical_contract':False}
+ (OUT/'resource_audit.json').write_text(json.dumps(report,indent=2,allow_nan=False)+'\n');print(json.dumps({'source_and_export_count':len(scene['parts']),'new_native_meshes_checked':len(meshchecks),'endpoint_derivative_checks':len(jac),'max_vertex_error_m':max(x['bidirectional_vertex_error_m'] for x in meshchecks),'max_J_error_m_per_rad':max(x['error_m_per_rad'] for x in jac),'physical_acceptance':False}))
+if __name__=='__main__':main()

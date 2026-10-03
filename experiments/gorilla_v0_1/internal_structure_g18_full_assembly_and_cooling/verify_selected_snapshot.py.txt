@@ -1,0 +1,24 @@
+from pathlib import Path
+import ast,gzip,hashlib,json,re,subprocess
+R=Path.cwd();O=R/'experiments/gorilla_v0_1/internal_structure_g18_full_assembly_and_cooling';m=json.loads((O/'snapshot_manifest.json').read_text());sha=lambda b:hashlib.sha256(b).hexdigest();checks=[];js=astn=links=0
+for r in m['files']:
+ p=O/r['stored_path'];b=p.read_bytes();assert sha(b)==r['stored_sha256'];d=gzip.decompress(b) if r['encoding']=='gzip' else b;assert sha(d)==r['original_sha256']
+ origin=R/r['original_path'];assert sha(origin.read_bytes())==r['original_sha256']
+ restored=R/'.scratch/gorilla_g18_selected_restore_check'/r['original_path'];assert sha(restored.read_bytes())==r['original_sha256']
+ suffix=Path(r['original_path']).suffix
+ if suffix=='.json':json.loads(d);js+=1
+ elif r['original_path'].endswith('.json.gz'):json.loads(gzip.decompress(d));js+=1
+ elif suffix=='.py':ast.parse(d);astn+=1
+ checks.append({'stored_path':r['stored_path'],'exact_original_stored_restored':True})
+for p in [R/'robots/gorilla_v0_1/README.md',R/'robots/gorilla_v0_1/design/current_decisions.md',R/'robots/gorilla_v0_1/design/project_schedule.md',O/'README.md']:
+ for x in re.findall(r'\]\(([^)]+)\)',p.read_text()):
+  if x.startswith(('http','thread:','codex:','#')):continue
+  q=x.split('#')[0]
+  if (p.parent/q)==O/'selected_snapshot_verification.json':
+   links+=1;continue
+  assert (p.parent/q).exists(),(p,q);links+=1
+jsons=[json.loads(l) for l in (R/'experiments/ledger.jsonl').read_text().splitlines() if l.strip()]
+result=dict(robot_id='gorilla_v0_1',selected_files=len(checks),upstream_identity_checks=len(m['upstream_frozen_identity_checks']),json_parsed=js,python_ast_parsed=astn,authoritative_document_links_checked=links,selected_stored_bytes=sum(r['stored_bytes'] for r in m['files']),all_exact_selected_bytes_verified=True,restore_isolated=True,expensive_geometry_or_physics_replayed=False,physical_aesthetic_or_stable_si_accepted=False)
+(O/'selected_snapshot_verification.json').write_text(json.dumps(result,indent=2)+'\n')
+assert (O/'selected_snapshot_verification.json').is_file()
+print(json.dumps(result))

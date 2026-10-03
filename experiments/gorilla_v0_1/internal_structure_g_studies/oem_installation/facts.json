@@ -1,0 +1,170 @@
+{
+  "scope": "one OEM CSF/CSG installation engineering document, only exact standard CSG50/65 ratio100; no robot qualification",
+  "source_doc_url": "https://www.harmonicdrive.net/_hd/content/documents1/CSG-CSF_GearUnits.pdf",
+  "source_doc_sha256": "517160deff3bc6272980fef807212d29ee2301ce819b4388df540fcd3ce7d97b",
+  "source_doc_revision": "TI-26024 REV 1 CSF-CSG Catalog 072026",
+  "source_doc_date": "July 2026",
+  "interface_identity": {
+    "A_left_small_bolt_circle": "output flange / integrated bearing inner race / flexspline output",
+    "B_outer_large_bolt_circle": "case / circular spline / fixed parent in nominal reduction configuration",
+    "right_center": "wave generator input, rotating drive input; not case"
+  },
+  "identity_sources_pages": [
+    5,
+    6,
+    33,
+    36,
+    37
+  ],
+  "body_mass_split_status": "not available; identities do not imply full gear unit belongs to one rigid body",
+  "bearing_plane_definition": {
+    "R": "axial offset from output load flange mounting face to bearing pitch plane, into case, fig6 p34",
+    "dp": "cross roller pitch circle diameter",
+    "Lr": "axial outward lever from output load flange datum to radial force location",
+    "La": "radial lever from axis to axial force line",
+    "macro_envelope_origin_matches_OEM_datum": "unverified; do not add R twice if wrench already shifted to bearing plane"
+  },
+  "models": [
+    {
+      "sku": "CSG-50-100-2UH",
+      "dp_m": 0.119,
+      "R_m": 0.018,
+      "C_N": 34800,
+      "C0_N": 60200,
+      "Mc_Nm": 759,
+      "Km_Nm_per_rad_mean": 1710000,
+      "OEM_complete_unit_mass_kg": 8.9,
+      "full_envelope_mm": [
+        190,
+        98
+      ],
+      "output_mount": {
+        "thread_count": 8,
+        "thread": "M14",
+        "depth_mm": 21,
+        "PCD_mm": 84,
+        "catalog_tightening_Nm_per_screw": 205,
+        "catalog_joint_transmission_Nm": 3070
+      },
+      "case_mount": {
+        "CSG_drawing_and_p33_count": 14,
+        "thread": "M8",
+        "PCD_mm": 174,
+        "conflicting_p37_count": 12,
+        "conflicting_p37_tightening_Nm_per_screw": 37,
+        "conflicting_p37_group_transmission_Nm": 3040,
+        "capacity_adopted": false
+      }
+    },
+    {
+      "sku": "CSG-65-100-2UH",
+      "dp_m": 0.16,
+      "R_m": 0.0225,
+      "C_N": 55600,
+      "C0_N": 103000,
+      "Mc_Nm": 1860,
+      "Km_Nm_per_rad_mean": 4040000,
+      "OEM_complete_unit_mass_kg": 20.9,
+      "full_envelope_mm": [
+        260,
+        123.5
+      ],
+      "output_mount": {
+        "thread_count": 8,
+        "thread": "M16",
+        "depth_mm": 24,
+        "PCD_mm": 110,
+        "catalog_tightening_Nm_per_screw": 319,
+        "catalog_joint_transmission_Nm": 5480
+      },
+      "case_mount": {
+        "thread_count": 8,
+        "thread": "M12",
+        "PCD_mm": 236,
+        "catalog_tightening_Nm_per_screw": 128,
+        "catalog_joint_transmission_Nm": 6310,
+        "capacity_is_conditional_installation_reference_only": true
+      }
+    }
+  ],
+  "formula_source": {
+    "Mmax_p34": "Frmax*(Lr+R) + Famax*La",
+    "average_F_eq11_eq12_p34": "(sum(n_i*t_i*abs(F_i)^(10/3))/sum(n_i*t_i))^(3/10)",
+    "X_Y_list2_p34": {
+      "q": "Faav/(Frav+2*(Frav*(Lr+R)+Faav*La)/dp)",
+      "q_le_1_5": [
+        1,
+        0.45
+      ],
+      "q_gt_1_5": [
+        0.67,
+        0.67
+      ]
+    },
+    "P0_eq19_p35": "Frmax+2*Mmax/dp+0.44*Famax",
+    "fs_eq17_p35": "C0/P0",
+    "L10_eq15_p35": "1e6/(60*Nav)*(C/(fw*Pc))^(10/3)",
+    "osc_life_eq18_p35": "1e6/(60*n1)*(90/phi)*(C/(fw*Pc))^(10/3)",
+    "phi_definition": "half total oscillation angle, degrees",
+    "fretting_warning_small_oscillation_deg": 5,
+    "Pc_eq16_as_actually_printed": "X*(2*(Frav*(Lr+R)+Faav*La)/dp)+Y*Faav",
+    "Pc_eq16_internal_inconsistency_status": "visually confirmed missing direct Frav term relative to coefficient denominator; not accepted for qualification",
+    "Nav_eq13_printed_denominator_status": "printed adjacent t1t2 ... +tn lacks summation connections"
+  },
+  "conditional_own_formula_proposals": {
+    "Pc_candidate": "X*(Frav+2*Mav/dp)+Y*Faav",
+    "Nav_candidate": "sum(n_i*t_i)/sum(t_i)",
+    "adopted_for_qualified_OEM_life": false,
+    "needs": "OEM erratum/confirmation"
+  },
+  "fs_general_reference_min": {
+    "normally_not_rotating_slight_oscillation": [
+      0.5,
+      0.5
+    ],
+    "normally_not_rotating_impact": [
+      1,
+      1.5
+    ],
+    "normally_rotating_normal": [
+      1,
+      2
+    ],
+    "normally_rotating_impact": [
+      2,
+      3
+    ]
+  },
+  "fw_general_reference": {
+    "steady_no_impact_vibration": [
+      1,
+      1.2
+    ],
+    "normal": [
+      1.2,
+      1.5
+    ],
+    "impact_vibration": [
+      1.5,
+      3
+    ]
+  },
+  "mount_table_conditions": {
+    "bolt_standard": "JIS B1176",
+    "strength_wording_reference": "JIS B1051 over 12.9 as printed",
+    "torque_coefficient_K": 0.2,
+    "clamp_coefficient_A": 1.4,
+    "surface_friction_coefficient": 0.15,
+    "thread_strength_and_engagement_actual_unknown": true
+  },
+  "unknown": [
+    "specific G bearing datum and load spectrum",
+    "dynamic equation erratum",
+    "custom bolts threads preload fatigue flange strength",
+    "temperature seal lubrication actual conditions",
+    "OEM internal component mass and inertia split",
+    "CSG50 14-hole mount joint transmission verification"
+  ],
+  "G_given_gravity_benchmark_used_for_pass": false,
+  "zero_velocity_life_formula_used_for_pass": false
+}

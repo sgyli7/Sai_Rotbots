@@ -1,0 +1,36 @@
+"""Literal world-triangle intersections, no hull/cavity inference or geometry editing."""
+from pathlib import Path
+import gzip,json,hashlib
+import numpy as np
+from PIL import Image,ImageDraw,ImageFont
+O=Path(__file__).resolve().parent
+ROOT=next(p for p in O.parents if (p/'sai_robots_engineering_rules.md').is_file())
+C=ROOT/'.scratch/gorilla_internal_g9_whole_source/scene.json.gz';s=json.loads(gzip.decompress(C.read_bytes()))
+allocpath=ROOT/'.scratch/gorilla_internal_g8_system_allocation/whole_system_allocation.json';alloc=json.loads(allocpath.read_text())
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+keep={n for g in alloc['actual_F1_nine_moved_group_bounds'] for n in g['exact_member_ids']}
+font=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',17);im=Image.new('RGB',(1600,1600),'white');d=ImageDraw.Draw(im);records=[]
+for row,variant in enumerate(['a','b']):
+    m=np.load(O/variant/'torso_core_native.npz')
+    core={'name':'g9_'+variant,'vertices_world_m':m['vertices_world_m'],'faces':m['faces']}
+    parts=[core]+[p for p in s['parts'] if p['name'] in keep or p.get('role') in ('armor_cover','armor_surface')]
+    for col,(axis,value,uv,target) in enumerate([(1,.310,[0,2],[0.,2.25]),(2,2.290,[0,1],[0.,0.])]):
+        x0,y0=col*800,row*800;d.text((x0+18,y0+15),'Gorilla G9 '+variant.upper()+' actual section '+str(axis)+' = '+str(value)+' m',fill='black',font=font)
+        rec={'variant':variant,'plane_axis':axis,'plane_value_m':value,'parts':[]}
+        for p in parts:
+            v=np.asarray(p['vertices_world_m']);ff=np.asarray([[f[0],f[i],f[i+1]] for f in p['faces'] for i in range(1,len(f)-1)]);t=v[ff];dd=t[:,:,axis]-value;sel=(dd.min(1)<-1e-10)&(dd.max(1)>1e-10);t=t[sel];dd=dd[sel]
+            color=(32,87,179) if p.get('role') in ('armor_cover','armor_surface') else (110,126,130) if p['name'].startswith('g9_') else (216,102,16)
+            n=0
+            for tri,ds in zip(t,dd):
+                pts=[]
+                for i,j in [(0,1),(1,2),(2,0)]:
+                    if ds[i]*ds[j]<0:pts.append(tri[i]+(tri[j]-tri[i])*(-ds[i])/(ds[j]-ds[i]))
+                if len(pts)!=2:continue
+                q=np.array(pts)[:,uv]-target;q[:,0]=x0+400+q[:,0]*680;q[:,1]=y0+410-q[:,1]*680
+                d.line(tuple(q.ravel()),fill=color,width=2);n+=1
+            if n:rec['parts'].append({'name':p['name'],'actual_triangle_intersections':n})
+        d.text((x0+18,y0+745),'Grey actual core / orange complete modules / blue actual original armor',fill='black',font=font)
+        d.text((x0+18,y0+772),'No hull/free-cavity substitute. Original positions; candidate rejected.',fill='black',font=font);records.append(rec)
+im.save(O/'actual_internal_sections.png')
+(O/'section_manifest.json').write_text(json.dumps({'source_context_sha256':sha(C),'source_allocation_sha256':sha(allocpath),'section_producer_sha256':sha(__file__),'core_native_sha256':{a:sha(O/a/'torso_core_native.npz') for a in ['a','b']},'planes':records,'pixels_per_m':680,'operation':'Literal triangle-plane segments; not projected AABB, cavity inference or acceptance','image_sha256':sha(O/'actual_internal_sections.png')},indent=2)+'\n')
+print('sections_ready',len(records),sha(O/'actual_internal_sections.png'))

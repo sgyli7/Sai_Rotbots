@@ -1,0 +1,57 @@
+"""Gorilla G14 literal grouped initial insertion/removal, all other pieces physically retained."""
+from pathlib import Path
+import gzip,json,hashlib,numpy as np,manifold3d as mf
+O=Path(__file__).resolve().parent;D=O/'b';S=D/'scene.json.gz';sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();s=json.loads(gzip.decompress(S.read_bytes()));P={p['name']:p for p in s['parts']};M={n:mf.Manifold(mf.Mesh64(np.array(p['vertices_world_m']),np.array(p['faces'],np.uint64))) for n,p in P.items()};B={n:np.array(m.bounding_box()).reshape(2,3) for n,m in M.items()};threshold=1e-10
+import trimesh as tm
+bench_T={}
+for n,p in P.items():
+ sg=1 if n.startswith('g14_left') else -1; T=tm.transformations.rotation_matrix(np.pi,[0,0,1],[-.130,sg*.3735,2.290]);bench_T[n]=T;M[n]=M[n].transform(T[:3,:]);B[n]=np.array(M[n].bounding_box()).reshape(2,3)
+results=[]
+for side,sg in [('left',1),('right',-1)]:
+ pre='g14_'+side+'_';names=[n for n in P if n.startswith(pre)];offsets={n:np.zeros(3) for n in M};state=dict(M);groups={};sg=-sg
+ groups['stator_kit_sleeve_TIM_and_two_seals']=[pre+n for n in ['QTL210_complete_reference','water_inner_isolation_sleeve','stator_TIM','water_rear_end_seal','water_front_end_seal','motor_terminal_protrusion']]
+ groups['motor_rotor_profile_shaft_and_holder']=[n for n in names if n.startswith(pre+'input_key_')]+[pre+n for n in ['stepped_WG_input_shaft','rotor_holder_sleeve_spider','QTL210_rotor_known_profile_reference']]
+ groups['motor_rear_cover_brake_housing_and_seated_bearing']=[pre+n for n in ['removable_motor_rear_cover_and_brake_housing','motor_rear_cover_gasket','input_bearing_1','brake_front_lining']]
+ groups['rear_cover_fasteners']=[n for n in names if n.startswith(pre+'motor_rear_cover_mount_')]
+ groups['brake_disc']=[pre+'brake_rotor_hub']
+ groups['brake_pressure_yoke_springs_and_spacers']=[n for n in names if n.startswith(pre+'brake_spring_pack_') or n.startswith(pre+'brake_yoke_spacer_')]+[pre+n for n in ['brake_rear_lining','brake_pressure_plate','brake_release_yoke','brake_release_coil']]
+ groups['encoder_target_and_readhead']=[pre+n for n in ['encoder_code_target_hub','encoder_readhead']]
+ groups['brake_rear_cover']=[pre+'removable_brake_rear_cover']
+ groups['brake_guide_bolts']=[n for n in names if n.startswith(pre+'brake_yoke_guide_bolt_')]
+ start={'stator_kit_sleeve_TIM_and_two_seals':[0,-sg*.24,0],'motor_rotor_profile_shaft_and_holder':[0,-sg*.45,0],'motor_rear_cover_brake_housing_and_seated_bearing':[-.50,0,0],'rear_cover_fasteners':[.90,0,0],'brake_disc':[.55,0,0],'brake_pressure_yoke_springs_and_spacers':[.65,0,0],'encoder_target_and_readhead':[.85,0,0],'brake_rear_cover':[.65,0,-.25],'brake_guide_bolts':[.90,0,.20]}
+ flat=[n for ns in groups.values() for n in ns];assert len(flat)==len(set(flat))
+ def place(n,t):offsets[n]=np.array(t);state[n]=M[n].translate(offsets[n].tolist())
+ for g,ns in groups.items():
+  for n in ns:place(n,start[g])
+ def hits(ns):
+  rr=[]
+  for a in ns:
+   bb=B[a]+offsets[a]
+   for b in state:
+    if b in ns:continue
+    bc=B[b]+offsets[b]
+    if not(np.all(bb[1]>=bc[0]) and np.all(bc[1]>=bb[0])):continue
+    v=(state[a]^state[b]).volume()
+    if v>threshold:rr.append({'a':a,'b':b,'volume_cm3':v*1e6,'finite_material_pair':bool(P[a].get('finite_material') and P[b].get('finite_material')),'protected_reference_not_accepted':not(P[a].get('finite_material') and P[b].get('finite_material'))})
+  return sorted(rr,key=lambda r:-r['volume_cm3'])
+ initial=hits(flat);operations=[];moves=[]
+ def move(g,target,label):
+  ns=groups[g];orig={n:offsets[n].copy() for n in ns};target=np.array(target);rows=[]
+  for t in np.linspace(0,1,21):
+   for n in ns:place(n,orig[n]*(1-t)+target*t)
+   rows.append({'fraction':float(t),'pairs':hits(ns)})
+  operations.append({'operation':label,'group':g,'exact_ids':ns,'from_world_translation_m':orig[ns[0]].tolist(),'to_world_translation_m':target.tolist(),'samples':rows,'finite_material_failure_samples':sum(any(p['finite_material_pair'] for p in x['pairs']) for x in rows),'reference_probe_samples':sum(any(p['protected_reference_not_accepted'] for p in x['pairs']) for x in rows),'all_other_pieces_retained_at_actual_current_positions':True});moves.append((g,orig[ns[0]],target.copy(),label))
+ move('stator_kit_sleeve_TIM_and_two_seals',[0,0,0],'insert_complete_stator_kit_envelope_sleeve_TIM_seals_from_open_rear')
+ move('motor_rotor_profile_shaft_and_holder',[0,0,0],'insert_motor_rotor_reference_and_actual_shaft_holder_before_rear_cover')
+ move('motor_rear_cover_brake_housing_and_seated_bearing',[0,-sg*.30,0],'retrieve_real_rear_cover_to_clear_rear_installation_axis')
+ move('motor_rear_cover_brake_housing_and_seated_bearing',[0,0,0],'seat_motor_rear_cover_over_bare_shaft_before_brake_disc')
+ move('rear_cover_fasteners',[0,-sg*.30,0],'retrieve_rear_cover_bolts_washers_to_rear_axis')
+ move('rear_cover_fasteners',[0,0,0],'insert_actual_rear_cover_bolts_washers_into_clearance_holes')
+ for g,d in [('brake_disc',.30),('brake_pressure_yoke_springs_and_spacers',.30),('encoder_target_and_readhead',.30),('brake_rear_cover',.30),('brake_guide_bolts',.30)]:
+  move(g,[0,-sg*d,0],'retrieve_'+g+'_to_rear_axis')
+  move(g,[0,0,0],'insert_'+g)
+ final_offsets={n:t.tolist() for n,t in offsets.items() if np.linalg.norm(t)>1e-12};install=list(operations);operations=[];install_moves=list(moves)
+ for g,orig,target,label in reversed(install_moves):move(g,orig.tolist(),'reverse_removal_'+label)
+ results.append({'side':side,'actual_initial_parking_world_translations_m':start,'initial_vs_unmoved_parts_pairs':initial,'initial_group_vs_group_not_exempt_qualification_unknown':True,'installation':install,'reverse_removal':operations,'fully_installed_nonzero_offsets':final_offsets,'motion_samples_each':21,'source_volume_constant_for_each_actual_piece':True,'no_deleted_or_hidden_obstacles':True,'both_complete_modules_retained_and_rotated_180deg_about_Z_on_independent_local_assembly_fixtures':True,'fixture_scope_not_whole_robot_assembly':True,'neutral_product_core_ports_not_moved_in_source':True,'assembly_is_depressurized_drained_fluid_lumen_template_is_not_material':True,'whole_QTL_envelope_and_known_rotor_profile_are_protected_references_not_certified_separate_stator_inner_geometry':True,'shaft_key_threads_bearing_preload_fixture_and_actual_OEM_assembly_unknown':True,'TIM_full66_contact_disturbed_by_motor_or_sleeve_removal_requires_reapplication_or_unqualified_durable_interface':True})
+ r={'robot_id':'gorilla_v0_1','source_sha256':sha(S),'producer_sha256':sha(__file__),'pair_threshold_m3':threshold,'results':results,'initial_assembly_physical_accepted':False,'source_geometry_unchanged':True};(D/'initial_assembly_report.json').write_text(json.dumps(r,indent=2)+'\n');print('SIDE_ASSEMBLY_READY',side,[(x['operation'],x['finite_material_failure_samples']) for x in install],flush=True)
+print('INITIAL_ASSEMBLY_REPORT',sha(D/'initial_assembly_report.json'),flush=True)

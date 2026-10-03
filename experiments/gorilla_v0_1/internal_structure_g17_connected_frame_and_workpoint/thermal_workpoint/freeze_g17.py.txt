@@ -1,0 +1,9 @@
+from pathlib import Path
+import hashlib,json,time
+O=Path(__file__).resolve().parent;R=O.parents[1]
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+d=json.loads((O/'joint_workpoint_v3.json').read_text())
+inputs=[{'path':p,'sha256':h,'current_matches':sha(R/p)==h} for p,h in d['source_hashes'].items()]
+outputs=[{'path':str(p.relative_to(O)),'sha256':sha(p),'bytes':p.stat().st_size} for p in sorted(O.iterdir()) if p.is_file() and p.name!='freeze_manifest.json']
+f={'robot':'Gorilla V0.1','stage':'G17 joint thermal workpoint','frozen_utc':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'adopted_formula_source':'joint_workpoint_v3.json','adopted_sha256':sha(O/'joint_workpoint_v3.json'),'scope':'One150 vs complete two150-series, same fullS1 core/fan inventory, exact task heat/energy reference; source-bound geometric parameter only, no exterior or CAD edits','physical_candidates_count':2,'inputs':inputs,'outputs':outputs,'input_hash_mismatch_count':sum(not x['current_matches'] for x in inputs),'geometry_or_thermal_or_pressure_NPSH_hardware_wholebody_appearance_accepted':False,'v1_v2_producers_and_corrections_preserved':True,'formula_checker_independent':True,'image_actually_viewed':'parameter_section_diagnostic.png','G16_and_other_frozen_sources_not_modified':True,'root_final_architecture':True}
+(O/'freeze_manifest.json').write_text(json.dumps(f,indent=2)+'\n');print(json.dumps({'freeze_sha':sha(O/'freeze_manifest.json'),'adopted_sha':f['adopted_sha256'],'inputs':len(inputs),'outputs':len(outputs),'input_mismatch':f['input_hash_mismatch_count'],'report_sha':sha(O/'README.md')},indent=2))

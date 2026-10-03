@@ -1,0 +1,21 @@
+from pathlib import Path
+import json,numpy as np
+O=Path(__file__).resolve().parent
+p=O/'interface_contract.json';c=json.loads(p.read_text())
+for j in c['b']['joints']:
+ i=j['id'].split('_')[-1];v={'pitch':[-.04,.515,2.405],'roll':[.05,.83,2.32],'yaw':[.23,.83,1.99]}[i]
+ j['pivot_world_m']=v;j['pivot_delta_world_m']=(np.array(v)-np.array(j['original_pivot_world_m'])).tolist()
+c['b']['macro_reason']='Whole roll outside pitch reaction radial window and yaw below roll radial window; transfers proceed on real upstream output side, not backfolding through protected packages.'
+p.write_text(json.dumps(c,indent=2)+'\n')
+s=(O/'build_forward_serial.py').read_text()
+s=s.replace("receiver=receiver-cy(L+.005,g['CS_hole_m']/2+.0002,.032,x,z)","receiver=receiver-cy(L+.005,g['CS_hole_m']/2+.0002,.032,x,z)\n  if arg.variant=='b':receiver=receiver-cy(L+.0145,.0067,.007,x,z)")
+s=s.replace("tt,_=getattr(oc,'fuse'if op=='add'else'cut')", "tt,_=getattr(oc,'fuse'if op=='add'else'cut')")
+s=s.replace("for j in contract['joints']:\n", "for j in contract['joints']:\n print('CAD_JOINT_BEGIN',j['id'],flush=True)\n")
+s=s.replace("# Common fixed pitch", "print('CAD_COMPONENTS_COMPLETE',flush=True)\n# Common fixed pitch")
+s=s.replace("carrier=output_parts[ident]+sh+reaction_parts[nident]", "print('CAD_TRANSFER_BEGIN',ident,nident,flush=True)\n carrier=output_parts[ident]+sh+reaction_parts[nident]\n print('CAD_TRANSFER_COMPLETE',ident,nident,flush=True)")
+(O/'build_forward_serial_b.py').write_text(s)
+# Native duplicate does not claim CAD and keeps actual final recipe immutable in its own producer.
+x=(O/'build_native_preview.py').read_text()
+x=x.replace("receiver=receiver-cy(L+.005,g['CS_hole_m']/2+.0002,.032,x,z)","receiver=receiver-cy(L+.005,g['CS_hole_m']/2+.0002,.032,x,z)\n  if arg.variant=='b':receiver=receiver-cy(L+.0145,.0067,.007,x,z)")
+x=x.replace("sha(O/'build_forward_serial.py')", "sha(O/'build_forward_serial_b.py')")
+(O/'build_native_b.py').write_text(x)

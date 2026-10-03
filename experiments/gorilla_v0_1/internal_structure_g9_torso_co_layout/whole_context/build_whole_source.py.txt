@@ -1,0 +1,158 @@
+"""One editable world-SI context assembled from exact, frozen native members.
+
+No source meshes are repaired, rescaled, translated, hidden, or re-authored.
+The result is a rejected spatial candidate, not the Gorilla physical contract.
+"""
+from pathlib import Path
+import copy, gzip, hashlib, json, datetime
+from collections import Counter, defaultdict
+import numpy as np
+
+ROOT = Path('/home/ethan/Projects/Sai_Rotbots')
+OUT = Path(__file__).resolve().parent
+INPUTS = {
+    'structure': '.scratch/gorilla_internal_f1_structure/structure_scene.json',
+    'structure_interface': '.scratch/gorilla_internal_f1_structure/interface.json',
+    'structure_mass': '.scratch/gorilla_internal_f1_structure/mass_ledger.json',
+    'system': '.scratch/gorilla_internal_f1_system/layout_2_scene.json',
+    'system_interfaces': '.scratch/gorilla_internal_f1_system/layout_2_interfaces.json',
+    'system_screen': '.scratch/gorilla_internal_f1_system/layout_2_screen.json',
+    'solid_audit': '.scratch/gorilla_internal_f1_audit/solid_components_receipt.json',
+    'mass_audit': '.scratch/gorilla_internal_f1_audit/present_mass_receipt.json',
+    'final_audit': '.scratch/gorilla_internal_f1_audit/final_receipt.json',
+    'c15': 'robots/gorilla_v0_1/cad/source/appearance_c_scene.json',
+    'aa3': 'robots/gorilla_v0_1/design/concepts/aa3/user_confirmed_four_view.jpg',
+    'decisions': 'robots/gorilla_v0_1/design/current_decisions.md',
+    'g8_allocation': '.scratch/gorilla_internal_g8_system_allocation/whole_system_allocation.json',
+}
+sha = lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def write(name, obj):
+    data = (json.dumps(obj, indent=2, allow_nan=False)+'\n').encode()
+    p = OUT/name
+    if p.suffix == '.gz':
+        with p.open('wb') as f:
+            with gzip.GzipFile(filename='', mode='wb', fileobj=f, mtime=0) as g: g.write(data)
+    else: p.write_bytes(data)
+    return sha(p)
+
+def main():
+    OUT.mkdir(parents=True, exist_ok=True)
+    sources={k:{'path':v,'sha256':sha(ROOT/v)} for k,v in INPUTS.items()}
+    src={k:json.loads((ROOT/v).read_text()) for k,v in INPUTS.items() if v.endswith('.json')}
+    structure, system = src['structure'],src['system']
+    sm={p['name']:p for p in structure['parts']}; lm={p['name']:p for p in system['parts']}
+    assert len(sm)==375 and len(lm)==1794 and all(lm[n]==p for n,p in sm.items())
+    parts=copy.deepcopy(structure['parts']) + [copy.deepcopy(p) for p in system['parts'] if p['name'] not in sm]
+    pm={p['name']:p for p in parts}
+    assert len(parts)==len(pm)==1794 and all(pm[n]==p for n,p in lm.items())
+    c15={p['name']:p for p in src['c15']['parts']}
+    armor=[n for n,p in c15.items() if p.get('role') in ('armor_cover','armor_surface')]
+    assert len(armor)==111 and all(pm[n]==c15[n] for n in armor)
+    rawrows=system['mass_rows_system_and_retained_context_only']
+    rows=[]; excluded=[]; member_mass=defaultdict(list)
+    for r in rawrows:
+        ids=r.get('member_ids') or [r.get('part_name',r['id'])]
+        present=[n for n in ids if n in pm]; absent=[n for n in ids if n not in pm]
+        global_oil=r['id']=='f1_global_oil_stock_once'
+        q=copy.deepcopy(r)
+        q.update({'native_member_ids':ids,'present_native_member_ids':present,'absent_native_member_ids':absent,
+                  'presence_class':'all_present' if not absent else ('all_absent' if not present else 'mixed'),
+                  'whole_robot_tensor_qualified':False})
+        if global_oil:
+            q.update({'g9_count_scope':'global_oil_metadata_once_no_spatial_COM_or_I','native_member_ids':[],
+                      'present_native_member_ids':[],'not_a_zero_mass_unknown':True});rows.append(q)
+        elif not absent:
+            q['g9_count_scope']='present_inventory_range_only_not_installed_body_mass'
+            if any(n in system['retained_context_challenge_ids'] for n in ids):q['g9_count_scope']='incompatible_retained_shoulder_context_not_additive_robot_mass'
+            rows.append(q)
+            for n in ids: member_mass[n].append(r['id'])
+        else:
+            q['g9_count_scope']='excluded_absent_or_mixed_historical_rows';excluded.append(q)
+    ghost=[r for r in excluded if r.get('source')=='E2_structure']
+    assert len(ghost)==142
+    ghost_sum=np.sum([r['mass_range_kg'] for r in ghost],axis=0).tolist()
+    groups=system['new_complete_group_records']; group_map={n:g['id'] for g in groups for n in g['part_ids']}
+    old_bad=set(system['uninstalled_old_cylinder_fitting_ids']+system['orphan_prior_four_case_port_shell_ids'])
+    ownership={}
+    for n,p in pm.items():
+        gravity=p.get('mass_owner_body',p.get('body'))
+        matched=[r for r in rows if n in r.get('present_native_member_ids',[])]
+        if matched: gravity=matched[0].get('gravity_mass_owner',matched[0].get('mass_owner_body',matched[0].get('body',gravity)))
+        function_state=('retained_authoritative_visible_armor_context' if n in armor else
+                        'context_invalid_uninstalled_old_fitting' if n in old_bad else
+                        'context_invalid_old_shoulder_bridge_not_replaced_by_new_torso' if n=='e2_upper_net_torso' else
+                        'retained_candidate_structure_not_physically_installed' if n in sm else
+                        'retained_complete_system_candidate_not_physically_installed')
+        iswindow=p.get('role')=='holding_mount_window'
+        ownership[n]={'source_key':'structure' if n in sm else 'system','source_native_id':n,
+                      'source_whole_part_dictionary_sha256':hashlib.sha256(json.dumps(p,sort_keys=True,separators=(',',':'),allow_nan=False).encode()).hexdigest(),
+                      'function_state':function_state,'kinematic_owner':p.get('body'),
+                      'gravity_owner_candidate':gravity,'gravity_owner_accepted':False,
+                      'complete_group':group_map.get(n),'mass_row_ids':member_mass.get(n,[]),
+                      'nonphysical_service_window':iswindow,'finite_hardware_present':not iswindow,
+                      'owner_label_is_not_reaction_path_or_rigid_connection_proof':True}
+    missing=src['system_interfaces']['missing_cylinder_owner_ids']
+    assert missing==['left_fold','left_ankle','right_fold','right_ankle']
+    missingrows=[]
+    for aid in missing:
+        a=next(a for a in src['structure_interface']['actuators'] if a['id']==aid)
+        missingrows.append({'function':aid,'finite_barrel_and_rod_geometry_present':False,'mass_kg':None,'COM_world_m':None,'full_I_kg_m2':None,
+                            'short_working_deficit_m':a['short_working_deficit_m'],
+                            'endpoint_frames_are_mathematical_only':True,'holding_module_id':f'f1_{aid}_holding',
+                            'holding_actual_barrel_mount_not_present':True,'redline':'Cannot release leg actuation or whole-robot mass/inertia/control; absent hardware is not zero.'})
+    replacement=[]
+    oldmap={p['name']:p for p in src['c15']['parts']}
+    for n in system['replacement_removed_ids']:
+        replacement.append({'source_native_id':n,'state':'replaced_absent_from_candidate','present_in_g9':n in pm,
+                            'source_registry':'F1 system replacement_removed_ids','no_mass_credit_without_member_scope':True})
+    assert not any(r['present_in_g9'] for r in replacement)
+    scene={'schema':'gorilla_g9_whole_space_context_candidate_v1','robot_id':'gorilla_v0_1',
+           'candidate':'one_f1_layout_2_registration_rejected_spatial_input','coordinate_frame':system['coordinate_frame'],
+           'parts':parts,'body_tree':copy.deepcopy(system['body_tree']),
+           'joint_supports':copy.deepcopy(src['structure_interface']['joint_supports']),'actuators':copy.deepcopy(system['actuators']),
+           'source_layout_2_hydraulic_support_records':copy.deepcopy(system['joint_supports']),
+           'body_tree_joint_candidates':[{'body':b,**copy.deepcopy(v),'axis_or_support_not_physical_qualification':True}
+                                         for b,v in system['body_tree'].items() if v.get('parent') is not None],
+           'physical_body_ownership':{n:q['gravity_owner_candidate'] for n,q in ownership.items()},
+           'part_function_and_owner_registry_file':'part_registry.json','input_sources':sources,
+           'assembly_plan':{'primary_structure_count':375,'nonstructure_system_count':1419,'unique_native_count':1794,
+                            'copied_old_1794_plus_375':False,'geometry_equal_to_complete_layout_2':True,
+                            'native_world_vertex_or_face_mutations':0,'part_dictionary_mutations':0},
+           'authoritative_visible_armor_ids':armor,'original_armor_external_delta_mm':0,
+           'new_leg_foot_design_received_or_applied':False,'missing_physical_cylinders':missingrows,
+           'present_inventory_mass_rows':rows,'structure_material_group_ledger':copy.deepcopy(src['structure_mass']),
+           'bench_only_not_instantiated':['gorilla_internal_g7_cad_carrier','gorilla_internal_g8_carrier_variants'],
+           'service_spaces_nonphysical':copy.deepcopy(system['service_spaces_nonphysical']),
+           'fluid_inventory':copy.deepcopy(system['fluid_inventory']),
+           'whole_robot_mass_kg':None,'whole_robot_COM_world_m':None,'whole_robot_full_I_kg_m2':None,
+           'geometry_accepted':False,'physics_accepted':False,'aesthetic_accepted':False,'stable_physical_contract':False,
+           'flow_connected':False,'biped_bimanual_autonomous_bevy_complex_task_endpoint_preserved':True,
+           'next_scope':'Main torso / shoulder / waist actual CAD with shared drive/energy/thermal/wire/tool volume; architecture by root.'}
+    scene_hash=write('scene.json.gz',scene)
+    write('part_registry.json',{'scene_stored_sha256':scene_hash,'members':ownership,'replacement_absent_registry':replacement,
+                               'structure_groups':src['structure_mass']['material_groups'],'unknown_functions':missingrows,
+                               'duplicated_geometry_member_count':0,'original_armor_exact_rows':111})
+    write('mass_inventory.json',{'scene_stored_sha256':scene_hash,'present_rows':rows,'excluded_historical_rows':excluded,
+                               'ghost_E2_structure_count':142,'ghost_E2_structure_range_kg':ghost_sum,
+                               'structure_groups_counted_only_in_external_ledger':True,
+                               'incompatible_retained_context_ids':system['retained_context_challenge_ids'],
+                               'structure_stock_reference_count_once':len(src['structure_mass']['complete_reference_mass_rows']),
+                               'catalogue_inertia_from_filled_reference_geometry_not_used':True,
+                               'global_oil_stock_once_spatial_COM_and_I_unknown':True,
+                               'missing_functions_not_zero':missingrows,'whole_robot_mass_or_COM_or_I':None})
+    interfaces=copy.deepcopy(src['system_interfaces'])
+    interfaces.update({'source_F1_layout_sha256':interfaces.pop('scene_sha256'), 'scene_stored_sha256':scene_hash,
+                       'F1_structure_interface':src['structure_interface'],
+                       'mechanical_or_fluid_or_electrical_installed':False,'no_new_axis_or_owner_contract':True,
+                       'complete_pose_parts_not_composed_for_the_whole_robot':True})
+    write('interfaces.json',interfaces)
+    write('registration_receipt.json',{'computed_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+              'source_bindings':sources,'scene_stored_sha256':scene_hash,'native_count':len(parts),'unique_native_count':len(pm),
+              'structure_full_dictionary_exact_count':375,'system_nonstructure_exact_count':1419,
+              'same_full_candidate_part_dictionary_set_as_layout_2':True,'C15_visible_armor_exact_count':111,
+              'replaced_absent_count':len(replacement),'excluded_ghost_count':142,'excluded_ghost_range_kg':ghost_sum,
+              'missing_cylinders':missing,'bench_pieces_added':0,'source_failures_preserved':True,
+              'source_material_or_assembly_accepted':False,'whole_robot_mass_COM_I_qualified':False,
+              'producer_sha256':sha(__file__)})
+    print(json.dumps({'scene_sha256':scene_hash,'native_parts':len(parts),'ghost_range_kg':ghost_sum,'missing':missing}),flush=True)
+if __name__=='__main__':main()

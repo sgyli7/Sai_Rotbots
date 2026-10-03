@@ -1,0 +1,101 @@
+"""Independent vector sums against frozen G4; no FEM or source mutation."""
+from pathlib import Path
+from datetime import datetime,timezone
+import hashlib,json
+import numpy as np
+
+ROOT=Path(__file__).resolve().parents[2];P=Path(__file__).resolve().parent
+G4=ROOT/'.scratch/gorilla_internal_g4_pitch_module';D=ROOT/'.scratch/gorilla_internal_g6_3d_domain_review'
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+def save(name,x):(P/name).write_text(json.dumps(x,indent=2,ensure_ascii=False,allow_nan=False)+'\n')
+
+def main():
+    h=json.loads((G4/'optimization_handoff.json').read_text());reports=[]
+    for stem in ['native_case18','tetra_case18','native_case20_stop']:
+        r=json.loads((P/(stem+'_report.json')).read_text());a=np.load(P/(stem+'_loads.npz'))
+        actual=h['actual_6D_load_interfaces'][r['source_case_index']]
+        original=actual['actual_child_point_load_ports']+[actual['equivalent_ground_load_at_output_mount']]
+        # These selected cases are neutral; independently compare original G4
+        # world points/wrenches directly without the sibling's frame converter.
+        if actual['q_deg']!=0:raise RuntimeError('this direct-source audit is only neutral')
+        rows=[]
+        for i,(port,orig) in enumerate(zip(r['port_reports'],original)):
+            xyz=a['points_m'];force=a['port_forces_xyz_N'][i];center=np.asarray(orig['point_world_m'])
+            F=force.sum(0);M=np.cross(xyz-center,force).sum(0);target=np.asarray(orig['wrench_Fxyz_Mxyz'])
+            delta=np.r_[F,M]-target
+            rows.append({'id':port['id'],'G4_actual_load_center_world_m':center.tolist(),'source_F_M':target.tolist(),
+                         'independent_nodal_F_M_about_actual_center':np.r_[F,M].tolist(),
+                         'nodal_minus_frozen_G4_F_M':delta.tolist(),
+                         'reported_center_minus_frozen_G4_center':(np.asarray(port['center_m'])-center).tolist(),
+                         'independent_normal_region_verified':next(p['geometry_region_verified'] for p in r['independent_native_geometry_checks'] if p['id']==port['id'])})
+        F=a['F_xyz_N'].sum(0);M=np.cross(a['points_m'],a['F_xyz_N']).sum(0)
+        Q=a['gauge_rows'];R=a['rigid_mode_matrix'];rigid_work=R.T@a['F_dofs_xyz_N']
+        rank=int(np.linalg.matrix_rank(Q@R));reports.append({'stem':stem,'ports':rows,'sum_F_N':F.tolist(),
+                       'sum_M_origin_Nm':M.tolist(),'rigid_virtual_work':rigid_work.tolist(),'gauge_times_rigid_modes_rank':rank,
+                       'report_sha256':sha(P/(stem+'_report.json')),'loads_sha256':sha(P/(stem+'_loads.npz'))})
+    mesh=np.load(D/'geometry_tetra.npz');q=mesh['points_m'][mesh['tetra']]
+    volumes=np.abs(np.einsum('ij,ij->i',np.cross(q[:,1]-q[:,0],q[:,2]-q[:,0]),q[:,3]-q[:,0]))/6
+    edges=q[:,1:]-q[:,:1]
+    determinant_volumes=np.abs(np.linalg.det(edges))/6
+    le=edges.astype(np.longdouble)
+    extended_volumes=np.abs(np.einsum('ij,ij->i',np.cross(le[:,0],le[:,1]),le[:,2]))/6
+    geometry_mesh={'path':str(D/'geometry_tetra.npz'),'sha256':sha(D/'geometry_tetra.npz'),'nodes':len(mesh['points_m']),
+                   'tetra':len(mesh['tetra']),'minimum_tetra_volume_float64_determinant_m3':float(determinant_volumes.min()),
+                   'minimum_tetra_volume_float64_cross_dot_m3':float(volumes.min()),
+                   'minimum_tetra_volume_longdouble_cross_dot_m3':float(extended_volumes.min()),
+                   'float64_cross_dot_zero_volume_count':int((volumes==0).sum()),
+                   'volume_precision_scope':'One extreme sliver cancels to zero under float64 cross-dot; determinant and extended precision remain positive ~2e-23m3. This is numerical ill-conditioning, not proof of one truly collapsed geometric tet.',
+                   'total_tetra_volume_m3':float(volumes.sum()),
+                   'unusable_for_strength_FE':'severe slivers; sibling quality refinement failed; material coverage is not FE quality','FE_ready':False}
+    receipt={'schema':'G6_source_bound_load_port_independent_receipt','source_scene_sha256':sha(G4/'module_scene.json'),
+             'handoff_sha256':sha(G4/'optimization_handoff.json'),'G4_report_sha256':sha(G4/'report.json'),
+             'domain_interfaces_sha256':sha(D/'domain_interfaces.json'),'same_source_load_cases_sha256':sha(D/'same_source_6d_load_cases.json'),
+             'assembly_script_sha256':sha(P/'assemble_load_ports.py'),'direct_original_G4_neutral_source_checks':reports,
+             'geometry_only_tetra_mesh':geometry_mesh,'FE_solver_executed':False,
+             'physical_release':False,'strength_qualification':False,'actual_contact_distribution_qualified':False}
+    save('verification_receipt.json',receipt)
+    selected=json.loads((P/'tetra_case18_report.json').read_text());tab=[]
+    for port in selected['port_reports']:
+        f=port['target_Fxyz_Mxyz'][:3];mm=port['target_Fxyz_Mxyz'][3:]
+        tab.append(f"| {port['id']} | {port['center_m']} | {np.round(f,3).tolist()} | {np.round(mm,3).tolist()} | {port['nodes']} | {port['surface_area_m2']:.8f} | {port['wrench_matrix_rank']} |")
+    md=f'''# G6 actual child conditional load ports
+
+Executable input: `assemble_load_ports.py`. Frozen G4 child source SHA `{sha(G4/'module_scene.json')}`, actual `g4_child_load_carrier`. This branch applies no FEM, alters no source geometry, and makes no strength or robot reduction claim.
+
+The selected primary case is original G4 index18: neutral pitch, 29430 N upward at ground CoP [0.25,0.75,0]m, equal cylinder allocation with the paired journals taking roll/yaw reaction. Module and robot gravity are absent. This is the G4 conditional 3t static-pressure example, not a walking/payload rating. Five force/moment interfaces are independently compared directly against the original frozen G4 handoff, without importing the sibling's equilibrium routine.
+
+| Actual port | Source load center m | Force XYZ N | Moment XYZ about center N m | Tet surface nodes | Surface area m² | Arbitrary-traction wrench rank |
+|---|---|---|---|---:|---:|---:|
+{chr(10).join(tab)}
+
+Surface regions preserve exact native facet identifiers. Independent checks use actual child ownership, journal29.95mm and pin-bore20.2mm radii, axial-Y normals, outward journal/inward bore normal directions, planar stop z=.388 and downstream x=.29 surfaces. All seven native regions pass those geometry checks. The stop patches exist but are inactive in case18; cylinder-bore patches are inactive in separate case20, the static shoe route. No region is chosen from the nearest pivot or assigned an all-DOF clamp.
+
+For each selected patch, triangle area/3 is lumped to actual nodes. Initial force is area-proportional. A minimum weighted correction satisfies all six force/moment equations at the original load center, so pressure-center/patch-centroid offsets do not silently change the applied wrench. Each weighted wrench matrix has rank6. Source journal load centers Y=.505/.795 differ from actual whole-sleeve patch centroids .50175/.79825; those offsets remain in the report. This **arbitrary vector traction includes tangential/tensile components and corrective couples**; it is not a solution for compression-only bearing/pin pressure or contact friction. A catalogue bearing does not justify this distribution.
+
+Native case18 has2944 surface nodes; geometry-tet case18 has2954 nodes/12722tet. Per-port residual is≤1.28e−11 in the separately listed N/Nm components; total-force components≤6.16e−11N and total-moment components≤1.98e−11Nm. Case20 mechanical-stop route has force components≤1.19e−11N, moment≤5.01e−12Nm, port residual≤4.01e−11. Independent sums and six rigid virtual-work residuals are saved in `verification_receipt.json`.
+
+The exported six integral gauge rows span only translations/rotations: C=RᵀW and rank(CR)=6. Use an augmented [K,Cᵀ;C,0] system for a compatible self-balanced free-body conditional analysis. This does not freeze the journal, prevent elastic surface motion or model actual supports. With a valid free-body linear elastic K whose kernel is exactly R, gauges select a displacement representative; gauge reactions should approach zero for these balanced loads. That K/kernel premise has not been tested here. Surface-only files use area weighting for gauges; the tet file uses actual tet volume lumping, without interpreting surface weight as mass.
+
+The available tet mesh is geometry-only, SHA `{sha(D/'geometry_tetra.npz')}`, minimum float64-determinant volume{geometry_mesh['minimum_tetra_volume_float64_determinant_m3']:.3g}m³. One extreme sliver cancels to zero in float64 cross-dot volume while extended precision remains positive~2e−23m³; this diagnoses ill-conditioning, not a proven geometric collapse. Severe slivers and failed quality refinement make it **FE-inadmissible for trusted stress**. Successful facet mapping and balanced loading do not repair it. Root's next choices are: retain all five self-equilibrated source ports with only rigid gauges after a valid mesh; or solve the complete physical bearing/pin/stop/downstream contact allocation first and replace these conditional tractions. The second route must establish preload, pressure centers, axial/radial stiffness, clearance/friction and actual mounting bolts. Both routes still need material/process, connections, fatigue/dynamics and full-machine loads.
+
+Reproduce the actual mappings:
+
+```bash
+.venv/bin/python .scratch/gorilla_internal_g6_load_ports/assemble_load_ports.py
+.venv/bin/python .scratch/gorilla_internal_g6_load_ports/assemble_load_ports.py --mesh .scratch/gorilla_internal_g6_3d_domain_review/geometry_tetra.npz --prefix tetra_case18
+.venv/bin/python .scratch/gorilla_internal_g6_load_ports/assemble_load_ports.py --case-index 20 --prefix native_case20_stop
+.venv/bin/python .scratch/gorilla_internal_g6_load_ports/verify_and_freeze.py
+```
+
+The NPZ interface exports `points_m`, `boundary_faces`, exact `native_face_markers_1based`, assembled `F_xyz_N`/flattened XYZ DOFs, per-port force arrays, `gauge_rows` and `rigid_mode_matrix`; the tet result also includes tetra connectivity. All physical support/contact boundaries remain conditional.
+'''
+    (P/'load_port_review.md').write_text(md)
+    inputs=[G4/'module_scene.json',G4/'optimization_handoff.json',G4/'report.json',D/'domain_interfaces.json',D/'same_source_6d_load_cases.json',D/'native_child_surface.npz',D/'geometry_tetra.npz']
+    files=[{'path':str(f.relative_to(P)),'sha256':sha(f),'bytes':f.stat().st_size} for f in sorted(P.iterdir()) if f.is_file() and f.name!='manifest.json']
+    save('manifest.json',{'schema':'G6_load_ports_frozen_snapshot','created_UTC':datetime.now(timezone.utc).isoformat(),
+                         'inputs':[{'path':str(f),'sha256':sha(f)} for f in inputs],'outputs':files,
+                         'manifest_self_hash_excluded':True,'physical_release':False,'FE_ready':False})
+    print(json.dumps({'manifest_sha256':sha(P/'manifest.json'),'receipt_sha256':sha(P/'verification_receipt.json'),
+                      'review_sha256':sha(P/'load_port_review.md'),'tetra_report_sha256':sha(P/'tetra_case18_report.json')},indent=2))
+
+if __name__=='__main__':main()

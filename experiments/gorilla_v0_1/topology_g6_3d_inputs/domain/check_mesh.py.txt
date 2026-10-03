@@ -1,0 +1,55 @@
+"""Actual native-boundary/void/layer checks; these are not a FEM acceptance test."""
+from pathlib import Path
+import hashlib
+import json
+import sys
+import numpy as np
+from scipy.sparse import coo_matrix
+from scipy.sparse.csgraph import connected_components
+OUT=Path(__file__).resolve().parent
+case=sys.argv[1]
+a=np.load(OUT/(case+'_tetra.npz'));x=a['points_m'];e=a['tetra'];bf=a['boundary_faces'];markers=a['native_face_markers_1based']
+s=np.load(OUT/'native_child_surface.npz');sv=s['vertices_world_m'];sf=s['faces']
+p=x[e];native_tri=sv[sf];ntarea=np.linalg.norm(np.cross(native_tri[:,1]-native_tri[:,0],native_tri[:,2]-native_tri[:,0]),axis=1)/2
+bt=x[bf];barea=np.linalg.norm(np.cross(bt[:,1]-bt[:,0],bt[:,2]-bt[:,0]),axis=1)/2
+by_marker=np.bincount(markers,weights=barea,minlength=len(sf)+1)[1:]
+area_error=by_marker-ntarea
+all_edges=np.concatenate([e[:,[i,j]] for i in range(4) for j in range(i+1,4)],axis=0)
+graph=coo_matrix((np.ones(len(all_edges)),(all_edges[:,0],all_edges[:,1])),shape=(len(x),len(x))).tocsr()
+roots=connected_components(graph,directed=False,return_labels=False)
+
+def intervals_at_xy(xx,yy):
+ mask=(p[:,:,0].min(1)<=xx+1e-12)&(p[:,:,0].max(1)>=xx-1e-12)&(p[:,:,1].min(1)<=yy+1e-12)&(p[:,:,1].max(1)>=yy-1e-12)
+ ids=np.flatnonzero(mask);t=p[ids];M=np.transpose(t[:,1:]-t[:,:1],(0,2,1));inv=np.linalg.inv(M)
+ av=np.einsum('nij,nj->ni',inv,np.array([xx,yy,0])-t[:,0]);bv=inv[:,:,2]
+ aa=np.c_[1-av.sum(1),av];bb=np.c_[-bv.sum(1),bv]
+ lower=np.full(len(ids),-np.inf);upper=np.full(len(ids),np.inf);valid=np.ones(len(ids),bool)
+ for k in range(4):
+  pos=bb[:,k]>1e-12;neg=bb[:,k]<-1e-12;flat=~(pos|neg)
+  lower[pos]=np.maximum(lower[pos],-aa[pos,k]/bb[pos,k]);upper[neg]=np.minimum(upper[neg],-aa[neg,k]/bb[neg,k]);valid[flat]&=aa[flat,k]>=-1e-10
+ valid&=upper-lower>1e-10
+ return ids[valid],np.c_[lower[valid],upper[valid]]
+
+layers=[]
+for xx in [-.02,.16,.24]:
+ for yy in [.57,.65,.73]:
+  ids,ints=intervals_at_xy(xx,yy);lo=np.maximum(ints[:,0],.354);hi=np.minimum(ints[:,1],.360);keep=hi-lo>1e-9
+  clips=np.c_[lo[keep],hi[keep]];clips=clips[np.argsort(clips[:,0])]
+  # A generic ray normally crosses one tetra per z interval; duplicated coplanar
+  # ray intersections do not count as extra through-thickness layers.
+  unique=[]
+  for lo1,hi1 in clips:
+   if not unique or abs(lo1-unique[-1][0])>1e-8 or abs(hi1-unique[-1][1])>1e-8:unique.append([float(lo1),float(hi1)])
+  total=0.;end=.354;gap=0.
+  for lo1,hi1 in unique:
+   gap=max(gap,lo1-end);total+=max(0.,hi1-max(end,lo1));end=max(end,hi1)
+  gap=max(gap,.360-end)
+  layers.append({'x_y_m':[xx,yy],'wall_z_range_m':[.354,.360],'tetra_line_intervals':unique,'distinct_nonzero_intervals':len(unique),'material_coverage_m':total,'max_gap_m':max(0.,gap),'at_least_two_layers_on_this_ray':len(unique)>=2 and gap<1e-8 and abs(total-.006)<1e-8})
+
+voids=[]
+for name,point in [('main_inner_cavity',[.05,.65,.285]),('journal_bore_negative',[-.06,.505,.3]),('journal_bore_positive',[-.06,.795,.3]),('fork_pin_bore_negative',[.26,.49,.34]),('fork_pin_bore_positive',[.26,.81,.34])]:
+ ids,ints=intervals_at_xy(point[0],point[1]);hits=ids[(ints[:,0]<point[2]-1e-9)&(ints[:,1]>point[2]+1e-9)]
+ voids.append({'id':name,'point_m':point,'strict_tetra_material_hits':len(hits)})
+checks={'case':case,'mesh_sha256':hashlib.sha256((OUT/(case+'_tetra.npz')).read_bytes()).hexdigest(),'material_node_graph_roots':int(roots),'source_native_material_roots':1,'boundary_native_marker_area_error_max_m2':float(abs(area_error).max()),'boundary_native_marker_area_relative_error_max':float(np.max(abs(area_error)/np.maximum(ntarea,1e-30))),'boundary_area_error_l1_m2':float(abs(area_error).sum()),'void_probe_count':len(voids),'void_probes':voids,'thin_wall_ray_probes':layers,'all_sampled_6mm_wall_rays_have_two_intervals':all(z['at_least_two_layers_on_this_ray'] for z in layers),'two_layer_coverage_is_global_guarantee':False,'holes_bound_by_native_surface_plus_volume':True,'full_contact_load_mesh_ready':False,'FEM_or_optimization_run':False,'physical_release':False}
+(OUT/(case+'_mesh_checks.json')).write_text(json.dumps(checks,indent=2)+'\n')
+print(json.dumps({'case':case,'roots':roots,'max_marker_area_error':checks['boundary_native_marker_area_error_max_m2'],'void_material_hits':[r['strict_tetra_material_hits'] for r in voids],'layer_counts':[r['distinct_nonzero_intervals'] for r in layers],'layer_sample_pass':checks['all_sampled_6mm_wall_rays_have_two_intervals']}))

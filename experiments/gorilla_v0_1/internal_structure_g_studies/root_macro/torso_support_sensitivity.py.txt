@@ -1,0 +1,50 @@
+"""Whole-upper-inventory gravity sensitivity, not a G robot rating or OEM bearing-centre model."""
+from pathlib import Path
+import hashlib,json,math
+import numpy as np
+
+ROOT=Path(__file__).resolve().parents[2]
+SCENE=ROOT/'.scratch/gorilla_internal_e2a_integrated/scene.json'
+LEDGER=ROOT/'.scratch/gorilla_internal_e2a_integrated/mass_ledger.json'
+OUT=Path(__file__).resolve().parent
+s=json.loads(SCENE.read_text());ledger=json.loads(LEDGER.read_text());tree=s['body_tree']
+def is_upper(b):
+    seen=set()
+    while b in tree and b not in seen:
+        if b=='torso':return True
+        seen.add(b);b=tree[b].get('parent')
+    return False
+rows=[r for r in ledger['mass_rows'] if is_upper(r['body'])]
+upper=[]
+for i,label in enumerate(['low_listed','nominal_listed','high_listed']):
+    mass=sum(r['mass_range_kg'][i] for r in rows)
+    com=sum(np.array(r['COM_world_m'])*r['mass_range_kg'][i] for r in rows)/mass
+    upper.append({'profile':label,'mass_kg':mass,'COM_world_m':com.tolist()})
+
+def ry(q):
+    c=math.cos(q);t=math.sin(q);return np.array([[c,0,t],[0,1,0],[-t,0,c]])
+
+result=[];assumed_pitch_pivot=np.array([0.,0.,1.75])
+for p in upper:
+    for z in [1.91,2.05,2.15]:
+        for x in np.linspace(-.15,.25,17):
+            center=np.array([x,0.,z]);cases=[]
+            for q in [-25.,0.,25.]:
+                R=ry(math.radians(q));P=assumed_pitch_pivot+R@(center-assumed_pitch_pivot);axis=R@np.array([1.,0.,0.]);C=assumed_pitch_pivot+R@(np.array(p['COM_world_m'])-assumed_pitch_pivot)
+                for payload,reach in [(0.,0.),(50.,.45),(100.,.45)]:
+                    # Same upstream rigid carrier transform; +X reaching load is a declared sensitivity.
+                    H=assumed_pitch_pivot+R@(np.array([reach,0.,2.05])-assumed_pitch_pivot)
+                    F=np.array([0.,0.,-9.80665*p['mass_kg']]);FH=np.array([0.,0.,-9.80665*payload]);M=np.cross(C-P,F)+np.cross(H-P,FH);FT=F+FH
+                    axial=float(FT@axis);radial=float(np.linalg.norm(FT-axial*axis));twist=float(M@axis);overturn=float(np.linalg.norm(M-twist*axis))
+                    cases.append({'pitch_deg':q,'payload_kg':payload,'declared_payload_center_neutral_m':[reach,0.,2.05],'axial_N':axial,'radial_N':radial,'axis_torque_Nm':twist,'overturning_Nm':overturn,'Mc759_reference_ratio':overturn/759.,'Mc1860_reference_ratio':overturn/1860.})
+            peak=max(cases,key=lambda c:c['overturning_Nm'])
+            result.append({'profile':p['profile'],'assumed_support_center_neutral_m':center.tolist(),'cases':cases,'max_overturning_Nm':peak['overturning_Nm'],'peak_case':peak})
+best=[]
+for p in upper:
+    for z in [1.91,2.05,2.15]:
+        options=[r for r in result if r['profile']==p['profile'] and abs(r['assumed_support_center_neutral_m'][2]-z)<1e-9]
+        best.append(min(options,key=lambda r:r['max_overturning_Nm']))
+report={'schema':'gorilla_g_upper_gravity_support_sensitivity_v1','inputs':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in [SCENE,LEDGER]},'scope':'Historical source-listed descendant-of-torso inventories under rigid upstream pitch and declared reaching loads. Source mass/COM is unqualified; this is not a new G robot or minimal inevitable force.', 'upper_inventory_rows':len(rows),'upper_profiles':upper,'assumed_upstream_pitch_pivot_world_m':assumed_pitch_pivot.tolist(),'assumed_roll_axis_neutral':[1.,0.,0.],'actual_OEM_pressure_center_unknown':True,'formula':'F=sum(m*g); M=sum((COM-P)crossF); axial=Fdotaxis; radial=norm(F-axial*axis); overturn=norm(M-(Mdotaxis)*axis). Units SI.','best_grid_by_z':best,'all_grid':result,'capacity_or_joint_rating':False,'reference_Mc_is_not_combined_static_or_lifetime_qualification':True,'installation_kinematics_and_stability_qualified':False,'physical_accepted':False,'not_whole_mass_or_new_payload_rating':True,'limits':['Old torso/arm and system proxy masses remain unqualified.','Support centres are own sensitivity coordinates, not OEM pressure-centre facts or feasible mounting positions.','No lateral load, acceleration, ground allocation, friction, dynamic joint force or motor/thermal capability.','Original torso roll or pitch axes are not approved or changed by this calculation.','Payload cases are sensitivity inputs, not performance promises.']}
+(OUT/'torso_support_sensitivity.json').write_text(json.dumps(report,indent=2)+'\n')
+print('upper',upper)
+for b in best:print(b['profile'],b['assumed_support_center_neutral_m'],'max_bending',round(b['max_overturning_Nm'],3),'Mc ratios',round(b['max_overturning_Nm']/759,3),round(b['max_overturning_Nm']/1860,3))

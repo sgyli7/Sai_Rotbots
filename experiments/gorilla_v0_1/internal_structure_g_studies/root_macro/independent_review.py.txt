@@ -1,0 +1,48 @@
+"""Read-only root review of exact G1 native resources and macro formula identities."""
+from pathlib import Path
+import hashlib
+import json
+import sys
+import numpy as np
+
+ROOT = Path('/home/ethan/Projects/Sai_Rotbots')
+OUT = Path(__file__).resolve().parent
+sys.path.insert(0, str(ROOT/'.scratch/gorilla_internal_g_material_contract'))
+from native_signed_material import validate_scene
+sha = lambda p: hashlib.sha256(p.read_bytes()).hexdigest()
+records = []
+for name, relative in [
+    ('waist_b', '.scratch/gorilla_internal_g1_waist_chain/scene.json'),
+    ('lower', '.scratch/gorilla_internal_g1_lower_chain/chain_scene.json'),
+    ('hand_a', '.scratch/gorilla_internal_g1_hand_allocation/scene_a.json'),
+    ('hand_b', '.scratch/gorilla_internal_g1_hand_allocation/scene_b.json'),
+]:
+    p = ROOT/relative
+    before = sha(p)
+    data = json.loads(p.read_text())
+    report = validate_scene(data)
+    record = {'name': name, 'source_path': relative, 'source_sha256': before,
+              'source_unchanged': before == sha(p), 'parts': len(data['parts']),
+              'resource_contract_pass': report['resource_contract_pass'],
+              'duplicate_ids': report['duplicate_ids'],
+              'failed_parts': [{'id': r['id'], 'errors': r['errors']} for r in report['parts'] if not r['resource_contract_pass']],
+              'scope': 'listed native finite/topology/nesting predicates; component envelopes remain installation envelopes, not accurate OEM material'}
+    assert record['source_unchanged']
+    records.append(record)
+    print(name, 'parts', record['parts'], 'failed', len(record['failed_parts']), flush=True)
+
+identities = []
+for diameter, rod in [(.063,.030), (.050,.025), (.040,.020)]:
+    cap = np.pi*diameter**2/4
+    annulus = np.pi*(diameter**2-rod**2)/4
+    assert np.isclose(cap-annulus, np.pi*rod**2/4, rtol=1e-14, atol=1e-18)
+    identities.append({'bore_m': diameter, 'rod_m': rod, 'cap_minus_annulus_equals_rod_area': True})
+for ev in [.9,.97]:
+    for em in [.85,.9]:
+        for ee in [.9,.96]:
+            ideal_displacement_rate = 2*11e-6*3000/60
+            fluid_power = 21e6*ideal_displacement_rate*ev
+            electric_power = 21e6*ideal_displacement_rate/em/ee
+            assert np.isclose(fluid_power/electric_power, ev*em*ee, rtol=1e-14)
+receipt = {'robot_id': 'gorilla_v0_1', 'validator_sha256': sha(ROOT/'.scratch/gorilla_internal_g_material_contract/native_signed_material.py'), 'entry_sha256': sha(Path(__file__)), 'resource_reviews': records, 'cylinder_area_identities': identities, 'pump_fluid_to_electrical_efficiency_identity': True, 'physics_accepted': False, 'installation_accepted': False, 'software_ci': {'commit': '91be59d12f002efe737fd2fd8bfc0537f447fa9b', 'run_id': 37076035263, 'conclusion': 'success', 'scope': 'software regression/build/existing-robot tasks, not Gorilla physics'}, 'visual_review': ['G stock section comparison', 'G1 waist bare/original-armor four-view', 'G1 lower native left/original armor', 'G1 hand same-scale native projection'], 'candidate_geometry_changed': False}
+(OUT/'independent_review.json').write_text(json.dumps(receipt, indent=2) + '\n')

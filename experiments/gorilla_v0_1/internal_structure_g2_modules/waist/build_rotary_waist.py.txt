@@ -1,0 +1,82 @@
+from pathlib import Path
+import json, hashlib, math, collections, sys
+import numpy as np, trimesh as tm, manifold3d as mf
+R=Path('/home/ethan/Projects/Sai_Rotbots'); O=Path(__file__).resolve().parent
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+write=lambda p,d:Path(p).write_text(json.dumps(d,indent=2,allow_nan=False)+'\n')
+M=json.loads((R/'.scratch/gorilla_internal_e2a_integrated/scene.json').read_text())
+layout=sys.argv[1] if len(sys.argv)>1 else 'a'; sign=1 if layout=='a' else -1
+parts=[]; inventory=[]; frame=collections.defaultdict(list); steel=collections.defaultdict(list); joints=[]; profiles=[]
+def ori(c,a):
+ T=tm.geometry.align_vectors([0,0,1],a);T[:3,3]=c;return T[:3,:]
+def cy(c,r,L,a):return mf.Manifold.cylinder(L,r,r,64,True).transform(ori(c,a))
+def bx(c,d):return mf.Manifold.cube(d,True).translate(c)
+def rg(c,ro,ri,L,a):return cy(c,ro,L,a)-cy(c,ri,L+.004,a)
+def profile(c,d,t,along,name,body):
+ inner=np.array(d)-2*t;inner[along]=d[along]+.010
+ profiles.append({'id':name,'body':body,'center_m':c,'outer_dimensions_m':d,'wall_m':t,'open_extrusion_axis_index':along,'material':'conditional_unwelded_6082_T6_extruded_machined_bolted','density_kg_m3':2710,'E_Pa':70e9,'conditional_yield_Pa':250e6,'exact_cutouts_mass_in_native_not_gross_formula':True})
+ return bx(c,d)-bx(c,inner.tolist())
+def union(ms):
+ u=ms[0]
+ for x in ms[1:]:u=u+x
+ return u
+COL={'pelvis':[.27,.34,.39,1],'waist_yaw_carrier':[.42,.50,.57,1],'waist_pitch_carrier':[.34,.47,.52,1],'torso':[.53,.57,.61,1]}
+def add(n,b,m,role='finite_material',material='steel_interface_hypothesis',**kw):
+ q=m.to_mesh64();p={'name':'g2_'+n,'body':b,'role':role,'rgba':COL.get(b,[.45,.31,.18,1]),'vertices_world_m':np.asarray(q.vert_properties)[:,:3].tolist(),'faces':np.asarray(q.tri_verts).astype(int).tolist(),**kw}
+ if role!='complete_component_reference':p.update(material_id=material,density_kg_m3=2710 if material.startswith('6082') else 7850)
+ parts.append(p);return p['name']
+# Exactly complete OEM/reference functions. OEM internal holes/moving split are not reconstructed.
+configs=[('waist_yaw','pelvis','waist_yaw_carrier',[0,0,1.42],[0,0,1],'csg65'),('waist_pitch','waist_yaw_carrier','waist_pitch_carrier',[0,0,1.78],[0,sign,0],'csg65'),('waist_roll','waist_pitch_carrier','torso',[-.078,0,2.05],[1,0,0],'csg50')]
+kits={}
+for k,parent,child,cc,aa,fam in configs:
+ c=np.array(cc,float);a=np.array(aa,float); cp=lambda u:c+a*u
+ core,proj,D,gm,mD,mL,mm,case=(.115,.0085,.260,20.9,.210,.066,5.8,.136) if fam=='csg65' else (.090,.008,.190,8.9,.160,.0345,1.613,.101)
+ inf=-core/2;out=core/2+proj;mc=inf-.007-mL/2;bc=mc-mL/2-.02525;ec=bc-.025
+ masses={'gear':[gm]*3,'motor':[mm]*3,'brake':[.8,1.5,3.],'encoder':[.1,.2,.35],'controller':[.7,1.1,1.8],'wire_coolant_connector':[.12,.25,.5]};ids={}
+ for typ,r,L,u in [('gear',D/2,core+proj,proj/2),('motor',mD/2,mL,mc),('brake',.060,.035,bc),('encoder',.035,.012,ec)]:
+  ids[typ]=add(k+'_'+typ,parent,cy(cp(u),r,L,a),'complete_component_reference',mass_range_kg=masses[typ],OEM_internal_material_not_drawn=True,OEM_fixed_input_output_split_unknown=typ in ['gear','motor','brake'],complete_dimensions_m={'D':r*2,'L':L})
+ shell=rg(cp(proj/2),case,D/2+.002,core+proj+.020,a)
+ motorcase=rg(cp(mc),mD/2+.008,mD/2+.002,mL+.008,a)
+ # Full WG/rotor shaft passes through explicit openings, not a solid nearest-pivot plate.
+ flange=rg(cp(inf-.004),case,mD/2+.002,.012,a)
+ ids['gear_load_shell']=add(k+'_gear_load_shell',parent,shell+flange);steel[parent].append(shell+flange)
+ ids['motor_cooling_case']=add(k+'_motor_cooling_case',parent,motorcase);steel[parent].append(motorcase)
+ sr=.01360 if fam=='csg65' else .00945;rr=.074 if fam=='csg65' else .052
+ hub=union([cy(cp(inf-.027),sr,.060,a),rg(cp(inf-.0035),.035,sr-.0001,.013,a),rg(cp(mc+.004),rr,sr-.0001,.004,a)])
+ ids['input_coupling']=add(k+'_input_coupling',k+'_input_link',hub,mechanical_rotor_WG_interface_unknown=True)
+ adapter=rg(cp(out+.014),.080,.030,.028,a);pc=.055 if fam=='csg65' else .042
+ u=np.array([1.,0,0]) if abs(a[0])<.8 else np.array([0.,1,0]);v=np.cross(a,u)
+ for j in range(8):adapter=adapter-cy(cp(out+.014)+pc*(math.cos(j*math.pi/4)*u+math.sin(j*math.pi/4)*v),.009 if fam=='csg65' else .008,.040,a)
+ ids['output_adapter']=add(k+'_output_adapter',child,adapter);steel[child].append(adapter)
+ side=np.array([1.,0,0]) if k=='waist_pitch' else np.array([0.,1,0]);ctrl=cp(mc+.015)+side*(case+.060);conn=cp(inf+.010)-side*(case+.055)
+ ids['controller']=add(k+'_controller',parent,bx(ctrl,[.060,.035,.090]),'complete_component_reference',mass_range_kg=masses['controller'])
+ ids['wire_coolant_connector']=add(k+'_wire_coolant_connector',parent,bx(conn,[.035,.045,.070]),'complete_component_reference',mass_range_kg=masses['wire_coolant_connector'])
+ # Finite clamp around motor exterior; side plate connects bay without crossing its finite controller.
+ bay=bx(ctrl,[.080,.060,.110])-bx(ctrl,[.068,.048,.098]);frame[parent].append(bay)
+ start=cp(mc+.015)+side*(case-.004);end=ctrl-side*.035;mid=(start+end)/2;dim=[.015,.015,.015];dim[int(np.argmax(abs(side)))]=float(np.linalg.norm(end-start))+.010;frame[parent].append(bx(mid,dim))
+ inventory.append({'group':k,'family':fam,'parent':parent,'child':child,'functional_part_ids':ids,'all10functions':len(ids)==10,'axis_world':a.tolist(),'core_center_world_m':c.tolist(),'full_OEM_L_m':core+proj,'OEM_A_output_world_m':cp(out).tolist(),'OEM_B_case_input_world_m':cp(inf).tolist(),'bearing_pressure_center_world_m':cp(out-(.0225 if fam=='csg65' else .018)).tolist(),'no_added_OEM_races':True})
+ kits[k]={'c':c,'a':a,'out':out,'inf':inf,'case':case,'mc':mc,'motorD':mD}
+ joints.append({'interface':k+'_OEM_B_case_to_parent','parent':parent,'child':child,'A_output_known':True,'B_case_known':True,'WG_input_known':True,'flange_fasteners_preload_capacity_unknown':True})
+# Parent supports real external cases and include explicit motor/input clearance corridors.
+frame['pelvis']+=[rg([0,0,1.360],.145,.113,.016,[0,0,1]),profile([0,0,1.350],[.32,.40,.060],.006,0,'pelvis_open_box','pelvis')-cy([0,0,1.35],.115,.080,[0,0,1])]
+frame['waist_yaw_carrier']+=[rg([0,0,1.516],.140,.030,.020,[0,0,1]),profile([0,-sign*.080,1.575],[.300,.140,.110],.006,0,'yaw_upper_crossmember','waist_yaw_carrier')]
+# Pitch fixed case support lies on input face, with unobstructed shaft/motor opening.
+pitchseat=bx([0,-sign*.071,1.780],[.310,.018,.310])-cy([0,-sign*.071,1.780],.136,.028,[0,1,0])
+frame['waist_yaw_carrier']+=[pitchseat,profile([-.145,-sign*.080,1.645],[.045,.140,.160],.006,2,'pitch_case_left_upright','waist_yaw_carrier'),profile([.145,-sign*.080,1.645],[.045,.140,.160],.006,2,'pitch_case_right_upright','waist_yaw_carrier')]
+# Pitch output owns a full lateral carrier. It rises outside the pitch shell and crosses above it.
+py=sign*.130
+frame['waist_pitch_carrier']+=[profile([0,py,1.880],[.140,.100,.240],.006,2,'pitch_output_side_column','waist_pitch_carrier'),profile([0,sign*.065,1.998],[.140,.250,.080],.006,1,'pitch_to_roll_crossmember','waist_pitch_carrier')]
+frame['waist_pitch_carrier'].append(rg([-.078,0,2.05],.116,.101,.148,[1,0,0]))
+# Narrow actual 6082 profiles replace the large steel torso box. Steel shoulder seats retained.
+frame['torso']+=[profile([.143,0,2.05],[.280,.100,.100],.006,0,'roll_output_horizontal_profile','torso'),profile([.240,0,2.205],[.100,.140,.320],.006,2,'torso_vertical_spine','torso'),profile([.055,0,2.360],[.470,.140,.140],.006,0,'spine_to_shoulder_connector','torso'),profile([-.130,0,2.360],[.100,1.140,.140],.006,1,'shoulder_bridge','torso')]
+for z in [-1,1]:
+ seat=rg([-.130,z*.460,2.360],.140,.132,.024,[0,1,0]);add('shoulder_'+('left'if z==1 else'right')+'_steel_seat','torso',seat);steel['torso'].append(seat)
+ joints.append({'interface':'shoulder_'+str(z),'world_axis_point_m':[-.13,z*.46,2.36],'axis_world':[0,z,0],'finite_seat_profile_contact_explicit':True,'full_arm_hardware_and_connection_fasteners_not_qualified':True})
+# Material partition is actual Boolean machining around distinct steel seats, not density relabel.
+for b,ms in frame.items():
+ alu=union(ms)
+ if steel[b]:alu=alu-union(steel[b])
+ add(b+'_6082_reaction_material',b,alu,material='6082_T6_unwelded_extruded_machined_bolted_hypothesis',construction_joins_and_bolts_not_strength_accepted=True)
+TREE={'pelvis':{'parent':None},'waist_yaw_carrier':{'parent':'pelvis','pivot_world_m':[0,0,1.486],'axis_world':[0,0,1],'joint_id':'waist_yaw'},'waist_pitch_carrier':{'parent':'waist_yaw_carrier','pivot_world_m':[0,sign*.066,1.78],'axis_world':[0,sign,0],'joint_id':'waist_pitch'},'torso':{'parent':'waist_pitch_carrier','pivot_world_m':[-.025,0,2.05],'axis_world':[1,0,0],'joint_id':'waist_roll'}}
+scene={'schema':'gorilla_g2_rotary_waist_native_v1','robot_id':'gorilla_v0_1','layout':layout,'parts':parts,'original_armor_comparator':[p for p in M['parts']if p['role']in['armor_cover','armor_surface']],'body_tree':TREE,'rotary_functional_inventory':inventory,'material_profiles':profiles,'installation_interfaces':joints,'source_hashes':{str(p.relative_to(R)):sha(p)for p in [R/'.scratch/gorilla_internal_e2a_integrated/scene.json',R/'.scratch/gorilla_internal_g1_oem_installation/installation_and_bearing_check.md',R/'.scratch/gorilla_internal_g_root_macro/rotary_input_inertia_screen.json',R/'.scratch/gorilla_internal_g_root_macro/frame_material_screen.json',Path(__file__)]},'scope':'three complete rotary waist functional modules and mixed finite reaction profiles/steel seats; no hydraulic pitch, no full arms/legs/system qualification','original_armor_change_mm':0,'OEM_reference_not_internal_material':True,'OEM_inertia_split_and_real_joint_dynamics_unknown':True,'no_fix_normals_split_compose_or_checker_geometry_repair':True,'geometry_accepted':False,'physical_accepted':False,'stable_SI':False,'aesthetic_accepted':False}
+write(O/('layout_'+layout+'_scene.json'),scene);write(O/('layout_'+layout+'_parameters.json'),{k:v for k,v in scene.items()if k not in ['parts','original_armor_comparator']});print(layout,'rows',len(parts),'sha',sha(O/('layout_'+layout+'_scene.json')),flush=True)

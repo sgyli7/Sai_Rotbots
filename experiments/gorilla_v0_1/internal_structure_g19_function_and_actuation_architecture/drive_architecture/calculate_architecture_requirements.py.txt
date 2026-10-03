@@ -1,0 +1,121 @@
+#!/usr/bin/env python3
+"""G19 conditional requirements; readonly G18 source, not a new geometry/acceptance."""
+from __future__ import annotations
+import argparse, gzip, hashlib, json, math
+from collections import Counter
+from pathlib import Path
+import numpy as np
+ROOT=Path(__file__).resolve().parents[2]
+HERE=Path(__file__).resolve().parent
+INPUT=ROOT/'.scratch/gorilla_internal_g18_root_review/body_b_arm_b'
+EXPECTED={'scene.json.gz':'9873e9db2a6a5c20d9466216577c69a6c7afcab9c2db4ce22b88b4181c40e694','function_mass_and_actual_joint_gravity.json.gz':'23990d4f78d7324f66fa26d9f3b7e4e9bdd781dbee812ec380ed815b1b406de9'}
+LEVELS=['low','nominal_range_marker','high']
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+def read(p):return json.loads(gzip.decompress(p.read_bytes()) if p.suffix=='.gz' else p.read_bytes())
+def dump(p,d):p.write_text(json.dumps(d,indent=2,ensure_ascii=False)+'\n')
+def rotation(axis,rad):
+ a=np.asarray(axis,float);a=a/np.linalg.norm(a);x,y,z=a;K=np.array([[0,-z,y],[z,0,-x],[-y,x,0.]])
+ return np.eye(3)+math.sin(rad)*K+(1-math.cos(rad))*(K@K)
+def joint_rotation(p,a,rad):
+ T=np.eye(4);T[:3,:3]=rotation(a,rad);T[:3,3]=np.asarray(p)-T[:3,:3]@np.asarray(p);return T
+def main():
+ ap=argparse.ArgumentParser();ap.add_argument('--output-dir',type=Path,default=HERE);args=ap.parse_args();out=args.output_dir;out.mkdir(parents=True,exist_ok=True)
+ inputs=[]
+ for fn,h in EXPECTED.items():
+  p=INPUT/fn;actual=sha(p);assert actual==h,(fn,actual,h);inputs.append({'path':str(p),'sha256':actual})
+ scene=read(INPUT/'scene.json.gz');ledger=read(INPUT/'function_mass_and_actual_joint_gravity.json.gz');tree=scene['body_tree_candidate'];joints=scene['new_joint_interfaces'];rows=ledger['function_mass_rows'];unmapped=ledger['unmapped_owner_rows_not_zero']
+ assert len(joints)==8 and len(unmapped)==422
+ def descendant(body,root):
+  visited=set()
+  while body in tree and body not in visited:
+   if body==root:return True
+   visited.add(body);body=tree[body].get('parent')
+  return False
+ def transforms(q):
+  memo={}
+  def fk(b):
+   if b is None or b not in tree:return np.eye(4)
+   if b in memo:return memo[b]
+   node=tree[b];T=fk(node.get('parent')).copy()
+   if node.get('joint_id') in q:T=T@joint_rotation(node['pivot_world_m'],node['axis_world'],math.radians(q[node['joint_id']]))
+   memo[b]=T;return T
+  for b in tree:fk(b)
+  return memo
+ poses=[{'id':'neutral','joint_degrees':{}},{'id':'combined_reach_conditional','joint_degrees':{f'{s}_{j}':v for s in ['left','right'] for j,v in [('pitch',15),('roll',10),('yaw',15),('elbow_pitch',35)]}}]
+ cases=[];neutral_error=0.;derived_requirements=[]
+ for pose in poses:
+  Ts=transforms(pose['joint_degrees']);pc={'id':pose['id'],'joint_degrees':pose['joint_degrees'],'root_shift_world_m':[0,0,0],'joint_screens':[]}
+  for ji,j in enumerate(joints):
+   PT=Ts[j['parent_body']];pivot=(PT@np.r_[j['pivot_world_m'],1])[:3];axis=PT[:3,:3]@j['axis_world'];axis=axis/np.linalg.norm(axis)
+   selected=[r for r in rows if descendant(r.get('owner_candidate'),j['output_body'])];side=j['id'].split('_')[0];palm=f'{side}_palm';hand=(Ts[palm]@np.r_[tree[palm]['pivot_world_m'],1])[:3]
+   # K maps a world hand wrench [Fxyz,Mxyz] to world joint wrench; a.T M is joint torque.
+   v=hand-pivot;K=np.eye(6);K[3:,:3]=np.array([[0,-v[2],v[1]],[v[2],0,-v[0]],[-v[1],v[0],0.]])
+   torque_coeff=np.r_[axis@K[3:,:3],axis]
+   unitkg=K@np.array([0,0,-9.81,0,0,0.]);known=[];unknown=[]
+   for li,label in enumerate(LEVELS):
+    F=np.zeros(3);M=np.zeros(3);bad=[];contributors=[]
+    for r in selected:
+     masses=r.get('mass_range_kg');m=None if masses is None else masses[li];com=r.get('COM_world_proxy_m')
+     if m is None or com is None:bad.append(r['id']);continue
+     com=(Ts[r['owner_candidate']]@np.r_[com,1])[:3];f=np.array([0.,0.,-9.81*m]);F+=f;M+=np.cross(com-pivot,f);contributors.append(r['id'])
+    wrench=np.r_[F,M];tau=float(axis@M)
+    if pose['id']=='neutral':
+     reference=ledger['actual_new_joint_known_subset_gravity'][ji]['known_subset_gravity'][li]['known_subset_body_on_parent_Fxyz_Mxyz'];neutral_error=max(neutral_error,float(np.max(np.abs(wrench-reference))))
+    payloads=[{'external_hand_mass_kg':mass,'conditional_wrench_Fxyz_Mxyz':(wrench+mass*unitkg).tolist(),'conditional_axis_torque_Nm':float(tau+mass*(axis@unitkg[3:])),'payload_capacity_acceptance':False} for mass in [0,25,50,100]]
+    bearing=[];fperp=F-axis*(axis@F);mperp=M-axis*(axis@M)
+    for span in [.08,.12,.18]:bearing.append({'pressure_center_span_m_assumed':span,'force_reaction_upper_bound_per_side_N':float(np.linalg.norm(fperp)/2+np.linalg.norm(mperp)/span),'axial_force_N':float(abs(axis@F)),'calculation':'triangle inequality; actual load split/preload/bearing life/contact unknown; axial torque excluded from radial bending'})
+    known.append({'level':label,'known_subset_proxy_gravity_Fxyz_Mxyz':wrench.tolist(),'axis_torque_Nm':tau,'included_function_ids':contributors,'unknown_selected_function_ids':bad,'hand_gravity_sensitivity_Nm_per_kg':float(axis@unitkg[3:]),'hand_payload_sensitivities_not_ratings':payloads,'support_reaction_sensitivity':bearing})
+    if li==1:
+     family='QTL210_65_N' if j['id'].endswith('_pitch') and not j['id'].endswith('_elbow_pitch') else 'QTR160_34_N'
+     motor=MOTORS[family];motor_z=MOTORS['QTR160_34_Z'] if family=='QTR160_34_N' else None
+     sensitivity=[]
+     for qdot in [.25,.5,1.]:
+      rpm=qdot*100*60/(2*math.pi)
+      for eta in [.6,.75,.9]:
+       tin=abs(tau)/(100*eta);cur=tin/motor['Kt_Nm_per_Arms'];pout=abs(tau)*qdot;cu=3*motor['R_phase_25C_ohm']*cur*cur
+       d={'qdot_rad_s_assumed':qdot,'ratio':100,'gear_eta_assumed_not_OEM_map':eta,'output_torque_only_known_gravity_Nm':tau,'motor_rpm':rpm,'input_torque_excluding_unqualified_friction_Nm':tin,'current_Arms_linear_Kt_assumption':cur,'copper_loss_25C_W':cu,'copper_loss_100C_sensitivity_W':cu*(1+.00393*75),'gear_loss_sensitivity_W':pout*(1/eta-1),'ideal_Vdc_back_EMF_floor_excludes_IR_inductance_PWM_margin_V':math.sqrt(2)*motor['Ke_LL_rms_V_krpm']*rpm/1000,'catalogue_Tc_mount_20C_coil_100C_Nm':motor['Tc_Nm'],'catalogue_Ts_if_separate_Nm':motor.get('Ts_Nm'),'dynamic_inertia_Coriolis_and_422_owner_rows_unknown':True}
+       if motor_z:d['QTR_Z_same_geometry_alternative_Vdc_floor_V']=math.sqrt(2)*motor_z['Ke_LL_rms_V_krpm']*rpm/1000
+       sensitivity.append(d)
+     derived_requirements.append({'pose':pose['id'],'joint_id':j['id'],'motor_family_reference':family,'sensitivities':sensitivity,'continuous_capacity_acceptance':False})
+   pc['joint_screens'].append({'joint_id':j['id'],'parent_body':j['parent_body'],'output_body':j['output_body'],'pivot_world_m':pivot.tolist(),'axis_world':axis.tolist(),'hand_application_point_world_m':hand.tolist(),'unit_world_hand_wrench_to_axis_torque_coefficients':torque_coeff.tolist(),'unit_hand_gravity_kg_wrench_Fxyz_Mxyz':unitkg.tolist(),'known_subset_levels':known,'global_unmapped_owner_rows_count_not_assigned_to_this_arm':len(unmapped)})
+  cases.append(pc)
+ assert neutral_error<1e-8,neutral_error
+ # Missing owners stay symbolic: no automatic reassignment/split of complete OEM masses.
+ symbolic=[{'id':r['id'],'member_ids':r.get('member_ids'),'owner_candidate':r.get('owner_candidate'),'mass_range_kg':r.get('mass_range_kg'),'COM_world_geometric_proxy_m':r.get('geometric_COM_proxy_m'),'load_expression':'once actual owner and COM are established: F=m*[0,0,-9.81]; M=(T_owner*COM-p_joint) cross F; currently unassigned, not zero','SI_mass_or_owner_accepted':False} for r in unmapped]
+ known_doc={'schema':'gorilla_g19_actual_8_axis_conditional_requirements_v1','inputs':inputs,'producer_sha256':sha(Path(__file__)),'neutral_numeric_reproduction_max_wrench_error':neutral_error,'poses':cases,'unmapped_owner_rows_count':len(unmapped),'unmapped_owner_rows_symbolic':symbolic,'unknown_COM_and_mass_not_zero':True,'whole_mass_kg':None,'whole_COM_m':None,'whole_full_I_kgm2':None,'actuator_requirement_accepted':False,'old_lower_body_not_new_design_contract':True}
+ dump(out/'requirements.json',known_doc);dump(out/'motor_speed_heat_sensitivity.json',{'source_requirements_producer_sha256':sha(Path(__file__)),'motor_facts':MOTORS,'screen':derived_requirements,'heat_known_gravity_only_not_total_system':True,'friction_map_PWM_thermal_mount_fluid_dynamic_unknown':True})
+ arch=architecture(cases);arch.update({'inputs':inputs,'producer_sha256':sha(Path(__file__)),'whole_geometry_or_capacity_accepted':False,'OEM_internal_COM_fullI_not_uniform':True});dump(out/'architecture_comparison.json',arch)
+ dump(out/'calculation_receipt.json',{'inputs':inputs,'neutral_error':neutral_error,'joint_count':len(joints),'pose_count':len(cases),'unknown_owner_count':len(unmapped),'output_sha256':{p.name:sha(p) for p in [out/'requirements.json',out/'motor_speed_heat_sensitivity.json',out/'architecture_comparison.json']},'producer_sha256':sha(Path(__file__)),'resource_or_assembly_gate_rerun':False})
+ print(json.dumps({'neutral_error':neutral_error,'unknown':len(unmapped),'outputs':str(out),'A_dimensions':arch['A']['nonoverlapped_dimension_budget_m'],'raw_catalogue_mass':arch['catalogue_mass_only_not_complete_joint_total_kg']},indent=2))
+MOTORS={
+ 'QTL210_65_N':{'source_url':'https://www.tecnotion.com/wp-content/uploads/2025/11/QTL210_Specsheet_EN_2.4.pdf','stator_OD_m':.210,'stator_Hmax_m':.066,'local_lead_projection_m':.015,'stator_mass_kg':4.2,'rotor_mass_kg':1.6,'catalogue_total_kg_ex_cables':5.8,'rotor_polar_I_kgm2':.009,'full_I_unknown':True,'Tc_Nm':65,'Ts_Nm':46,'Kt_Nm_per_Arms':8.7,'Ke_LL_rms_V_krpm':528,'R_phase_25C_ohm':3.18,'L_phase_H':.016,'Pc_W':690,'Rth_coil_mount_K_W':.116,'Umax_Vdc':680,'nmax_at_Tc_Umax_rpm':716},
+ 'QTR160_34_N':{'source_url':'https://www.tecnotion.com/wp-content/uploads/2022/05/Torque_Brochure_EN_2-5.pdf','stator_OD_m':.160,'stator_Hmax_m':.0345,'local_lead_projection_m':.0035,'stator_mass_kg':1.212,'rotor_mass_kg':.401,'catalogue_total_kg_ex_cables':1.613,'rotor_polar_I_kgm2':.0014,'full_I_unknown':True,'Tc_Nm':15.9,'Kt_Nm_per_Arms':3.46,'Ke_LL_rms_V_krpm':209,'R_phase_25C_ohm':5.45,'L_phase_H':.01503,'Pc_W':450,'Rth_coil_mount_K_W':.17,'Umax_Vdc':325,'nmax_at_Tc_48Vdc_rpm':149},
+ 'QTR160_34_Z':{'source_url':'https://www.tecnotion.com/wp-content/uploads/2022/05/Torque_Brochure_EN_2-5.pdf','same_mechanical_source_as':'QTR160_34_N','catalogue_total_kg_ex_cables':1.613,'Tc_Nm':15.3,'Kt_Nm_per_Arms':.93,'Ke_LL_rms_V_krpm':56,'R_phase_25C_ohm':.43,'L_phase_H':.00109,'Pc_W':450,'Rth_coil_mount_K_W':.17,'Umax_Vdc':325,'nmax_at_Tc_48Vdc_rpm':260}}
+def architecture(cases):
+ gear={'CSG65_2A':{'ratio':100,'OD_m':.215,'axial_m':.083,'mass_kg':6.7,'L10_ref_Nm':1236,'repeated_peak_ref_Nm':2990,'momentary_peak_ref_Nm':6175,'source_url':'https://www.harmonicdrive.net/products/component-sets/cup-type/csg-2a/csg-65-100-2a-gr'},'CSG50_2A':{'ratio':100,'OD_m':.170,'axial_m':.064,'mass_kg':3.2,'L10_ref_Nm':611,'repeated_peak_ref_Nm':1274,'momentary_peak_ref_Nm':2678,'source_url':'https://www.harmonicdrive.net/products/component-sets/cup-type/csg-2a/csg-50-100-2a-gr'},'CSG65_2UH':{'OD_m':.260,'axial_body_m':.115,'local_input_protrusion_m':.0085,'mass_kg':20.9,'source_url':'https://www.harmonicdrive.net/products/gear-units/gear-units/csg-2uh/csg-65-100-2uh'},'CSG50_2UH':{'OD_m':.190,'axial_body_m':.090,'mass_kg':8.9,'source_url':'https://www.harmonicdrive.net/products/gear-units/gear-units/csg-2uh/csg-50-100-2uh'}}
+ common={'input_motor_encoder':'input speed/commutation; output absolute encoder separately required','brake':'retain brake spring/release controller or defined output lock; motor-side lock transformed capacity unknown','bearing':'two adequately spaced input bearings AND independent output load-bearing pair for component set, fixed seats/retainers and preload unknown','driver':'all 8 drives present; bus choice/current/voltage and fault isolation unknown','cooling':'wet case sealed away from dry bearings, PC bolts and rotor; real inlet/outlet/vent/drain and TIM contact; G13/G14 failed proof not inherited','wiring':'power, encoder, output feedback through each moving interface; flex loops or rotary unions with finite bend/twist unknown','toolspace':'staged removal with parking of every part; old G18 failed paths retained','manual_load_support':'must unload and mechanically support downstream chain before brake/seat removal'}
+ budget={'pitch':{'component':.083,'motor':.066,'output_pair':2*.02975,'input_pair_assumed':.020,'brake_axial_assumed':.014,'endwalls_assumed':.012,'assembly_clearance_assumed':.010,'sum_axial_no_nesting_m':.2645,'outer_OD_own_housing_range_m':[.245,.275]},'roll_yaw_elbow':{'component':.064,'motor':.0345,'output_pair':2*.02975,'input_pair_assumed':.020,'brake_axial_assumed':.014,'endwalls_assumed':.012,'assembly_clearance_assumed':.010,'sum_axial_no_nesting_m':.214,'outer_OD_own_housing_range_m':[.200,.230]}}
+ housing=[]
+ # Finite algebraic material candidates, NOT CAD admission and no hole/strength credit.
+ for fam,Do,L in [('pitch',.245,.2645),('small',.200,.214)]:
+  for wall in [.006,.008]:
+   Ri=Do/2-wall;Ro=Do/2;endhole=.03
+   v=math.pi*(Ro*Ro-Ri*Ri)*L+2*wall*math.pi*(Ri*Ri-endhole*endhole)
+   housing.append({'family':fam,'wall_m_assumed':wall,'skin_plus_two_end_annuli_volume_m3':v,'conditional_steel_7850_mass_kg':7850*v,'functional_holes_local_bosses_joint_paths_not_built':True,'material_reuse_credit_kg':0})
+ transmission=[]
+ for pose in cases:
+  for j in pose['joint_screens']:
+   nom=j['known_subset_levels'][1]
+   for payload in [0,50,100]:
+    torque=abs(nom['axis_torque_Nm']+payload*nom['hand_gravity_sensitivity_Nm_per_kg'])
+    for R in [.05,.075,.1]:transmission.append({'pose':pose['id'],'joint_id':j['joint_id'],'payload_per_active_hand_kg_conditional':payload,'torque_Nm':torque,'pitch_radius_m_assumed':R,'effective_belt_tension_difference_N':torque/R,'shaft_load_not_this_difference_alone':True,'belt_width_pretension_tooth_capacity_servicefactor_unknown':True})
+ shafts=[]
+ for Do,Di in [(.05,.04),(.06,.04),(.08,.06)]:
+  J=math.pi/32*(Do**4-Di**4);L=.6
+  for tau in [200,500,1000]:shafts.append({'Do_m':Do,'Di_m':Di,'L_m':L,'rho_kg_m3_assumed':7850,'G_Pa_assumed':80e9,'metal_mass_kg':7850*math.pi/4*(Do**2-Di**2)*L,'torque_Nm':tau,'torsion_angle_deg':math.degrees(tau*L/(80e9*J)),'max_shear_MPa':tau*Do/(2*J)/1e6,'splines_CV_bearings_housings_fatigue_additional_unknown':True})
+ gross=2*(math.pi/4*.260**2*.1235+3*math.pi/4*.190**2*.09)
+ return {'gear_official_facts':gear,'common_complete_functions':common,'catalogue_mass_only_not_complete_joint_total_kg':{'A_8_component_sets':2*(6.7+3*3.2),'B_8_housed_gear_units':2*(20.9+3*8.9),'same_8_frameless_motors':2*(5.8+3*1.613),'A_output_bearing_marker_16x_SFK32212_1p15':16*1.15,'raw_gear_inventory_difference_no_credit':2*(20.9+3*8.9)-2*(6.7+3*3.2),'complete_A_mass_kg':None,'complete_B_mass_kg':None},
+ 'A':{'name':'integrated complete own load-bearing joint housing with official component-set gear','components_not_cut_housed_gears':True,'chain':['torso broad node -> fixed common housing -> separate input-bearing pair/motor/WG','CS fixed to housing; WG input; FS output -> independent output-bearing pair/journal -> pitch load shell','pitch load shell -> roll fixed housing -> roll output load shell -> yaw fixed housing','yaw output -> closed upperarm load shell -> elbow fixed housing -> elbow output -> full forearm/wrist/hand context'], 'nonoverlapped_dimension_budget_m':budget,'housing_finite_algebraic_material_budget':housing,'gear_component_support_manual_url':'https://www.harmonicdrive.net/_hd/content/documents1/CSG-CSF_Component.pdf','CS_FS_concentricity_WG_force_external_bearing_clearance_unknown':True,'assembly':['output support/journal and load shell on assembly support fixture','install unmodified CS/FS and input bearings to OEM alignment/clearance requirements','install rotor/WG/key after shaft fit; removable dry end cover and brake/encoder','complete sealed cooling shell/ports, then controller/water/electrical','service inverse order, support downstream before withdrawing load seats; full native path not built'],'geometry_fit_original_armor_or_body_not_verified':True,'complete_COM_fullI_unknown':True},
+ 'B':{'name':'proximal complete drives plus remote high-torque transmission through serial axes','bank_complete_gear_and_motor_mass_without_brake_driver_etc_kg':2*(20.9+3*8.9+5.8+3*1.613),'8_complete_gears_bounding_cylinders_gross_m3_not_cavity':gross,'bank_mass_moved_not_deleted':True,'chain':['torso broad node -> 8 intact housed gear/motor/brake/driver/cooling groups','pitch bank -> pitch output pulley/shaft -> pitch independent load support','roll bank -> transmission through pitch -> roll output/independent bearing','yaw bank -> transmission through pitch and roll -> yaw output/independent bearing','elbow bank -> through pitch/roll/yaw -> upperarm shaft/belt stages -> elbow output/independent support','joint-side output encoder and mechanical load-holding -> same full forearm/wrist/hand context'],'serial_transmission_coupling':'need actual carrier/differential equations q=H(theta_motor,q_parent); virtual work tau_motor=H.T*tau_joint. No rigid straight cable/shaft across changing axes accepted. Routing dimensions and DOF-preserving coupling unknown.','belt_reference_manual_url':'https://www.gates.com/content/dam/documents-library/catalogs/powergrip-gt3-drive-design-manual-en.pdf','belt_tension_sensitivity':transmission,'hollow_shaft_finite_algebraic_sensitivity':shafts,'transmission_mass_torque_speed_capacity_kg':None,'assembly':['mount complete proximal bank to real reaction node, independent load supports at joints','install shafts/pulleys/bearings/differentials per serial carrier before closing reaction shells','measure zero/backlash/tension and joint-side encoders; output locks retain unload safety','remote motor service does not release loaded joint; joint drive stages still require supported removal'],'moving_arm_gravity_credit_kg':0,'mass_COM_and_transmission_actual_fit_unknown':True},
+ 'architecture_choice_by_root':None,'OEM_full_I_unknown':'only catalogue rotor polar I available; neither gearbox nor whole frameless motor uniform-volume I admitted','unclosed_physical':['422 owner rows','gravity-only subset + unknown COM and material rejects','true dynamic inertia and serial coupling','complete duty torque-speed thermal map/voltage','transmission stiffness and bearing load split','actual shell/assembly/finite fluid path','current old lowerbody not new design']}
+if __name__=='__main__':main()

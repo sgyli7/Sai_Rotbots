@@ -1,0 +1,56 @@
+from pathlib import Path
+P=Path(__file__).resolve().parent;AP=P.parent/'a'/'build_chain.py'
+exec(compile(AP.read_text().split('# Explicit new armor source:')[0],str(AP),'exec'))
+O=P
+_open_beam=beam
+# Physical finite end plates, declared integral/welded hypothesis, with net mass.
+def beam(a,b,w=.050,d=.060,wall=.006,solid=False):
+ s=_open_beam(a,b,w,d,wall,solid)
+ if solid:return s
+ aa=np.asarray(a);bb=np.asarray(b);u=(bb-aa)/np.linalg.norm(bb-aa);x=AY-u*(AY@u)
+ if np.linalg.norm(x)<1e-8:x=AX-u*(AX@u)
+ x/=np.linalg.norm(x);basis=np.column_stack([x,np.cross(u,x),u])
+ for c in [aa+u*wall/2,bb-u*wall/2]:
+  T=np.eye(4);T[:3,:3]=basis;T[:3,3]=c;s=s+mf.Manifold.cube([w,d,wall],center=True).transform(T[:3,:4].copy())
+ return s
+K=np.array([-.080,.398,.970]);F=np.array([-.140,.470,.550]);A=np.array([-.080,.520,.310]);R=np.array([-.130,.560,.215]);H=np.array([.080,.650,.115])
+parts=[];frames={b:[] for b in ['thigh_interface','middle','distal','ankle_carrier','arch','forefoot']}
+J=[dict(id='knee',parent='thigh_interface',child='middle',c=K,axis=AY,seats=[-.155,.155],collars=[-.095,.095]),dict(id='fold',parent='middle',child='distal',c=F,axis=AY,seats=[-.150,.150],collars=[-.080,.080]),dict(id='ankle_pitch',parent='distal',child='ankle_carrier',c=A,axis=AY,seats=[-.140,.140],collars=[-.080,.080]),dict(id='ankle_roll',parent='ankle_carrier',child='arch',c=R,axis=AX,seats=[-.080,.080],collars=[-.030,.030]),dict(id='forefoot',parent='arch',child='forefoot',c=H,axis=AY,seats=[-.120,.120],collars=[-.045,.045])]
+for j in J:
+ for d in j['seats']:
+  c=j['c']+j['axis']*d;fm(j['parent'],ring(c,.080,.055,.037,j['axis']))
+  add(j['id']+'_bearing_reference_'+str(d),j['parent'],ring(c,.055,.03035,.02975,j['axis']),'bearing_reference_envelope',density_kg_m3=None,mass_range_kg=[1.15,1.15,1.55],reference_scope='SKF 32212 60/110/29.75mm reference or33212 T38 not yet positioned; C0 not a joint rating, axial pressure centres unresolved',rgba=[.42,.46,.49,.55])
+ fm(j['child'],ring(j['c'],.030,.014,.380 if j['axis'][1] else .215,j['axis']))
+ for d in j['collars']:fm(j['child'],ring(j['c']+j['axis']*d,.045,.0292,.024,j['axis']))
+for sg in [-1,1]:
+ ky=K[1]+sg*.095;fy=F[1]+sg*.150;yc=.300 if sg<0 else .640
+ fm('middle',path([[K[0],ky,K[2]-.033],[.090,yc,.835],[.115,yc,.715],[F[0]+.020,fy,F[2]+.063]],w=.070,d=.100,wall=.008))
+ fc=F[1]+sg*.080;ay=A[1]+sg*.140
+ fm('distal',path([[F[0]-.030,fc,F[2]+.030],[-.245,.350 if sg<0 else .690,.690],[-.255,.350 if sg<0 else .690,.820]],w=.060,d=.090,wall=.008))
+ fm('distal',path([[F[0]-.010,fc,F[2]-.037],[-.225,.340 if sg<0 else .600,.430],[A[0],ay,A[2]+.078]],w=.060,d=.090,wall=.008))
+for x in [R[0]-.080,R[0]+.080]:
+ for cy in [A[1]-.080,A[1]+.080]:fm('ankle_carrier',beam([x,R[1],R[2]+.069],[A[0],cy,A[2]-.033],w=.042,d=.030,wall=.006))
+# Broad finite fixed heel and arch, with actual load ribs into embedded separated pressure carrier.
+heelouter=box([-.280,.505,.080],[.270,.360,.116]);heelinner=box([-.280,.505,.080],[.254,.344,.100]);fm('arch',heelouter-heelinner)
+for y in [.430,.580]:fm('arch',path([[R[0],R[1],R[2]-.037],[-.210,y,.140],[-.280,y,.131]],w=.060,d=.075,wall=.008))
+archrear=box([-.065,.650,.178],[.160,.360,.100])-box([-.065,.650,.178],[.144,.344,.084]);fm('arch',archrear)
+for y in [H[1]-.120,H[1]+.120]:
+ fm('arch',path([[-.045,y,.214],[H[0],y,H[2]+.062]],w=.050,d=.045,wall=.008))
+for y in [.445,.865]:
+ fm('arch',path([[-.045,.530 if y<.6 else .770,.214],[.020,y,.250]],w=.050,d=.065,wall=.008))
+fm('arch',beam([.020,.445,.289],[.020,.865,.289],w=.065,d=.050,wall=.008))
+for body,padname in [('forefoot','left_composite_forepad'),('arch','left_composite_heel_pad')]:
+ v=np.array(OLD[padname]['vertices_world_m']);poly=MultiPoint(v[np.isclose(v[:,2],.033),:2]).convex_hull
+ core=shapely.geometry.polygon.orient(poly.buffer(-.003,join_style='mitre'),sign=1.)
+ fm(body,slab(core,.017,.006))
+ if body=='forefoot':
+  for y in [.605,.695]:fm(body,path([[H[0],y,H[2]-.027],[.160,y,.065],[.385,y,.040]],w=.032,d=.052,wall=.006))
+  for y in [.440,.870]:fm(body,box([.255,y,.045],[.275,.020,.046]))
+  fm(body,box([.105,.650,.044],[.050,.330,.044]))
+ else:
+  for y in [.430,.580]:fm(body,box([-.280,y,.043],[.200,.028,.044]))
+fm('distal',box([-.255,.520,.822],[.080,.400,.028]))
+for y in [A[1]-.140,A[1]+.140]:fm('distal',box([A[0],y,A[2]+.068],[.090,.070,.024]))
+for b,ss in frames.items():add(b+'_primary_frame',b,unite(ss))
+scene={'robot_id':'gorilla_v0_1','candidate':'G3 B architecture first finite source, incomplete actuator/brace integration','parts':parts,'joints':[{**j,'c':j['c'].tolist(),'axis':j['axis'].tolist()} for j in J],'structural_sections_m':{'middle_box':[.070,.100,.008],'distal_box':[.060,.090,.008],'fixed_heel_wall':.008,'separate_hidden_pressure_carriers':.006},'incomplete_modules':['complete finite cylinders and pin/fork interfaces','folding braces and lock geometry','new armor shell and four-pose scene'],'material_and_geometry_accepted':False,'upstream_scope':'Actual knee input reference mount; thigh and thigh-knee actuator remain upstream unknown','source_hashes':{str(BASEP.relative_to(ROOT)):sha(BASEP),str(Path(__file__).relative_to(ROOT)):sha(Path(__file__))}}
+(O/'architecture_source.json').write_text(json.dumps(scene,indent=2)+'\n');print('G3 B first architecture',len(parts),sha(O/'architecture_source.json'),flush=True)

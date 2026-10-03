@@ -1,0 +1,272 @@
+"""Original CPU numerical benchmark; no DTU source code copied, no robot model."""
+from pathlib import Path
+from datetime import datetime, timezone
+import argparse
+import hashlib
+import json
+import math
+import time
+import warnings
+import numpy as np
+from scipy import sparse
+from scipy.sparse.linalg import splu, MatrixRankWarning
+from scipy.sparse.csgraph import connected_components
+from PIL import Image, ImageDraw
+
+OUT=Path(__file__).resolve().parent
+L,H,T,E,NU,RHO=.30,.12,.010,210e9,.3,7850.
+E_MIN_RATIO=1e-9
+PENAL=3.
+WEIGHTS=np.array([.5,.5])
+
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+def save_json(path,data):path.write_text(json.dumps(data,ensure_ascii=False,indent=2,allow_nan=False)+'\n')
+
+def q4(hx,hz,thickness):
+    C=np.array([[1,NU,0],[NU,1,0],[0,0,(1-NU)/2]])/(1-NU**2)
+    def B(xi,eta):
+        dx=np.array([-(1-eta),1-eta,1+eta,-(1+eta)])/(2*hx)
+        dz=np.array([-(1-xi),-(1+xi),1+xi,1-xi])/(2*hz)
+        b=np.zeros((3,8));b[0,0::2]=dx;b[1,1::2]=dz;b[2,0::2]=dz;b[2,1::2]=dx
+        return b
+    ke=np.zeros((8,8))
+    for xi in [-1/math.sqrt(3),1/math.sqrt(3)]:
+        for eta in [-1/math.sqrt(3),1/math.sqrt(3)]:
+            b=B(xi,eta);ke+=b.T@C@b*thickness*hx*hz/4
+    return ke,B(0,0),C,B
+
+def mesh(nx,nz):
+    x=np.linspace(0,L,nx+1);z=np.linspace(0,H,nz+1)
+    xx,zz=np.meshgrid(x,z,indexing='xy');nodes=np.c_[xx.ravel(),zz.ravel()]
+    cells=[]
+    for j in range(nz):
+        for i in range(nx):
+            n=j*(nx+1)+i;cells.append([n,n+1,n+nx+2,n+nx+1])
+    cells=np.array(cells,dtype=np.int64)
+    dofs=(cells[:,:,None]*2+np.array([0,1])).reshape(-1,8)
+    fixed=np.ravel(np.c_[2*np.flatnonzero(nodes[:,0]==0),2*np.flatnonzero(nodes[:,0]==0)+1])
+    F=np.zeros((nodes.shape[0]*2,2));forces=np.array([[0,1000],[-1000,-1000]])
+    # Exact consistent nodal integration of constant line traction over the
+    # literal [.05,.07] interval, including partially intersected Q4 edges.
+    a,b=.05,.07
+    for j in range(nz):
+        z0,z1=z[j:j+2];lo,hi=max(a,z0),min(b,z1)
+        if hi<=lo:continue
+        wtop=((hi-z0)**2-(lo-z0)**2)/(2*(z1-z0))/(b-a)
+        wbottom=(hi-lo)/(b-a)-wtop
+        for node,w in [(j*(nx+1)+nx,wbottom),((j+1)*(nx+1)+nx,wtop)]:
+            for k in range(2):F[2*node:2*node+2,k]+=w*forces[k]
+    centers=nodes[cells].mean(1)
+    lo=nodes[cells].min(1);hi=nodes[cells].max(1)
+    passive=(lo[:,0]<.020-1e-12)|((hi[:,0]>.290+1e-12)&(lo[:,1]<.070-1e-12)&(hi[:,1]>.050+1e-12))
+    return {'nx':nx,'nz':nz,'nodes':nodes,'cells':cells,'dofs':dofs,'fixed':fixed,'F':F,'centers':centers,'passive':passive,'hx':L/nx,'hz':H/nz}
+
+def solve_case(m,modulus,thickness,active=None,keep_U=False):
+    ne=len(m['cells']);active=np.ones(ne,dtype=bool) if active is None else active
+    ids=np.flatnonzero(active);ndof=len(m['nodes'])*2
+    ke,Bc,C,_=q4(m['hx'],m['hz'],thickness)
+    edof=m['dofs'][ids]
+    rr=np.repeat(edof,8,axis=1).ravel();cc=np.tile(edof,(1,8)).ravel()
+    kval=(np.asarray(modulus)[ids,None,None]*ke[None]).ravel()
+    K=sparse.coo_matrix((kval,(rr,cc)),shape=(ndof,ndof)).tocsc()
+    used=np.unique(edof);fixed=np.intersect1d(m['fixed'],used);free=np.setdiff1d(used,fixed)
+    unsupported=np.setdiff1d(np.flatnonzero(np.any(m['F']!=0,axis=1)),used)
+    result={'active_elements':len(ids),'active_nodes':len(used)//2,'unused_void_dofs_removed_from_linear_system':ndof-len(used),
+            'unused_void_nodes_removed_from_linear_system':(ndof-len(used))//2,
+            'active_material_islands_not_removed':True,'unsupported_loaded_dofs':unsupported.tolist(),'solver_success':False}
+    if len(unsupported):return result,None,None
+    U=np.zeros_like(m['F'])
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter('error',MatrixRankWarning)
+            lu=splu(K[free][:,free]);U[free]=lu.solve(m['F'][free])
+        if not np.isfinite(U).all():raise ValueError('nonfinite displacement')
+        residual=K@U-m['F'];rel=float(np.linalg.norm(residual[free])/np.linalg.norm(m['F'][free]))
+        if rel>1e-6:raise ValueError(f'free residual relative {rel}')
+        ue=U[m['dofs']]
+        ce=np.einsum('eil,ij,ejl->el',ue,ke,ue)
+        disp=np.linalg.norm(U.reshape(-1,2,2),axis=1)
+        strain=np.einsum('ij,ejl->eil',Bc,ue)
+        stress=np.einsum('ij,ejl->eil',C,strain)*np.asarray(modulus)[:,None,None]
+        sx,sz,tau=stress[:,0,:],stress[:,1,:],stress[:,2,:]
+        vm=np.sqrt(sx*sx-sx*sz+sz*sz+3*tau*tau)
+        reactions=residual[fixed]
+        cases=[]
+        for k in range(2):
+            R=np.zeros(ndof);R[fixed]=residual[fixed,k]
+            total=m['F'][:,k]+R
+            world_y_moment=float(np.sum(m['nodes'][:,1]*total[0::2]-m['nodes'][:,0]*total[1::2]))
+            compliance=float(m['F'][:,k]@U[:,k]);energy=float(.5*U[:,k]@(K@U[:,k]))
+            cases.append({'case':k,'compliance_N_m':compliance,'strain_energy_J':energy,
+              'max_displacement_m':float(disp[:,k].max()),'max_solid_center_VM_Pa':float(vm[ids,k].max()),
+              'loaded_patch_mean_ux_uz_m':np.average(U.reshape(-1,2,2)[:,:,k],axis=0,weights=np.linalg.norm(m['F'].reshape(-1,2,2)[:,:,k],axis=1)).tolist(),
+              'support_reaction_Fx_Fz_N':[float(R[0::2].sum()),float(R[1::2].sum())],
+              'force_balance_Fx_Fz_N':[float(total[0::2].sum()),float(total[1::2].sum())],
+              'world_Y_moment_balance_Nm':world_y_moment,
+              'free_residual_absmax_N':float(np.abs(residual[free,k]).max()),
+              'free_residual_relative_norm':float(np.linalg.norm(residual[free,k])/np.linalg.norm(m['F'][free,k])),
+              'energy_compliance_consistency_abs_J':abs(2*energy-compliance)})
+        result.update({'solver_success':True,'cases':cases,'weighted_compliance_N_m':float(sum(WEIGHTS[k]*cases[k]['compliance_N_m'] for k in range(2))),
+                       'relative_free_residual':rel,'no_stress_strength_gate':True})
+        if keep_U:result['U_array']=U
+        return result,ce,vm
+    except Exception as exc:
+        result['solver_error']=repr(exc);return result,None,None
+
+def filter_matrix(m,radius_cells):
+    nx,nz=m['nx'],m['nz'];rad=int(math.ceil(radius_cells));row=[];col=[];vals=[]
+    for j in range(nz):
+        for i in range(nx):
+            e=j*nx+i
+            for jj in range(max(0,j-rad),min(nz,j+rad+1)):
+                for ii in range(max(0,i-rad),min(nx,i+rad+1)):
+                    w=max(0.,radius_cells-math.hypot(ii-i,jj-j))
+                    if w:row.append(e);col.append(jj*nx+ii);vals.append(w)
+    Hf=sparse.csr_matrix((vals,(row,col)),shape=(nx*nz,nx*nz))
+    A=sparse.diags(1/np.asarray(Hf.sum(1)).ravel())@Hf
+    # Retained physical solid regions override filter output, so their derivative
+    # is zero. Their mass still counts toward the physical volume constraint.
+    A=sparse.diags((~m['passive']).astype(float))@A
+    return A.tocsr()
+
+def optimize(m,maxiter):
+    n=len(m['cells']);passive=m['passive'];A=filter_matrix(m,2.5)
+    def physical(x):return np.asarray(A@x).ravel()+passive.astype(float)
+    dv=np.asarray(A.T@np.ones(n)).ravel();x=np.full(n,.5);x[passive]=1
+    # Initialize physical, including retained/filter contribution, to exactlyf=.5.
+    lower,upper=0.,1.
+    for _ in range(60):
+        mid=(lower+upper)/2;x[~passive]=mid
+        if physical(x).mean()>.5:upper=mid
+        else:lower=mid
+    history=[]
+    for iteration in range(1,maxiter+1):
+        rho=physical(x);Ee=E*(E_MIN_RATIO+(1-E_MIN_RATIO)*rho**PENAL)
+        res,ce,_=solve_case(m,Ee,T)
+        if not res['solver_success']:raise RuntimeError(res)
+        dc_phys=-PENAL*E*(1-E_MIN_RATIO)*rho**(PENAL-1)*(ce@WEIGHTS)
+        dc=np.asarray(A.T@dc_phys).ravel()
+        low,high=0.,max(1.,float(np.max(-dc[~passive]/dv[~passive])))*1e4
+        old=x.copy()
+        for _ in range(65):
+            lam=(low+high)/2
+            candidate=x*np.sqrt(np.maximum(1e-30,-dc/(lam*np.maximum(1e-30,dv))))
+            candidate=np.clip(candidate,np.maximum(.001,x-.20),np.minimum(1.,x+.20));candidate[passive]=1.
+            if physical(candidate).mean()>.5:low=lam
+            else:high=lam
+        x=candidate;change=float(np.max(np.abs(x-old)))
+        history.append({'iteration':iteration,'weighted_compliance_before_update_N_m':res['weighted_compliance_N_m'],
+                        'physical_volume_fraction_before_update':float(rho.mean()),'after_update':float(physical(x).mean()),
+                        'max_design_change':change,'free_relative_residual':res['relative_free_residual']})
+        if iteration%10==0 or iteration==1:print(f'ITER {iteration} C={res["weighted_compliance_N_m"]:.8g} V={physical(x).mean():.9f} change={change:.5g}',flush=True)
+        if change<.01:break
+    rho=physical(x)
+    return x,rho,history,A,physical
+
+def connectivity(m,binary):
+    nx,nz=m['nx'],m['nz'];idx=np.flatnonzero(binary);r=[];c=[]
+    for e in idx:
+        j,i=divmod(int(e),nx)
+        for jj,ii in [(j+1,i),(j-1,i),(j,i+1),(j,i-1)]:
+            if 0<=jj<nz and 0<=ii<nx and binary[jj*nx+ii]:r.append(e);c.append(jj*nx+ii)
+    graph=sparse.csr_matrix((np.ones(len(r)),(r,c)),shape=(nx*nz,nx*nz))[idx][:,idx]
+    count,labels=connected_components(graph,directed=False)
+    components=[];points=m['nodes'][m['cells']]
+    support_cells=points[:,:,0].min(1)==0
+    load_pad=(points[:,:,0].max(1)>.290+1e-12)&(points[:,:,1].min(1)<.070-1e-12)&(points[:,:,1].max(1)>.050+1e-12)
+    for k in range(count):
+        ids=idx[labels==k];components.append({'elements':len(ids),'touches_fixed_face':bool(support_cells[ids].any()),
+                                            'contains_retained_load_pad':bool(np.any(load_pad[ids]))})
+    return {'face_connected_material_components':int(count),'components':components,
+            'all_retained_cells_present':bool(binary[m['passive']].all()),
+            'one_face_connected_load_support_path':bool(count==1 and components[0]['touches_fixed_face'] and components[0]['contains_retained_load_pad']),
+            'diagonal_single_node_contact_not_treated_as_solid_bridge':True}
+
+def numerical_tests(m,A,physical,x):
+    ke,Bc,C,Bfn=q4(m['hx'],m['hz'],T)
+    local=np.array([[0,0],[m['hx'],0],[m['hx'],m['hz']],[0,m['hz']]])
+    modes=[np.tile([1.,0],4),np.tile([0.,1.],4),np.c_[-local[:,1],local[:,0]].ravel()]
+    rigid=[float(np.linalg.norm(ke@u)/(np.linalg.norm(ke)*np.linalg.norm(u))) for u in modes]
+    eig=np.linalg.eigvalsh(ke);zero=int(np.sum(np.abs(eig)<np.max(eig)*1e-10))
+    eps=np.array([1e-4,-2e-5,3e-5]);Uaff=np.c_[eps[0]*local[:,0]+eps[2]/2*local[:,1],eps[1]*local[:,1]+eps[2]/2*local[:,0]].ravel()
+    errs=[float(np.max(np.abs(Bfn(a,b)@Uaff-eps))) for a in [-1/math.sqrt(3),1/math.sqrt(3)] for b in [-1/math.sqrt(3),1/math.sqrt(3)]]
+    energy=.5*E*float(Uaff@ke@Uaff);expected=.5*E*float(eps@C@eps)*m['hx']*m['hz']*T
+    # Sensitivities at a nonuniform, nonsingular moderate-density point; avoids
+    # misleading cancellation at an almost-void optimized variable.
+    rng=np.random.default_rng(20261003);test=np.clip(.45+.08*rng.normal(size=len(x)),.25,.75);test[m['passive']]=1
+    rho=physical(test);Ee=E*(E_MIN_RATIO+(1-E_MIN_RATIO)*rho**PENAL)
+    res,ce,_=solve_case(m,Ee,T);dc=np.asarray(A.T@(-PENAL*E*(1-E_MIN_RATIO)*rho**(PENAL-1)*(ce@WEIGHTS))).ravel()
+    variables=np.flatnonzero(~m['passive']);chosen=variables[np.linspace(0,len(variables)-1,4,dtype=int)]
+    fd=[]
+    for i in chosen:
+        h=1e-5;xp=test.copy();xm=test.copy();xp[i]+=h;xm[i]-=h
+        def obj(xx):
+            rr=physical(xx);rrs,_,_=solve_case(m,E*(E_MIN_RATIO+(1-E_MIN_RATIO)*rr**PENAL),T)
+            return rrs['weighted_compliance_N_m'],float(rr.mean())
+        cp,vp=obj(xp);cm,vm=obj(xm);finite=(cp-cm)/(2*h);vfinite=(vp-vm)/(2*h)
+        exactv=float(np.asarray(A.T@np.ones(len(x))).ravel()[i]/len(x))
+        fd.append({'variable':int(i),'analytic_dC':float(dc[i]),'central_difference_dC':finite,
+                   'relative_error':abs(finite-dc[i])/max(abs(dc[i]),1e-12),
+                   'dvolume_analytic':exactv,'dvolume_finite_difference':vfinite})
+    return {'Q4_rigid_modes':3,'rigid_residual_relative':rigid,'zero_stiffness_eigenvalues':zero,
+            'positive_eigenvalues_count':int(np.sum(eig>np.max(eig)*1e-10)),
+            'constant_affine_strain_patch_max_abs_error':max(errs),
+            'patch_strain_energy_relative_error':abs(energy-expected)/expected,
+            'compliance_density_filter_chain_finite_difference':fd,
+            'finite_difference_step':1e-5,'only_2D_linear_Q4_validation':True}
+
+def field_image(m,density,binary,path):
+    scale=10;arr=np.uint8(np.round(255*(1-density.reshape(m['nz'],m['nx']))))[::-1]
+    panel=Image.fromarray(arr).resize((m['nx']*scale,m['nz']*scale),resample=Image.Resampling.NEAREST).convert('RGB')
+    im=Image.new('RGB',(panel.width,panel.height+90),'white');im.paste(panel,(0,70));dr=ImageDraw.Draw(im)
+    dr.text((12,10),'G5 synthetic Q4 CPU benchmark | x=0 fixed, L=.30m H=.12m',fill='black')
+    dr.text((12,30),'REAL SOLVE FIELD: binary true void' if binary else 'VIRTUAL SIMP physical density; NOT solid material',fill='black')
+    dr.text((12,50),'No Gorilla load/interface, manufacturing, buckling, fatigue or 3D qualification',fill='black')
+    im.save(path)
+
+def main():
+    ap=argparse.ArgumentParser();ap.add_argument('--nx',type=int,default=80);ap.add_argument('--nz',type=int,default=32);ap.add_argument('--maxiter',type=int,default=80)
+    args=ap.parse_args();start=time.time();m=mesh(args.nx,args.nz)
+    np.savez_compressed(OUT/'mesh_loads.npz',nodes_xz_m=m['nodes'],q4_nodes_BL_BR_TR_TL=m['cells'],dofs_ux_uz_interleaved=m['dofs'],fixed_dofs=m['fixed'],load_Fx_Fz_dofs_by_case=m['F'],passive_keep_solid=m['passive'])
+    inp={'schema':'synthetic_G5_numerical_tool_only','geometry_m':{'L':L,'H':H,'thickness':T},'E_Pa':E,'nu':NU,'density_kg_m3':RHO,
+     'mesh':{'nx':args.nx,'nz':args.nz,'node_order':'z rows, x fastest','Q4_order':'BL BR TR TL','DOF_order':'2node=ux,2node+1=uz'},
+     'loads_N':[[0,1000],[-1000,-1000]],'case_weights':WEIGHTS.tolist(),'fixed':'all ux/uz at x0',
+     'load_rule':'right xL uniform line traction over literal z.05..07; consistent linearedge shape integral including truncated edge intersections; equivalentcenterz.06',
+     'retained_rule':'cells intersecting left20mmband OR right10mm x central20mm pad are forced physicalrho1; all retained mass counts toward .5',
+     'retained_elements':int(m['passive'].sum()),'retained_fraction':float(m['passive'].mean()),'volume_fraction':.5,
+     'SIMP':{'p':PENAL,'Emin_over_E':E_MIN_RATIO},'density_filter_radius_cell_units':2.5,'OC_move_limit':.2,'stop_change':.01,'max_iterations':args.maxiter,
+     'density_filter_not_manufacturing_minimum_wall':True,'sources':[{'url':'https://www.topopt.mek.dtu.dk/-/media/subsites/topopt/apps/dokumenter-og-filer-til-apps/topopt88.pdf','authors':'Andreassen et al.2011','used':'equations1–10 densitySIMP/filter/chainrule/OC; selfwritten implementation, no copiedsourcecode'},{'url':'https://scikit-fem.readthedocs.io/en/stable/','used':'assembler scope/version reference; root performs independent assemblercomparison'}],
+     'generator_sha256':sha(Path(__file__)),'created_UTC':datetime.now(timezone.utc).isoformat()}
+    save_json(OUT/'input.json',inp)
+    print(f'INPUT ready {args.nx}x{args.nz} nodes={len(m["nodes"])} keep={m["passive"].sum()}',flush=True)
+    full,_,_=solve_case(m,np.full(len(m['cells']),E),T)
+    half,_,_=solve_case(m,np.full(len(m['cells']),E),T/2)
+    x,rho,history,A,physical=optimize(m,args.maxiter)
+    np.savez_compressed(OUT/'density_fields.npz',design_x=x,physical_density=rho,threshold_binary=rho>.5,history_compliance=np.array([r['weighted_compliance_before_update_N_m'] for r in history]))
+    save_json(OUT/'iteration_history.json',history)
+    binary=rho>.5;graph=connectivity(m,binary)
+    virtual,_,_=solve_case(m,E*(E_MIN_RATIO+(1-E_MIN_RATIO)*rho**PENAL),T)
+    hard,_,_=solve_case(m,np.full(len(m['cells']),E),T,active=binary,keep_U=True)
+    hard_U=hard.pop('U_array',None)
+    if hard_U is not None:np.savez_compressed(OUT/'binary_solution.npz',U_ux_uz_cases=hard_U,active_element_ids=np.flatnonzero(binary),active_connectivity=m['cells'][binary],all_original_nodes=m['nodes'])
+    equal_binary,_,_=solve_case(m,np.full(len(m['cells']),E),T*float(binary.mean()))
+    coarse=mesh(40,16);coarsefull,_,_=solve_case(coarse,np.full(len(coarse['cells']),E),T)
+    coarsehalf,_,_=solve_case(coarse,np.full(len(coarse['cells']),E),T/2)
+    tests=numerical_tests(m,A,physical,x)
+    def metrics(name,r,fraction,thickness):
+        return {'name':name,'material_area_m2':L*H*fraction,'mass_kg':L*H*thickness*RHO*fraction,'thickness_m':thickness,**r}
+    results=[metrics('full_10mm',full,1.,T),metrics('full_5mm_target_equal_mass',half,1.,T/2),metrics('virtual_SIMP_10mm',virtual,float(rho.mean()),T),metrics('binary_actual_void_10mm',hard,float(binary.mean()),T),metrics('full_plate_binary_equal_mass_thickness',equal_binary,1.,T*float(binary.mean()))]
+    report={'schema':'G5_synthetic_Q4_multi_load_topology_tool_benchmark','input_sha256':sha(OUT/'input.json'),'mesh_npz_sha256':sha(OUT/'mesh_loads.npz'),
+     'iterations':len(history),'stopped_by_change_lt_p01':history[-1]['max_design_change']<.01,'last_max_change':history[-1]['max_design_change'],
+     'physical_volume_fraction':float(rho.mean()),'binary_volume_fraction':float(binary.mean()),'retained_material_present_after_binary':bool(binary[m['passive']].all()),
+     'binary_true_void_reassembled_without_Emin':True,'binary_connectivity':graph,'comparison':results,
+     'baseline_mesh_comparison':{'coarse40x16_10mm':coarsefull,'fine80x32_10mm':full,'coarse40x16_5mm':coarsehalf,'fine80x32_5mm':half},
+     'numerical_tests':tests,'elapsed_s':time.time()-start,
+     'center_stress_scope':'Q4 cell center plane-stress diagnostic. In virtual_SIMP_10mm row this uses virtual E(rho) and does not describe real solid stress; legacy max_solid_center_VM_Pa key is not a material-qualification claim.',
+     'limits':['synthetictoolonly,notGorillaloadorweightreduction','densityfieldisvirtualstiffness','hardcutusesnoEminnobridgeorremovedisland','centerVMnotpeakcornerstressornotchyieldcheck','bucklingfatiguecontact3Drealjointnotchecked','5mmbaselineequalscontinuous.5volume,notnecessarilybinaryvolume; separateexactbinarymassbaselineincluded'],
+     'Gorilla_physical_accepted':False,'manufacturing_or_strength_accepted':False}
+    save_json(OUT/'benchmark_report.json',report)
+    field_image(m,rho,False,OUT/'physical_density.png');field_image(m,binary.astype(float),True,OUT/'binary_true_void.png')
+    print('COMPLETE',json.dumps({'report_sha256':sha(OUT/'benchmark_report.json'),'iterations':len(history),'binary_components':graph['face_connected_material_components'],'binary_solver_success':hard['solver_success'],'time_s':report['elapsed_s']}),flush=True)
+
+if __name__=='__main__':main()

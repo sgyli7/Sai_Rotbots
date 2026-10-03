@@ -1,0 +1,35 @@
+from pathlib import Path
+import gzip,json,hashlib
+import numpy as np
+R=Path.cwd();O=Path(__file__).resolve().parent;D=R/'.scratch/gorilla_internal_g15_mass_load_contract';B=R/'.scratch/gorilla_internal_g15_thorax_functional_colayout/b'
+read=lambda p:json.loads(gzip.decompress(p.read_bytes()) if p.suffix=='.gz' else p.read_bytes());sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+m=read(D/'g15_b_mass_contract.json');w=read(D/'sixd_load_contract.json');s=read(B/'scene.json.gz');pm={p['name']:p for p in s['parts']};summary=read(D/'final_summary.json');audit=read(B/'audit_summary.json');checks=[]
+def ck(n,a,b):
+ a=np.array(a,float);b=np.array(b,float);checks.append({'check':n,'max_abs_error':float(np.max(np.abs(a-b))),'pass':bool(np.allclose(a,b,rtol=1e-10,atol=1e-7))})
+def good(r):return r.get('mass_range_kg') is not None and all(x is not None for x in r['mass_range_kg'])
+rows=m['function_mass_rows'];nums=[r for r in rows if good(r)];ck('whole_numeric_subset_NOTwhole',summary['numeric_subset_not_whole_kg'],np.sum([r['mass_range_kg'] for r in nums],axis=0))
+invalid=set(audit['resource_rejectIDs']);bad=[r['id'] for r in nums if set(r['member_ids'])&invalid];checks.append({'check':'invalid_native_material_is_parameter_not_known','pass':not bad,'bad_rows':bad})
+# Source-declared own pack auxiliaries counted separately from unknown cell mass; no invented OEM COM.
+aux=[]
+for r in rows:
+ if r['id'].endswith(':complete_pack'):
+  for sub in r['complete_function_subrow_members']:
+   if sub['id'] not in pm:continue
+   p=pm[sub['id']];v=np.array(p['vertices_world_m']);aux.append({'mass_range_kg':sub['source_mass_range_kg'],'COM_world_proxy_m':((v.min(0)+v.max(0))/2).tolist(),'current_static_scope':'central'})
+ck('pack_own_aux_once',summary['pack_own_aux_separate_kg'],np.sum([r['mass_range_kg'] for r in aux],axis=0))
+ports={k:np.array(v['origin_world_m'])for k,v in w['ports'].items()}
+def wr(m,c,port):f=np.array([0,0,-w['gravity_m_s2']*m]);return np.r_[f,np.cross(np.array(c)-ports[port],f)]
+for j,case in enumerate(w['macro1_source_neutral_gravity_known_subset']):
+ sums={k:np.zeros(6)for k in ['left','right','central']};allwaist=np.zeros(6);mass=0
+ for r in nums+aux:
+  k=r.get('current_static_scope');c=r.get('COM_world_proxy_m')
+  if k not in sums or c is None:continue
+  mm=r['mass_range_kg'][j];sums[k]+=wr(mm,c,'waist' if k=='central' else k);allwaist+=wr(mm,c,'waist');mass+=mm
+ ck(str(j)+':left',case['shoulder_body_on_core_Fxyz_Mxyz']['left'],sums['left']);ck(str(j)+':right',case['shoulder_body_on_core_Fxyz_Mxyz']['right'],sums['right']);ck(str(j)+':central',case['central_module_and_core_Fxyz_Mxyz_at_waist'],sums['central']);ck(str(j)+':upper_total',case['upper_known_Fxyz_Mxyz_at_waist'],allwaist);ck(str(j)+':upper_mass',case['numeric_known_mass_kg'],mass)
+for q in w['macro2_same_source_hand_force_sensitivity']['parameterized_examples']:
+ total=np.zeros(6)
+ for k in ['left','right']:
+  force=np.array(q['shoulder_increment6'][k][:3]);app=np.array(w['macro2_same_source_hand_force_sensitivity']['application_points'][k]['candidate_application_point_m']);z=np.r_[force,np.cross(app-ports[k],force)];ck(str((q['mode'],q['downward_task_force_equivalent_kg_parameter_only'],k)),q['shoulder_increment6'][k],z);total+=np.r_[force,np.cross(app-ports['waist'],force)]
+ ck(str((q['mode'],q['downward_task_force_equivalent_kg_parameter_only'],'transport')),q['waist_increment6'],total)
+out={'body_sha256':sha(B/'scene.json.gz'),'mass_contract_sha256':sha(D/'g15_b_mass_contract.json'),'sixd_sha256':sha(D/'sixd_load_contract.json'),'summary_sha256':sha(D/'final_summary.json'),'checks':checks,'all_pass':all(c['pass']for c in checks),'old_G13A745_841_994_was_upper_subset_NOTwhole_mass':True,'root_previous_whole_scope_interpretation_corrected':True,'unknowns_NOTzero_and_no_strength_or_wholeI_release':True,'native_resource_validity_is_separate_from_load_arithmetic':True}
+(O/'independent_mass_resultants.json').write_text(json.dumps(out,indent=2)+'\n');print(json.dumps({'checks':len(checks),'failed':[c for c in checks if not c['pass']]}))

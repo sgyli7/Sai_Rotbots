@@ -1,0 +1,36 @@
+from pathlib import Path
+import json, gzip, hashlib, math
+import numpy as np
+O=Path(__file__).resolve().parent
+sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+d=json.loads(gzip.decompress((O/'bound_g18_scene.json.gz').read_bytes()))
+f=json.loads((O/'bound_cell_source_facts.json').read_text())['source_facts']['high_power_cell_official_reference']
+parts={p['name']:p for p in d['parts']}
+source=[]
+for i in range(4):
+ cells=[p for n,p in parts.items() if n.startswith(f'g16_pack_{i}_cell_')]
+ assert len(cells)==120
+ vs=np.concatenate([p['vertices_world_m'] for p in cells]);cv=np.array(parts[f'g16_pack_{i}_Al_enclosure']['vertices_world_m'])
+ cellsize=np.ptp(vs,axis=0);casesize=np.ptp(cv,axis=0)
+ source.append(dict(module=i,cells=len(cells),cell_array_AABB_dimensions_m=cellsize.tolist(),case_AABB_dimensions_m=casesize.tolist(),array_center_m=((vs.min(0)+vs.max(0))/2).tolist(),inherited_total_case_minus_array_m=(casesize-cellsize).tolist()))
+assert max(abs(x['cell_array_AABB_dimensions_m'][0]-.26905) for x in source)<1e-8
+assert max(abs(x['cell_array_AABB_dimensions_m'][2]-.22405) for x in source)<1e-8
+rows=[]
+for nx,nz in [(10,18),(12,15),(15,12)]:
+ assert nx*nz==180
+ cells=np.array([(nx-1)*.0225+f['max_diameter_m'],f['max_height_m'],(nz-1)*.0225+f['max_diameter_m']])
+ case=cells+np.array(source[0]['inherited_total_case_minus_array_m'])
+ rows.append(dict(physical_grid_X_Z=[nx,nz],cells_per_module=180,modules=4,logical_topology='4 x 18s10p',case_AABB_design_dimensions_XYZ_m=case.tolist(),four_case_gross_L=float(4*np.prod(case)*1000),two_high_design25mm_gap_height_m=float(2*case[2]+.025),native_installation_battery_thermal_electrical_rating_accepted=False))
+# One exact integer mapping for the 15x12 candidate: 3x6 series groups, each 5x2 parallel.
+maprows=[]
+for gr in range(6):
+ columns=range(3) if gr%2==0 else range(2,-1,-1)
+ for pos,gc in enumerate(columns):
+  series=gr*3+pos
+  for px in range(5):
+   for pz in range(2):maprows.append(dict(series_group=series,parallel_cell=px*2+pz,grid_X=gc*5+px,grid_Z=gr*2+pz))
+assert len({(x['grid_X'],x['grid_Z']) for x in maprows})==180
+assert all(len([x for x in maprows if x['series_group']==k])==10 for k in range(18))
+report=dict(producer_sha256=sha(Path(__file__)),source_scene_sha256=sha(O/'bound_g18_scene.json.gz'),cell_facts_sha256=sha(O/'bound_cell_source_facts.json'),source_actual_native_array_case_measurements=source,integer_grid_parameter_comparison_720=rows,electrical_group_mapping_15x12=maprows,case_array_margin_is_not_actual_clearance_or_certified_dielectric_TIM_pressure_or_service=True,logical_mapping_is_not_busbar_CAD_or_fault_fuse_thermal_design=True,maximum_cell_mass_only_upper_kg=50.4,lower_nameplate_energy_reference_kWh=11.16,complete_mass_COM_I_unknown=True,new_modules_installed_in_robot=False,old_modules_retired=False,selected_next_native_probe_grid_X_Z=[15,12],selection='Native probe only: avoids the 0.879m height of 10x18 at cost of depth .3515m. No claim of original shell or body integration fit.')
+(O/'integer_package_grid_study.json').write_text(json.dumps(report,indent=2,allow_nan=False)+'\n')
+print([(x['physical_grid_X_Z'],x['case_AABB_design_dimensions_XYZ_m'],x['two_high_design25mm_gap_height_m'])for x in rows])

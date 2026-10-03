@@ -1,0 +1,88 @@
+"""Freeze the complete B leg for native geometry renders; upper C15 is context only."""
+from pathlib import Path
+import os, subprocess, hashlib, json, copy
+import numpy as np
+
+R = Path('/home/ethan/Projects/Sai_Rotbots')
+D = R/'.scratch/gorilla_internal_g3_root_render/leg_b_complete_01'
+S = R/'.scratch/gorilla_internal_g3_foot_chain/b'
+C = R/'experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_scene.json'
+BL = Path('/home/ethan/Softwares/blender-local/root')
+sha = lambda p: hashlib.sha256(p.read_bytes()).hexdigest()
+D.mkdir(parents=True, exist_ok=False)
+parents = {}
+for name in ['chain_scene.json', 'armor_scene.json', 'interface.json']:
+    raw = (S/name).read_bytes()
+    (D/name).write_bytes(raw)
+    parents[name] = {'path':str((S/name).relative_to(R)), 'sha256':sha(S/name)}
+chain = json.loads((D/'chain_scene.json').read_text())
+armor = json.loads((D/'armor_scene.json').read_text())
+interface = json.loads((D/'interface.json').read_text())
+c15 = json.loads(C.read_text())
+parents['c15'] = {'path':str(C.relative_to(R)), 'sha256':sha(C)}
+removed = set(interface['removed_original_part_names'])
+removed |= {n.replace('left_', 'right_', 1) for n in removed}
+names = {p['name'] for p in c15['parts']}
+assert not (removed - names), sorted(removed - names)
+context = [copy.deepcopy(p) for p in c15['parts'] if p['name'] not in removed]
+for p in context:
+    p['source_scope'] = 'C15 retained appearance context; no physical claims inherited'
+
+def mirror(p):
+    p = copy.deepcopy(p)
+    p['name'] = p['name'] + '_right_visual_mirror'
+    p['vertices_world_m'] = [[x,-y,z] for x,y,z in p['vertices_world_m']]
+    p['faces'] = [[f[0],f[2],f[1]] for f in p['faces']]
+    p['body'] = p.get('body','') + '_right_visual_mirror'
+    p['mirror_scope'] = 'Geometry only; right load/actuation/assembly evidence absent'
+    return p
+
+def scene(name, parts, scope):
+    p = D/(name+'.json')
+    p.write_text(json.dumps({'robot_id':'gorilla_v0_1','candidate':'G3 B complete lower candidate / C15 upper appearance context',
+        'parts':parts,'parent_sources':parents,'scope':scope,
+        'physical_accepted':False,'aesthetic_accepted':False,'stable_si':False},indent=2)+'\n')
+    return p
+
+left = copy.deepcopy(chain['parts']) + copy.deepcopy(armor['parts'])
+whole = scene('whole_packaging_source', context + left + [mirror(p) for p in left],
+    'Actual neutral G3 B left lower module plus symmetric visual mirror; C15 upper/arms retained only for appearance comparison. No complete physical integration or user aesthetic acceptance.')
+bare = scene('left_bare_source', copy.deepcopy(chain['parts']),
+    'Single left G3 B complete neutral finite architecture, no new covers. Not a qualified load model.')
+fold = next(p for p in chain['pose_scenes'] if p['id']=='neutral_unloaded_forefold')
+folded_armor = []
+for p in armor['parts']:
+    p = copy.deepcopy(p)
+    T = np.array(fold['body_transforms'][p['body']])
+    v = np.array(p['vertices_world_m'])
+    p['vertices_world_m'] = (v @ T[:3,:3].T + T[:3,3]).tolist()
+    folded_armor.append(p)
+folded = scene('left_forefold_source', copy.deepcopy(fold['parts']) + folded_armor,
+    'Actual B unloaded forefoot fold pose with source body transforms. Mechanical stops retracted; no loaded walking or dynamic acceptance.')
+env = dict(os.environ)
+env['LD_LIBRARY_PATH'] = ':'.join(str(BL/p) for p in ['usr/lib','usr/lib/aarch64-linux-gnu','usr/lib/aarch64-linux-gnu/lapack','usr/lib/aarch64-linux-gnu/blas'])
+env['BLENDER_SYSTEM_SCRIPTS'] = str(BL/'usr/share/blender/scripts')
+env['BLENDER_SYSTEM_DATAFILES'] = str(BL/'usr/share/blender/datafiles')
+env['PYTHONHOME'] = '/usr'
+env['PYTHONNOUSERSITE'] = '1'
+env['PYTHONPATH'] = str(R/'.venv/lib/python3.12/site-packages')
+entries = [(whole,'whole','front,left,rear,top,threequarter','3.04','0,0,1.325'),
+    (bare,'bare','left,threequarter','1.28','0.015,0.54,0.51'),
+    (folded,'forefold','left,threequarter','1.28','0.015,0.54,0.51')]
+for src,label,views,scale,target in entries:
+    out = D/label
+    out.mkdir()
+    args = [str(BL/'usr/bin/blender'),'-b','--threads','12','--python-exit-code','1','--python',str(D.parent/'render_native.py'),
+        '--','--scene',str(src),'--output',str(out),'--views',views,'--resolution','800','--samples','24','--scale',scale,'--target',target]
+    print('NATIVE_RENDER_START',label,sha(src),flush=True)
+    with (out/'blender.log').open('w') as f:
+        result = subprocess.run(args,env=env,stdout=f,stderr=subprocess.STDOUT)
+    print('NATIVE_RENDER_EXIT',label,result.returncode,flush=True)
+    if result.returncode:
+        print((out/'blender.log').read_text()[-2500:],flush=True)
+        raise SystemExit(result.returncode)
+(D/'assembly_receipt.json').write_text(json.dumps({'parents':parents,'removed_c15_names':sorted(removed),
+    'retained_c15_count':len(context),'new_left_parts':len(left),'right_scope':'Visual mirror only',
+    'sources':[{'path':str(p.relative_to(R)),'sha256':sha(p)} for p in [whole,bare,folded]],
+    'aesthetic_accepted':False,'physical_accepted':False},indent=2)+'\n')
+print('COMPLETE_LEG_NATIVE_RENDER_READY',flush=True)

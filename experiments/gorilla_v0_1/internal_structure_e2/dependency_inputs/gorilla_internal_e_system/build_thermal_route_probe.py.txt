@@ -1,0 +1,195 @@
+from pathlib import Path
+import json,hashlib,math,collections
+import numpy as np
+import trimesh
+ROOT=Path('/home/ethan/Projects/Sai_Rotbots');OUT=ROOT/'.scratch/gorilla_internal_e_system'
+DSP=ROOT/'robots/gorilla_v0_1/configs/internal_structure_d_system_spec.json';BASE=ROOT/'robots/gorilla_v0_1/cad/source/appearance_c_scene.json'
+data=json.loads(DSP.read_text());base=json.loads(BASE.read_text());modules=[];parts=[];fluid=[];routes=[];nodes={};edges=[];meshes={};ports={}
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def union(ms):return trimesh.boolean.union(ms,engine='manifold') if len(ms)>1 else ms[0].copy()
+def diff(m,ms):return trimesh.boolean.difference([m,*ms],engine='manifold') if ms else m.copy()
+def cylinder(a,b,r):
+ a=np.array(a,float);b=np.array(b,float);v=b-a;m=trimesh.creation.cylinder(radius=r,height=np.linalg.norm(v),sections=24);m.apply_transform(trimesh.geometry.align_vectors([0,0,1],v/np.linalg.norm(v)));m.apply_translation((a+b)/2);return m
+def sphere(c,r):m=trimesh.creation.icosphere(subdivisions=1,radius=r);m.apply_translation(c);return m
+def box(c,d):m=trimesh.creation.box(extents=d);m.apply_translation(c);return m
+def tube(a,b,ro,ri):return diff(cylinder(a,b,ro),[cylinder(np.array(a)-(np.array(b)-a)*.001,np.array(b)+(np.array(b)-a)*.001,ri)])
+def emit(id,body,cat,m,mr=None,density=2700,own='',**kw):
+ assert m.is_watertight and m.is_winding_consistent and m.volume>0,id
+ nominal=m.volume*density;mr=mr or [nominal*.9,nominal,nominal*1.2]
+ r={'id':id,'body':body,'category':cat,'mass_range_kg':mr,'geometry_scope':'native finite closed material or explicitly labeled constituent envelope','own_assumption':own,'source':'Own geometry, no selected SKU/capability; anchored to D source only','physics_unknown':['pressure/flow/heat or mechanical installation qualification','actual connection/pose/installed COM and inertia'], 'role':'E_thermal_routing_candidate','physical_contract_stable':False};r.update(kw);modules.append(r)
+ p={'name':id,'body':body,'role':'E_thermal_routing_candidate','category':cat,'vertices_world_m':m.vertices.tolist(),'faces':m.faces.tolist(),'color_rgba':([.16,.48,.56,1] if cat=='coolant_material' else [.28,.32,.34,1]),'edge_bevel_m':0,'mass_range_kg':mr,'primitive_material_volume_m3':float(m.volume),'E_metadata':{k:v for k,v in r.items() if k not in ['geometry_scope']}};parts.append(p);meshes[id]=m;return r
+def wet(id,body,m,**kw):fluid.append({'id':id,'body':body,'mesh':m,**kw})
+def node(id,c,owner,kind='port'):nodes[id]={'id':id,'center_world_m':list(c),'frame_owner':owner,'kind':kind};return id
+def route(id,start,end,points,ri=.003,ro=.005,flow=0):
+ ns=[nodes[start],*points,nodes[end]];inner=[];outer=[];length=0
+ for a,b in zip(ns,ns[1:]):
+  ca,cb=np.array(a['center_world_m']),np.array(b['center_world_m']);length+=float(np.linalg.norm(cb-ca));inner.append(cylinder(ca,cb,ri));outer.append(cylinder(ca,cb,ro))
+ # Finite rounded elbows are represented; their radius is not a qualified flexible bend radius.
+ for a in ns[1:-1]:inner.append(sphere(a['center_world_m'],ri*1.25));outer.append(sphere(a['center_world_m'],ro*1.4))
+ inside=union(inner);outside=diff(union(outer),[inside]);body=ns[-1]['frame_owner'];moves=sorted(set(n['frame_owner'] for n in ns));flex=len(moves)>1
+ emit(id,body,'coolant_material',outside,density=1200,own='Own polymer hose wall/finite elbows; hose temperature, pressure, fittings and minimum bend radius unknown',endpoint_frames=moves,not_one_rigid_body=flex,pose_rebuild_rule='Transform every polyline node by its own frame, then rebuild endpoints; constant arc length/bend radius and hose load not verified',flow_L_min_hypothesis=flow)
+ # Half-segment frame allocation only affects inventory COM proxy, never certifies rigid hose motion.
+ for i,(a,b) in enumerate(zip(ns,ns[1:])):
+  aa=np.array(a['center_world_m']);bb=np.array(b['center_world_m']);mid=(aa+bb)/2
+  wet(id+'_fluid_a'+str(i),a['frame_owner'],cylinder(aa,mid,ri));wet(id+'_fluid_b'+str(i),b['frame_owner'],cylinder(mid,bb,ri))
+ for i,a in enumerate(ns[1:-1]):wet(id+'_fluid_elbow'+str(i),a['frame_owner'],sphere(a['center_world_m'],ri*1.25))
+ routes.append({'id':id,'start':start,'end':end,'nodes':ns,'inner_radius_m':ri,'outer_radius_m':ro,'neutral_centerline_length_m':length,'neutral_flow_L_min_hypothesis':flow,'frames':moves,'cross_frame_flexible':flex,'constant_length_sweep_or_bend_radius_qualified':False});edges.append([start,end]);return id
+def point(c,owner):return {'center_world_m':list(c),'frame_owner':owner,'kind':'rebuild_control_node'}
+def local_channel_case(src):
+ g=src['geometry'];c=np.array(g['center_world_m']);a=np.array(g['axis_world']);R=g['outer_radius_m'];r=g['inner_radius_m'];L=g['length_m'];hat=np.array([1.,0,0])
+ if abs(hat@a)>.8:hat=np.array([0.,1,0])
+ hat=hat-a*(hat@a);hat/=np.linalg.norm(hat)
+ material=tube(c-a*L/2,c+a*L/2,R,r);channel=tube(c-a*(L-.006)/2,c+a*(L-.006)/2,R-.002,r+.002)
+ holes=[];srcid=src['id'];inout=[]
+ for mode,sign in [('supply',-1),('return',1)]:
+  pc=c+sign*a*L*.24;inside=pc+hat*(R-.003);outside=pc+hat*(R+.018)
+  holes.append(cylinder(pc+hat*(R-.0035),outside,.005));wet('e_'+srcid+'_'+mode+'_fluid_port',src['body'],cylinder(inside,outside,.003))
+  id=node('e_'+srcid+'_'+mode,outside,src['body']);nodes[id]['outward_axis_world']=hat.tolist();inout.append(id)
+  emit('e_'+srcid+'_'+mode+'_port_shell',src['body'],'coolant_connector',tube(pc+hat*(R+.0005),outside,.006,.003),density=2700,own='Own radial port and fitting, seal/thread/strain relief not rated')
+ emit('e_'+srcid,src['body'],'motor_cooling_case',diff(material,[channel,*holes]),own='Replacement same external6mm-wall annulus;2mm annular channel,2mm inner+outer walls,3mm end closures; braid/thermal contact/baffles not qualified',replaces_D_ids=[srcid],original_case_source=src['exact_source'],usable_channel_native_volume_L=float(channel.volume*1000))
+ wet('e_'+srcid+'_cavity',src['body'],channel);return inout
+
+# Two native finite distribution headers with all branch bores retained.
+cases=[m for m in data['modules'] if m['id'].endswith('_motor_cooling_case')]
+targets=[]
+for src in cases:
+ sp,rp=local_channel_case(src);target={'id':src['id'].replace('_motor_cooling_case',''),'body':src['body'],'supply':sp,'return':rp,'flow':3.3 if src['geometry']['outer_radius_m']>.1 else 1.5,'source_scope':'custom cooling-case channel, source motor mounting20C not achieved'};targets.append(target)
+# Additional complete thermal interfaces, using D installation anchors, not new SKU assumptions.
+for side,sg in [('left',1),('right',-1)]:
+ c=np.array([-.12,sg*.145,2.31]);sp=node('e_'+side+'_emrax_supply',c+[0,0,.108],'torso');rp=node('e_'+side+'_emrax_return',c+[0,0,-.108],'torso')
+ targets.append({'id':side+'_emrax188_lc','body':'torso','supply':sp,'return':rp,'flow':6.0,'source_scope':'OEM minimum6L/min/inlet<=50C; exact OEM ports/cavity unavailable, external anchors assumed, air required','internal_fluid_CAD_known':False})
+ emit('e_'+side+'_emrax_port_brackets','torso','coolant_connector',box(c+[.06,0,.1],[.035,.05,.025]),[.12,.25,.5],own='Own two-port mounting/strain-relief allowance, OEM LC actual ports and internal volume unknown')
+for id,c,dims,q in [('compute',[.02,0,2.54],[.16,.14,.024],1.0),('power_aux',[.19,0,2.35],[.09,.17,.026],2.0),('oil_water_HX',[-.04,0,1.79],[.13,.18,.08],6.0)]:
+ c=np.array(c);material=box(c,dims);cavity=box(c,np.array(dims)-[.006,.006,.008]);ports0=[]
+ for mode,sign in [('supply',1),('return',-1)]:
+  pc=c+np.array([sign*dims[0]/2,0,0]);po=pc+[sign*.012,0,0];ports0.append(node('e_'+id+'_'+mode,po,'torso'));material=diff(material,[cylinder(pc-[sign*.008,0,0],po,.007)])
+  wet('e_'+id+'_'+mode+'_port','torso',cylinder(pc-[sign*.008,0,0],po,.005))
+ emit('e_'+id+'_coldplate','torso','auxiliary_coldplate',diff(material,[cavity]),own='Own finite fluid cavity/coldplate, heat transfer, seals, electrical isolation and oil/water mixing failure unqualified');wet('e_'+id+'_coldplate_cavity','torso',cavity)
+ targets.append({'id':id,'body':'torso','supply':ports0[0],'return':ports0[1],'flow':q,'source_scope':'own power/heat allocation unknown, positive installation allowance'})
+for m in data['modules']:
+ if not m['id'].endswith('custom_hv_pack'):continue
+ c=np.array(m['geometry']['center_world_m'])+[.087,0,0];d=[.014,.20,.27];cavity=box(c,np.array(d)-[.004,.006,.006]);material=diff(box(c,d),[cavity]);sp=node('e_'+m['id']+'_supply',c+[.012,.070,0],'torso');rp=node('e_'+m['id']+'_return',c+[.012,-.070,0],'torso')
+ for port in [sp,rp]:holes=cylinder(np.array(nodes[port]['center_world_m'])-[.010,0,0],nodes[port]['center_world_m'],.005);material=diff(material,[holes]);wet(port+'_fluid','torso',cylinder(np.array(nodes[port]['center_world_m'])-[.010,0,0],nodes[port]['center_world_m'],.003))
+ emit('e_'+m['id']+'_coldplate','torso','battery_coldplate',material,own='Own cell-case coldplate+fluid cavity; actual pack electrical isolation/thermal/runaway behavior unknown');wet('e_'+m['id']+'_cavity','torso',cavity)
+ targets.append({'id':m['id'],'body':'torso','supply':sp,'return':rp,'flow':.5,'source_scope':'new HV pack thermal/current unknown, own cell cooling allowance'})
+
+header_info={}
+for mode,sg in [('supply',1),('return',-1)]:
+ c=np.array([.08,sg*.085,2.35]);d=np.array([.12,.075,.28]);inside=box(c,d-.016);mat=diff(box(c,d),[inside]);portids=[]
+ for i,t in enumerate(targets):
+  y=c[1]+((i%4)-1.5)*.014;z=c[2]-.112+(i//4)*.032;x=.123 if sg>0 else .037
+  p=node('e_main_'+mode+'_branch_'+t['id'],[x,y,z],'torso','header_port');portids.append(p)
+  mat=diff(mat,[cylinder([x-.023,y,z],[x+.023,y,z],.007)])
+ emit('e_main_'+mode+'_header','torso','coolant_manifold',mat,own='Finite own8mm-wall header with32 bored branch interfaces; pressure proof, purge/balancing and mounting not qualified');wet('e_main_'+mode+'_header_cavity','torso',inside);header_info[mode]={'center':c,'ports':portids}
+
+def routed_waypoints(t,mode):
+ body=t['body'];p=np.array(nodes[t[mode]]['center_world_m']);sg=1 if p[1]>=0 else -1;offset=.014 if mode=='supply' else -.014
+ if 'upper_arm' in body:return [point([.20,sg*(.46+offset),2.32],'torso'),point([.06,sg*(.68+offset),2.20],body),point([-.07,sg*(.77+offset),p[2]],body)]
+ if 'forearm' in body or 'palm' in body:
+  w=[point([.20,sg*(.46+offset),2.32],'torso'),point([.06,sg*(.68+offset),2.20],('left' if sg>0 else 'right')+'_upper_arm'),point([-.11,sg*(.79+offset),1.83],('left' if sg>0 else 'right')+'_upper_arm'),point([-.16,sg*(.91+offset),1.70],('left' if sg>0 else 'right')+'_forearm'),point([-.12,sg*(.91+offset),max(p[2],1.29)],('left' if sg>0 else 'right')+'_forearm')]
+  if 'palm' in body:w.append(point([.05,sg*(.93+offset),1.21],body))
+  return w
+ if 'thigh' in body or 'foot' in body:
+  side='left' if sg>0 else 'right';w=[point([.19,sg*(.26+offset),1.75],'torso'),point([.10,sg*(.31+offset),1.61],'pelvis'),point([.07,sg*(.46+offset),1.48],side+'_thigh')]
+  if 'foot' in body:w += [point([.04,sg*(.47+offset),1.00],side+'_thigh'),point([-.01,sg*(.50+offset),.90],side+'_middle_shank'),point([.02,sg*(.55+offset),.57],side+'_middle_shank'),point([.06,sg*(.63+offset),.47],side+'_distal_shank'),point([.08,sg*(.66+offset),.30],side+'_distal_shank'),point([.10,sg*(.69+offset),.18],side+'_foot')]
+  return w
+ if body=='pelvis':return [point([.19,sg*(.26+offset),1.75],'torso'),point([.12,sg*(.31+offset),p[2]],'pelvis')]
+ return [point([.20 if mode=='supply' else -.22,p[1],p[2]],'torso')]
+for i,t in enumerate(targets):
+ for mode in ['supply','return']:
+  hs=header_info[mode]['ports'][i];ri=.005 if t['flow']>=6 else .003
+  way=routed_waypoints(t,mode)
+  hp=np.array(nodes[hs]['center_world_m']);escape=hp.copy();escape[0]=.17 if mode=='supply' else -.01
+  way=[point(escape,'torso'),*way]
+  axis=nodes[t[mode]].get('outward_axis_world')
+  if axis is not None:way.append(point(np.array(nodes[t[mode]]['center_world_m'])+np.array(axis)*.025,t['body']))
+  if mode=='supply':route('e_'+t['id']+'_'+mode+'_hose',hs,t[mode],way,ri=ri,ro=ri+.002,flow=t['flow'])
+  else:route('e_'+t['id']+'_'+mode+'_hose',t[mode],hs,list(reversed(way)),ri=ri,ro=ri+.002,flow=t['flow'])
+ edges.append([t['supply'],t['return']]);t['thermal_transfer_inside_node_is_not_OEM_CAD']=not t.get('internal_fluid_CAD_known',True)
+
+# Corrected reservoir: liquid has6mm lower clearance and separate real headspace.
+c=np.array([-.22,0,2.22]);r=.035;ri=.032;L=.15;reservoir_cavity=cylinder(c-[0,0,(L-.006)/2],c+[0,0,(L-.006)/2],ri);shell=diff(cylinder(c-[0,0,L/2],c+[0,0,L/2],r),[reservoir_cavity,cylinder(c-[0,0,.095],c-[0,0,.045],.008)])
+emit('e_coolant_reservoir_shell','torso','coolant_reservoir',shell,density=1200,own='Own sealed polymer reservoir: real3mm endcaps, .463L interior; expansion/purge/pressure unqualified')
+h=.00030/(math.pi*ri**2);fillc=c+[0,0,-L/2+.003+.006+h/2];fill=cylinder(fillc-[0,0,h/2],fillc+[0,0,h/2],ri-.0003);wet('e_coolant_reservoir_fill','torso',fill)
+rv=node('e_reservoir_tee',c-[0,0,.05],'torso');pumpin=node('e_coolant_pump_in',[-.03,-.03,2.42],'torso');pumpout=node('e_coolant_pump_out',[-.03,.03,2.42],'torso')
+emit('e_coolant_pump_complete_reserve','torso','coolant_pump',box([-.075,0,2.40],[.12,.14,.10]),[1.5,3.0,6.0],own='Complete custom pump+motor/controller/resilient mount allowance;66.5L/min target only, no selected or rated pump',required_flow_L_min_hypothesis=sum(t['flow'] for t in targets))
+route('e_reservoir_pump_tee',rv,pumpin,[point([-.22,0,2.12],'torso'),point([-.22,0,2.40],'torso')],ri=.006,ro=.008)
+hot=node('e_hot_header_exit',[.08,-.085,2.47],'torso');cold=node('e_cold_header_entry',[.08,.085,2.47],'torso');edges += [[pumpin,pumpout],[pumpout,cold]]
+route('e_pump_to_cold_header',pumpout,cold,[point([.02,.04,2.46],'torso')],ri=.016,ro=.020,flow=sum(t['flow'] for t in targets))
+
+# Native open fin/tube core and real fans/shrouds: no zero-drag heat rating.
+coreports=[];air_area={}
+def radiator(id,c,w,h,depth,tubes):
+ c=np.array(c);out=[];inside=[]
+ for i in range(tubes):
+  y=c[1]+(i-(tubes-1)/2)*w/tubes;d=[depth-.004,.005,h];out.append(box([c[0],y,c[2]],d));inside.append(box([c[0],y,c[2]],[d[0]-.001,.0035,h+.004]))
+ for z in np.linspace(c[2]-h/2,c[2]+h/2,20):out.append(box([c[0],c[1],z],[depth,w,.0003]))
+ for sg in [-1,1]:
+  yy=c[1];zz=c[2]+sg*h/2;out.append(cylinder([c[0],yy-w/2-.008,zz],[c[0],yy+w/2+.008,zz],.011));inside.append(cylinder([c[0],yy-w/2-.009,zz],[c[0],yy+w/2+.009,zz],.008))
+ coolant=union(inside);mat=diff(union(out),[coolant]);emit(id,'torso','radiator_native_material',mat,own='Own aluminium fins+flattened hollow tubes+headers; area/geometry only, not capacity, pressure or fan curve',frontal_area_m2=w*h);wet(id+'_fluid','torso',coolant)
+ sp=node(id+'_hot_port',[c[0],c[1]-w/2-.012,c[2]+h/2],'torso');rp=node(id+'_cold_port',[c[0],c[1]-w/2-.012,c[2]-h/2],'torso');coreports.append((sp,rp));edges.append([sp,rp]);air_area[id]=w*h
+def duct(id,c,d,axis=0):
+ outer=box(c,d);di=np.array(d)-.003;di[axis]=d[axis]+.004;emit(id,'torso','sealed_duct',diff(outer,[box(c,di)]),density=1200,own='Finite1.5mm wall duct, open ends; requires real sealed armor openings, flow/static pressure not rated')
+for side,sg in [('left',1),('right',-1)]:
+ radiator('e_'+side+'_original_grille_core',[.18,sg*.323,2.15],.07,.17,.035,6)
+ radiator('e_'+side+'_supplement_rear_core',[-.38,sg*.20,2.29],.29,.35,.045,12)
+ duct('e_'+side+'_original_intake',[.26,sg*.323,2.15],[.12,.105,.225]);duct('e_'+side+'_original_to_emrax_air',[.05,sg*.323,2.20],[.28,.11,.15]);duct('e_'+side+'_emrax_air_exit',[-.21,sg*.20,2.31],[.25,.16,.18])
+ duct('e_'+side+'_side_intake_plenum',[-.20,sg*.375,2.29],[.30,.055,.35],axis=1);duct('e_'+side+'_rear_exhaust_collar',[-.445,sg*.20,2.29],[.06,.30,.36]);
+ fc=np.array([-.428,sg*.20,2.29]);fan=tube(fc-[.014,0,0],fc+[.014,0,0],.1375,.13);fan=union([fan,cylinder(fc-[.018,0,0],fc+[.018,0,0],.03)])
+ emit('e_'+side+'_rear_fan','torso','fan_complete_reserve',fan,[1.0,2.0,4.0],own='Finite open fan frame+motor hub, blade/motor/rib/guard allowance included in mass; unknown real pressure-flow/electrical/acoustic capability',requires_original_armor_opening=True)
+for i,(sp,rp) in enumerate(coreports):
+ flow=.5 if 'original' in sp else (sum(t['flow'] for t in targets)-1)/2
+ route('e_hot_to_core_'+str(i),hot,sp,[point([-.20,nodes[sp]['center_world_m'][1],2.45],'torso')],ri=.008,ro=.010,flow=flow)
+ route('e_core_to_pump_'+str(i),rp,pumpin,[point([-.20,nodes[rp]['center_world_m'][1],2.00],'torso')],ri=.008,ro=.010,flow=flow)
+edges += [[cold,x] for x in header_info['supply']['ports']]+[[x,hot] for x in header_info['return']['ports']]+[[pumpin,rv]]
+
+# Explicit net fluid inventory: union overlap first, then assign disjoint body proxies.
+groups=collections.defaultdict(list)
+for f in fluid:groups[f['body']].append(f['mesh'])
+occupied=None;inventory=[]
+for body in sorted(groups):
+ m=union(groups[body]);m=diff(m,[occupied]) if occupied is not None else m
+ if m.volume<=1e-10:continue
+ emit('e_coolant_inventory_'+body,body,'coolant_inventory',m,[m.volume*990,m.volume*1030,m.volume*1080],own='Net-disjoint liquid geometry, counted once; density990/1030/1080 own fluid sensitivity; composition/EMRAX internal volume and pose distribution unknown',fluid_mass_not_rigid=True,COM_is_neutral_flow_inventory_proxy=True)
+ inventory.append({'body':body,'net_volume_L':float(m.volume*1000),'mass_range_kg':[m.volume*990,m.volume*1030,m.volume*1080]});occupied=union([occupied,m]) if occupied is not None else m.copy()
+emit('e_two_emrax_unknown_internal_liquid_allowance','torso','coolant_inventory_unknown_internal',box([-.13,0,2.34],[.040,.050,.050]),[.10,.25,.50],own='2×OEM LC internal fluid volume unknown; displayed service inventory envelope not claimed actual motor cavity; additional liquid budget only once',OEM_cavity_known=False)
+
+# Cheap topology and selected actual geometry checks, no flow or full-pose claim.
+adj=collections.defaultdict(set)
+for a,b in edges:adj[a].add(b)
+def reachable(a,b):
+ seen={a};q=[a]
+ while q:
+  x=q.pop()
+  if x==b:return True
+  for y in adj[x]-seen:seen.add(y);q.append(y)
+ return False
+topology=[{'target':t['id'],'supply_reachable_from_pump':reachable(pumpout,t['supply']),'return_reachable_to_pump':reachable(t['return'],pumpin),'native_OEM_internal_channel_proven':t.get('internal_fluid_CAD_known',True)} for t in targets]
+assert len(cases)==23 and all(x['supply_reachable_from_pump'] and x['return_reachable_to_pump'] for x in topology)
+def source_mesh(p):return trimesh.Trimesh(p['vertices_world_m'],[[f[0],f[i],f[i+1]] for f in p['faces'] for i in range(1,len(f)-1)],process=False)
+armor=[p for p in base['parts'] if p['role'] in ['armor_cover','armor_surface']];hits=[]
+sample=[m for m in modules if m['category'] in ['radiator_native_material','fan_complete_reserve','coolant_reservoir','sealed_duct']]
+for r in sample:
+ a=meshes[r['id']]
+ for p in armor:
+  b=source_mesh(p)
+  if not np.all(np.minimum(a.bounds[1],b.bounds[1])-np.maximum(a.bounds[0],b.bounds[0])>1e-6):continue
+  v=trimesh.boolean.intersection([a,b],engine='manifold').volume
+  if v>1e-9:hits.append({'module':r['id'],'armor':p['name'],'positive_material_volume_m3':float(v)})
+fill_overlap=trimesh.boolean.intersection([fill,shell],engine='manifold').volume
+replaced=[m['id'] for m in data['modules'] if m['category'] in ['radiator_core','fan','sealed_air_duct','coolant_pump','coolant_reservoir','coolant_inventory','coolant_line'] or m['id'].endswith('_motor_cooling_case')]
+mass=np.sum([r['mass_range_kg'] for r in modules],axis=0).tolist();old=np.sum([m['mass_range_kg'] for m in data['modules'] if m['id'] in replaced],axis=0).tolist()
+report={'schema':'gorilla_internal_e_thermal_route_probe_v1','input_hashes':{str(DSP.relative_to(ROOT)):sha(DSP),str(BASE.relative_to(ROOT)):sha(BASE)},'builder_sha256':sha(__file__),'scope':'Complete functional graph/native finite routing probe; not architecture/flow/heat/manufactured/pose acceptance. Rebuild if root repositions E actuators.','modules':modules,'routes':routes,'port_nodes':nodes,'topology_edges':edges,'thermal_targets':targets,'topology_checks':topology,'target_counts':{'rotary_cases':23,'EMRAX_LC':2,'compute_aux_oil':3,'packs':4},'required_flow_L_min_hypothesis':sum(t['flow'] for t in targets),'all_source_minimum_EMRAX_flows_reserved':True,'net_coolant_inventory':inventory,'net_drawn_coolant_volume_L':sum(x['net_volume_L'] for x in inventory),'additional_unknown_EMRAX_cavity_mass_kg':[.10,.25,.50],'corrected_reservoir_fill_shell_positive_overlap_m3':float(fill_overlap),'actual_usable_reservoir_volume_L':float(math.pi*ri**2*(L-.006)*1000),'reservoir_drawn_fill_L':float(fill.volume*1000),'mass_range_kg':mass,'replaces_D_module_ids':replaced,'replaced_D_mass_range_kg':old,'delta_module_mass_range_kg':(np.array(mass)-old).tolist(),'radiator_core_frontal_area_m2':air_area,'source_original_front_total_face_area_m2':.0351,'new_supplemental_rear_total_face_area_m2':.203,'additional_openings_required':{'side_inlet_each_dimensions_m':[.30,.35],'rear_exhaust_each_dimensions_m':[.30,.36],'unchanged_AA3_original_dual_grilles_retained':True,'original_armor_not_modified_in_this_probe':True},'selected_neutral_native_armor_positive_intersections':hits,'airflow_and_pressure_not_zero_or_rated':True,'liquid_heat_and_pressure_model':'rho cp Q dT requires same-point task heat and actual pump/system pressure-flow and temperatures. Native channel graph does not provide heat/pressure capacity.','hydraulic_oil_inventory_scope':'Existing30L total not added here. Oil-to-water HX is own installation/cross-contamination unknown; thermal duty state/return throttling negative work paths unresolved.','source_motor_bus_scope':'QTL210 maximum680Vdc source point vsQTR160Z48V source point remain separate; DC/DC/controllers/HV insulation and actual low-bus torque-speed unknown; no chosen universal bus.','unclosed':['OEM EMRAX actual LC ports/cavity and necessary air flow','source mounting20C at ambient>20 cannot be delivered by passive air/water loop; temperature/derating/refrigeration unknown','full serial E hierarchy and module repositioning','cross-frame hose constant length/minimum bend/motion clearance/force','real pressure-flow radiator/fan/pump curves, fin seals and service opening','whole new-new routing/system/armor/movement intersections','all controller heat and cell current/runaway/insulation','annular cooling channels/baffles/interface thermal resistance/pressure life'],'geometry_accepted':False,'physics_accepted':False,'stable_physical_contract':False}
+# Avoid variable-shadowing in the reservoir calculation: recorded native volumes are authoritative only for this own geometry.
+report['actual_usable_reservoir_volume_L']=float(reservoir_cavity.volume*1000)
+report.pop('new_supplemental_rear_total_face_area_m2',None)
+report['rear_heat_exchanger_core_frontal_area_m2']=.203
+report['rear_exhaust_opening_gross_area_m2']=.216
+report['supplement_side_intake_opening_gross_area_m2']=.210
+report['selected_armor_intersection_scope']={'included_sample_categories':['radiator_native_material','fan_complete_reserve','coolant_reservoir','sealed_duct'],'sample_module_count':len(sample),'unchanged_armor_part_count':len(armor),'mode':'neutral native finite material only, positive volume>1e-9m3','excludes':'Not all189 E modules, all liquid routes/new-new pairs, pose sweeps, OEM material or whole-machine screen.'}
+report['net_drawn_fluid_connected_components']=len([m for m in occupied.split(only_watertight=False) if m.volume>1e-9])
+report['native_inventory_is_not_hydraulic_flow_topology_proof']=True
+report['oil_HX_scope']='Native water coldplate only; no actual separate rated oil channel/return fittings or real hydraulic return route yet. Requires positive oil-side material/space and30L inventory redistribution; not accepted oil-to-coolant interface.'
+report['heat_source_reference']= {'source_catalogue_Pc_sum_W':11550,'not_simultaneous_complete_joint_thermal_rating':True,'root_additional_axis_constraint_path':'.scratch/gorilla_internal_e_constraints/reference_axes.json','root_reference_LP_all48_cases_exceed_gear_L10_normalization':True,'conditioned_working_point_and_material_capacity_not_accepted':True}
+(OUT/'thermal_route_spec.json').write_text(json.dumps(report,indent=2)+'\n');(OUT/'thermal_route_scene.json').write_text(json.dumps({'schema':'gorilla_internal_e_thermal_native_v1','source_spec_sha256':sha(OUT/'thermal_route_spec.json'),'input_hashes':report['input_hashes'],'parts':parts},indent=2)+'\n')
+print(json.dumps({'modules':len(modules),'parts':len(parts),'targets':len(targets),'flow_L_min':report['required_flow_L_min_hypothesis'],'mass_kg':mass,'coolant_L':report['net_drawn_coolant_volume_L'],'reservoir_fill_overlap_m3':float(fill_overlap),'sample_armor_hits':len(hits),'graph_pass_only':True},indent=2))

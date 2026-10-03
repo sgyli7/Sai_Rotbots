@@ -1,0 +1,50 @@
+#!/usr/bin/env python3
+"""Read-only polygon representation adapter; no winding/geometry repair or material admission."""
+import pathlib,json,gzip,hashlib,collections,sys,importlib.util
+import numpy as np
+from importlib.machinery import SourceFileLoader
+R=pathlib.Path('/home/ethan/Projects/Sai_Rotbots');D=pathlib.Path(__file__).resolve().parent;SOURCE=R/'.scratch/gorilla_internal_g22_root_assembly/scene.json.gz';Q=R/'.scratch/gorilla_internal_g22_route_installation_review/foreign_installation_queries.json';MAT=R/'experiments/gorilla_v0_1/internal_structure_g_studies/material_contract/native_signed_material.py.txt';sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+s=json.load(gzip.open(SOURCE,'rt'));queries=json.loads(Q.read_text());ids=sorted(set(x['target'] for x in queries['foreign_positive_or_unknown_pairs'] if x['actual_positive_intersection_V_m3'] is None));by={p['name']:p for p in s['parts']};out=[];diagnostic=[];tol=1e-8
+loader=SourceFileLoader('g23_signed_adapter',str(MAT));sp=importlib.util.spec_from_loader('g23_signed_adapter',loader);mat=importlib.util.module_from_spec(sp);sys.modules['g23_signed_adapter']=mat;loader.exec_module(mat)
+def area2(a,b,c):return np.cross(b-a,c-a).item()
+def triangulate(v,face):
+ if len(face)==3:return [face],{'planarity_gap_m':0,'source_triangle_preserved':True}
+ idx=list(face);xyz=v[idx];n=np.cross(xyz,np.roll(xyz,-1,axis=0)).sum(0);L=np.linalg.norm(n)
+ if L<1e-14:return None,{'reject':'zero_newell_normal'}
+ n=n/L;err=float(np.max(np.abs((xyz-xyz[0])@n)))
+ if err>tol:return None,{'reject':'nonplanar_polygon_source_ambiguity_not_projected','planarity_gap_m':err}
+ axis=np.argmax(np.abs(n));xy=np.delete(xyz,axis,axis=1);signed=float(np.cross(xy,np.roll(xy,-1,axis=0)).sum()/2);sg=1 if signed>0 else -1;remaining=list(range(len(face)));tris=[]
+ for loop in range(len(face)*len(face)):
+  if len(remaining)<=3:break
+  clipped=False
+  for jj in range(len(remaining)):
+   a,b,c=remaining[jj-1],remaining[jj],remaining[(jj+1)%len(remaining)];A,B,C=xy[[a,b,c]]
+   if sg*area2(A,B,C)<=1e-16:continue
+   others=[k for k in remaining if k not in [a,b,c]]
+   if any(min(sg*area2(A,B,xy[k]),sg*area2(B,C,xy[k]),sg*area2(C,A,xy[k]))>=-1e-16 for k in others):continue
+   tris.append([idx[a],idx[b],idx[c]]);remaining.pop(jj);clipped=True;break
+  if not clipped:return None,{'reject':'earclip_could_not_prove_simple_nondegenerate_polygon','planarity_gap_m':err}
+ if len(remaining)!=3:return None,{'reject':'earclip_incomplete'}
+ tris.append([idx[k] for k in remaining]);return tris,{'planarity_gap_m':err,'preserves_source_vertex_indices_and_cyclic_winding':True}
+def edges(faces):
+ c=collections.Counter()
+ for f in faces:
+  for a,b in zip(f,f[1:]+f[:1]):c[tuple(sorted((a,b)))]+=1
+ return {str(k):d for k,d in c.items() if d!=2}
+def V(v,tri):
+ t=v[np.array(tri,int)];return float(np.einsum('ij,ij->i',t[:,0],np.cross(t[:,1],t[:,2])).sum()/6)
+for n in ids:
+ p=by[n];v=np.array(p['vertices_world_m']);f=p['faces'];tri=[];fail=[];facechecks=[]
+ for fi,face in enumerate(f):
+  t,c=triangulate(v,list(face));facechecks.append(dict(c,source_face_index=fi))
+  if t is None:fail.append(dict(c,source_face_index=fi));continue
+  tri.extend(t)
+ baseline=[[face[0],face[j],face[j+1]] for face in f for j in range(1,len(face)-1)]
+ rec={'id':n,'source_vertex_count':len(v),'source_polygon_faces':len(f),'planarity_tolerance_m':tol,'failed_faces':fail,'facechecks':facechecks,'source_boundary_incidence_non2':edges(f),'no_vertices_added_deleted_or_merged':True,'source_winding_never_flipped':True,'material_resource_admitted':False}
+ if not fail:
+  delta=V(v,tri)-V(v,baseline);same=edges(tri)==edges(f);assert same,'polygon adapter changed original non2 boundary incidence';q=dict(p,faces=tri,source_original_polygon_faces_preserved_external=hashlib.sha256(json.dumps(f).encode()).hexdigest(),source_specific_triangulation_scope='only planar simple polygons; source loop preserved, no repair',physical_accepted=False);out.append(q);rr=mat.validate_scene({'parts':[q]});rec.update(adapter_generated=True,triangle_count=len(tri),signed_source_fan_V_m3=V(v,baseline),signed_adapter_V_m3=V(v,tri),signed_volume_delta_m3=delta,original_non2_boundary_incidence_identical=same,resource=rr['parts'][0],material_resource_admitted=rr['resource_contract_pass'])
+ else:rec.update(adapter_generated=False,unknown_nonplanar_or_nonsimple_source_retained=True)
+ diagnostic.append(rec)
+(D/'polygon_adapter_source_specific_report.json').write_text(json.dumps({'source_SHA':sha(SOURCE),'query_SHA':sha(Q),'source_ids':ids,'face_planarity_tol_m':tol,'parts':diagnostic,'no_source_overwritten':True,'not_whole_armor_fit_or_collision_admission':True,'failed_parts_never_implicitly_triangulated_or_zeroed':True},indent=2)+'\n')
+(D/'polygon_adapter_planar_copies.json.gz').write_bytes(gzip.compress(json.dumps({'source_SHA':sha(SOURCE),'parts':out,'original_vertices_and_winding_preserved':True,'not_repaired_source_or_installed_material':True},separators=(',',':')).encode(),mtime=0))
+print('EVENT G23 source-specific polygon adapter',len(ids),'generated',len(out),'materialadmitted',sum(x['material_resource_admitted'] for x in diagnostic),'notgenerated',len(ids)-len(out),flush=True)

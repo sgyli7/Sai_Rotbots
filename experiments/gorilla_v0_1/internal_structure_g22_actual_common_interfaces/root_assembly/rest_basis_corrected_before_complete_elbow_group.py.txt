@@ -1,0 +1,64 @@
+"""Source-bound full body geometric probe. Fixed rebinds are not real adapters."""
+from pathlib import Path
+import json,gzip,hashlib,copy
+import numpy as np
+R=Path.cwd();O=Path(__file__).resolve().parent;inputs={}
+def read(rel):
+ b=(R/rel).read_bytes();inputs[rel]=hashlib.sha256(b).hexdigest();return json.loads(gzip.decompress(b) if rel.endswith('.gz') else b)
+def write(name,x):
+ b=(json.dumps(x,indent=2,allow_nan=False)+'\n').encode();(O/name).write_bytes(gzip.compress(b,mtime=0) if name.endswith('.gz') else b)
+body=read('.scratch/gorilla_internal_g21_whole_body_space_allocation/b/scene.json.gz')
+core=read('.scratch/gorilla_internal_g22_core_connection/module_scene.json.gz')
+c=read('.scratch/gorilla_internal_g22_source_derived_interfaces/source_derived_interfaces.json')
+contract=c['bilateral_replacement_contract'];retire=set(contract['conditional_geometry_probe_retire_ids'])|{core['old_frame_reference_not_active']}
+old={p['name']:p for p in body['parts']};assert retire<=set(old)
+parts=[copy.deepcopy(p) for p in body['parts'] if p['name'] not in retire];parts_by_name={p['name']:p for p in parts}; added=[];duplicates=[]
+for p in core['parts']:
+ if p['name'] in parts_by_name:
+  assert np.allclose(p['vertices_world_m'],parts_by_name[p['name']]['vertices_world_m'],rtol=0,atol=1e-12);duplicates.append(p['name']);continue
+ p=copy.deepcopy(p);parts.append(p);parts_by_name[p['name']]=p;added.append(p['name'])
+tree=copy.deepcopy(body['body_tree_candidate']);oldtree=copy.deepcopy(tree);transforms={};rigid_rebind=[]
+def descendant(b,root,t):
+ visited=set()
+ while b in t and b not in visited:
+  if b==root:return True
+  visited.add(b);b=t[b].get('parent')
+ return False
+def align(a,b):
+ a=np.array(a,float);b=np.array(b,float);a/=np.linalg.norm(a);b/=np.linalg.norm(b);k=np.cross(a,b);d=float(a@b);K=np.array([[0,-k[2],k[1]],[k[2],0,-k[0]],[-k[1],k[0],0]])
+ assert d>-.999999
+ return np.eye(3)+K+K@K/(1+d)
+for sp in contract['bilateral_instance_plan']:
+ side=sp['side'];js=sp['joints']
+ for j in js:
+  tree[j['output_body']]={'parent':j['parent_body'],'joint_id':j['id'],'pivot_world_m':j['pivot_world_m'],'axis_world':j['axis_world_candidate_same_angle_axialvector'],'scope':'actual candidate source axes; encoder signs/real connections unqualified'}
+ upper=side+'_upper_arm';yaw=js[2];signed=np.array(yaw['axis_world_candidate_same_angle_axialvector']);old_axis=np.array(oldtree[upper]['axis_world']);geometric_axis=signed*(1 if old_axis@signed>=0 else -1)
+ r=align(old_axis,geometric_axis);o=np.array(oldtree[upper]['pivot_world_m']);n=np.array(yaw['pivot_world_m']);t=n-r@o
+ if side=='right':
+  S=np.diag([1,-1,1]);assert np.allclose(r,S@transforms['left'][:3,:3]@S,atol=1e-12), 'bilateral nearest rest basis must mirror left'
+
+ trans=np.eye(4);trans[:3,:3]=r;trans[:3,3]=t;transforms[side]=trans
+ for b,node in tree.items():
+  if descendant(b,upper,oldtree):
+   node['pivot_world_m']=(r@np.array(oldtree[b]['pivot_world_m'])+t).tolist()
+   if 'axis_world' in oldtree[b]:node['axis_world']=(r@np.array(oldtree[b]['axis_world'])).tolist()
+ tree[upper]={'parent':yaw['output_body'],'fixed_geometric_rebind':True,'rest_world_transform_4x4':trans.tolist(),'pivot_world_m':n.tolist(),'real_transfer_adapter_material_missing':True}
+ ids=[]
+ for p in parts:
+  if p['name'] in added:continue
+  if descendant(p.get('body'),upper,oldtree) or p['name'] in contract['preserve_and_rebind_whole_downstream_ids'] and p['name'].startswith(('d_'+side,side+'_')):
+   v=np.array(p['vertices_world_m']);p['vertices_world_m']=(v@r.T+t).tolist();p['g22_original_source_name']=p['name'];p['g22_candidate_rest_rigid_transform']=trans.tolist();p['physical_connection_admitted']=False
+   # Shape transforms preserve candidate material; OEM/armor owner remains unqualified.
+   for key in ['exact_CAD_COM_world_m','COM_world_m']:
+    if key in p:p[key]=(r@np.array(p[key])+t).tolist()
+   for key in ['exact_CAD_full_I_at_COM_world_kg_m2']:
+    if key in p:p[key]=(r@np.array(p[key])@r.T).tolist()
+   ids.append(p['name'])
+ rigid_rebind.append({'side':side,'proper_transform_4x4':trans.tolist(),'det_R':float(np.linalg.det(r)),'old_yaw_axis_world':oldtree[upper]['axis_world'],'new_yaw_axis_world':yaw['axis_world_candidate_same_angle_axialvector'],'rest_geometric_axis_world':geometric_axis.tolist(),'joint_signed_axis_distinct_from_rest_orientation':True,'changed_exact_ids':ids,'derived_new_elbow_world_m':tree[side+'_proximal_forearm']['pivot_world_m'],'source_new_elbow_PLAN_world_m':c['downstream_FK_change_entry']['new_elbow_source_plan_world_m'],'physical_adapter_implemented':False,'neutral_armor_moves_candidate_not_adopted':True})
+# Correct mirrored input IDs only in new context. Their dynamic mapping stays explicit.
+for p in parts:
+ if p['name'] in added and p.get('body','').startswith('g21_'):
+  side='right' if p['name'].startswith('g22_right_context') else 'left';p['geometric_pose_owner_candidate']=p['body'].replace('g21_',side+'_');p['input_rotor_gear_coupling_and_full_I_unknown']=True
+write('scene.json.gz',{'schema':'gorilla_g22_actual_common_geometry_probe_v1','robot_id':'gorilla_v0_1','coordinate_frame':'SI Xforward Yleft Zup','parts':parts,'body_tree_candidate':tree,'inputs':inputs,'conditional_probe_replaced_exact_ids':sorted(retire),'actual_added_core_and_joint_ids':added,'duplicate_existing_waist_ids_counted_once':duplicates,'rest_rebinds':rigid_rebind,'same_body_not_material_or_connection_waiver':True,'waist_rotating_output_and_arm_transfer_adapters_missing':True,'old_lower_body_history_only':True,'whole_robot_M_COM_I':None,'stable_SI_or_runtime_adopted':False,'physical_accepted':False,'aesthetic_accepted':False})
+write('composition_receipt.json',{'inputs':inputs,'source_body_count':len(old),'conditional_probe_replaced_count':len(retire),'new_core_joint_added_count':len(added),'duplicate_waist_ids_kept_once':duplicates,'actual_common_source_count':len(parts),'unique_IDs':len(parts_by_name)==len(parts),'new_actual_joint_source_in_body_now':True,'root_new_source_generation_changes':False,'root_actual_source_composition_and_rigid_rest_rebind':True,'rest_rebinds':rigid_rebind,'qualified_function_retirement_credit':0,'first_signed_axis_rest_error_retained':'first_axis_signed_alignment_error','right_rest_mirror_left_verified':True,'missing_real_arm_transfer_connections':True,'source_resource_rejections_retained':c['current_source_resource_rejected_ids'],'physical_accepted':False})
+print(json.dumps({'whole_parts':len(parts),'conditional_replaced':len(retire),'actual_added':len(added),'duplicate_counted_once':duplicates,'new_elbows':[x['derived_new_elbow_world_m'] for x in rigid_rebind]}))

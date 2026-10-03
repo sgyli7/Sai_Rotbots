@@ -1,0 +1,20 @@
+"""One bounded B installation derivative: no axes/OEM/hand-function reduction."""
+from pathlib import Path
+import json,runpy
+import numpy as np
+B=Path(__file__).resolve().parent;n=runpy.run_path(str(B/'build_wrist_layout.py'),run_name='selected_mount_helpers')
+sha=n['sha'];native=n['native'];segment=n['segment'];s=json.loads((B/'wrist_scene_b.json').read_text());pmap={p['name']:p for p in s['parts']};rmap={r['id']:r for r in s['modules']};changes=[]
+install=next(x for x in s['G3_installation'] if x['joint']=='left_wrist_yaw');j=next(x for x in s['joints'] if x['id']=='left_wrist_yaw')
+a=np.array(j['axis_world']);input_axis=a*j['input_face_B_sign'];fix=np.array(install['fixed_install_face']);mc=np.array(install['motor_center']);L=n['MOTORS']['78']['L'];u=np.array([0,0,1.])
+def put(id,m,why):
+ p=pmap[id];r=rmap[id];p['vertices_world_m']=np.asarray(m.vertices).tolist();p['faces']=np.asarray(m.faces).tolist()
+ if r['material_density_kg_m3']:
+  rho=r['material_density_kg_m3'];nom=float(m.volume*rho);r['material_volume_m3']=float(m.volume);r['mass_range_kg']=[.9*nom,nom,1.25*nom]
+ r['assumption']+=' SELECTED boundedinstallation: '+why;changes.append(dict(id=id,scope=why,old_B_function_retained=True))
+for k in [-1,1]:
+ c0=fix+u*(k*.073);c1=mc+input_axis*(L/2+.037)+u*(k*.026);mid=np.array(j['fixed_B_face_world_m'])+input_axis*(.018+L+.004)+u*(k*.073)
+ for i,(p,q) in enumerate([(c0,mid),(mid,c1)]):put(f'g3_wrist_yaw_input_support_cradle_{k}_{i}',segment(p,q,.005,.0025),'samecomplete yawinputbearing cradle rotated radial placement intoverticalZ plane to clear pitchoutputadapter; axes/dimensions/bearings/shaft unchanged, actualmount/strength stillunknown')
+for key in ['forearm_roll','wrist_pitch','wrist_yaw']:
+ id='g3_'+key+'_connectors_fasteners';m=native(pmap[id]);m.apply_translation([.042,0,0]);put(id,m,'complete connector/fastener function samevolume/mass moved42mmX besidecontroller instead ofsupportcrossing; actualmating plug/cable/servicing stillunknown')
+s['parts']=list(pmap.values());s['modules']=list(rmap.values());s['candidate']='g3_selected_b_installation';s['source_B_sha256']=sha(B/'wrist_scene_b.json');s['installation_builder_sha256']=sha(__file__);s['installation_changes']=changes;s['bounded_installation_only']=True;s['geometry_accepted']=False;s['physics_accepted']=False
+p=B/'selected_installation_scene.json';p.write_text(json.dumps(s,separators=(',',':'))+'\n');print('G3_SELECTED_READY',p,sha(p),len(s['parts']),np.array([r['mass_range_kg'] for r in s['modules']]).sum(0).tolist(),flush=True)

@@ -1,0 +1,20 @@
+#!/usr/bin/env python3
+import pathlib,json,gzip,hashlib
+from OCP.STEPControl import STEPControl_Reader,STEPControl_Writer,STEPControl_AsIs
+from OCP.TopExp import TopExp_Explorer
+from OCP.TopAbs import TopAbs_SOLID
+from OCP.TopoDS import TopoDS
+from OCP.BRepGProp import BRepGProp
+from OCP.GProp import GProp_GProps
+from OCP.BRepCheck import BRepCheck_Analyzer
+from OCP.BRepBuilderAPI import BRepBuilderAPI_Transform
+from OCP.gp import gp_Trsf,gp_Pnt
+D=pathlib.Path(__file__).resolve().parent;sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+# The same frameCAD geometry is common to A/B; identifyunique solid by frozen per-shape analyticvolume.
+p=D/'b';rec=json.loads((p/'CAD_si_readback_receipt.json').read_text());target=next(x['CADvolume_m3'] for x in rec['per_shape_checks'] if x['id']=='g21_wide_closed_load_cage_net');rd=STEPControl_Reader();rd.ReadFile(str(p/'energy_subsystem_si.step'));rd.TransferRoots();ex=TopExp_Explorer(rd.OneShape(),TopAbs_SOLID);found=[]
+while ex.More():
+ ss=TopoDS.Solid_s(ex.Current());pr=GProp_GProps();BRepGProp.VolumeProperties_s(ss,pr);v=pr.Mass()/1e9
+ if abs(v-target)<1e-10:found.append(ss)
+ ex.Next()
+assert len(found)==1,(len(found),target)
+tr=gp_Trsf();tr.SetScale(gp_Pnt(0,0,0),.001);shape=BRepBuilderAPI_Transform(found[0],tr,True).Shape();assert BRepCheck_Analyzer(shape).IsValid();writer=STEPControl_Writer();writer.Transfer(shape,STEPControl_AsIs);out=D/'primary_cage_si.step';writer.Write(str(out));txt=out.read_text();assert 'SI_UNIT(.MILLI.,.METRE.)' in txt;out.write_text(txt.replace('SI_UNIT(.MILLI.,.METRE.)','SI_UNIT($,.METRE.)'));read=STEPControl_Reader();read.ReadFile(str(out));read.TransferRoots();pr=GProp_GProps();BRepGProp.VolumeProperties_s(read.OneShape(),pr);wr={'source_scene_SHA':sha(p/'scene.json.gz'),'same_native_frame_source_in_a_SHA':sha(D/'a'/'scene.json.gz'),'source_energy_STEP_SHA':sha(p/'energy_subsystem_si.step'),'identified_source_solid_count':len(found),'selection':'unique analyticCADvolume from exactnamedframe per-shape receipt; no manually substitutedgeom','source_targetCAD_volume_m3':target,'output_explicit_METER_STEP_SHA':sha(out),'source_reader_internal_mm_to_SI_transform':.001,'numeric_coordinate_m_to_explicit_meter_declaration_only':True,'independent_readbackvolume_m3':pr.Mass()/1e9,'relative_volume_error':(pr.Mass()/1e9-target)/target,'OCC_frame_valid':True,'actual_X_core_connection_planes_m':[.112,.124],'contract_X_dot115_is_NOTactualsurface':True,'strength_attachment_load_or_service_notqualified':True};(D/'primary_cage_CAD_receipt.json').write_text(json.dumps(wr,indent=2)+'\n');print('EVENT G21 trueprimaryCAD isolated',sha(out),flush=True)

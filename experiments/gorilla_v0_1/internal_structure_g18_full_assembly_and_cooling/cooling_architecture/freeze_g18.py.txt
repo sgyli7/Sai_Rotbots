@@ -1,0 +1,12 @@
+from pathlib import Path
+import json,hashlib,time
+R=Path('/home/ethan/Projects/Sai_Rotbots');O=Path(__file__).resolve().parent
+D=json.loads((O/'architecture_comparison_v3.json').read_text());B=json.loads((O/'body_b_locked_inventory_v1.json').read_text())
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+refs={**D['inherited_primary_source_hashes'],**D['source_hashes'],B['source_path']:B['source_sha']}
+inputs=[]
+for p,h in refs.items():
+ q=R/p if not Path(p).is_absolute() else Path(p);inputs.append({'path':str(q),'sha256_expected':h,'sha256_current':sha(q),'hash_matches':sha(q)==h,'read_only_input':True})
+outputs=[{'path':str(p.relative_to(R)),'sha256':sha(p),'bytes':p.stat().st_size} for p in sorted(O.iterdir()) if p.is_file() and p.name!='freeze_manifest.json']
+receipt={'stage':'G18 frozen independent cooling architecture scope','created_utc':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'final_source':'architecture_comparison_v3.json','final_source_sha':sha(O/'architecture_comparison_v3.json'),'body_geometry_source_sha':B['source_sha'],'inputs':inputs,'outputs':outputs,'input_mismatch_count':sum(not x['hash_matches'] for x in inputs),'oldsource_mutated':False,'source_producers_original_v1_v2_v3_preserved':True,'physical_hardware_SI_control_wholebody_appearance_task_admission':False,'scope':'two architectures; source-bound functions/conditionalphysicaldata; bodycompletecountnotactualroutes; optionalplotunavailable retained; noCAD/GPU/Git'}
+(O/'freeze_manifest.json').write_text(json.dumps(receipt,indent=2)+'\n');print(json.dumps({'freeze_sha':sha(O/'freeze_manifest.json'),'final_sha':receipt['final_source_sha'],'inputs':len(inputs),'outputs':len(outputs),'hash_mismatch':receipt['input_mismatch_count']},indent=2))

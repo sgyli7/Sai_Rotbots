@@ -1,0 +1,13 @@
+from pathlib import Path
+import json,hashlib
+import numpy as np
+from PIL import Image,ImageDraw,ImageFont
+O=Path(__file__).resolve().parent;sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();font=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',16);small=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',12);W,H=1600,1200;im=Image.new('RGB',(W,H),'white');d=ImageDraw.Draw(im);inputs={}
+for vi,v in enumerate(['a','b']):
+ S=O/v/'literal_sections.json';s=json.loads(S.read_text());inputs[str(S.relative_to(O))]=sha(S)
+ for j,ind in enumerate([0,2,3]):
+  r=s['sections'][ind];x0=j*530;y0=vi*580;d.text((x0+12,y0+14),'G23 '+v.upper()+' actual slice '+r['axis']+'='+str(r['value_m'])+' m',font=font,fill='black');d.text((x0+12,y0+42),'Net area '+str(round(r['area_m2']*1e6,2))+' mm2; rejected source',font=small,fill='black');cx=0 if r['axis']=='X'else .03;cy=2.23 if r['axis']=='X'else 0;scale=350
+  for loop in r['polygons_m']:
+   p=np.asarray(loop);xy=[(x0+265+(x-cx)*scale,y0+300-(y-cy)*scale)for x,y in p];d.line(xy+[xy[0]],fill=(42,85,108),width=2)
+  d.line((x0+330,y0+540,x0+470,y0+540),fill='black',width=2);d.text((x0+330,y0+518),'400 mm / 350 px/m',font=small,fill='black')
+d.text((12,1170),'Literal native material cross sections; no repair / support / strength / aesthetic acceptance.',font=small,fill='black');im.save(O/'literal_sections_comparison.png');(O/'section_render_receipt.json').write_text(json.dumps({'inputs':inputs,'producer_sha256':sha(Path(__file__)),'output_sha256':sha(O/'literal_sections_comparison.png'),'actual_native_slice_operation':True,'physical_accepted':False},indent=2)+'\n')

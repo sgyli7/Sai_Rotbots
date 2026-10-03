@@ -1,0 +1,54 @@
+from pathlib import Path
+import json
+import hashlib
+import numpy as np
+from scipy.optimize import linprog
+
+ROOT = Path('/home/ethan/Projects/Sai_Rotbots')
+RP = ROOT/'experiments/gorilla_v0_1/internal_structure_e_constraints/reference_axes.json'
+SP = ROOT/'robots/gorilla_v0_1/evidence/internal_structure_d_screen.json'
+ref, screen = json.loads(RP.read_text()), json.loads(SP.read_text())
+out = []
+for case in ref['cases']:
+    pose = next(p for p in screen['poses'] if p['id'] == case['pose'])
+    v = np.asarray(pose['actual_pad_contact_vertices_world_m'])
+    E = np.vstack([np.ones(len(v)), v[:,0], v[:,1]])
+    # Equalities reconstructed from the previously checked E0 feasible normal
+    # witness. This remains the frozen D domain and floating-point tolerance.
+    target = E @ np.asarray(case['normal_reactions_N'])
+    base = [m for m in case['models_at_joint_witness'] if m['SI_unit'] == 'N']
+    A, b = [], []
+    for m in base:
+        k = np.asarray(m['coeff'])
+        A.extend([k/m['plus'], -k/m['minus']])
+        b.extend([1-m['bias']/m['plus'], 1+m['bias']/m['minus']])
+    A, b = np.asarray(A), np.asarray(b)
+    intervals = []
+    for m in case['models_at_joint_witness']:
+        if m['id'] not in ['ds_waist_pitch','ds_left_hip_roll','ds_right_hip_roll','ds_left_foot_roll','ds_right_foot_roll']:
+            continue
+        k = np.asarray(m['coeff'])
+        endpoints = []
+        for sign in [1,-1]:
+            res = linprog(sign*k, A_ub=A, b_ub=b, A_eq=E, b_eq=target, bounds=[(0,None)]*len(v), method='highs')
+            assert res.success
+            demand = m['bias'] + k @ res.x
+            dual = b @ res.ineqlin.marginals + target @ res.eqlin.marginals
+            reduced = sign*k-A.T@res.ineqlin.marginals-E.T@res.eqlin.marginals
+            gap = res.fun-dual
+            violation = max(0., float(np.max(A@res.x-b)),float(-np.min(res.x)),float(np.max(res.ineqlin.marginals)),float(-np.min(reduced)))
+            assert abs(gap) < 1e-5 and violation < 1e-6
+            endpoints.append({'demand_Nm':float(demand),'normal_reactions_N':res.x.tolist(),'numerical_dual_gap':float(gap),'max_normalized_bound_violation':violation,'normal_equality_residual':float(np.max(abs(E@res.x-target)))})
+        lo,hi = endpoints[0]['demand_Nm'], endpoints[1]['demand_Nm']
+        assert lo <= hi+1e-6
+        intervals.append({'id':m['id'],'catalogue_L10_reference_Nm':m['plus'],'signed_independent_range_Nm':[lo,hi],'minimum_absolute_demand_in_this_domain_Nm':0. if lo <= 0 <= hi else min(abs(lo),abs(hi)),'endpoint_witnesses':endpoints})
+    out.append({'pose':case['pose'],'case':case['case'],'independent_axis_intervals':intervals})
+report = {
+    'scope':'Individual axis extrema over frozen-D exact-contact reference with D hydraulic/brace capacity hypotheses at t<=1 only. Other rotary axes are unconstrained. Endpoint reactions can differ across axes; individual minima do NOT form a simultaneously feasible full robot. E0 added-axis all-rotary joint minimax remains the coupled test. Equalities are reconstructed from saved E0 checked witness, not new E-body masses or full dynamic contact.',
+    'input_hashes':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in [RP,SP]},
+    'cases':out,'physics_accepted':False,'stable_contract':False,
+}
+(ROOT/'.scratch/gorilla_e_drive_intervals.json').write_text(json.dumps(report,indent=2,allow_nan=False)+'\n')
+for c in out:
+    if c['case']['mass_profile']=='diagnostic_nominal' and c['case']['payload_kg_hypothesis']==0 and c['case']['separate_pressure_demand_kg']==0:
+        print(c['pose'], [(a['id'],a['signed_independent_range_Nm']) for a in c['independent_axis_intervals']],flush=True)

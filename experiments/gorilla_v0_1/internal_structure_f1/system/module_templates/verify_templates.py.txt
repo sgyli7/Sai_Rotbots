@@ -1,0 +1,21 @@
+from pathlib import Path
+import json, hashlib, itertools
+import numpy as np
+import trimesh as tm
+OUT=Path(__file__).resolve().parent
+reports={}
+for kind in ['holding','directional']:
+    p=OUT/(kind+'_template_scene.json'); s=json.loads(p.read_text())
+    meshes={r['name']:tm.Trimesh(vertices=r['vertices_world_m'],faces=r['faces'],process=False) for r in s['parts']}
+    meshchecks={n:{'watertight':bool(m.is_watertight),'positive_volume_m3':float(m.volume),'connected_components':len(m.split(only_watertight=False)),'AABB_local_m':m.bounds.tolist()} for n,m in meshes.items()}
+    if not all(v['watertight'] and v['positive_volume_m3']>0 for v in meshchecks.values()): raise ValueError('invalid native')
+    pairs=[]
+    for n1,n2 in itertools.combinations(meshes,2):
+        a,b=meshes[n1],meshes[n2]
+        if not np.all(np.minimum(a.bounds[1],b.bounds[1])-np.maximum(a.bounds[0],b.bounds[0])>1e-9): continue
+        inter=tm.boolean.intersection([a,b],engine='manifold'); v=float(inter.volume) if inter is not None else 0.
+        if v>1e-10: pairs.append({'a':n1,'b':n2,'positive_intersection_volume_m3':v,'scope':'OEM envelope intersections at bolted engagement do NOT establish native OEM contact; own-material overlap requires explicit correction'})
+    ids=[r['id'] for r in s['mass_rows']]
+    reports[kind]={'source_scene_sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'count':len(meshes),'unique_mass_ids':len(set(ids))==len(ids),'physical_parts_all_have_positive_mass':all(r['mass_kg']>0 for r in s['mass_rows']),'mass_sum_kg':sum(r['mass_kg'] for r in s['mass_rows']),'mesh_checks':meshchecks,'positive_intersections':pairs,'whole_robot_or_installed_collision_checked':False,'tensor_qualification':False}
+(OUT/'verification.json').write_text(json.dumps(reports,indent=2)+'\n')
+print(json.dumps({k:{'count':v['count'],'mass_sum_kg':v['mass_sum_kg'],'positive_intersections':v['positive_intersections'],'multi_piece':{n:r['connected_components'] for n,r in v['mesh_checks'].items() if r['connected_components']!=1}} for k,v in reports.items()},indent=2))

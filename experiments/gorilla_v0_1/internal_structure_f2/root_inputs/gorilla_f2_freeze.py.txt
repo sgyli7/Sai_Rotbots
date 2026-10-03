@@ -1,0 +1,43 @@
+"""Preserve F2 rejected source modules, analytic screens and root corrections."""
+from pathlib import Path
+import json, hashlib, gzip
+
+ROOT = Path(__file__).resolve().parents[1]
+OUT = ROOT / 'experiments/gorilla_v0_1/internal_structure_f2'
+SOURCES = {
+    'lower_module': ROOT / '.scratch/gorilla_internal_f2_lower_module',
+    'waist_hip_module': ROOT / '.scratch/gorilla_internal_f2_waist_hip_module',
+    'pressure_pin': ROOT / '.scratch/gorilla_internal_f2_pressure_pin_screen',
+    'root_audit': ROOT / '.scratch/gorilla_internal_f2_root_audit',
+}
+
+def sha(b):
+    return hashlib.sha256(b).hexdigest()
+
+def main():
+    OUT.mkdir(parents=True, exist_ok=True)
+    rows = []
+    for section, folder in SOURCES.items():
+        for p in sorted(folder.rglob('*')):
+            if not p.is_file() or '__pycache__' in p.parts or 'cache' in p.parts:
+                continue
+            raw = p.read_bytes()
+            suffix = '.txt' if p.suffix == '.py' else '.gz' if len(raw) > 1_000_000 and p.suffix in ('.json', '.glb', '.blend') else ''
+            q = OUT / section / (str(p.relative_to(folder)) + suffix)
+            q.parent.mkdir(parents=True, exist_ok=True)
+            stored = gzip.compress(raw, compresslevel=6, mtime=0) if suffix == '.gz' else raw
+            if q.exists() and q.read_bytes() != stored:
+                raise RuntimeError('Refuse overwrite ' + str(q))
+            q.write_bytes(stored)
+            rows.append({'original_path': str(p.relative_to(ROOT)), 'stored_path': str(q.relative_to(OUT)), 'original_sha256': sha(raw), 'stored_sha256': sha(stored), 'original_bytes': len(raw), 'stored_bytes': len(stored), 'encoding': 'gzip' if suffix == '.gz' else 'identity', 'executable_source_as_text': suffix == '.txt'})
+    raw = Path(__file__).read_bytes()
+    q = OUT / 'root_inputs' / (Path(__file__).name + '.txt')
+    q.parent.mkdir(exist_ok=True)
+    q.write_bytes(raw)
+    rows.append({'original_path': str(Path(__file__).relative_to(ROOT)), 'stored_path': str(q.relative_to(OUT)), 'original_sha256': sha(raw), 'stored_sha256': sha(raw), 'original_bytes': len(raw), 'stored_bytes': len(raw), 'encoding': 'identity', 'executable_source_as_text': True})
+    report = {'schema': 'gorilla_rejected_module_snapshot_v1', 'robot_id': 'gorilla_v0_1', 'candidate': 'F2 lower and waist/hip A/B rejected modules; source-preserving material and pressure diagnostics', 'files': rows, 'oem_download_cache_excluded': True, 'geometry_accepted': False, 'physics_accepted': False, 'aesthetic_baseline_approved': False, 'whole_robot_integrated': False, 'new_SI_or_capability_rating': False}
+    (OUT / 'snapshot_manifest.json').write_text(json.dumps(report, indent=2)+'\n')
+    print('FILES', len(rows), 'STORED', sum(r['stored_bytes'] for r in rows), 'MANIFEST', sha((OUT/'snapshot_manifest.json').read_bytes()))
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,67 @@
+from pathlib import Path
+import json,hashlib,importlib.util
+import numpy as np
+import trimesh
+from scipy.optimize import linprog
+from sai_agent.structural_statics import resultant
+ROOT=Path('/home/ethan/Projects/Sai_Rotbots');R=ROOT/'robots/gorilla_v0_1';OUT=Path(__file__).parent
+paths=[R/'cad/source/internal_structure_d_scene.json',R/'evidence/internal_structure_d_screen.json',R/'configs/internal_structure_d_system_spec.json',R/'configs/appearance_c_spec.json',R/'cad/source/internal_structure_d_leg_scene.json']
+scene,screen,system,geometry,leg=[json.loads(p.read_text()) for p in paths]
+f=importlib.util.spec_from_file_location('h',ROOT/'scripts/evaluation/evaluate_gorilla_internal_structure.py');h=importlib.util.module_from_spec(f);f.loader.exec_module(h)
+def mesh(p):return trimesh.Trimesh(p['vertices_world_m'],[[a[0],a[i],a[i+1]] for a in p['faces'] for i in range(1,len(a)-1)],process=False)
+parts={p['name']:p for p in scene['parts']};points=geometry['points_world_m'];rows=[]
+def axis_scope(j,T):
+ name=j['id'].removeprefix('ds_');side=next((s for s in ('left','right') if name.startswith(s+'_')),None)
+ if not side:
+  child='torso';parent='torso' if name=='waist_roll' else 'pelvis'
+ elif 'hip_' in name:child=side+'_thigh';parent='pelvis'
+ elif 'foot_' in name:child=side+'_foot';parent=side+'_foot'
+ elif 'shoulder_' in name:
+  child=side+'_upper_arm';parent='torso' if name.endswith('pitch') else child
+ elif 'elbow_' in name:child=side+'_forearm';parent=side+'_upper_arm'
+ elif 'forearm_' in name:child=side+'_forearm';parent=child
+ elif 'wrist_' in name:child=side+'_palm';parent=side+'_forearm' if name.endswith('pitch') else child
+ else:raise ValueError(name)
+ return child,parent
+for pose in screen['poses']:
+ T={b:np.array(t) for b,t in pose['body_transforms'].items()};parents,_=h.transforms(points,json.loads((R/'configs/internal_structure_d_spec.json').read_text())['candidate_pose_angles_deg'][pose['id']])
+ direct={p['name']:mesh(p) for p in next(x for x in leg['pose_scenes'] if x['id']==pose['id'])['parts']};cache={}
+ def posed(n):
+  if n in cache:return cache[n]
+  if n in direct:cache[n]=direct[n]
+  else:
+   p=parts[n];m=mesh(p);m.apply_transform(T[h.canonical(p['body'])]);cache[n]=m
+  return cache[n]
+ centers={}
+ for row in screen['mass_rows']:
+  if row.get('member_ids'):
+   ms=[posed(n) for n in row['member_ids']];m=trimesh.boolean.union(ms,engine='manifold') if len(ms)>1 else ms[0];centers[row['id']]=m.center_mass
+  else:centers[row['id']]=posed(row['id']).center_mass
+ contacts=[]
+ for n,p in parts.items():
+  if p['role']=='contact_surface_candidate':
+   v=posed(n).vertices
+   if abs(v[:,2].min())<1e-7:
+    for q in v[abs(v[:,2])<1e-8]:contacts.append((p['body'],*np.round(q,12)))
+ cs=sorted(set(contacts));cb=[x[0] for x in cs];V=np.array([x[1:] for x in cs]);assert np.allclose(V,pose['actual_pad_contact_vertices_world_m'],atol=1e-12)
+ for case in pose['cases']:
+  index={'all_lower_bounds':0,'diagnostic_nominal':1,'all_upper_bounds':2}[case['mass_profile']];factor=case['gravity_factor_sensitivity'];loads=[{'body':r['body'],'position_world_m':centers[r['id']].tolist(),'force_world_N':[0,0,-r['mass_range_kg'][index]*9.80665*factor]} for r in screen['mass_rows']]
+  if case['payload_kg_hypothesis']:
+   for side in ('left','right'):loads.append({'body':side+'_palm','position_world_m':h.transformed(T[side+'_palm'],points[side+'_palm']).tolist(),'force_world_N':[0,0,-case['payload_kg_hypothesis']*.5*9.80665*factor]})
+  if case['separate_pressure_demand_kg']:loads.append({'body':'torso','position_world_m':h.transformed(T['torso'],[0,0,2.45]).tolist(),'force_world_N':[0,0,-case['separate_pressure_demand_kg']*9.80665]})
+  models=[{'id':x['id'],'bias':x['force_gravity_N'],'coeff':x['force_contact_coefficients'],'plus':x['positive_force_hypothesis_N'],'minus':x['negative_force_hypothesis_N'],'SI_unit':'N','scope':'existing D hydraulic or equal-sharing brace hypothesis'} for x in case['mapped_hydraulic_and_foot_pin_LP']['force_models']]
+  for j in system['axis_order']:
+   if j.get('gear_family') not in ('csg65','csg50','csg32'):continue
+   child,parent=axis_scope(j,T);distal=h.descendants(parents,child);J=h.transformed(T[parent],j['center_world_m']);axis=T[parent][:3,:3]@j['axis_world'];ff,mm=resultant([r for r in loads if r['body'] in distal],J);k=np.cross(V-J,[0,0,1])@axis*np.array([b in distal for b in cb]);cap=j['catalogue_reducer_rated_Nm']
+   models.append({'id':j['id'],'bias':float(mm@axis),'coeff':k.tolist(),'plus':cap,'minus':cap,'SI_unit':'N m','scope':'proposed axis center/orientation and C15 distal subtree; reducer catalogue rated reference ONLY, not complete static/thermal joint capacity','descendant_proxy':child,'axis_frame_proxy':parent})
+  F,M=resultant(loads,[0,0,0]);target=np.array([-F[2],M[1],-M[0]]);E=np.vstack([np.ones(len(V)),V[:,0],V[:,1]]);A=[];b=[]
+  for j in models:A.extend([np.r_[np.array(j['coeff'])/j['plus'],-1],np.r_[-np.array(j['coeff'])/j['minus'],-1]]);b.extend([-j['bias']/j['plus'],j['bias']/j['minus']])
+  A=np.array(A);b=np.array(b);c=np.r_[np.zeros(len(V)),1.];Eq=np.column_stack([E,np.zeros(3)]);res=linprog(c,A_ub=A,b_ub=b,A_eq=Eq,b_eq=target,bounds=[(0,None)]*len(c),method='highs')
+  entry={'pose':pose['id'],'case':{k:case[k] for k in ['mass_profile','payload_kg_hypothesis','separate_pressure_demand_kg','gravity_factor_sensitivity']},'solver_success':bool(res.success),'physical_acceptance':False}
+  if res.success:
+   lam=np.array(res.ineqlin.marginals);y=np.array(res.eqlin.marginals);dual=float(b@lam+target@y);red=c-A.T@lam-Eq.T@y;gap=float(res.fun-dual);eqerr=float(abs(Eq@res.x-target).max());err=float(max(0,(A@res.x-b).max(),-res.x.min(),lam.max(),-red.min()))
+   entry.update({'reference_minimax_peak_use':float(res.fun),'normal_reactions_N':res.x[:-1].tolist(),'numerical_dual_lower_bound':dual,'gap':gap,'eq_residual':eqerr,'max_normalized_primal_dual_violation':err,'models_at_joint_witness':[{**j,'demand_at_witness':float(j['bias']+np.array(j['coeff'])@res.x[:-1])} for j in models]})
+  rows.append(entry)
+report={'candidate':'internal_structure_e_constraints_from_frozen_D','input_hashes':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in paths+[Path(__file__)]},'cases':rows,'scope':'Augmented reference axes only. Frozen D geometry and exact mass-center pose reconstruction, but additional23 serial axes/distal subtrees are hypotheses, body allocation remains D packaging proxy. Gear rated reference at catalogue L10 condition is not static continuous motor/gear/drive/thermal qualification; this is an architecture diagnostic and cannot reject AA3 or claim E capacity. No friction/dynamics/true serial carriers. Mixed N and N m demands are normalized by same-unit capacities before LP.','physics_accepted':False}
+(OUT/'reference_axes.json').write_text(json.dumps(report,indent=2,allow_nan=False)+'\n')
+print(json.dumps({'cases':len(rows),'reference_peak_range':[min(r['reference_minimax_peak_use'] for r in rows),max(r['reference_minimax_peak_use'] for r in rows)],'nominal_empty_neutral':next(r['reference_minimax_peak_use'] for r in rows if r['pose']=='neutral' and r['case']=={'mass_profile':'diagnostic_nominal','payload_kg_hypothesis':0,'separate_pressure_demand_kg':0,'gravity_factor_sensitivity':1.0}),'physical_acceptance':False}))

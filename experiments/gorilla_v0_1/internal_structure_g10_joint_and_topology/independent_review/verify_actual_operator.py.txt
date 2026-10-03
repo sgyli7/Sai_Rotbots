@@ -1,0 +1,164 @@
+"""Independent strong-form Tet4 isotropic action, energy and SIMP/filter audit.
+
+Does not import producer/root stiffness, B matrix, gradient or solve functions.
+Producer displacement fields are read-only test inputs, not independent solves.
+"""
+from pathlib import Path
+import json, hashlib, time, argparse
+import numpy as np
+from scipy.sparse import load_npz
+from scipy.spatial import cKDTree
+from scipy.linalg import qr
+
+ROOT=Path('/home/ethan/Projects/Sai_Rotbots')
+SRC=ROOT/'.scratch/gorilla_topology_g10_actual_simp'
+OUT=ROOT/'.scratch/gorilla_topology_g10_independent_review'
+MESH=ROOT/'.scratch/gorilla_internal_g8_carrier_variants/b/coarse/carrier_tetra.npz'
+LOAD=ROOT/'.scratch/gorilla_internal_g8_load_envelope/g8_b_full42_loads.npz'
+BASE=ROOT/'.scratch/gorilla_internal_g8_root_fem/b_envelope_baseline.json'
+
+def sha(p):
+    h=hashlib.sha256()
+    with open(p,'rb') as f:
+        for q in iter(lambda:f.read(1<<20),b''):h.update(q)
+    return h.hexdigest()
+
+def save(name,x):
+    (OUT/name).write_text(json.dumps(x,indent=2,allow_nan=False)+'\n')
+
+def independent_action(n,t,U,rho,coeff,C0,E,nu,p=3.,emin=1e-6):
+    """stress-gradN scattering; engineering Voigt B convention never used."""
+    lam=E*nu/((1+nu)*(1-2*nu));mu=E/(2*(1+nu))
+    Fu=np.zeros((len(n),3,8));eg=np.zeros((len(t),8,8))
+    V=np.empty(len(t));cent=np.empty((len(t),3))
+    factor=emin+(1-emin)*rho**p
+    volerr=0.
+    for j in range(0,len(t),6000):
+        sl=slice(j,min(j+6000,len(t)));tt=t[sl];pts=n[tt]
+        # J_{world component, vertex difference}; invJ has grad of N1..N3.
+        J=np.transpose(pts[:,1:]-pts[:,0,None],(0,2,1))
+        inv=np.linalg.inv(J);v=np.linalg.det(J)/6.
+        if np.any(v<=0):raise ValueError('nonpositive native tetra determinant')
+        V[sl]=v;cent[sl]=pts.mean(axis=1)
+        grads=np.concatenate((-inv.sum(axis=1,keepdims=True),inv),axis=1)
+        ue=U[tt];du=ue[:,1:]-ue[:,0,None]
+        gu=np.einsum('evcr,eva->ecar',du,inv,optimize=True)
+        eps=(gu+np.transpose(gu,(0,2,1,3)))*.5
+        tr=np.trace(eps,axis1=1,axis2=2)
+        # np.trace layout is (element,basis); no transpose is needed.
+        stress0=2*mu*eps+lam*np.eye(3)[None,:,:,None]*tr[:,None,None,:]
+        eg[sl]=v[:,None,None]*np.einsum('ecar,ecas->ers',eps,stress0,optimize=True)
+        fe=v[:,None,None,None]*factor[sl,None,None,None]*np.einsum('ecar,eia->eicr',stress0,grads,optimize=True)
+        for k in range(4):np.add.at(Fu,tt[:,k],fe[:,k])
+    Gram=np.einsum('e,ers->rs',factor,eg,optimize=True)
+    C=np.einsum('rq,rs,sq->q',coeff,Gram,coeff,optimize=True)
+    ratios=C/C0;objective=float(np.mean(ratios**8)**(1/8))
+    w=ratios**7/(len(C0)*C0*objective**7)
+    W=(coeff*w[None,:])@coeff.T
+    energy_weight=np.einsum('ers,rs->e',eg,W,optimize=True)
+    # Negative compliance derivative at an equilibrium field (adjoint = state).
+    grad=-p*(1-emin)*rho**(p-1)*energy_weight
+    return Fu.reshape(-1,8),V,cent,Gram,C,objective,grad,energy_weight
+
+def main(field_name,label):
+    started=time.monotonic();field=SRC/field_name;fsha=sha(field)
+    z=np.load(MESH);n=z['points_m'];t=z['tetra'];l=np.load(LOAD)
+    F=l['basis_F_xyz_N_cases'].reshape(-1,8);coeff=l['original_case_coefficients']
+    allF=l['F_xyz_N_cases'].reshape(-1,42)
+    C0=np.array([x['compliance_J'] for x in json.loads(BASE.read_text())['cases']])
+    q=np.load(field);U=q['U_basis_m'].reshape(len(n),3,8);rho=q['physical_density']
+    cfg=json.loads((SRC/'input.json').read_text())
+    Fi,V,cent,G,C,obj,grad,ew=independent_action(n,t,U,rho,coeff,C0,cfg['E_Pa'],cfg['nu'])
+    UD=U.reshape(-1,8);Gext=F.T@UD;Cext=np.einsum('rq,rs,sq->q',coeff,Gext,coeff,optimize=True)
+    residual=np.linalg.norm(Fi-F,axis=0)/np.linalg.norm(F,axis=0)
+    residual42=np.linalg.norm(Fi@coeff-allF,axis=0)/np.linalg.norm(allF,axis=0)
+    force_reconstruction=np.linalg.norm(F@coeff-allF)/np.linalg.norm(allF)
+    forces=allF.reshape(len(n),3,42).sum(axis=0)
+    moments=np.cross(n[:,:,None],allF.reshape(len(n),3,42),axis=1).sum(axis=0)
+    rel=n-n.mean(axis=0);rel/=np.linalg.norm(rel,axis=1).max()
+    R=np.zeros((3*len(n),6));R[0::3,0]=R[1::3,1]=R[2::3,2]=1
+    R[0::3,4]=rel[:,2];R[0::3,5]=-rel[:,1]
+    R[1::3,3]=-rel[:,2];R[1::3,5]=rel[:,0]
+    R[2::3,3]=rel[:,1];R[2::3,4]=-rel[:,0]
+    _,_,piv=qr(R.T,pivoting=True,mode='economic');gauge=piv[:6]
+    dom=np.load(SRC/'material_domain.npz');fixed=dom['fixed_elements'];ids=np.flatnonzero(~fixed)
+    H=load_npz(SRC/'density_filter_design_design.npz');fm=np.load(SRC/'filter_fixed_inventory.npz')
+    hs=fm['denominator'];fs=fm['fixed_weight_sum']
+    x=q['design_x'] if 'design_x' in q else np.ones(len(ids))
+    filterrho=(H@x+fs)/hs
+    gx=np.asarray(H.T@(grad[ids]/hs)).ravel();dv=np.asarray(H.T@(V[ids]/hs)).ravel()
+    # Build 200 filter rows anew from SI centroids and native signed tetra volume.
+    tree=cKDTree(cent);rng=np.random.default_rng(7193)
+    selected=np.unique(np.r_[np.linspace(0,len(ids)-1,30,dtype=int),rng.choice(len(ids),170,replace=False)])
+    idmap=np.full(len(t),-1,dtype=np.int64);idmap[ids]=np.arange(len(ids))
+    sample=[]
+    for i in selected:
+        nativeid=ids[i];ne=np.array(tree.query_ball_point(cent[nativeid],.015),dtype=int)
+        dist=np.linalg.norm(cent[ne]-cent[nativeid],axis=1)
+        weights=np.maximum(0,.015-dist)*V[ne];mask=weights>0
+        ne=ne[mask];weights=weights[mask]
+        dn=ne[~fixed[ne]];dw=weights[~fixed[ne]];dn=idmap[dn]
+        order=np.argsort(dn);row=H.getrow(i);expected=dn[order];actual=row.indices
+        ok=np.array_equal(expected,actual)
+        sample.append({'design_row':int(i),'native_element':int(nativeid),'design_neighbour_ids_equal':bool(ok),'weights_relative_l2':float(np.linalg.norm(row.data-dw[order])/np.linalg.norm(dw)) if ok else 1.,'denominator_relative_error':float(abs(hs[i]-weights.sum())/weights.sum()),'fixed_sum_relative_error':float(abs(fs[i]-weights[fixed[ne]].sum())/max(weights.sum(),1e-30))})
+    dx=rng.normal(size=len(ids));a=rng.normal(size=len(ids))
+    filterdot1=float(a@(H@dx/hs));filterdot2=float(dx@(H.T@(a/hs)))
+    h=1e-5
+    vf1=float(V[ids]@((H@(x+h*dx)+fs)/hs));vf0=float(V[ids]@((H@(x-h*dx)+fs)/hs))
+    dvolume_fd=(vf1-vf0)/(2*h);dvolume_an=float(dv@dx)
+    gd=json.loads((SRC/'actual_gradient_check.json').read_text())
+    chosen_native=np.array(gd['selected_design_element_ids'],dtype=int)
+    if np.any(idmap[chosen_native]<0):raise ValueError('FD direction includes nondesign native cell')
+    direction=np.zeros(len(ids));direction[idmap[chosen_native]]=1
+    independent_dir=float(gx@direction)
+    # Material-operator derivative with frozen U. This is NOT state re-solve FD.
+    # Contract the p8 adjoint W from the field; equivalent to U^T dK U.
+    dr=np.zeros(len(t));dr[ids]=H@direction/hs
+    hf=.001
+    plus=cfg['Emin_over_E']+(1-cfg['Emin_over_E'])*(rho+hf*dr)**3
+    minus=cfg['Emin_over_E']+(1-cfg['Emin_over_E'])*(rho-hf*dr)**3
+    localfd=-float((plus-minus)@ew)/(2*hf)
+    np.savez_compressed(OUT/f'{label}_independent_sensitivity.npz',physical_compliance_gradient=grad,design_gradient=gx,volume_gradient=dv,independent_basis_gram_J=G,case_compliance_J=C,case_indices=l['case_indices'])
+    report={
+      'scope':'actual original B mesh, independent stress-gradN assembly action; producer states used as test input; no imported B/K/gradient; no second optimization or independent equilibrium solve',
+      'field_file':str(field),'field_sha256':fsha,'source_field_unchanged_after_query':sha(field)==fsha,
+      'producer_file_hashes':{str(SRC/k):sha(SRC/k) for k in ['input.json','material_domain.npz','filter_fixed_inventory.npz','density_filter_design_design.npz','actual_gradient_check.json']},
+      'source_mesh_sha256':sha(MESH),'source_load_sha256':sha(LOAD),'review_producer_sha256':sha(__file__),
+      'nodes':len(n),'tetra':len(t),'all_native_tetra_positive_determinant':bool(np.all(V>0)),
+      'native_volume_m3':float(V.sum()),'source_volume_relative_l2':float(np.linalg.norm(V-dom['element_volume_m3'])/np.linalg.norm(V)),
+      'source_centroid_max_abs_error_m':float(np.max(abs(cent-dom['element_centroids_m']))),
+      'variable_E_min_max_Pa':list(map(float,[cfg['E_Pa']*(cfg['Emin_over_E']+(1-cfg['Emin_over_E'])*rho.min()**3),cfg['E_Pa']*(cfg['Emin_over_E']+(1-cfg['Emin_over_E'])*rho.max()**3)])),
+      'density_min_max':list(map(float,[rho.min(),rho.max()])),
+      'basis_full_operator_residual_relative':residual.tolist(),
+      'all42_full_operator_residual_relative':residual42.tolist(),
+      'independently_selected_rank6_QR_gauge_dofs':gauge.tolist(),
+      'QR_gauge_rigid_constraint_rank':int(np.linalg.matrix_rank(R[gauge])),
+      'independent_operator_residual_on6_gauge_max_N':float(np.max(abs((Fi-F)[gauge]))),
+      'internal_external_basis_gram_relative_l2':float(np.linalg.norm(G-Gext)/np.linalg.norm(Gext)),
+      'all42_internal_external_compliance_max_relative_error':float(np.max(abs(C-Cext)/Cext)),
+      'all42_coeff_force_reconstruction_relative_l2':float(force_reconstruction),
+      'all42_case_indices':l['case_indices'].tolist(),'basis_case_indices':l['basis_case_indices'].tolist(),
+      'all42_net_force_max_N':float(np.max(abs(forces))),'all42_net_moment_origin_max_Nm':float(np.max(abs(moments))),
+      'objective_p8_from_independent_internal_energy':obj,'case_compliances_J':C.tolist(),
+      'fixed_element_count':int(fixed.sum()),'design_element_count':len(ids),
+      'fixed_volume_fraction':float(V[fixed].sum()/V.sum()),'total_density_volume_fraction':float(V@rho/V.sum()),
+      'fixed_physical_density_exactly_one':bool(np.all(rho[fixed]==1)),
+      'filter_density_max_abs_error':float(np.max(abs(filterrho-rho[ids]))),
+      'filter_constant_field_max_abs_error':float(np.max(abs((H@np.ones(len(ids))+fs)/hs-1))),
+      'independent_filter_row_count':len(sample),'independent_filter_row_samples':sample,
+      'filter_adjoint_dot_relative_error':float(abs(filterdot1-filterdot2)/max(abs(filterdot1),abs(filterdot2))),
+      'affine_volume_gradient_fd_relative_error':float(abs(dvolume_fd-dvolume_an)/max(abs(dvolume_fd),abs(dvolume_an))),
+      'independent_design_directional_derivative':independent_dir,
+      'producer_baseline_state_resolved_central_difference':gd['central_difference'],
+      'direction_comparison_valid_only_for_baseline_field':label=='baseline',
+      'frozen_state_operator_derivative_fd':localfd,
+      'frozen_state_derivative_fd_relative_error':float(abs(localfd-independent_dir)/max(abs(localfd),abs(independent_dir))),
+      'no_load_projection_performed':True,'no_physical_support_added_by_audit':True,
+      'density_field_is_not_CAD_material_or_strength_acceptance':True,
+      'physical_or_whole_robot_accepted':False,'elapsed_seconds':time.monotonic()-started}
+    if label=='baseline':report['independent_gradient_vs_producer_actual_fd_relative_error']=float(abs(independent_dir-gd['central_difference'])/abs(gd['central_difference']))
+    save(f'{label}_actual_operator_review.json',report)
+    print(json.dumps({k:v for k,v in report.items() if not isinstance(v,list) and k!='producer_file_hashes'},indent=2),flush=True)
+
+if __name__=='__main__':
+    p=argparse.ArgumentParser();p.add_argument('--field',required=True);p.add_argument('--label',required=True);a=p.parse_args();main(a.field,a.label)

@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+"""Source-bound finite G12 checks, never whole robot acceptance."""
+import pathlib,gzip,json,hashlib,importlib.util,sys
+from importlib.machinery import SourceFileLoader
+import numpy as np
+import manifold3d as mf
+from scipy.spatial.distance import pdist
+P=pathlib.Path(__file__).resolve().parent;R=P.parents[1];D=P/'b'
+def sha(p):return hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
+def read(p):return json.load(gzip.open(p,'rt')) if str(p).endswith('.gz') else json.loads(p.read_text())
+loader=SourceFileLoader('signedcontract',str(R/'experiments/gorilla_v0_1/internal_structure_g_studies/material_contract/native_signed_material.py.txt'));sp=importlib.util.spec_from_loader('signedcontract',loader);mod=importlib.util.module_from_spec(sp);sys.modules['signedcontract']=mod;loader.exec_module(mod)
+def tri(p):v=np.array(p['vertices_world_m']);f=np.array([[r[0],r[i],r[i+1]] for r in p['faces'] for i in range(1,len(r)-1)],np.uint64);return v,f
+def mm(p):v,f=tri(p);return mf.Manifold(mf.Mesh64(v,f))
+def main():
+ s=read(D/'scene.json.gz');src=read(R/'.scratch/gorilla_internal_g9_module_placement/layout_1/scene.json.gz');sh=read(R/'.scratch/gorilla_internal_g11_shoulder_load_paths/b/scene.json.gz');by={p['name']:p for p in s['parts']};old={p['name']:p for p in src['parts']};newids=[r['id'] for r in s['new_module_mass_rows']];physical=[by[n] for n in newids];newparts=[p for p in s['parts'] if p['name'].startswith('g12_')];valid=mod.validate_scene({'parts':physical});(D/'new_native_resource_receipt.json').write_text(json.dumps(valid,indent=2)+'\n')
+ packs=[]
+ for info in s['new_pack_info']:
+  cells=[by[n] for n in info['cell_ids']];centers=np.array([(np.array(p['vertices_world_m']).min(0)+np.array(p['vertices_world_m']).max(0))/2 for p in cells]);nearest=float(pdist(centers).min());mi=np.array([r['mass_range_kg'] for r in s['new_module_mass_rows'] if r['id'].startswith(info['id']+'_')]).sum(0)
+  outer=[p for p in newparts if p['name'].startswith(info['id']+'_') and p['role']!='service_after_shell_removal'];vv=np.concatenate([np.array(p['vertices_world_m']) for p in outer]);lo=vv.min(0);hi=vv.max(0)
+  packs.append({'id':info['id'],'cells':len(cells),'minimum_center_spacing_m':nearest,'min_radial_envelope_gap_m':nearest-.02155,'complete_own_function_mass_range_kg_under_maxcell_budget':mi.tolist(),'full_own_function_AABB_m':[lo.tolist(),hi.tolist()],'full_own_function_AABB_L':float(np.prod(hi-lo)*1000),'source_cell_actual_mass_unknown_max70g_budget_used':True,'20s6p_connectivity_or_cooling_not_qualified':True})
+ # All new-new and new-versus-original111armor AABB candidates queried in native geometry.
+ objects=physical+[by[n] for n in src['authoritative_visible_armor_ids']]+[by[p['name']] for p in sh['parts']];verts=[np.array(p['vertices_world_m']) for p in objects];lo=np.array([v.min(0) for v in verts]);hi=np.array([v.max(0) for v in verts]);cache={};rows=[];unknown=[];candidates=0
+ def kernel(i):
+  if i not in cache:cache[i]=mm(objects[i])
+  return cache[i]
+ for i in range(len(physical)):
+  cand=np.flatnonzero(np.all(hi[i]>lo[i+1:]+1e-9,axis=1)&np.all(hi[i+1:]>lo[i]+1e-9,axis=1))+i+1
+  for j in cand:
+   candidates+=1;a,b=kernel(i),kernel(j)
+   if a.status()!=mf.Error.NoError or b.status()!=mf.Error.NoError:unknown.append({'a':objects[i]['name'],'b':objects[j]['name'],'status':[str(a.status()),str(b.status())]});continue
+   V=float((a^b).volume())
+   if V>1e-9:rows.append({'a':objects[i]['name'],'b':objects[j]['name'],'positive_intersection_m3':V,'scope':'native fan/kernel overlap diagnostic; original OEM/armor strict source admission not implied','class_a':objects[i]['role'],'class_b':objects[j]['role']})
+ rows.sort(key=lambda r:-r['positive_intersection_m3']);(D/'finite_overlap_rows.json').write_text(json.dumps({'scene_sha256':sha(D/'scene.json.gz'),'scope':'667new physical/reference parts vs each other and111armor+128G11shoulder only; not full retained2538parts','AABB_candidate_pairs':candidates,'positive_pairs':rows,'unknown_kernel_pairs':unknown,'admission':False},indent=2)+'\n')
+ energyrows=[r for r in s['new_module_mass_rows'] if r['id'].startswith('g12_pack_') or r['id'] in ('g12_HV_contactors_precharge_disconnect_current_sensor','g12_LV_converter')];energy=np.array([r['mass_range_kg'] for r in energyrows]).sum(0)
+ fluidrows=[r for r in s['new_module_mass_rows'] if 'global_inventory_half' in r['id']]
+ canon=lambda p:json.dumps(p,sort_keys=True,separators=(',',':'))
+ summary={'scene_sha256':sha(D/'scene.json.gz'),'actual_parts':len(s['parts']),'duplicate_names':len(s['parts'])-len(by),'111_original_armor_bytewise_exact':all(canon(by[n])==canon(old[n]) for n in src['authoritative_visible_armor_ids']),'128_shoulder_source_bytewise_exact':all(canon(by[p['name']])==canon(p) for p in sh['parts']),'pack_receipts':packs,'480cell_count':sum(p['cells'] for p in packs),'source_minimum_energy_kWh':7.44,'full_new_energy_function_mass_range_kg_under_maxcell_budget':energy.tolist(),'fluid_rows_exact4':fluidrows,'fluid_global_mass_once_nominal_kg':sum(r['mass_range_kg'][1] for r in fluidrows),'all667new_mass_ids_present_once':len(newids)==len(set(newids)) and all(n in by for n in newids),'new_native_resources_pass':valid['resource_contract_pass'],'new_native_reject_ids':[r['id'] for r in valid['parts'] if not r['resource_contract_pass']],'frame_resource':[r for r in valid['parts'] if r['id']=='g12_main_frame_baseline_net_material'][0],'finite_overlap_positive_pairs':len(rows),'top20_actual_intersections':rows[:20],'unknown_kernel_candidate_pairs':len(unknown),'all_old_routes_after_moves_red':True,'actual_pack_mount_case_gap_m':.001,'coldplate_to_cell_end_thermal_path_gap_m':.046-.035075,'coldplate_channel_sealed_void_without_routed_ports':True,'source_cell_voltage_series_BMS_insulation_regen_unknown':True,'no_old77kg_qualified_mass_credit':True,'no_final_architecture_or_optimizer_or_wholeSI_admission':True}
+ (D/'audit_summary.json').write_text(json.dumps(summary,indent=2)+'\n');print(json.dumps({k:summary[k] for k in ['scene_sha256','full_new_energy_function_mass_range_kg_under_maxcell_budget','new_native_resources_pass','new_native_reject_ids','finite_overlap_positive_pairs','unknown_kernel_candidate_pairs','111_original_armor_bytewise_exact','128_shoulder_source_bytewise_exact','480cell_count']},indent=2))
+if __name__=='__main__':main()

@@ -1,0 +1,1309 @@
+{
+  "robot_id": "gorilla_v0_1",
+  "assertions_passed": true,
+  "script_sha256": "02ea20d2d94ad3a536f76d793f35f378bc852a06457911878d62ef2dc35a33b4",
+  "validator_sha256": "e531ae21a9e81aa7fc5186ee739fc19fe0e39efb9444a58a2e136410763c2fb8",
+  "fixture_source_sha256": "3b29b2a1df68c8c9e3e58bbdbe416a2c0ea2d28ef0f5f314dedf1538578bec83",
+  "cases": {
+    "legal_hollow": {
+      "id": "legal_hollow",
+      "tolerances_si": {
+        "min_boundary_volume_m3": 1e-10,
+        "min_triangle_area_m2": 1e-16,
+        "containment_abs_volume_m3": 1e-12,
+        "containment_rel_volume": 1e-08,
+        "containment_bbox_m": 1e-09,
+        "minimum_parent_boundary_gap_m": 1e-08,
+        "native_kernel_volume_difference_m3": 1e-08
+      },
+      "errors": [],
+      "boundaries": [
+        {
+          "boundary_index": 0,
+          "signed_volume_m3": 0.0010000000000000005,
+          "native_faces": 12,
+          "source_sign": 1,
+          "parent": null,
+          "depth": 0,
+          "bounds_world_m": [
+            [
+              -0.05,
+              -0.05,
+              -0.05
+            ],
+            [
+              0.05,
+              0.05,
+              0.05
+            ]
+          ],
+          "expected_source_sign": 1,
+          "classification": "outer_material_boundary"
+        },
+        {
+          "boundary_index": 1,
+          "signed_volume_m3": -0.00012500000000000006,
+          "native_faces": 12,
+          "source_sign": -1,
+          "parent": 0,
+          "depth": 1,
+          "bounds_world_m": [
+            [
+              -0.025,
+              -0.025,
+              -0.025
+            ],
+            [
+              0.025,
+              0.025,
+              0.025
+            ]
+          ],
+          "minimum_parent_boundary_gap_query_m": 2e-08,
+          "parent_gap_query_cap_m": 2e-08,
+          "outside_kernel_status": "Error.NoError",
+          "expected_source_sign": -1,
+          "classification": "closed_void_boundary"
+        }
+      ],
+      "containment_queries": [
+        {
+          "a": 0,
+          "b": 1,
+          "intersection_volume_m3": 0.00012500000000000003,
+          "a_in_b": false,
+          "b_in_a": true,
+          "abs_tol_m3": 1e-12,
+          "rel_tol": 1e-08
+        }
+      ],
+      "resource_contract_pass": true,
+      "source_modified": false,
+      "physical_accepted": false,
+      "full_material_geometry_acceptance": false,
+      "source_geometry_sha256": "dbc825a81982df0ef9b0fa1ae03d319803eff8faf84711854b89ca37d841ccce",
+      "native_vertices": 16,
+      "native_triangles": 24,
+      "diagnostic_continued_after_invalid_small_triangles": false,
+      "kernel_status": "Error.NoError",
+      "native_signed_volume_m3": 0.0008750000000000002,
+      "kernel_signed_volume_m3": 0.0008750000000000002,
+      "geometric_root_boundary_indices": [
+        0
+      ],
+      "material_component_count_from_nesting": 1,
+      "closed_void_count": 1,
+      "require_single_material_component": false,
+      "parity_diagnostic": {
+        "scope": "DIAGNOSTIC_ONLY_UNACCEPTED; assumes nesting parity solely to show possible semantic correction, never changes input or verdict",
+        "volume_m3": 0.0008750000000000002,
+        "source_volume_delta_m3": 0.0,
+        "method": "Boolean positive root minus positive odd-depth void plus positive even-depth island; no compose"
+      }
+    },
+    "flipped_hollow": {
+      "id": "flipped_hollow",
+      "tolerances_si": {
+        "min_boundary_volume_m3": 1e-10,
+        "min_triangle_area_m2": 1e-16,
+        "containment_abs_volume_m3": 1e-12,
+        "containment_rel_volume": 1e-08,
+        "containment_bbox_m": 1e-09,
+        "minimum_parent_boundary_gap_m": 1e-08,
+        "native_kernel_volume_difference_m3": 1e-08
+      },
+      "errors": [
+        {
+          "code": "same_sign_nested_or_orphan_negative_boundary",
+          "boundary": 1,
+          "parent": 0,
+          "depth": 1,
+          "actual_sign": 1,
+          "required_sign": -1
+        }
+      ],
+      "boundaries": [
+        {
+          "boundary_index": 0,
+          "signed_volume_m3": 0.0010000000000000005,
+          "native_faces": 12,
+          "source_sign": 1,
+          "parent": null,
+          "depth": 0,
+          "bounds_world_m": [
+            [
+              -0.05,
+              -0.05,
+              -0.05
+            ],
+            [
+              0.05,
+              0.05,
+              0.05
+            ]
+          ],
+          "expected_source_sign": 1,
+          "classification": "outer_material_boundary"
+        },
+        {
+          "boundary_index": 1,
+          "signed_volume_m3": 0.00012500000000000006,
+          "native_faces": 12,
+          "source_sign": 1,
+          "parent": 0,
+          "depth": 1,
+          "bounds_world_m": [
+            [
+              -0.025,
+              -0.025,
+              -0.025
+            ],
+            [
+              0.025,
+              0.025,
+              0.025
+            ]
+          ],
+          "minimum_parent_boundary_gap_query_m": 2e-08,
+          "parent_gap_query_cap_m": 2e-08,
+          "outside_kernel_status": "Error.NoError",
+          "expected_source_sign": -1,
+          "classification": "closed_void_boundary"
+        }
+      ],
+      "containment_queries": [
+        {
+          "a": 0,
+          "b": 1,
+          "intersection_volume_m3": 0.00012500000000000003,
+          "a_in_b": false,
+          "b_in_a": true,
+          "abs_tol_m3": 1e-12,
+          "rel_tol": 1e-08
+        }
+      ],
+      "resource_contract_pass": false,
+      "source_modified": false,
+      "physical_accepted": false,
+      "full_material_geometry_acceptance": false,
+      "source_geometry_sha256": "8d852f5c2a2848bee06c84232950b2d9bb5443f1e08da04d0ab6d8ff9c2ad7c2",
+      "native_vertices": 16,
+      "native_triangles": 24,
+      "diagnostic_continued_after_invalid_small_triangles": false,
+      "kernel_status": "Error.NoError",
+      "native_signed_volume_m3": 0.0011250000000000003,
+      "kernel_signed_volume_m3": 0.0011250000000000003,
+      "geometric_root_boundary_indices": [
+        0
+      ],
+      "material_component_count_from_nesting": 1,
+      "closed_void_count": 1,
+      "require_single_material_component": false,
+      "parity_diagnostic": {
+        "scope": "DIAGNOSTIC_ONLY_UNACCEPTED; assumes nesting parity solely to show possible semantic correction, never changes input or verdict",
+        "volume_m3": 0.0008750000000000002,
+        "source_volume_delta_m3": -0.0002500000000000001,
+        "method": "Boolean positive root minus positive odd-depth void plus positive even-depth island; no compose"
+      }
+    },
+    "two_hollow_materials": {
+      "id": "two_hollow_materials",
+      "tolerances_si": {
+        "min_boundary_volume_m3": 1e-10,
+        "min_triangle_area_m2": 1e-16,
+        "containment_abs_volume_m3": 1e-12,
+        "containment_rel_volume": 1e-08,
+        "containment_bbox_m": 1e-09,
+        "minimum_parent_boundary_gap_m": 1e-08,
+        "native_kernel_volume_difference_m3": 1e-08
+      },
+      "errors": [],
+      "boundaries": [
+        {
+          "boundary_index": 0,
+          "signed_volume_m3": 0.0010000000000000002,
+          "native_faces": 12,
+          "source_sign": 1,
+          "parent": null,
+          "depth": 0,
+          "bounds_world_m": [
+            [
+              -0.05,
+              -0.05,
+              -0.05
+            ],
+            [
+              0.05,
+              0.05,
+              0.05
+            ]
+          ],
+          "expected_source_sign": 1,
+          "classification": "outer_material_boundary"
+        },
+        {
+          "boundary_index": 1,
+          "signed_volume_m3": -0.000125,
+          "native_faces": 12,
+          "source_sign": -1,
+          "parent": 0,
+          "depth": 1,
+          "bounds_world_m": [
+            [
+              -0.025,
+              -0.025,
+              -0.025
+            ],
+            [
+              0.025,
+              0.025,
+              0.025
+            ]
+          ],
+          "minimum_parent_boundary_gap_query_m": 2e-08,
+          "parent_gap_query_cap_m": 2e-08,
+          "outside_kernel_status": "Error.NoError",
+          "expected_source_sign": -1,
+          "classification": "closed_void_boundary"
+        },
+        {
+          "boundary_index": 2,
+          "signed_volume_m3": 0.001,
+          "native_faces": 12,
+          "source_sign": 1,
+          "parent": null,
+          "depth": 0,
+          "bounds_world_m": [
+            [
+              0.15000000000000002,
+              -0.05,
+              -0.05
+            ],
+            [
+              0.25,
+              0.05,
+              0.05
+            ]
+          ],
+          "expected_source_sign": 1,
+          "classification": "outer_material_boundary"
+        },
+        {
+          "boundary_index": 3,
+          "signed_volume_m3": -0.000125,
+          "native_faces": 12,
+          "source_sign": -1,
+          "parent": 2,
+          "depth": 1,
+          "bounds_world_m": [
+            [
+              0.17500000000000002,
+              -0.025,
+              -0.025
+            ],
+            [
+              0.225,
+              0.025,
+              0.025
+            ]
+          ],
+          "minimum_parent_boundary_gap_query_m": 2e-08,
+          "parent_gap_query_cap_m": 2e-08,
+          "outside_kernel_status": "Error.NoError",
+          "expected_source_sign": -1,
+          "classification": "closed_void_boundary"
+        }
+      ],
+      "containment_queries": [
+        {
+          "a": 0,
+          "b": 1,
+          "intersection_volume_m3": 0.00012500000000000003,
+          "a_in_b": false,
+          "b_in_a": true,
+          "abs_tol_m3": 1e-12,
+          "rel_tol": 1e-08
+        },
+        {
+          "a": 2,
+          "b": 3,
+          "intersection_volume_m3": 0.000125,
+          "a_in_b": false,
+          "b_in_a": true,
+          "abs_tol_m3": 1e-12,
+          "rel_tol": 1e-08
+        }
+      ],
+      "resource_contract_pass": true,
+      "source_modified": false,
+      "physical_accepted": false,
+      "full_material_geometry_acceptance": false,
+      "source_geometry_sha256": "50d0040ac6d06bd82c14c8191155bb1c3011d6d3caa2a876c8c45f31c9e80a59",
+      "native_vertices": 32,
+      "native_triangles": 48,
+      "diagnostic_continued_after_invalid_small_triangles": false,
+      "kernel_status": "Error.NoError",
+      "native_signed_volume_m3": 0.00175,
+      "kernel_signed_volume_m3": 0.0017500000000000003,
+      "geometric_root_boundary_indices": [
+        0,
+        2
+      ],
+      "material_component_count_from_nesting": 2,
+      "closed_void_count": 2,
+      "require_single_material_component": false,
+      "parity_diagnostic": {
+        "scope": "DIAGNOSTIC_ONLY_UNACCEPTED; assumes nesting parity solely to show possible semantic correction, never changes input or verdict",
+        "volume_m3": 0.0017500000000000003,
+        "source_volume_delta_m3": 2.168404344971009e-19,
+        "method": "Boolean positive root minus positive odd-depth void plus positive even-depth island; no compose"
+      }
+    },
+    "positive_island_inside_void": {
+      "id": "positive_island_inside_void",
+      "tolerances_si": {
+        "min_boundary_volume_m3": 1e-10,
+        "min_triangle_area_m2": 1e-16,
+        "containment_abs_volume_m3": 1e-12,
+        "containment_rel_volume": 1e-08,
+        "containment_bbox_m": 1e-09,
+        "minimum_parent_boundary_gap_m": 1e-08,
+        "native_kernel_volume_difference_m3": 1e-08
+      },
+      "errors": [],
+      "boundaries": [
+        {
+          "boundary_index": 0,
+          "signed_volume_m3": 0.0010000000000000005,
+          "native_faces": 12,
+          "source_sign": 1,
+          "parent": null,
+          "depth": 0,
+          "bounds_world_m": [
+            [
+              -0.05,
+              -0.05,
+              -0.05
+            ],
+            [
+              0.05,
+              0.05,
+              0.05
+            ]
+          ],
+          "expected_source_sign": 1,
+          "classification": "outer_material_boundary"
+        },
+        {
+          "boundary_index": 1,
+          "signed_volume_m3": -0.00012500000000000006,
+          "native_faces": 12,
+          "source_sign": -1,
+          "parent": 0,
+          "depth": 1,
+          "bounds_world_m": [
+            [
+              -0.025,
+              -0.025,
+              -0.025
+            ],
+            [
+              0.025,
+              0.025,
+              0.025
+            ]
+          ],
+          "minimum_parent_boundary_gap_query_m": 2e-08,
+          "parent_gap_query_cap_m": 2e-08,
+          "outside_kernel_status": "Error.NoError",
+          "expected_source_sign": -1,
+          "classification": "closed_void_boundary"
+        },
+        {
+          "boundary_index": 2,
+          "signed_volume_m3": 8.000000000000003e-06,
+          "native_faces": 12,
+          "source_sign": 1,
+          "parent": 1,
+          "depth": 2,
+          "bounds_world_m": [
+            [
+              -0.01,
+              -0.01,
+              -0.01
+            ],
+            [
+              0.01,
+              0.01,
+              0.01
+            ]
+          ],
+          "minimum_parent_boundary_gap_query_m": 2e-08,
+          "parent_gap_query_cap_m": 2e-08,
+          "outside_kernel_status": "Error.NoError",
+          "expected_source_sign": 1,
+          "classification": "material_island_inside_closed_void"
+        }
+      ],
+      "containment_queries": [
+        {
+          "a": 0,
+          "b": 1,
+          "intersection_volume_m3": 0.00012500000000000003,
+          "a_in_b": false,
+          "b_in_a": true,
+          "abs_tol_m3": 1e-12,
+          "rel_tol": 1e-08
+        },
+        {
+          "a": 0,
+          "b": 2,
+          "intersection_volume_m3": 8.000000000000001e-06,
+          "a_in_b": false,
+          "b_in_a": true,
+          "abs_tol_m3": 1e-12,
+          "rel_tol": 1e-08
+        },
+        {
+          "a": 1,
+          "b": 2,
+          "intersection_volume_m3": 8.000000000000001e-06,
+          "a_in_b": false,
+          "b_in_a": true,
+          "abs_tol_m3": 1e-12,
+          "rel_tol": 1e-08
+        }
+      ],
+      "resource_contract_pass": true,
+      "source_modified": false,
+      "physical_accepted": false,
+      "full_material_geometry_acceptance": false,
+      "source_geometry_sha256": "6c1c503ad0f4f688f60c3b17a719284a8b7fbe17f668b457fb07e5c83cb0f876",
+      "native_vertices": 24,
+      "native_triangles": 36,
+      "diagnostic_continued_after_invalid_small_triangles": false,
+      "kernel_status": "Error.NoError",
+      "native_signed_volume_m3": 0.000883,
+      "kernel_signed_volume_m3": 0.0008830000000000002,
+      "geometric_root_boundary_indices": [
+        0
+      ],
+      "material_component_count_from_nesting": 2,
+      "closed_void_count": 1,
+      "require_single_material_component": false,
+      "parity_diagnostic": {
+        "scope": "DIAGNOSTIC_ONLY_UNACCEPTED; assumes nesting parity solely to show possible semantic correction, never changes input or verdict",
+        "volume_m3": 0.0008830000000000002,
+        "source_volume_delta_m3": 2.168404344971009e-19,
+        "method": "Boolean positive root minus positive odd-depth void plus positive even-depth island; no compose"
+      }
+    },
+    "tiny_particle": {
+      "id": "tiny_particle",
+      "tolerances_si": {
+        "min_boundary_volume_m3": 1e-10,
+        "min_triangle_area_m2": 1e-16,
+        "containment_abs_volume_m3": 1e-12,
+        "containment_rel_volume": 1e-08,
+        "containment_bbox_m": 1e-09,
+        "minimum_parent_boundary_gap_m": 1e-08,
+        "native_kernel_volume_difference_m3": 1e-08
+      },
+      "errors": [
+        {
+          "code": "closed_boundary_volume_below_source_threshold",
+          "boundary": 1,
+          "volume_m3": 1.2499999999998664e-13
+        }
+      ],
+      "boundaries": [
+        {
+          "boundary_index": 0,
+          "signed_volume_m3": 0.0010000000000000002,
+          "native_faces": 12,
+          "source_sign": 1,
+          "parent": null,
+          "depth": 0,
+          "bounds_world_m": [
+            [
+              -0.05,
+              -0.05,
+              -0.05
+            ],
+            [
+              0.05,
+              0.05,
+              0.05
+            ]
+          ],
+          "expected_source_sign": 1,
+          "classification": "outer_material_boundary"
+        },
+        {
+          "boundary_index": 1,
+          "signed_volume_m3": 1.2499999999998664e-13,
+          "native_faces": 12,
+          "source_sign": 1,
+          "parent": null,
+          "depth": null,
+          "bounds_world_m": [
+            [
+              0.199975,
+              -2.5e-05,
+              -2.5e-05
+            ],
+            [
+              0.200025,
+              2.5e-05,
+              2.5e-05
+            ]
+          ]
+        }
+      ],
+      "containment_queries": [],
+      "resource_contract_pass": false,
+      "source_modified": false,
+      "physical_accepted": false,
+      "full_material_geometry_acceptance": false,
+      "source_geometry_sha256": "568f07da837b2bc5971bcffad1c06bd1edad078a084dfbbda773f3080a7ce426",
+      "native_vertices": 16,
+      "native_triangles": 24,
+      "diagnostic_continued_after_invalid_small_triangles": false,
+      "kernel_status": "Error.NoError",
+      "native_signed_volume_m3": 0.0010000000001250005,
+      "kernel_signed_volume_m3": 0.0010000000001250003,
+      "geometric_root_boundary_indices": [
+        0
+      ],
+      "material_component_count_from_nesting": 1,
+      "closed_void_count": 0,
+      "require_single_material_component": false,
+      "parity_diagnostic": {
+        "scope": "DIAGNOSTIC_ONLY_UNACCEPTED; assumes nesting parity solely to show possible semantic correction, never changes input or verdict",
+        "volume_m3": 0.0010000000000000002,
+        "source_volume_delta_m3": -1.2500027055106777e-13,
+        "method": "Boolean positive root minus positive odd-depth void plus positive even-depth island; no compose"
+      }
+    },
+    "parent_near_skin": {
+      "id": "parent_near_skin",
+      "tolerances_si": {
+        "min_boundary_volume_m3": 1e-10,
+        "min_triangle_area_m2": 1e-16,
+        "containment_abs_volume_m3": 1e-12,
+        "containment_rel_volume": 1e-08,
+        "containment_bbox_m": 1e-09,
+        "minimum_parent_boundary_gap_m": 1e-08,
+        "native_kernel_volume_difference_m3": 1e-08
+      },
+      "errors": [],
+      "boundaries": [
+        {
+          "boundary_index": 0,
+          "signed_volume_m3": 0.0010000000000000005,
+          "native_faces": 12,
+          "source_sign": 1,
+          "parent": null,
+          "depth": 0,
+          "bounds_world_m": [
+            [
+              -0.05,
+              -0.05,
+              -0.05
+            ],
+            [
+              0.05,
+              0.05,
+              0.05
+            ]
+          ],
+          "expected_source_sign": 1,
+          "classification": "outer_material_boundary"
+        },
+        {
+          "boundary_index": 1,
+          "signed_volume_m3": -0.0009997000299989997,
+          "native_faces": 12,
+          "source_sign": -1,
+          "parent": 0,
+          "depth": 1,
+          "bounds_world_m": [
+            [
+              -0.049995,
+              -0.049995,
+              -0.049995
+            ],
+            [
+              0.049995,
+              0.049995,
+              0.049995
+            ]
+          ],
+          "minimum_parent_boundary_gap_query_m": 2e-08,
+          "parent_gap_query_cap_m": 2e-08,
+          "outside_kernel_status": "Error.NoError",
+          "expected_source_sign": -1,
+          "classification": "closed_void_boundary"
+        }
+      ],
+      "containment_queries": [
+        {
+          "a": 0,
+          "b": 1,
+          "intersection_volume_m3": 0.0009997000299989999,
+          "a_in_b": false,
+          "b_in_a": true,
+          "abs_tol_m3": 1e-12,
+          "rel_tol": 1e-08
+        }
+      ],
+      "resource_contract_pass": true,
+      "source_modified": false,
+      "physical_accepted": false,
+      "full_material_geometry_acceptance": false,
+      "source_geometry_sha256": "97de8b373520b793ded40ee06e4c4d447115f4eca52e4037356348053521dd99",
+      "native_vertices": 16,
+      "native_triangles": 24,
+      "diagnostic_continued_after_invalid_small_triangles": false,
+      "kernel_status": "Error.NoError",
+      "native_signed_volume_m3": 2.999700010003579e-07,
+      "kernel_signed_volume_m3": 2.999700010004663e-07,
+      "geometric_root_boundary_indices": [
+        0
+      ],
+      "material_component_count_from_nesting": 1,
+      "closed_void_count": 1,
+      "require_single_material_component": false,
+      "parity_diagnostic": {
+        "scope": "DIAGNOSTIC_ONLY_UNACCEPTED; assumes nesting parity solely to show possible semantic correction, never changes input or verdict",
+        "volume_m3": 2.999700010004663e-07,
+        "source_volume_delta_m3": 1.0842021724855044e-19,
+        "method": "Boolean positive root minus positive odd-depth void plus positive even-depth island; no compose"
+      }
+    },
+    "crossing_closed_boundary": {
+      "id": "crossing_closed_boundary",
+      "tolerances_si": {
+        "min_boundary_volume_m3": 1e-10,
+        "min_triangle_area_m2": 1e-16,
+        "containment_abs_volume_m3": 1e-12,
+        "containment_rel_volume": 1e-08,
+        "containment_bbox_m": 1e-09,
+        "minimum_parent_boundary_gap_m": 1e-08,
+        "native_kernel_volume_difference_m3": 1e-08
+      },
+      "errors": [
+        {
+          "code": "crossing_or_equal_closed_boundaries",
+          "a": 0,
+          "b": 1,
+          "intersection_volume_m3": 8.750000000000001e-05
+        },
+        {
+          "code": "same_sign_nested_or_orphan_negative_boundary",
+          "boundary": 1,
+          "parent": null,
+          "depth": 0,
+          "actual_sign": -1,
+          "required_sign": 1
+        }
+      ],
+      "boundaries": [
+        {
+          "boundary_index": 0,
+          "signed_volume_m3": 0.0010000000000000002,
+          "native_faces": 12,
+          "source_sign": 1,
+          "parent": null,
+          "depth": 0,
+          "bounds_world_m": [
+            [
+              -0.05,
+              -0.05,
+              -0.05
+            ],
+            [
+              0.05,
+              0.05,
+              0.05
+            ]
+          ],
+          "expected_source_sign": 1,
+          "classification": "outer_material_boundary"
+        },
+        {
+          "boundary_index": 1,
+          "signed_volume_m3": -0.000125,
+          "native_faces": 12,
+          "source_sign": -1,
+          "parent": null,
+          "depth": 0,
+          "bounds_world_m": [
+            [
+              0.015,
+              -0.025,
+              -0.025
+            ],
+            [
+              0.065,
+              0.025,
+              0.025
+            ]
+          ],
+          "expected_source_sign": 1,
+          "classification": "outer_material_boundary"
+        }
+      ],
+      "containment_queries": [
+        {
+          "a": 0,
+          "b": 1,
+          "intersection_volume_m3": 8.750000000000001e-05,
+          "a_in_b": false,
+          "b_in_a": false,
+          "abs_tol_m3": 1e-12,
+          "rel_tol": 1e-08
+        }
+      ],
+      "resource_contract_pass": false,
+      "source_modified": false,
+      "physical_accepted": false,
+      "full_material_geometry_acceptance": false,
+      "source_geometry_sha256": "49e87996cbe0c81d80b68d5166706bd7874710307d4b5106aeb006f53182c1d7",
+      "native_vertices": 16,
+      "native_triangles": 24,
+      "diagnostic_continued_after_invalid_small_triangles": false,
+      "kernel_status": "Error.NoError",
+      "native_signed_volume_m3": 0.0008750000000000002,
+      "kernel_signed_volume_m3": 0.0008750000000000002,
+      "geometric_root_boundary_indices": [
+        0,
+        1
+      ],
+      "material_component_count_from_nesting": 2,
+      "closed_void_count": 0,
+      "require_single_material_component": false,
+      "parity_diagnostic": {
+        "scope": "DIAGNOSTIC_ONLY_UNACCEPTED; assumes nesting parity solely to show possible semantic correction, never changes input or verdict",
+        "volume_m3": 0.0010375000000000002,
+        "source_volume_delta_m3": 0.0001625,
+        "method": "Boolean positive root minus positive odd-depth void plus positive even-depth island; no compose"
+      }
+    },
+    "through_hole_ring": {
+      "id": "through_hole_ring",
+      "tolerances_si": {
+        "min_boundary_volume_m3": 1e-10,
+        "min_triangle_area_m2": 1e-16,
+        "containment_abs_volume_m3": 1e-12,
+        "containment_rel_volume": 1e-08,
+        "containment_bbox_m": 1e-09,
+        "minimum_parent_boundary_gap_m": 1e-08,
+        "native_kernel_volume_difference_m3": 1e-08
+      },
+      "errors": [],
+      "boundaries": [
+        {
+          "boundary_index": 0,
+          "signed_volume_m3": 0.00013173503660292947,
+          "native_faces": 512,
+          "source_sign": 1,
+          "parent": null,
+          "depth": 0,
+          "bounds_world_m": [
+            [
+              -0.05,
+              -0.05,
+              -0.01
+            ],
+            [
+              0.05,
+              0.05,
+              0.01
+            ]
+          ],
+          "expected_source_sign": 1,
+          "classification": "outer_material_boundary"
+        }
+      ],
+      "containment_queries": [],
+      "resource_contract_pass": true,
+      "source_modified": false,
+      "physical_accepted": false,
+      "full_material_geometry_acceptance": false,
+      "source_geometry_sha256": "858b6df6df210b46aa41cc755b7912e4ac5f1c78dc5cc9c6f91e608e9b0aa965",
+      "native_vertices": 256,
+      "native_triangles": 512,
+      "diagnostic_continued_after_invalid_small_triangles": false,
+      "kernel_status": "Error.NoError",
+      "native_signed_volume_m3": 0.00013173503660292947,
+      "kernel_signed_volume_m3": 0.00013173503660292947,
+      "geometric_root_boundary_indices": [
+        0
+      ],
+      "material_component_count_from_nesting": 1,
+      "closed_void_count": 0,
+      "require_single_material_component": false,
+      "parity_diagnostic": {
+        "scope": "DIAGNOSTIC_ONLY_UNACCEPTED; assumes nesting parity solely to show possible semantic correction, never changes input or verdict",
+        "volume_m3": 0.00013173503660292947,
+        "source_volume_delta_m3": 0.0,
+        "method": "Boolean positive root minus positive odd-depth void plus positive even-depth island; no compose"
+      }
+    },
+    "parent_near_skin_strict_source_tolerance": {
+      "id": "parent_near_skin",
+      "tolerances_si": {
+        "min_boundary_volume_m3": 1e-10,
+        "min_triangle_area_m2": 1e-16,
+        "containment_abs_volume_m3": 1e-12,
+        "containment_rel_volume": 1e-08,
+        "containment_bbox_m": 1e-09,
+        "minimum_parent_boundary_gap_m": 2e-05,
+        "native_kernel_volume_difference_m3": 1e-08
+      },
+      "errors": [
+        {
+          "code": "parent_boundary_tolerance_unresolved",
+          "boundary": 1,
+          "parent": 0,
+          "gap_m": 5.0000000000050004e-06
+        }
+      ],
+      "boundaries": [
+        {
+          "boundary_index": 0,
+          "signed_volume_m3": 0.0010000000000000005,
+          "native_faces": 12,
+          "source_sign": 1,
+          "parent": null,
+          "depth": 0,
+          "bounds_world_m": [
+            [
+              -0.05,
+              -0.05,
+              -0.05
+            ],
+            [
+              0.05,
+              0.05,
+              0.05
+            ]
+          ],
+          "expected_source_sign": 1,
+          "classification": "outer_material_boundary"
+        },
+        {
+          "boundary_index": 1,
+          "signed_volume_m3": -0.0009997000299989997,
+          "native_faces": 12,
+          "source_sign": -1,
+          "parent": 0,
+          "depth": 1,
+          "bounds_world_m": [
+            [
+              -0.049995,
+              -0.049995,
+              -0.049995
+            ],
+            [
+              0.049995,
+              0.049995,
+              0.049995
+            ]
+          ],
+          "minimum_parent_boundary_gap_query_m": 5.0000000000050004e-06,
+          "parent_gap_query_cap_m": 4e-05,
+          "outside_kernel_status": "Error.NoError",
+          "expected_source_sign": -1,
+          "classification": "closed_void_boundary"
+        }
+      ],
+      "containment_queries": [
+        {
+          "a": 0,
+          "b": 1,
+          "intersection_volume_m3": 0.0009997000299989999,
+          "a_in_b": false,
+          "b_in_a": true,
+          "abs_tol_m3": 1e-12,
+          "rel_tol": 1e-08
+        }
+      ],
+      "resource_contract_pass": false,
+      "source_modified": false,
+      "physical_accepted": false,
+      "full_material_geometry_acceptance": false,
+      "source_geometry_sha256": "97de8b373520b793ded40ee06e4c4d447115f4eca52e4037356348053521dd99",
+      "native_vertices": 16,
+      "native_triangles": 24,
+      "diagnostic_continued_after_invalid_small_triangles": false,
+      "kernel_status": "Error.NoError",
+      "native_signed_volume_m3": 2.999700010003579e-07,
+      "kernel_signed_volume_m3": 2.999700010004663e-07,
+      "geometric_root_boundary_indices": [
+        0
+      ],
+      "material_component_count_from_nesting": 1,
+      "closed_void_count": 1,
+      "require_single_material_component": false
+    },
+    "two_hollow_single_component_required": {
+      "id": "two_hollow_materials",
+      "tolerances_si": {
+        "min_boundary_volume_m3": 1e-10,
+        "min_triangle_area_m2": 1e-16,
+        "containment_abs_volume_m3": 1e-12,
+        "containment_rel_volume": 1e-08,
+        "containment_bbox_m": 1e-09,
+        "minimum_parent_boundary_gap_m": 1e-08,
+        "native_kernel_volume_difference_m3": 1e-08
+      },
+      "errors": [
+        {
+          "code": "source_requires_one_material_component",
+          "found": 2
+        }
+      ],
+      "boundaries": [
+        {
+          "boundary_index": 0,
+          "signed_volume_m3": 0.0010000000000000002,
+          "native_faces": 12,
+          "source_sign": 1,
+          "parent": null,
+          "depth": 0,
+          "bounds_world_m": [
+            [
+              -0.05,
+              -0.05,
+              -0.05
+            ],
+            [
+              0.05,
+              0.05,
+              0.05
+            ]
+          ],
+          "expected_source_sign": 1,
+          "classification": "outer_material_boundary"
+        },
+        {
+          "boundary_index": 1,
+          "signed_volume_m3": -0.000125,
+          "native_faces": 12,
+          "source_sign": -1,
+          "parent": 0,
+          "depth": 1,
+          "bounds_world_m": [
+            [
+              -0.025,
+              -0.025,
+              -0.025
+            ],
+            [
+              0.025,
+              0.025,
+              0.025
+            ]
+          ],
+          "minimum_parent_boundary_gap_query_m": 2e-08,
+          "parent_gap_query_cap_m": 2e-08,
+          "outside_kernel_status": "Error.NoError",
+          "expected_source_sign": -1,
+          "classification": "closed_void_boundary"
+        },
+        {
+          "boundary_index": 2,
+          "signed_volume_m3": 0.001,
+          "native_faces": 12,
+          "source_sign": 1,
+          "parent": null,
+          "depth": 0,
+          "bounds_world_m": [
+            [
+              0.15000000000000002,
+              -0.05,
+              -0.05
+            ],
+            [
+              0.25,
+              0.05,
+              0.05
+            ]
+          ],
+          "expected_source_sign": 1,
+          "classification": "outer_material_boundary"
+        },
+        {
+          "boundary_index": 3,
+          "signed_volume_m3": -0.000125,
+          "native_faces": 12,
+          "source_sign": -1,
+          "parent": 2,
+          "depth": 1,
+          "bounds_world_m": [
+            [
+              0.17500000000000002,
+              -0.025,
+              -0.025
+            ],
+            [
+              0.225,
+              0.025,
+              0.025
+            ]
+          ],
+          "minimum_parent_boundary_gap_query_m": 2e-08,
+          "parent_gap_query_cap_m": 2e-08,
+          "outside_kernel_status": "Error.NoError",
+          "expected_source_sign": -1,
+          "classification": "closed_void_boundary"
+        }
+      ],
+      "containment_queries": [
+        {
+          "a": 0,
+          "b": 1,
+          "intersection_volume_m3": 0.00012500000000000003,
+          "a_in_b": false,
+          "b_in_a": true,
+          "abs_tol_m3": 1e-12,
+          "rel_tol": 1e-08
+        },
+        {
+          "a": 2,
+          "b": 3,
+          "intersection_volume_m3": 0.000125,
+          "a_in_b": false,
+          "b_in_a": true,
+          "abs_tol_m3": 1e-12,
+          "rel_tol": 1e-08
+        }
+      ],
+      "resource_contract_pass": false,
+      "source_modified": false,
+      "physical_accepted": false,
+      "full_material_geometry_acceptance": false,
+      "source_geometry_sha256": "50d0040ac6d06bd82c14c8191155bb1c3011d6d3caa2a876c8c45f31c9e80a59",
+      "native_vertices": 32,
+      "native_triangles": 48,
+      "diagnostic_continued_after_invalid_small_triangles": false,
+      "kernel_status": "Error.NoError",
+      "native_signed_volume_m3": 0.00175,
+      "kernel_signed_volume_m3": 0.0017500000000000003,
+      "geometric_root_boundary_indices": [
+        0,
+        2
+      ],
+      "material_component_count_from_nesting": 2,
+      "closed_void_count": 2,
+      "require_single_material_component": true
+    }
+  },
+  "duplicate_id_case": {
+    "schema": "gorilla_native_signed_material_contract_prototype_v1",
+    "robot_id": "gorilla_v0_1",
+    "declared_units": "metres; vertices_world_m",
+    "duplicate_ids": [
+      {
+        "id": "legal_hollow",
+        "count": 2
+      }
+    ],
+    "parts": [
+      {
+        "id": "legal_hollow",
+        "tolerances_si": {
+          "min_boundary_volume_m3": 1e-10,
+          "min_triangle_area_m2": 1e-16,
+          "containment_abs_volume_m3": 1e-12,
+          "containment_rel_volume": 1e-08,
+          "containment_bbox_m": 1e-09,
+          "minimum_parent_boundary_gap_m": 1e-08,
+          "native_kernel_volume_difference_m3": 1e-08
+        },
+        "errors": [],
+        "boundaries": [
+          {
+            "boundary_index": 0,
+            "signed_volume_m3": 0.0010000000000000005,
+            "native_faces": 12,
+            "source_sign": 1,
+            "parent": null,
+            "depth": 0,
+            "bounds_world_m": [
+              [
+                -0.05,
+                -0.05,
+                -0.05
+              ],
+              [
+                0.05,
+                0.05,
+                0.05
+              ]
+            ],
+            "expected_source_sign": 1,
+            "classification": "outer_material_boundary"
+          },
+          {
+            "boundary_index": 1,
+            "signed_volume_m3": -0.00012500000000000006,
+            "native_faces": 12,
+            "source_sign": -1,
+            "parent": 0,
+            "depth": 1,
+            "bounds_world_m": [
+              [
+                -0.025,
+                -0.025,
+                -0.025
+              ],
+              [
+                0.025,
+                0.025,
+                0.025
+              ]
+            ],
+            "minimum_parent_boundary_gap_query_m": 2e-08,
+            "parent_gap_query_cap_m": 2e-08,
+            "outside_kernel_status": "Error.NoError",
+            "expected_source_sign": -1,
+            "classification": "closed_void_boundary"
+          }
+        ],
+        "containment_queries": [
+          {
+            "a": 0,
+            "b": 1,
+            "intersection_volume_m3": 0.00012500000000000003,
+            "a_in_b": false,
+            "b_in_a": true,
+            "abs_tol_m3": 1e-12,
+            "rel_tol": 1e-08
+          }
+        ],
+        "resource_contract_pass": true,
+        "source_modified": false,
+        "physical_accepted": false,
+        "full_material_geometry_acceptance": false,
+        "source_geometry_sha256": "dbc825a81982df0ef9b0fa1ae03d319803eff8faf84711854b89ca37d841ccce",
+        "native_vertices": 16,
+        "native_triangles": 24,
+        "diagnostic_continued_after_invalid_small_triangles": false,
+        "kernel_status": "Error.NoError",
+        "native_signed_volume_m3": 0.0008750000000000002,
+        "kernel_signed_volume_m3": 0.0008750000000000002,
+        "geometric_root_boundary_indices": [
+          0
+        ],
+        "material_component_count_from_nesting": 1,
+        "closed_void_count": 1,
+        "require_single_material_component": false
+      },
+      {
+        "id": "legal_hollow",
+        "tolerances_si": {
+          "min_boundary_volume_m3": 1e-10,
+          "min_triangle_area_m2": 1e-16,
+          "containment_abs_volume_m3": 1e-12,
+          "containment_rel_volume": 1e-08,
+          "containment_bbox_m": 1e-09,
+          "minimum_parent_boundary_gap_m": 1e-08,
+          "native_kernel_volume_difference_m3": 1e-08
+        },
+        "errors": [],
+        "boundaries": [
+          {
+            "boundary_index": 0,
+            "signed_volume_m3": 0.0010000000000000005,
+            "native_faces": 12,
+            "source_sign": 1,
+            "parent": null,
+            "depth": 0,
+            "bounds_world_m": [
+              [
+                -0.05,
+                -0.05,
+                -0.05
+              ],
+              [
+                0.05,
+                0.05,
+                0.05
+              ]
+            ],
+            "expected_source_sign": 1,
+            "classification": "outer_material_boundary"
+          },
+          {
+            "boundary_index": 1,
+            "signed_volume_m3": -0.00012500000000000006,
+            "native_faces": 12,
+            "source_sign": -1,
+            "parent": 0,
+            "depth": 1,
+            "bounds_world_m": [
+              [
+                -0.025,
+                -0.025,
+                -0.025
+              ],
+              [
+                0.025,
+                0.025,
+                0.025
+              ]
+            ],
+            "minimum_parent_boundary_gap_query_m": 2e-08,
+            "parent_gap_query_cap_m": 2e-08,
+            "outside_kernel_status": "Error.NoError",
+            "expected_source_sign": -1,
+            "classification": "closed_void_boundary"
+          }
+        ],
+        "containment_queries": [
+          {
+            "a": 0,
+            "b": 1,
+            "intersection_volume_m3": 0.00012500000000000003,
+            "a_in_b": false,
+            "b_in_a": true,
+            "abs_tol_m3": 1e-12,
+            "rel_tol": 1e-08
+          }
+        ],
+        "resource_contract_pass": true,
+        "source_modified": false,
+        "physical_accepted": false,
+        "full_material_geometry_acceptance": false,
+        "source_geometry_sha256": "dbc825a81982df0ef9b0fa1ae03d319803eff8faf84711854b89ca37d841ccce",
+        "native_vertices": 16,
+        "native_triangles": 24,
+        "diagnostic_continued_after_invalid_small_triangles": false,
+        "kernel_status": "Error.NoError",
+        "native_signed_volume_m3": 0.0008750000000000002,
+        "kernel_signed_volume_m3": 0.0008750000000000002,
+        "geometric_root_boundary_indices": [
+          0
+        ],
+        "material_component_count_from_nesting": 1,
+        "closed_void_count": 1,
+        "require_single_material_component": false
+      }
+    ],
+    "resource_contract_pass": false,
+    "source_modified": false,
+    "physical_accepted": false,
+    "limits": [
+      "Contract proves only listed finite/topology/nested-boundary predicates under source tolerances.",
+      "Within-one-connected-boundary self-intersections are not comprehensively tested; Mesh64 NoError alone cannot certify embedding.",
+      "Touching or tolerance-ambiguous boundaries reject rather than guess.",
+      "Materials connected topologically are not a bearing/joint/assembly/strength/contact qualification.",
+      "No parent-body rigid-connection inference, no automatic normal or winding repair."
+    ]
+  },
+  "input_immutability_assertion_pass": true,
+  "physical_accepted": false
+}

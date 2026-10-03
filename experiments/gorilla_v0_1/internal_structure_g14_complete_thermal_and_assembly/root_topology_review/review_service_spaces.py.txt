@@ -1,0 +1,9 @@
+import gzip,json,pathlib,hashlib,numpy as np,manifold3d as mf
+P=pathlib.Path(__file__).resolve().parent;S=P/'bound_b_scene.json.gz';d=json.loads(gzip.decompress(S.read_bytes()));f=next(p for p in d['parts'] if p['name']=='g14_cage_anchor_output_adapter_net_material')
+def mm(p):
+ v=np.array(p['vertices_world_m'],float);ff=np.array([[r[0],r[i],r[i+1]] for r in p['faces'] for i in range(1,len(r)-1)],np.uint64);return mf.Manifold(mf.Mesh64(v,ff))
+frame=mm(f);rows=[]
+for p in d['parts']:
+ if p['role']!='service_after_shell_removal':continue
+ m=mm(p);rows.append({'id':p['name'],'source_role':p['role'],'temporary_void_NOT_hardware':True,'kernel_status':str(m.status()),'source_bounds_world_m':list(m.bounding_box()),'actual_template_vs_frame_volume_cm3':(m^frame).volume()*1e6 if m.status()==mf.Error.NoError else None,'source_maintenance_direction':p.get('maintenance_direction'),'original_metadata_direction_after_group_rotation_unknown':True,'not_dynamic_extraction_or_all_parked_obstacles_validation':True})
+r={'robot_id':'gorilla_v0_1','source_sha256':hashlib.sha256(S.read_bytes()).hexdigest(),'producer_sha256':hashlib.sha256(pathlib.Path(__file__).read_bytes()).hexdigest(),'source_service_templates':rows,'assembly_accepted':False,'next_sweep':'Whole finite modules with immutable geometry at each world rigid-transform step, all other modules and parked removed parts retained; temporary service is not a permanent topology cut without a validated route.'};(P/'service_space_review.json').write_text(json.dumps(r,indent=2)+'\n');print('SERVICE',len(rows),sum(v['actual_template_vs_frame_volume_cm3']>1e-4 for v in rows if v['actual_template_vs_frame_volume_cm3'] is not None))

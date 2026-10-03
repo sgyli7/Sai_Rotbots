@@ -1,0 +1,4 @@
+import pathlib,json,gzip,importlib.util
+P=pathlib.Path(__file__).resolve().parent;D=P/'b';sp=importlib.util.spec_from_file_location('geom',P/'geometry_helpers.py');g=importlib.util.module_from_spec(sp);sp.loader.exec_module(g);s=json.load(gzip.open(D/'scene.json.gz','rt'));g.h.OUT=D;g.h.render(s['parts'],'native_four_view.png');g.h.render(s['parts'],'native_cutaway_four_view.png',True);g.h.sections([p for p in s['parts'] if p['name'] in s['original_visible_armor_ids'] or p['name'].startswith('g14_')]);from PIL import Image,ImageDraw
+for n in ['native_four_view.png','native_cutaway_four_view.png']:
+ im=Image.open(D/n);dd=ImageDraw.Draw(im);dd.rectangle((0,0,1800,50),fill='#f3f2ed');dd.text((25,10),'G14 FINAL SOURCE a6a45796 / CORRECTED WHOLE HX GROUP / COMPLETE CORE + 480 CELLS + ALL FUNCTIONS',fill='black');dd.text((25,30),'No visible exterior adoption / assembly, routing, thermal, strength and whole inertia remain unqualified',fill='black');im.save(D/n)

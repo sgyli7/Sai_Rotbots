@@ -1,0 +1,8 @@
+from PIL import Image,ImageDraw,ImageFont
+from pathlib import Path
+p=Path(__file__).resolve().parent;c=Image.new('RGB',(1064,1160),'white');d=ImageDraw.Draw(c);f=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',16)
+d.text((20,8),'GORILLA V0.2 / actual b7 native lower / normalized units / NOT SI',fill='black',font=f)
+d.text((20,31),'Same orthographic scale .634491 units; CPU Cycles; geometry unchanged',fill='black',font=f)
+for i,n in enumerate(['front','left','rear','top']):
+ x=20+(i%2)*524;y=62+(i//2)*544;c.paste(Image.open(p/('native_'+n+'.png')).convert('RGB'),(x,y));d.text((x,y+512),n.upper()+' / source +Z up',fill='black',font=f)
+c.save(p/'native_normalized_four_view.png')

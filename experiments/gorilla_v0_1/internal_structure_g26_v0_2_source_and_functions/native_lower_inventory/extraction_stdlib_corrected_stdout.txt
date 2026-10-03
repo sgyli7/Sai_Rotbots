@@ -1,0 +1,28 @@
+Blender 4.0.2
+Read blend: "/home/ethan/Projects/Sai_Rotbots/.scratch/gorilla_internal_g26_v0_2_lower_source_inventory/source_inputs/lower_modular_components_b7.blend"
+Traceback (most recent call last):
+  File "/home/ethan/Projects/Sai_Rotbots/.scratch/gorilla_internal_g26_v0_2_lower_source_inventory/extract_safe_blend.py", line 32, in <module>
+    allgeom=[q for q in objrows if q['type']=='MESH'and q['name'].startswith(('L_','R_'))];bound=np.array([q['bounds_from_base_object_box_world_normalized']for q in allgeom]);result={'robot_id':'gorilla_v0_2','revision':'b7','source_blend_sha256':before,'source_json_sha256':sha(J),'source_json_declared_blend_sha256':meta['source_sha256'],'source_json_matches_captured_blend':meta['source_sha256']==before,'units':'normalized appearance units; NOT SI','Blender_version':bpy.app.version_string,'autoexec_disabled_cli_and_open':True,'only_agent_owned_script_executed':True,'embedded_text_blocks_present_names':[x.name for x in bpy.data.texts],'none_embedded_script_executed':True,'linked_library_paths':[x.filepath for x in bpy.data.libraries],'scene_unit_settings':{'system':bpy.context.scene.unit_settings.system,'scale_length':bpy.context.scene.unit_settings.scale_length},'objects':objrows,'meshes':meshrows,'lower_mesh_objects':len(allgeom),'lower_bounds_world_normalized':[bound[:,0,:].min(0).tolist(),bound[:,1,:].max(0).tolist()],'source_hierarchy_only_not_actual_loadchain':True,'materials_are_appearance_no_structural_properties':True,'source_unchanged_after_extract':sha(S)==before,'engineering_ready':False,'appearance_accepted_here':False,'original_source_metadata':meta};(O/'native_lower_scene.json').write_text(json.dumps(result,indent=2));print('G26_SAFE_EXTRACT',len(allgeom),len(meshrows),result['lower_bounds_world_normalized'],flush=True)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ethan/.local/share/uv/python/cpython-3.12-linux-aarch64-gnu/lib/python3.12/json/__init__.py", line 238, in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+  File "/home/ethan/.local/share/uv/python/cpython-3.12-linux-aarch64-gnu/lib/python3.12/json/encoder.py", line 202, in encode
+    chunks = list(chunks)
+             ^^^^^^^^^^^^
+  File "/home/ethan/.local/share/uv/python/cpython-3.12-linux-aarch64-gnu/lib/python3.12/json/encoder.py", line 432, in _iterencode
+    yield from _iterencode_dict(o, _current_indent_level)
+  File "/home/ethan/.local/share/uv/python/cpython-3.12-linux-aarch64-gnu/lib/python3.12/json/encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "/home/ethan/.local/share/uv/python/cpython-3.12-linux-aarch64-gnu/lib/python3.12/json/encoder.py", line 326, in _iterencode_list
+    yield from chunks
+  File "/home/ethan/.local/share/uv/python/cpython-3.12-linux-aarch64-gnu/lib/python3.12/json/encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "/home/ethan/.local/share/uv/python/cpython-3.12-linux-aarch64-gnu/lib/python3.12/json/encoder.py", line 439, in _iterencode
+    o = _default(o)
+        ^^^^^^^^^^^
+  File "/home/ethan/.local/share/uv/python/cpython-3.12-linux-aarch64-gnu/lib/python3.12/json/encoder.py", line 180, in default
+    raise TypeError(f'Object of type {o.__class__.__name__} '
+TypeError: Object of type bool is not JSON serializable
+
+Blender quit

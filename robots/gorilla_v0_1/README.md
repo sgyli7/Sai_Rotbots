@@ -1,23 +1,58 @@
-# Gorilla V0.1
+# Gorilla — V0.2 整机设计（保留 V0.1 工程历史）
 
-当前工作：**C15 复合脚阶段提交 → 内部完整模块预算与装配。** 先保存当前 Gorilla 外壳和分段脚候选，再闭合真实内部占位、宏观物理及载荷分摊。原稿形状仍是约束；最终目标是双足、双手和自主复杂 Bevy 任务。
+当前工作：**V0.2十小时整机共同设计，2026-10-04 01:03–11:03（China）**。P30正式外观已收到并核对，URI为当前全身审美基准；全部长宽高按新版重建。骨架、关节、传动、完整体内模块、能源和主动液冷／风道一起合回新全身；b7为归一化参考，不是完整制造CAD。G24/G25已阶段提交，G26输入已保存，当前新骨盆/比例、短包及腿驱动共同推进；安装与整机物理仍未放行。
 
 唯一当前状态入口：[当前决定与门禁](design/current_decisions.md)。
 
 | 资料 | 入口 |
 |---|---|
-| 唯一外观基准 | [用户再次确认的四视图](design/concepts/aa3/user_confirmed_four_view.jpg)；其他图片与粗模仅为历史资料 |
+| V0.2正式外观交接 | [P30 URI四视](design/concepts/appearance_handoff_p30/uri_p30.png)；[来源与核对](source/appearance_handoff_p30/import_receipt.json)，b7归一化参考须新全身SI与结构重建 |
+| G26全身输入与功能 | [原生lower、完整模块比较及感知](../../experiments/gorilla_v0_1/internal_structure_g26_v0_2_source_and_functions/README.md)；原始缺口及独立纠偏保留，安装/物理未放行 |
+| G25主动风道与液冷 | [实际两风道、原厂风机曲线事实与研究](../../experiments/gorilla_v0_1/internal_structure_g25_forced_air_and_liquid_cooling/README.md)；安装与持续热未放行 |
+| G24连续承力与完整系统 | [实际共源／身份／安装／有限FK／宏观预算](../../experiments/gorilla_v0_1/internal_structure_g24_connected_system_assembly/README.md)；已保存失败候选，整机门禁未过 |
+| 先进液冷与主动散热 | [一手研究与前进／pad两侧出架构](hardware/cooling_technology_and_vent_architecture.md)；共形水套、冷板及高级路线适用边界分报 |
+| G23完整肩／core／720能源共布 | [实际两源、同源检查图、粗算及独立覆盖补检](../../experiments/gorilla_v0_1/internal_structure_g23_complete_module_integration/README.md)；腰承力、肩安装与完整热／供电仍拒绝 |
+| G22实际共同接口／线路／安装 | [原生共同源、同源四视与独立空间／FK检查](../../experiments/gorilla_v0_1/internal_structure_g22_actual_common_interfaces/README.md)；历史共同安装失败，G23已另保存 |
+| G21主架/三轴/能源/宏观粗算 | [真实源、有限截面与功能范围裁决](../../experiments/gorilla_v0_1/internal_structure_g21_common_body_and_joint/README.md)；新肩尚未装入body，未放行 |
+| G20实际完整模块/安装 | [真实原生/CAD/四视、完整包络和独立复核](../../experiments/gorilla_v0_1/internal_structure_g20_native_complete_modules/README.md)；三分支A/B均拒绝，接续共同设计 |
+| G19完整功能与架构 | [实际功能账、两路线、电压热与储能/空间裁决](../../experiments/gorilla_v0_1/internal_structure_g19_function_and_actuation_architecture/README.md)；下一原生探针，未采用/物理放行 |
+| G18完整内部集成与冷却 | [实际源、原生四视、独立质量/干涉与能量范围](../../experiments/gorilla_v0_1/internal_structure_g18_full_assembly_and_cooling/README.md)；仍拒绝装配/物理/审美 |
+| G17连续主架与联合工作点 | [实际CAD/native、完整肩三轴、整组拒绝与热预算](../../experiments/gorilla_v0_1/internal_structure_g17_connected_frame_and_workpoint/README.md)；两候选仍拒绝 |
+| G16宽厚设计域与真实接口 | [实际CAD/native、完整两布局、热工作范围与独立复核](../../experiments/gorilla_v0_1/internal_structure_g16_broad_domain_and_interfaces/README.md)；两候选仍拒绝 |
+| G15完整功能与物理设计输入 | [同版实际布局、质量/载荷、热/库存与独立复核](../../experiments/gorilla_v0_1/internal_structure_g15_function_mass_and_domain/README.md)；两候选仍拒绝 |
+| G14完整系统与拓扑入口 | [冻结候选、实际图、边界与复核](../../experiments/gorilla_v0_1/internal_structure_g14_complete_thermal_and_assembly/README.md)；尚未装配/物理放行 |
+| 上半身与既定配色基准 | [用户再次确认的 AA3 四视图](design/concepts/aa3/user_confirmed_four_view.jpg) |
+| 新下半身接续参考 | [用户最新四视图与来源范围](design/concepts/lower_body_redesign/source_manifest.json)；V0.2大形已获工程接续授权，b7 Blender/JSON已提供；旧腿足仅历史占位 |
 | 来源身份 | [唯一外观权威记录](source/appearance_authority.json)；[原包导入与哈希](source/appearance_import.json) |
 | C 工作输入（迭代中） | [appearance_c_spec.json](configs/appearance_c_spec.json)；[原稿轮廓与分区点](source/appearance_c_reference_landmarks.json)；[可见护甲区域约束](source/appearance_c_front_shape_constraints.json) |
 | C15 阶段基底 | [提交说明与缺口](design/appearance_c15_stage.md)；[冻结映射](../../experiments/gorilla_v0_1/appearance_c_round_fifteen/snapshot_manifest.json)；[Blender](../../experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c.blend)、[GLB](../../experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c.glb) |
 | C15 实际复合脚 | [中立](../../experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_foot_left.png)、[卸载折叠](../../experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_foot_folded_left.png)、[机制拆壳](../../experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_foot_mechanism_left.png)；[原生几何检查](../../experiments/gorilla_v0_1/appearance_c_round_fifteen/composite_foot_c15_screen.json) |
-| 内部研究输入 | [真实驱动/能源/热/感知模块依据](hardware/internal_module_research.md)；尚未完成整机模块布局 |
+| 内部 B 历史拒绝候选 | [改变、粗算与拒绝评审](design/internal_structure_b_review.md)；[原生源](cad/source/internal_structure_b_scene.json)、[Blender](cad/source/internal_structure_b.blend)、[GLB](cad/exports/internal_structure_b/internal_structure_b.glb)；原护甲保留但匹配未通过 |
+| 内部 D 历史拒绝候选 | [同版评审/复现](design/internal_structure_d_review.md)；[整机native源](cad/source/internal_structure_d_scene.json)、[Blender](cad/source/internal_structure_d.blend)、[GLB](cad/exports/internal_structure_d/internal_structure_d.glb)；[冻结清单](../../experiments/gorilla_v0_1/internal_structure_d/snapshot_manifest.json) |
+| 内部 D 同源图 | [四视](images/internal_structure_d_four_view.png)、[拆壳斜视](images/internal_structure_d_cutaway_threequarter.png)、[侧拆壳](images/internal_structure_d_cutaway_left.png)；原111甲壳不改，冲突没有隐藏 |
+| 内部 D 参数/证据 | [统一参数](configs/internal_structure_d_spec.json)、[全机模块](configs/internal_structure_d_system_spec.json)；[质量/接触/空间](evidence/internal_structure_d_screen.json)、[功率/流量](evidence/internal_structure_d_power.json)、[红黄线](evidence/internal_structure_d_gates.json) |
+| G2 安装检查点 | [实际源/范围/下一动作](../../experiments/gorilla_v0_1/internal_structure_g2_modules/README.md)；全部安装未放行，隐藏几何可新源重建 |
+| G3 功能链与新末端 | [实际源/粗算/完整图/失败](../../experiments/gorilla_v0_1/internal_structure_g3_functional_chains/README.md)；未组成新整机，新粗甲不采用 |
+| 新末端参考与授权 | [六图来源清单](design/concepts/leg_terminal_references/source_manifest.json)；可重设计末端，参考不提供承载认证 |
+| G/G1 历史研究 | [实际结果/复现](../../experiments/gorilla_v0_1/internal_structure_g_studies/README.md)；原生材料、原厂安装、腰/下腿/手部源及整体资源粗算；未组成新整机 |
+| 最近完整 E2a 研究 | [整机源/同源图/拒绝](../../experiments/gorilla_v0_1/internal_structure_e2/README.md)；未合格历史账本，不作定型质量 |
+| 内部 E 开局诊断 | [完整轴参考](../../experiments/gorilla_v0_1/internal_structure_e_constraints/README.md)；[串联腿、全关节热路与独立复核](../../experiments/gorilla_v0_1/internal_structure_e_probes/README.md)；实际失败分支，未组成整机或换审美基准 |
+| 分置线性/泵阀一手依据 | [型号事实/有限几何/电热条件](hardware/distributed_internal_component_references.md)；参照、假设与联合资格分别报告 |
+| 内部 C 历史拒绝探针 | [同版评审/复现](design/internal_structure_c_review.md)；[净材料/组件源](cad/source/internal_structure_c_scene.json)；[联合接触/驱动](evidence/internal_structure_c_screen.json)、[空间拒绝](evidence/internal_structure_c_space.json)、[门禁](evidence/internal_structure_c_gates.json)；[冻结清单](../../experiments/gorilla_v0_1/internal_structure_c/snapshot_manifest.json) |
+| 内部 B 同源图 | [整机正](images/internal_structure_b_front.png)、[左](images/internal_structure_b_left.png)、[后](images/internal_structure_b_rear.png)、[拆壳斜视](images/internal_structure_b_cutaway_threequarter.png)、[脚近景](images/internal_structure_b_foot_mechanism_detail.png)；新模块与冲突没有隐藏 |
+| 内部 B 参数/证据 | [参数](configs/internal_structure_b_spec.json)、[真实姿态/静力](evidence/internal_structure_b_statics.json)、[正体积冲突](evidence/internal_structure_b_space.json)、[独立脚复核](evidence/internal_structure_b_foot_review.json)、[资源/端点力矩检查](evidence/internal_structure_b_resource_check.json) |
+| Tesla / Figure / GD01 参照 | [一手共同设计研究](hardware/internal_co_design_references.md)；区分代际、公开事实与推断，不继承联合额定或未公开 CAD |
+| 包装授权与共同设计方法 | [历史 C 任务依据](design/internal_co_design_c_brief.md)；C/D 已有实际候选与拒绝图，下一方案以当前决定为准 |
+| 紧凑电驱部件参照 | [原厂组件事实与条件](hardware/compact_electric_component_references.md)；包含支承的齿轮组件和精确绕组电机仍需整套匹配 |
+| 内部架构 A 前一候选 | [粗算、装配与红黄线评审](design/internal_architecture_a_review.md)；[两路线同尺度实图](images/internal_architecture_a_route_comparison.png)；四路线仍未通过 |
+| 内部架构 A 参数与证据 | [预算配置](configs/internal_architecture_a_spec.json)、[布局配置](configs/internal_architecture_a_layout.json)；[宏观预算](evidence/internal_architecture_a_budget.json)、[空间/重心/接地筛查](evidence/internal_architecture_a_space.json) |
+| 内部研究输入与真实 CAD | [真实驱动/能源/热/感知模块依据](hardware/internal_module_research.md)；原厂参考网格仅本地忽略保存，受控模型为自有模块包络 |
 | 历史 C14 可编辑模型 | [Blender 源](../../experiments/gorilla_v0_1/appearance_c_round_fourteen/appearance_c.blend)、[GLB](../../experiments/gorilla_v0_1/appearance_c_round_fourteen/appearance_c.glb)、[参数化几何源](../../experiments/gorilla_v0_1/appearance_c_round_fourteen/appearance_c_scene.json)；外观/物理仍未通过 |
 | 历史 C14 实际对照 | [同源四视](../../experiments/gorilla_v0_1/appearance_c_round_fourteen/appearance_c_four_view.png)；[阶段实渲审查](design/appearance_c_checkpoint_review.md)；[渲染身份](../../experiments/gorilla_v0_1/appearance_c_round_fourteen/appearance_c_render_manifest.json) |
 | 内部主结构实渲 | [拆壳斜视](../../experiments/gorilla_v0_1/appearance_c_round_fourteen/appearance_c_structure_threequarter.png)、[正面](../../experiments/gorilla_v0_1/appearance_c_round_fourteen/appearance_c_structure_front.png)、[侧面](../../experiments/gorilla_v0_1/appearance_c_round_fourteen/appearance_c_structure_left.png)；同一实际几何，隐藏的护盖逐项记录 |
 | 主体受力入口与结果 | [计算依据](design/structure_c14_basis.md)；[同版受力记录](../../experiments/gorilla_v0_1/appearance_c_round_fourteen/structure_c14_screen.json)、[红黄线](../../experiments/gorilla_v0_1/appearance_c_round_fourteen/structure_c14_gates.json)；有限准静力筛查，不是稳定动力学合同或吨级认证 |
 | 当前工作树几何 | [可编辑控制网格](cad/source/appearance_c_scene.json)；后续增量须完成实渲/导出检查后才成为冻结候选 |
-| C 外观增量与复现（历史） | [历轮冻结评审](design/appearance_c_checkpoint_review.md)；[当前 C14 冻结映射](../../experiments/gorilla_v0_1/appearance_c_round_fourteen/snapshot_manifest.json)（46 副本）；网格/文件身份通过，外观仍未通过 |
+| C 外观增量与复现（历史） | [历轮冻结评审](design/appearance_c_checkpoint_review.md)；[历史 C14 冻结映射](../../experiments/gorilla_v0_1/appearance_c_round_fourteen/snapshot_manifest.json)（46 副本）；网格/文件身份通过，外观仍未通过 |
 | 历史 C14 等高整机对照 | [正面](images/appearance_c_round_fourteen_front_comparison.png)、[侧面](images/appearance_c_round_fourteen_left_comparison.png)、[后面](images/appearance_c_round_fourteen_rear_comparison.png)；原图相机未校准，图像不能证明物理能力 |
 | 用户新增背部控制屏 | [同版背屏近景](../../experiments/gorilla_v0_1/appearance_c_round_fourteen/appearance_c_rear_panel_detail.png)；原蓝板外框/固定点保留，状态/任务/本地控制为静态界面候选 |
 | 散热入口原生几何复核 | [同版入口检查](../../experiments/gorilla_v0_1/appearance_c_round_fourteen/appearance_c_intake_clearance.json)；每侧 2008 个当前格栅间隙样本无蓝白甲遮挡，仅验证采样入口，不代表完整排风或热能力 |
@@ -29,8 +64,28 @@
 | 任务与接口边界 | [任务和仿真交接](design/task_and_simulation_handoff.md) |
 | 器件依据 | [驱动和供电参照](hardware/component_basis.md) |
 
-首版核心为双足移动、双手操作、自主感知/规划/执行，最终在 Bevy 等游戏引擎的原生物理世界中完成搬运和环境操作。GD01 用于大型机器人方向参考；Goose 用于流程经验。两者的轴数、质量、尺寸、执行器和策略不继承。
+首版核心为双足移动、双手操作、自主感知/规划/执行，最终在 Bevy 等游戏引擎的原生物理世界中完成搬运和环境操作。用户将功能目标定位为 Figure / Tesla Bot 的 MAX PRO，GD01 用于大型体量参考；Goose 用于流程经验。各参照的轴数、质量、尺寸、执行器和策略不继承。
 
 C15 将前掌、足弓与后跟分开，取消跨段连续底板；卸载端姿态有界几何检查通过，固定侧止挡安装和锁止承力仍开放。尚未建立新脚 SI 合同，C14 整板脚的质量/接触/受力结果不适用于 C15。
 
 历史 C14 已建立实际有限壁厚框架和条件质量/受力账本，包含当时脚底单向反力、关节六维载荷和限定截面应力。42 梁中 30 梁有有限筛查、12 梁未分析；条件毛料及组件预留总质量约 1.15–1.79 吨。完整惯量、轴向/驱动、连接/轴承/脚底、运动接触和热仍未闭合，外观也未放行。B 的失败记录保留，两版证据不混用；首个完整工程检查点仍未达标。
+
+早期内部基底：[G4 单关节／拓扑比较](../../experiments/gorilla_v0_1/internal_structure_g4_joint_study/README.md)与[G5 CPU 拓扑工具链](../../experiments/gorilla_v0_1/topology_g5_toolchain/README.md)。前者是未放行的实际内部bench，后者只校验数值工具；完整三维骨架和整机能力仍由[当前决定](design/current_decisions.md)继续推进。
+
+[G6 实际三维输入与网格拒绝证据](../../experiments/gorilla_v0_1/topology_g6_3d_inputs/README.md)：宽厚承力域与同源节点载荷入口；当前网格不适用于结构FEM，没有机器人减重或强度放行。
+
+[G7 实际CAD与三维条件基线](../../experiments/gorilla_v0_1/topology_g7_cad_baseline/README.md)：合法宽厚承力件、两档体网格及独立数值核验；已识别压撑顶墙传力风险，尚无骨架优化、强度或整机资格。
+
+[G8 宽厚内部传力路径对照](../../experiments/gorilla_v0_1/topology_g8_material_paths/README.md)：两真实CAD及完整42条件工况；连续内肋显著改善压撑刚度，驱动/接触/全机资格仍开放。接续G9整体主结构与机电空间共同安排。
+
+[G9 宽厚主躯与完整系统实际共布](../../experiments/gorilla_v0_1/internal_structure_g9_torso_co_layout/README.md)：两真实主core、九组两实际摆位、切面和宏观质量/翻转力矩；整装失败保存，接续完整肩接口与有界真实三维优化。
+
+[G10 完整肩与实际三维减材](../../experiments/gorilla_v0_1/internal_structure_g10_joint_and_topology/README.md)：保留完整驱动的真实CAD/实际四视，实际401,748tet及全42工况的12步SIMP与独立数值审计；减材实体/肩安装仍拒绝，不冒称完整身体优化。
+
+[G11 宽厚身体域与功能预算](../../experiments/gorilla_v0_1/internal_structure_g11_body_domain_and_budget/README.md)：完整条件域/肩接面与任务预算，实际几何、单位和库存独立核；失效格栅面积推论明确撤销，整机仍未放行。
+
+历史内部检查点：[G12完整系统共同布局与热路筛查](../../experiments/gorilla_v0_1/internal_structure_g12_complete_system_colayout/README.md)已保存；安装和物理仍拒绝。G13改为宽截面承力笼架与完整系统分区，唯一当前状态见[current_decisions](design/current_decisions.md)。
+
+[G13宽截面笼架与肩干湿分区](../../experiments/gorilla_v0_1/internal_structure_g13_load_cage_and_cooling/README.md)：实际CAD/native、载荷和测量范围纠正已保存；三分支未整合或放行。当前排期只读唯一决定索引。
+
+[G15完整功能布局、同版质量与物理设计输入](../../experiments/gorilla_v0_1/internal_structure_g15_function_mass_and_domain/README.md)：两实际宏观方案拒绝、库存与载荷范围纠正及独立复核已保存；G16先解决宽厚身体域与完整功能分区，真实拓扑优化和复杂Bevy目标继续。

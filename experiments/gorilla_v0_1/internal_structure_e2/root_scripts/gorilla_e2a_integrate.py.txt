@@ -1,0 +1,104 @@
+"""Integrate actual E2 sources; no historical mass or capacity results inherited."""
+from pathlib import Path
+import copy,gzip,hashlib,json
+import numpy as np
+import trimesh
+
+ROOT=Path(__file__).resolve().parents[1];OUT=ROOT/'.scratch/gorilla_internal_e2a_integrated'
+BASE=ROOT/'experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_scene.json'
+STRUCT=ROOT/'.scratch/gorilla_internal_e2_structure/structure_scene.json'
+SYSTEM=ROOT/'.scratch/gorilla_internal_e2_system/system_scene.json'
+SYSPEC=ROOT/'.scratch/gorilla_internal_e2_system/system_spec.json'
+UPPER=ROOT/'.scratch/gorilla_internal_e2_upper_replay/upper_scene.json'
+INTER=ROOT/'.scratch/gorilla_internal_e2_structure/interface.json'
+SUPPLEMENT=ROOT/'.scratch/gorilla_internal_e2a_supplement/right_hip_yaw_components.json'
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def write(p,v):Path(p).write_text(json.dumps(v,indent=2,allow_nan=False)+'\n')
+def read(p):return json.loads(Path(p).read_text())
+def mesh(p):return trimesh.Trimesh(p['vertices_world_m'],[[f[0],f[i],f[i+1]] for f in p['faces'] for i in range(1,len(f)-1)],process=False)
+def partlist(s):
+ if s.get('parts') is not None:return s['parts']
+ return next(p for p in s['pose_scenes'] if p['id'] in ('neutral','neutral_locked'))['parts']
+def main():
+ OUT.mkdir(parents=True,exist_ok=True)
+ base,st,sy,ss,up,inter=[read(p) for p in (BASE,STRUCT,SYSTEM,SYSPEC,UPPER,INTER)]
+ tree=copy.deepcopy(inter['body_tree']);tree.update(up['body_tree_graft'])
+ parent={b:t['parent'] for b,t in tree.items()}
+ for b,p in parent.items():
+  seen={b}
+  while p is not None:
+   if p not in parent or p in seen:raise ValueError('Bad serial tree '+b)
+   seen.add(p);p=parent[p]
+ aliases=up['original_visual_body_aliases'];ownership={}
+ removed=set(st.get('removed_D_system_module_ids',st.get('replaced_D_system_module_ids',[])))
+ if not removed:raise ValueError('Structure replacement ID ledger required')
+ parts=[];origin={};original_retained=[]
+ def add(p,source,body=None):
+  if p['name'] in origin:raise ValueError('Duplicate native part '+p['name'])
+  parts.append(copy.deepcopy(p));origin[p['name']]=source;ownership[p['name']]=body or aliases.get(p['body'],p['body'])
+ # Original external armor, split pads and display geometry are copied exactly;
+ # their moving-body ownership is a separate candidate mapping.
+ roles={'armor_surface','armor_cover','ground_pad','contact_surface_candidate','control_display_ui','control_display_glass','display_module_envelope'}
+ replaced_original=set(st.get('replaced_original_nonarmor_ids',[]))
+ for p in base['parts']:
+  if p['name'] in replaced_original:continue
+  if p['role'] in roles or p['role']=='visible_mechanism' and (p['body']=='torso' or p['name'].startswith(('crown_','rear_door_','rear_service_','central_indicator_'))):
+   add(p,'original_c15');original_retained.append(p['name'])
+ structure_replaced=set(ss.get('root_structure_replaced_native_ids',[]))
+ for p in partlist(st):
+  if p['name'] in structure_replaced:continue
+  add(p,'E2_structure')
+ for p in read(SUPPLEMENT)['parts']:add(p,'E2_structure')
+ bymodule={r['id']:r for r in ss['modules']}
+ retained_system=[]
+ for p in sy['parts']:
+  if p['name'] in removed:continue
+  body=up['system_module_body_reassignments'].get(p['name'])
+  add(p,'E2_system',body);retained_system.append(p['name'])
+ for p in up['parts']:add(p,'E2_upper')
+ if any(ownership[p['name']] not in tree for p in parts):raise ValueError('Unassigned bodies '+str(sorted({ownership[p['name']] for p in parts if ownership[p['name']] not in tree})))
+ rows=[];unknown=[];alias_mass=[];grouped={}
+ for p in parts:
+  name=p['name'];m=mesh(p);src=origin[name];r=bymodule.get(name,{}) if src=='E2_system' else {}
+  if r.get('mass_counted_elsewhere'):
+   owner=r['mass_counted_elsewhere']
+   if owner not in retained_system:raise ValueError('Missing mass alias owner '+name)
+   alias_mass.append({'id':name,'owner':owner});continue
+  if src=='original_c15':
+   if p['role'] in ('armor_surface','armor_cover'):mr=[m.volume*x for x in (1300,2000,2800)];basis='C15 unchanged armor with D density hypotheses'
+   elif p['role'] in ('ground_pad','contact_surface_candidate'):mr=[m.volume*x for x in (1100,1250,1500)];basis='C15 unchanged pad hypotheses'
+   elif p['role'] in ('control_display_ui','control_display_glass','display_module_envelope','visible_mechanism'):continue
+   else:unknown.append(name);continue
+  else:
+   mr=r.get('mass_range_kg',p.get('mass_range_kg'));md=p.get('E2_metadata',p.get('metadata',{}))
+   if mr is None:mr=md.get('mass_range_kg')
+   density=p.get('density_kg_m3_hypothesis',p.get('density_kg_m3',p.get('assumed_density_kg_m3',md.get('density_kg_m3'))))
+   if src=='E2_structure' and density is not None:
+    key=p.get('material_union_group',name);grouped.setdefault(key,{'ids':[],'density':density})['ids'].append(name)
+    if grouped[key]['density']!=density:raise ValueError('Mixed union density '+key)
+    continue
+   if mr is None and density is not None:mr=[m.volume*density]*3
+   if mr is None:unknown.append(name);continue
+   if len(mr)==2:mr=[mr[0],sum(mr)/2,mr[1]]
+   basis='Actual native/material or complete source component allowance; OEM internals/installation unqualified'
+  if not(m.is_watertight and m.is_winding_consistent and m.volume>0):raise ValueError('Invalid counted native '+name)
+  if not(0<mr[0]<=mr[1]<=mr[2]):raise ValueError('Invalid mass '+name)
+  rows.append({'id':name,'body':ownership[name],'source':src,'mass_range_kg':mr,'COM_world_m':m.center_mass.tolist(),'inertia_proxy_at_COM_kg_m2':(m.moment_inertia*mr[1]/m.volume).tolist(),'basis':basis,'true_material_or_installed_inertia_qualified':False})
+ if unknown:raise ValueError('Unaccounted physical materials '+str(unknown))
+ pm={p['name']:p for p in parts}
+ for group,info in grouped.items():
+  ids=info['ids'];ms=[mesh(pm[n]) for n in ids];m=trimesh.boolean.union(ms,engine='manifold') if len(ms)>1 else ms[0]
+  if not(m.is_watertight and m.is_winding_consistent and m.volume>0):raise ValueError('Invalid material union '+group)
+  bodies={ownership[n] for n in ids}
+  if len(bodies)!=1:raise ValueError('Union across independent mass owners '+group)
+  rho=info['density'];mr=[m.volume*rho]*3
+  rows.append({'id':'e2_net_stock_'+group,'body':next(iter(bodies)),'source':'E2_structure','mass_range_kg':mr,'COM_world_m':m.center_mass.tolist(),'inertia_proxy_at_COM_kg_m2':(m.moment_inertia*rho).tolist(),'basis':'Exact neutral material union at stated density, not a load-path or joint-rigidity qualification','member_ids':ids,'positive_material_components':len([x for x in m.split(only_watertight=False) if x.volume>1e-10]),'true_material_or_installed_inertia_qualified':False})
+ armor={p['name']:p for p in base['parts'] if p['role'] in ('armor_surface','armor_cover')};lookup={p['name']:p for p in parts};assert len(armor)==111 and all(armor[k]==lookup[k] for k in armor)
+ supports=copy.deepcopy(inter['joint_supports']);supports.extend(up['joint_supports_graft'])
+ hashes={str(p.relative_to(ROOT)):sha(p) for p in (BASE,STRUCT,SYSTEM,SYSPEC,UPPER,INTER,SUPPLEMENT,Path(__file__).resolve())}
+ source={'schema':'gorilla_internal_structure_candidate_v1','robot_id':'gorilla_v0_1','candidate':'internal_structure_e2a','coordinate_frame':'SI m; X front, Y left, Z up','parts':parts,'body_tree':tree,'physical_body_ownership':ownership,'joint_supports':supports,'actuators':inter['actuators'],'input_hashes':hashes,'original_armor_preserved_count':111,'original_retained_ids':original_retained,'source_origin':origin,'excluded_system_ids_replaced_by_structure':sorted(removed),'excluded_original_nonarmor_replaced_by_structure':sorted(replaced_original),'mass_rows':rows,'mass_aliases_counted_once':alias_mass,'whole_mass_range_kg':[sum(r['mass_range_kg'][i] for r in rows) for i in range(3)],'mass_scope':'Listed net finite sources and complete component allowances; complete manufacturing/hand transmissions/true rotor/gear/line inertia unresolved. No D whole mass inherited. Original illustrative mechanisms excluded; any attached physical hardware must have a finite retained module or remains a gap.','base_scene':str(BASE.relative_to(ROOT)),'base_scene_sha256':sha(BASE),'geometry_accepted':False,'physics_accepted':False,'stable_physical_contract':False,'aesthetic_baseline_approved':False}
+ source['structure_native_ids_replaced_by_system_cooling']=sorted(structure_replaced)
+ write(OUT/'scene.json',source)
+ write(OUT/'mass_ledger.json',{k:v for k,v in source.items() if k in ('robot_id','candidate','whole_mass_range_kg','mass_rows','mass_aliases_counted_once','mass_scope','input_hashes','excluded_system_ids_replaced_by_structure')})
+ print(json.dumps({'native_parts':len(parts),'mass_rows':len(rows),'whole_mass_range_kg':source['whole_mass_range_kg'],'source_sha256':sha(OUT/'scene.json'),'geometry_accepted':False}))
+if __name__=='__main__':main()

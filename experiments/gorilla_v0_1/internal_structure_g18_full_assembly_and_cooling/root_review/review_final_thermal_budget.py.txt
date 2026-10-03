@@ -1,0 +1,66 @@
+"""Independent conservation checks, preserving conditional physical conclusions."""
+from pathlib import Path
+import hashlib,json,math
+import numpy as np
+O=Path(__file__).resolve().parent;R=O.parents[1]
+P=R/'.scratch/gorilla_internal_g18_cooling_architecture/architecture_comparison_v3.json'
+bound=O/'bound_thermal_v3.json'
+if not bound.exists():bound.write_bytes(P.read_bytes())
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+d=json.loads(bound.read_bytes());b=d['B_proposal'];checks=[]
+duration_source=R/'.scratch/gorilla_internal_g15_thermal_operating_domain/operating_domain.json'
+duration_bound=O/'bound_mission_duration_source.json'
+if not duration_bound.exists():duration_bound.write_bytes(duration_source.read_bytes())
+domains={x['id']:x for x in json.loads(duration_bound.read_bytes())['two_physical_budget_domains']}
+def ck(n,c,details=None):checks.append({'check':n,'pass':bool(c),'details':details})
+ck('final_source_still_bound',sha(bound)==sha(P))
+v2=json.loads((O/'body_b_arm_b/bound_thermal_budget.json').read_bytes())['B_proposal']
+for key in ['same_task_heat_energy','fluid_once_proxy_candidates','full_new_groups_for_body']:
+    ck('v2_current_mass_handoff_vs_final_'+key,v2[key]==b[key])
+ck('full188_branches_preserved',sum(x.get('count',1)*x.get('flow_each_Lmin',x.get('flow_Lmin',0)) for x in b['complete_branch_account'])==59)
+aux=b['auxiliary_once_allocation']
+ck('28V_full_aux_once',abs(8*215+2*28*15+97.5+sum(aux['other500W_complete_nonqualified_assignment'].values())-aux['total28V_W'])<1e-10)
+for mission in b['same_task_heat_energy']:
+    for phase in mission['phases']:
+        bus=phase['bus_kW']
+        for i,V in enumerate([288,200]):
+            heat=(bus*1000/.98/V)**2*.2/1000
+            ck('I2R_'+mission['mission']+phase['phase']+str(mission['WP32_supply_V_budget'])+str(V),abs(heat-phase['cell_heat_kW_at288_200'][i])<1e-11)
+        for point in phase['EMRAX_own_motor_eta_partitions']:
+            ck('heat_conservation_'+mission['mission']+phase['phase']+str(point['eta_motor_own'])+str(mission['WP32_supply_V_budget']),
+               max(abs(point['rest_liquid_kW_at288_200'][i]+point['EMRAX_liquid_kW']+point['EMRAX_rotor_air_kW']-phase['total_low_kW_at288_200_before_LC_airpartition'][i]) for i in range(2))<1e-10)
+    avg=[sum(p['duty']*(p['bus_kW']/.98+(p['bus_kW']*1000/.98/V)**2*.2/1000) for p in mission['phases']) for V in [288,200]]
+    ck('energy_input_'+mission['mission']+str(mission['WP32_supply_V_budget']),np.max(np.abs(np.asarray(avg)-mission['avg_input_including_cells_kW_at288_200']))<1e-10)
+    duration=domains[mission['mission']]['duration_h']
+    ck('actual_mission_duration_nameplate_'+mission['mission']+str(mission['WP32_supply_V_budget']),np.max(np.abs(np.asarray(avg)*duration/.75-mission['nameplate_required_kWh_SOC75_at288_200']))<1e-10)
+    ck('480_SOC75_reserve10_time_'+mission['mission']+str(mission['WP32_supply_V_budget']),np.max(np.abs(7.44*.75*.9/np.asarray(avg)*60-mission['480_timecap_min_SOC75_reserve10_at288_200']))<1e-10)
+for row in b['pressure_screens']:
+    for name in ['main_pipe','pump_suction_feed','critical_branch']:
+        p=row[name];ratio=p['ID_m'];f=p['f'];
+        # Recover the density independently from the stated historical property interpolation.
+        rho=float(np.interp(row['T_C'],[10,40,65,90],[1078.72,1064.91,1050.05,1032.15]))
+        dp=(f*p['L_m']/ratio+p['K_own'])*rho*p['v_m_s']**2/2
+        ck('Darcy_'+row['loop']+str(row['T_C'])+row['regime_assumption']+name,abs(dp-p['dp_Pa'])<1e-8)
+    expected=[sum(row[k]['dp_Pa'] for k in ['main_pipe','pump_suction_feed'])+
+              b['joint_ES_graph_capture']['emrax_bank' if row['loop']=='emrax' else 'rest_bank']['liquid_dp_Pa_manual_range'][i]*row['core_multiplier']+
+              row['branch_dp_Pa_own_range'][i]+row['filter_balance_Pa_own_range'][i] for i in range(2)]
+    ck('joint_liquid_pressure_'+row['loop']+str(row['T_C'])+row['regime_assumption'],max(abs(expected[i]-row['system_dp_Pa_own_range'][i]) for i in range(2))<1e-8)
+air=b['full_air_pressure_joint_ledger'];ratio=6.5*60/622
+ck('fan_affinity_head_only',abs(475*ratio**2-air['theoretical_each_PWM_head_Pa'])<1e-10)
+ck('fan_affinity_power_not_energycredit',abs(215*ratio**3-air['theoretical_each_PWM_power_W_not_energycredit'])<1e-10)
+ck('8_airpaths_countonce',sum(x['core_count']*x['fan_count_each_core'] for x in air['rows'])==8 and sum(x['whole_segment_air_m3min'] for x in air['rows'])==52)
+for row in air['rows']:
+    dp=[sum(row[k][i] for k in ['fullcore_air_dp_Pa_manual_range','own_plenum_drop_Pa_range','inlet_exhaust_own_dp_Pa_range','rotor_parallelbranch_own_dp_Pa_range']) for i in range(2)]
+    ck('complete_air_pressure_'+row['loop_segment'],max(abs(dp[i]-row['system_dp_Pa_own_range'][i]) for i in range(2))<1e-10)
+thermal_rows=b['conditional_property_mean_temperature_fixedpoint']
+for i in [0,len(thermal_rows)//2,len(thermal_rows)-1]:
+    row=thermal_rows[i]
+    for name,z in [('EMRAX',row['EMRAX_loop']),('hot',row['hot_loop']),('rest288',row['rest_loop_at288_200'][0]),('rest200',row['rest_loop_at288_200'][1])]:
+        ck('stated_meanT_'+str(i)+name,abs((z['supply_C']+z['return_C'])/2-z['mean_C_properties'])<1e-8)
+out={'schema':'gorilla_g18_independent_conservation_audit_v1','producer_sha256':sha(Path(__file__)),
+     'final_thermal_sha256':sha(bound),'checks':checks,'identity_and_formula_checks_pass':all(x['pass'] for x in checks),
+     'mission_duration_input_sha256':sha(duration_bound),
+     'proof_scope':'Stated conditional arithmetic, inventory identity and heat/energy conservation only; no cold pump/fan/UA/NPSH/installed circuit or structural acceptance',
+     'physical_hardware_or_stable_SI_admission':False}
+(O/'independent_final_thermal_budget.json').write_text(json.dumps(out,indent=2,allow_nan=False)+'\n')
+print(json.dumps({'checks':len(checks),'failed':[x for x in checks if not x['pass']],'physical_admission':False},indent=2))

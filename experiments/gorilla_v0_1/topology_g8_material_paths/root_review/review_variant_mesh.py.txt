@@ -1,0 +1,57 @@
+"""Independent tetra/geometry mass audit; admission is for conditional P1 only."""
+from pathlib import Path
+import argparse, hashlib, itertools, json
+import numpy as np
+from scipy.sparse import coo_matrix
+from scipy.sparse.csgraph import connected_components
+
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+ap=argparse.ArgumentParser();ap.add_argument('--name',required=True);ap.add_argument('--source-directory',type=Path,required=True);ap.add_argument('--level',choices=['coarse','fine'],default='coarse')
+a=ap.parse_args();OUT=Path(__file__).resolve().parent
+ROOT=OUT.parents[1];BASE=a.source_directory.resolve()
+SOURCE=BASE/'cad_source_manifest.json';MESH=BASE/a.level/'carrier_tetra.npz'
+cad=json.loads(SOURCE.read_text())
+assert sha(BASE/'carrier_exact.brep')==cad['CAD_files']['brep']
+assert sha(BASE/'carrier_exact.step')==cad['CAD_files']['step']
+z=np.load(MESH);nodes=z['points_m'];cells=z['tetra'];faces=z['boundary_faces']
+p=nodes[cells]
+signed=np.einsum('ij,ij->i',np.cross(p[:,1]-p[:,0],p[:,2]-p[:,0]),p[:,3]-p[:,0])/6
+volume=np.abs(signed)
+edges=np.vstack([cells[:,[i,j]] for i,j in itertools.combinations(range(4),2)])
+adj=coo_matrix((np.ones(len(edges)),(edges[:,0],edges[:,1])),shape=(len(nodes),len(nodes))).tocsr()
+roots,_=connected_components(adj,directed=False)
+edge_squared=np.stack([np.sum((p[:,i]-p[:,j])**2,axis=1) for i,j in itertools.combinations(range(4),2)],axis=1)
+quality=12*np.cbrt((3*volume)**2)/edge_squared.sum(axis=1)
+tri=nodes[faces]
+surface_signed_volume=float(np.einsum('ij,ij->i',tri[:,0],np.cross(tri[:,1],tri[:,2])).sum()/6)
+rho=7850.;v=float(volume.sum());mass=rho*v
+centroid=(volume[:,None]*p.mean(axis=1)).sum(axis=0)/v
+# Uniform tetra second moment: (sum(vertex_i) outer sum + sum(vertex_i outer vertex_i))/20.
+delta=p-centroid
+s=delta.sum(axis=1)
+second=np.einsum('e,ei,ej->ij',volume,s,s)/20+np.einsum('e,eki,ekj->ij',volume,delta,delta)/20
+inertia=rho*(np.trace(second)*np.eye(3)-second)
+volume_error=(v-cad['actual_volume_m3'])/cad['actual_volume_m3']
+cad_inertia=np.asarray(cad['inertia_at_COM_world_kg_m2'])
+flags={'all_nodes_used':len(np.unique(cells))==len(nodes),'one_material_graph':roots==1,
+       'strict_positive_tetra_sign':bool(np.all(signed>0)),'no_numerically_tiny_tets':bool(volume.min()>1e-20),
+       'minimum_mean_ratio_above_declared_exploratory_threshold_0p05':bool(quality.min()>.05),
+       'CAD_chord_volume_difference_below_0p1_percent':abs(volume_error)<.001,
+       'outward_native_surface_volume_matches_tetra':abs(surface_signed_volume-v)/v<1e-10}
+report={'robot_id':'gorilla_v0_1','level':a.level,'name':a.name,'producer_sha256':sha(__file__),
+        'cad_manifest_sha256':sha(SOURCE),'brep_sha256':sha(BASE/'carrier_exact.brep'),'mesh_sha256':sha(MESH),
+        'nodes':len(nodes),'tetrahedra':len(cells),'DOFs':3*len(nodes),'boundary_faces':len(faces),
+        'material_node_graph_roots':int(roots),'volume_m3':v,'signed_surface_volume_m3':surface_signed_volume,
+        'CAD_chord_volume_relative_difference':volume_error,'conditional_mass_kg':mass,
+        'center_of_mass_m':centroid.tolist(),'complete_inertia_at_COM_world_kg_m2':inertia.tolist(),
+        'CAD_COM_difference_m':(centroid-np.asarray(cad['center_world_m'])).tolist(),
+        'CAD_inertia_relative_frobenius_difference':float(np.linalg.norm(inertia-cad_inertia)/np.linalg.norm(cad_inertia)),
+        'minimum_tetra_volume_m3':float(volume.min()),'maximum_tetra_edge_m':float(np.sqrt(edge_squared.max())),
+        'mean_ratio_quantiles':np.quantile(quality,[0,.01,.5,.99,1]).tolist(),
+        'numerical_baseline_admission_checks':{k:bool(v) for k,v in flags.items()},
+        'structural_FE_admissible':all(flags.values()),
+        'admission_scope':'Conditional small-strain isotropic P1 baseline, with explicit prescribed port forces; not converged stress or qualified real supports.',
+        'actual_component_load_solved_in_this_audit':False,'mesh_convergence_proven':False,
+        'contact_strength_buckling_fatigue_manufacturing_whole_robot_accepted':False}
+(OUT/(a.name+'_mesh_admission.json')).write_text(json.dumps(report,indent=2)+'\n')
+print(json.dumps(report,indent=2))

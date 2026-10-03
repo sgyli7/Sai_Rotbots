@@ -1,0 +1,35 @@
+"""Restore omitted right hip-yaw complete components without resizing OEM envelopes."""
+from pathlib import Path
+import copy, hashlib, json
+
+ROOT = Path(__file__).resolve().parents[1]
+SOURCE = ROOT / '.scratch/gorilla_internal_e2_structure/structure_scene.json'
+OUT = ROOT / '.scratch/gorilla_internal_e2a_supplement'
+
+def main():
+    scene = json.loads(SOURCE.read_text())
+    neutral = next(p['parts'] for p in scene['pose_scenes'] if p['id'] == 'neutral')
+    parts = []
+    for part in neutral:
+        if not part['name'].startswith('e2_ds_left_hip_yaw_'):
+            continue
+        mirrored = copy.deepcopy(part)
+        mirrored['name'] = mirrored['name'].replace('left_', 'right_')
+        mirrored['E2_metadata']['source_D_module_id'] = mirrored['E2_metadata']['source_D_module_id'].replace('left_', 'right_')
+        mirrored['vertices_world_m'] = [[v[0], -v[1], v[2]] for v in mirrored['vertices_world_m']]
+        mirrored['faces'] = [list(reversed(f)) for f in mirrored['faces']]
+        mirrored['E2_metadata']['mirrored_from_part'] = part['name']
+        parts.append(mirrored)
+    assert len(parts) == 6
+    data = {
+        'robot_id': 'gorilla_v0_1', 'candidate': 'internal_structure_e2a_inventory_correction',
+        'source_sha256': hashlib.sha256(SOURCE.read_bytes()).hexdigest(), 'parts': parts,
+        'missing_mass_range_kg': [sum(p['mass_range_kg'][i] for p in parts) for i in range(3)],
+        'basis': 'Reflect six real left hip-yaw component native meshes about Y=0 with winding reversed, same whole OEM size and component mass allowances; pelvis stator ownership retained. Original frozen E2 structure is unmodified. This fixes inventory omission only; fit, ports, wiring, mirror-specific OEM compatibility and drive not qualified.',
+        'geometry_accepted': False, 'physics_accepted': False,
+    }
+    OUT.mkdir(parents=True, exist_ok=True)
+    (OUT / 'right_hip_yaw_components.json').write_text(json.dumps(data, indent=2, allow_nan=False) + '\n')
+
+if __name__ == '__main__':
+    main()

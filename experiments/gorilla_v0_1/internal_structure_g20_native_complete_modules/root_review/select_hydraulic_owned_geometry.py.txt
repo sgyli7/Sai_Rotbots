@@ -1,0 +1,17 @@
+"""Selected own geometry, not byte restoration of the original OEM-CAD scene."""
+from pathlib import Path
+import gzip,json,hashlib
+ROOT=next(p for p in Path(__file__).resolve().parents if(p/'sai_robots_engineering_rules.md').exists())
+O=Path(__file__).resolve().parent
+rows=[]
+for variant,rel in [('a','scene_a.json.gz'),('b','b/scene_b.json.gz')]:
+    p=ROOT/'.scratch/gorilla_internal_g20_hydraulic_complete_module'/rel
+    data=p.read_bytes(); scene=json.loads(gzip.decompress(data))
+    omitted=[q for q in scene['parts'] if q['role']=='official_oem_cad_reference']
+    selected=[q for q in scene['parts'] if q['role']!='official_oem_cad_reference']
+    out=dict(robot_id='gorilla_v0_1',source_scene_sha256=hashlib.sha256(data).hexdigest(),scope='Exact selected own-native, independently authored dimensional gross and function/fluid/service parts; original two imported OEM coil triangulations omitted. NOT the complete source scene and NOT physics accepted.',parts=selected,omitted_original_parts=[dict(id=q['name'],role=q['role'],OEM_source_sha256=q['source_sha256']) for q in omitted],source_geometry_modified=False,part_selection_is_new_subset=True,full_original_scene_restored=False,physical_accepted=False)
+    dest=O/f'hydraulic_selected_parts_{variant}.json.gz'
+    dest.write_bytes(gzip.compress(json.dumps(out,separators=(',',':'),allow_nan=False).encode(),mtime=0))
+    rows.append(dict(source_path=str(p.relative_to(ROOT)),source_sha256=hashlib.sha256(data).hexdigest(),selected_path=str(dest.relative_to(ROOT)),selected_sha256=hashlib.sha256(dest.read_bytes()).hexdigest(),selected_count=len(selected),omitted_OEM_CAD_count=len(omitted)))
+(O/'hydraulic_selected_geometry_receipt.json').write_text(json.dumps(dict(variants=rows,reason='Original manufacturer CAD reproduction/redistribution rights are not established; raw CAD, its NPZ and enclosing original scenes stay local. Own engineering and failure reports are selected for version control.',complete_module_reproduction=False),indent=2)+'\n')
+print(rows)

@@ -1,0 +1,197 @@
+{
+  "schema": "gorilla_internal_c_native_source_readonly_review_v1",
+  "created_at_utc": "2026-10-02T17:00:04+00:00",
+  "review_mode": "fixed_source_readonly_review_not_model_execution",
+  "source_files": {
+    "scene": {
+      "path": "robots/gorilla_v0_1/cad/source/internal_structure_c_scene.json",
+      "sha256": "e7281d2bf5ece116e6a88b8c8fc5e7c4c16c8e5ab230fb0ad3b9bd8427cac3bc"
+    },
+    "spec": {
+      "path": "robots/gorilla_v0_1/configs/internal_structure_c_spec.json",
+      "sha256": "ecbe6ad64d8c968f913b14998b69b7f14080d2b950b526813309c34c8f6b873d"
+    },
+    "builder": {
+      "path": "scripts/models/build_gorilla_internal_co_design.py",
+      "sha256": "5454c09258b0a2392b2fc9e153f8497f544c2a3e30bf7ef0ee75d301e8152ec4"
+    },
+    "helper": {
+      "path": "scripts/models/build_gorilla_internal_structure.py",
+      "sha256": "a85e85c477b6a47ee0b1d047beb2671d0bc32c6580520fe10e6338acbb9cbf43"
+    },
+    "component_references": {
+      "path": "robots/gorilla_v0_1/hardware/compact_electric_component_references.md",
+      "sha256": "e1dc129ed209ce87f6689008f82d64e2060601ae47305878555ae2747f4c56f5"
+    }
+  },
+  "scene_sha256_expected": "e7281d2bf5ece116e6a88b8c8fc5e7c4c16c8e5ab230fb0ad3b9bd8427cac3bc",
+  "scene_unchanged_at_review_write": true,
+  "source_scope_flags": {
+    "selected_route": null,
+    "explored_route": "rotary_electric_constituent_layout_probe",
+    "stable_physical_contract": false,
+    "geometry_accepted": false,
+    "physics_accepted": false
+  },
+  "catalogue_component_counts": {
+    "gear": 8,
+    "motor": 8,
+    "reserve": 8
+  },
+  "catalogue_reference_counts": {
+    "Nabtesco RV-380N component set": 4,
+    "Tecnotion QTL-A-230-85-N electromagnetic kit": 4,
+    "Nabtesco RV-160N component set": 4,
+    "Tecnotion QTL-A-230-65-N electromagnetic kit": 4
+  },
+  "catalogue_gear_mass_sum_kg": 264.4,
+  "catalogue_motor_mass_sum_kg": 65.6,
+  "catalogue_total_mass_sum_kg": 330.0,
+  "auxiliary_reserve_mass_sum_range_kg": [
+    64.0,
+    112.0,
+    176.0
+  ],
+  "steel_net_frame_mass_kg_recomputed_from_reported_volumes": 464.3769170474845,
+  "steel_mass_is_manufactured_assembly_mass": false,
+  "catalogue_plus_steel_plus_aux_mass_range_kg_excluding_armor_context": [
+    858.3769170474845,
+    906.3769170474845,
+    970.3769170474845
+  ],
+  "steel_connected_material_component_counts": {
+    "left_thigh": 3,
+    "left_middle_shank": 3,
+    "left_distal_shank": 2,
+    "right_thigh": 3,
+    "right_middle_shank": 3,
+    "right_distal_shank": 2,
+    "pelvis": 5,
+    "torso": 1,
+    "left_upper_arm": 1,
+    "left_forearm": 1,
+    "right_upper_arm": 1,
+    "right_forearm": 1,
+    "left_foot": 2,
+    "left_forefoot_display": 1,
+    "left_heel_display": 1,
+    "right_foot": 2,
+    "right_forefoot_display": 1,
+    "right_heel_display": 1
+  },
+  "steel_bodies_with_multiple_positive_material_components": [
+    "left_thigh",
+    "left_middle_shank",
+    "left_distal_shank",
+    "right_thigh",
+    "right_middle_shank",
+    "right_distal_shank",
+    "pelvis",
+    "left_foot",
+    "right_foot"
+  ],
+  "legacy_oem_bearing_envelope_names_in_scene": [],
+  "catalogue_integrated_bearing_count_as_additional_mass": 0,
+  "context_module_count": 51,
+  "context_body_labels": [
+    "unresolved_module_allocation"
+  ],
+  "critical_findings": [
+    {
+      "id": "fixed_side_case_load_path_open",
+      "severity": "RED_LINE",
+      "type": "derived_geometry_confirmed_by_sample_mesh",
+      "part": "isc_left_thigh_net_frame",
+      "builder_lines": [
+        131,
+        150
+      ],
+      "rv380_case_inner_radius_m": 0.1485,
+      "motor_neck_outer_radius_m": 0.126,
+      "nominal_radial_separation_m": 0.022499999999999992,
+      "sample_mesh_watertight": true,
+      "sample_mesh_positive_material_components": 3,
+      "sample_component_mass_kg": [
+        35.660590906957445,
+        11.121540193904567,
+        5.671597516271929
+      ],
+      "meaning": "Input-side neck is radially clear of RV380 case; original frame is removed around outer case plus clearance. No fixed-side bridge/cap/fastener load path exists in this finite material source. Same rigid body label cannot supply missing material connection."
+    },
+    {
+      "id": "left_foot_island_connection_open",
+      "severity": "RED_LINE",
+      "type": "sample_mesh_observation",
+      "part": "isc_left_foot_net_frame",
+      "sample_mesh_watertight": true,
+      "positive_material_components": 2,
+      "aabb_Y_minimum_separation_m": 0.05699998140335083,
+      "meaning": "Two disjoint positive material shells assigned to left_foot have at least 57mm AABB Y separation; no connecting member or specified fastening path in this frame mesh. Positive shell volume*7850 is not net island mass when internal void shells are separate.",
+      "positive_shell_volume_times_density_kg_not_net_island_mass": [
+        19.46341368038242,
+        1.752713919943694
+      ],
+      "whole_foot_net_material_mass_kg": 21.030165785313706,
+      "void_assignment_note": "Positive closed surface shells can enclose negative-volume void shells; no island net mass allocation was attempted. Net whole-foot mass retains all signed volumes."
+    },
+    {
+      "id": "body_and_internal_motion_unqualified",
+      "severity": "RED_LINE_UNKNOWN",
+      "type": "source_observation_and_physical_implication",
+      "builder_lines": [
+        122,
+        127,
+        178,
+        185
+      ],
+      "meaning": "All gear and full electromagnetic-kit mass is allocated to parent; published motor stator/rotor mass and nominal Jr are omitted despite being known. Rotor/input/output internal motion, true gear division, COM and installed inertia remain unknown. Secondary hip/ankle axes are unresolved; serial multi-axis carriers/support route not represented.",
+      "known_nominal_motor_rotor_Jr_omitted": true
+    },
+    {
+      "id": "motor_voltage_thermal_leads_unknown",
+      "severity": "RED_LINE_UNKNOWN",
+      "type": "source_vs_catalogue_boundary",
+      "motor_connector_protrusion_m": 0.036,
+      "catalogue_mount_C": 20.0,
+      "catalogue_coil_C": 100.0,
+      "max_voltage_Vdc_reference": 680.0,
+      "actual_gorilla_bus_assumed": null,
+      "meaning": "Nominal cylinders omit connector geometry; auxiliary space is provisional. Full torque-speed-voltage curve, sealing coolant loop, brake and driver not selected or qualified. No 102.4V inheritance."
+    }
+  ],
+  "next_evidence_needed": [
+    "fixed side case/neck/frame connected finite material and mounting path",
+    "output flange OEM bolt/interface and bearing load path",
+    "rotor/input/output dynamic mass and inertia split",
+    "full lead/cooling/brake/driver assembly envelope",
+    "serial hip yaw/roll and ankle roll carriers/body map",
+    "motor curve at selected bus and duty",
+    "joint load and full geometry result from parent"
+  ],
+  "no_manufacturer_research_expansion": true,
+  "no_controlled_file_edits": true,
+  "no_full_model_run_ci_gpu": true,
+  "legacy_B_bearing_count_checked": 16,
+  "legacy_B_bearing_names_retained_in_C": [],
+  "known_motor_internal_fields": {
+    "QTL-A-230-85-N": {
+      "stator_mass_kg_ex_cables": 7.2,
+      "rotor_mass_kg": 2.4,
+      "rotor_Jr_kg_m2": 0.014,
+      "ratio": 117,
+      "ideal_rigid_reflected_Jr_kg_m2": 191.64600000000002
+    },
+    "QTL-A-230-65-N": {
+      "stator_mass_kg_ex_cables": 5.2,
+      "rotor_mass_kg": 1.6,
+      "rotor_Jr_kg_m2": 0.009,
+      "ratio": 81,
+      "ideal_rigid_reflected_Jr_kg_m2": 59.04899999999999
+    }
+  },
+  "known_motor_rotor_mass_total_kg": 16.0,
+  "known_motor_stator_mass_total_kg": 49.6,
+  "known_Jr_is_not_complete_joint_inertia": true,
+  "scene_sha256_at_review_completion": "e7281d2bf5ece116e6a88b8c8fc5e7c4c16c8e5ab230fb0ad3b9bd8427cac3bc",
+  "scene_unchanged_at_review_completion": true
+}

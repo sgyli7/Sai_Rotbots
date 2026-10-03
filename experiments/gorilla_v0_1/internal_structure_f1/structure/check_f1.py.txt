@@ -1,0 +1,109 @@
+"""Read-only rerunnable finite F1 diagnostic. Writes this scratch folder only."""
+from pathlib import Path
+from collections import defaultdict
+import json, math, hashlib, time
+import numpy as np,trimesh as tr
+from PIL import Image,ImageDraw
+import axes_and_modules as a
+O=Path(__file__).resolve().parent;ROOT=a.ROOT;mesh=a.mesh
+read=a.read;sha=a.sha
+S=read(O/'structure_scene.json');I=read(O/'interface.json');BASE=a.BASE
+ARM=[p for p in BASE['parts'] if p['role'] in ['armor_cover','armor_surface']]
+TH=1e-10
+def write(n,d):(O/n).write_text(json.dumps(d,indent=2,allow_nan=False)+'\n')
+def intersect(ma,mb):
+ if not(np.all(ma.bounds[1]>mb.bounds[0]) and np.all(mb.bounds[1]>ma.bounds[0])):return None
+ x=tr.boolean.intersection([ma,mb],engine='manifold')
+ return x if x.volume>TH else None
+topo=[];groups=defaultdict(list);refs=[];base_m={p['name']:mesh(p) for p in S['parts']}
+for p in S['parts']:
+ m=base_m[p['name']];topo.append({'id':p['name'],'finite':bool(np.isfinite(m.vertices).all()),'watertight':bool(m.is_watertight),'consistent_winding':bool(m.is_winding_consistent),'positive_volume':bool(m.volume>TH),'volume_m3':float(m.volume)})
+ if 'density_kg_m3' in p:groups[p['material_union_group']].append(p)
+ elif p['role']!='holding_mount_window':refs.append({'id':p['name'],'body':p.get('mass_owner_body',p['body']),'mass_range_kg':p['mass_range_kg'],'role':p['role']})
+unions={};stats=[];member={}
+for g,ps in groups.items():
+ m=tr.boolean.union([base_m[p['name']] for p in ps],engine='manifold') if len(ps)>1 else base_m[ps[0]['name']].copy();unions[g]=m;member[g]=ps[0];comps=[x for x in m.split(only_watertight=False) if x.volume>TH];stats.append({'group':g,'body':ps[0]['body'],'mass_owner_body':ps[0].get('mass_owner_body',ps[0]['body']),'member_ids':[p['name'] for p in ps],'net_volume_m3':float(m.volume),'density_kg_m3':7850,'mass_kg':float(m.volume*7850),'positive_connected_components':len(comps),'component_volumes_cm3':sorted([float(x.volume*1e6) for x in comps],reverse=True),'centroid_world_m':m.center_mass.tolist(),'bounds_world_m':m.bounds.tolist()})
+ print('UNION',g,len(ps),len(comps),round(m.volume*7850,3),flush=True)
+write('mass_ledger.json',{'input_scene_sha256':sha(O/'structure_scene.json'),'material_groups':stats,'complete_reference_mass_rows':refs,'net_material_mass_kg':sum(x['mass_kg'] for x in stats),'component_reference_mass_range_kg':np.sum([r['mass_range_kg'] for r in refs],axis=0).tolist(),'candidate_scope_mass_range_kg':(np.sum([r['mass_range_kg'] for r in refs],axis=0)+sum(x['mass_kg'] for x in stats)).tolist(),'not_whole_robot_mass':True,'density_is_conditional_7850':True,'holding_windows_not_hardware':True,'no_subtraction_from_existing_system_mass':True})
+write('topology.json',{'input_scene_sha256':sha(O/'structure_scene.json'),'rows':topo,'failures':[r for r in topo if not all(r[k] for k in ['finite','watertight','consistent_winding','positive_volume'])]})
+armor_m={p['name']:mesh(p) for p in ARM};pose_results=[];invariance=[]
+def posed_armor(ps):
+ Ts=ps['body_transforms'];out={};alignment={'left_foot':'left_foot_roll_arch','right_foot':'right_foot_roll_arch'}
+ for p in ARM:
+  b=alignment.get(p['body'],p['body']);T=Ts.get(b)
+  if T is None:
+   # Original shoulder/arm rigid comparator followsnewtorso only, nonewarmmotioncontract claimed.
+   T=Ts.get('torso') if ('arm' in b or 'palm' in b or 'finger' in b) else np.eye(4)
+  m=armor_m[p['name']].copy();m.apply_transform(T);out[p['name']]=m
+ return out
+for ps in S['pose_scenes']:
+ posed={p['name']:p for p in ps['parts']};gm={};coll=[];ah=[];bearing=[];component_conflicts=[];component_armor=[];Tdict={}
+ for g,m in unions.items():
+  p=member[g];pp=posed[p['name']];T=np.array(pp['applied_transform_world']);nm=m.copy();nm.apply_transform(T);gm[g]=nm;Tdict[g]=T
+  inv=np.max(np.abs(tr.transformations.transform_points(np.array(p['vertices_world_m']),T)-np.array(pp['vertices_world_m'])));invariance.append({'pose':ps['id'],'part':p['name'],'rigid_vertices_max_abs_m':float(inv),'net_volume_error_m3':float(abs(nm.volume-m.volume))})
+ am=posed_armor(ps)
+ for ix,(ga,ma) in enumerate(gm.items()):
+  for gb,mb in list(gm.items())[ix+1:]:
+   x=intersect(ma,mb)
+   if x is not None:coll.append({'a':ga,'b':gb,'volume_cm3':float(x.volume*1e6),'bounds_world_m':x.bounds.tolist(),'scope':'Different actual material assembly, includes nominalpin/runningfits; not automatically legal.'})
+  for an,mb in am.items():
+   x=intersect(ma,mb)
+   if x is not None:ah.append({'material_group':ga,'armor':an,'volume_cm3':float(x.volume*1e6),'bounds_world_m':x.bounds.tolist()})
+ for p in ps['parts']:
+  if p['role']!='bearing_reference':continue
+  m=mesh(p)
+  for g,n in gm.items():
+   x=intersect(m,n)
+   if x is not None:bearing.append({'bearing_ref':p['name'],'material_group':g,'volume_cm3':float(x.volume*1e6)})
+ for p in ps['parts']:
+  if p['role']!='complete_component_reference':continue
+  m=mesh(p)
+  for g,n in gm.items():
+   x=intersect(m,n)
+   if x is not None:component_conflicts.append({'reference_id':p['name'],'material_group':g,'volume_cm3':float(x.volume*1e6),'bounds_world_m':x.bounds.tolist(),'same_owner_body':p['body']==member[g]['body'],'scope':'Complete OEM/custom reference envelope, not verified internal material; sameowner gear/input/cooling containment cannot be automatically counted as actualmetal collision.'})
+  for an,n in am.items():
+   x=intersect(m,n)
+   if x is not None:component_armor.append({'reference_id':p['name'],'armor':an,'volume_cm3':float(x.volume*1e6),'bounds_world_m':x.bounds.tolist()})
+ ar=[]
+ for ad in I['actuators']:
+  r=next((x for x in ps['actual_endpoint_link_transforms'] if x['id']==ad['id']),None)
+  if r is not None:
+   e=r['eye_length_m']-ad['allocated_custom_zero_eye_length_m'];ar.append({'id':ad['id'],'extension_m':e,'stroke_m':ad['actual_stroke_design_m'],'within_working_stroke':bool(-1e-8<=e<=ad['actual_stroke_design_m']+1e-8),'finite_geometry_present':ad['short_working_deficit_m']==0,'extension_delta_invariant_material':True})
+ row={'id':ps['id'],'actual_material_group_intersections':coll,'original_armor_intersections':ah,'unqualified_bearing_reference_intersections':bearing,'complete_component_reference_vs_material':component_conflicts,'complete_component_reference_vs_original_armor':component_armor,'actuator_actual_extension_check':ar,'root_shift_z_m':ps['root_shift_z_m'],'original_armor_pose_scope':'Original unchangedneutral native comparator rigidly followsnewserialtrees where correspondingbodiesexist; upperarms followtorsoonly. No originalAA3 acceptance implied.','geometry_accepted':False}
+ pose_results.append(row);write('pose_intersections_partial.json',pose_results)
+ print('POSECHECK',ps['id'],'new/new',len(coll),'armor',len(ah),'bearingrefs',len(bearing),flush=True)
+# Actual window rays from interior midplane towards eachsource thin armor face, not AABB.
+win=I['reserved_window'];cc=np.array(win['center_world_m']);dd=np.array(win['dimensions_xyz_m']);rayrows=[]
+for y in np.linspace(cc[1]-dd[1]/2+.005,cc[1]+dd[1]/2-.005,9):
+ for z in np.linspace(cc[2]-dd[2]/2+.005,cc[2]+dd[2]/2-.005,9):
+  o=np.array([cc[0],y,z]);r={'origin_world_m':o.tolist()}
+  for sg in [-1,1]:
+   hits=[]
+   for name,m in armor_m.items():
+    loc,ri,fi=m.ray.intersects_location([o],[[sg,0,0]],multiple_hits=True)
+    for pt,face in zip(loc,fi):
+     t=sg*(pt[0]-o[0])
+     if t>1e-7:hits.append((float(t),name,pt.tolist(),int(face),m.face_normals[face].tolist()))
+   hit=min(hits,key=lambda x:x[0]) if hits else None
+   r['positive_X' if sg>0 else 'negative_X']={'distance_m':hit[0],'part':hit[1],'point_world_m':hit[2],'triangle':hit[3],'normal_world':hit[4],'window_end_clearance_m':hit[0]-dd[0]/2} if hit else {'unknown':'No nativearmor surface onray; not sealed cavity proof.'}
+  rayrows.append(r)
+write('window_inner_skin_rays.json',{'window':win,'ray_method':'81interior-grid points +X/-X nearestactualtriangle, material0separatelychecked. Nativeinnerface inference requiresnormal/shellside review; openray recordedunknown.','rows':rayrows,'armor_input_sha256':sha(ROOT/'experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_scene.json')})
+# Native orthographic depth sorting, same model positions, no camera shift toconcealconflicts.
+def render(ps,name,axis,showarmor=False):
+ im=Image.new('RGB',(900,1150),'white');draw=ImageDraw.Draw(im);pr=[];scale=365;ox=450;oy=1100
+ pp=ps['parts']+ARM if showarmor else ps['parts']
+ for p in pp:
+  if p['role']=='holding_mount_window':continue
+  v=np.array(p['vertices_world_m']);color=(59,79,87) if p['role'].startswith('finite_frame') else (184,143,49) if 'actuator' in p['role'] else (95,111,132)
+  if p in ARM:color=tuple(int(255*c) for c in p.get('color_rgba',p.get('rgba',[.4,.6,.7,1]))[:3])
+  for f in p['faces']:
+   vv=v[f];depth=float(vv[:,0 if axis=='front' else 1].mean());xy=[(ox-scale*(x[1] if axis=='front' else x[0]),oy-scale*x[2]) for x in vv];pr.append((depth,xy,color))
+ for _,xy,color in sorted(pr,key=lambda x:x[0],reverse=axis=='rear'):draw.polygon(xy,fill=color)
+ draw.text((15,15),'Gorilla F1 '+name+' native source / candidate REJECTED',fill='black');draw.text((15,38),'375 finite/ref parts, original armor comparator only; missing4hydrauliccylinders',fill='black');im.save(O/(name+'.png'))
+for ax in ['front','left','rear']:render(S['pose_scenes'][0],'bare_'+ax,'front' if ax!='left' else 'left')
+render(S['pose_scenes'][0],'with_original_armor_left','left',True)
+def inputs():return {str(p.relative_to(ROOT)):sha(p) for p in [O/'structure_scene.json',O/'interface.json',O/'axis_probe.json',Path(__file__),ROOT/'experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_scene.json',ROOT/'.scratch/gorilla_internal_e2a_integrated/scene.json']}
+result={'robot_id':'gorilla_v0_1','inputs':inputs(),'threshold_positive_material_volume_m3':TH,'native_parts':len(S['parts']),'poses':pose_results,'topology_failures':[r for r in topo if not all(r[k] for k in ['finite','watertight','consistent_winding','positive_volume'])],'material_groups_count':len(stats),'disconnected_material_groups':[x for x in stats if x['positive_connected_components']!=1],'pose_material_invariance':{'all_group_transforms_reproduce_vertices':all(r['rigid_vertices_max_abs_m']<1e-9 for r in invariance),'max_vertex_error_m':max(r['rigid_vertices_max_abs_m'] for r in invariance),'max_union_volume_error_m3':max(r['net_volume_error_m3'] for r in invariance),'all_375_neutral_native_parts_not_recutted_inposes':True},'missing_actuator_parts_due_actual_zero_length':[a for a in I['actuators'] if a['short_working_deficit_m']>0],'geometry_accepted':False,'physics_accepted':False,'no_AA3_must_change_conclusion':True,'not_strength_FEA_or_qualified_support_rating':True}
+write('checks.json',result)
+write('manifest.json',{'robot_id':'gorilla_v0_1','candidate':'F1 scratch rejected candidate','files':{str(p.relative_to(ROOT)):sha(p) for p in sorted(O.iterdir()) if p.is_file() and p.name!='manifest.json'},'inputs':inputs(),'geometry_accepted':False,'physics_accepted':False})
+print('CHECKS FINAL',len(stats),len(result['disconnected_material_groups']),len(result['topology_failures']),flush=True)

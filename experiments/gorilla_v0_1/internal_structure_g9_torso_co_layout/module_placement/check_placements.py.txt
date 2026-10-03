@@ -1,0 +1,52 @@
+"""Actual whole-module/core/context Boolean checks with explicit source polygons."""
+from pathlib import Path
+import gzip,json,hashlib,sys,time
+import numpy as np
+import manifold3d as mf
+R=Path('/home/ethan/Projects/Sai_Rotbots');O=Path(__file__).resolve().parent
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def M(p):
+ f=np.array([[f[0],f[j],f[j+1]] for f in p['faces'] for j in range(1,len(f)-1)],dtype=np.uint64,order='C')
+ return mf.Manifold(mf.Mesh64(np.array(p['vertices_world_m'],dtype=np.float64,order='C'),f))
+def main():
+ i=int(sys.argv[1]);D=O/f'layout_{i}';start=time.monotonic();s=json.loads(gzip.decompress((D/'scene.json.gz').read_bytes()));pm={p['name']:p for p in s['parts']}
+ fluid={'oil_inventory_once','coolant_inventory','coolant_inventory_unknown_internal'};nonphysical={'holding_mount_window','control_display_ui','visible_mechanism','display_module_envelope','control_display_glass'}
+ refonly=set(s['reference_only_pending_complete_functional_replacement_ids']);active={n:p for n,p in pm.items() if n not in refonly and p.get('category') not in fluid and p.get('role') not in nonphysical}
+ group={n:r['id'] for r in s['new_complete_group_placements'] for n in r['complete_member_ids']};core=s['new_core_part_id'];query=list(group)+[core]
+ boxes={n:np.array([np.asarray(p['vertices_world_m']).min(0),np.asarray(p['vertices_world_m']).max(0)]) for n,p in active.items()}
+ ids=list(active);low=np.array([boxes[n][0] for n in ids]);high=np.array([boxes[n][1] for n in ids]);cache={};seen=set();hits=[];errs=[];tests=0
+ def kernel(n):
+  if n not in cache:cache[n]=M(active[n])
+  return cache[n]
+ reference_roles={'component_module_envelope','component_reference_envelope','complete_component_reference','bearing_reference'}
+ finite_roles={'finite_frame_material','finite_actuator_material','finite_pin_material','finite_brace_material','finite_installation_material','E2_finite_load_material','finite_load_material','finite_main_load_material'}
+ for n in query:
+  if n not in active:continue
+  b=boxes[n];candidates=np.where(np.all(np.minimum(b[1],high)-np.maximum(b[0],low)>1e-9,axis=1))[0]
+  for k in candidates:
+   other=ids[k]
+   if n==other or (n in group and other in group and group[n]==group[other]):continue
+   pair=tuple(sorted((n,other)))
+   if pair in seen:continue
+   seen.add(pair);tests+=1
+   try:v=float((kernel(n)^kernel(other)).volume())
+   except Exception as e:errs.append({'a':n,'b':other,'error':str(e)});continue
+   if v<=1e-9:continue
+   roles=[active[n]['role'],active[other]['role']];stock=bool(set(roles)&reference_roles)
+   hits.append({'a':n,'b':other,'group_a':group.get(n),'group_b':group.get(other),'a_owner':active[n].get('body'),'b_owner':active[other].get('body'),
+        'volume_m3':v,'volume_cm3':v*1e6,'a_role':roles[0],'b_role':roles[1],'reference_envelope_involved':stock,
+        'new_core_involved':core in pair,'original_armor_involved':bool(set(roles)&{'armor_surface','armor_cover'}),
+        'different_complete_group_pair':n in group and other in group and group[n]!=group[other],
+        'finite_material_pair_query':not stock and core in pair and any(r in finite_roles for r in roles),
+        'geometry_query_is_not_OEM_material_or_connection_qualification':True})
+ report={'scene_stored_sha256':sha(D/'scene.json.gz'),'full_native_rows':len(pm),'active_exclusion_rows':len(active),'tests':tests,
+        'positive_pairs':sorted(hits,key=lambda r:-r['volume_m3']),'errors':errs,
+        'new_core_pairs':sum(r['new_core_involved'] for r in hits),'armor_pairs':sum(r['original_armor_involved'] for r in hits),
+        'complete_group_vs_complete_group_pairs':sum(r['different_complete_group_pair'] for r in hits),
+        'original_core_position_failure_screen_not_inherited':True,'unchanged_rest_rest_and_full_motion_not_retested':True,
+        'old_e2_torso_reference_only_not_silently_deleted':sorted(refonly),'fluid_and_service_not_solid_hardware':True,
+        'query_representation':'Original indexed triangles or explicit source-bound polygon fan; no source repair.',
+        'no_OEM_void_or_intended_interference_automatically_excluded':True,'physics_or_geometry_or_aesthetic_accepted':False,
+        'elapsed_s':time.monotonic()-start,'checker_sha256':sha(__file__)}
+ (D/'space_checks.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps({k:report[k] for k in ['tests','new_core_pairs','armor_pairs','complete_group_vs_complete_group_pairs','elapsed_s']}),flush=True)
+if __name__=='__main__':main()

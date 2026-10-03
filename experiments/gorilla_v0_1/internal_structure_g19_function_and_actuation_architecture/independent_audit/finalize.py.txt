@@ -1,0 +1,39 @@
+import json,hashlib,datetime
+from pathlib import Path
+R=Path('/home/ethan/Projects/Sai_Rotbots');O=R/'.scratch/gorilla_internal_g19_independent_audit'; P=R/'.scratch/gorilla_internal_g19_root_macro';W=R/'.scratch/gorilla_internal_g19_drive_architecture'
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+d=json.loads((O/'audit.json').read_text());w=json.loads((W/'winding_ratio_voltage.json').read_text());ws=json.loads((W/'winding_summary.json').read_text());identity=R/'.scratch/gorilla_internal_g19_function_architecture/function_identity_checks.json';di=json.loads(identity.read_text())
+d['preserved_G19_function_identity_checks']={'path':str(identity),'sha256':sha(identity),'original_schema':di['schema'],'original_sourceSHA':di['sourceSHA'],'original_checks_literal':di['checks'],'scope_not_physical_release':True};d['inputs_sha256'][str(identity.relative_to(R))]=sha(identity)
+d['energy_only_scalar_comparisons']=714;d['including_summary_scalar_comparisons']=d.pop('energy_scalar_checks');d['summary_source_full_sha256_matches']=ws['source_full_sha256']==sha(W/'winding_ratio_voltage.json');d['winding_summary_hash_binding_verified']=d['summary_source_full_sha256_matches']
+ss=[x for x in w['screens'] if x['Vbus_assumed_V'] in (180,302.4)];group=[]
+for motor in w['motor_facts']:
+ a=[x for x in ss if x['motor']==motor];group.append({'motor':motor,'count':len(a),'qdot_0p5_voltage_model_failed_count':sum(x['qdot_p5_voltage_model_rejected'] for x in a),'known_subset_Tc_exceeded_count':sum(x['catalogue_Tc_magnitude_exceeded_even_by_known_subset'] for x in a),'max_Tc_utilization':max(x['catalogue_Tc_utilization_known_subset'] for x in a),'required_Vdc_0p5_range':[min(x['steady_qdot_p5_required_Vdc_including_10pct_margin'] for x in a),max(x['steady_qdot_p5_required_Vdc_including_10pct_margin'] for x in a)]})
+d['72s10p_raw_bus_endpoint_drive_counterexamples']=group
+cached=[R/'.scratch/gorilla_internal_c_drive/qtl210_specsheet_2_4.pdf',W/'cache/tecnotion_torque_brochure_2_5.pdf',R/'.scratch/gorilla_internal_g11_functional_budget/molicel_p45b_datasheet_1_4.pdf']
+d['cached_primary_inspection_only']=[{'path':str(p),'sha256':sha(p),'inspection_scope':s} for p,s in zip(cached,['QTL210 specsheet table page1: mounting20C coils100C, Tc65 versus Ts46, voltage dependency, +/-10%','Torque Brochure2.5 QTR160 table (printed20) and drawing: sourceTc/mount20C; no independent QTR Ts value provided in these facts','P45B v1.4 page1:charge4.2V/min15.5Wh/max70g/max21.55x70.15mm/DC15mOhmtyp50%SOC'])]
+for x in d['cached_primary_inspection_only']:d['inputs_sha256'][str(Path(x['path']).relative_to(R))]=x['sha256']
+d['remaining_physical_gaps']=['720 native packs/busbar/insulation/cooling/local18sBMS/completeHVLV have not been built or installed; geometric arithmetic is not space admission','Ns voltage is raw fixed terminal sensitivity; OCV versus SOC, sag, R at heat/age/SOC, cell tolerance and current balance not modeled','SOC75*0.9=.675 implements10%relative reserve; 10percentage-point reserve would be.65, a different contract','QTL sourceTs46Nm is distinct from rotatingTc65Nm, both require mounting20C/coils100C; QTR suppliedfacts lack separate Ts, so zero-speed duty not established byTc','Motor dq model id0/linearKt/R100 copper only; source±10% not propagated, no complete speed/core/friction/PWM/saturation/inverter/regen or mechanical installation qualification','422 unknown motionowner rows not included in known-subset jointgravity; descendants/arm dynamics not complete','Added560/640/720 cellaux mass and COM change wholebody demand; no recalculated dynamics or qualified wholeM/COM/I','Umax325/680 are ceiling references, not verified driver busrange; raw72s180-302.4 plus regen/transient/isolation/bus sag still require actual electrical contract']
+(O/'audit.json').write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n')
+md='''# G19 独立能量与驱动电压审查
+
+四个 root bound 输入哈希与 v3 逐字匹配。独立脚本未导入或调用生产计算函数；714 个电池/格阵/阶段/任务标量核对零差异，最大绝对差 5.68e−14。另 24 summary 各对应 5 个实际母线 screen（840 标量核对），6480 个驱动工作点的输入力矩、RMS 电流、铜损、dq 电压与模型最高速度均独立复现，最大电压/铜损差 1.14e−13。原 G19 19 项功能身份检查保留原 SHA/逐项原文，只证明身份，不能推出功能合并或物理通过。
+
+80s6p/7p 的条件 A 能量仍不足；80s8p 与 72s10p 的算术预算可覆盖原 30min 条件 A。后者 11.16kWh 最低能量参考，对两辅助电压和 nominal/cutoff 的所需范围 8.999928–9.336531kWh，条件时间 35.859–37.200min。原 60min 条件 B 仍需 38.579608–40.700785kWh，720 电芯只给出 16.452–17.356min 条件时间。这里无额外 PWM/回馈信用、没有实物续航评级；储能输入逐阶段为 Pbus/.98 + Ncell·Icell²·R，未将平均电流平方替代逐阶段损耗。
+
+v2 的 80s10p 标签与 Ns72 不符，原始错误保留；v3 为 72s10p，raw charge/nominal/cutoff=302.4/259.2/180V。四模块各18s10p，共4×180=720；每模块10×18机械格、cell轴Y、pitch22.5mm，表面间隙0.95mm，最大电芯阵列224.05×70.15×404.05mm；自定完整箱体238.99999999999997×111×427mm，四箱AABB合45.311532L。这只是电芯排布与自定附加尺寸算术；未建立可安装的720 pack/母排/BMS/热/维护完整 native。
+
+72s10p 电压区间未直接超过表列 QTR325V/QTL680V Umax，但不支持所有现有绕组在完整任务速度域。两端母线相关432个 QTL_N pitch 点（100/80比）全部无法在该 dq 模型达到0.5rad/s，所需317.549–427.772V；左 combined nominal+50kg、η=.75 示例 ratio100需404.429V、ratio80需327.266V。低Ke QTR_Z 的电压条件改善，1296相关点没有此速度电压拒绝，但14点已知子集输入力矩超过Tc，不能凭换绕组解除所有能力约束。QTR_N 有103/648点速度电压拒绝。各 screen 都保留 complete_dynamic_422_unknown_owner_continuous_fit_accepted=false。
+
+Ts、Tc 和热不能混用：QTL-A210-65 N 原表 Ts46Nm/Tc65Nm、coils100°C/mount20°C，Umax处716rpm不继承到低母线；QTR这组提供Tc但没有独立Ts值。20°C安装面、实际冷却/温度降额、±10%参数、电压与逆变器/回馈/绝缘/峰值保护、未知422 owner动态质量、增加电芯与辅助后的新质量/力矩、720完整pack接口仍未闭。P45B70g只为质量上界，low/mid为null；典型15mΩ@50%SOC不能成为冷热老化保证。
+
+SOC计算采用75%可用能量窗口再留其中10%，即有效系数0.675；这不等于从名义容量扣10个百分点（0.65）。固定terminal电压敏感性也不是开路电压+压降的自洽SOC模型。整机M/COM/I、稳定SI、装配/持续输出/热/续航放行全部未主张。
+
+复现：`python3 .scratch/gorilla_internal_g19_independent_audit/audit.py`；最终 scope/身份收据：`python3 .scratch/gorilla_internal_g19_independent_audit/finalize.py`。全部输入 hash、独立32个名义/截止任务预算、96个阶段电压点、机械格坐标和反证在 audit.json。源PDF仅本地只读检查，不复制、再发布或入Git。
+'''
+(O/'README.md').write_text(md)
+inspection=O/'torque_table_inspection.txt'
+if inspection.exists():inspection.unlink()
+manifest={'stage':'G19 independent readonly audit','created_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'inputs':d['inputs_sha256'],'outputs':{str(p.relative_to(O)):sha(p) for p in sorted(O.iterdir()) if p.is_file() and p.name!='freeze_manifest.json'},'upstream_sources_modified':False,'physical_admission':False}
+(O/'freeze_manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+print('AUDIT_SHA',sha(O/'audit.json'));print('README_SHA',sha(O/'README.md'));print('MANIFEST_SHA',sha(O/'freeze_manifest.json'));print('INPUTS',len(manifest['inputs']),'OUTPUTS',len(manifest['outputs']))
+print('SHA_ERRORS',sum(sha(R/k)!=v for k,v in manifest['inputs'].items())+sum(sha(O/k)!=v for k,v in manifest['outputs'].items()))

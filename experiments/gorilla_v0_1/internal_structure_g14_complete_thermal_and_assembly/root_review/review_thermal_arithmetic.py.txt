@@ -1,0 +1,28 @@
+from pathlib import Path
+import math,json,hashlib,numpy as np
+P=Path(__file__).resolve().parent;R=P.parents[1];S=R/'.scratch/gorilla_internal_g14_thermal_complete_inventory/thermal_complete_inventory.json';b=S.read_bytes();d=json.loads(b);checks=[]
+def eq(label,a,b,rtol=1e-9,atol=1e-8):
+ ok=math.isclose(a,b,rel_tol=rtol,abs_tol=atol);checks.append(dict(label=label,actual=a,expected=b,pass_=ok))
+for r in d['complete4320_temperature_screens']:
+ q=r['heat_kW']*1000;C=r['water_L_min']/60*4180
+ eq(r['label']+str(r['ambient_C'])+' Tin',r['radiator_Tin_C'],r['ambient_C']+q/r['H_Q_per_initialDeltaT_W_K'])
+ eq(r['label']+str(r['ambient_C'])+' conservation',q,C*(r['radiator_Tin_C']-r['radiator_Tout_C']))
+for r in d['complete4320_temperature_capacity_conditional']:
+ C=15.1/60*4180;H=166;eq('purewater conditional limit'+str(r['ambient_C']),r['upper_temperature_screen_kW'],(r['EMRAX_inlet_limit_C']-r['ambient_C'])/(1/H-1/C)/1000)
+stock=d['fluid_stock_derivation']; lines=stock['new_water_line_budget']
+for r in lines:
+ for i in [0,1]:eq(r['label']+str(i),r['fluid_volume_L_range'][i],math.pi/4*r['ID_m_range'][i]**2*r['new_centerline_length_m_range'][i]*1000)
+for i in [0,1]:eq('all new line range'+str(i),stock['new_water_line_total_L_range'][i],sum(r['fluid_volume_L_range'][i] for r in lines))
+for r in stock['F1_cylinder_swept_inventory']:
+ eq(r['id']+' stroke volume difference',r['swept_full_cap_volume_L']-r['swept_full_annular_volume_L'],math.pi/4*r['rod_m']**2*r['stroke_m']*1000)
+ eq(r['id']+' rod swing',r['tank_fill_swing_L'],r['swept_full_cap_volume_L']-r['swept_full_annular_volume_L'])
+for r in d['pump_pipe_pressure_sensitivity']:
+ Q=r['flow_L_min']/60000;diam=r['pipe_ID_m'];u=4*Q/(math.pi*diam**2);dp=(r['assumed_f_Darcy']*r['length_m']/diam+r['assumed_sumK'])*1000*u*u/2
+ eq('Darcy '+str(r['flow_L_min'])+'/'+str(diam),r['pipe_and_fittings_dp_Pa'],dp)
+ eq('remaining '+str(r['flow_L_min'])+'/'+str(diam),r['remaining_before_core_coldplates_HX_Pa'],r['pump_reference_dp_Pa']-dp)
+for i in [0,1]:eq('split heat'+str(i),d['heat_accounting']['A480_total_kW_range'][i],d['heat_accounting']['A_oil_kW']+d['heat_accounting']['A_lowT_kW_range'][i])
+identity=[]
+for path,h in d['input_hashes'].items():
+ actual=hashlib.sha256((R/path).read_bytes()).hexdigest();identity.append(dict(path=path,expected=h,actual=actual,pass_=actual==h))
+r=dict(source_sha256=hashlib.sha256(b).hexdigest(),checks=checks,input_identity_checks=identity,arithmetic_check_count=len(checks),failure_count=sum(not c['pass_'] for c in checks)+sum(not c['pass_'] for c in identity),scope='Independent pure-water reference heat balance, Darcy sensitivity and cylinder/line inventory arithmetic. Source H is initial-temperature empirical coefficient, not UA. This does not select coolant, establish flow operating point, installed geometry, thermal capability, whole fluid stock or release.',pure_water_curve_not_transferred_to_glycol=True,global_inventory_and_physical_fluid_geometry_distinct=True,physical_accepted=False)
+(P/'thermal_arithmetic_review.json').write_text(json.dumps(r,indent=2)+'\n');print(json.dumps({k:v for k,v in r.items() if k not in ['checks','input_identity_checks']}));assert not r['failure_count']

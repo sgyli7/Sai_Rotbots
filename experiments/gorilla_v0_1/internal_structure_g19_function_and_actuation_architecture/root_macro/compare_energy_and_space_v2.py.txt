@@ -1,0 +1,98 @@
+"""Counterfactual parallel cell budget at the exact preceding task demand.
+
+No geometry, task profile, source rating or installed hardware is changed.
+The added-mass effect on motion/contact, packaging and continuous power remains open.
+"""
+from pathlib import Path
+import json, hashlib, math
+import numpy as np
+
+O = Path(__file__).resolve().parent
+sha = lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()
+read = lambda p: json.loads(Path(p).read_text())
+thermal = read(O / 'bound_g18_thermal_v3.json')['B_proposal']
+durations = {x['id']:x['duration_h'] for x in read(O/'bound_mission_duration_source.json')['two_physical_budget_domains']}
+facts = read(O / 'bound_cell_source_facts.json')['source_facts']['high_power_cell_official_reference']
+assert facts['minimum_energy_Wh'] == 15.5 and facts['max_mass_kg'] == .070
+Ns, voltages, eta, soc, remaining = 80, [288., 200.], .98, .75, .90
+alternatives = []
+for Ns, Np in [(80,6), (80,7), (80,8), (72,10)]:
+    voltages = [Ns*3.6, Ns*2.5]
+    N = Ns * Np
+    R = Ns * facts['typical_DC_50percentSOC_ohm'] / Np
+    budgets = []
+    for task in thermal['same_task_heat_energy']:
+        rows = []
+        for phase in task['phases']:
+            terminal_W = phase['bus_kW'] * 1000 / eta
+            pack_A = [terminal_W / V for V in voltages]
+            cell_A = [I / Np for I in pack_A]
+            cell_heat = [I * I * R / 1000 for I in pack_A]
+            assert max(abs(cell_heat[i] - N * cell_A[i]**2 * facts['typical_DC_50percentSOC_ohm'] / 1000) for i in range(2)) < 1e-10
+            rows.append(dict(phase=phase['phase'], duty=phase['duty'],
+                             unchanged_bus_kW=phase['bus_kW'],
+                             pack_terminal_A_at288_200=pack_A, cell_A_at288_200=cell_A,
+                             cell_heat_kW_at288_200=cell_heat,
+                             storage_input_kW_at288_200=[terminal_W/1000+h for h in cell_heat]))
+        avg = [sum(r['duty']*r['storage_input_kW_at288_200'][i] for r in rows) for i in range(2)]
+        duration_h = durations[task['mission']]
+        nameplate = [P*duration_h/soc/remaining for P in avg]
+        cap = N*facts['minimum_energy_Wh']/1000
+        budgets.append(dict(mission=task['mission'], actual_duration_h=duration_h,
+                            auxiliary_supply_upper_V=task['WP32_supply_V_budget'],
+                            auxiliary_source_upper_kW=task['auxiliary_upper_kW'], phases=rows,
+                            average_storage_input_kW_at288_200=avg,
+                            required_nameplate_SOC75_reserve10_kWh_at288_200=nameplate,
+                            conditionally_available_energy_kWh=cap,
+                            conditional_energy_margin_kWh_at288_200=[cap-E for E in nameplate],
+                            conditional_time_min_SOC75_reserve10_at288_200=[60*cap*soc*remaining/P for P in avg],
+                            real_runtime_or_temperature_current_rating=False))
+    alternatives.append(dict(topology=f'80s{Np}p', cells=N,
+                             lower_reference_nameplate_kWh=N*facts['minimum_energy_Wh']/1000,
+                             cell_mass_kg=[None, None, N*facts['max_mass_kg']],
+                             maximum_cylindrical_cell_envelope_L=N*math.pi*(facts['max_diameter_m']/2)**2*facts['max_height_m']*1000,
+                             typical_DC_Rpack_ohm_not_guaranteed=R, budgets=budgets,
+                             charge_nominal_cutoff_pack_V=[Ns*4.2,Ns*3.6,Ns*2.5],
+                             numeric_terminal_voltage_column_order=voltages,
+                             formal_voltage_dependent_field_names_inherited_as_column_labels_only=True,
+                             accepted_or_applied=False))
+
+# Nominal geometric allocation from actual 120-cell source envelope, not free cavity.
+cell_d, cell_h, pitch = facts['max_diameter_m'], facts['max_height_m'], .0225
+geometry = []
+for tag, nx, nz, pack_cells, electrical in [('current_480',12,10,120,'4×20s6p reference'),
+                                          ('proposed_640_shallow',8,20,160,'4×20s8p design question'),
+                                          ('proposed_720_lower_voltage',10,18,180,'4×18s10p design question')]:
+    dims = np.array([(nx-1)*pitch+cell_d, cell_h, (nz-1)*pitch+cell_d])
+    # Existing maximum enclosure-minus-cell-stack margins, not qualified insulation.
+    enclosure = dims + np.array([.01495,.04085,.02295])
+    gap_stack = .025
+    geometry.append(dict(id=tag, physical_grid_x_z=[nx,nz], modules=4, cells_per_module=pack_cells,
+                         electrical=electrical, cell_axis='Y', cell_pitch_m=pitch,
+                         cell_surface_gap_m=pitch-cell_d,
+                         cell_array_dimensions_XYZ_m=dims.tolist(),
+                         custom_enclosure_gross_dimensions_XYZ_m=enclosure.tolist(),
+                         four_enclosure_gross_AABB_sum_L=float(4*np.prod(enclosure)*1000),
+                         two_high_stack_enclosure_height_with_design25mm_gap_m=float(2*enclosure[2]+gap_stack),
+                         actual_native_640_case_busbars_cooling_mounts_and_service_present=False,
+                         source_margin_is_not_dielectric_pressure_thermal_or_service_qualification=True))
+
+out=dict(robot_id='gorilla_v0_1', stage='G19 root conditional parallel-energy and shallow-module comparison',
+         producer_sha256=sha(__file__), source_hashes={p.name:sha(p) for p in [O/'bound_g18_thermal_v3.json',O/'bound_cell_source_facts.json',O/'bound_g18_scene.json.gz',O/'bound_mission_duration_source.json']},
+         official_reference=facts, same_task_same_aux_upper=True,
+         resistance_variation_hot_SOC_aging_sag_unknown=True,
+         no_theoretical_PWM_efficiency_or_regeneration_credit=True,
+         bus_voltage_compatible_controller_and_regen_acceptance_unclosed=True,
+         actual_added_mass_changes_dynamics_and_power_not_recalculated=True,
+         cell_count_sensitivities=alternatives, package_space_questions=geometry,
+         cell_busbar_INS_BMS_contactors_cooling_mount_and_repair_complete_mass_not_known=True,
+         proposed_640_or_720_next_geometry_candidate_only=True,
+         raw_bus_matching_driver_insulation_regen_overvoltage_protection_not_installed=True,
+         installed_physics_endurance_aesthetic_or_stable_SI_accepted=False)
+(O/'energy_and_space_comparison_v2.json').write_text(json.dumps(out,indent=2,allow_nan=False)+'\n')
+for a in alternatives:
+    q=[x for x in a['budgets'] if x['mission']=='a_30min_deliberate_mission']
+    print(a['topology'], 'kWh',a['lower_reference_nameplate_kWh'], 'A time extrema min',
+          [min(v for x in q for v in x['conditional_time_min_SOC75_reserve10_at288_200']),max(v for x in q for v in x['conditional_time_min_SOC75_reserve10_at288_200'])],
+          'worst margin kWh',min(v for x in q for v in x['conditional_energy_margin_kWh_at288_200']))
+print('Package scopes',[(x['id'],x['custom_enclosure_gross_dimensions_XYZ_m'],x['four_enclosure_gross_AABB_sum_L'],x['two_high_stack_enclosure_height_with_design25mm_gap_m'])for x in geometry])

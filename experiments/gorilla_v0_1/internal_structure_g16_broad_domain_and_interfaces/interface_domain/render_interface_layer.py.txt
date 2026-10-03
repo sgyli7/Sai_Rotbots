@@ -1,0 +1,23 @@
+"""G16 source-bound native diagnostic, no AI/mesh styling edits."""
+from pathlib import Path
+import gzip,json,hashlib,math
+import numpy as np
+from PIL import Image,ImageDraw,ImageFont
+O=Path(__file__).resolve().parent;S=O/'native_interface_scene.json.gz';sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();s=json.loads(gzip.decompress(S.read_bytes()));W=700;H=680;PPM=400.;C=np.array([-.05,0,2.205]);font=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',15);small=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',11)
+V={'front':([1,0,0],[0,0,1],[0,-1,0]),'left':([0,1,0],[0,0,1],[-1,0,0]),'rear':([-1,0,0],[0,0,1],[0,1,0]),'top':([0,0,1],[1,0,0],[0,-1,0])};outs=[]
+for name,(cam,up,right)in V.items():
+ cam=np.array(cam);up=np.array(up);right=np.array(right);dep=np.full((H,W),-np.inf);rgb=np.full((H,W,3),255,np.uint8)
+ for p in s['parts']:
+  v=np.array(p.get('vertices_world_m',p.get('vertices')));f=np.array([[q[0],q[k],q[k+1]]for q in p['faces']for k in range(1,len(q)-1)]);vv=v-C;q=np.c_[W/2+vv@right*PPM,H/2-vv@up*PPM,vv@cam];tr=q[f];N=np.cross(v[f[:,1]]-v[f[:,0]],v[f[:,2]]-v[f[:,0]]);norm=np.linalg.norm(N,axis=1);valid=norm>1e-15;N[valid]/=norm[valid,None];cl=p['g16_interface_classification'];color=np.array([235,150,53]if cl.startswith('retained_serial')else [100,170,137]if cl.startswith('moving_pitch')else [128,161,185]if cl.startswith('current_own')else [178,171,143]if cl.startswith('OEM')else [135,146,152]);light=np.array([1.,-.6,1.5]);light/=np.linalg.norm(light)
+  for j,a in enumerate(tr):
+   if not valid[j]or N[j]@cam<=0:continue
+   xa,ya,za=a[0];xb,yb,zb=a[1];xc,yc,zc=a[2];den=(yb-yc)*(xa-xc)+(xc-xb)*(ya-yc)
+   if abs(den)<1e-10:continue
+   x0=max(0,int(np.floor(a[:,0].min())));x1=min(W-1,int(np.ceil(a[:,0].max())));y0=max(60,int(np.floor(a[:,1].min())));y1=min(H-70,int(np.ceil(a[:,1].max())))
+   if x1<x0 or y1<y0:continue
+   xx,yy=np.meshgrid(np.arange(x0,x1+1)+.5,np.arange(y0,y1+1)+.5);aa=((yb-yc)*(xx-xc)+(xc-xb)*(yy-yc))/den;bb=((yc-ya)*(xx-xc)+(xa-xc)*(yy-yc))/den;cc=1-aa-bb;zz=aa*za+bb*zb+cc*zc;z=dep[y0:y1+1,x0:x1+1];mask=(aa>=-1e-9)&(bb>=-1e-9)&(cc>=-1e-9)&(zz>z);z[mask]=zz[mask];rgb[y0:y1+1,x0:x1+1][mask]=(color*(.7+.3*max(0,float(N[j]@light)))).astype(np.uint8)
+ im=Image.fromarray(rgb);D=ImageDraw.Draw(im);D.text((18,12),'GORILLA G16 / '+name.upper()+' / exact current native layer',font=font,fill=(30,39,45));D.text((18,37),'Fixed core blue; pitch output green; retained serial carrier orange; OEM reference tan',font=small,fill=(60,65,70));D.text((18,H-55),'Internal diagnosis only. Full functional/connection/strength scope rejected.',font=small,fill=(45,50,55));D.text((18,H-32),'B27141a30 source | layer '+sha(S)[:12]+' | 237 unchanged source pieces',font=small,fill=(45,50,55));D.line((W-110,H-30,W-30,H-30),fill=(20,25,30),width=2);D.text((W-103,H-50),'200 mm',font=small,fill=(20,25,30));p=O/('native_'+name+'.png');im.save(p);outs.append({'path':str(p),'sha256':sha(p),'source_layer_sha256':sha(S),'camera_direction':cam.tolist(),'up_world':up.tolist(),'right_world':right.tolist(),'target_world_m':C.tolist(),'pixels_per_m':PPM,'shown_part_count':len(s['parts']),'hidden_part_ids':[]})
+board=Image.new('RGB',(2*W,2*H),'white')
+for i,p in enumerate(outs):board.paste(Image.open(p['path']),(W*(i%2),H*(i//2)))
+p=O/'native_interface_four_view.png';board.save(p);outs.append({'path':str(p),'sha256':sha(p),'operation':'unaltered contact sheet'})
+(O/'native_render_manifest.json').write_text(json.dumps({'producer_sha256':sha(__file__),'source_layer_sha256':sha(S),'base_current_sha256':s['source_sha256'],'scope':'exact237 original field source subset, only diagnostic role colors; not whole exterior and not new artwork','outputs':outs,'physical_accepted':False},indent=2)+'\n');print('RENDERED',sha(p),flush=True)

@@ -1,0 +1,155 @@
+"""Read-only finite material, motion, mass and pressure-domain receipt forG4bench."""
+from pathlib import Path
+import json, hashlib, math, sys
+from collections import defaultdict
+import numpy as np
+import trimesh as tr
+import manifold3d as mf
+
+O=Path(__file__).resolve().parent
+ROOT=next(p for p in O.parents if (p/'sai_robots_engineering_rules.md').exists())
+sys.path.insert(0,str(ROOT/'.scratch/gorilla_internal_g_material_contract'))
+import native_signed_material as gate
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+S=O/'module_scene.json';s=json.loads(S.read_text());source_sha=sha(S)
+def M(p):return mf.Manifold(mf.Mesh64(np.asarray(p['vertices_world_m'],np.float64,order='C'),np.asarray(p['faces'],np.uint64,order='C')))
+def bounds_of(p):v=np.asarray(p['vertices_world_m']);return np.array([v.min(0),v.max(0)])
+def overlap_box(a,b):return bool(np.all(a[1]>=b[0]) and np.all(b[1]>=a[0]))
+def mp(p):
+    t=tr.Trimesh(p['vertices_world_m'],p['faces'],process=False);u=t.mass_properties
+    vol=float(u.volume)
+    masses=p['mass_range_kg'] if p.get('density_kg_m3') is None else [vol*p['density_kg_m3']]*3
+    return {'id':p['name'],'body':p['body'],'role':p['role'],'volume_m3':vol,'mass_range_kg':masses,
+        'com_world_m':u.center_mass.tolist(),'inertia_at_com_world_kg_m2_range':[(u.inertia*x/vol).tolist() for x in masses],
+        'mass_scope':'cataloguebearinguniformenvelopeinertia' if p['role']=='bearing_reference_envelope' else 'finiteconditionalsteelrho7850'}
+def total(rows):
+    out=[]
+    for k in range(3):
+        mass=sum(r['mass_range_kg'][k] for r in rows);com=sum(np.array(r['com_world_m'])*r['mass_range_kg'][k] for r in rows)/mass
+        inertia=np.zeros((3,3))
+        for r in rows:
+            d=np.array(r['com_world_m'])-com;inertia+=np.array(r['inertia_at_com_world_kg_m2_range'][k])+r['mass_range_kg'][k]*(np.dot(d,d)*np.eye(3)-np.outer(d,d))
+        out.append({'case':['low','nominal','high'][k],'mass_kg':mass,'com_world_m':com.tolist(),'inertia_at_com_world_kg_m2':inertia.tolist(),'inertia_eigenvalues':np.linalg.eigvalsh(inertia).tolist()})
+    return out
+material_gate=gate.validate_scene({'parts':s['parts']})
+(O/'material_gate.json').write_text(json.dumps({'robot_id':'gorilla_v0_1','source_sha256':source_sha,'gate_entry_sha256':sha(ROOT/'.scratch/gorilla_internal_g_material_contract/native_signed_material.py'),'contract':material_gate},indent=2)+'\n')
+invalid={r['id'] for r in material_gate['parts'] if not r['resource_contract_pass']}
+print('GATE',len(s['parts'])-len(invalid),'of',len(s['parts']),sorted(invalid),flush=True)
+basevol={p['name']:M(p).volume() for p in s['parts']};poses=[]
+for po in s['pose_scenes']:
+    pp=po['parts'];mm={p['name']:M(p) for p in pp};boxes={p['name']:bounds_of(p) for p in pp};pairs=[]
+    for i,a in enumerate(pp):
+        for b in pp[i+1:]:
+            if not overlap_box(boxes[a['name']],boxes[b['name']]):continue
+            v=float((mm[a['name']]^mm[b['name']]).volume())
+            if v<=1e-10:continue
+            cls='invalidsourceconditional' if a['name'] in invalid or b['name'] in invalid else 'reference_component_envelope' if 'bearing_reference_envelope' in [a['role'],b['role']] else 'verified_native_material_intersection'
+            pairs.append({'a':a['name'],'b':b['name'],'a_body':a['body'],'b_body':b['body'],'volume_cm3':v*1e6,'classification':cls,'intended_interference_qualified':False})
+    contacts=[]
+    for stop in s['static_stop_interfaces']:
+        a=next(p for p in pp if p['name']==stop['part'])
+        for target in ['g4_parent_load_housing','g4_child_load_carrier']:
+            contacts.append({'stop':a['name'],'target':target,'min_gap_to_0p3m_m':float(mm[a['name']].min_gap(mm[target],.3)),
+                'expected_closed_neutral_contact':not po['stop_open_unloaded_only'],'actual_positive_volume_cm3':float((mm[a['name']]^mm[target]).volume())*1e6,
+                'finite_contact_pressure_and_retain_qualified':False})
+    rows=[mp(p) for p in pp]
+    poses.append({'id':po['id'],'q_deg':po['q_deg'],'intersections':sorted(pairs,key=lambda x:-x['volume_cm3']),
+        'material_pairs_count':sum(p['classification']=='verified_native_material_intersection' for p in pairs),
+        'reference_pairs_count':sum(p['classification']=='reference_component_envelope' for p in pairs),
+        'stop_contact_queries':contacts,'maximum_per_part_volume_error_m3':max(abs(mm[p['name']].volume()-basevol[p['name']]) for p in pp),
+        'total_mass_COM_I':total(rows),'root_shift_z_m':0})
+    print('POSE',po['id'],'pairs',len(pairs),'material',poses[-1]['material_pairs_count'],flush=True)
+
+C=np.array(s['joint_supports'][0]['center_world_m']);axis=np.array([0.,1.,0.]);bearing_points=[C+[0,-.145,0],C+[0,.145,0]]
+def w(f,p):return np.r_[f,np.cross(np.array(p)-C,f)]
+loadcases=[]
+for q in [-25.,0.,25.]:
+    T=tr.transformations.rotation_matrix(math.radians(q),axis,C)
+    points=[];us=[];js=[]
+    for a in s['actuators']:
+        aa=np.array(a['A_world_m']);bb=tr.transformations.transform_points([a['B_world_m']],T)[0]
+        u=(bb-aa)/np.linalg.norm(bb-aa);points.append(bb);us.append(u);js.append(float(u@np.cross(axis,bb-C)))
+    for factor in [1.,1.5]:
+        for dy in [-.1,0.,.1]:
+            ground=np.array([0.,0.,29430*factor]);cop=np.array([.25,.65+dy,0.]);external=w(ground,cop)
+            for mode in ['actuator_equal_share_bearings_take_roll_yaw','actuator_pair_takes_roll_bearings_take_yaw','neutral_mechanical_shoes_equal_bearings_take_roll_yaw']:
+                if mode.startswith('neutral') and q!=0:continue
+                if mode.startswith('neutral'):
+                    drivepoints=[C+[.15,-.075,.088],C+[.15,.075,.088]];dirs=[np.array([0.,0.,-1.])]*2
+                else:drivepoints=points;dirs=us
+                cols=[w(u,b) for u,b in zip(dirs,drivepoints)]
+                for p in bearing_points:cols += [w(np.array([1.,0,0]),p),w(np.array([0.,0,1.]),p)]
+                mat=np.array(cols).T
+                if mode=='actuator_pair_takes_roll_bearings_take_yaw':eq=np.array([0,0,0,-.145,0,.145])
+                else:eq=np.array([1.,-1.,0,0,0,0])
+                A=np.vstack([mat[[0,2,3,4,5]],eq]);rhs=np.r_[-external[[0,2,3,4,5]],0.]
+                x=np.linalg.solve(A,rhs);res=mat@x+external;port=[]
+                for i in range(2):port.append({'interface':('static_stop_' if mode.startswith('neutral') else 'moving_cylinder_eye_')+str(i),'point_world_m':drivepoints[i].tolist(),'force_on_child_N':(dirs[i]*x[i]).tolist()})
+                reactions=[]
+                for i in range(2):
+                    force=np.array([x[2+2*i],0,x[3+2*i]])
+                    radial=float(np.linalg.norm(force));d=.05990;di=.02820;Z=math.pi*(d**4-di**4)/(32*d)
+                    reactions.append({'point_world_m':bearing_points[i].tolist(),'force_on_child_N':force.tolist(),'radial_load_N':radial,
+                        'local_journal_offset_m':.025,'local_journal_nominal_bending_MPa':radial*.025/Z/1e6,'does_not_take_complete_pitch_torque':True})
+                pressure=[]
+                if not mode.startswith('neutral'):
+                    for i,f in enumerate(x[:2]):
+                        cap=math.pi*.05**2/4;ann=math.pi*(.05**2-.025**2)/4;area=cap if f>=0 else ann
+                        pressure.append({'id':s['actuators'][i]['id'],'J_m_per_rad':js[i],'required_signed_force_N':float(f),'direction':'push' if f>=0 else 'pull',
+                            'ideal_required_pressure_MPa':abs(f)/area/1e6,'pressure_efficiency_screens':[{'pressure_MPa':p,'efficiency':e,'available_force_N':p*1e6*area*e,'satisfied':abs(f)<=p*1e6*area*e} for p in [21.,30.] for e in [1.,.8]],
+                            'pin_double_shear_MPa':abs(f)/(2*math.pi*.04**2/4)/1e6,'pin_midspan76mm_bending_MPa':abs(f)*.076/4/(math.pi*.04**3/32)/1e6,
+                            'eye_projected_bearing_MPa':abs(f)/(.04*.034)/1e6,'fork_projected_bearing_MPa':abs(f)/(2*.04*.014)/1e6})
+                parentports=[]
+                for i in range(2):
+                    p=np.array(s['actuators'][i]['A_world_m']) if not mode.startswith('neutral') else C+[.15,(-.075 if i==0 else .075),.25]
+                    parentports.append({'point_world_m':p.tolist(),'force_on_parent_N':(-dirs[i]*x[i]).tolist()})
+                parentports += [{'point_world_m':r['point_world_m'],'force_on_parent_N':(-np.array(r['force_on_child_N'])).tolist()} for r in reactions]
+                top_mount=C+[-.170,0.,.610]
+                parent_external=sum(w(np.array(p['force_on_parent_N']),p['point_world_m']) for p in parentports)
+                parent_mount_force=-parent_external[:3];parent_mount_moment=-parent_external[3:]-np.cross(top_mount-C,parent_mount_force)
+                loadcases.append({'q_deg':q,'load_factor':factor,'CoP_world_m':cop.tolist(),'ground_force_N':ground.tolist(),'mode':mode,
+                    'drive_or_stop_forces_N':x[:2].tolist(),'sixD_equilibrium_residual':res.tolist(),'wrench_ports_on_child':port,'bearing_reactions':reactions,'cylinder_pressure_pin_screens':pressure,
+                    'wrench_ports_on_parent':parentports,'upstream_mount_world_m':top_mount.tolist(),'required_upstream_force_N':parent_mount_force.tolist(),'required_upstream_moment_at_mount_Nm':parent_mount_moment.tolist(),
+                    'stop_compression_pressure_MPa':[float(abs(f)/(.058*.043)/1e6) for f in x[:2]] if mode.startswith('neutral') else None,
+                    'contact_fits_stress_concentrations_fatigue_preload_gravity_wholerobot_unknown':True})
+
+pose_gate_ids={x['id']:x for x in material_gate['parts']}
+parent_gate=pose_gate_ids['g4_parent_load_housing'];child_gate=pose_gate_ids['g4_child_load_carrier']
+neutral_rows=[mp(p) for p in s['parts']]
+withdraw_samples=[]
+neutral_fixed={p['name']:M(p) for p in s['parts'] if p['role']!='manual_static_stop_shoe'}
+neutral_boxes={p['name']:bounds_of(p) for p in s['parts'] if p['role']!='manual_static_stop_shoe'}
+for fraction in np.linspace(0.,1.,21):
+    collisions=[]
+    for p in s['parts']:
+        if p['role']!='manual_static_stop_shoe':continue
+        offset=np.asarray(p['unlock_translation_world_m'])*fraction
+        mm=M(p).translate(offset);bounds=bounds_of(p)+offset
+        for name,target in neutral_fixed.items():
+            if not overlap_box(bounds,neutral_boxes[name]):continue
+            v=float((mm^target).volume())
+            if v>1e-10:collisions.append({'shoe':p['name'],'target':name,'volume_cm3':v*1e6,
+                'classification':'reference_component_envelope' if 'SKF32212_reference' in name else 'verified_native_material_intersection'})
+    withdraw_samples.append({'fraction':float(fraction),'translation_X_m':float(fraction*.280),'intersections':collisions})
+print('MANUAL_WITHDRAW',sum(bool(x['intersections']) for x in withdraw_samples),'colliding_samples_of_21',flush=True)
+r={'robot_id':'gorilla_v0_1','scope':'G4oneanklepitchbench only; newdesignawaited, noleg/exteriorfreeze',
+   'source_sha256':source_sha,'checker_sha256':sha(Path(__file__)),'strong_material_gate_sha256':sha(O/'material_gate.json'),
+   'source_resource_pass_count':len(s['parts'])-len(invalid),'source_part_count':len(s['parts']),'rejected_source_ids':sorted(invalid),
+   'source_material_gate_pass':material_gate['resource_contract_pass'],
+   'actual_fixed_housing_material_root_count':parent_gate.get('material_component_count_from_nesting'),
+   'actual_moving_carrier_material_root_count':child_gate.get('material_component_count_from_nesting'),
+   'frame_source_contract_failures':{'parent':parent_gate['errors'],'child':child_gate['errors']},
+   'per_piece_mass_COM_full_I':neutral_rows,'total_declared_mass_COM_I':total(neutral_rows),
+   'bearing_mass_count_once_kg':2*1.15,'bearing_inertia_is_uniform_reference_envelope_not_actual_roller':True,
+   'known_mass_missing':['oil','holding/seals/fittings/hoses','staticstoplateralretainers/stowtools','upstreammountbolts','fulllegcarrier/drive'],
+   'pose_checks':poses,'pressure_static_load_cases':loadcases,'geometry_accepted':False,'physical_accepted':False,
+   'manual_shoe_withdrawal_21_sample_check':withdraw_samples,
+   'manual_shoe_withdrawal_path_clear':not any(x['intersections'] for x in withdraw_samples),
+   'manual_release_requires_full_unload':True,
+   'unqualified_interference_is_not_assembly_success':True,'threshold_volume_m3':1e-10,
+   'force_scope':'29430Nupwardgroundload, optional1.5factor; exact6Dpairedcyl/bearing/stopstatic equations and defined allocations, nogravity/friction/dynamic/wholecontactLP qualification',
+   'upstream_long_cylinder_space_unintegrated':True,'journal_does_not_carry_whole9123Nm_torque':True,
+   'anchor_probe_A_rejected_minJ':s['anchor_macro_candidates'][0]['J_range_m_per_rad'][0],
+   'selected_B_minJ':s['anchor_macro_candidates'][1]['J_range_m_per_rad'][0]}
+(O/'report.json').write_text(json.dumps(r,indent=2,allow_nan=False,default=lambda x:x.item())+'\n')
+print('REPORT',sha(O/'report.json'),'MASS',r['total_declared_mass_COM_I'][1]['mass_kg'],flush=True)

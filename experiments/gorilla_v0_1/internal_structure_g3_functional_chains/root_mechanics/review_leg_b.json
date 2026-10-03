@@ -1,0 +1,306 @@
+{
+  "robot_id": "gorilla_v0_1",
+  "source_path": ".scratch/gorilla_internal_g3_root_render/leg_b_complete_01/chain_scene.json",
+  "source_sha256": "8fb41bd85c971d1456543c9660dd123780e3e342846c230ad2751fa5177b2fab",
+  "entry_sha256": "1517749e1b3aade0b242eb0357a9eb5885a4278bf0b23750ee8a68ab9ea223f6",
+  "native_resource": {
+    "parts": 50,
+    "pass_count": 49,
+    "errors": [
+      {
+        "id": "g3_arch_load_net",
+        "errors": [
+          {
+            "code": "closed_boundary_volume_below_source_threshold",
+            "boundary": 32,
+            "volume_m3": -1.3734869265708009e-13
+          }
+        ]
+      }
+    ],
+    "mechanical_connection_not_inferred": true
+  },
+  "independent_material_witnesses": [
+    {
+      "a": "g3_thigh_interface_load_net",
+      "b": "g3_middle_load_net",
+      "both_resource_valid": true,
+      "positive_volume_cm3": 42.32086590342592
+    },
+    {
+      "a": "g3_middle_load_net",
+      "b": "g3_distal_load_net",
+      "both_resource_valid": true,
+      "positive_volume_cm3": 21.58827060153269
+    },
+    {
+      "a": "g3_ankle_roll_rod",
+      "b": "g3_ankle_carrier_load_net",
+      "both_resource_valid": true,
+      "positive_volume_cm3": 23.510961089324567
+    }
+  ],
+  "material_body_count_from_native_kernel": {
+    "g3_thigh_interface_load_net": 2,
+    "g3_middle_load_net": 19,
+    "g3_distal_load_net": 13,
+    "g3_ankle_carrier_load_net": 17,
+    "g3_arch_load_net": 40,
+    "g3_forefoot_load_net": 13
+  },
+  "scoped_mass": {
+    "finite_metal_kg": 319.19197012410376,
+    "pads_range_kg": [
+      9.175564970627175,
+      11.214579408544326,
+      14.27310106542005
+    ],
+    "ten_catalog_bearings_range_kg": [
+      11.500000000000002,
+      11.500000000000002,
+      15.500000000000004
+    ],
+    "six_armor_range_kg": [
+      16.37762656496593,
+      24.135449674686633,
+      37.92713520307899
+    ],
+    "sum_as_listed_range_kg": [
+      356.24516165969686,
+      366.04199920733475,
+      386.8922063926028
+    ],
+    "scope": "Single left lower module. Arch invalid tiny closed boundary retained. No oil/valves/hoses/end fittings, knee input/upper thigh or complete robot. Same-body overlaps are not automatic mass savings."
+  },
+  "ground_compression_screen": {
+    "equivalent_compression_mass_kg": 3000,
+    "ground_force_world_N": [
+      0.0,
+      0.0,
+      29430.0
+    ],
+    "CoP_world_m": [
+      0.25,
+      0.65,
+      0.0
+    ],
+    "pressure30MPa_is_conditional_assumption_not_certified_continuous_spec": true,
+    "joint_and_frame_weight_omitted_makes_this_not_full_statics": true,
+    "actuator_rows": [
+      {
+        "id": "fold_inner",
+        "axis": "fold",
+        "signed_J_m_per_rad": 0.22643896944002226,
+        "external_ground_torque_Nm": -11477.7,
+        "equal_share_actuator_count_assumption": 2,
+        "required_signed_one_actuator_N": 25343.915025722068,
+        "required_pressure_MPa": 12.907549931662805,
+        "supply_chamber": "cap_extending",
+        "cap_force_at_assumed30MPa_N": 58904.86225480863,
+        "annulus_force_at_assumed30MPa_N": 44178.64669110648,
+        "load_route": "conditional actuator balance; true assembly reactions unresolved",
+        "qualified": false
+      },
+      {
+        "id": "fold_outer",
+        "axis": "fold",
+        "signed_J_m_per_rad": 0.22643896944002226,
+        "external_ground_torque_Nm": -11477.7,
+        "equal_share_actuator_count_assumption": 2,
+        "required_signed_one_actuator_N": 25343.915025722068,
+        "required_pressure_MPa": 12.907549931662805,
+        "supply_chamber": "cap_extending",
+        "cap_force_at_assumed30MPa_N": 58904.86225480863,
+        "annulus_force_at_assumed30MPa_N": 44178.64669110648,
+        "load_route": "conditional actuator balance; true assembly reactions unresolved",
+        "qualified": false
+      },
+      {
+        "id": "ankle_pitch",
+        "axis": "ankle_pitch",
+        "signed_J_m_per_rad": -0.15881195811402737,
+        "external_ground_torque_Nm": -9711.9,
+        "equal_share_actuator_count_assumption": 1,
+        "required_signed_one_actuator_N": -61153.455415661025,
+        "required_pressure_MPa": 41.52693212395643,
+        "supply_chamber": "annulus_retracting",
+        "cap_force_at_assumed30MPa_N": 58904.86225480863,
+        "annulus_force_at_assumed30MPa_N": 44178.64669110648,
+        "load_route": "conditional actuator balance; true assembly reactions unresolved",
+        "qualified": false
+      },
+      {
+        "id": "ankle_roll",
+        "axis": "ankle_roll",
+        "signed_J_m_per_rad": -0.13499999999999998,
+        "external_ground_torque_Nm": 2648.699999999999,
+        "equal_share_actuator_count_assumption": 1,
+        "required_signed_one_actuator_N": 19619.999999999996,
+        "required_pressure_MPa": 9.992383947081555,
+        "supply_chamber": "cap_extending",
+        "cap_force_at_assumed30MPa_N": 58904.86225480863,
+        "annulus_force_at_assumed30MPa_N": 44178.64669110648,
+        "load_route": "conditional actuator balance; true assembly reactions unresolved",
+        "qualified": false
+      },
+      {
+        "id": "forefold",
+        "axis": "forefoot",
+        "signed_J_m_per_rad": 0.09686318179366796,
+        "external_ground_torque_Nm": -5003.099999999999,
+        "equal_share_actuator_count_assumption": 1,
+        "required_signed_one_actuator_N": 51651.204382871685,
+        "required_pressure_MPa": 41.10272247091899,
+        "supply_chamber": "cap_extending",
+        "cap_force_at_assumed30MPa_N": 37699.11184307752,
+        "annulus_force_at_assumed30MPa_N": 28274.33388230814,
+        "load_route": "forefold unloaded only; loaded route must be mechanical brace/stop",
+        "qualified": false
+      }
+    ]
+  },
+  "forefoot_brace_sensitivity": {
+    "chord_axial_diagnostic_only": true,
+    "brace_knee_stop_and_real_stiffness_not_solved": true,
+    "assumption": "Braces carry all pitch and roll moment; hinge carries remaining forces and yaw. Not unique without bearing/link stiffness.",
+    "cases": [
+      {
+        "load_factor": 1.0,
+        "CoP_world_m": [
+          0.25,
+          0.65,
+          0.0
+        ],
+        "brace_chord_compression_N": [
+          26440.49748170812,
+          25210.706901163565
+        ],
+        "all_compression": true,
+        "fore_hinge_force_reaction_N": [
+          -46786.153846153844,
+          -0.0,
+          -7546.153846153848
+        ],
+        "pin_40mm_80mmspan_nominal_bending_MPa": [
+          84.16271744045314,
+          80.24817244322278
+        ]
+      },
+      {
+        "load_factor": 1.0,
+        "CoP_world_m": [
+          0.25,
+          0.55,
+          0.0
+        ],
+        "brace_chord_compression_N": [
+          42979.06046144536,
+          8672.143921426326
+        ],
+        "all_compression": true,
+        "fore_hinge_force_reaction_N": [
+          -46786.153846153844,
+          -0.0,
+          -7546.153846153844
+        ],
+        "pin_40mm_80mmspan_nominal_bending_MPa": [
+          136.8065984376893,
+          27.604291445986657
+        ]
+      },
+      {
+        "load_factor": 1.0,
+        "CoP_world_m": [
+          0.25,
+          0.75,
+          0.0
+        ],
+        "brace_chord_compression_N": [
+          9901.93450197088,
+          41749.26988090081
+        ],
+        "all_compression": true,
+        "fore_hinge_force_reaction_N": [
+          -46786.153846153844,
+          -0.0,
+          -7546.153846153844
+        ],
+        "pin_40mm_80mmspan_nominal_bending_MPa": [
+          31.518836443217,
+          132.89205344045894
+        ]
+      },
+      {
+        "load_factor": 1.5,
+        "CoP_world_m": [
+          0.25,
+          0.65,
+          0.0
+        ],
+        "brace_chord_compression_N": [
+          39660.746222562186,
+          37816.06035174535
+        ],
+        "all_compression": true,
+        "fore_hinge_force_reaction_N": [
+          -70179.23076923077,
+          -0.0,
+          -11319.230769230766
+        ],
+        "pin_40mm_80mmspan_nominal_bending_MPa": [
+          126.24407616067974,
+          120.3722586648342
+        ]
+      },
+      {
+        "load_factor": 1.5,
+        "CoP_world_m": [
+          0.25,
+          0.55,
+          0.0
+        ],
+        "brace_chord_compression_N": [
+          64468.590692168036,
+          13008.215882139495
+        ],
+        "all_compression": true,
+        "fore_hinge_force_reaction_N": [
+          -70179.23076923077,
+          -0.0,
+          -11319.230769230766
+        ],
+        "pin_40mm_80mmspan_nominal_bending_MPa": [
+          205.20989765653394,
+          41.406437168980005
+        ]
+      },
+      {
+        "load_factor": 1.5,
+        "CoP_world_m": [
+          0.25,
+          0.75,
+          0.0
+        ],
+        "brace_chord_compression_N": [
+          14852.90175295633,
+          62623.90482135121
+        ],
+        "all_compression": true,
+        "fore_hinge_force_reaction_N": [
+          -70179.23076923077,
+          -0.0,
+          -11319.230769230766
+        ],
+        "pin_40mm_80mmspan_nominal_bending_MPa": [
+          47.27825466482554,
+          199.3380801606884
+        ]
+      }
+    ]
+  },
+  "root_visual_judgment": "Native whole FRONT/LEFT/REAR/TOP and bare/fold views inspected. New covers are flat broad slabs; aesthetic quality below authority, not adopted.",
+  "geometry_accepted": false,
+  "physics_accepted": false,
+  "aesthetic_accepted": false,
+  "stable_si": false
+}

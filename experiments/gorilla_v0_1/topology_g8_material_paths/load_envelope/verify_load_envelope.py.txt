@@ -1,0 +1,85 @@
+"""Independent direct-original-source audit; imports no assembly/LP/port solver."""
+from pathlib import Path
+import argparse,hashlib,json
+import numpy as np
+
+OUT=Path(__file__).resolve().parent;ROOT=OUT.parents[1]
+G4=ROOT/'.scratch/gorilla_internal_g4_pitch_module'
+def sha(p): return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def save(p,d): Path(p).write_text(json.dumps(d,indent=2,ensure_ascii=False,allow_nan=False)+'\n')
+def material_vector(v,c,s):
+    x,y,z=v;return np.array([c*x-s*z,y,s*x+c*z])
+
+def verify(prefix):
+    report=json.loads((OUT/(prefix+'_report.json')).read_text());a=np.load(OUT/(prefix+'_loads.npz'))
+    source=json.loads((G4/'optimization_handoff.json').read_text());scene=json.loads((G4/'module_scene.json').read_text())
+    if report['G4_literal_handoff_sha256']!=sha(G4/'optimization_handoff.json') or report['G4_literal_scene_sha256']!=sha(G4/'module_scene.json'):raise ValueError('source hash mismatch')
+    meshpath=Path(report['mesh_path']);mesh=np.load(meshpath);nodes=mesh['points_m'];faces=mesh['boundary_faces'];tags=mesh['boundary_physical_tags']
+    if sha(meshpath)!=report['mesh_sha256'] or sha(report['CAD_source_path'])!=report['CAD_source_sha256'] or sha(report['physicalgroup_report_path'])!=report['physicalgroup_report_sha256']:raise ValueError('geometric source hash mismatch')
+    F=a['F_xyz_N_cases'];cases=source['actual_6D_load_interfaces'];indices=a['case_indices']
+    if len(cases)!=42 or not np.array_equal(indices,np.arange(42)) or F.shape!=(len(nodes),3,42): raise ValueError('load case/domain lost')
+    bytag={tag:np.unique(faces[tags==tag]) for tag in range(1,8)}
+    overlaps=[]
+    for i in range(1,8):
+        for j in range(i+1,8):
+            n=len(np.intersect1d(bytag[i],bytag[j]))
+            if n:overlaps.append({'tags':[i,j],'shared_nodes':n})
+    if overlaps: raise ValueError('independent isolated-port extraction not applicable to overlapping physical groups')
+    pivot=np.array(next(j['center_world_m'] for j in scene['joint_supports'] if j['id']=='ankle_pitch_bench'))
+    rows=[];metadata_exact=True;original_static_force_class_exact=True;maxF=maxM=maxglobalF=maxglobalM=maxoutside=0.
+    for ci,case in enumerate(cases):
+        metadata=report['case_reports'][ci]
+        metadata_exact=metadata_exact and all(metadata[k]==case[k] for k in ['q_deg','load_factor','CoP_world_m','mode']) and metadata['case_index']==ci
+        original_ground=np.asarray(case['equivalent_ground_load_at_output_mount']['wrench_Fxyz_Mxyz'])[:3]
+        original_static_force_class_exact=original_static_force_class_exact and bool(np.array_equal(original_ground,np.array([0.,0.,29430.*case['load_factor']])))
+        angle=np.deg2rad(case['q_deg']);c=np.cos(angle);s=np.sin(angle)
+        stop=case['mode'].startswith('neutral_mechanical');ptags=[5,6,1,2,7] if stop else [3,4,1,2,7]
+        ports=case['actual_child_point_load_ports']+[case['equivalent_ground_load_at_output_mount']]
+        cr=[];targetF=np.zeros(3);targetM=np.zeros(3)
+        for tag,p in zip(ptags,ports):
+            worldp=np.array(p['point_world_m']);worldw=np.array(p['wrench_Fxyz_Mxyz'])
+            center=pivot+material_vector(worldp-pivot,c,s);w=np.r_[material_vector(worldw[:3],c,s),material_vector(worldw[3:],c,s)]
+            ids=bytag[tag];f=F[ids,:,ci];actual=np.r_[f.sum(0),np.cross(nodes[ids]-center,f).sum(0)];res=actual-w
+            maxF=max(maxF,float(abs(res[:3]).max()));maxM=max(maxM,float(abs(res[3:]).max()))
+            targetF+=w[:3];targetM+=np.cross(center,w[:3])+w[3:]
+            cr.append({'physical_tag':tag,'original_world_load_center_m':worldp.tolist(),'original_world_wrench':worldw.tolist(),
+                       'independent_material_center_m':center.tolist(),'independent_material_wrench':w.tolist(),'actual_assembled_wrench':actual.tolist(),'residual':res.tolist()})
+        active=np.unique(np.concatenate([bytag[t] for t in ptags]));outside=np.setdiff1d(np.arange(len(nodes)),active)
+        outside_max=float(abs(F[outside,:,ci]).max(initial=0.));maxoutside=max(maxoutside,outside_max)
+        totalF=F[:,:,ci].sum(0);totalM=np.cross(nodes,F[:,:,ci]).sum(0)
+        maxglobalF=max(maxglobalF,float(abs(totalF-targetF).max()));maxglobalM=max(maxglobalM,float(abs(totalM-targetM).max()))
+        rows.append({'case_index':ci,'q_deg':case['q_deg'],'load_factor':case['load_factor'],'CoP_world_m':case['CoP_world_m'],'mode':case['mode'],
+                     'independently_audited_port_rows':cr,'source_material_total_F_N':targetF.tolist(),'source_material_total_M_Nm':targetM.tolist(),
+                     'actual_total_F_N':totalF.tolist(),'actual_total_M_Nm':totalM.tolist(),'source_minus_actual_F_N':(targetF-totalF).tolist(),
+                     'source_minus_actual_M_Nm':(targetM-totalM).tolist(),'force_outside_actual_active_groups_N':outside_max})
+    flat=F[a['loaded_node_ids']].reshape(-1,42);S=np.linalg.svd(flat,compute_uv=False)
+    rank=int(np.count_nonzero(S>S[0]*1e-12));B=a['basis_F_xyz_N_cases'];ids=a['basis_case_indices'];coeff=a['original_case_coefficients']
+    actual_basis=bool(np.array_equal(B,F[:,:,ids]));error=np.einsum('ncr,rk->nck',B,coeff)-F
+    error_max=float(abs(error).max());error_rel=float(np.linalg.norm(error)/np.linalg.norm(F))
+    gauge=np.load(OUT/(prefix+'_gauge.npz'));C=gauge['gauge_rows'];R=gauge['rigid_mode_matrix']
+    gauge_rank=int(np.linalg.matrix_rank(C@R));virtual_work=R.T@F.reshape(-1,42)
+    gates={'all42_original_cases_preserved':True,'no_original_case_metadata_shrink':metadata_exact,'all_literal_ground_forces_exactly_29430_N_times_source_factor':original_static_force_class_exact,'no_old_facet_number_mapping':report['old_facet_ids_reused'] is False,
+           'actual_generic_ports_rank6':all(p['operator_rank']==6 for c in report['case_reports'] for p in c['ports']),
+           'port_force_residual_under_1e_6_N':maxF<1e-6,'port_moment_residual_under_1e_7_Nm':maxM<1e-7,
+           'global_force_residual_under_1e_6_N':maxglobalF<1e-6,'global_moment_residual_under_1e_7_Nm':maxglobalM<1e-7,
+           'zero_force_outside_actual_active_groups':maxoutside==0.,'basis_columns_are_literal_actual_cases':actual_basis,
+           'basis_reconstruction_abs_under_1e_7_N':error_max<1e-7,'basis_reconstruction_relative_under_1e_10':error_rel<1e-10,
+           'direct_SVD_rank_matches_report':rank==report['SVD_numerical_rank'],'only_six_rigid_gauge_rank':gauge_rank==6}
+    receipt={'schema':'G8_independent_direct_G4_literal_port_and_basis_receipt','prefix':prefix,'all_gates_pass':all(gates.values()),'gates':gates,
+             'hashes':{'assembly_script':sha(OUT/'assemble_load_envelope.py'),'independent_verifier':sha(Path(__file__)),
+                       'report':sha(OUT/(prefix+'_report.json')),'loads':sha(OUT/(prefix+'_loads.npz')),'gauge':sha(OUT/(prefix+'_gauge.npz')),
+                       'G4_handoff':sha(G4/'optimization_handoff.json'),'G4_scene':sha(G4/'module_scene.json'),'actual_mesh':sha(meshpath),
+                       'actual_CAD':sha(report['CAD_source_path']),'actual_CAD_physicalgroups':sha(report['physicalgroup_report_path'])},
+             'max_port_force_error_N':maxF,'max_port_moment_error_Nm':maxM,'max_global_force_error_N':maxglobalF,'max_global_moment_error_Nm':maxglobalM,
+             'actual_physicalgroup_nodes_overlap':overlaps,'SVD_direct_force_rows_rank':rank,'singular_values_N':S.tolist(),
+             'basis_case_indices':ids.tolist(),'basis_reconstruction_max_abs_N':error_max,'basis_reconstruction_relative':error_rel,
+             'basis_error_by_case_N':abs(error).max((0,1)).tolist(),'max_rigid_mode_virtual_work_residual_FM':float(abs(virtual_work).max()),
+             'case_rows':rows,'solver_executed':False,'contact_qualification':False,'physical_release':False,
+             'scope':'Conserving conditional generic-traction loads only. Direct original G4 source audit and actual new CAD physicalgroup node extraction. No assembly function imported.'}
+    save(OUT/(prefix+'_verification.json'),receipt)
+    if not all(gates.values()): raise ValueError('independent receipt failed: '+str(gates))
+    print(json.dumps({'prefix':prefix,'rank':rank,'port_F_N':maxF,'port_M_Nm':maxM,'global_F_N':maxglobalF,'global_M_Nm':maxglobalM,'basis_error_N':error_max,'receipt_sha256':sha(OUT/(prefix+'_verification.json'))},indent=2))
+
+if __name__=='__main__':
+    p=argparse.ArgumentParser();p.add_argument('prefixes',nargs='+');a=p.parse_args()
+    for prefix in a.prefixes: verify(prefix)

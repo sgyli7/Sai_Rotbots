@@ -1,0 +1,44 @@
+from pathlib import Path
+import json,hashlib,sys,collections,math
+import numpy as np,trimesh as tm,manifold3d as mf
+O=Path(__file__).resolve().parent;R=O.parents[1];sys.path.insert(0,str(R/'.scratch/gorilla_internal_g_material_contract'));from native_signed_material import validate_scene,kernel
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();source=Path(sys.argv[1]);d=json.loads(source.read_text());tag='selected_a' if source.name=='scene.json' else 'layout_'+d['layout'];parts=d['parts'];armor=d['original_armor_comparator'];contract=validate_scene(d,diagnose_parity=False);contract['source_sha256']=sha(source);contract['validator_sha256']=sha(R/'.scratch/gorilla_internal_g_material_contract/native_signed_material.py');(O/(tag+'_resource_contract.json')).write_text(json.dumps(contract,indent=2)+'\n');print(tag,'contract',contract['resource_contract_pass'],'bad',[(x['id'],[e['code'] for e in x['errors']]) for x in contract['parts'] if x['errors']],flush=True)
+FULL_TREE=json.loads((R/'.scratch/gorilla_internal_e2a_integrated/scene.json').read_text())['body_tree'];PM={p['name']:p for p in parts+armor};raw={n:kernel(p['vertices_world_m'],[[f[0],f[j],f[j+1]] for f in p['faces'] for j in range(1,len(f)-1)]) for n,p in PM.items()};owners=collections.defaultdict(list);refs=[]
+for p in parts:
+ if p['role']=='complete_component_reference':refs.append({'id':p['name'],'mass_range_kg':p['mass_range_kg'],'packaging_body':p['body'],'actual_rotor_OEM_internal_motion_allocation_unknown':p.get('OEM_owner_split_unknown',False)})
+ else:owners[(p['body'],p['material_id'],p['density_kg_m3'])].append(p['name'])
+ledger=[]
+for (b,material,rho),ns in owners.items():
+ u=raw[ns[0]]
+ for n in ns[1:]:u=u+raw[n]
+ ledger.append({'owner':b,'material_id':material,'member_ids':ns,'net_material_volume_m3':float(u.volume()),'material_mass_kg':float(u.volume())*rho,'density_kg_m3':rho,'native_material_components':len([c for c in u.decompose() if c.volume()>1e-10]),'material_connectivity_not_OEM_joint_connection_or_strength_proof':True})
+refmass=np.sum([p['mass_range_kg'] for p in parts if p['role']=='complete_component_reference'],axis=0);net=sum(r['material_mass_kg'] for r in ledger);mass={'source_sha256':sha(source),'material_rows':ledger,'complete_reference_rows':refs,'complete_reference_sum_kg':refmass.tolist(),'finite_material_net_mass_kg':net,'complete_scope_mass_range_kg':(refmass+net).tolist(),'mass_range_scope':'new mixed-material rotary waist module only; excludes full arms/legs/armor/system and historical root external upper880.424kg; no certificate or wholebody mass','reference_mass_once_and_no_F2_ghost_union_rows':True,'counts_complete_rotor_constituents_once_but_SI_split_unknown':True};(O/(tag+'_mass_ledger.json')).write_text(json.dumps(mass,indent=2)+'\n')
+def trans(q):
+ Ts={'pelvis':np.eye(4)}
+ for b in ['waist_yaw_carrier','waist_pitch_carrier','torso']:
+  z=d['body_tree'][b];Ts[b]=Ts[z['parent']]@tm.transformations.rotation_matrix(math.radians(q.get(z['joint_id'],0)),z['axis_world'],z['pivot_world_m'])
+ for _ in range(20):
+  for bb,zz in FULL_TREE.items():
+   if bb not in Ts and zz.get('parent') in Ts:Ts[bb]=Ts[zz['parent']]
+ for k in d['rotary_functional_inventory']:Ts[k['group']+'_input_link']=Ts[k['parent']]
+ arows=[]
+ return Ts,arows
+poses=[('neutral',{}),('pitch_minus_15',{'waist_pitch':-15}),('pitch_plus_15',{'waist_pitch':15}),('roll_plus_10',{'waist_roll':10}),('yaw_plus_15',{'waist_yaw':15}),('pitch_minus_5',{'waist_pitch':-5}),('pitch_minus_10',{'waist_pitch':-10}),('pitch_plus_5',{'waist_pitch':5}),('pitch_plus_10',{'waist_pitch':10}),('combined_positive',{'waist_pitch':15,'waist_yaw':15,'waist_roll':10}),('combined_negative',{'waist_pitch':-5,'waist_yaw':-15,'waist_roll':-10})];hits=[];poseout=[]
+for name,q in poses:
+ Ts,ar=trans(q);mm={};lo={};hi={};owner={}
+ for p in parts+armor:
+  b=p['body'];T=Ts.get(b,np.eye(4));mm[p['name']]=raw[p['name']].transform(T[:3,:]);box=mm[p['name']].bounding_box();lo[p['name']]=np.array(box[:3]);hi[p['name']]=np.array(box[3:]);owner[p['name']]=b
+ ph=[];seen=set()
+ for p in parts:
+  n=p['name']
+  for other,z in PM.items():
+   if n==other or (z['role'] not in ['armor_cover','armor_surface'] and p['body']==z['body'] and p.get('material_id')==z.get('material_id')):continue
+   pair=tuple(sorted([n,other]))
+   if pair in seen:continue
+   seen.add(pair)
+   if np.any(np.minimum(hi[n],hi[other])-np.maximum(lo[n],lo[other])<=1e-7):continue
+   v=float((mm[n]^mm[other]).volume())
+   if v>1e-10:
+    h={'pose':name,'a':n,'b':other,'owner_a':p['body'],'owner_b':z['body'],'positive_volume_m3':v,'armor':z['role'] in ['armor_cover','armor_surface'],'complete_reference_involved':p['role']=='complete_component_reference' or z['role']=='complete_component_reference','same_body_different_material':p['body']==z['body'] and p.get('material_id')!=z.get('material_id'),'true_new_finite_material_pair':p['role']!='complete_component_reference' and z['role']!='complete_component_reference' and z['role'] not in ['armor_cover','armor_surface']};ph.append(h);hits.append(h)
+ poseout.append({'id':name,'angles_deg':q,'body_transforms':{b:T.tolist() for b,T in Ts.items()},'endpoint_actuation':ar,'positive_count':len(ph),'true_new_finite_material_pairs':sum(h['true_new_finite_material_pair'] for h in ph),'armor_pairs':sum(h['armor'] for h in ph)});print(tag,name,'finite',poseout[-1]['true_new_finite_material_pairs'],'armor',poseout[-1]['armor_pairs'],flush=True)
+result={'source_sha256':sha(source),'resource_contract_pass':contract['resource_contract_pass'],'poses':poseout,'positive_pairs':hits,'sampled_only_no_continuous_clearance_proof':True,'OEM_reference_overlap_not_true_material_boolean_pass':True,'unresolved_mating_input_output_overlap_all_retained':True,'all_original_armor111_material_context_unmodified_scope_conditional':True,'geometry_accepted':False,'physics_accepted':False};(O/(tag+'_pose_checks.json')).write_text(json.dumps(result,indent=2)+'\n');print(tag,'done mass',mass['complete_scope_mass_range_kg'],'maxfinite',max([h['positive_volume_m3'] for h in hits if h['true_new_finite_material_pair']],default=0),flush=True)

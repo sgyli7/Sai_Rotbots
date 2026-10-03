@@ -1,0 +1,63 @@
+from pathlib import Path
+R=Path('/home/ethan/Projects/Sai_Rotbots'); P=R/'.scratch/gorilla_internal_g18_body_codesign'; old=(R/'.scratch/gorilla_internal_g17_connected_cage_layout/b/build_connected_layout.py').read_text()
+head=old[:old.index('BASE=')]
+init='''BASE=R/'.scratch/gorilla_internal_g17_connected_cage_layout/b/scene.json.gz';THERM=R/'.scratch/gorilla_internal_g17_thermal_joint_workpoint/joint_workpoint_v3.json';s=read(BASE);thermal=read(THERM);old={p['name']:p for p in s['parts']}
+SH=R/'.scratch/gorilla_internal_g13_shoulder_cooling_zones/a/scene.json.gz';original_anchor={p['name']:p for p in read(SH)['parts']}
+retire={'g17_connected_cage_and_fixed_anchor_net'}
+parts=[copy.deepcopy(p) for p in s['parts'] if p['name'] not in retire];mass=[copy.deepcopy(r) for r in s['new_module_mass_rows'] if r['id'] not in retire];groups=[];newids=[];slots=copy.deepcopy(s['complete_partition_slots'])
+'''
+helpers=old[old.index('def ct(p)'):old.index('# MacroA:')].replace("'G17 own bounded", "'G18 own bounded").replace("p['g17actual_common", "p['g18actual_common")
+mods='''# Same-source finite pack installations: joined Al plate+ports, clearance bores in actual case, real bolt passages.
+pack_receipt=[]
+def replace_native(n,m,extra):
+ p=by[n];keep={k:v for k,v in p.items() if k not in ['vertices_world_m','faces','name','body','role','rgba','physical_mass_assigned']};keep.update(extra);rho=keep.get('density_kg_m3',2700);keep['mass_range_kg']=[m.volume()*rho]*3
+ q=g.nat(m,n,p['body'],p['role'],p.get('rgba',[.4,.6,.7,1]),keep);i=next(i for i,x in enumerate(parts) if x['name']==n);parts[i]=q;by[n]=q;newids.append(n)
+ for r in mass:
+  if r['id']==n:r['mass_range_kg']=keep['mass_range_kg'];r['source_scope']='G18 same-source actual net material, own density and manufacture unknown'
+for k in range(4):
+ tag=f'g16_pack_{k}';caseid=tag+'_Al_enclosure';plateid=tag+'_coldplate';portids=[n for n in by if n.startswith(tag+'_coldplate_port_')];bolts=[n for n in by if n.startswith(tag+'_mount_bolt_')]
+ case=g.mm(by[caseid]);plate=g.mm(by[plateid]);oldVcase=case.volume();oldVplate=plate.volume();holecenters=[]
+ for n in portids:
+  cp=ct(by[n]);case=case-g.cyl(cp,.0053,.050,'X',64);plate=plate+g.mm(by[n]);holecenters.append({'function':'true_port_clearance','center_m':cp.tolist(),'radius_m':.0053,'axis':'X'})
+  plate=plate-g.cyl(cp,.0025,.035,'X',64)
+ for n in bolts:
+  cp=ct(by[n]);case=case-g.cyl(cp,.0033,.055,'X',64);holecenters.append({'function':'true_bolt_passage','center_m':cp.tolist(),'radius_m':.0033,'axis':'X'})
+ replace_native(caseid,case,{'G18_real_clearance_bores':holecenters,'seal_preload_and_passage_voltageclearance_unknown':True})
+ replace_native(plateid,plate,{'G18_coldplate_and_twoports_single_Al_net':True,'retired_separate_port_ids':portids,'fluid_lumen_connected_to_channel_geometry_only_not_flow_rating':True,'same_material_manufacture_assumption':'integrally machined or welded Al port+plate; pressure/seal/thermal qualification unknown'})
+ retire.update(portids);parts[:]=[p for p in parts if p['name'] not in portids];mass[:]=[r for r in mass if r['id'] not in portids]
+ for n in portids:del by[n]
+ slot=next(q for q in slots if q['id']==tag);slot['member_ids']=[n for n in slot['member_ids'] if n not in portids];slot['port_function_now_net_in_id']=plateid
+ pack_receipt.append({'pack':tag,'old_case_V_m3':oldVcase,'new_case_V_m3':case.volume(),'old_plate_V_m3':oldVplate,'new_plate_with_ports_V_m3':plate.volume(),'retired_separate_port_ids':portids,'holes':holecenters,'net_only_own_material_NOcells_scaled':True})
+# Macro A: retreat all four complete packs 35mm, shift full series pump group 15mm rear/35mm outboard, bring rear full thermal segments 25mm inward.
+for k in range(4):
+ tag=f'g16_pack_{k}';ids=[n for n in by if n.startswith(tag+'_')];a=[.25,-.07 if k%2==0 else .07,2.140 if k<2 else 2.396];b=np.array(a)+[-.035,0,0];move(ids,a,b,tag=tag+'_complete_retreat');slot=next(q for q in slots if q['id']==tag);slot['g18_center_world_m']=b.tolist()
+ids=[n for n in by if n.startswith(('g17_low_EWP150','g17_low_series','g17_low_pump_installation'))];move(ids,[.31,.24,2.43],[.295,.275,2.43],tag='complete_two150_series_guard_tools')
+for j in range(4):
+ tag=f'g16_low_es0707_segment_{j}';slot=next(q for q in slots if q['id']==tag+'_fullthermal');a=np.array(slot['center_world_m']);b=a+[.025,0,0];move([n for n in by if n.startswith(tag+'_')],a,b,tag=tag+'_complete_inward');slot['center_world_m']=b.tolist()
+wr('pack_finite_installation_receipt.json',pack_receipt)
+'''
+primary=old[old.index('# Primary OCC'):old.index('# Logical globalfluid')]
+primary=primary.replace('housing=rg(.012,.140,.132,.024)+rg(-.0065,.140,.0851,.013)+rg(.020,.140,.118,.010)', "housing=rg(.012,.140,.132,.024)+rg(-.0065,.140,.0851,.013)+rg(.01975,.140,.132,.0095)+rg(.02725,.140,.118,.0055)")
+primary=primary.replace("oldm=g.mm(old[f'g13_{side}_fixed_reaction_closed_anchor'])", "oldm=g.mm(original_anchor[f'g13_{side}_fixed_reaction_closed_anchor'])")
+primary=primary.replace("'original_B_holes_PC236_andsupport_PC270_preserved':True", "'original_B_holes_PC236_andsupport_PC270_preserved':True,'own_receiver_redesigned_NOT_original_anchor_identity':True,'rear_step_q_0p015_to_0p0245_Ri132mm_and_q_0p0245_to_0p030_Ri118mm':True,'protectedOEM_q0to24mm_R130mm_no_union':True")
+primary=primary.replace('g17_connected_cage_and_fixed_anchor_net','g18_connected_cage_and_redesigned_receiver_net')
+primary=primary.replace("'integrated_oldanchor_IDs':sorted(n for n in retire if n.endswith('fixed_reaction_closed_anchor'))", "'integrated_oldanchor_IDs':['g13_left_fixed_reaction_closed_anchor','g13_right_fixed_reaction_closed_anchor']")
+end='''scene=copy.deepcopy(s);scene.update({'schema':'gorilla_g18_body_codesign_v1','producer_sha256':sha(__file__),'sources':{'G17_finalB':{'path':str(BASE),'sha256':sha(BASE)},'G13_original_shoulder':{'path':str(SH),'sha256':sha(SH)},'thermal_final':{'path':str(THERM),'sha256':sha(THERM)},'rules':{'path':str(R/'sai_robots_engineering_rules.md'),'sha256':sha(R/'sai_robots_engineering_rules.md')},'geometryhelper':{'path':str(R/'.scratch/gorilla_internal_g14_complete_thermal_colayout/geometry_helpers.py'),'sha256':sha(R/'.scratch/gorilla_internal_g14_complete_thermal_colayout/geometry_helpers.py')}},'parts':parts,'new_module_mass_rows':mass,'new_geometry_ids':sorted(set(newids)),'proposed_retired_ids':sorted(retire),'rigidgroup_transforms':groups,'complete_partition_slots':slots,'macro':'a','G17source_interface_contract_is_historical_DATUM_only':True,'G18_receiver_stock_clearance_real_installed_contacts_unknown':True,'globalfluidinventory':copy.deepcopy(s['globalfluidinventory']),'assembly_admission':False})
+scene['globalfluidinventory']['G17_raw_oil_range_with_different_workingfill_NOT_current']=True;scene['globalfluidinventory']['newconditional_oil_L_range']=[17.151,19.248,22.046]
+for row in scene['new_module_mass_rows']:
+ if row['id']=='g17_global_oil_conditional_once':row['mass_range_kg']=[17.151*.85,19.248*.85,22.046*.85];row['source_scope']='same historical external route proxy plus actual7L workingfill; new routes unknown not certified inventory'
+(D/'scene.json.gz').write_bytes(gzip.compress(json.dumps(scene,separators=(',',':')).encode(),mtime=0))
+wr('spec.json',{'scene_SHA':sha(D/'scene.json.gz'),'parts':len(parts),'cells':480,'frameprimaryCAD_valid':cadvalid,'frameCAD_solidcount':ns,'netframeincludes_redesigned_receivers_once_kg':whole.n.volume()*7850,'ownreceiver_NO_originalanchor_identity_inheritance':True,'allOEMfullsource_preserved':True,'fullfunction_physicalqualification':False})
+print('EVENT G18A source',sha(D/'scene.json.gz'),'parts',len(parts),'CADvalid',cadvalid,'CADsolid',ns,'netmass',whole.n.volume()*7850,flush=True)
+g.h.OUT=D;pp=[p for p in parts if p['role']!='design_domain_bulk'];g.h.render(pp,'native_four_view.png');g.h.render(pp,'native_cutaway_four_view.png',True);g.h.sections([p for p in parts if p['name'] in scene['original_visible_armor_ids'] or p['name'] in newids or p['name'].startswith('g16_')])
+from PIL import Image,ImageDraw
+for n in ['native_four_view.png','native_cutaway_four_view.png']:
+ im=Image.open(D/n);dr=ImageDraw.Draw(im);dr.rectangle((0,0,1800,50),fill='#f3f2ed');dr.text((25,10),'G18 A / ACTUAL RECEIVER + PACK FINITE INSTALLATION / COMPLETE TWO150 + FULL S1 SYSTEM',fill='black');dr.text((25,30),'OEM unchanged / new visible exposure, fluid, installed contacts, structure and thermal remain conditional or failed / no exterior adoption',fill='black');im.save(D/n)
+print('EVENT G18A views',flush=True)
+'''
+(P/'a/build_body_codesign.py').write_text(head+init+helpers+mods+primary+end)
+# Variant-local evaluator uses changed IDs and current parent hashes, never runs an old frozen producer.
+audit=(R/'.scratch/gorilla_internal_g17_connected_cage_layout/b/audit_connected_layout.py').read_text().replace("s['sources']['G16_finalB']['path']", "s['sources']['G17_finalB']['path']").replace('g17_connected_cage_and_fixed_anchor_net','g18_connected_cage_and_redesigned_receiver_net').replace("'g17_connected_cage_layout", "'g18_body_codesign")
+# Two joined/cut pack parts have real local deformation, so rigid transform identity tests must exclude these from unchanged geometry claim.
+audit=audit.replace("for n in q['member_ids']] or [0]", "for n in q['member_ids'] if n not in s['new_geometry_ids']] or [0]")
+(P/'a/audit_body_codesign.py').write_text(audit)

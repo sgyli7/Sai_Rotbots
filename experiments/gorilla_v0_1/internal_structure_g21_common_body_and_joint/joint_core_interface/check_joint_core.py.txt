@@ -1,0 +1,48 @@
+"""Read-only G21 material/inventory, complete protection collisions and serial displayed FK probes."""
+from pathlib import Path
+import json,gzip,hashlib,math,importlib.util,sys,argparse
+import numpy as np,manifold3d as mf
+O=Path(__file__).resolve().parent;ROOT=next(p for p in O.parents if(p/'sai_robots_engineering_rules.md').is_file());ap=argparse.ArgumentParser();ap.add_argument('--variant',choices=['a','b'],required=True);arg=ap.parse_args();D=O/arg.variant;sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();put=lambda p,d:Path(p).write_text(json.dumps(d,indent=2,allow_nan=False)+'\n')
+S=D/'scene.json.gz';s=json.loads(gzip.decompress(S.read_bytes()));ps=s['parts'];by={p['name']:p for p in ps};ms={p['name']:mf.Manifold(mf.Mesh64(np.array(p['vertices_world_m'],dtype=float),np.array(p['faces'],dtype=np.uint64)))for p in ps};threshold=1e-10
+vp=ROOT/'.scratch/gorilla_internal_g_material_contract/native_signed_material.py';spec=importlib.util.spec_from_file_location('g21validator',vp);val=importlib.util.module_from_spec(spec);sys.modules[spec.name]=val;spec.loader.exec_module(val)
+gates=[val.validate_part(p,require_single_material_component=True)for p in ps if p['finite_material']];valid={r['id']for r in gates if r['resource_contract_pass']}
+put(D/'native_material_gate.json',{'source_sha256':sha(S),'producer_sha256':sha(Path(__file__)),'validator_sha256':sha(vp),'parts':gates,'rejected_count':len(gates)-len(valid),'no_repairs':True,'physical_accepted':False})
+def pairs(mm,subset=None):
+ out=[];names=list(mm)
+ for i,a in enumerate(names):
+  for b in names[i+1:]:
+   if subset is not None and((a in subset)==(b in subset)):continue
+   aa=np.array(mm[a].bounding_box());bb=np.array(mm[b].bounding_box())
+   if not(np.all(aa[3:]>bb[:3])and np.all(bb[3:]>aa[:3])):continue
+   iv=float((mm[a]^mm[b]).volume())
+   if iv>threshold:
+    pa,pb=by[a],by[b];finite=pa['finite_material']and pb['finite_material'];out.append({'a':a,'b':b,'owner_a':pa['body'],'owner_b':pb['body'],'same_owner':pa['body']==pb['body'],'volume_m3':iv,'volume_cm3':iv*1e6,'classification':'finite_material'if finite else'protected_installation_query','valid_material_sources':a in valid and b in valid if finite else None,'gross_intersection_not_proven_OEM_material_collision':not finite})
+ return sorted(out,key=lambda r:r['volume_m3'],reverse=True)
+neutral=pairs(ms);prefix='g21_'+arg.variant+'_';joints=s['joint_interfaces']
+def rotation(j,q):
+ c=np.array(j['pivot_world_m']);a=np.array(j['axis_world']);t=math.radians(q);K=np.array([[0,-a[2],a[1]],[a[2],0,-a[0]],[-a[1],a[0],0]]);Q=np.eye(3)+math.sin(t)*K+(1-math.cos(t))*(K@K);T=np.eye(4);T[:3,:3]=Q;T[:3,3]=c-Q@c;return T
+poses=[]
+for label,angles in [('pitch_p15',[15,0,0]),('roll_p15',[0,15,0]),('combined',[15,10,10])]:
+ Ts=[rotation(j,q)for j,q in zip(joints,angles)];mm={}
+ for p in ps:
+  n=p['name'];T=np.eye(4)
+  if n.startswith(prefix+'roll_')or n.startswith(prefix+'yaw_')or p['body']=='left_shoulder_pitch_carrier':T=Ts[0]@T
+  if n.startswith(prefix+'yaw_')or p['body']=='left_shoulder_roll_carrier':T=T@Ts[1]
+  if p['body']=='left_shoulder_yaw_carrier':T=T@Ts[2]
+  mm[n]=ms[n].transform(T[:3,:]);
+ poses.append({'id':label,'joint_degrees':dict(zip(['pitch','roll','yaw'],angles)),'pairs':pairs(mm),'scope':'new rigid serial display groups, input tooth/CSFS deformation/race split/internal OEM unknown; no stableSI or dynamics','material_constant_preserved':True})
+service=[]
+for j in joints:
+ id=j['id'].split('_')[-1];names={n for n in ms if n==prefix+id+'_input_two_seat_stepped_shaft'or n==prefix+id+'_rotor_holder_spider'};delta=np.array(j['axis_world'])*.250;samples=[]
+ for alpha in np.linspace(0,1,9):
+  mm={n:m.translate(delta*alpha)if n in names else m for n,m in ms.items()};samples.append({'alpha':float(alpha),'pairs':pairs(mm,names)})
+ service.append({'id':id+'_shaft_holder_extract','moving_names':sorted(names),'translation_world_m':delta.tolist(),'samples':samples,'all_other_parts_stay_present':True,'complete_installsequence_cover_brake_release_bearing_retainer_still_unknown':True})
+put(D/'collision_pose_service_report.json',{'source_sha256':sha(S),'producer_sha256':sha(Path(__file__)),'positive_volume_threshold_m3':threshold,'neutral':neutral,'poses':poses,'service':service,'same_owner_never_exempt':True,'physical_accepted':False})
+# Whole own finite inventory, never subtract intersections as invented assembled mass credit.
+fin=[p for p in ps if p['finite_material']];M=sum(p['mass_range_kg'][1]for p in fin);com=sum(np.array(p['exact_CAD_COM_world_m'])*p['mass_range_kg'][1]for p in fin)/M;I=np.zeros((3,3))
+for p in fin:
+ d=np.array(p['exact_CAD_COM_world_m'])-com;I+=np.array(p['exact_CAD_full_I_at_COM_world_kg_m2'])+p['mass_range_kg'][1]*((d@d)*np.eye(3)-np.outer(d,d))
+refs=np.sum([p['mass_range_kg']for p in ps if not p['finite_material']and'mass_range_kg'in p],axis=0);refs+=np.sum([r['mass_range_kg']for r in s['whole_component_mass_rows']],axis=0);rows=json.loads((D/'cad_part_manifest.json').read_text());put(D/'inventory_report.json',{'source_sha256':sha(S),'producer_sha256':sha(Path(__file__)),'self_made_individual_material_inventory_sum_kg':M,'own_only_component_sum_COM_world_m':com.tolist(),'own_only_component_sum_full_I_at_COM_world_kg_m2':I.tolist(),'full_protected_module_range_kg':refs.tolist(),'conditional_component_inventory_sum_range_kg':(refs+M).tolist(),'not_assembled_net_mass_own_intersections_unremoved':True,'unrealized_outputbolts_keys_keeper_brackets_thread_fastener_water_fill_mass':None,'unrealized_function_terms_not_zero':True,'OEM_mass_split_COM_fullI_unknown':True,'finite_CAD_native_gt0p25pct':[r['name']for r in rows if abs(r['native_CAD_volume_relative_error'])>.0025],'shared_OCC_tags':len([t for r in rows for t in r['OCC_solid_tags']])!=len(set(t for r in rows for t in r['OCC_solid_tags'])),'physical_accepted':False})
+# Actual X=.111 cross-section at fixed source datum; surface frame idealization not whole stiffness.
+core=next(p for p in ps if p['name'].endswith('core_fixed_receiver_continuous_candidate'));T=np.array([[0,0,-1,0],[0,1,0,0],[1,0,0,0]]);cs=ms[core['name']].transform(T).slice(.111);put(D/'core_actual_section.json',{'source_sha256':sha(S),'producer_sha256':sha(Path(__file__)),'part':core['name'],'world_plane_X_m':.111,'section_polygon_coordinates_are_transformed_world_negZ_Y_m':[np.array(p).tolist()for p in cs.to_polygons()],'actual_material_section_area_m2':cs.area(),'interface_plane_X_m':.115,'actual_bolts_mate_preload_unknown':True,'wholebeam_FE_qualification':False})
+print('G21CHECK',arg.variant,'finite',len(fin),'reject',len(gates)-len(valid),'neutralFinite',sum(r['classification']=='finite_material'for r in neutral),'protection',sum(r['classification']!='finite_material'for r in neutral),'mass',M,refs.tolist(),flush=True)

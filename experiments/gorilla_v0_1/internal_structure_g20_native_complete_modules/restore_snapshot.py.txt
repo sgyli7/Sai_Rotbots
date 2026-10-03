@@ -1,0 +1,37 @@
+"""Restore selected exact research bytes into a separate empty directory."""
+from pathlib import Path
+import argparse, gzip, hashlib, json
+
+ap = argparse.ArgumentParser()
+ap.add_argument('--destination', type=Path, required=True)
+args = ap.parse_args()
+base = Path(__file__).resolve().parent
+dest = args.destination.resolve()
+dest.mkdir(parents=True, exist_ok=True)
+if any(dest.iterdir()):
+    raise ValueError('Destination must be empty; do not overwrite live or frozen sources.')
+manifest = json.loads((base / 'snapshot_manifest.json').read_text())
+sha = lambda b: hashlib.sha256(b).hexdigest()
+for row in manifest['files']:
+    if row['encoding'] == 'gzip_chunks':
+        blocks = []
+        for c in row['storage_chunks']:
+            stored = (base / c['stored_path']).read_bytes()
+            assert sha(stored) == c['stored_sha256']
+            data = gzip.decompress(stored)
+            assert len(data) == c['original_chunk_bytes'] and sha(data) == c['original_chunk_sha256']
+            blocks.append(data)
+        data = b''.join(blocks)
+    else:
+        stored = (base / row['stored_path']).read_bytes()
+        assert sha(stored) == row['stored_sha256']
+        data = gzip.decompress(stored) if row['encoding'] == 'gzip' else stored
+    assert sha(data) == row['original_sha256'] and len(data) == row['original_bytes']
+    rel = Path(row['original_path'])
+    assert not rel.is_absolute() and '..' not in rel.parts
+    target = dest / rel
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(data)
+    assert sha(target.read_bytes()) == row['original_sha256']
+print(json.dumps({'restored_selected_files': len(manifest['files']), 'destination': str(dest),
+                  'runtime_and_excluded_filter_restored': False, 'canonical_index_overwritten': False}))

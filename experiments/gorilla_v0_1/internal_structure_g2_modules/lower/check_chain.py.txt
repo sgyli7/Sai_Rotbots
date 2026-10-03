@@ -1,0 +1,49 @@
+from pathlib import Path
+import sys,json,hashlib,math
+import numpy as np,trimesh as tr,manifold3d as mf
+from PIL import Image,ImageDraw
+O=Path(__file__).resolve().parent;ROOT=O.parents[1];sys.path.insert(0,str(ROOT/'.scratch/gorilla_internal_g_material_contract'));import native_signed_material as gate
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+S=O/'chain_scene.json';s=json.loads(S.read_text());r={'source_sha256':sha(S),'checker_sha256':sha(Path(__file__)),'geometry_and_physics_accepted':False,'threshold_volume_m3':1e-10,'contract':gate.validate_scene({'parts':s['parts']}),'poses':[],'mass_scope':'Actual finite source union net metal; contact pad density range. Candidate only, no inertia/joint/strength qualification.'}
+def M(p):return mf.Manifold(mf.Mesh64(np.array(p['vertices_world_m'],np.float64,order='C',copy=True),np.array(p['faces'],np.uint64,order='C',copy=True)))
+def bounds(p):v=np.array(p['vertices_world_m']);return np.array([v.min(0),v.max(0)])
+def intersects(a,b):return bool(np.all(a[1]>=b[0]) and np.all(b[1]>=a[0]))
+basevol={p['name']:float(M(p).volume()) for p in s['parts']};mmetal=sum(v*7850 for p in s['parts'] if p.get('density_kg_m3') for v in [basevol[p['name']]]);padvol=sum(basevol[p['name']] for p in s['parts'] if p['role']=='retained_contact_pad');r['mass_kg']={'finite_metal_density_7850':mmetal,'pads_range_density_900_1100_1400':[padvol*x for x in [900,1100,1400]],'total_range':[mmetal+padvol*x for x in [900,1100,1400]]}
+r['part_resource']=[{'name':p['name'],'volume_m3':basevol[p['name']],'status':str(M(p).status()),'solid_decompose_components':len(M(p).decompose()),'bounds':bounds(p).tolist()} for p in s['parts']]
+for po in s['pose_scenes']:
+ pp=po['parts'];meshes={p['name']:M(p) for p in pp};bb={p['name']:bounds(p) for p in pp};cross=[];padcross=[]
+ for i,a in enumerate(pp):
+  for b in pp[i+1:]:
+   if a['body']==b['body'] or not intersects(bb[a['name']],bb[b['name']]):continue
+   v=float((meshes[a['name']]^meshes[b['name']]).volume())
+   if v>1e-10:(padcross if 'retained_contact_pad' in [a['role'],b['role']] else cross).append({'a':a['name'],'b':b['name'],'a_body':a['body'],'b_body':b['body'],'volume_cm3':v*1e6})
+ armorcross=[]
+ for a in s['armor_comparator']:
+  aa=dict(a);tt=np.array(po['body_transforms'][a['comparison_body']]);aa['vertices_world_m']=tr.transformations.transform_points(a['vertices_world_m'],tt).tolist();am=M(aa);ab=bounds(aa)
+  for b in pp:
+   if b['role']=='retained_contact_pad' or not intersects(ab,bb[b['name']]):continue
+   v=float((am^meshes[b['name']]).volume())
+   if v>1e-10:armorcross.append({'armor':a['name'],'part':b['name'],'volume_cm3':v*1e6,'candidate_bounds_m':bb[b['name']].tolist(),'armor_bounds_m':ab.tolist()})
+ r['poses'].append({'id':po['id'],'material_mass_constant_max_volume_error_m3':max(abs(float(meshes[p['name']].volume())-basevol[p['name']]) for p in pp),'different_owner_material_intersections':sorted(cross,key=lambda x:-x['volume_cm3']),'pad_intersections':padcross,'original_armor_intersections':sorted(armorcross,key=lambda x:-x['volume_cm3']),'actual_endpoint_lengths_m':[{'id':a['id'],'length_m':float(np.linalg.norm(np.array(a['B_world_m'])-a['A_world_m']))} for a in po['endpoint_transforms']]})
+ print('CHECK',po['id'],'cross',len(cross),'armor',len(armorcross),flush=True)
+# Same scale native triangle painter projection: source geometry, no inferred imagery or shape correction.
+W,H=1000,1200;scale=850.;views={'front':(np.array([0,-1,0]),np.array([0,0,1]),np.array([1,0,0])),'left':(np.array([-1,0,0]),np.array([0,0,1]),np.array([0,1,0])),'rear':(np.array([0,1,0]),np.array([0,0,1]),np.array([-1,0,0])),'top':(np.array([0,-1,0]),np.array([1,0,0]),np.array([0,0,1]))};images=[]
+def drawview(id,po,view,armor):
+ ux,uy,dep=views[view];entries=list(po['parts']);center=np.array([-.02,.5,.48]) if view!='top' else np.array([.02,.5,0]);items=[]
+ if armor:
+  for a in s['armor_comparator']:
+   if np.array(a['vertices_world_m'])[:,2].min()>1.13:continue
+   q=dict(a);q['vertices_world_m']=tr.transformations.transform_points(a['vertices_world_m'],np.array(po['body_transforms'][a['comparison_body']])).tolist();entries.append(q)
+ for p in entries:
+  vv=np.array(p['vertices_world_m']);rgba=p.get('rgba',p.get('color_rgba',[.26,.47,.67,1]));col=tuple(int(255*min(1,max(0,x))) for x in rgba[:3])
+  for face in p['faces']:
+   for k in range(1,len(face)-1):
+    tri=vv[[face[0],face[k],face[k+1]]];pr=tri-center;points=[(W/2+float(x@ux)*scale,H/2-float(x@uy)*scale) for x in pr];n=np.cross(tri[1]-tri[0],tri[2]-tri[0]);n/=max(np.linalg.norm(n),1e-20);light=.6+.4*abs(float(n@np.array([.5,.4,.768])));color=tuple(int(x*light) for x in col);items.append((float(tri.mean(0)@dep),points,color))
+ im=Image.new('RGB',(W,H),'white');d=ImageDraw.Draw(im)
+ for z,pts,col in sorted(items,key=lambda x:x[0]):d.polygon(pts,fill=col)
+ d.text((20,20),f'Gorilla G2 candidate / {id} / {view} / '+('original armor comparator 0mm' if armor else 'bare finite material'),fill='black');d.text((20,H-30),f'SI same scale {scale:g}px/m | SOURCE {sha(S)[:16]} | NO PHYSICAL ACCEPTANCE',fill='black');p=O/f'{id}_{view}_{"armor" if armor else "bare"}.png';im.save(p);images.append({'path':p.name,'sha256':sha(p),'view':view,'pose':id,'armor':armor,'px_per_m':scale,'projected_source_sha256':sha(S)})
+for view in views:
+ for armor in [False,True]:drawview('neutral',s['pose_scenes'][0],view,armor)
+for po in s['pose_scenes'][1:]:drawview(po['id'],po,'left',False)
+r['images']=images;r['actuator_screens']=[{k:a.get(k) for k in ['id','bore_m','rod_m','wall_m','pin_m','q_range_deg','stroke_m','minimum_zero_eye_m','custom_zero_eye_m','short_zero_deficit_m','complete_geometry_present']}|{'J_min_m_per_rad':min(x['J_m_per_rad'] for x in a['samples']),'J_max_m_per_rad':max(x['J_m_per_rad'] for x in a['samples']),'eye_min_m':min(x['eye_length_m'] for x in a['samples']),'eye_max_m':max(x['eye_length_m'] for x in a['samples'])} for a in s['actuators']]
+(O/'report.json').write_text(json.dumps(r,indent=2,default=str)+'\n');print('DONE',mmetal,sha(O/'report.json'),flush=True)

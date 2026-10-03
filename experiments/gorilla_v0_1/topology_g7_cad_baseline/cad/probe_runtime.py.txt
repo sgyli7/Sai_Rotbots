@@ -1,0 +1,20 @@
+"""Actual cube/tet smoke test for isolated Gmsh ARM64 runtime."""
+from pathlib import Path
+import json,time,numpy as np
+import gmsh
+O=Path(__file__).resolve().parent
+gmsh.initialize([], False, False);gmsh.option.setNumber('General.Terminal',0)
+gmsh.model.add('hollow_cube_regression')
+a=gmsh.model.occ.addBox(-.05,-.05,-.05,.1,.1,.1)
+b=gmsh.model.occ.addBox(-.025,-.025,-.025,.05,.05,.05)
+solid,_=gmsh.model.occ.cut([(3,a)],[(3,b)]);gmsh.model.occ.synchronize()
+volume=sum(gmsh.model.occ.getMass(3,t) for d,t in solid)
+gmsh.option.setNumber('Mesh.MeshSizeMax',.010);gmsh.option.setNumber('Mesh.MeshSizeMin',.005)
+gmsh.option.setNumber('Mesh.Algorithm3D',1);gmsh.model.mesh.generate(3)
+tt,et,ee=gmsh.model.mesh.getElements(3)
+q=gmsh.model.mesh.getElementQualities(et[0],'minSICN');nodes,xyz,_=gmsh.model.mesh.getNodes()
+gmsh.write(str(O/'runtime_hollow_cube.msh'))
+r={'runtime_version':gmsh.__version__,'cad_volume_m3':volume,'expected_volume_m3':.000875,'volume_matches':abs(volume-.000875)<1e-12,
+ 'tet_count':len(et[0]),'node_count':len(nodes),'minSICN_min':float(np.min(q)),'finite_nodes':bool(np.isfinite(xyz).all()),
+ 'tool_works':True,'model_physical_acceptance':False}
+gmsh.finalize();(O/'runtime_probe.json').write_text(json.dumps(r,indent=2)+'\n');print(r,flush=True)

@@ -1,0 +1,16 @@
+"""Check all immutable native meshes and actual rigid transforms, read-only source."""
+from pathlib import Path
+import json,hashlib
+import numpy as np,trimesh as tr
+O=Path(__file__).resolve().parent
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+S=json.loads((O/'structure_scene.json').read_text());base={p['name']:p for p in S['parts']};rows=[]
+for pose in S['pose_scenes']:
+ vmax=omax=xmax=0.;changed=0;detmin=1.
+ for p in pose['parts']:
+  b=base[p['name']];T=np.array(p['applied_transform_world']);R=T[:3,:3]
+  detmin=min(detmin,float(np.linalg.det(R)));omax=max(omax,float(np.max(np.abs(R.T@R-np.eye(3)))));xmax=max(xmax,float(np.max(np.abs(tr.transformations.transform_points(b['vertices_world_m'],T)-np.array(p['vertices_world_m'])))));changed+=p['faces']!=b['faces']
+  mb=tr.Trimesh(b['vertices_world_m'],b['faces'],process=False);mp=tr.Trimesh(p['vertices_world_m'],p['faces'],process=False);vmax=max(vmax,float(abs(mb.volume-mp.volume)))
+ rows.append({'pose':pose['id'],'native_parts':len(pose['parts']),'min_rotation_determinant':detmin,'max_orthonormal_error':omax,'max_rigid_vertex_error_m':xmax,'native_faces_changed_count':changed,'max_part_volume_error_m3':vmax})
+r={'source_sha256':sha(O/'structure_scene.json'),'producer_sha256':sha(__file__),'all_native_1875_pose_parts_independently_checked':True,'rows':rows,'passed_rigid_material_identity_only':all(x['native_faces_changed_count']==0 and x['max_orthonormal_error']<1e-10 and x['max_part_volume_error_m3']<1e-10 and x['min_rotation_determinant']>.9999999 for x in rows),'not_physical_acceptance':True}
+(O/'rigid_material_audit.json').write_text(json.dumps(r,indent=2)+'\n');print(r)

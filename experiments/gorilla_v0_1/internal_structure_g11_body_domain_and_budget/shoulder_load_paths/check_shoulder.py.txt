@@ -1,0 +1,46 @@
+"""New finite source gate + owner/type-separated native assembly probes, no repairs."""
+from pathlib import Path
+import argparse,json,gzip,hashlib,sys,time
+import numpy as np
+import manifold3d as mf
+import trimesh as tm
+O=Path(__file__).resolve().parent;ROOT=next(p for p in O.parents if (p/'sai_robots_engineering_rules.md').is_file());sys.path.insert(0,str(ROOT/'.scratch/gorilla_internal_g_material_contract'));import native_signed_material as gate
+ap=argparse.ArgumentParser();ap.add_argument('--variant',choices=['a','b'],required=True);args=ap.parse_args();D=O/args.variant
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();S=D/'scene.json.gz';s=json.loads(gzip.decompress(S.read_bytes()));ctxpath=ROOT/'.scratch/gorilla_internal_g9_whole_source/scene.json.gz';ctx=json.loads(gzip.decompress(ctxpath.read_bytes()));rows=[];cache={};bounds={};start=time.monotonic()
+for p in s['parts']:
+ v=np.asarray(p['vertices_world_m'],dtype=float);f=np.asarray(p['faces'],dtype=np.uint64)
+ m=mf.Manifold(mf.Mesh64(np.asarray(v,order='C'),np.asarray(f,order='C')));cache[p['name']]=m;bounds[p['name']]=np.array([v.min(0),v.max(0)])
+ must_one=p.get('finite_material',False)
+ g=gate.validate_part(p,require_single_material_component=must_one)
+ rows.append({'name':p['name'],'body':p['body'],'role':p['role'],'resource_contract':g,'kernel_material_components':len(m.decompose()) if m.status()==mf.Error.NoError else None,'finite_material':p.get('finite_material',False),'CAD_mass_or_reference_range_kg':p.get('mass_range_kg'),'exact_CAD_full_I_own_material':p.get('exact_CAD_full_I_at_COM_world_kg_m2'),'exact_CAD_COM_own_material':p.get('exact_CAD_COM_world_m')})
+def overlap(a,b):return np.all(a[1]>=b[0]) and np.all(b[1]>=a[0])
+poses=[]
+for q in [0,30,-30]:
+ pp=[]
+ for p in s['parts']:
+  m=cache[p['name']];bb=bounds[p['name']]
+  if p['body'].endswith('_shoulder_pitch_carrier'):
+   sg=1 if p['name'].startswith('g11_left') else -1;T=tm.transformations.rotation_matrix(np.deg2rad(q),[0,sg,0],[-.130,sg*.560,2.290]);m=m.transform(T[:3,:]);vv=np.asarray(m.to_mesh64().vert_properties)[:,:3];bb=np.array([vv.min(0),vv.max(0)])
+  pp.append((p,m,bb))
+ own=[];reference=[]
+ for i,(p,m,bb) in enumerate(pp):
+  for p2,m2,bb2 in pp[i+1:]:
+   if p['body']==p2['body'] or not overlap(bb,bb2):continue
+   vol=float((m^m2).volume())
+   if vol<=1e-10:continue
+   r={'a':p['name'],'b':p2['name'],'a_owner':p['body'],'b_owner':p2['body'],'volume_cm3':vol*1e6,'qualified_material_interference':bool(p.get('finite_material') and p2.get('finite_material'))}
+   (own if r['qualified_material_interference'] else reference).append(r)
+ poses.append({'output_pitch_deg':q,'actual_moving_material_only':'Output carrier/bolts/keepers rigidly transformed, material conserved. Input brake/release/gear internal kinematics unresolved, not claimed as actual driven pose','different_owner_material':sorted(own,key=lambda r:-r['volume_cm3']),'reference_or_unselected_component_probes':sorted(reference,key=lambda r:-r['volume_cm3'])})
+armor=[];nine=[];alloc=json.loads((ROOT/'.scratch/gorilla_internal_g8_system_allocation/whole_system_allocation.json').read_text());ids={n:g['id'] for g in alloc['actual_F1_nine_moved_group_bounds'] for n in g['exact_member_ids']}
+for p2 in ctx['parts']:
+ role=p2.get('role','');kind='original_armor' if role in ('armor_cover','armor_surface') else 'original_complete_nine' if p2['name'] in ids else None
+ if not kind:continue
+ v=np.array(p2['vertices_world_m']);bb2=np.array([v.min(0),v.max(0)]);f=np.array([[f[0],f[i],f[i+1]] for f in p2['faces'] for i in range(1,len(f)-1)],np.uint64);m2=mf.Manifold(mf.Mesh64(np.asarray(v,dtype=float,order='C'),np.asarray(f,order='C')))
+ if m2.status()!=mf.Error.NoError:continue
+ for p in s['parts']:
+  if not overlap(bounds[p['name']],bb2):continue
+  vol=float((cache[p['name']]^m2).volume())
+  if vol>1e-10:
+   r={'new_part':p['name'],'new_finite_material':p.get('finite_material'),'context_part':p2['name'],'group':ids.get(p2['name']),'volume_cm3':vol*1e6,'probe_not_original_or_new_assembly_release':True};(armor if kind=='original_armor' else nine).append(r)
+report={'robot_id':'gorilla_v0_1','variant':args.variant,'source_sha256':sha(S),'producer_sha256':sha(__file__),'source_context_sha256':sha(ctxpath),'source_CAD_manifest_sha256':sha(D/'cad_part_manifest.json'),'unique_ID':len(set(p['name'] for p in s['parts']))==len(s['parts']),'parts':rows,'native_rejected_count':sum(not r['resource_contract']['resource_contract_pass'] for r in rows),'poses':poses,'original_armor_probes':sorted(armor,key=lambda r:-r['volume_cm3']),'original_nine_group_probes':sorted(nine,key=lambda r:-r['volume_cm3']),'original_armor_and_gear_reference_probes_not_OEM_net_solid':True,'assembly_physical_accepted':False,'actual_brake_release_and_fast_input_motion_not_qualified':True,'elapsed_s':time.monotonic()-start}
+(D/'check_report.json').write_text(json.dumps(report,indent=2)+'\n');print('CHECK_READY',args.variant,'rejected',report['native_rejected_count'],'poses_material_pairs',[len(p['different_owner_material']) for p in poses],'armor',len(armor),'nine',len(nine),sha(D/'check_report.json'),flush=True)

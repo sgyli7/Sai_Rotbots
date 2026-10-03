@@ -1,0 +1,43 @@
+"""G16 native sampled maintenance/tool exclusions. Not continuous clearance approval."""
+from pathlib import Path
+import json,gzip,copy,math,time
+import numpy as np,manifold3d as mf
+import build_interface_layer as H
+O=Path(__file__).resolve().parent
+
+def bbox(p,delta):x=H.v(p)+delta;return x.min(0),x.max(0)
+def overlap(a,b):return bool(np.all(a[1]>=b[0]-1e-9)and np.all(b[1]>=a[0]-1e-9))
+def part(m,name,reason):
+ q=m.to_mesh64();return {'name':name,'body':'void_reference_only','role':'sampled_motion_exclusion_NOT_hardware','vertices_world_m':np.asarray(q.vert_properties)[:,:3].tolist(),'faces':np.asarray(q.tri_verts).tolist(),'rgba':[.85,.50,.2,.15],'reason':reason,'volume_not_component_material_or_mass':True,'source_sha256':H.EXPECTED}
+
+def main():
+ t=time.time();S=H.read(H.FILES['current']);P={p['name']:p for p in S['parts']};F=H.read(H.FILES['service']);allout=[];summaries=[];tools=[]
+ for side,sg in [('left',1),('right',-1)]:
+  state={n:np.zeros(3)for n in P};obsids={n for n in P if n.startswith('g13_'+side+'_')}|{'g15_chest_shoulder_waist_net_cage','e2_upper_net_'+side+'_shoulder_pitch_carrier','e2_upper_net_'+side+'_shoulder_roll_carrier','ds_'+side+'_shoulder_roll_gear','ds_'+side+'_shoulder_yaw_gear'};seq=next(r['sequence']for r in F['manual_disassembly']if r['side']==side)
+  for op in seq:
+   ids=op['exact_ids'];D=np.array(op['translation_world_m']);mats=[];samples=[]
+   for frac in np.linspace(0,1,21):
+    pairs=[]
+    for n in ids:
+     pp=P[n];delta=state[n]+frac*D;B=bbox(pp,delta);m=H.kernel(pp).translate(delta);mats.append(m)
+     for on in obsids-set(ids):
+      oo=P[on];ob=bbox(oo,state[on])
+      if not overlap(B,ob):continue
+      mm=H.kernel(oo).translate(state[on]);q=m^mm;vol=float(q.volume())
+      if vol>1e-10:pairs.append({'moving':n,'obstacle':on,'positive_volume_cm3':vol*1e6,'query_class':'actual_ownmaterial'if pp.get('finite_material',pp.get('density_kg_m3_hypothesis')is not None)and oo.get('finite_material',oo.get('density_kg_m3_hypothesis')is not None)else'protectedOEM_or_fluid_reference_probe_not_actual_material','moving_prior_park_translation_world_m':state[n].tolist(),'obstacle_prior_park_translation_world_m':state[on].tolist()})
+    samples.append({'fraction':float(frac),'pairs':pairs,'actual_material_pairs':sum(p['query_class']=='actual_ownmaterial'for p in pairs)})
+   void=mf.Manifold.batch_boolean(mats,mf.OpType.Add);allout.append(part(void,'g16_'+side+'_'+op['operation']+'_sampled_sweep','21 actual current meshes with previous-step parking retained; phase-only sampled union, not continuous sweptsolid'))
+   summaries.append({'side':side,'operation':op['operation'],'member_ids':ids,'translation_world_m':D.tolist(),'steps':21,'all_prior_removed_parts_kept_at_actual_parked_positions':True,'checked_obstacle_IDs':sorted(obsids-set(ids)),'fullrobot_othergroups_not_exhaustively_checked':True,'samples':samples,'native_sweep_volume_m3':float(void.volume()),'physical_maintenance_qualified':False})
+   for n in ids:state[n]+=D
+  # A wrench/tool clearance is an explicit hypothetical envelope, no SKU claim.
+  for i in range(8):
+   bolt=P['g13_'+side+'_load_support_mount_bolt_'+str(i)];vv=H.v(bolt);center=(vv.min(0)+vv.max(0))/2;Y=vv[:,1].max()if sg>0 else vv[:,1].min();c=np.array([center[0],Y+sg*.05,center[2]]);m=mf.Manifold.cylinder(.10,.018,.018,32,True).rotate([-90*sg,0,0]).translate(c);pp=part(m,'g16_'+side+'_support_bolt_'+str(i)+'_tool_void','hypothetical36mmOD x100mm tool keepout placed at actualbolt head; actualtool,handaccess/tighteningtorque unknown');allout.append(pp);probe=[]
+   for on in obsids:
+    if on==bolt['name']:continue
+    ob=bbox(P[on],np.zeros(3));bd=(np.asarray(m.bounding_box())[:3],np.asarray(m.bounding_box())[3:])
+    if not overlap(bd,ob):continue
+    q=m^H.kernel(P[on]);V=float(q.volume())
+    if V>1e-10:probe.append({'obstacle':on,'positive_volume_cm3':V*1e6,'scope':'tool versus actualmaterial'if P[on].get('finite_material',P[on].get('density_kg_m3_hypothesis')is not None)else'tool versus protectedreference'})
+   tools.append({'id':pp['name'],'source_bolt_ID':bolt['name'],'hypothetical_tool_OD_m':.036,'length_m':.10,'center_world_m':c.tolist(),'axis_world':[0,sg,0],'initial_pose_probes':probe,'actual_tool_and_fullassembly_access_unknown':True})
+ H.gz('sampled_motion_tool_voids.json.gz',{'robot_id':'gorilla_v0_1','source_sha256':H.EXPECTED,'producer_sha256':H.sha(__file__),'parts':allout,'not_physical_hardware_not_mass':True,'source_old_service_reference_sha256':H.sha(H.FILES['service']),'no_continuous_sweep_or_assembly_admission':True});H.put('motion_tool_void_contract.json',{'source_sha256':H.EXPECTED,'source_service_reference_sha256':H.sha(H.FILES['service']),'producer_sha256':H.sha(__file__),'staged_disassembly_sample_queries':summaries,'hypothetical_tool_envelopes':tools,'scope':'current B local shoulder+serial carriers/core; complete otherstock/pipes/humantooling not checked','missing_initial_stator_rotor_installation_order_remains_rejected':True,'ownerlabel_not_kinematic_contract':True,'physical_accepted':False,'elapsed_s':time.time()-t});print('MOTION_TOOLS_READY',len(allout),'elapsed',time.time()-t,flush=True)
+if __name__=='__main__':main()

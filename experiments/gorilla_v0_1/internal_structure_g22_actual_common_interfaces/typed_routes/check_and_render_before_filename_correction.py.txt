@@ -1,0 +1,55 @@
+#!/usr/bin/env python3
+import pathlib,json,gzip,hashlib,importlib.util,math,itertools
+import numpy as np,manifold3d as mf,trimesh
+from PIL import Image,ImageDraw
+R=pathlib.Path('/home/ethan/Projects/Sai_Rotbots');D=pathlib.Path(__file__).resolve().parent;sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+HELP=R/'.scratch/gorilla_internal_g14_complete_thermal_colayout/geometry_helpers.py';sp=importlib.util.spec_from_file_location('g22reviewhelper',HELP);g=importlib.util.module_from_spec(sp);sp.loader.exec_module(g)
+s=json.load(gzip.open(D/'scene.json.gz','rt'));by={p['name']:p for p in s['parts']};C=np.array(s['pack0_worldcenter_m']);M=np.array(s['pack0_local_to_world_R']);glocal={p['name']:mf.Manifold(mf.Mesh64((np.array(p['vertices_world_m'])-C)@M,np.array(p['faces'],np.uint64))) for p in s['parts']}
+old=json.load(gzip.open(R/'.scratch/gorilla_internal_g21_whole_body_space_allocation/b/scene.json.gz','rt'));ob={p['name']:p for p in old['parts']};localold=lambda n:mf.Manifold(mf.Mesh64((np.array(ob[n]['vertices_world_m'])-C)@M,np.array(ob[n]['faces'],np.uint64)))
+# Independentliteral parametricchannels fromfrozenG21 build_b recipe; raw stockfirstqueryhadwrongportdatum, preserveitunknown.
+gx=(30-1)*.0225+.02155;gz=(6-1)*.0225+.02155;px=-gx/2+.0235;pz=gz/2-.035
+ch=g.bx([0,-.043075,pz],[gx-.01055,.0025,.007])+g.bx([0,-.043075,-pz],[gx-.01055,.0025,.007])+g.bx([gx/2-.009,-.043075,0],[.007,.0025,2*pz+.007])
+for z in [-pz,pz]:ch=ch+g.bx([px,-.043075,z],[.014,.004,.010])+g.cyl([px,-.049075,z],.0035,.019,'Y',32)
+source=localold('g21_pack_0_coldplate_integral_ports');review=[]
+for net,x,rad in [(0,-.28125,.0066),(2,-.16875,.0017)]:
+ hole=g.cyl([x,-.049,-.045],rad,.040,'Y',64);review.append({'net':net,'literal_G21_channel_to_hole_min_gap_m':ch.min_gap(hole,.01),'positive_hole_vs_literal_sourcewaterchannel_V_m3':float((ch^hole).volume()),'geometry_only_not_pressureseal_strength':True})
+receipt={'frozen_typed_source_SHA':sha(D/'scene.json.gz'),'source_G21_builder_SHA':sha(R/'.scratch/gorilla_internal_g21_whole_body_space_allocation/build_b.py'),'derivedliteral_port_x_z_m':[px,pz],'literalchannel_vs_actualsourceAl_V_m3':float((ch^source).volume()),'body_channel_clearance_checks':review,'earlier_stock_query_has_wrong_port_datums_and_notaccepted':'first query stock usedx-.31375,z.0325 insteadliteralx-.313525,z.032025; itszero min_gap mustnotbeused aspressureproof. Original report preserved. This separateliteral read-bound calculation doesnotremovegeometryorrepairsource.','pressure_thinligament_fullwater_boundary_or_realstock_valid':False}
+(D/'water_channel_literal_review.json').write_text(json.dumps(receipt,indent=2)+'\n')
+# Independentmass signed integral andatomicmesh edge statistics; no calls toproducer'svolume accumulation.
+mr=[];pair=[];netparts=[p for p in s['parts'] if p['typed_category']=='conductor'];ins=[p for p in s['parts'] if p['typed_category'] in ['wire_insulation','feedthrough_dielectric','connector_dielectric']]
+for p in s['parts']:
+ v=np.array(p['vertices_world_m']);f=np.array(p['faces']);t=v[f];V=np.einsum('ij,ij->i',t[:,0],np.cross(t[:,1],t[:,2])).sum()/6;rho=p['density_kg_m3'];edges=np.sort(np.concatenate([f[:,[0,1]],f[:,[1,2]],f[:,[2,0]]]),axis=1);_,deg=np.unique(edges,axis=0,return_counts=True);mr.append({'id':p['name'],'independent_signed_V_m3':float(V),'rho_assumption':rho,'independent_mass_once_kg':float(V*rho),'producer_record_mass_kg':p['mass_once_kg'],'massdifference_kg':float(V*rho-p['mass_once_kg']),'native_non2_edge_count':int(np.count_nonzero(deg!=2))})
+for a in netparts:
+ for b in ins:pair.append({'Cu':a['name'],'dielectric':b['name'],'actual_native_V_m3':float((glocal[a['name']]^glocal[b['name']]).volume())})
+(D/'independent_typed_check.json').write_text(json.dumps({'scene_SHA':sha(D/'scene.json.gz'),'once_materialmass_signed_tetra_rows':mr,'Cu_vs_all_dielectric_rows':pair,'mass_source_shapes_not_volumefromgenericstocks':True,'total_signed_mass_kg':sum(x['independent_mass_once_kg'] for x in mr),'max_mass_difference_kg':max(abs(x['massdifference_kg']) for x in mr),'actual_max_Cu_vs_dielectric_V_m3':max(x['actual_native_V_m3'] for x in pair),'native_source_edges_non2_sum':sum(x['native_non2_edge_count'] for x in mr),'no_source_topology_modification':True},indent=2)+'\n')
+# Allplots areactualnative triangle projections. Visual-onlyclippedbarriers; no handpaintedroute/structure.
+views=[('local XZ',np.array([1,0,0.]),np.array([0,0,1.]),np.array([0,-1,0.])),('local XY',np.array([1,0,0.]),np.array([0,1,0.]),np.array([0,0,1.])),('local YZ',np.array([0,1,0.]),np.array([0,0,1.]),np.array([1,0,0.])),('threequarter',np.array([1,-1,0.])/np.sqrt(2),np.array([1,1,2.])/np.sqrt(6),np.array([-1,-1,1.])/np.sqrt(3))]
+clip=g.bx([-.287,0,.035],[.32,.35,.23]);selected=[]
+for p in s['parts']:
+ m=glocal[p['name']]
+ if p['typed_category']=='source_analysis_bored_barrier':m=m^clip
+ mm=m.to_mesh64();v=np.asarray(mm.vert_properties)[:,:3];f=np.asarray(mm.tri_verts);selected.append((p,v,f))
+def render(name,show_copper):
+ out=Image.new('RGB',(1600,1240),'#f5f4ee');dr=ImageDraw.Draw(out);dr.text((25,10),'G22 actual three typed nets / worldSI native interpreted in frozenpack0 localframe / no rating or720pack admission',fill='black');dr.text((25,30),'COPPER CUTAWAY: dielectric/barriers explicitly withdrawn' if show_copper else 'Actual Cu + net dielectric + feedthrough + independent bored sourcecoupons; barriercrop is visualization only',fill='black');scale=1750;center=np.array([-.285,-.008,.035]);renders=[]
+ for k,(label,xaxis,yaxis,normal) in enumerate(views):
+  ox=400+(k%2)*800;oy=340+(k//2)*600;triangles=[]
+  for p,v,f in selected:
+   if show_copper and p['typed_category']!='conductor':continue
+   tr=v[f];centroid=tr.mean(1);depth=centroid@normal;v2=np.column_stack([(v-center)@xaxis*scale+ox,-(v-center)@yaxis*scale+oy]);rgb=tuple(int(max(0,min(1,c))*255) for c in p.get('rgba',[.6,.6,.6,1])[:3])
+   for ids,z in zip(f,depth):triangles.append((float(z),[tuple(v2[i]) for i in ids],rgb))
+  for _,points,rgb in sorted(triangles,key=lambda a:a[0]):dr.polygon(points,fill=rgb)
+  dr.text((25+(k%2)*800,65+(k//2)*600),f'{label}; actualnative; common scale1750px/m',fill='black')
+ out.save(D/name)
+render('native_typed_route_four_view.png',False);render('native_Cu_cutaway_four_view.png',True)
+# Thintrue material slice at actualcap Z−45mm andsignalbankZ115mm; referencegeometryclippedonlyforview.
+def sections():
+ out=Image.new('RGB',(1600,700),'#f5f4ee');dr=ImageDraw.Draw(out);dr.text((25,10),'G22 actualnative material slices (0.5mmvisualslab): nofabrication/electrical/pressure qualification',fill='black')
+ for kk,z in enumerate([-.045,.115]):
+  slab=g.bx([-.287,0,z],[.32,.35,.0005]);tris=[]
+  for p in s['parts']:
+   m=glocal[p['name']]^slab;me=m.to_mesh64();v=np.asarray(me.vert_properties)[:,:3];f=np.asarray(me.tri_verts);rgb=tuple(int(c*255) for c in p['rgba'][:3]);vv=np.column_stack([(v[:,0]+.285)*1850+400+kk*800,-v[:,1]*1850+390])
+   for ids in f:tris.append(([tuple(vv[i]) for i in ids],rgb))
+  for poly,rgb in tris:dr.polygon(poly,fill=rgb)
+  dr.text((25+kk*800,45),f'local Z={z}m; 1850px/m; actualfeedthrough/copper/barrier intersect',fill='black')
+ out.save(D/'native_feedthrough_sections.png')
+sections();print('EVENT G22 literalchannelcheck',review,'masscheck',max(abs(x['massdifference_kg']) for x in mr),'viewsfinished',flush=True)

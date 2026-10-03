@@ -1,0 +1,135 @@
+"""G20 native, editable manufacturing-envelope probe. No OEM net-material fabrication."""
+from pathlib import Path
+import numpy as np, json,gzip,hashlib,math,time
+import manifold3d as mf
+P=Path(__file__).resolve().parent
+parts=[];mass=[];ports=[];services=[];shapes={};fluids=[]
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def write(n,x):(P/n).write_text(json.dumps(x,ensure_ascii=False,indent=2)+'\n')
+def box(c,d):return mf.Manifold.cube(d).translate((np.asarray(c)-np.asarray(d)/2).tolist())
+def cyl(c,r,L,ax='Z',n=48):
+ m=mf.Manifold.cylinder(L,r,r,n).translate([0,0,-L/2])
+ if ax=='X':m=m.rotate([0,90,0])
+ if ax=='Y':m=m.rotate([-90,0,0])
+ return m.translate(c)
+def union(a):return mf.Manifold.batch_boolean(a,mf.OpType.Add)
+def tube(c,ro,ri,L,ax='Z'):return cyl(c,ro,L,ax)-cyl(c,ri,L+.002,ax)
+def add(n,m,owner,role='finite_custom_material',rho=None,mrange=None,meta=None):
+ a=m.to_mesh64();v=np.asarray(a.vert_properties)[:,:3];f=np.asarray(a.tri_verts)
+ q={'name':n,'body':owner,'role':role,'vertices_world_m':v.tolist(),'faces':f.tolist(),'rgba':{'finite_custom_material':[.39,.5,.59,1],'oem_gross_reference':[.77,.49,.18,.68],'unqualified_function_stock':[.49,.25,.66,.72],'fluid_lumen_reference':[.12,.65,.86,.28],'service_stock':[.9,.28,.17,.17]}.get(role,[.43,.47,.52,1]),'finite_material':role=='finite_custom_material','source_native_repair':False,'mass_or_fullI_from_gross_forbidden':role!='finite_custom_material'}
+ q.update(meta or {});parts.append(q);shapes[n]=m
+ if rho is not None:mr=[m.volume()*rho]*3;q['density_hypothesis_kg_m3']=rho
+ else:mr=mrange
+ if mr is not None:mass.append({'id':n,'member_ids':[n],'owner':owner,'mass_range_kg':mr,'basis':'actual net own material density' if rho is not None else 'catalogue aggregate once or explicit functional allowance; no gross density/inertia','geometry_role':role,'fullI_known':rho is not None});q['mass_range_kg']=mr
+ return q
+# Coordinates local m, Z cartridge axis upward; HVC datum A at Z=0.
+# Official HVC12-4 limits mapped to nominal smooth bore; thread helix/detail A seat not represented as manufacturing qualified.
+bore=[{'depth_start_mm':0,'depth_end_mm':20.571,'diameter_mm':26.9875,'meaning':'1-1/16-12UN2B major-diameter clearance reference, smooth, not finished thread'},
+ {'depth_start_mm':20.571,'depth_end_mm':35.56,'diameter_mm':24.765,'meaning':'0.972..0.978 mean bore'},
+ {'depth_start_mm':35.56,'depth_end_mm':60.198,'diameter_mm':23.8252,'meaning':'0.937..0.939 mean bore'},
+ {'depth_start_mm':60.198,'depth_end_mm':84.582,'diameter_mm':22.2504,'meaning':'0.875..0.877 mean bore'},
+ {'depth_start_mm':84.582,'depth_end_mm':98.425,'diameter_mm':20.6502,'meaning':'0.812..0.814 mean bore'}]
+cv=[cyl([0,0,-(r['depth_start_mm']+r['depth_end_mm'])/2000],r['diameter_mm']/2000,(r['depth_end_mm']-r['depth_start_mm'])/1000+.000002) for r in bore]
+# Detail A large spotface and short 29.21 counterbore kept as stock; actual 74..76deg seat/thread tolerance is red.
+cv+=[cyl([0,0,.0004],.020511,.0023748),cyl([0,0,-.00184],.014605,.00368)]
+cavity=union(cv)
+# P4/P3/P2 side annular zones; P1 at bottom. Four distinct gallery cuts to respective bore.
+main_outer=box([0,0,-.060],[.070,.070,.120]);gallery=[]
+settings=[('P4',[-.0,0,-.02845],'X',1),('P3',[0,0,-.053086],'Y',1),('P2',[0,0,-.077724],'X',-1),('P1',[0,0,-.108],'Y',-1)]
+for pname,c,ax,sign in settings:
+ idx=0 if ax=='X' else 1;ct=np.array(c);ct[idx]=sign*.025;void=cyl(ct.tolist(),.0045,.060,ax)
+ if pname=='P1':void=void+cyl([0,0,-.103],.0045,.019)
+ gallery.append(void);pos=np.array(c);pos[idx]=sign*.035;normal=np.zeros(3);normal[idx]=sign
+ ports.append({'id':pname,'owner':'control_block','surface_m':pos.tolist(),'normal':normal.tolist(),'lumen_diameter_m':.009,'thread':'custom G1/4 external interface assumed; actual thread not reconstructed','cavity_zone':pname,'connection_dimension_qualified':False})
+# Mount four underside 5.5mm bores and countersinks.
+mountvoid=[]
+for x in [-.025,.025]:
+ for y in [-.025,.025]:mountvoid.append(cyl([x,y,-.112],.00275,.019))
+main=main_outer-union([cavity]+gallery+mountvoid)
+add('control_block_hvc12_4_smooth_nominal',main,'control_block',rho=7850,meta={'material':'conditional machined steel rho7850; strength/fatigue/thread/seat NOT qualified','HVC_source':'official_sources/hvc12_4.gif','bore_steps':bore,'cavity_reconstructed_from_official_limits_not_OEM_material':True,'actual_interface_chamfers_threads_sealing_unknown':True})
+add('control_cavity_and_galleries',mf.Manifold.batch_boolean([union([cavity]+gallery),main_outer],mf.OpType.Intersect),'control_block','fluid_lumen_reference',meta={'installed_valve_displaces_fluid_unknown':True,'no_global_inventory_added_here':True})
+# Cartridge gross respects official total below98.4/above117.7. Explicit envelope only, not OEM material.
+insert=union([cyl([0,0,-(r['depth_start_mm']+r['depth_end_mm'])/2000],r['diameter_mm']/2000-.00008,(r['depth_end_mm']-r['depth_start_mm'])/1000-.00004) for r in bore])
+upper=cyl([0,0,.060],.01015,.1114)+mf.Manifold.cylinder(.008,.0269/(2*math.cos(math.pi/6)),.0269/(2*math.cos(math.pi/6)),6).translate([0,0,0])
+add('hsp12_47c_cartridge_complete_gross',insert+upper,'hsp12_valve','oem_gross_reference',mrange=[.44]*3,meta={'source':'G19 hydraforce_hsp12_47c.pdf p2/p4','bare_weight_excludes_coil_nut':True,'internal_OEM_geometry_material_and_fullI_unknown':True,'above_mount_envelope_m':.1177,'below_mount_envelope_m':.0984,'assembled_top_exact_datum_unknown':True})
+coil=np.load(P/'official_coil_native.npz');v=coil['vertices_local_m'];f=coil['faces']
+for i,z in enumerate([.014,.064]):
+ name=f'e_coil_{i}_official_historical_cad';q={'name':name,'body':'hsp12_valve','role':'official_oem_cad_reference','vertices_world_m':(v+[0,0,z]).tolist(),'faces':f.tolist(),'rgba':[.25,.28,.32,1],'finite_material':False,'mass_range_kg':[.37]*3,'internal_OEM_material_and_fullI_unknown':True,'native_raw_export_not_repaired':True,'source_native_edge_gate_pass':False,'source':'official_sources/coil_10_er.stp','source_sha256':sha(P/'official_sources/coil_10_er.stp'),'installation_axial_datum_assumed_from_complete_HSP12_drawing':True};parts.append(q);mass.append({'id':name,'member_ids':[name],'owner':'hsp12_valve','mass_range_kg':[.37]*3,'basis':'current2026Ecoil catalogue once, historical CAD version matching open','geometry_role':q['role'],'fullI_known':False})
+# Two actual separate washer/retention ring own finite budgets, no silent nut omission.
+for z,n in [(.0125,'lower_coil_washer'),(.1156,'upper_coil_retainer')]:
+ add(n,tube([0,0,z],.015,.0103,.0025),'hsp12_valve',rho=7850,meta={'retention_thread/preload/axial_datum_unknown':True})
+# Four separate side fittings: face-to-face axes and open lumen, no fictitious whole-density SKU.
+for pname,c,ax,sgn in settings:
+ idx=0 if ax=='X' else 1;ct=np.array(c);ct[idx]=sgn*.045
+ add('fitting_'+pname,tube(ct.tolist(),.008,.0045,.020,ax),'control_block',rho=7850,meta={'custom_fitting_pressure_thread_retention_NOT_qualified':True,'zero_gap_port_face_coordinate':sgn*.035})
+# Direct mounted dualholding reference block. Shape derived only known exterior/holes/gasket interfaces.
+hc=np.array([.250,0,-.060]);hb=box(hc,[.138,.045,.0245]);holdingholes=[]
+for x in [-.019,.019]:
+ for y in [-.014,.014]:holdingholes.append(cyl((hc+[x,y,0]).tolist(),.00325,.030))
+for x in [-.019,.019]:holdingholes.append(cyl((hc+[x,0,-.009]).tolist(),.003,.010))
+for x in [-.046,.046]:holdingholes.append(cyl((hc+[x,-.012,.00025]).tolist(),.0058,.030,'Y'))
+hb=hb-union(holdingholes)
+ends=[cyl((hc+[sgn*.08775,0,0]).tolist(),.0115,.0375,'X') for sgn in [-1,1]]
+add('a_vbso_de_78_fc2_complete_gross',union([hb]+ends),'local_holding','oem_gross_reference',mrange=[1.2]*3,meta={'source':'G19 re18307-56 official 2D','full_adjust_end_to_end_m':.213,'block_dimensions_m':[.138,.045,.0245],'known_mount_holes_m':.0065,'OEM_internal_crosspilot_material_void_unknown':True,'direct_actuator_gasket_interface_required':True,'mass_source_complete_once':True})
+facez=hc[2]-.01225
+# Own separate adapter with two real 6mm direct ports, 4 fastener holes; OEM gland interface seats retained as conditional.
+adaptouter=box([.250,0,facez-.007],[.156,.065,.014]);advoid=[]
+for x in [-.019,.019]:
+ advoid.append(cyl([.250+x,0,facez-.007],.003,.018))
+ advoid.append(tube([.250+x,0,facez-.00095],.0079,.0048,.0019))
+ for y in [-.014,.014]:advoid.append(cyl([.250+x,y,facez-.007],.00325,.018))
+adapter=adaptouter-union(advoid)
+add('holding_direct_adapter',adapter,'local_holding',rho=7850,meta={'O_ring_ID_crosssection_mm':[9.93,2.62],'own_gland_width_depth_mm':[3.1,1.9],'gland_compression_OEM_mating_surface_unknown':True,'direct_actuator_target_surface_z_m':facez-.014,'actuator_mount_surface_NOT_present':True})
+for i,x in enumerate([-.019,.019]):
+ for j,y in enumerate([-.014,.014]):
+  # 6mm bolt with shank through exact6.5mm holes; separate heads above, ends extend below adapter and target absent.
+  sh=cyl([.250+x,y,facez+.001],.003,.039)
+  hd=cyl([.250+x,y,facez+.027],.005,.007)
+  add(f'holding_mount_bolt_{i}{j}',sh+hd,'local_holding',rho=7850,meta={'screw_actual_engagement_and_target_thread_unknown':True})
+for i,x in enumerate([-.046,.046]):
+ add(f'holding_V{i+1}_fitting',tube((hc+[x,-.0325,.00025]).tolist(),.008,.0045,.020,'Y'),'local_holding',rho=7850,meta={'G1_4_thread/torque/seal_UNKNOWN':True})
+for i,x in enumerate([-.019,.019]):ports.append({'id':f'C{i+1}','owner':'local_holding','surface_m':[.250+x,0,facez-.014],'normal':[0,0,-1],'lumen_diameter_m':.006,'direct_mount_to_actuator_required':True,'actual_actuator_face_absent':True})
+for i,x in enumerate([-.046,.046]):ports.append({'id':f'V{i+1}','owner':'local_holding','surface_m':(hc+[x,-.0425,.00025]).tolist(),'normal':[0,-1,0],'thread':'G1/4 official; own fitting sizing conditional','lumen_diameter_m':.009})
+# Complete auxiliaries: distinct finite housings + explicit non-rated internal/control inventories.
+# Pressure compensation is a full custom 350bar functional placeholder, NOT assigned OEM rating.
+# Feedback P/A/B and LS differencing always accounted; custom compensator safety/regulation remains red.
+ac=np.array([-.097,0,-.065]);comp_o=box(ac,[.060,.060,.080]);comp_void=union([cyl(ac.tolist(),.009,.082),cyl((ac+[0,0,-.025]).tolist(),.0045,.064,'X'),cyl((ac+[0,0,.025]).tolist(),.0045,.064,'X')]);comp=comp_o-comp_void
+add('pressure_compensator_custom_housing',comp,'aux_pressure_comp',rho=7850,meta={'differential_pressure_compensation_function':True,'p_target_bar':350,'rating_not_verified':True,'sleeve/spool/spring/orifice/control_stability_unknown':True})
+add('pressure_compensator_sleeve_spool_spring_reserve',cyl(ac.tolist(),.0088,.072),'aux_pressure_comp','unqualified_function_stock',mrange=[.12,.23,.40],meta={'custom_internal_function_stock_NOT_solid_OEM_material':True,'closed_loop_delta_p_setting_bar':[5.5,11,13.8],'settings_are_analysis_range_not_source_rating':True})
+# Local full pressure filter canister with cavity/cap/media stock; not inherited global filters.
+fc=np.array([-.100,.082,-.066]);fout=cyl(fc.tolist(),.022,.066);fin=cyl(fc.tolist(),.018,.056);add('pressure_filter_canister',fout-fin,'aux_filter',rho=7850,meta={'pressurefatigue/seal/bypass/filtergrade_delta_p_unknown':True})
+add('filter_media_bypass_element_stock',cyl(fc.tolist(),.017,.049),'aux_filter','unqualified_function_stock',mrange=[.08,.14,.25],meta={'media_and_bypass_rating_unknown':True})
+for dz in [-.020,.020]:add(f'filter_fitting_{dz}',tube((fc+[0,-.030,dz]).tolist(),.008,.0045,.016,'Y'),'aux_filter',rho=7850)
+# Isolation and local thermal/shock relief remain complete reserved functions plus finite manifold.
+rc=np.array([-.025,.088,-.075]);ro=box(rc,[.050,.044,.065]);rv=union([cyl(rc.tolist(),.006,.069),cyl((rc+[0,0,-.020]).tolist(),.0045,.054,'X')]);add('relief_isolation_aux_manifold',ro-rv,'aux_relief',rho=7850,meta={'pressure_design_target_bar':350,'flow15Lmin/response/settings_NOT_verified':True})
+add('thermal_shock_relief_and_isolation_stock',cyl((rc+[0,0,.011]).tolist(),.0058,.025),'aux_relief','unqualified_function_stock',mrange=[.15,.28,.45],meta={'functional_inventory':['thermal_relief','shock_relief','service_isolation','trapped_pressure_bleed'],'custom_reference_not_selected_valve_rating':True})
+# Sensor/driver full enclosures, wire plugs, thermal pad with actual mounting space.
+for i,cc in enumerate([[.055,.067,-.028],[.055,.067,-.077],[-.045,.065,-.053]]):
+ add(f'pressure_sensor_{i}_stock',cyl(cc,.0075,.028),'control_electrical','unqualified_function_stock',mrange=[.035,.055,.09],meta={'350bar_pressure_fatigue/accuracy/rate/port_unknown':True})
+dc=np.array([-.030,.150,-.050]);do=box(dc,[.075,.050,.080]);di=box(dc,[.071,.046,.076]);add('dual_current_driver_enclosure',do-di,'control_electrical',rho=2700,meta={'12Vcoil_current_regulation_100HzPWM/fault_safe/wiring_UNKNOWN':True})
+add('driver_board_connectors_safety_IO_stock',box(dc,[.065,.025,.060]),'control_electrical','unqualified_function_stock',mrange=[.12,.22,.36])
+for i,z in enumerate([-.025,-.065]):add(f'driver_wire_connector_{i}',box([-.030,.181,z],[.026,.012,.014]),'control_electrical','unqualified_function_stock',mrange=[.025,.045,.08])
+# Own independent carrier plate and four hollow standoffs. The holding module is NOT mechanically carried by this control plate.
+plate=box([-.045,.064,-.130],[.190,.210,.008]);holes=[]
+for x in [-.025,.025]:
+ for y in [-.025,.025]:holes.append(cyl([x,y,-.130],.00275,.012))
+for x in [-.12,.025]:
+ for y in [-.025,.15]:holes.append(cyl([x,y,-.130],.00425,.012))
+plate=plate-union(holes);add('control_module_mount_plate',plate,'control_mount',rho=2700,meta={'actual_robot_mating_parent_absent':True})
+for x in [-.025,.025]:
+ for y in [-.025,.025]:
+  add(f'control_mount_bolt_{x}_{y}',cyl([x,y,-.122],.0025,.025)+cyl([x,y,-.136],.0045,.004),'control_mount',rho=7850,meta={'thread/engagement_unknown':True})
+# Thin removable guard U shell, top aperture preserves coil extraction. Avoid gigantic solid covers.
+gu=box([0,0,-.052],[.093,.092,.149])-box([0,0,-.051],[.089,.088,.153]);gu=gu-box([0,0,-.075],[.150,.100,.095]);add('removable_control_guard',gu,'control_guard',rho=2700,meta={'guard_attachment_and_cablefeed_unknown':True})
+# Services explicit spaces, never mass or guaranteed free volume.
+for n,c,d,owner,desc in [('hsp_full_cartridge_extraction',[0,0,.225],[.055,.075,.220],'hsp12_valve','remove coil connectors/nut first; +Z full extraction140mm above totaltop117.7'),('holding_left_adjust_tool',[.116,0,-.060],[.055,.055,.055],'local_holding','-X tool40mm beyond leftadjust'),('holding_right_adjust_tool',[.384,0,-.060],[.055,.055,.055],'local_holding','+X tool40mm beyond rightadjust'),('holding_bolt_access',[.250,0,-.012],[.050,.045,.035],'local_holding','+Z hex/socket access'),('driver_plug_access',[-.030,.211,-.050],[.085,.060,.100],'control_electrical','+Y hands/wireloop30mm')]:
+ add(n,box(c,d),owner,'service_stock',meta={'permanent_material':False,'after_service_removals_only':True,'description':desc});services.append({'id':n,'bounds_m':box(c,d).bounding_box(),'function':desc})
+# Temporary bench intermodule hose routing intentionally NOT connected: ports/transforms actual, downstream owner changes unknown.
+# Each local supply/return requires real hosebreak-protected upstream routing; no old71m lines inherited.
+write('interfaces.json',{'frame':'local SI m; Z cartridge axis','ports':ports,'pressure_compensation_control_required':True,'fluid_connectivity_edges':[{'from':'P4','to':'V1','physical_line_present':False},{'from':'P2','to':'V2','physical_line_present':False},{'from':'C1','to':'actuator_A_direct','physical_actuator_present':False},{'from':'C2','to':'actuator_B_direct','physical_actuator_present':False}],'new_robot_routes_connected':False,'services':services,'owner_parent_assignments_not_robot_bodytree':True})
+sourcepaths={k:P.parent/'gorilla_internal_g19_hydraulic_architecture'/k for k in ['hydraforce_hsp12_47c.pdf','hydraforce_dual_counterbalance_18307_56.pdf','hydraforce_coil10_e_2026.pdf','architecture_budget_v3.json']}
+sourcepaths.update({k:P/'official_sources'/k for k in ['hvc12_4.gif','coil_10_er.stp','coil_10_e_stp.zip']})
+s={'schema':'gorilla_g20_complete_hydraulic_module_probe_a','coordinate_frame':'localSI m,not Gorilla joint/body coordinates','parts':parts,'mass_rows':mass,'sources':{k:{'path':str(v),'sha256':sha(v)} for k,v in sourcepaths.items()},'complete_functions':['4way bidirectional proportionalcontrol','2Ecoil+retention','direct dualholding','differentialpressurecompensation','pressurefilter/bypass','serviceisolation/bleed','thermal/shockrelief','3pressuresensors','dualcurrentdriver/safetyIO','mount/guard','ports/fittings','fluidvoid/servicepath'],'known_OEM_catalog_mass_kg':2.38,'OEM_fullI_unknown':True,'module_gross_envelope_is_NOT_material_or_freecavity':True,'actual_hose_and_OEM_internal_fluid_volume_unknown':True,'physical_adoption':False,'robot_axes_or_hydraulic_count_change':False,'macro_layout_count':1,'total_mass_qualified':False}
+(P/'scene_a.json.gz').write_bytes(gzip.compress(json.dumps(s,separators=(',',':')).encode(),mtime=0))
+write('parameters_a.json',{'scene_sha256':sha(P/'scene_a.json.gz'),'HVC_nominal_steps':bore,'main_block_dimensions_m':[.070,.070,.120],'main_block_net_mass_kg':main.volume()*7850,'complete_function_mass_range_kg':np.array([x['mass_range_kg'] for x in mass]).sum(0).tolist(),'mass_scope':'one control+one directholding full technical candidate; conditional own material+OEM catalog+unqualified function ranges; missing actual hoses/gaskets fasteners/cable additions unknown, NOT rating','technical_condition':{'supply_bar':[160,210,350],'HSP_normal_max_bar':350,'HSP_port1_as_inlet_max_bar':276,'hold_setting_range_bar':[200,350],'load_pressure_zero_return_max_bar':350/1.3,'port1_return_pressure_bar':[0,10,20],'representative_branch_Q_Lmin':[15,25],'whole_module_flow_not_rated':True,'coil_max_A':1.2,'coil_initial_W_each':20.31,'normal_one_active_electrical_heat_W_upper':20.31,'two_active_fault_W_upper':40.62,'max_HSP_neutral_leak_Lmin':.164,'leak_heat_at350bar_kW':350*.164/600},'largest_reds':['smooth HVC bore no real thread/detailA seat/gland machining qualification','pressure compensator/relief/filter/isolation custom function not rated350','coil STEP boundary4 degree-not2 edges and historical variant','actuator direct adapter target/thread absent','new hoses/aux control lines not physically connected','own block pressurefatigue/wall/thermal/controlstability not verified','OEM material/fullI and internal oil void unknown']})
+print('EVENT actual_scene',sha(P/'scene_a.json.gz'),'parts',len(parts),flush=True)

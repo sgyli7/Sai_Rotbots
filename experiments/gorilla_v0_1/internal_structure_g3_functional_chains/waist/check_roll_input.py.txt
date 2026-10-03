@@ -1,0 +1,38 @@
+from pathlib import Path
+import json, hashlib, sys, itertools, collections, math
+import numpy as np
+import trimesh as tm
+import manifold3d as mf
+R=Path('/home/ethan/Projects/Sai_Rotbots');O=Path(__file__).resolve().parent
+sys.path.insert(0,str(R/'.scratch/gorilla_internal_g_material_contract'))
+from native_signed_material import validate_scene, kernel
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+write=lambda p,d:Path(p).write_text(json.dumps(d,indent=2,allow_nan=False)+'\n')
+SOURCE=O/(sys.argv[1] if len(sys.argv)>1 else 'scene.json');PREFIX='' if SOURCE.name=='scene.json' else 'wg6_'
+d=json.loads(SOURCE.read_text());parts=d['parts'];ref=d['complete_OEM_reference_context'];armor=d['original_armor_comparator']
+contract=validate_scene(d);contract['source_sha256']=sha(SOURCE);write(O/(PREFIX+'resource_contract.json'),contract)
+print('contract',contract['resource_contract_pass'],[(r['id'],r['errors']) for r in contract['parts'] if r['errors']],flush=True)
+ALL=parts+ref+armor;K={p['name']:kernel(p['vertices_world_m'],[[f[0],f[j],f[j+1]] for f in p['faces'] for j in range(1,len(f)-1)]) for p in ALL};bb={n:np.array(k.bounding_box()) for n,k in K.items()}
+def pairs(A,B=None):
+ out=[];seen=set()
+ for a in A:
+  for b in (B if B is not None else A):
+   if a['name']==b['name']:continue
+   pair=tuple(sorted([a['name'],b['name']]))
+   if pair in seen:continue
+   seen.add(pair);x=bb[a['name']];y=bb[b['name']]
+   if np.any(np.minimum(x[3:],y[3:])-np.maximum(x[:3],y[:3])<=1e-8):continue
+   vol=float((K[a['name']]^K[b['name']]).volume())
+   if vol>1e-10:out.append({'a':a['name'],'b':b['name'],'owner_a':a['body'],'owner_b':b['body'],'positive_volume_m3':vol,'same_owner':a['body']==b['body'],'material_a':a.get('material_id'),'material_b':b.get('material_id')})
+ return sorted(out,key=lambda h:-h['positive_volume_m3'])
+hits=pairs(parts);refs=pairs(parts,ref);armorhit=pairs(parts,armor)
+write(O/(PREFIX+'neutral_material_and_reference_checks.json'),{'source_sha256':sha(SOURCE),'intrinsic_material_pairs':hits,'full_OEM_gross_reference_pairs_ALL_UNRESOLVED_UNLESS_SPECIFIC_INTERFACE_CONFIRMED':refs,'armor_material_pairs':armorhit,'resource_contract_pass':contract['resource_contract_pass'],'own_material_intersections_not_excused_by_same_owner':True,'original_visible_armor_change_mm':0,'installation_accepted':False,'geometry_accepted':False})
+print('pairs intrinsic/reference/armor',len(hits),len(refs),len(armorhit),'max',hits[:4],flush=True)
+rows=[]
+for p in parts:
+ m=tm.Trimesh(vertices=p['vertices_world_m'],faces=p['faces'],process=False);mp=m.mass_properties;mass=float(mp.volume)*p['density_kg_m3'];rows.append({'id':p['name'],'gravity_owner':p['body'],'volume_m3':float(mp.volume),'mass_kg':mass,'COM_world_m':mp.center_mass.tolist(),'inertia_COM_kg_m2':(np.array(mp.inertia)*p['density_kg_m3']).tolist(),'material':p['material_id'],'mass_geometry_authority':'finite candidate material at declared conditional density'})
+total=sum(r['mass_kg'] for r in rows);radii={p['name']:np.asarray(p['vertices_world_m']) for p in parts};inp=[r for r in rows if r['gravity_owner']=='input'];J=sum(r['inertia_COM_kg_m2'][0][0]+r['mass_kg']*(r['COM_world_m'][1]**2+(r['COM_world_m'][2]-2.05)**2) for r in inp)
+F=79e9*.003**4/(8*.014**3*5)*.003*6;meanR=2/3*(.0435**3-.027**3)/(.0435**2-.027**2);holding=2*.35*F*meanR
+bond_area=math.pi*.111*.0246;tau25=25/(.0555*bond_area);shaft_tau=16*25/(math.pi*.019**3);wgF=2*866/(50*.00254)*.07*math.tan(math.radians(20))
+write(O/(PREFIX+'mass_and_load_screen.json'),{'source_sha256':sha(SOURCE),'finite_material_rows':rows,'finite_material_mass_kg':total,'complete_OEM_mass_once_kg':{'gear_complete_with_output_bearing':8.9,'bare_motor_stator':1.212,'bare_motor_rotor':.401},'scope_mass_before_external_controller_wiring_kg':total+8.9+1.613,'own_input_axial_J_kg_m2':J,'known_OEM_gear_input_J_kg_m2':.00125,'known_OEM_motor_rotor_J_kg_m2':.0014,'fixed_parent_ideal_reflected_input_J_kg_m2':(J+.00125+.0014)*10000,'spring_working_force_N':F,'spring_mean_friction_radius_m':meanR,'conditional_static_holding_Nm_at_mu_point35':holding,'holding_mu_unknown_range':[.20,.40],'holding_Nm_mu_range':[holding*.20/.35,holding*.40/.35],'rotor_film_area_m2':bond_area,'rotor_film_mean_shear_Pa_at25Nm':tau25,'nominal_solid19shaft_torsion_Pa_at25Nm':shaft_tau,'key_slot_stress_concentration_not_in_solid_formula':True,'WG_axial_force_N_at866Nm_using_primary_p27_ratio100_formula':wgF,'native_WG_film_effective_area_m2':next(r['volume_m3']for r in rows if r['id']=='g3_roll_WG_axial_retaining_compound_film')/1e-5,'minimum_mean_WG_bond_shear_Pa':wgF/(next(r['volume_m3']for r in rows if r['id']=='g3_roll_WG_axial_retaining_compound_film')/1e-5),'actual_preload_hot_oily_bond_creep_fatigue_and_groove_bearing_rating_unknown':True,'brake_release_force_model_not_verified':True,'thermal_continuous_capacity_not_verified':True,'physical_accepted':False,'SI_full_OEM_owner_split_unknown':True})
+print('mass',total,total+10.513,'own inputJ',J,'brake conditionalNm',holding,flush=True)

@@ -1,0 +1,11 @@
+from pathlib import Path
+import urllib.request,hashlib,json,time,concurrent.futures
+O=Path(__file__).resolve().parent
+sources={'hydraforce_sp10_47c.pdf':'https://www.hydraforce.com/globalassets/product-pdf-files/sp10-47c_25sep2024_16-36.pdf','moog_epu_rev_k_2024.pdf':'https://www.moog.com/content/dam/sites/moog/products/electrohydrostatic-pump-unit/Moog-EPU-Catalog-en.pdf','parker_compact_eha_catalog.pdf':'https://www.parker.com/content/dam/Parker-com/Literature/Hydraulic-Pump-Division/Oildyne-EHA/Compact-EHA-Catalog-HY22-3101E-7-13.pdf','sun_counterbalance_technical_tip_2021.pdf':'https://prod.sunhydraulics.com/wp-content/uploads/2021/01/TT_US_Ctrbal_POCk_JAN2021.pdf','hydraforce_coil10_d.html':'https://www.hydraforce.com/zh/products/cartridge-valves/cartridge-valve-accessories/coil_10-xxdxx/'}
+def get(item):
+ name,url=item
+ try:
+  req=urllib.request.Request(url,headers={'User-Agent':'Mozilla/5.0'});data=urllib.request.urlopen(req,timeout=30).read();(O/name).write_bytes(data);return {'path':name,'url':url,'bytes':len(data),'sha256':hashlib.sha256(data).hexdigest(),'outcome':'downloaded','downloaded_utc':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime())}
+ except Exception as e:return {'path':name,'url':url,'outcome':'failed','error':str(e)}
+with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:r=list(pool.map(get,sources.items()))
+(O/'primary_download_receipt_v1.json').write_text(json.dumps(r,indent=2)+'\n');print(json.dumps(r,indent=2))

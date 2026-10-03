@@ -1,0 +1,40 @@
+"""Gorilla G14 source-bound bounded cooling and actual grouped manual removal; no source repair."""
+from pathlib import Path
+import json,gzip,hashlib,numpy as np,manifold3d as mf,time
+O=Path(__file__).resolve().parent;D=O/'a';S=D/'scene.json.gz';sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();scene=json.loads(gzip.decompress(S.read_bytes()));parts={p['name']:p for p in scene['parts']};base={n:mf.Manifold(mf.Mesh64(np.array(p['vertices_world_m'],float),np.array(p['faces'],np.uint64))) for n,p in parts.items()};threshold=1e-10
+bounds=lambda m:np.array(m.bounding_box()).reshape(2,3)
+def collide(group,state):
+ r=[]
+ for a in group:
+  for b in state:
+   if b in group:continue
+   x,y=bounds(state[a]),bounds(state[b])
+   if not (np.all(x[1]>=y[0]) and np.all(y[1]>=x[0])):continue
+   v=(state[a]^state[b]).volume()
+   if v>threshold:r.append({'a':a,'b':b,'volume_cm3':v*1e6,'both_finite_material':bool(parts[a].get('finite_material') and parts[b].get('finite_material'))})
+ return sorted(r,key=lambda x:-x['volume_cm3'])
+services=[];waters=[]
+for side,sg in [('left',1),('right',-1)]:
+ prefix='g14_'+side+'_';state=dict(base);stages=[]
+ def stage(label,names,delta):
+  origin={n:state[n] for n in names};samples=[]
+  for t in np.linspace(0,1,21):
+   for n,m in origin.items():state[n]=m.translate((np.array(delta)*t).tolist())
+   samples.append({'fraction':float(t),'pairs':collide(names,state)})
+  stages.append({'operation':label,'exact_ids':names,'translation_world_m':delta,'samples':samples,'actual_finite_failure_samples':sum(any(r['both_finite_material'] for r in x['pairs']) for x in samples),'reference_probe_samples':sum(any(not r['both_finite_material'] for r in x['pairs']) for x in samples),'all_prior_removed_parts_retained_at_their_actual_translated_positions':True})
+ stage('support_mount_fasteners_withdraw', [n for n in parts if n.startswith(prefix+'load_support_mount_')],[0,sg*.80,0])
+ stage('upper_support_remove', [prefix+'load_support_upper'],[0,0,.18])
+ stage('lower_support_remove', [prefix+'load_support_lower'],[0,0,-.18])
+ stage('A_output_bolts_deengage_then_remain_captive', [n for n in parts if n.startswith(prefix+'A_output_mount_bolt_')],[0,sg*.035,0])
+ stage('complete_output_and_reference_bearings_remove', [prefix+'output_flange_journals_closed_arm_carrier']+[n for n in parts if n.startswith(prefix+'A_output_mount_bolt_')]+[n for n in parts if n.startswith(prefix+'journal_axial_keeper_') or n.startswith(prefix+'independent_load_bearing_')],[0,sg*.24,0])
+ services.append({'side':side,'sequence':stages,'unloaded_external_cradle_required_but_capacity_and_attachment_unknown':True,'hose_electrical_disconnect_and_depressurization_required':True,'future_core_not_included_in_local_anchor_probe':True,'retained_G11_whole_output_withdrawal_failure_samples':11,'new_thread_nut_preload_connection_missing_or_unqualified':True})
+ water=base[prefix+'bounded_water_region'];hits=[]
+ for n,m in base.items():
+  if parts[n].get('finite_material'):
+   v=(water^m).volume()
+   if v>threshold:hits.append({'name':n,'volume_cm3':v*1e6})
+ sleeve=base[prefix+'water_inner_isolation_sleeve'];sphere=mf.Manifold.sphere(.0002,16);inner= np.array([-.13,sg*(.3735-.052),2.29])+np.array([.107,0,0]);filled=(sphere.translate(inner.tolist())^sleeve).volume()
+ waters.append({'side':side,'source_water_component_count':len(water.decompose()),'source_water_volume_m3':water.volume(),'fluid_mass_assumed_rho1050_kg':water.volume()*1050,'water_vs_finite_material_intersections':hits,'nominal_inner_wall_R107_point_probe_sphere_intersection_m3':filled,'drill_radial_span_m':[.112,.127],'independent_sleeve_wall_m':{'wet':.0034,'dry':.0027},'two_end_seals_thickness_m':.001,'primary_in_out_bore_m':.004,'vent_drain_bore_m':.002,'source_water_open_primary_ports_have_virtual_control_surface_caps':True,'closed_volume_not_hydraulic_pressure_sealing_qualification':True})
+p=.3e6;ri=.113;ro=.117;si=.1051;so=.1085;L=.040;full=.066;area=2*np.pi*.105*full;Ax=np.pi*(.1078**2-.1051**2)
+thermal={'hypotheses_only':True,'water_pressure_Pa':p,'outer_wall_axisymmetric_hoop_Pa':p*(ro*ro+ri*ri)/(ro*ro-ri*ri),'inner_sleeve_external_pressure_max_compression_Pa':2*p*so*so/(so*so-si*si),'end_pressure_force_N':p*np.pi*(.113**2-.1085**2),'buckling_holes_gland_preload_and_pressure_rating_unknown':True,'Pc690W_is_OEM_mount_boundary_reference_not_installed_motor_loss':True,'assumed_heat_W':690,'assumed_TIM_k_W_mK':[1,5],'assumed_sleeve_k_W_mK':[100,200],'assumed_water_h_W_m2K':[1000,5000],'TIM_contact_area_m2':area,'TIM_R_K_W_range':[.0001/(5*area),.0001/area],'sleeve_radial_R_K_W_range':[float(np.log(so/si)/(2*np.pi*200*L)),float(np.log(so/si)/(2*np.pi*100*L))],'water_convection_R_K_W_range':[1/(5000*2*np.pi*so*L),1/(1000*2*np.pi*so*L)],'wet_contact_fraction_of_full_motor_length':L/full,'axial_dry_front_length_m':.018,'axial_dry_rear_length_m':.008,'axial_heat_cross_section_m2':Ax,'uniform_full_length_heat_is_unverified_sensitivity_only':True,'front_uniform_dry_heat_W':690*.018/full,'rear_uniform_dry_heat_W':690*.008/full,'front_1D_adiabatic_end_extra_delta_K_range':[690*.018/full*.018/(2*200*Ax),690*.018/full*.018/(2*100*Ax)],'rear_1D_adiabatic_end_extra_delta_K_range':[690*.008/full*.008/(2*200*Ax),690*.008/full*.008/(2*100*Ax)],'assumed_flow_L_min':[1,2],'assumed_rho_kg_m3':1050,'assumed_cp_J_kgK':3700,'fluid_rise_K_at_690W':[690/(2e-3/60*1050*3700),690/(1e-3/60*1050*3700)],'main_port_area_m2':float(np.pi*.002**2),'two_semicircle_channel_cross_section_each_m2':(.113-.1085)*L,'actual_stator_axial_contact_map_motor_loss_flow_pressure_drop_and_external_HX_unknown':True,'Tn_continuous_capability_accepted':False}
+r={'robot_id':'gorilla_v0_1','source_sha256':sha(S),'producer_sha256':sha(__file__),'material_pair_threshold_m3':threshold,'water':waters,'manual_disassembly':services,'conditional_pressure_thermal':thermal,'assembly_physical_accepted':False,'source_not_modified':True};(D/'functional_report.json').write_text(json.dumps(r,indent=2)+'\n');print('FUNCTIONAL_READY',sha(D/'functional_report.json'),[(x['side'],[(z['operation'],z['actual_finite_failure_samples'],z['reference_probe_samples']) for z in x['sequence']]) for x in services],flush=True)

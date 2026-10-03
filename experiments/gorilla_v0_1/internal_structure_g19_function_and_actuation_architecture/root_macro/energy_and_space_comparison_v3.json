@@ -1,0 +1,1654 @@
+{
+  "robot_id": "gorilla_v0_1",
+  "stage": "G19 root conditional parallel-energy and shallow-module comparison",
+  "producer_sha256": "5cd5a42829d498eefa5ac7f4816812f81e5cbbae9b60fa65f62b4f1a20a87629",
+  "source_hashes": {
+    "bound_g18_thermal_v3.json": "f3a0851642ccfe2371290304f14c9f5724812e25d4ed6d72c14ea6db16163a4d",
+    "bound_cell_source_facts.json": "090b84b12d178e3ab0e580068fe787568348197e2fe4e54b4e35366ae82f3290",
+    "bound_g18_scene.json.gz": "9873e9db2a6a5c20d9466216577c69a6c7afcab9c2db4ce22b88b4181c40e694",
+    "bound_mission_duration_source.json": "e1fe592096d29a6ab20f52cc002136ab245d757c221d20f4360b76ee49e637d1"
+  },
+  "official_reference": {
+    "url": "https://www.molicel.com/wp-content/uploads/INR21700P45B_1.4_Product-Data-Sheet-of-INR-21700-P45B-80109.pdf",
+    "pdf_sha256": "54832eb1684991f097578f02dd9ecfc3ba49cbc8bea40beacd7103092b717e69",
+    "minimum_energy_Wh": 15.5,
+    "minimum_capacity_Ah": 4.3,
+    "max_mass_kg": 0.07,
+    "max_diameter_m": 0.02155,
+    "max_height_m": 0.07015,
+    "nominal_V": 3.6,
+    "discharge_cutoff_V": 2.5,
+    "discharge_current_A": 45,
+    "discharge_cutoff_C": 80,
+    "discharge_environment_C": [
+      -40,
+      60
+    ],
+    "charge_environment_C": [
+      0,
+      60
+    ],
+    "typical_DC_50percentSOC_ohm": 0.015,
+    "physical_pack_and_supply_not_selected": true
+  },
+  "same_task_same_aux_upper": true,
+  "resistance_variation_hot_SOC_aging_sag_unknown": true,
+  "no_theoretical_PWM_efficiency_or_regeneration_credit": true,
+  "bus_voltage_compatible_controller_and_regen_acceptance_unclosed": true,
+  "actual_added_mass_changes_dynamics_and_power_not_recalculated": true,
+  "cell_count_sensitivities": [
+    {
+      "topology": "80s6p",
+      "cells": 480,
+      "lower_reference_nameplate_kWh": 7.44,
+      "cell_mass_kg": [
+        null,
+        null,
+        33.6
+      ],
+      "maximum_cylindrical_cell_envelope_L": 12.281554594074922,
+      "typical_DC_Rpack_ohm_not_guaranteed": 0.19999999999999998,
+      "budgets": [
+        {
+          "mission": "a_30min_deliberate_mission",
+          "actual_duration_h": 0.5,
+          "auxiliary_supply_upper_V": 28,
+          "auxiliary_source_upper_kW": 3.1575,
+          "phases": [
+            {
+              "phase": "motion",
+              "duty": 0.25,
+              "unchanged_bus_kW": 21.588872549019605,
+              "pack_terminal_A_at_nominal_cutoff": [
+                76.49118675247877,
+                110.14730892356941
+              ],
+              "cell_A_at_nominal_cutoff": [
+                12.748531125413129,
+                18.3578848205949
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                1.1701803301605167,
+                2.4264859326208468
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                23.1996421148744,
+                24.45594771733473
+              ]
+            },
+            {
+              "phase": "manipulation",
+              "duty": 0.35,
+              "unchanged_bus_kW": 12.435822440087145,
+              "pack_terminal_A_at_nominal_cutoff": [
+                44.061162273551396,
+                63.44807367391402
+              ],
+              "cell_A_at_nominal_cutoff": [
+                7.343527045591899,
+                10.574678945652336
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                0.3882772041792457,
+                0.8051316105860841
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                13.077891938962049,
+                13.494746345368887
+              ]
+            },
+            {
+              "phase": "hold",
+              "duty": 0.4,
+              "unchanged_bus_kW": 4.657500000000001,
+              "pack_terminal_A_at_nominal_cutoff": [
+                16.50191326530613,
+                23.762755102040824
+              ],
+              "cell_A_at_nominal_cutoff": [
+                2.7503188775510217,
+                3.960459183673471
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                0.05446262828313728,
+                0.11293370600791344
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                4.807013648691302,
+                4.865484726416078
+              ]
+            }
+          ],
+          "average_storage_input_kW_at_nominal_cutoff": [
+            12.299978166831838,
+            12.783342040779225
+          ],
+          "required_nameplate_SOC75_reserve10_kWh_at_nominal_cutoff": [
+            9.111094938393954,
+            9.469142252429055
+          ],
+          "conditionally_available_energy_kWh": 7.44,
+          "conditional_energy_margin_kWh_at_nominal_cutoff": [
+            -1.6710949383939537,
+            -2.0291422524290548
+          ],
+          "conditional_time_min_SOC75_reserve10_at_nominal_cutoff": [
+            24.497604460188434,
+            23.571300763038384
+          ],
+          "real_runtime_or_temperature_current_rating": false
+        },
+        {
+          "mission": "b_60min_high_concurrency_mission",
+          "actual_duration_h": 1.0,
+          "auxiliary_supply_upper_V": 28,
+          "auxiliary_source_upper_kW": 3.1575,
+          "phases": [
+            {
+              "phase": "motion",
+              "duty": 0.4,
+              "unchanged_bus_kW": 35.85357843137255,
+              "pack_terminal_A_at_nominal_cutoff": [
+                127.03223650571337,
+                182.92642056822726
+              ],
+              "cell_A_at_nominal_cutoff": [
+                21.172039417618894,
+                30.48773676137121
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                3.227437822328699,
+                6.69241506838079
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                39.812721935974146,
+                43.27769918202624
+              ]
+            },
+            {
+              "phase": "manipulation",
+              "duty": 0.4,
+              "unchanged_bus_kW": 22.17710784313725,
+              "pack_terminal_A_at_nominal_cutoff": [
+                78.57535375261214,
+                113.1485094037615
+              ],
+              "cell_A_at_nominal_cutoff": [
+                13.095892292102024,
+                18.858084900626917
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                1.2348172434696278,
+                2.5605170360586205
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                23.864519124221925,
+                25.190218916810917
+              ]
+            },
+            {
+              "phase": "hold",
+              "duty": 0.2,
+              "unchanged_bus_kW": 5.657500000000001,
+              "pack_terminal_A_at_nominal_cutoff": [
+                20.044997165532884,
+                28.864795918367353
+              ],
+              "cell_A_at_nominal_cutoff": [
+                3.340832860922147,
+                4.810799319727892
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                0.08036038227324427,
+                0.16663528868179933
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                5.853319565946714,
+                5.93959447235527
+              ]
+            }
+          ],
+          "average_storage_input_kW_at_nominal_cutoff": [
+            26.641560337267773,
+            28.575086134005918
+          ],
+          "required_nameplate_SOC75_reserve10_kWh_at_nominal_cutoff": [
+            39.468978277433735,
+            42.33346093926803
+          ],
+          "conditionally_available_energy_kWh": 7.44,
+          "conditional_energy_margin_kWh_at_nominal_cutoff": [
+            -32.02897827743374,
+            -34.89346093926803
+          ],
+          "conditional_time_min_SOC75_reserve10_at_nominal_cutoff": [
+            11.31014836163691,
+            10.54485010428062
+          ],
+          "real_runtime_or_temperature_current_rating": false
+        },
+        {
+          "mission": "a_30min_deliberate_mission",
+          "actual_duration_h": 0.5,
+          "auxiliary_supply_upper_V": 32,
+          "auxiliary_source_upper_kW": 3.2775,
+          "phases": [
+            {
+              "phase": "motion",
+              "duty": 0.25,
+              "unchanged_bus_kW": 21.708872549019606,
+              "pack_terminal_A_at_nominal_cutoff": [
+                76.91635682050597,
+                110.75955382152858
+              ],
+              "cell_A_at_nominal_cutoff": [
+                12.819392803417662,
+                18.45992563692143
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                1.183225189307879,
+                2.4535357525488175
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                23.335135953613598,
+                24.605446516854535
+              ]
+            },
+            {
+              "phase": "manipulation",
+              "duty": 0.35,
+              "unchanged_bus_kW": 12.555822440087145,
+              "pack_terminal_A_at_nominal_cutoff": [
+                44.4863323415786,
+                64.06031857187318
+              ],
+              "cell_A_at_nominal_cutoff": [
+                7.414388723596434,
+                10.676719761978864
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                0.39580675304107643,
+                0.820744883105976
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                13.207870467415715,
+                13.632808597480613
+              ]
+            },
+            {
+              "phase": "hold",
+              "duty": 0.4,
+              "unchanged_bus_kW": 4.7775,
+              "pack_terminal_A_at_nominal_cutoff": [
+                16.927083333333332,
+                24.375
+              ],
+              "cell_A_at_nominal_cutoff": [
+                2.8211805555555554,
+                4.0625
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                0.05730523003472222,
+                0.11882812499999998
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                4.932305230034722,
+                4.993828125
+              ]
+            }
+          ],
+          "average_storage_input_kW_at_nominal_cutoff": [
+            12.429460744012788,
+            12.920375888331849
+          ],
+          "required_nameplate_SOC75_reserve10_kWh_at_nominal_cutoff": [
+            9.20700795852799,
+            9.570648806171741
+          ],
+          "conditionally_available_energy_kWh": 7.44,
+          "conditional_energy_margin_kWh_at_nominal_cutoff": [
+            -1.7670079585279899,
+            -2.130648806171741
+          ],
+          "conditional_time_min_SOC75_reserve10_at_nominal_cutoff": [
+            24.242403287298238,
+            23.321302925259047
+          ],
+          "real_runtime_or_temperature_current_rating": false
+        },
+        {
+          "mission": "b_60min_high_concurrency_mission",
+          "actual_duration_h": 1.0,
+          "auxiliary_supply_upper_V": 32,
+          "auxiliary_source_upper_kW": 3.2775,
+          "phases": [
+            {
+              "phase": "motion",
+              "duty": 0.4,
+              "unchanged_bus_kW": 35.973578431372545,
+              "pack_terminal_A_at_nominal_cutoff": [
+                127.4574065737406,
+                183.53866546618647
+              ],
+              "cell_A_at_nominal_cutoff": [
+                21.242901095623434,
+                30.589777577697745
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                3.2490780981007625,
+                6.737288344221741
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                39.956811191338055,
+                43.44502143745903
+              ]
+            },
+            {
+              "phase": "manipulation",
+              "duty": 0.4,
+              "unchanged_bus_kW": 22.29710784313725,
+              "pack_terminal_A_at_nominal_cutoff": [
+                79.00052382063936,
+                113.76075430172068
+              ],
+              "cell_A_at_nominal_cutoff": [
+                13.16675397010656,
+                18.960125716953446
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                1.2482165527870812,
+                2.5883018438592917
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                24.00036741313122,
+                25.34045270420343
+              ]
+            },
+            {
+              "phase": "hold",
+              "duty": 0.2,
+              "unchanged_bus_kW": 5.7775,
+              "pack_terminal_A_at_nominal_cutoff": [
+                20.47016723356009,
+                29.47704081632653
+              ],
+              "cell_A_at_nominal_cutoff": [
+                3.4116945389266817,
+                4.912840136054421
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                0.08380554931398342,
+                0.173779187057476
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                5.9792137125792895,
+                6.069187350322782
+              ]
+            }
+          ],
+          "average_storage_input_kW_at_nominal_cutoff": [
+            26.77871418430357,
+            28.728027126729543
+          ],
+          "required_nameplate_SOC75_reserve10_kWh_at_nominal_cutoff": [
+            39.672169161931215,
+            42.56004018774747
+          ],
+          "conditionally_available_energy_kWh": 7.44,
+          "conditional_energy_margin_kWh_at_nominal_cutoff": [
+            -32.23216916193122,
+            -35.12004018774747
+          ],
+          "conditional_time_min_SOC75_reserve10_at_nominal_cutoff": [
+            11.252220622923698,
+            10.488711900429859
+          ],
+          "real_runtime_or_temperature_current_rating": false
+        }
+      ],
+      "charge_nominal_cutoff_pack_V": [
+        336.0,
+        288.0,
+        200.0
+      ],
+      "numeric_terminal_voltage_column_order": [
+        288.0,
+        200.0
+      ],
+      "voltage_fields_explicitly_bind_nominal_and_cutoff": true,
+      "accepted_or_applied": false
+    },
+    {
+      "topology": "80s7p",
+      "cells": 560,
+      "lower_reference_nameplate_kWh": 8.68,
+      "cell_mass_kg": [
+        null,
+        null,
+        39.2
+      ],
+      "maximum_cylindrical_cell_envelope_L": 14.328480359754076,
+      "typical_DC_Rpack_ohm_not_guaranteed": 0.17142857142857143,
+      "budgets": [
+        {
+          "mission": "a_30min_deliberate_mission",
+          "actual_duration_h": 0.5,
+          "auxiliary_supply_upper_V": 28,
+          "auxiliary_source_upper_kW": 3.1575,
+          "phases": [
+            {
+              "phase": "motion",
+              "duty": 0.25,
+              "unchanged_bus_kW": 21.588872549019605,
+              "pack_terminal_A_at_nominal_cutoff": [
+                76.49118675247877,
+                110.14730892356941
+              ],
+              "cell_A_at_nominal_cutoff": [
+                10.927312393211253,
+                15.735329846224202
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                1.0030117115661572,
+                2.079845085103583
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                23.03247349628004,
+                24.109306869817466
+              ]
+            },
+            {
+              "phase": "manipulation",
+              "duty": 0.35,
+              "unchanged_bus_kW": 12.435822440087145,
+              "pack_terminal_A_at_nominal_cutoff": [
+                44.061162273551396,
+                63.44807367391402
+              ],
+              "cell_A_at_nominal_cutoff": [
+                6.294451753364485,
+                9.064010524844859
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                0.3328090321536392,
+                0.6901128090737865
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                13.022423766936441,
+                13.379727543856589
+              ]
+            },
+            {
+              "phase": "hold",
+              "duty": 0.4,
+              "unchanged_bus_kW": 4.657500000000001,
+              "pack_terminal_A_at_nominal_cutoff": [
+                16.50191326530613,
+                23.762755102040824
+              ],
+              "cell_A_at_nominal_cutoff": [
+                2.3574161807580185,
+                3.3946793002915463
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                0.04668225281411767,
+                0.09680031943535439
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                4.799233273222282,
+                4.849351339843519
+              ]
+            }
+          ],
+          "average_storage_input_kW_at_nominal_cutoff": [
+            12.235660001786677,
+            12.64997189374158
+          ],
+          "required_nameplate_SOC75_reserve10_kWh_at_nominal_cutoff": [
+            9.063451853175316,
+            9.370349550919688
+          ],
+          "conditionally_available_energy_kWh": 8.68,
+          "conditional_energy_margin_kWh_at_nominal_cutoff": [
+            -0.38345185317531616,
+            -0.690349550919688
+          ],
+          "conditional_time_min_SOC75_reserve10_at_nominal_cutoff": [
+            28.730775450500207,
+            27.78978506457553
+          ],
+          "real_runtime_or_temperature_current_rating": false
+        },
+        {
+          "mission": "b_60min_high_concurrency_mission",
+          "actual_duration_h": 1.0,
+          "auxiliary_supply_upper_V": 28,
+          "auxiliary_source_upper_kW": 3.1575,
+          "phases": [
+            {
+              "phase": "motion",
+              "duty": 0.4,
+              "unchanged_bus_kW": 35.85357843137255,
+              "pack_terminal_A_at_nominal_cutoff": [
+                127.03223650571337,
+                182.92642056822726
+              ],
+              "cell_A_at_nominal_cutoff": [
+                18.147462357959053,
+                26.13234579546104
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                2.766375276281742,
+                5.73635577289782
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                39.35165938992719,
+                42.32163988654327
+              ]
+            },
+            {
+              "phase": "manipulation",
+              "duty": 0.4,
+              "unchanged_bus_kW": 22.17710784313725,
+              "pack_terminal_A_at_nominal_cutoff": [
+                78.57535375261214,
+                113.1485094037615
+              ],
+              "cell_A_at_nominal_cutoff": [
+                11.22505053608745,
+                16.164072771965927
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                1.058414780116824,
+                2.1947288880502462
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                23.68811666086912,
+                24.824430768802543
+              ]
+            },
+            {
+              "phase": "hold",
+              "duty": 0.2,
+              "unchanged_bus_kW": 5.657500000000001,
+              "pack_terminal_A_at_nominal_cutoff": [
+                20.044997165532884,
+                28.864795918367353
+              ],
+              "cell_A_at_nominal_cutoff": [
+                2.863571023647555,
+                4.123542274052479
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                0.0688803276627808,
+                0.1428302474415423
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                5.841839511336251,
+                5.915789431115012
+              ]
+            }
+          ],
+          "average_storage_input_kW_at_nominal_cutoff": [
+            26.38427832258578,
+            28.04158614836133
+          ],
+          "required_nameplate_SOC75_reserve10_kWh_at_nominal_cutoff": [
+            39.08781973716411,
+            41.54309059016493
+          ],
+          "conditionally_available_energy_kWh": 8.68,
+          "conditional_energy_margin_kWh_at_nominal_cutoff": [
+            -30.40781973716411,
+            -32.86309059016493
+          ],
+          "conditional_time_min_SOC75_reserve10_at_nominal_cutoff": [
+            13.32384368076767,
+            12.536380721835272
+          ],
+          "real_runtime_or_temperature_current_rating": false
+        },
+        {
+          "mission": "a_30min_deliberate_mission",
+          "actual_duration_h": 0.5,
+          "auxiliary_supply_upper_V": 32,
+          "auxiliary_source_upper_kW": 3.2775,
+          "phases": [
+            {
+              "phase": "motion",
+              "duty": 0.25,
+              "unchanged_bus_kW": 21.708872549019606,
+              "pack_terminal_A_at_nominal_cutoff": [
+                76.91635682050597,
+                110.75955382152858
+              ],
+              "cell_A_at_nominal_cutoff": [
+                10.988050974357995,
+                15.822793403075512
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                1.0141930194067534,
+                2.103030645041844
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                23.166103783712472,
+                24.254941409347563
+              ]
+            },
+            {
+              "phase": "manipulation",
+              "duty": 0.35,
+              "unchanged_bus_kW": 12.555822440087145,
+              "pack_terminal_A_at_nominal_cutoff": [
+                44.4863323415786,
+                64.06031857187318
+              ],
+              "cell_A_at_nominal_cutoff": [
+                6.355190334511229,
+                9.151474081696168
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                0.33926293117806555,
+                0.7034956140908366
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                13.151326645552704,
+                13.515559328465475
+              ]
+            },
+            {
+              "phase": "hold",
+              "duty": 0.4,
+              "unchanged_bus_kW": 4.7775,
+              "pack_terminal_A_at_nominal_cutoff": [
+                16.927083333333332,
+                24.375
+              ],
+              "cell_A_at_nominal_cutoff": [
+                2.418154761904762,
+                3.482142857142857
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                0.04911876860119047,
+                0.10185267857142857
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                4.924118768601191,
+                4.976852678571428
+              ]
+            }
+          ],
+          "average_storage_input_kW_at_nominal_cutoff": [
+            12.36413777931204,
+            12.784922188728377
+          ],
+          "required_nameplate_SOC75_reserve10_kWh_at_nominal_cutoff": [
+            9.158620577268177,
+            9.47031273239139
+          ],
+          "conditionally_available_energy_kWh": 8.68,
+          "conditional_energy_margin_kWh_at_nominal_cutoff": [
+            -0.4786205772681775,
+            -0.7903127323913903
+          ],
+          "conditional_time_min_SOC75_reserve10_at_nominal_cutoff": [
+            28.432229264559375,
+            27.496452055838837
+          ],
+          "real_runtime_or_temperature_current_rating": false
+        },
+        {
+          "mission": "b_60min_high_concurrency_mission",
+          "actual_duration_h": 1.0,
+          "auxiliary_supply_upper_V": 32,
+          "auxiliary_source_upper_kW": 3.2775,
+          "phases": [
+            {
+              "phase": "motion",
+              "duty": 0.4,
+              "unchanged_bus_kW": 35.973578431372545,
+              "pack_terminal_A_at_nominal_cutoff": [
+                127.4574065737406,
+                183.53866546618647
+              ],
+              "cell_A_at_nominal_cutoff": [
+                18.2082009391058,
+                26.219809352312353
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                2.7849240840863683,
+                5.774818580761494
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                39.492657177323665,
+                42.482551673998785
+              ]
+            },
+            {
+              "phase": "manipulation",
+              "duty": 0.4,
+              "unchanged_bus_kW": 22.29710784313725,
+              "pack_terminal_A_at_nominal_cutoff": [
+                79.00052382063936,
+                113.76075430172068
+              ],
+              "cell_A_at_nominal_cutoff": [
+                11.285789117234193,
+                16.25153632881724
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                1.0698999023889268,
+                2.218544437593679
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                23.822050762733063,
+                24.970695297937816
+              ]
+            },
+            {
+              "phase": "hold",
+              "duty": 0.2,
+              "unchanged_bus_kW": 5.7775,
+              "pack_terminal_A_at_nominal_cutoff": [
+                20.47016723356009,
+                29.47704081632653
+              ],
+              "cell_A_at_nominal_cutoff": [
+                2.9243096047942987,
+                4.211005830903789
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                0.07183332798341437,
+                0.148953588906408
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                5.96724149124872,
+                6.044361752171714
+              ]
+            }
+          ],
+          "average_storage_input_kW_at_nominal_cutoff": [
+            26.519331474272434,
+            28.190171139208985
+          ],
+          "required_nameplate_SOC75_reserve10_kWh_at_nominal_cutoff": [
+            39.287898480403605,
+            41.763216502531826
+          ],
+          "conditionally_available_energy_kWh": 8.68,
+          "conditional_energy_margin_kWh_at_nominal_cutoff": [
+            -30.607898480403605,
+            -33.083216502531826
+          ],
+          "conditional_time_min_SOC75_reserve10_at_nominal_cutoff": [
+            13.255990270382355,
+            12.470303861016722
+          ],
+          "real_runtime_or_temperature_current_rating": false
+        }
+      ],
+      "charge_nominal_cutoff_pack_V": [
+        336.0,
+        288.0,
+        200.0
+      ],
+      "numeric_terminal_voltage_column_order": [
+        288.0,
+        200.0
+      ],
+      "voltage_fields_explicitly_bind_nominal_and_cutoff": true,
+      "accepted_or_applied": false
+    },
+    {
+      "topology": "80s8p",
+      "cells": 640,
+      "lower_reference_nameplate_kWh": 9.92,
+      "cell_mass_kg": [
+        null,
+        null,
+        44.800000000000004
+      ],
+      "maximum_cylindrical_cell_envelope_L": 16.37540612543323,
+      "typical_DC_Rpack_ohm_not_guaranteed": 0.15,
+      "budgets": [
+        {
+          "mission": "a_30min_deliberate_mission",
+          "actual_duration_h": 0.5,
+          "auxiliary_supply_upper_V": 28,
+          "auxiliary_source_upper_kW": 3.1575,
+          "phases": [
+            {
+              "phase": "motion",
+              "duty": 0.25,
+              "unchanged_bus_kW": 21.588872549019605,
+              "pack_terminal_A_at_nominal_cutoff": [
+                76.49118675247877,
+                110.14730892356941
+              ],
+              "cell_A_at_nominal_cutoff": [
+                9.561398344059846,
+                13.768413615446176
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                0.8776352476203876,
+                1.819864449465635
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                22.90709703233427,
+                23.849326234179518
+              ]
+            },
+            {
+              "phase": "manipulation",
+              "duty": 0.35,
+              "unchanged_bus_kW": 12.435822440087145,
+              "pack_terminal_A_at_nominal_cutoff": [
+                44.061162273551396,
+                63.44807367391402
+              ],
+              "cell_A_at_nominal_cutoff": [
+                5.5076452841939245,
+                7.931009209239252
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                0.2912079031344343,
+                0.6038487079395631
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                12.980822637917237,
+                13.293463442722366
+              ]
+            },
+            {
+              "phase": "hold",
+              "duty": 0.4,
+              "unchanged_bus_kW": 4.657500000000001,
+              "pack_terminal_A_at_nominal_cutoff": [
+                16.50191326530613,
+                23.762755102040824
+              ],
+              "cell_A_at_nominal_cutoff": [
+                2.062739158163266,
+                2.970344387755103
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                0.040846971212352964,
+                0.08470027950593509
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                4.793397991620518,
+                4.8372512999141
+              ]
+            }
+          ],
+          "average_storage_input_kW_at_nominal_cutoff": [
+            12.187421378002806,
+            12.549944283463347
+          ],
+          "required_nameplate_SOC75_reserve10_kWh_at_nominal_cutoff": [
+            9.027719539261339,
+            9.296255024787664
+          ],
+          "conditionally_available_energy_kWh": 9.92,
+          "conditional_energy_margin_kWh_at_nominal_cutoff": [
+            0.892280460738661,
+            0.6237449752123361
+          ],
+          "conditional_time_min_SOC75_reserve10_at_nominal_cutoff": [
+            32.96513573618949,
+            32.01289112728461
+          ],
+          "real_runtime_or_temperature_current_rating": false
+        },
+        {
+          "mission": "b_60min_high_concurrency_mission",
+          "actual_duration_h": 1.0,
+          "auxiliary_supply_upper_V": 28,
+          "auxiliary_source_upper_kW": 3.1575,
+          "phases": [
+            {
+              "phase": "motion",
+              "duty": 0.4,
+              "unchanged_bus_kW": 35.85357843137255,
+              "pack_terminal_A_at_nominal_cutoff": [
+                127.03223650571337,
+                182.92642056822726
+              ],
+              "cell_A_at_nominal_cutoff": [
+                15.879029563214171,
+                22.865802571028407
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                2.420578366746524,
+                5.019311301285593
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                39.005862480391976,
+                41.60459541493104
+              ]
+            },
+            {
+              "phase": "manipulation",
+              "duty": 0.4,
+              "unchanged_bus_kW": 22.17710784313725,
+              "pack_terminal_A_at_nominal_cutoff": [
+                78.57535375261214,
+                113.1485094037615
+              ],
+              "cell_A_at_nominal_cutoff": [
+                9.821919219076518,
+                14.143563675470187
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                0.9261129326022208,
+                1.9203877770439652
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                23.555814813354516,
+                24.550089657796264
+              ]
+            },
+            {
+              "phase": "hold",
+              "duty": 0.2,
+              "unchanged_bus_kW": 5.657500000000001,
+              "pack_terminal_A_at_nominal_cutoff": [
+                20.044997165532884,
+                28.864795918367353
+              ],
+              "cell_A_at_nominal_cutoff": [
+                2.5056246456916105,
+                3.608099489795919
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                0.0602702867049332,
+                0.12497646651134948
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                5.833229470378404,
+                5.89793565018482
+              ]
+            }
+          ],
+          "average_storage_input_kW_at_nominal_cutoff": [
+            26.19131681157428,
+            27.641461159127886
+          ],
+          "required_nameplate_SOC75_reserve10_kWh_at_nominal_cutoff": [
+            38.801950831961896,
+            40.95031282833761
+          ],
+          "conditionally_available_energy_kWh": 9.92,
+          "conditional_energy_margin_kWh_at_nominal_cutoff": [
+            -28.881950831961895,
+            -31.030312828337607
+          ],
+          "conditional_time_min_SOC75_reserve10_at_nominal_cutoff": [
+            15.339434931444805,
+            14.534687500314327
+          ],
+          "real_runtime_or_temperature_current_rating": false
+        },
+        {
+          "mission": "a_30min_deliberate_mission",
+          "actual_duration_h": 0.5,
+          "auxiliary_supply_upper_V": 32,
+          "auxiliary_source_upper_kW": 3.2775,
+          "phases": [
+            {
+              "phase": "motion",
+              "duty": 0.25,
+              "unchanged_bus_kW": 21.708872549019606,
+              "pack_terminal_A_at_nominal_cutoff": [
+                76.91635682050597,
+                110.75955382152858
+              ],
+              "cell_A_at_nominal_cutoff": [
+                9.614544602563246,
+                13.844944227691073
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                0.8874188919809093,
+                1.8401518144116134
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                23.03932965628663,
+                23.99206257871733
+              ]
+            },
+            {
+              "phase": "manipulation",
+              "duty": 0.35,
+              "unchanged_bus_kW": 12.555822440087145,
+              "pack_terminal_A_at_nominal_cutoff": [
+                44.4863323415786,
+                64.06031857187318
+              ],
+              "cell_A_at_nominal_cutoff": [
+                5.560791542697325,
+                8.007539821484148
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                0.29685506478080737,
+                0.615558662329482
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                13.108918779155445,
+                13.42762237670412
+              ]
+            },
+            {
+              "phase": "hold",
+              "duty": 0.4,
+              "unchanged_bus_kW": 4.7775,
+              "pack_terminal_A_at_nominal_cutoff": [
+                16.927083333333332,
+                24.375
+              ],
+              "cell_A_at_nominal_cutoff": [
+                2.1158854166666665,
+                3.046875
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                0.042978922526041664,
+                0.08912109375
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                4.917978922526042,
+                4.96412109375
+              ]
+            }
+          ],
+          "average_storage_input_kW_at_nominal_cutoff": [
+            12.31514555578648,
+            12.683331914025775
+          ],
+          "required_nameplate_SOC75_reserve10_kWh_at_nominal_cutoff": [
+            9.122330041323318,
+            9.39506067705613
+          ],
+          "conditionally_available_energy_kWh": 9.92,
+          "conditional_energy_margin_kWh_at_nominal_cutoff": [
+            0.797669958676682,
+            0.5249393229438706
+          ],
+          "conditional_time_min_SOC75_reserve10_at_nominal_cutoff": [
+            32.623244133012,
+            31.676219050588475
+          ],
+          "real_runtime_or_temperature_current_rating": false
+        },
+        {
+          "mission": "b_60min_high_concurrency_mission",
+          "actual_duration_h": 1.0,
+          "auxiliary_supply_upper_V": 32,
+          "auxiliary_source_upper_kW": 3.2775,
+          "phases": [
+            {
+              "phase": "motion",
+              "duty": 0.4,
+              "unchanged_bus_kW": 35.973578431372545,
+              "pack_terminal_A_at_nominal_cutoff": [
+                127.4574065737406,
+                183.53866546618647
+              ],
+              "cell_A_at_nominal_cutoff": [
+                15.932175821717575,
+                22.94233318327331
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                2.4368085735755716,
+                5.052966258166307
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                39.14454166681286,
+                41.7606993514036
+              ]
+            },
+            {
+              "phase": "manipulation",
+              "duty": 0.4,
+              "unchanged_bus_kW": 22.29710784313725,
+              "pack_terminal_A_at_nominal_cutoff": [
+                79.00052382063936,
+                113.76075430172068
+              ],
+              "cell_A_at_nominal_cutoff": [
+                9.87506547757992,
+                14.220094287715085
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                0.9361624145903109,
+                1.941226382894469
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                23.688313274934448,
+                24.693377243238608
+              ]
+            },
+            {
+              "phase": "hold",
+              "duty": 0.2,
+              "unchanged_bus_kW": 5.7775,
+              "pack_terminal_A_at_nominal_cutoff": [
+                20.47016723356009,
+                29.47704081632653
+              ],
+              "cell_A_at_nominal_cutoff": [
+                2.5587709041950113,
+                3.684630102040816
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                0.06285416198548757,
+                0.13033439029310703
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                5.958262325250794,
+                6.025742553558413
+              ]
+            }
+          ],
+          "average_storage_input_kW_at_nominal_cutoff": [
+            26.324794441749084,
+            27.78677914856857
+          ],
+          "required_nameplate_SOC75_reserve10_kWh_at_nominal_cutoff": [
+            38.9996954692579,
+            41.165598738620105
+          ],
+          "conditionally_available_energy_kWh": 9.92,
+          "conditional_energy_margin_kWh_at_nominal_cutoff": [
+            -29.0796954692579,
+            -31.245598738620103
+          ],
+          "conditional_time_min_SOC75_reserve10_at_nominal_cutoff": [
+            15.261657631895496,
+            14.458674675891562
+          ],
+          "real_runtime_or_temperature_current_rating": false
+        }
+      ],
+      "charge_nominal_cutoff_pack_V": [
+        336.0,
+        288.0,
+        200.0
+      ],
+      "numeric_terminal_voltage_column_order": [
+        288.0,
+        200.0
+      ],
+      "voltage_fields_explicitly_bind_nominal_and_cutoff": true,
+      "accepted_or_applied": false
+    },
+    {
+      "topology": "72s10p",
+      "cells": 720,
+      "lower_reference_nameplate_kWh": 11.16,
+      "cell_mass_kg": [
+        null,
+        null,
+        50.400000000000006
+      ],
+      "maximum_cylindrical_cell_envelope_L": 18.422331891112382,
+      "typical_DC_Rpack_ohm_not_guaranteed": 0.10800000000000001,
+      "budgets": [
+        {
+          "mission": "a_30min_deliberate_mission",
+          "actual_duration_h": 0.5,
+          "auxiliary_supply_upper_V": 28,
+          "auxiliary_source_upper_kW": 3.1575,
+          "phases": [
+            {
+              "phase": "motion",
+              "duty": 0.25,
+              "unchanged_bus_kW": 21.588872549019605,
+              "pack_terminal_A_at_nominal_cutoff": [
+                84.99020750275419,
+                122.38589880396601
+              ],
+              "cell_A_at_nominal_cutoff": [
+                8.499020750275418,
+                12.238589880396601
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                0.7801202201070112,
+                1.6176572884138982
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                22.809582004820896,
+                23.647119073127783
+              ]
+            },
+            {
+              "phase": "manipulation",
+              "duty": 0.35,
+              "unchanged_bus_kW": 12.435822440087145,
+              "pack_terminal_A_at_nominal_cutoff": [
+                48.956846970612666,
+                70.49785963768224
+              ],
+              "cell_A_at_nominal_cutoff": [
+                4.895684697061267,
+                7.049785963768224
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                0.2588514694528306,
+                0.5367544070573895
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                12.948466204235633,
+                13.226369141840191
+              ]
+            },
+            {
+              "phase": "hold",
+              "duty": 0.4,
+              "unchanged_bus_kW": 4.657500000000001,
+              "pack_terminal_A_at_nominal_cutoff": [
+                18.335459183673475,
+                26.403061224489804
+              ],
+              "cell_A_at_nominal_cutoff": [
+                1.8335459183673475,
+                2.6403061224489806
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                0.036308418855424844,
+                0.07528913733860897
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                4.7888594392635895,
+                4.827840157746773
+              ]
+            }
+          ],
+          "average_storage_input_kW_at_nominal_cutoff": [
+            12.149902448393131,
+            12.472145031024722
+          ],
+          "required_nameplate_SOC75_reserve10_kWh_at_nominal_cutoff": [
+            8.999927739550468,
+            9.2386259489072
+          ],
+          "conditionally_available_energy_kWh": 11.16,
+          "conditional_energy_margin_kWh_at_nominal_cutoff": [
+            2.1600722604495317,
+            1.9213740510927995
+          ],
+          "conditional_time_min_SOC75_reserve10_at_nominal_cutoff": [
+            37.20029867892281,
+            36.23915524360007
+          ],
+          "real_runtime_or_temperature_current_rating": false
+        },
+        {
+          "mission": "b_60min_high_concurrency_mission",
+          "actual_duration_h": 1.0,
+          "auxiliary_supply_upper_V": 28,
+          "auxiliary_source_upper_kW": 3.1575,
+          "phases": [
+            {
+              "phase": "motion",
+              "duty": 0.4,
+              "unchanged_bus_kW": 35.85357843137255,
+              "pack_terminal_A_at_nominal_cutoff": [
+                141.14692945079264,
+                203.2515784091414
+              ],
+              "cell_A_at_nominal_cutoff": [
+                14.114692945079264,
+                20.325157840914137
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                2.1516252148858,
+                4.461610045587195
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                38.73690932853125,
+                41.04689415923264
+              ]
+            },
+            {
+              "phase": "manipulation",
+              "duty": 0.4,
+              "unchanged_bus_kW": 22.17710784313725,
+              "pack_terminal_A_at_nominal_cutoff": [
+                87.3059486140135,
+                125.72056600417943
+              ],
+              "cell_A_at_nominal_cutoff": [
+                8.73059486140135,
+                12.572056600417943
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                0.8232114956464188,
+                1.707011357372414
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                23.452913376398715,
+                24.33671323812471
+              ]
+            },
+            {
+              "phase": "hold",
+              "duty": 0.2,
+              "unchanged_bus_kW": 5.657500000000001,
+              "pack_terminal_A_at_nominal_cutoff": [
+                22.272219072814316,
+                32.07199546485261
+              ],
+              "cell_A_at_nominal_cutoff": [
+                2.2272219072814314,
+                3.207199546485261
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                0.05357358818216286,
+                0.11109019245453287
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                5.826532771855633,
+                5.8840493761280035
+              ]
+            }
+          ],
+          "average_storage_input_kW_at_nominal_cutoff": [
+            26.041235636343114,
+            27.33025283416854
+          ],
+          "required_nameplate_SOC75_reserve10_kWh_at_nominal_cutoff": [
+            38.579608350137946,
+            40.489263458027466
+          ],
+          "conditionally_available_energy_kWh": 11.16,
+          "conditional_energy_margin_kWh_at_nominal_cutoff": [
+            -27.419608350137946,
+            -29.329263458027466
+          ],
+          "conditional_time_min_SOC75_reserve10_at_nominal_cutoff": [
+            17.356319274236643,
+            16.53771747895908
+          ],
+          "real_runtime_or_temperature_current_rating": false
+        },
+        {
+          "mission": "a_30min_deliberate_mission",
+          "actual_duration_h": 0.5,
+          "auxiliary_supply_upper_V": 32,
+          "auxiliary_source_upper_kW": 3.2775,
+          "phases": [
+            {
+              "phase": "motion",
+              "duty": 0.25,
+              "unchanged_bus_kW": 21.708872549019606,
+              "pack_terminal_A_at_nominal_cutoff": [
+                85.46261868945108,
+                123.06617091280954
+              ],
+              "cell_A_at_nominal_cutoff": [
+                8.546261868945107,
+                12.306617091280954
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                0.7888167928719194,
+                1.6356905016992118
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                22.940727557177638,
+                23.78760126600493
+              ]
+            },
+            {
+              "phase": "manipulation",
+              "duty": 0.35,
+              "unchanged_bus_kW": 12.555822440087145,
+              "pack_terminal_A_at_nominal_cutoff": [
+                49.42925815730956,
+                71.17813174652576
+              ],
+              "cell_A_at_nominal_cutoff": [
+                4.942925815730956,
+                7.117813174652577
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                0.26387116869405103,
+                0.5471632554039841
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                13.075934883068689,
+                13.359226969778621
+              ]
+            },
+            {
+              "phase": "hold",
+              "duty": 0.4,
+              "unchanged_bus_kW": 4.7775,
+              "pack_terminal_A_at_nominal_cutoff": [
+                18.80787037037037,
+                27.083333333333332
+              ],
+              "cell_A_at_nominal_cutoff": [
+                1.880787037037037,
+                2.708333333333333
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                0.03820348668981482,
+                0.07921875
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                4.913203486689815,
+                4.95421875
+              ]
+            }
+          ],
+          "average_storage_input_kW_at_nominal_cutoff": [
+            12.277040493044376,
+            12.60431725592375
+          ],
+          "required_nameplate_SOC75_reserve10_kWh_at_nominal_cutoff": [
+            9.09410406892176,
+            9.336531300684259
+          ],
+          "conditionally_available_energy_kWh": 11.16,
+          "conditional_energy_margin_kWh_at_nominal_cutoff": [
+            2.0658959310782397,
+            1.8234686993157414
+          ],
+          "conditional_time_min_SOC75_reserve10_at_nominal_cutoff": [
+            36.81506143569957,
+            35.85914181806075
+          ],
+          "real_runtime_or_temperature_current_rating": false
+        },
+        {
+          "mission": "b_60min_high_concurrency_mission",
+          "actual_duration_h": 1.0,
+          "auxiliary_supply_upper_V": 32,
+          "auxiliary_source_upper_kW": 3.2775,
+          "phases": [
+            {
+              "phase": "motion",
+              "duty": 0.4,
+              "unchanged_bus_kW": 35.973578431372545,
+              "pack_terminal_A_at_nominal_cutoff": [
+                141.61934063748956,
+                203.93185051798497
+              ],
+              "cell_A_at_nominal_cutoff": [
+                14.161934063748955,
+                20.393185051798497
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                2.1660520654005087,
+                4.491525562814495
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                38.8737851586378,
+                41.19925865605179
+              ]
+            },
+            {
+              "phase": "manipulation",
+              "duty": 0.4,
+              "unchanged_bus_kW": 22.29710784313725,
+              "pack_terminal_A_at_nominal_cutoff": [
+                87.7783598007104,
+                126.40083811302298
+              ],
+              "cell_A_at_nominal_cutoff": [
+                8.77783598007104,
+                12.640083811302299
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                0.8321443685247212,
+                1.7255345625728618
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                23.584295228868857,
+                24.477685422917
+              ]
+            },
+            {
+              "phase": "hold",
+              "duty": 0.2,
+              "unchanged_bus_kW": 5.7775,
+              "pack_terminal_A_at_nominal_cutoff": [
+                22.74463025951121,
+                32.752267573696145
+              ],
+              "cell_A_at_nominal_cutoff": [
+                2.274463025951121,
+                3.2752267573696145
+              ],
+              "cell_heat_kW_at_nominal_cutoff": [
+                0.0558703662093223,
+                0.1158527913716507
+              ],
+              "storage_input_kW_at_nominal_cutoff": [
+                5.951278529474628,
+                6.011260954636956
+              ]
+            }
+          ],
+          "average_storage_input_kW_at_nominal_cutoff": [
+            26.17348786089759,
+            27.473029822514906
+          ],
+          "required_nameplate_SOC75_reserve10_kWh_at_nominal_cutoff": [
+            38.775537571700134,
+            40.70078492224431
+          ],
+          "conditionally_available_energy_kWh": 11.16,
+          "conditional_energy_margin_kWh_at_nominal_cutoff": [
+            -27.615537571700134,
+            -29.54078492224431
+          ],
+          "conditional_time_min_SOC75_reserve10_at_nominal_cutoff": [
+            17.26861939081664,
+            16.45177117048772
+          ],
+          "real_runtime_or_temperature_current_rating": false
+        }
+      ],
+      "charge_nominal_cutoff_pack_V": [
+        302.40000000000003,
+        259.2,
+        180.0
+      ],
+      "numeric_terminal_voltage_column_order": [
+        259.2,
+        180.0
+      ],
+      "voltage_fields_explicitly_bind_nominal_and_cutoff": true,
+      "accepted_or_applied": false
+    }
+  ],
+  "package_space_questions": [
+    {
+      "id": "current_480",
+      "physical_grid_x_z": [
+        12,
+        10
+      ],
+      "modules": 4,
+      "cells_per_module": 120,
+      "electrical": "4\u00d720s6p reference",
+      "cell_axis": "Y",
+      "cell_pitch_m": 0.0225,
+      "cell_surface_gap_m": 0.0009499999999999995,
+      "cell_array_dimensions_XYZ_m": [
+        0.26905,
+        0.07015,
+        0.22404999999999997
+      ],
+      "custom_enclosure_gross_dimensions_XYZ_m": [
+        0.28400000000000003,
+        0.111,
+        0.24699999999999997
+      ],
+      "four_enclosure_gross_AABB_sum_L": 31.145712,
+      "two_high_stack_enclosure_height_with_design25mm_gap_m": 0.5189999999999999,
+      "actual_native_new_cases_busbars_cooling_mounts_and_service_present": false,
+      "source_margin_is_not_dielectric_pressure_thermal_or_service_qualification": true
+    },
+    {
+      "id": "proposed_640_shallow",
+      "physical_grid_x_z": [
+        8,
+        20
+      ],
+      "modules": 4,
+      "cells_per_module": 160,
+      "electrical": "4\u00d720s8p design question",
+      "cell_axis": "Y",
+      "cell_pitch_m": 0.0225,
+      "cell_surface_gap_m": 0.0009499999999999995,
+      "cell_array_dimensions_XYZ_m": [
+        0.17905,
+        0.07015,
+        0.44905
+      ],
+      "custom_enclosure_gross_dimensions_XYZ_m": [
+        0.19399999999999998,
+        0.111,
+        0.47200000000000003
+      ],
+      "four_enclosure_gross_AABB_sum_L": 40.656192,
+      "two_high_stack_enclosure_height_with_design25mm_gap_m": 0.9690000000000001,
+      "actual_native_new_cases_busbars_cooling_mounts_and_service_present": false,
+      "source_margin_is_not_dielectric_pressure_thermal_or_service_qualification": true
+    },
+    {
+      "id": "proposed_720_lower_voltage",
+      "physical_grid_x_z": [
+        10,
+        18
+      ],
+      "modules": 4,
+      "cells_per_module": 180,
+      "electrical": "4\u00d718s10p design question",
+      "cell_axis": "Y",
+      "cell_pitch_m": 0.0225,
+      "cell_surface_gap_m": 0.0009499999999999995,
+      "cell_array_dimensions_XYZ_m": [
+        0.22404999999999997,
+        0.07015,
+        0.40405
+      ],
+      "custom_enclosure_gross_dimensions_XYZ_m": [
+        0.23899999999999996,
+        0.111,
+        0.42700000000000005
+      ],
+      "four_enclosure_gross_AABB_sum_L": 45.311532,
+      "two_high_stack_enclosure_height_with_design25mm_gap_m": 0.8790000000000001,
+      "actual_native_new_cases_busbars_cooling_mounts_and_service_present": false,
+      "source_margin_is_not_dielectric_pressure_thermal_or_service_qualification": true
+    }
+  ],
+  "v2_original_retained_with_topology_label_error": true,
+  "v2_label_error": "72s10p calculation used Ns=72 but inherited topology label was 80s10p; v3 corrects labels and explicitly named voltage columns. Original v2 bytes retained as failed provenance.",
+  "cell_busbar_INS_BMS_contactors_cooling_mount_and_repair_complete_mass_not_known": true,
+  "proposed_640_or_720_next_geometry_candidate_only": true,
+  "raw_bus_matching_driver_insulation_regen_overvoltage_protection_not_installed": true,
+  "installed_physics_endurance_aesthetic_or_stable_SI_accepted": false
+}

@@ -1,0 +1,60 @@
+from pathlib import Path
+import json,gzip,hashlib,collections
+import numpy as np
+R=Path.cwd();O=Path(__file__).resolve().parent;ROOT=R/'.scratch/gorilla_internal_g23_root_assembly';sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();read=lambda p:json.loads(gzip.decompress(Path(p).read_bytes()));bindings=json.loads((ROOT/'input_bindings.json').read_text());ins={x['original_path']:read(R/x['bound_path'])for x in bindings};old=ins['.scratch/gorilla_internal_g22_root_assembly/scene.json.gz'];mod=ins['.scratch/gorilla_internal_g23_compact_energy_routes/module_scene.json.gz'];shoulder=ins['.scratch/gorilla_internal_g23_forward_serial_shoulder/native_only_a/scene.json.gz'];olds={p['name']:p for p in old['parts']};module={p['name']:p for p in mod['parts']};Q=np.array([[0.,-1,0],[1.,0,0],[0.,0,1]]);C=[[.30,0,2.1125],[.30,0,2.364525],[-.33,0,2.1125],[-.33,0,2.364525]];expected_sources={'a':'e9d3452964f81d3c3f72291e16819933be726dad9d423c4ae6fbd20d323ae0dc','b':'6bedcd06cd6729fad71d6e26dfad99ae588e6745db295c0658da44ddc077efa9'};results={}
+def geometry_hash(p):return hashlib.sha256(json.dumps({'vertices':p['vertices_world_m'],'faces':p['faces']},sort_keys=True,separators=(',',':')).encode()).hexdigest()
+for v in ['a','b']:
+ S=ROOT/v/'scene.json.gz';s=read(S);assert sha(S)==expected_sources[v];ps={p['name']:p for p in s['parts']};core=ins['.scratch/gorilla_internal_g23_integrated_core/'+v+'/scene.json.gz'];cp={p['name']:p for p in core['parts']};retired=set(old['actual_added_core_and_joint_ids'])|{n for n in olds if n.startswith('g21_pack_')};newc=set(s['new_core_joint_ids']);newp=set(s['new_pack_ids']);retained=set(olds)-retired;errs=[];warnings=[]
+ if len(ps)!=len(s['parts']):errs.append('duplicate_IDS')
+ if set(s['conditional_geometry_probe_retire_ids'])!=retired:errs.append('retirement_mismatch')
+ if set(ps)!=retained|set(cp)|newp:errs.append('finite_actual_inventory_member_set_mismatch')
+ unchanged=[];retain_metadata_delta=[]
+ for n in sorted(retained):
+  if geometry_hash(ps[n])!=geometry_hash(olds[n])or ps[n].get('body')!=olds[n].get('body'):errs.append('retained_geometry_owner_changed:'+n)
+  else:unchanged.append(n)
+  p=dict(ps[n]);p.pop('g23_new_module_ports_not_connected',None);p.pop('original_route_historical_geometry_not_admitted_new_wiring',None)
+  if p!=olds[n]:retain_metadata_delta.append(n)
+ corechecks=[];topmoment=[]
+ for n in sorted(cp):
+  p=ps[n];src=cp[n];geo=geometry_hash(p)==geometry_hash(src);expectedbody=src['body']
+  if expectedbody.startswith('g23_'):expectedbody=expectedbody.replace('g23_','right_'if n.startswith('g23_right_context_')else'left_')
+  moments=[k for k in src if 'COM'in k or'full_I'in k or'exact_CAD'in k];active=[k for k in p if 'COM'in k or'full_I'in k or'exact_CAD'in k];saved=p.get('upstream_unqualified_mass_metadata',{})
+  goodmoment=all(k not in p and saved.get(k)==src[k]for k in moments);corechecks.append({'id':n,'geometry_exact':geo,'body_expected':expectedbody,'body_actual':p['body'],'dynamic_owner_rescope_not_qualification':expectedbody!=src['body'],'active_moment_fields':active,'upstream_moment_fields_preserved_quarantined':goodmoment});
+  if not geo or p['body']!=expectedbody or not goodmoment or active:errs.append('core_composition_mismatch:'+n)
+  topmoment.extend([n+':'+k for k in active])
+ modules=[]
+ for i,c in enumerate(C):
+  instance=[p for p in s['parts']if p.get('module_instance_index')==i and p['name']in newp];names={p['g23_local_module_name']for p in instance};cells=[p for p in instance if p['g23_local_module_name'].startswith('g23_cell_')];service=[p for p in instance if'service'in p.get('role','')];hardware=[p for p in instance if'service'not in p.get('role','')];actualv=np.concatenate([np.array(p['vertices_world_m'])for p in hardware]);checks=[]
+  for p in instance:
+   n=p['g23_local_module_name'];src=module[n];expected=np.array(src['vertices_world_m'])@Q.T+np.array(c);actual=np.array(p['vertices_world_m']);exact=np.array_equal(expected,actual);faces=p['faces']==src['faces'];moments=[k for k in src if'COM'in k or'full_I'in k or'exact_CAD'in k];sav=p.get('upstream_unqualified_mass_metadata',{});mOK=all(k not in p and sav.get(k)==src[k]for k in moments);active=[k for k in p if'COM'in k or'full_I'in k or'exact_CAD'in k];checks.append({'id':p['name'],'source_name':n,'vertices_exact_transform':exact,'faces_exact_proper_rotation':faces,'moment_quarantined':mOK,'active_moment_fields':active,'body_torso':p['body']=='torso','source_sha_match':p.get('g23_module_source_sha256')==bindings[1]['sha256']});
+   if not exact or not faces or not mOK or active or p['body']!='torso':errs.append('module_composition_mismatch:'+p['name'])
+  ports=[]
+  for j,src in enumerate(mod['HV_ports']):
+   exp=Q@np.array(src['HV_lug_center_m'])+c;act=s['module_placements'][i]['new_HV_ports'][j]['world_lug_center_m'];ports.append({'net':src['net'],'world_expected_m':exp.tolist(),'actual_m':act,'exact':np.array_equal(exp,np.array(act)),'old_route_not_connected':True})
+  classes=dict(collections.Counter(p.get('component_class',p.get('role','missing'))for p in instance));grid=collections.Counter((p.get('series_group'),p.get('parallel_cell'))for p in cells);uniquegrid=len(grid)==180 and max(grid.values())==1;roles=collections.Counter(p.get('role','')for p in instance);services_bounds=np.concatenate([np.array(p['vertices_world_m'])for p in service]);rec={'index':i,'full_source_name_set_equal':names==set(module),'actual_instances':len(instance),'actual_cells':len(cells),'cell_grid_unique':uniquegrid,'series_group_count':len({p.get('series_group')for p in cells}),'parallel_cell_count':len({p.get('parallel_cell')for p in cells}),'series_parallel_is_source_hypothesis_not_rating':True,'role_counts':dict(roles),'component_class_counts':classes,'complete_service_count':len(service),'actual_hardware_bounds_m':[actualv.min(0).tolist(),actualv.max(0).tolist()],'actual_service_bounds_m':[services_bounds.min(0).tolist(),services_bounds.max(0).tolist()],'ports':ports,'checks':checks};modules.append(rec)
+  if names!=set(module)or len(cells)!=180 or not uniquegrid:errs.append('module_function_inventory_failed:'+str(i))
+ # Independent axial-vector mirror and exact part reflection tests.
+ mirror=[];coreleft={p['name']:p for p in core['parts']if not p['name'].startswith('g23_right_context_') and p['name'].startswith('g23_a_')}
+ for p in core['parts']:
+  if not p['name'].startswith('g23_right_context_'):continue
+  ln=p['source_original_name'];l=next(q for q in core['parts']if q['name']==ln);exp=np.array(l['vertices_world_m']);exp[:,1]*=-1;ok=np.array_equal(exp,np.array(p['vertices_world_m']))and p['faces']==np.array(l['faces'])[:,[0,2,1]].tolist();mirror.append({'left':ln,'right':p['name'],'exact_signed_mirror':ok})
+  if not ok:errs.append('right_native_mirror_mismatch:'+p['name'])
+ axisrows=[];tree=s['body_tree_candidate']
+ for side,sgn in [('left',1),('right',-1)]:
+  M=np.diag([1.,sgn,1.])
+  for j in shoulder['joint_interfaces']:
+   n=j['output_body'].replace('left_',side+'_');actual=tree[n];xp=M@np.array(j['pivot_world_m']);xa=np.linalg.det(M)*M@np.array(j['axis_world']);ok=np.array_equal(xp,np.array(actual['pivot_world_m']))and np.array_equal(xa,np.array(actual['axis_world']));axisrows.append({'body':n,'expected_pivot_m':xp.tolist(),'expected_axial_vector':xa.tolist(),'actual_tree_matches':ok,'direction_contract_unknown_preserved':actual.get('encoder_sign_and_driver_mapping_unknown')})
+   if not ok:errs.append('tree_axis_mirror_mismatch:'+n)
+ owners=collections.Counter(p['body']for p in s['parts']);missingowners=sorted(n for n in owners if n not in tree);cycles=[]
+ for n in tree:
+  seen=set();k=n
+  while k in tree and tree[k].get('parent')is not None:
+   if k in seen:cycles.append(n);break
+   seen.add(k);k=tree[k]['parent']
+ orphanparents=sorted((n,t['parent'])for n,t in tree.items()if t.get('parent')is not None and t['parent']not in tree)
+ # Source equality of all retained whole IDs also proves complete thermal/reference/fluids were not silently omitted.
+ thermal=[n for n in retained if any(q in n for q in ['es0707','es0714','WP32','dual_fluid_HX','working_tank','workingfluid','degas','hydraulic_input','global_water','global_oil'])];unchangedthermal=all(geometry_hash(ps[n])==geometry_hash(olds[n])for n in thermal);external=s['retained_external_HV_routes_with_stale_endpoints'];flagged=all(ps[n].get('g23_new_module_ports_not_connected')and ps[n].get('original_route_historical_geometry_not_admitted_new_wiring')for n in external);gapfront=modules[1]['actual_hardware_bounds_m'][0][2]-modules[0]['actual_hardware_bounds_m'][1][2];gaprear=modules[3]['actual_hardware_bounds_m'][0][2]-modules[2]['actual_hardware_bounds_m'][1][2]
+ results[v]={'source_sha256':sha(S),'actual_part_count':len(ps),'duplicate_IDs':len(s['parts'])-len(ps),'conditional_retired_count':len(retired),'retired_old_core_joint_count':len(old['actual_added_core_and_joint_ids']),'retired_old_pack_count':len(retired-set(old['actual_added_core_and_joint_ids'])),'new_core_joint_count':len(newc),'new_pack_count':len(newp),'retained_count':len(retained),'retained_exact_geometry_owner_count':len(unchanged),'unexpected_retained_metadata_changes':retain_metadata_delta,'core_exact_geometry_owner_moment_checks':corechecks,'modules':modules,'actual_cells':sum(q['actual_cells']for q in modules),'layers_Z_actual_gap_m':[gapfront,gaprear],'gap_25mm_roundoff_tolerance1e-12_pass':abs(gapfront-.025)<1e-12 and abs(gaprear-.025)<1e-12,'not_full_cavity_service_or_thermal_fit':True,'native_reflection_checks':mirror,'body_axial_vector_checks':axisrows,'tree_cycles':cycles,'tree_orphan_parents':orphanparents,'parts_owners_not_in_candidate_tree':missingowners,'tree_is_not_real_output_adapter_or_waist_link':True,'retained_thermal_exact_IDs':sorted(thermal),'retained_thermal_source_geometry_unchanged':unchangedthermal,'external_HV_old_route_count':len(external),'external_HV_flags_all_unconnected':flagged,'all_external_HV_retained_ids':external,'qualified_function_retirement_credit':s['qualified_function_retirement_credit'],'composition_errors':errs,'whole_robot_M_COM_I':s['whole_robot_M_COM_I'],'root_original_acceptance_flags':[s['physical_accepted'],s['aesthetic_accepted'],s['stable_SI_or_runtime_adopted']]}
+print(json.dumps({v:{k:x for k,x in row.items()if k in ['actual_part_count','actual_cells','layers_Z_actual_gap_m','new_pack_count','retained_count','parts_owners_not_in_candidate_tree','tree_cycles','tree_orphan_parents','composition_errors']}for v,row in results.items()},indent=2),flush=True)
+report={'robot_id':'gorilla_v0_1','inputs':bindings,'producer_sha256':sha(Path(__file__)),'scope':'Independent full finite composition/rigid transform/member/function/mirror/tree metadata review only; no collision/native source repair/FE or new whole mass. Snapshot inputs used.','variants':results,'old_source_failures_retained':['A 13.404255mm disconnected waist native roots','B 4 subthreshold cage triangles and residual near-zero closed receiver boundaries','A shoulder intrinsic native/complete-reference installation failures','actual upper-arm terminal mate adapter absent','waist rotating output source absent','OEM input/output split and reflected-inertia dynamic owner unknown','cooling hydraulic fan pressure temperature and power operating domain unqualified','external HV and coolant routes remain old endpoints'], 'physical_accepted':False,'aesthetic_accepted':False}
+(O/'composition_review.json').write_text(json.dumps(report,indent=2,allow_nan=False)+'\n')

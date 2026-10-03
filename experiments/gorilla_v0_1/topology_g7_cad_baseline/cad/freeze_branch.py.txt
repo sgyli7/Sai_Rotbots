@@ -1,0 +1,134 @@
+"""Bind the G7 CAD prototype; never rebuild geometry or repair mesh data."""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import importlib.metadata
+import json
+from datetime import datetime, timezone
+from pathlib import Path
+
+
+HERE = Path(__file__).resolve().parent
+ROOT = next(p for p in HERE.parents if (p / "sai_robots_engineering_rules.md").is_file())
+DESTINATION = HERE / "freeze_manifest.json"
+
+
+def digest(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            h.update(block)
+    return h.hexdigest()
+
+
+def read(relative: str) -> dict:
+    return json.loads((HERE / relative).read_text())
+
+
+def check(expected: str, path: Path, label: str, checks: list[dict]) -> None:
+    actual = digest(path)
+    if actual != expected:
+        raise ValueError(f"Binding mismatch for {label}: {expected} != {actual}")
+    checks.append({"label": label, "path": str(path), "sha256": actual, "pass": True})
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--verify", action="store_true", help="Read-only verification of the frozen inventory.")
+    args = parser.parse_args()
+    if args.verify:
+        data = json.loads(DESTINATION.read_text())
+        for row in data["inventory"]:
+            path = HERE / row["relative_path"]
+            if path.stat().st_size != row["bytes"] or digest(path) != row["sha256"]:
+                raise ValueError(f"Frozen inventory changed: {path}")
+        for row in data["external_dependencies"]:
+            if digest(ROOT / row["repository_relative_path"]) != row["sha256"]:
+                raise ValueError(f"External dependency changed: {row['repository_relative_path']}")
+        print(json.dumps({"inventory_verified": len(data["inventory"]), "external_verified": len(data["external_dependencies"]), "manifest_sha256": digest(DESTINATION)}))
+        return
+    if DESTINATION.exists():
+        raise FileExistsError("Freeze manifest already exists; use --verify. No automatic re-signing.")
+
+    checks: list[dict] = []
+    cad = read("cad_source_manifest.json")
+    check(cad["producer_sha256"], HERE / "build_cad_carrier.py", "CAD producer", checks)
+    check(cad["CAD_files"]["brep"], HERE / "carrier_exact.brep", "exact BREP", checks)
+    check(cad["CAD_files"]["step"], HERE / "carrier_exact.step", "exact STEP", checks)
+    old_source = ROOT / ".scratch/gorilla_internal_g4_pitch_module/module_scene.json"
+    check(cad["source_G4_scene_sha256"], old_source, "read-only G4 input", checks)
+    runtime = read("tool_runtime_manifest.json")
+    for name, expected in runtime["packages"].items():
+        check(expected, HERE / "tools/packages" / name, "isolated package " + name, checks)
+    library = HERE / "tools/extract/usr/lib/aarch64-linux-gnu/libgmsh.so.4.12.1"
+    wrapper = HERE / "tools/extract/usr/lib/python3/dist-packages/gmsh.py"
+    check(runtime["loaded_library_sha256"], library, "loaded ARM64 library", checks)
+    check(runtime["wrapper_sha256"], wrapper, "loaded Python wrapper", checks)
+    check(runtime["runtime_probe_sha256"], HERE / "runtime_probe.json", "actual runtime regression", checks)
+    for level in ("coarse", "fine"):
+        receipt = read(f"{level}/mesh_receipt.json")
+        for key, relative in {
+            "producer_sha256": "mesh_cad_carrier.py",
+            "cad_brep_sha256": "carrier_exact.brep",
+            "cad_source_manifest_sha256": "cad_source_manifest.json",
+            "mesh_sha256": f"{level}/carrier_tetra.npz",
+            "boundary_mesh_sha256": f"{level}/carrier_boundary.npz",
+            "runtime_manifest_sha256": "tool_runtime_manifest.json",
+        }.items():
+            check(receipt[key], HERE / relative, level + " " + key, checks)
+        gate = read(f"{level}/new_material_gate.json")
+        check(gate["native_boundary_sha256"], HERE / level / "carrier_native_boundary.npz", level + " compact native", checks)
+        if not gate["signed_native_material_gate"]["resource_contract_pass"]:
+            raise ValueError(f"New signed material gate rejected {level}")
+    render = read("native_render_manifest.json")
+    check(render["source_sha256"], HERE / "native_surface_scene.json", "render native source", checks)
+    check(render["renderer_sha256"], HERE / "render_native_carrier.py", "render producer", checks)
+    for row in render["outputs"]:
+        check(row["sha256"], Path(row["path"]), "render output", checks)
+    report = read("report.json")
+    external = ROOT / report["external_assembly_receipt_path"]
+    check(report["external_assembly_receipt_sha256"], external, "independent assembly receipt", checks)
+    validator = ROOT / ".scratch/gorilla_internal_g_material_contract/native_signed_material.py"
+    check("e531ae21a9e81aa7fc5186ee739fc19fe0e39efb9444a58a2e136410763c2fb8", validator, "unchanged signed-material validator", checks)
+
+    paths = [p for p in HERE.iterdir() if p.is_file() and p != DESTINATION]
+    for level in ("coarse", "fine"):
+        paths.extend(p for p in (HERE / level).iterdir() if p.is_file())
+    paths.extend(p for p in (HERE / "tools/packages").iterdir() if p.is_file())
+    paths.extend([library, wrapper, HERE / "tools/official_linux64_elf_header.bin"])
+    paths.extend(sorted((HERE / "tools/extract/usr/share/doc").glob("*/copyright")))
+    inventory = [{"relative_path": str(p.relative_to(HERE)), "bytes": p.stat().st_size, "sha256": digest(p)} for p in sorted(set(paths))]
+    dependencies = [{"repository_relative_path": str(p.relative_to(ROOT)), "sha256": digest(p)} for p in (old_source, validator, external)]
+    versions = {}
+    for name in ("numpy", "trimesh", "manifold3d", "scipy", "cadquery-ocp"):
+        try:
+            versions[name] = importlib.metadata.version(name)
+        except importlib.metadata.PackageNotFoundError:
+            versions[name] = "unavailable from distribution metadata"
+    payload = {
+        "robot_id": "gorilla_v0_1",
+        "branch": "G7 exact-CAD internal carrier prototype",
+        "frozen_utc": datetime.now(timezone.utc).isoformat(),
+        "scope": "One G4 moving carrier only; no new exterior, full joint, leg or robot acceptance.",
+        "nominal_port_position_delta_m": 0.0,
+        "new_true_circle_source_requires_new_identity": True,
+        "binding_checks": checks,
+        "inventory": inventory,
+        "external_dependencies": dependencies,
+        "project_runtime_versions_at_freeze": versions,
+        "visual_review": {"native_four_view_and_threequarter_actually_viewed": True, "projection_pixels_per_m": 1400, "no_hidden_parts": True, "only_internal_piece": True},
+        "tool_license": runtime["license"],
+        "freeze_manifest_self_not_in_inventory": True,
+        "read_only_verify_command": ".venv/bin/python .scratch/gorilla_internal_g7_cad_carrier/freeze_branch.py --verify",
+        "physical_release": False,
+        "FEM_or_topology_optimization_performed_here": False,
+        "whole_robot_or_appearance_release": False,
+        "new_meshes_can_feed_independent_solver_checks_subject_to_load_BC_energy_and_convergence": True,
+    }
+    DESTINATION.write_text(json.dumps(payload, indent=2) + "\n")
+    print(json.dumps({"manifest_sha256": digest(DESTINATION), "inventory_files": len(inventory), "binding_checks": len(checks), "path": str(DESTINATION)}))
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,93 @@
+"""Same nominal G4 carrier in exact OCC boxes/circles; independent new CAD source."""
+from pathlib import Path
+import argparse,hashlib,json,math,time
+import numpy as np
+import gmsh
+
+O=Path(__file__).resolve().parent;ROOT=next(p for p in O.parents if (p/'sai_robots_engineering_rules.md').exists())
+G4=ROOT/'.scratch/gorilla_internal_g4_pitch_module/module_scene.json';sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+C=np.array([-.060,.650,.300]);oc=gmsh.model.occ
+
+def box(center,dims):
+    d=np.array(dims);x=np.array(center)+C-d/2
+    return oc.addBox(*x,*d)
+def cyl(center,r,L):
+    p=np.asarray(center)+C-[0,L/2,0]
+    return oc.addCylinder(*p,0,L,0,r)
+def cut(a,b):
+    out,_=oc.cut([(3,a)],[(3,b)],removeObject=True,removeTool=True)
+    assert len(out)==1 and out[0][0]==3,out
+    return out[0][1]
+def get_surface_samples(tag):
+    lo,hi=gmsh.model.getParametrizationBounds(2,tag)
+    uv=[[(1-a)*lo[0]+a*hi[0],(1-b)*lo[1]+b*hi[1]] for a in [.13,.49,.83] for b in [.17,.53,.89]]
+    return np.array(gmsh.model.getValue(2,tag,np.ravel(uv))).reshape(-1,3)
+
+def build():
+    t=time.time();gmsh.initialize([],False,False);gmsh.option.setNumber('General.Terminal',1)
+    gmsh.option.setNumber('General.NumThreads',4);gmsh.model.add('gorilla_g7_exact_carrier')
+    material=[cut(box([.1375,0,-.015],[.425,.240,.150]),box([.1375,0,-.015],[.413,.228,.138]))]
+    for side in [-1,1]:
+        material += [cyl([0,side*.1145,0],.046,.016),cyl([0,side*.144,0],.02995,.060)]
+        for sg in [-1,1]:material.append(cyl([.320,side*.160+sg*.038,.040],.055,.014))
+        material += [box([.320,side*.1595,-.0235],[.120,.107,.037]),box([.150,side*.075,.0715],[.060,.045,.033])]
+    joined,_=oc.fuse([(3,material[0])],[(3,x) for x in material[1:]],removeObject=True,removeTool=True)
+    assert len(joined)==1,joined
+    tag=joined[0][1]
+    # Apply each physical bore once after fusion. No STL import, normal repair, sliver deletion, auto hole filling.
+    tag=cut(tag,cyl([0,0,0],.01410,.400))
+    for side in [-1,1]:
+        for k in range(3):
+            a=2*math.pi*k/3;tag=cut(tag,cyl([.022*math.cos(a),side*.167,.022*math.sin(a)],.00315,.030))
+        tag=cut(tag,cyl([.320,side*.160,.040],.02020,.135))
+    oc.synchronize();vols=gmsh.model.getEntities(3);assert vols==[(3,tag)],vols
+    boundary=gmsh.model.getBoundary(vols,combined=True,oriented=False,recursive=False)
+    groups={i:[] for i in range(1,8)};surface_rows=[]
+    for dim,f in boundary:
+        typ=gmsh.model.getType(dim,f);pts=get_surface_samples(f);local=pts-C;ids=[]
+        if typ=='Cylinder':
+            jr=np.hypot(local[:,0],local[:,2]);pr=np.hypot(local[:,0]-.320,local[:,2]-.040)
+            if np.max(abs(jr-.02995))<1e-7:
+                ids.append(1 if np.mean(local[:,1])<0 else 2)
+            elif np.max(abs(pr-.02020))<1e-7:
+                ids.append(3 if np.mean(local[:,1])<0 else 4)
+        if typ=='Plane' and np.max(abs(local[:,2]-.088))<1e-7:
+            com=np.asarray(oc.getCenterOfMass(2,f))-C
+            if .119<=com[0]<=.181 and abs(abs(com[1])-.075)<.024:ids.append(5 if com[1]<0 else 6)
+        if typ=='Plane' and np.max(abs(local[:,0]-.350))<1e-7:
+            com=np.asarray(oc.getCenterOfMass(2,f))-C
+            if abs(com[1])<=.12001 and -.09001<=com[2]<=.06001:ids.append(7)
+        for i in ids:groups[i].append(f)
+        surface_rows.append({'tag':f,'type':typ,'area_m2':oc.getMass(2,f),'center_world_m':oc.getCenterOfMass(2,f),
+            'bounds_world_m':gmsh.model.getBoundingBox(2,f),'port_ids':ids})
+    names={1:'journal_radial_negative_y',2:'journal_radial_positive_y',3:'moving_pin_bore_negative_y',4:'moving_pin_bore_positive_y',
+        5:'stop_contact_negative_y',6:'stop_contact_positive_y',7:'downstream_mount'}
+    assert all(groups.values()),groups
+    for i,ff in groups.items():gmsh.model.addPhysicalGroup(2,ff,i);gmsh.model.setPhysicalName(2,i,names[i])
+    gmsh.model.addPhysicalGroup(3,[tag],101);gmsh.model.setPhysicalName(3,101,'finite_carrier_material')
+    volume=oc.getMass(3,tag);com=oc.getCenterOfMass(3,tag);inertia=np.asarray(oc.getMatrixOfInertia(3,tag)).reshape(3,3)
+    for ext in ['brep','step']:gmsh.write(str(O/('carrier_exact.'+ext)))
+    g4=json.loads(G4.read_text());p=next(p for p in g4['parts'] if p['name']=='g4_child_load_carrier')
+    import trimesh as tr
+    oldvol=tr.Trimesh(p['vertices_world_m'],p['faces'],process=False).volume
+    cad={'robot_id':'gorilla_v0_1','version':'G7 exact-circle CAD baseline, not G4-resource-accepted geometry',
+        'source_G4_scene_sha256':sha(G4),'producer_sha256':sha(Path(__file__)),'runtime_version':gmsh.__version__,
+        'CAD_files':{ext:sha(O/('carrier_exact.'+ext)) for ext in ['brep','step']},
+        'actual_material_solid_count':len(vols),'solid_tag':tag,'actual_volume_m3':volume,'conditional_mass_kg':volume*7850,
+        'density_kg_m3':7850,'center_world_m':com,'inertia_at_COM_world_kg_m2':(inertia*7850).tolist(),
+        'G4_native_facet_volume_m3':oldvol,'true_circle_delta_volume_m3':volume-oldvol,'true_circle_delta_mass_kg':(volume-oldvol)*7850,
+        'true_circle_relative_volume_delta':volume/oldvol-1,
+        'nominal_interface_geometry_changes_m':0.,'true_circle_difference':'All original64faceted circular surfaces replaced with mathematical circles. Maximum radial faceted sag R*(1-cos(pi/64)); no nominal dimension/axis/pad/exterior change.',
+        'max_radial_sag_by_feature_m':{'fork55mm':.055*(1-math.cos(math.pi/64)),'boss46mm':.046*(1-math.cos(math.pi/64)),
+            'journal29p95mm':.02995*(1-math.cos(math.pi/64)),'pinbore20p20mm':.02020*(1-math.cos(math.pi/64))},
+        'nominal_parameter_source':{'box_center_local_m':[.1375,0,-.015],'outer_dimensions_m':[.425,.240,.150],
+            'inner_dimensions_m':[.413,.228,.138],'wall_m':.006,'pivot_world_m':C.tolist(),'journal_OD_ID_m':[.0599,.0282],
+            'pin_hole_diameter_m':.0404,'journal_bolt_hole_diameter_m':.0063,'moving_eye_xz_local_m':[.320,.040],
+            'stop_top_z_local_m':.088,'stop_centers_xy_local_m':[[.150,-.075],[.150,.075]],'endmount_local_x_m':.350},
+        'ports':{str(i):{'name':names[i],'surface_tags':ff,'actual_surface_area_m2':sum(oc.getMass(2,f) for f in ff)} for i,ff in groups.items()},
+        'surface_inventory':surface_rows,'construction_time_s':time.time()-t,
+        'joint_clearance_load_distribution_stiffness_physical_acceptance':False,'original_G4_material_gate_not_inherited':True}
+    (O/'cad_source_manifest.json').write_text(json.dumps(cad,indent=2)+'\n')
+    gmsh.finalize();print('CAD',volume,'delta',volume-oldvol,'ports',[len(groups[i]) for i in range(1,8)],flush=True)
+
+if __name__=='__main__':build()

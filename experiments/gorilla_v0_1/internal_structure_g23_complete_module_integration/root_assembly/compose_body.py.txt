@@ -1,0 +1,136 @@
+"""Compose actual G23 A-bound core sources with four complete 180-cell modules.
+
+The independent shoulder B is deliberately not substituted into an A-bound
+receiver. All geometrical replacements remain conditional probes.
+"""
+from pathlib import Path
+import copy, gzip, hashlib, json
+import numpy as np
+
+R = Path.cwd()
+O = Path(__file__).resolve().parent
+sha = lambda b: hashlib.sha256(b).hexdigest()
+bindings = json.loads((O / 'input_bindings.json').read_text())
+data = {}
+for row in bindings:
+    b = (R / row['bound_path']).read_bytes()
+    assert sha(b) == row['sha256']
+    data[row['original_path']] = json.loads(gzip.decompress(b))
+old = data['.scratch/gorilla_internal_g22_root_assembly/scene.json.gz']
+module = data['.scratch/gorilla_internal_g23_compact_energy_routes/module_scene.json.gz']
+shoulder = data['.scratch/gorilla_internal_g23_forward_serial_shoulder/native_only_a/scene.json.gz']
+retired = set(old['actual_added_core_and_joint_ids'])
+old_packs = {p['name'] for p in old['parts'] if p['name'].startswith('g21_pack_')}
+retired |= old_packs
+assert len(old_packs) == 1028
+rotation = np.array([[0., -1., 0.], [1., 0., 0.], [0., 0., 1.]])
+centers = [[.30, 0., 2.1125], [.30, 0., 2.364525],
+           [-.33, 0., 2.1125], [-.33, 0., 2.364525]]
+
+def write(path, obj):
+    b = (json.dumps(obj, indent=2, allow_nan=False) + '\n').encode()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(gzip.compress(b, mtime=0) if path.suffix == '.gz' else b)
+
+def strip_unqualified_moments(p):
+    keys = [k for k in p if 'COM' in k or 'full_I' in k or 'exact_CAD' in k]
+    if keys:
+        p['upstream_unqualified_mass_metadata'] = {k: p.pop(k) for k in keys}
+        p['actual_component_moments_to_be_independently_rederived'] = True
+
+for candidate in ['a', 'b']:
+    core_key = f'.scratch/gorilla_internal_g23_integrated_core/{candidate}/scene.json.gz'
+    core = data[core_key]
+    assert core['inputs']['.scratch/gorilla_internal_g23_forward_serial_shoulder/native_only_a/scene.json.gz'] == bindings[2]['sha256']
+    parts = [copy.deepcopy(p) for p in old['parts'] if p['name'] not in retired]
+    tree = copy.deepcopy(old['body_tree_candidate'])
+    new_core_ids = []
+    for p0 in core['parts']:
+        p = copy.deepcopy(p0)
+        strip_unqualified_moments(p)
+        if p['body'].startswith('g23_'):
+            side = 'right' if p['name'].startswith('g23_right_context_') else 'left'
+            source_body = p['body']
+            p['body'] = source_body.replace('g23_', side + '_')
+            p['upstream_dynamic_owner_unqualified'] = source_body
+            p['input_rotor_coupling_ratio_sign_and_mass_split_unknown'] = True
+        p['g23_source_core_sha256'] = next(r['sha256'] for r in bindings if r['original_path'] == core_key)
+        parts.append(p)
+        new_core_ids.append(p['name'])
+    for side, sign in [('left', 1), ('right', -1)]:
+        S = np.diag([1., float(sign), 1.])
+        for j in shoulder['joint_interfaces']:
+            node = j['output_body'].replace('left_', side + '_')
+            parent = j['parent_body'].replace('left_', side + '_')
+            tree[node] = {'parent': parent, 'joint_id': j['id'].replace('left_', side + '_'),
+                          'pivot_world_m': (S @ np.array(j['pivot_world_m'])).tolist(),
+                          'axis_world': (np.linalg.det(S) * S @ np.array(j['axis_world'])).tolist(),
+                          'actual_source_basis': True, 'encoder_sign_and_driver_mapping_unknown': True}
+            inp = side + '_' + j['id'].split('_', 1)[1] + '_input'
+            tree[inp] = {'parent': parent, 'fixed_geometric_detail_parked': True,
+                         'pivot_world_m': (S @ np.array(j['pivot_world_m'])).tolist(),
+                         'gear_coupling_ratio_sign_and_dynamic_owner_unknown': True}
+        tree[side + '_upper_arm']['real_transfer_adapter_material_missing'] = True
+        tree[side + '_upper_arm']['actual_yaw_terminal_exists_but_upper_arm_mate_unimplemented'] = True
+    pack_ids = []
+    placements = []
+    for index, center in enumerate(centers):
+        t = np.array(center)
+        ids = []
+        for p0 in module['parts']:
+            p = copy.deepcopy(p0)
+            p['g23_local_module_name'] = p0['name']
+            p['name'] = f'g23_pack_{index}_' + p0['name']
+            p['body'] = 'torso'
+            p['vertices_world_m'] = (np.array(p0['vertices_world_m']) @ rotation.T + t).tolist()
+            strip_unqualified_moments(p)
+            p['g23_module_source_sha256'] = bindings[1]['sha256']
+            p['module_instance_index'] = index
+            p['actual_local_to_world_rotation'] = rotation.tolist()
+            p['actual_local_to_world_translation_m'] = center
+            parts.append(p)
+            ids.append(p['name'])
+        hardware = [p for p in parts if p['name'] in ids and 'service' not in p.get('role', '')]
+        v = np.concatenate([p['vertices_world_m'] for p in hardware])
+        ports = []
+        for port in module['HV_ports']:
+            ports.append({**port, 'world_lug_center_m': (rotation @ np.array(port['HV_lug_center_m']) + t).tolist()})
+        placements.append({'index': index, 'center_world_m': center, 'rotation': rotation.tolist(),
+                           'hardware_bounds_m': [v.min(0).tolist(), v.max(0).tolist()],
+                           'new_HV_ports': ports, 'complete_service_included_as_separate_role': True,
+                           'old_external_HV_and_water_routes_not_reconnected': True,
+                           '19net_complete_source_not_electrical_rating': True})
+        pack_ids += ids
+    names = [p['name'] for p in parts]
+    assert len(set(names)) == len(names)
+    cells = [p for p in parts if 'g23_local_module_name' in p and p['g23_local_module_name'].startswith('g23_cell_')]
+    assert len(cells) == 720
+    # Keep original HV hardware visible, explicitly refusing old endpoint evidence.
+    retained_route_ids = []
+    for p in parts:
+        if p['name'].startswith('g21_HV_'):
+            p['g23_new_module_ports_not_connected'] = True
+            p['original_route_historical_geometry_not_admitted_new_wiring'] = True
+            retained_route_ids.append(p['name'])
+    obj = {'robot_id': 'gorilla_v0_1', 'candidate': 'g23_common_' + candidate,
+           'coordinate_frame': 'SI Xforward Yleft Zup', 'parts': parts,
+           'body_tree_candidate': tree, 'input_bindings': bindings,
+           'conditional_geometry_probe_retire_ids': sorted(retired),
+           'new_core_joint_ids': new_core_ids, 'new_pack_ids': pack_ids,
+           'module_placements': placements, 'retained_external_HV_routes_with_stale_endpoints': retained_route_ids,
+           'qualified_function_retirement_credit': 0, 'actual_CAD_shoulder_A_pending': True,
+           'shoulder_B_not_mixed_into_A_bound_core': True,
+           'thermal_original_complete_groups_unchanged_not_revalidated': True,
+           'old_lower_body_history_only': True, 'whole_robot_M_COM_I': None,
+           'stable_SI_or_runtime_adopted': False, 'physical_accepted': False, 'aesthetic_accepted': False}
+    write(O / candidate / 'scene.json.gz', obj)
+    write(O / candidate / 'composition_receipt.json', {
+        'source_sha256': sha((O / candidate / 'scene.json.gz').read_bytes()),
+        'producer_sha256': sha(Path(__file__).read_bytes()), 'old_parts': len(old['parts']),
+        'replaced_probe_parts': len(retired), 'new_core_joint_parts': len(new_core_ids),
+        'new_four_module_parts': len(pack_ids), 'actual_parts': len(parts), 'actual_cells': len(cells),
+        'layer_center_pitch_m': .252025, 'minimum_hardware_Z_gap_m': placements[1]['hardware_bounds_m'][0][2] - placements[0]['hardware_bounds_m'][1][2],
+        'placements': placements, 'physical_admission': False,
+        'rebuild_complete_external_HV_liquid_and_service_connections_required': True})
+    print(json.dumps({'candidate': candidate, 'actual_parts': len(parts), 'cells': len(cells),
+                      'source_sha256': sha((O / candidate / 'scene.json.gz').read_bytes())}), flush=True)

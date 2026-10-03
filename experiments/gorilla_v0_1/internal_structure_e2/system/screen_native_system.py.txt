@@ -1,0 +1,30 @@
+from pathlib import Path
+import json,hashlib,time,numpy as np,trimesh,collections
+R=Path('/home/ethan/Projects/Sai_Rotbots');O=R/'.scratch/gorilla_internal_e2_system';S=O/'system_spec.json';P=O/'system_scene.json';B=R/'robots/gorilla_v0_1/cad/source/appearance_c_scene.json'
+sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest();s=json.loads(S.read_text());p=json.loads(P.read_text());base=json.loads(B.read_text());assert p['source_spec_sha256']==sha(S)
+def mesh(a):return trimesh.Trimesh(a['vertices_world_m'],[[f[0],f[i],f[i+1]] for f in a['faces'] for i in range(1,len(f)-1)],process=False)
+ms={a['name']:mesh(a) for a in p['parts']};armor={a['name']:mesh(a) for a in base['parts'] if a['role'] in ['armor_cover','armor_surface']};bad=[]
+for a in p['parts']:
+ m=ms[a['name']]
+ if not m.is_watertight or not m.is_winding_consistent or m.volume<=0:bad.append({'id':a['name'],'watertight':m.is_watertight,'winding_consistent':m.is_winding_consistent,'volume':float(m.volume)})
+fluidcats=['oil_inventory_once','coolant_inventory','coolant_inventory_unknown_internal'];newids={a['id'] for a in s['modules'] if a['id'].startswith(('e_','e2_'))};critical=[a['id'] for a in s['modules'] if a['id'].startswith('ds_') and any(q in a['id'] for q in ['hydraulic_input','custom_oil_tank','custom_hv_pack','hv_dc','bms_fuse','compute','dc_dc','back_screen'])]
+sample=[a for a in p['parts'] if (a['name'] in newids and a['category'] not in fluidcats) or a['name'] in critical];hits=[];candidate=0;checked=0;start=time.monotonic()
+for i,a in enumerate(sample):
+ m=ms[a['name']]
+ for name,b in armor.items():
+  if not np.all(np.minimum(m.bounds[1],b.bounds[1])-np.maximum(m.bounds[0],b.bounds[0])>1e-6):continue
+  candidate+=1;v=float(trimesh.boolean.intersection([m,b],engine='manifold').volume);checked+=1
+  if v>1e-9:hits.append({'module':a['name'],'armor':name,'native_positive_volume_m3':v})
+ if i%40==0:print('native_armor_progress',i,len(sample),'booleans',checked,'hits',len(hits),flush=True)
+# Separate global liquids: real routing intersections reject the spatial candidate even when each fluid inventory is internally disjoint.
+def union(mm):return trimesh.boolean.union(mm,engine='manifold') if len(mm)>1 else mm[0].copy()
+w=union([ms[a['name']] for a in p['parts'] if a['category']=='coolant_inventory']);oil=union([ms[a['name']] for a in p['parts'] if a['category']=='oil_inventory_once']);mix=float(trimesh.boolean.intersection([w,oil],engine='manifold').volume)
+# Narrow actual new-to-retained check for HX plus source-critical full modules, not all new-new pairs.
+hx=ms['e2_dual_fluid_HX_material'];hxhits=[]
+for id in critical:
+ b=ms[id]
+ if not np.all(np.minimum(hx.bounds[1],b.bounds[1])-np.maximum(hx.bounds[0],b.bounds[0])>1e-6):continue
+ v=float(trimesh.boolean.intersection([hx,b],engine='manifold').volume)
+ if v>1e-9:hxhits.append({'module':'e2_dual_fluid_HX_material','other':id,'positive_volume_m3':v})
+r={'schema':'gorilla_e2_limited_native_system_screen_v1','inputs':{str(q.relative_to(R)):sha(q) for q in [S,P,B]},'producer_sha256':sha(Path(__file__)),'native_closed_failure_rows':bad,'native_mesh_count':len(ms),'armor_count':len(armor),'screened_module_ids':[a['name'] for a in sample],'screened_module_count':len(sample),'native_armor_boolean_pairs':checked,'positive_armor_overlaps':hits,'positive_armor_overlap_count':len(hits),'native_oil_coolant_volume_overlap_L':mix*1000,'HX_to_retained_critical_hits':hxhits,'scope':'All new E2 material routes/thermal/valves/HX plus named retained pump/coupling/filter/tank/pack/BMS/compute/display modules vs111 unchanged original armor, neutral finite native only. Fluid-in-shell containment not collision-tested. Does not test all765 new-new,module motors/brakes/gear internal contacts or pose sweeps. SourceOEM complete envelopes are installation reservations, not sourced closed material bodies.','graph_does_not_prove_hydraulic_control_or_thermal_flow':True,'geometry_accepted':False,'physics_accepted':False,'elapsed_s':time.monotonic()-start}
+(O/'limited_system_screen.json').write_text(json.dumps(r,indent=2)+'\n');print(json.dumps({k:r[k] for k in ['native_mesh_count','screened_module_count','native_armor_boolean_pairs','positive_armor_overlap_count','native_oil_coolant_volume_overlap_L','elapsed_s']},indent=2))

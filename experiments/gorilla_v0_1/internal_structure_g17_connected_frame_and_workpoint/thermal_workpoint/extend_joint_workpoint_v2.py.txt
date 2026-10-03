@@ -1,0 +1,74 @@
+"""Extend frozen v1 without modifying it; source-bound conditional joint ROM."""
+from pathlib import Path
+import json,math,hashlib,time
+O=Path(__file__).resolve().parent;R=O.parents[1]
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def read(p):return json.loads(Path(p).read_text())
+def save(n,d):(O/n).write_text(json.dumps(d,indent=2)+'\n')
+v1p=O/'joint_workpoint_v1.json';d=read(v1p);v1sha=sha(v1p);d['stage']='G17 thermal joint workpoint v2';d['created_utc']=time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime());d['producer_sha256']=sha(__file__);d['predecessor']={'path':str(v1p.relative_to(R)),'sha256':v1sha,'unchanged':True}
+g16=read(R/'.scratch/gorilla_internal_g16_compact_thermal_scope/compact_module_scope.json');g15=read(R/'.scratch/gorilla_internal_g15_thermal_operating_domain/operating_domain.json');capture=read(O/'body_locked_capture_v1.json');props=g16['DOW_SR1_2002_50volEG_typical_properties']
+d['source_hashes'][str((O/'body_locked_capture_v1.json').relative_to(R))]=sha(O/'body_locked_capture_v1.json');d['body_locked_scope']=capture
+# v1 reference curve re-reading now records simultaneous point at actual specified Q, not broad endpoints combined.
+d['joint_core_graph_capture']={'source_pdf_sha256':d['source_hashes']['.scratch/gorilla_internal_g16_compact_thermal_scope/lytron2003_es_publication_mirrored.pdf'],'printed_page':54,'curvefluid':'50/50 EGW at71.1C; brand/concentration exactness not declared','air_props_rho1p2_cp1005_are_own':True,'low_each':{'Q_L_min':14.75,'Q_gpm':14.75/3.785411784,'air_m3_min':6.5,'air_cfm':6.5/.028316846592,'H_W_K_manual':[78,90],'nominal_H_W_K':84,'liquid_dp_Pa_manual':[26000,34000],'air_dp_Pa_manual':[72,86]},'hot_whole':{'Q_L_min':10,'Q_gpm':10/3.785411784,'air_m3_min':13,'air_cfm':13/.028316846592,'H_BTUhF_manual':[275,305],'H_W_K_manual':[275*.527527926,305*.527527926],'nominal_H_W_K':290*.527527926,'liquid_dp_Pa_manual':[18000,24000],'air_dp_Pa_manual':[55,75]},'graph_resolution_ranges_not_guaranteed_material_or_capability_bounds':True,'historical_vs_current_ES_revision_dimension_mismatch_still_open':True}
+# r_l is an unknown fluid-side fraction of total reference effective thermal resistance.
+corrections=[]
+for c in g16['cold_fluid_sensitivity']:
+ for r_l in [.2,.6]:
+  h=c['Dittus_Boelter_fluid_h_ratio_conditional'];fac=1/(1+r_l*(1/h-1));corrections.append({'T_C':c['T_C'],'assumed_liquid_fraction_effective_thermal_R':r_l,'cold_fluid_film_ratio_conditional':h,'effective_H_factor_ROM':fac,'whole_low_H_W_K_manual_ROM_range':[4*78*fac,4*90*fac],'model':'1/Heffective assumed additive fluid/other effectiveR; NOT measuredUA or exactepsilonNTU','source_ES_flowregime_Dh_fin_efficiency_and_actualfluid_unknown':True,'no_claimed_guaranteed_cold_H_lower_bound':True})
+d['cold_reference_resistance_ROM']=corrections
+# One shared airflow topology, no new whole-layout variant or repeated airflow ownership.
+rotor={'candidate_configuration':'LC only; current source cooling variant unspecified','two_motor_shaft_power_each_kW_by_phase':{},'low_air_assignment':{'core0':{'existing_fan_total_m3min':6.5,'EMRAX0_branch_required_peak_m3min':3.0,'bypass_m3min':3.5},'core1':{'existing_fan_total_m3min':6.5,'EMRAX1_branch_required_peak_m3min':3.0,'bypass_m3min':3.5},'core2':{'existing_fan_total_m3min':6.5,'fresh_intake':True},'core3':{'existing_fan_total_m3min':6.5,'fresh_intake':True}},'actual_G17_body_airroute_not_present':True,'core0_core1_indices_are_proposed_remap_not_physical_installed_endpoint':True,'each_motor_branch_net_area_m2_own':.010,'peak_motor_branch_velocity_m_s':5,'full_circumferential_188_rotor_service_and_guard_budget_xyz_m':[.248,.150,.248],'custom_duct_splitter_guard_seal_mass_each_kg':[.4,.8,1.5],'duct_wall_own_thickness_m':.0015,'splitter_full_ports_and_tools_not_registered_in_body':True,'no_additional_fan_or_unallocated_airflow_credit':True,'branch_K_own':[1,5],'branch_dp_Pa_own_at5ms':[15,75],'source_rotor_flowpressure_unknown':True,'balance_bypass_valve_or_geometry_required':True,'LC_airheat_not_waterheat_duplicate':True}
+for phase in g15['two_physical_budget_domains'][0]['phases']:
+ rotor['two_motor_shaft_power_each_kW_by_phase'][phase['phase']]=phase['pump_shaft_kW']/2
+d['EMRAX_rotor_shared_air_conditional']=rotor
+# Actual tank dims -> fill surface and first pump lift. Reference pump fluid eye location unknown.
+parts={p['id']:p for p in capture['parts']};lowtank=parts['g16_low_water_working_tank_shell'];oil=parts['g16_oil_working_tank_shell'];hot=parts['g16_hot_water_working_tank_shell'];pump=parts['g17_low_EWP150_stage_0_reference'];inner=[lowtank['xyz_max_m'][k]-lowtank['xyz_min_m'][k]-.006 for k in range(3)];low_surface=lowtank['xyz_min_m'][2]+.003+1.2/1000/(inner[0]*inner[1]);pumpcenter=(pump['xyz_min_m'][2]+pump['xyz_max_m'][2])/2
+r=props['50']['rho_kg_m3'];mu=props['50']['mu_mPa_s']/1000; Q=59/60000;D=.032;v=Q/(math.pi*D**2/4);Re=r*v*D/mu;f=.3164/Re**.25;suction_dp=.5*r*v*v*(f*.7/D+2)
+suction={'actual_low_coldfill_free_surface_Z_m_ignores_internal_baffles':low_surface,'actual_stage0_reference_center_Z_m_not_OEM_impeller_eye':pumpcenter,'conditional_static_fill_minus_pump_m':low_surface-pumpcenter,'pipeID_m':.032,'pipe_length_m_own':.7,'sumK_own':2,'cold50_suction_dp_Pa':suction_dp,'pump1_source59head_Pa':38840,'interstage_dp_Pa_own_range':[0,2000],'stage2_suction_gauge_Pa_tank0_30k':[r*9.81*(low_surface-pumpcenter)-suction_dp+38840-2000,30000+r*9.81*(low_surface-pumpcenter)-suction_dp+38840],'full_stage2_discharge_gauge_Pa_tank0_30k_optimistic':[r*9.81*(low_surface-pumpcenter)-suction_dp+77680-2000,30000+r*9.81*(low_surface-pumpcenter)-suction_dp+77680],'NPSHa_m_at_50C_pvap2_20k_absolute_tank0_30k':[(101325+gas-pv)/(r*9.81)+(low_surface-pumpcenter)-suction_dp/(r*9.81) for gas,pv in [(0,20000),(30000,2000)]],'vapour_range_not_selected_glycol_saturation_data':True,'source_EWP150_burst500kPa_not_continuous_pressure_rating':True,'secondstage_source_max_suction_case_workingpressure_NPSHr_unknown':True,'OEM_EMRAX_max2bar_only_branch_upper':True,'custom_relief_plus_bypass_candidate_gauge_Pa':120000,'regulation_not_manufacturer_ES_pump_or_plate_rating':True,'need_emrax_inlet_pressure_port_and_shutdown_measurement':True}
+d['actual_body_series_suction_condition']=suction
+# Joint steady temperatures based on conserved source motor heat split, not deleting old heat.
+temps=[];sourcebudgets=[b for b in d['same_task_heat_energy_budgets'] if b['aux_scope']=='source_upper']
+for domain in sourcebudgets:
+ old=next(x for x in g15['two_physical_budget_domains'] if x['id']==domain['domain']);phaseinfo={p['phase']:p for p in old['phases']}
+ for phase in domain['phases']:
+  motor_total=phaseinfo[phase['phase']]['motor_inverter_low_kW']*1000
+  # Source budget combines motor+inverter; 1/3 rotor split of whole is an upper-air case only.
+  for airfrac in [0,1/3]:
+   rotorQ=motor_total*airfrac
+   for Ta in [25,35]:
+    for correction in corrections:
+     if correction['T_C']!=50:continue
+     Hlow=sum(correction['whole_low_H_W_K_manual_ROM_range'])/2;Hw=Hlow/4; Cairpair=13/60*1.2*1005;Cairall=26/60*1.2*1005
+     pre_motor_pair=rotorQ/Cairpair; pre_fan_all=.86*1000/Cairall
+     # Four equal H cores, half upstream heated by rotor flow. Effective air offset is half pair preheat.
+     effective_air=Ta+pre_fan_all+.5*pre_motor_pair
+     Cfluid=59/60000*r*props['50']['cp_J_kgK'];qs=[x*1000-rotorQ for x in phase['low_liquid_kW_288_200']]
+     returns=[effective_air+q/Hlow for q in qs];supplies=[returns[k]-qs[k]/Cfluid for k in range(2)]
+     Hhot=d['joint_core_graph_capture']['hot_whole']['nominal_H_W_K'];Cairhot=13/60*1.2*1005;hotpre=.43*1000/Cairhot;hotr=Ta+hotpre+phase['hot_liquid_kW']*1000/Hhot;Ch=10/60000*r*props['50']['cp_J_kgK'];hots=hotr-phase['hot_liquid_kW']*1000/Ch
+     temps.append({'domain':domain['domain'],'phase':phase['phase'],'ambient_C':Ta,'fluid_T50_property_ROM_condition':True,'liquid_effective_H_W_K':Hlow,'liquid_R_fraction_own':correction['assumed_liquid_fraction_effective_thermal_R'],'motor_inverter_combined_budget_air_fraction_sensitivity':airfrac,'rotor_air_W':rotorQ,'water_low_W_288_200':qs,'combined_low_heat_W_288_200':[q+rotorQ for q in qs],'source_combined_motor_inverter_not_actual_motor_only_airfraction':True,'rotor_core0_1_preheat_K':pre_motor_pair,'low_effective_air_in_C':effective_air,'low_return_C_288_200':returns,'low_supply_C_288_200':supplies,'EMRAX50inlet_screen':[x<=50 for x in supplies],'hot_supply_C':hots,'hot_return_C':hotr,'source_EShot_samefluid_T71curve_to50_is_open':True,'steady_not_450s_transient_or_component_qualification':True})
+d['same_task_joint_temperature_screens']=temps
+# Fan system head includes the actual specified K(area), and conditional rotor shared branch.
+fanmargin=[]
+for K in [1,3]:
+ vel=6.5/60/(.172*.172);own=K*.5*1.2*vel**2
+ for front in [False,True]:
+  inlet=d['air_joint_workpoint']['front_screens'][0]['dp_Pa_at_rho1p2'] if front else 0
+  for motorDp in [0,15,75]:
+   syslo=72+own+inlet+motorDp;syshi=86+own+inlet+motorDp; fanmargin.append({'eachcore_air_m3min':6.5,'plenum_guard_K_own':K,'two_core_front_shared_intake':front,'EMRAX_shared_branch_balanced_dp_Pa_own':motorDp,'full_airdp_Pa_range':[syslo,syshi],'fan_affinity_available_Pa':186.74202086413496,'head_margin_Pa_range':[186.74202086413496-syshi,186.74202086413496-syslo],'unknown_core_faceuniformity_turn_realnetarea_recirc':True,'OEM_fullspeedpoint_possible_need_actual_PWM_map':True})
+d['fan_sealed_system_margin_screens']=fanmargin
+# Independent hot loop same exact liquid flow point. Source warmhead EWP80 manually read47kPa@10.
+d['hot_loop_joint_pressure']={'whole_Q_Lmin':10,'ES0714_dp_Pa_manual':[18000,24000],'own_HX_water_dp_Pa_allowance':[5000,15000],'own_pipe_filter_dp_Pa_allowance':[2000,8000],'system_Pa_range_warm':[25000,47000],'EWP80_warm_curve_Pa_manual_at10':[45500,49500],'coldfluid_core_HX_curve_and_NPSHr_unknown':True,'no_series_lowloop_pressure_inheritance':True,'fluid_power_W_system':[25000*10/60000,47000*10/60000],'source_electrical_upper_W':97.5}
+# v1 used QTL-size plate as a QTR film prototype: keep the torque requirement, withdraw the apparent QTR temperature fit.
+d['v1_scope_correction']={'QTR_temperature_estimates_not_actual_platefit':True,'explanation':'The new square-channel annulus outerD242mm is QTL-size. v1 reused its R for QTR; v2 retains only QTL-size coil calculations. QTR below is a required R limit with its own actual smaller plate still unbuilt. v1 bytes retained.'}
+d['task_torque_TIM_conditional']=[x for x in d['task_torque_TIM_conditional'] if not x['load_scope'].startswith('50')]
+d['QTR_task_required_mount_to_coolant_Rth']=[{'output611Nm_motor_input_Nm':611/(100*eta),'gear_eta_own':eta,'coil_copper_W_conditional':450*(611/(100*eta)/15.3)**2,'water_C':Tw,'max_total_mount_to_water_Rth_K_W_for100coil':(100-Tw)/(450*(611/(100*eta)/15.3)**2)-.17,'smaller_real_plate_required_unbuilt':True,'source_rotor_holder_not_replaced':True} for eta in [.75,.90] for Tw in [50,60]]
+# Current7L must not use retired2.608/4.108/6.608 global-oil range.
+for x in d['fluid_new7L_working_sensitivity']:
+ x['actual_oil_tank_capacity_L']=oil['capacity_L'];x['tank_capacity_minus_required_L']=oil['capacity_L']-x['oil_required_tankcap_L_own'];x['actual_low_hot_degas_capacity_L']=[lowtank['capacity_L'],hot['capacity_L']];x['old_G16_body_newconditional_oil_ranges_are_historical_other_workingfill_scope']=True
+# A reserves/explicit shorter task duration instead of asserting30min enough. No extra cells secretly added.
+d['480_duration_design_choice']={'minimum_nameplate_kWh':7.44,'cell_count':480,'topology':'4x20s6p series=80s6p','SOC_window_own_range':[.6,.75,.8],'reserve_fraction_own_range':[.05,.10],'A_sourceupper_25min_candidate_10percentreserve':True,'sourceupper_A_timecap_SOC75_reserve10_min':next(b for b in sourcebudgets if b['domain'].startswith('a'))['480_min7p44_time_cap_min_with_reserve_fraction']['0.1'],'not_runtime_packqualified_or_newtaskfixed':True,'fullsource_bus_heat_unchanged':'No PWM savings, no unearned rotary reduction, no new cells adopted','alternative_remaining_requirement':'If30min mandatory, at lowloadedV sourceupper need>=7.7573kWh before reserve; 10%reserve needs>=8.6192kWh. A complete80s7p560cell pack could be studied >=8.68kWh minimum cellenergy, but current body480 remains and all extraBMS/busbar/coldplate mass/space unresolved.'}
+# Wholeloop energy balance checks, pressure/electrical inequality and source identity only.
+checks={'source_current_body_sha_match':capture['source_sha256']=='52eb6bb53bb84cfacf24fbe4f2f4f4e35b4a97d4cef90729fc3ff9f0382c2756','v1_unchanged':sha(v1p)==v1sha,'LC_sensitivity_conserves_lowheat':all(all(abs(t['combined_low_heat_W_288_200'][k]-p['low_liquid_kW_288_200'][k]*1000)<1e-8 for k in range(2)) for t in temps for b in sourcebudgets if b['domain']==t['domain'] for p in b['phases'] if p['phase']==t['phase']),'same_source_stage_power_fluid_below_electricalmax':77680*59/60000<260,'actual_mid_oil_margin_negative':d['fluid_new7L_working_sensitivity'][1]['tank_capacity_minus_required_L']<0,'two_motor_and_bypass_air_sum13':2*(3+3.5)==13,'known30minenergygap_remains':next(b for b in sourcebudgets if b['domain'].startswith('a'))['nameplate_required_kWh_SOC75_288_200'][1]>7.44}
+d['formulas']=['Qlow=18*2+2*6+4*2+3=59 L/min; radiator bank4parallelQeach14.75','Dpwhole=Dpbank+max(Dpdevicebranch)+Dpmain+filterbalance; pump series sameQ notparallelQ','Pfluid=Dp*Q; sameQfullpumpinput power/heat not source maxflow zerohead','NPSHa=(Pgas_absolute-Pvap)/(rho*g)+Zfill-Zeye-hsuction; NPSHr and stage2case unknown','cold laminarDp proportionalmu, smoothBlasius proportionalrho^.75mu^.25 conditional','Fan affinity at fixed nondimensionalpoint Q/n,p/n²,P/n³; guardedhotPWMap needsmeasurement','Heffective ROM resistance split, not UA; Tcore_in=Ta_pre+Qheat/H; Tout=Tin-Q/Cdot','thermal LC partition Qwater+Qair=source loss once; inverter portion differs and exactvariant unknown','Pc_task=Pc_source*(Tinput/Tsource)^2 samecoppermodel; Tcoil=Twater+Pc_task*(Rcoil_mount+Rfilm+RTIM)','Voil_global=Voutside+7; Vtank=(7+β*Voil_global)/(1-hotairfraction)','Ename=dur/SOC*Σduty(Pbus/ηDC+I²R); Etimecap=Emin*SOC*(1reserve)/Pavg']
+save('joint_workpoint_v2.json',d);save('formula_checks_v2.json',{'checks':checks,'all_bookkeeping_checks_pass':all(checks.values()),'output_sha256':sha(O/'joint_workpoint_v2.json'),'not_thermal_pressure_or_module_admission':True})
+print(json.dumps({'sha':sha(O/'joint_workpoint_v2.json'),'checks':checks,'suction':suction,'cold_H':corrections,'A_motion35': [t for t in temps if t['domain'].startswith('a') and t['phase']=='motion' and t['ambient_C']==35],'QTR_requirement':d['QTR_task_required_mount_to_coolant_Rth']},indent=2))

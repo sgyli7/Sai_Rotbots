@@ -1,0 +1,53 @@
+from pathlib import Path
+import gzip,json,hashlib,numpy as np,manifold3d as mf
+O=Path(__file__).resolve().parent;D=O/'b_routed';D.mkdir(exist_ok=True);sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();S=O/'b/scene.json.gz';s=json.loads(gzip.decompress(S.read_bytes()));ps={p['name']:p for p in s['parts']};moves=[];ports=[];new=[];retired=[]
+def center(p):
+ v=np.array(p['vertices_world_m']);return(v.min(0)+v.max(0))/2
+def move(ids,c):
+ src=ps[ids[0]];delta=np.array(c)-center(src)
+ for i in ids:
+  p=ps[i];p['vertices_world_m']=(np.array(p['vertices_world_m'])+delta).tolist();p['g24_B_internal_independent_function_move_m']=delta.tolist();p['owner']='torso';p['dynamic_owner_assignment_conditional']=True
+ moves.append({'members':ids,'delta_m':delta.tolist(),'preserved_individual_native_shape':True,'not_fixed_OEM_relative_assembly':True})
+def meshpart(n,m,role='finite_custom_route',rho=2700,owner='torso'):
+ q=m.to_mesh64();v=np.array(q.vert_properties[:,:3]);f=np.array(q.tri_verts);new.append({'name':n,'body':owner,'owner':owner,'role':role,'vertices_world_m':v.tolist(),'faces':f.tolist(),'rgba':[.12,.5,.65,1],'finite_material':True,'mass_range_kg':[m.volume()*rho]*3,'native_volume_m3':m.volume(),'material_density_assumption_kg_m3':rho,'source_or_assumption':'G24 finite self-designed tube/duct, dimensions explicit; joint/seal/fatigue/pressure losses not qualified','physical_accepted':False});return n
+routes=[]
+def tube(n,a,b,ro=.01,ri=.007):
+ a=np.array(a);b=np.array(b);d=b-a;L=np.linalg.norm(d);z=d/L;x=np.cross([0,0,1],z)
+ if np.linalg.norm(x)<1e-7:x=np.cross([0,1,0],z)
+ x=x/np.linalg.norm(x);y=np.cross(z,x);Q=np.column_stack([x,y,z]);outer=mf.Manifold.cylinder(L,ro,ro,32);inner=mf.Manifold.cylinder(L+.0002,ri,ri,32).translate([0,0,-.0001]);m=(outer-inner).transform(np.column_stack([Q,a]));meshpart(n,m,rho=7850);routes.append({'id':n,'start_m':a.tolist(),'end_m':b.tolist(),'inner_radius_m':ri,'length_m':L,'lumen_L':np.pi*ri**2*L*1000,'seal_and_interface_unknown':True,'pump_curve_unqualified':True})
+def duct(n,a,b,outer=(.07,.06),wall=.002):
+ a=np.array(a);b=np.array(b);d=b-a;L=np.linalg.norm(d);z=d/L;x=np.cross([0,0,1],z)
+ if np.linalg.norm(x)<1e-7:x=np.cross([0,1,0],z)
+ x=x/np.linalg.norm(x);y=np.cross(z,x);Q=np.column_stack([x,y,z]);w,h=outer;mo=mf.Manifold.cube([w,h,L],True);mi=mf.Manifold.cube([w-2*wall,h-2*wall,L+.002],True);m=(mo-mi).transform(np.column_stack([Q,(a+b)/2]));meshpart(n,m,'finite_custom_air_duct',2700);return {'id':n,'start_m':a.tolist(),'end_m':b.tolist(),'net_cross_section_m2':(w-2*wall)*(h-2*wall),'sealing_mating_bend_pressure_and_AA3_intake_UNKNOWN':True}
+move(['e2_dual_fluid_HX_material'],[.30,0,1.69])
+for n in ['e2_oil_HX_in_actual_hollow_port','e2_oil_HX_out_actual_hollow_port','e2_oil_HX_water_return_actual_hollow_port','e2_oil_HX_water_supply_actual_hollow_port']:
+ retired.append({'id':n,'reason':'self-designed remote pipe locations replaced, HX complete material/area unchanged, oil and water functions preserved'});ps.pop(n)
+for label,a,b in [('oil_in',[.237,-.08,1.64],[.217,-.08,1.64]),('oil_out',[.363,-.08,1.74],[.383,-.08,1.74]),('water_in',[.237,.08,1.64],[.217,.08,1.64]),('water_out',[.363,.08,1.74],[.383,.08,1.74])]:
+ tube('g24_HX_'+label+'_conditional_port',a,b,.009,.0065);ports.append({'function':label,'world_m':b,'source':'new explicit custom adapter datum; HX internal chamber mate unknown'})
+move(['g18_WP32_full_pump_0','g18_WP32_full_pump_0_afterremoval_tool'],[-.035,-.355,1.77]);move(['g18_WP32_full_pump_1','g18_WP32_full_pump_1_afterremoval_tool'],[.015,.355,1.77])
+for n,c in [('g18_188_WP32_controller_LV',[.10,-.365,1.93]),('g18_188_filter_sensor_isolation',[.105,-.365,1.825]),('g16_low_filter_regulator_isolation',[.15,.355,1.825]),('g16_low_pump_controller',[.15,.355,1.93]),('g16_hot_EWP80_reference',[.16,0,1.435]),('g16_hot_filter_regulator_isolation',[.30,-.15,1.48]),('g16_hot_pump_controller',[.30,.15,1.48]),('g16_hot_pump_mount_reducers_fittings',[.16,0,1.35]),('g16_degas_return_guard_service',[.12,.46,2.16]),('e2_shared_unload_relief_accumulator_reserve',[-.16,0,1.66])]:move([n],c)
+move(['g16_low_water_working_tank_shell','g16_low_water_workingfluid_alias'],[.035,.46,2.16]);move(['g16_hot_water_working_tank_shell','g16_hot_water_workingfluid_alias'],[.035,-.46,2.16])
+# actual finite routed segments and explicit conditional mechanical endpoints; not claiming OEM mating.
+for prefix,y,zs in [('188',-.145,[1.92]),('rest',.145,[1.92,2.19,2.46])]:
+ supply=[-.125,y,1.75];ret=[-.145,y,1.75]
+ tube('g24_'+prefix+'_supply_header',supply,[-.125,y,2.54],.016,.0127);tube('g24_'+prefix+'_return_header',ret,[-.145,y,2.54],.016,.0127)
+ for k,z in enumerate(zs):
+  tube('g24_'+prefix+'_core_supply_'+str(k),[-.125,y,z],[-.108,y-.065,z],.008,.005);tube('g24_'+prefix+'_core_return_'+str(k),[-.145,y,z+.04],[-.108,y+.065,z],.008,.005)
+# six low cores two banks: remaining actual parallel branches, no fictitious port/source qualification
+for k,z in enumerate([2.19,2.46]):
+ tube('g24_rest_crossbank_supply_'+str(k),[-.125,.145,z],[-.108,-.210,z],.008,.005);tube('g24_rest_crossbank_return_'+str(k),[-.145,.145,z+.04],[-.108,-.080,z],.008,.005)
+for i in range(4):
+ p=ps['g23_pack_'+str(i)+'_g23_coldplate'];c=center(p)
+ tube('g24_pack_'+str(i)+'_waterfeed_conditional',[-.125,.145,1.79+i*.025],c+[-.01,0,.04],.007,.004)
+ tube('g24_pack_'+str(i)+'_waterreturn_conditional',c+[-.01,0,-.04],[-.145,.145,1.79+i*.025],.007,.004)
+for n,a,b in [('hot_core_feed',[.16,0,1.495],[.068,-.15,1.61]),('hot_core_return',[.068,.15,1.61],[.217,.08,1.64]),('HX_water_return',[.383,.08,1.74],[.16,0,1.435]),('oil_HX_feed',[.0525,0,1.68],[.217,-.08,1.64]),('oil_HX_return',[.383,-.08,1.74],[.0525,0,1.73])]:tube('g24_'+n,a,b)
+air=[]
+for sign in[-1,1]:
+ air.append(duct('g24_original_front_grille_intake_'+str(sign),[.217,sign*.32,2.15],[.075,sign*.145,1.92],(.12,.09)))
+ air.append(duct('g24_sensitive_exhaust_'+str(sign),[-.108,sign*.145,1.92],[-.42,sign*.40,1.85],(.10,.08)))
+for z in[2.19,2.46]:
+ for sign in[-1,1]:air.append(duct('g24_rest_discharge_'+str(sign)+'_'+str(z),[-.108,sign*.145,z],[-.42,sign*.40,z],(.10,.08)))
+for sign in[-1,1]:air.append(duct('g24_hot_discharge_'+str(sign),[-.108,sign*.14,1.61],[-.30,sign*.36,1.58],(.10,.08)))
+s['parts']=list(ps.values())+new;s['candidate']='g24_b_function_distribution_routed_conditional';s['baseline_b_sha256']=sha(S);s['complete_groups_are_functional_not_single_rigid_OEM']=True;s['internal_B_moves']=moves;s['retired_custom_ports_exact']=retired;s['actual_new_liquid_routes']=routes;s['actual_new_air_ducts']=air;s['new_port_contract']=ports;s['physical_accepted']=False;s['fullbody_M_COM_I']=None;s['routing_closure']= {'all_functions_preserved':True,'exact_OEM_port_mates':False,'18legacyplate_targets_actual_drive_variant_unknown':True,'EMRAX_rotor_air_routes_absent':True,'hot_HX_pressure_and_UA_unknown':True,'all_loop_closed_not_claimed':True,'front_diagnostic_duct_crosssection_violates_13m3min_low_loss_requirement':True,'AA3_other_intakes_discharge_acceptance_unknown':True,'PDU_HX_actual_common_conflict_retained':True}
+with gzip.GzipFile(filename='',fileobj=(D/'scene.json.gz').open('wb'),mode='wb',mtime=0)as z:z.write(json.dumps(s,separators=(',',':'),allow_nan=False).encode())
+(D/'routing_receipt.json').write_text(json.dumps({'source_sha256':sha(D/'scene.json.gz'),'baseline_sha256':sha(S),'parts':len(s['parts']),'new_parts':len(new),'moves':moves,'retired':retired,'liquid_routes':routes,'air_ducts':air,'conditional_ports':ports,'fluid_lumen_new_sum_L':sum(q['lumen_L']for q in routes),'old_global_stock_not_adopted':True,'resource_and_installation_NOTaccepted':True},indent=2));print(sha(D/'scene.json.gz'),len(s['parts']),len(new),flush=True)

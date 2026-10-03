@@ -1,0 +1,91 @@
+from pathlib import Path
+O=Path(__file__).resolve().parent;old=(O.parent/'gorilla_internal_g1_lower_chain/build_chain.py').read_text();prefix=old[:old.index('# Fixed housing')];prefix=prefix.replace('Gorilla G1','Gorilla G2').replace("R=np.array([-.205,.500,.245]);PF=np.array([-.050,.500,.124]);PH=np.array([-.180,.500,.124])","R=np.array([-.125,.500,.220]);PF=np.array([-.020,.650,.115]);PH=np.array([-.195,.500,.112])")
+prefix=prefix.replace("seats=[-.115,.115],collars=[-.080,.080]","seats=[-.115,.115],collars=[-.080,.080]").replace("seats=[-.140,.140],collars=[-.095,.095]","seats=[-.120,.120],collars=[-.080,.080]").replace("seats=[-.140,.140],collars=[-.085,.085]","seats=[-.130,.130],collars=[-.080,.080]").replace("seats=[-.060,.086],collars=[.003,.067]","seats=[-.042,.042],collars=[-.019,.019]").replace("seats=[-.130,.130],collars=[-.080,.080]","seats=[-.100,.100],collars=[-.060,.060]").replace("seats=[-.200,.200],collars=[-.167,.167]","seats=[-.145,.145],collars=[-.095,.095]")
+prefix=prefix.replace("'g1_'","'g2_'")
+mid='''# True serial housing / journals / output shafts, with explicit radial fit clearance.
+for j in J:
+ c=j['c'];ax=np.array(j['axis']);foot=j['id'] in ['forefoot','heel'];roll=j['id']=='ankle_roll';rs=.024 if foot else .025 if roll else .028;rb=.030 if foot else .033 if roll else .037;ro=.035 if foot else .044 if roll else .048;j.update(shaft_outer_radius_m=rs,journal_bore_radius_m=rs+.00035,housing_outer_radius_m=ro)
+ for off in j['seats']:
+  fm(j['parent'],ring(c+ax*off,ro,rb,.016,ax));add(j['id']+'_journal_'+str(off),j['parent'],ring(c+ax*off,rb,rs+.00035,.014,ax),'finite_journal_candidate',contact_scope='0.35mm radial diagnostic clearance; press/preload/lubrication/shim/retention unqualified')
+ for off in j['collars']:fm(j['child'],ring(c+ax*off,.030 if foot else .035 if roll else .040,rs-.0008,.012,ax))
+ length=.105 if roll else .260 if foot and j['id']=='forefoot' else .330 if foot else .340 if j['id']=='fold' else .310
+ fm(j['child'],ring(c,rs,.014 if foot or roll else .018,length,ax))
+fm('thigh_interface',beam(K+[-.040,-.115,.042],K+[-.040,.115,.042],.038,.034))
+# Middle front shell-frame lane and distal rear bay. Explicit journal-rim attachment nodes.
+for sg in [-1,1]:
+ ky=K[1]+sg*.08;fy=F[1]+sg*.12;fc=F[1]+sg*.08;ay=A[1]+sg*.13
+ fm('middle',path([[K[0]-.004,ky,K[2]-.032],[-.040,fy,.890],[.155,fy,.760],[.180,fy,.650],[F[0]+.018,fy,F[2]+.043]],w=.035,d=.038,wall=.006))
+ # Distal two cheeks enclose .184 rear cylinder, carry load forward to fixed ankle seats.
+ dy=.390 if sg<0 else .610
+ fm('distal',path([[F[0]-.010,fc,F[2]+.031],[-.180,dy,.610],[-.180,dy,.703]],w=.026,d=.026,wall=.005))
+ fm('distal',path([[F[0]+.005,fc,F[2]-.033],[-.015,dy,.435],[A[0]+.010,ay,A[2]+.040]],w=.030,d=.033,wall=.005))
+ # Ankle pitch output body lowers to the fixed ankle-roll journal stack.
+ cy=.380 if sg<0 else .620
+ fm('ankle_carrier',path([[A[0]+.004,A[1]+sg*.08,A[2]-.033],[-.065,cy,.247],[-.125,cy,.245]],w=.024,d=.024,wall=.005))
+ for xx in [R[0]-.042,R[0]+.042]:fm('ankle_carrier',beam([xx,.5+sg*.039,.220],[xx,cy,.247],.018,.020,.004))
+fm('distal',beam([-.180,.390,.703],[-.180,.610,.703],.026,.025,.005))
+# Roll-output arch, two separate segment hinge saddles, no full-length sole.
+for xx in [R[0]-.019,R[0]+.019]:
+ for sg in [-1,1]:
+  fm('arch',path([[xx,.5+sg*.026,.201],[-.075,.560 if sg<0 else .740,.165],[PF[0]-.006,PF[1]+sg*.1,PF[2]+.030]],w=.022,d=.028,wall=.005))
+  fm('arch',path([[xx,.5+sg*.026,.201],[-.195,.370 if sg<0 else .630,.155],[PH[0]-.005,PH[1]+sg*.145,PH[2]+.030]],w=.023,d=.026,wall=.005))
+'''
+# Reuse only our endpoint kinematics/cylinder analytic constructor, modify explicit family and interfaces.
+a=old[old.index('def action('):old.index("action('fold'")]
+a=a.replace('def action(id,pivot,aa,bb,parent,child,ax,rangeq):','def action(id,pivot,aa,bb,parent,child,ax,rangeq,bore,rod,wall,pin):')
+a=a.replace('math.pi*.063**2/4','math.pi*bore**2/4').replace('math.pi*(.063**2-.03**2)/4','math.pi*(bore**2-rod**2)/4')
+a=a.replace("minimum=stroke+.170;zero=lo-.010;tail=zero-minimum", "ear=.024 if bore<=.050 else .030;minimum=stroke+2*ear+.020+.020+.020+.020+.020;zero=lo-.010;tail=zero-minimum")
+a=a.replace("'bore_m':.063,'rod_m':.030,'wall_m':.005,'pin_m':.040", "'bore_m':bore,'rod_m':rod,'wall_m':wall,'pin_m':pin")
+a=a.replace("ax=np.array(ax)\n for sg", "ax=np.array(ax);forkoff=.026 if bore<=.050 else .032;forkL=.012;eyeL=.032 if bore<=.050 else .038;eyer=pin/2+.018;forkr=pin/2+.023\n for sg")
+a=a.replace("ax*sg*.032", "ax*sg*forkoff").replace("ring(p,.050,.020,.014,ax)","ring(p,forkr,pin/2+.00035,forkL,ax)").replace("aa+[0,0,.048]", "aa+[.043,0,0] if id!='roll' else aa+[0,0,-.041]")
+a=a.replace("anchor=np.array([-.17,.35 if sg<0 else .65,.920]) if id=='ankle_pitch' else np.array([.15,.42,.90]) if id=='fold' else np.array([-.24,.39 if aa[1]<.5 else .61,.721]);fm(parent,beam(support,anchor,.028,.022,.004))", "anchor=np.array([-.180,.390 if sg<0 else .610,.703]) if id=='ankle_pitch' else K+np.array([.038,sg*.080,0]) if id=='fold' else np.array([-.125+(sg*.042),.380,.247]);fm(parent,beam(support,anchor,.016,.020,.004))")
+a=a.replace("ring(p,.047,.020,.014,ax)","ring(p,forkr,pin/2+.00035,forkL,ax)").replace("ring(root,.045,.0295,.014,ax)","ring(root,.030 if id=='roll' else .034,.0242 if id=='roll' else .0272,.012,ax)").replace("beam(root,p,.020,.028,.004,solid=True)","beam(root,p,.016,.024,.004,solid=True)")
+a=a.replace("ring(aa,.020,0,.100,ax)","ring(aa,pin/2,0,.090,ax)").replace("ring(bb,.020,0,.100,ax)","ring(bb,pin/2,0,.090,ax)")
+a=a.replace("ear=.030;start=ear+tail+.020", "start=ear+tail+.020")
+a=a.replace("fixed=[ring(aa,.038,.020,.044,ax),seg(.024,.030,.020),seg(.030,.030+tail,.0365,.0155),seg(.030+tail,start,.0365),seg(start,start+stroke+.020,.0365,.0315),seg(start+stroke+.020,start+stroke+.040,.0365,.0155),seg(start+stroke+.040,start+stroke+.060,.0335,.0155)]", "ro=bore/2+wall;fixed=[ring(aa,eyer,pin/2+.00035,eyeL,ax),seg(ear-.006,ear,rod/2+.004),seg(ear,ear+tail,ro,rod/2+.0006),seg(ear+tail,start,ro),seg(start,start+stroke+.020,ro,bore/2),seg(start+stroke+.020,start+stroke+.040,ro,rod/2+.0006),seg(start+stroke+.040,start+stroke+.060,bore/2+.002,rod/2+.0006)]")
+a=a.replace("rod=[seg(start+ext,start+ext+.020,.0310),seg(start+ext+.010,L-ear,.015),seg(L-ear,L-.024,.018),ring(bb,.038,.020,.044,ax)]", "rods=[seg(start+ext,start+ext+.020,bore/2-.0005),seg(start+ext+.010,L-ear,rod/2),seg(L-ear,L-ear+.006,rod/2+.003),ring(bb,eyer,pin/2+.00035,eyeL,ax)]")
+a=a.replace("('rod',rod,child)","('rod',rods,child)")
+a=a.replace("a['complete_geometry_present']=True", "a['complete_geometry_present']=True;a['force_21MPa_cap_N']=21e6*math.pi*bore*bore/4;a['force_21MPa_rod_N']=21e6*math.pi*(bore*bore-rod*rod)/4;a['pressure_scope']='21MPa analytical hypothesis; module/heads/seals/wear/mount not qualified'")
+foot='''action('fold',F,[.025,.470,.950],[.085,.470,.610],'middle','distal',[0,1,0],[-20,0],.063,.030,.005,.040)
+action('ankle_pitch',A,[-.184,.500,.665],[-.184,.500,.300],'distal','ankle_carrier',[0,1,0],[-10,0],.050,.025,.004,.030)
+action('roll',R,[-.125,.250,.355],[-.125,.500,.355],'ankle_carrier','arch',[1,0,0],[-10,10],.040,.020,.004,.028)
+# Tray free space from actual original foot shell material at the full tray Z interval.
+footarmor=[p for p in BASE['parts'] if p['role'] in ['armor_surface','armor_cover'] and p['name'].startswith('left_') and np.array(p['vertices_world_m'])[:,2].max()<.255]
+free_space=[]
+for body,padname,pivot in [('forefoot','left_composite_forepad',PF),('heel','left_composite_heel_pad',PH)]:
+ pad=OLD[padname];v=np.array(pad['vertices_world_m']);top=v[np.isclose(v[:,2],.033)];poly=shapely.geometry.polygon.orient(MultiPoint(top[:,:2]).convex_hull,sign=1.0);cross=mf.CrossSection([np.array(poly.exterior.coords)[:-1]],mf.FillRule.Positive)
+ slabbox=box([.0,.5,.036],[2.,2.,.006002]);blocked=mf.CrossSection()
+ for ar in footarmor:
+  q=dict(ar);q['faces']=[[f[0],f[i],f[i+1]] for f in q['faces'] for i in range(1,len(f)-1)];mat=C(tr.Trimesh(q['vertices_world_m'],q['faces'],process=False))^slabbox
+  if mat.volume()>1e-12:blocked=blocked+mf.CrossSection(mat.project().to_polygons(),mf.FillRule.Positive).offset(.002,mf.JoinType.Miter)
+ free=cross-blocked
+ # Choose connected footprint region containing the intended native load rib. Other pad patches remain explicit unsupported-domain uncertainty.
+ contours=free.to_polygons();polys=[shapely.geometry.Polygon(c) for c in contours if shapely.geometry.Polygon(c).area>1e-6 and shapely.geometry.Polygon(c).exterior.is_ccw];pt=shapely.geometry.Point(.180,.665) if body=='forefoot' else shapely.geometry.Point(-.300,.500);selected=next((p for p in polys if p.covers(pt)),max(polys,key=lambda p:p.area));holes=[c for c in contours if not shapely.geometry.Polygon(c).exterior.is_ccw and selected.covers(shapely.geometry.Polygon(c).representative_point())];selectedcross=mf.CrossSection([np.array(selected.exterior.coords)[:-1]]+holes,mf.FillRule.Positive);tray=selectedcross.extrude(.006).translate([0,0,.033]);fm(body,tray)
+ free_space.append({'body':body,'z_interval_m':[.033,.039],'clearance_assumption_m':.002,'original_armor_names':[p['name'] for p in footarmor],'selected_loadable_polygon_xy_m':np.array(selected.exterior.coords).tolist(),'selected_area_m2':selected.area,'full_pad_area_m2':poly.area,'full_pressure_domain_qualified':False,'blocked_source':'Exact material intersection with6mm slab projected positive fill, then2mm XY offset; no generic inset'})
+ p=copy.deepcopy(pad);p['name']='g2_retained_'+padname;p['body']=body;p['role']='retained_contact_pad';p['faces']=[[f[0],f[i],f[i+1]] for f in p['faces'] for i in range(1,len(f)-1)];p['mass_range_kg']=[float(poly.area*.033*x) for x in [900,1100,1400]];parts.append(p)
+ if body=='forefoot':
+  for y in [.590,.710]:fm(body,path([[pivot[0],y,.115],[.095,y,.065],[.350,y,.057]],w=.026,d=.036,wall=.005))
+  fm(body,box([.175,.650,.095],[.060,.130,.024]));fm(body,beam([.175,.590,.081],[.175,.710,.081],.038,.024,.005))
+ else:
+  for y in [.405,.595]:fm(body,beam([pivot[0],y,.112],[-.275,y,.053],.030,.030,.005))
+  fm(body,beam([-.245,.5,.048],[-.385,.5,.048],.200,.018,.005));fm(body,box([-.315,.500,.061],[.060,.080,.014]))
+# Long-arm segment stops, locking sliders withdraw horizontally before unloaded folding.
+locks=[]
+for body,x,y,z,withdraw in [('forefoot',.175,.650,.107,[.095,0,0]),('heel',-.315,.500,.068,[-.095,0,0])]:
+ # Arch fixed roof has two side legs, stopped slider spans a real central void. No guide black wall.
+ cap=box([x,y,z+.008],[.060,.084,.016]);pinholes=[]
+ for sg in [-1,1]:
+  yy=y+sg*.042;roof=box([x,yy,z+.022],[.105,.028,.034]);channel=box([x,yy,z+.008],[.085,.032,.016]);fm('arch',roof-channel)
+  target=[PF[0]-.006,PF[1]+sg*.10,PF[2]+.030] if body=='forefoot' else [PH[0]-.005,PH[1]+sg*.145,PH[2]+.030]
+  fm('arch',beam([x,yy,z+.036],target,.020,.020,.004))
+ add(body+'_compression_slider','lock_'+body,cap,unlock_translation_world_m=withdraw,contact_scope='Nominal flat stop interface; guide lateral faces and retract travel physical checks required')
+ locks.append({'body':'lock_'+body,'translation':withdraw})
+# Local pressure holding reserve follows actual roll barrel frame; no pressure/shock qualification.
+add('roll_holding_reserve','roll_barrel_link',box([-.225,.345,.220],[.049,.098,.060]),'holding_complete_reference_envelope',motion_id='roll',motion_kind='barrel',mass_owner_body='ankle_carrier',mass_range_kg=[1.0,2.0,4.0],density_kg_m3=None,reference_scope='98x49x60mm core reference plus bracket/fittings mass interval; unqualified shock/return pressure installation')
+# Fresh primitives are fused as intended own monolithic groups; no repair of validator rejection.
+for body,ss in frames.items():add(body+'_net',body,unite(ss),construction_scope='New finite CSG from declared primitives; no old normalized source; joining/strength not qualified')
+'''
+end=old[old.index('# Original armor'):];end=end.replace('G1','G2').replace('g1_','g2_').replace("'unloaded_split_endpoint',{'fold':-20,'ankle_pitch':-10,'ankle_roll':10,'forefoot':-15,'heel':10}","'unloaded_split_endpoint',{'fold':-20,'ankle_pitch':-10,'ankle_roll':10,'forefoot':-15,'heel':10}")
+end=end.replace("'actuators':actions,'locks':locks", "'actuators':actions,'locks':locks,'foot_free_space':free_space")
+(O/'build_chain.py').write_text(prefix+mid+a+foot+end)
+print('PREPARED')

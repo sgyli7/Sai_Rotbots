@@ -1,0 +1,26 @@
+"""Capture selected exact G2 designs and independent review, excluding cached media/logs."""
+from pathlib import Path
+import gzip,hashlib,json,ast
+R=Path('/home/ethan/Projects/Sai_Rotbots');O=R/'experiments/gorilla_v0_1/internal_structure_g2_modules'
+GROUPS={'waist':'gorilla_internal_g2_rotary_waist','lower':'gorilla_internal_g2_lower_chain','hand':'gorilla_internal_g2_hand_allocation','root_review':'gorilla_internal_g2_root_review'}
+sha=lambda b:hashlib.sha256(b).hexdigest();rows=[];excluded=[]
+for label,dn in GROUPS.items():
+ base=R/'.scratch'/dn
+ for src in sorted(base.rglob('*')):
+  if not src.is_file() or '__pycache__' in src.parts:continue
+  rel=src.relative_to(base)
+  selected=src.suffix in {'.json','.md','.py','.svg','.png'} or src.name.endswith('.py.txt')
+  if src.name=='qtl210_reference_page-2.png':selected=False
+  raw=src.read_bytes()
+  if not selected:
+   excluded.append({'original_path':str(src.relative_to(R)),'sha256':sha(raw),'reason':'cache/log/downloaded source, excluded reproduction input'});continue
+  if src.suffix=='.json':json.loads(raw)
+  if src.suffix=='.py' or src.name.endswith('.py.txt'):ast.parse(raw)
+  name=src.name+'.txt' if src.suffix=='.py' else src.name
+  encoding='gzip' if src.suffix=='.json' and len(raw)>250000 else 'raw'
+  stored=gzip.compress(raw,compresslevel=9,mtime=0) if encoding=='gzip' else raw
+  dst=O/label/rel.parent/(name+('.gz' if encoding=='gzip' else ''));dst.parent.mkdir(parents=True,exist_ok=True)
+  if dst.exists() and dst.read_bytes()!=stored:raise ValueError('Refuse overwrite '+str(dst))
+  dst.write_bytes(stored);rows.append({'original_path':str(src.relative_to(R)),'original_sha256':sha(raw),'original_bytes':len(raw),'stored_path':str(dst.relative_to(O)),'stored_sha256':sha(stored),'stored_bytes':len(stored),'encoding':encoding})
+m={'robot_id':'gorilla_v0_1','scope':'G2 two macro layouts per module and bounded installation derivatives; rejected full installations, not integrated robot','files':rows,'excluded_cached_records':excluded,'physical_accepted':False,'aesthetic_accepted':False,'stable_si':False,'restore_dependency_note':'Restore G/G1, C15 and E2a/F inputs first as required. Exact thirdparty caches/logs excluded; URLs/hashes remain in original manifests. This snapshot does not claim complete recursive reproduction.'}
+(O/'snapshot_manifest.json').write_text(json.dumps(m,indent=2)+'\n');print(json.dumps({'files':len(rows),'stored_bytes':sum(x['stored_bytes'] for x in rows),'manifest_sha256':sha((O/'snapshot_manifest.json').read_bytes())}))

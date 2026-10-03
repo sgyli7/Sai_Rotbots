@@ -1,0 +1,61 @@
+#!/usr/bin/env python3
+import pathlib,json,gzip,hashlib,importlib.util,sys,collections,time
+from importlib.machinery import SourceFileLoader
+import numpy as np,manifold3d as mf
+from scipy.spatial.distance import pdist
+D=pathlib.Path(__file__).resolve().parent;P=D.parent;R=P.parents[1]
+def read(p):return json.load(gzip.open(p,'rt')) if str(p).endswith('.gz') else json.load(open(p))
+def sha(p):return hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
+def wr(n,v):(D/n).write_text(json.dumps(v,indent=2,ensure_ascii=False)+'\n')
+sp=importlib.util.spec_from_file_location('g16audithelpers',R/'.scratch/gorilla_internal_g14_complete_thermal_colayout/geometry_helpers.py');g=importlib.util.module_from_spec(sp);sp.loader.exec_module(g)
+ld=SourceFileLoader('g16material',str(R/'experiments/gorilla_v0_1/internal_structure_g_studies/material_contract/native_signed_material.py.txt'));sp=importlib.util.spec_from_loader('g16material',ld);m=importlib.util.module_from_spec(sp);sys.modules['g16material']=m;ld.exec_module(m)
+s=read(D/'scene.json.gz');by={p['name']:p for p in s['parts']};old={p['name']:p for p in read(pathlib.Path(s['sources']['G16_finalB']['path']))['parts']};new=set(s['new_geometry_ids']);new|={n for q in s['rigidgroup_transforms'] for n in q['member_ids']};physical=[by[n] for n in new if by[n]['role'] not in ['fluid_lumen_global_alias','design_domain_bulk','service_after_shell_removal']];v=m.validate_scene({'parts':physical});wr('native_material_receipt.json',v)
+def kind(p):
+ r=p['role'];n=p['name']
+ if r=='design_domain_bulk':return 'calculation_domain_notmaterial_or_certifiedcavity'
+ if r=='service_after_shell_removal':return 'after_shellremoval_service_notpermanentexclusion'
+ if r=='fluid_lumen_global_alias' or n.endswith('bounded_water_region'):return 'exclusivefluid_lumen_globalalias'
+ if p.get('finite_material') is True:return 'finite_material'
+ if any(q in r for q in ['reference','envelope','stock','budget']):return 'completefunction_reference_notnetmaterial'
+ if n in s['original_visible_armor_ids']:return 'original_visible_armor'
+ if p.get('density_kg_m3') is not None:return 'finite_material'
+ return 'retainedfunctional_component_unqualified'
+objects=[by[n] for n in sorted(new) if kind(by[n]) not in ['calculation_domain_notmaterial_or_certifiedcavity','after_shellremoval_service_notpermanentexclusion']]+[p for p in s['parts'] if p['name'] not in new and kind(p) not in ['calculation_domain_notmaterial_or_certifiedcavity','after_shellremoval_service_notpermanentexclusion']];nc=sum(n in new for n in [p['name'] for p in objects]);lo=np.array([np.array(p['vertices_world_m']).min(0) for p in objects]);hi=np.array([np.array(p['vertices_world_m']).max(0) for p in objects]);cache={};rows=[];unk=[];candidates=0
+for i in range(nc):
+ js=np.flatnonzero(np.all(hi[i]>lo[i+1:]+1e-9,axis=1)&np.all(hi[i+1:]>lo[i]+1e-9,axis=1))+i+1
+ for j in js:
+  candidates+=1
+  for k in [i,j]:
+   if k not in cache:cache[k]=g.mm(objects[k])
+  if any(cache[k].status()!=mf.Error.NoError for k in [i,j]):unk.append({'a':objects[i]['name'],'b':objects[j]['name'],'kernelstatus':[str(cache[i].status()),str(cache[j].status())]});continue
+  V=float((cache[i]^cache[j]).volume())
+  if V>1e-9:rows.append({'a':objects[i]['name'],'b':objects[j]['name'],'V_m3':V,'class_a':kind(objects[i]),'class_b':kind(objects[j]),'owner_a':objects[i]['body'],'owner_b':objects[j]['body'],'owner_doesNOTwaive':True})
+rows.sort(key=lambda q:-q['V_m3']);counts=collections.Counter(tuple(sorted([q['class_a'],q['class_b']])) for q in rows);wr('changed_all_collision_receipt.json',{'scene_SHA':sha(D/'scene.json.gz'),'scope':'new/moved finite+reference vs allpresentretained; no unchangedretained pairs, no motion, computationaldomain excluded','AABB_candidates':candidates,'positive_pairs':rows,'kernelunknown':unk,'class_counts':[{'classes':list(k),'count':v} for k,v in counts.items()],'assemblyadmission':False})
+# Bigfunction stock commonboundaries union diagnostics; no grossAABB claimedrealcasecad.
+slots=copy=[]
+for q in s['complete_partition_slots']:
+ pp=[by[n] for n in q['member_ids'] if n in by and kind(by[n])!='exclusivefluid_lumen_globalalias'];kern=[g.mm(p) for p in pp]
+ if any(k.status()!=mf.Error.NoError for k in kern):continue
+ mat=mf.Manifold.batch_boolean(kern,mf.OpType.Add);vv=np.concatenate([np.array(p['vertices_world_m']) for p in pp]);slots.append({'id':q['id'],'member_ids':[p['name'] for p in pp],'material_or_reference_profile_union':mat,'lo':vv.min(0),'hi':vv.max(0),'functionalProfile_notOEMnetmaterial':True})
+for side,word in [(1,'left'),(-1,'right')]:
+ names=[p['name'] for p in s['parts'] if p['name'].startswith('ds_'+word+'_hydraulic_input') and not p['name'].endswith(('_return_filter','_inverter'))];pp=[by[n] for n in names];mat=mf.Manifold.batch_boolean([g.mm(p) for p in pp],mf.OpType.Add);vv=np.concatenate([np.array(p['vertices_world_m']) for p in pp]);slots.append({'id':word+'_pumprotorstack','member_ids':names,'material_or_reference_profile_union':mat,'lo':vv.min(0),'hi':vv.max(0),'functionalProfile_notOEMnetmaterial':True})
+for word in ['left','right']:
+ names=[p['name'] for p in s['parts'] if p['name'].startswith('g13_'+word+'_') and 'bounded_water_region' not in p['name']];pp=[by[n] for n in names];mat=mf.Manifold.batch_boolean([g.mm(p) for p in pp],mf.OpType.Add);vv=np.concatenate([np.array(p['vertices_world_m']) for p in pp]);slots.append({'id':word+'_installed_shoulder_full','member_ids':names,'material_or_reference_profile_union':mat,'lo':vv.min(0),'hi':vv.max(0),'functionalProfile_notOEMnetmaterial':True})
+domain=g.mm(by['g16_calculation_domain_with_explicit_caps']);blocks=[];blockhits=[]
+for q in slots:
+ mat=q['material_or_reference_profile_union'];outside=mat-domain;blocks.append({k:v for k,v in q.items() if k not in ['material_or_reference_profile_union','lo','hi']}|{'AABB_m':[q['lo'].tolist(),q['hi'].tolist()],'profile_unionvolume_m3':mat.volume(),'outside_conditionallycalculationclosed_domain_m3':outside.volume(),'outside_domain_notproof_of_globalAA3impossibility':True,'inside_domain_NOTcertifiedfit':True})
+for i,a in enumerate(slots):
+ for b in slots[i+1:]:
+  if np.all(a['hi']>b['lo']+1e-9)&np.all(b['hi']>a['lo']+1e-9):
+   V=float((a['material_or_reference_profile_union']^b['material_or_reference_profile_union']).volume())
+   if V>1e-9:blockhits.append({'group_a':a['id'],'group_b':b['id'],'positive_profile_overlap_m3':V,'conservative_reference_scope_notOEMnetmaterial':True})
+blockhits.sort(key=lambda q:-q['positive_profile_overlap_m3']);wr('major_blocks_partition_receipt.json',{'scene_SHA':sha(D/'scene.json.gz'),'blocks':blocks,'cross_function_block_overlaps':blockhits,'major_blocks_nonoverlap_pass':not bool(blockhits),'groupinternal_interferences_separate_changed_allreceipt':True,'afterremovalservice_notpermanentlyexcluded':True})
+# trueclosedCADmasscomparedsignednative, notfullbodyinertia.
+p=by['g17_connected_cage_and_fixed_anchor_net'];vv,ff=g.h.triangles(p);dV=np.einsum('ij,ij->i',vv[ff[:,0]],np.cross(vv[ff[:,1]],vv[ff[:,2]]))/6;V=dV.sum();C=(dV[:,None]*(vv[ff[:,0]]+vv[ff[:,1]]+vv[ff[:,2]])/4).sum(0)/V;Q=np.zeros((3,3))
+for k,t in enumerate(ff):a=vv[t];z=a.sum(0);Q+=dV[k]*(np.outer(z,z)+a.T@a)/20
+M=V*7850;I=7850*(np.trace(Q)*np.eye(3)-Q)-M*((C@C)*np.eye(3)-np.outer(C,C));fr=next(q for q in v['parts'] if q['id']==p['name']);wr('frame_geometry_mass_COM_I.json',{'scene_SHA':sha(D/'scene.json.gz'),'only_own_cage':'density7850assumption','native_mass_kg':M,'COM_world_m':C.tolist(),'fullI_COM_kgm2':I.tolist(),'strictsignedresource':fr,'CADindependentvalidmapping':'frame_CAD_native_mapping.json','wholemassCOM_I_rotorallocationunknown':True})
+rr=[]
+for q in s['rigidgroup_transforms']:
+ aa=np.array(q['source_datum_m']);bb=np.array(q['target_datum_m']);Rr=np.array(q['R']);err=max([float(np.abs((np.array(old[n]['vertices_world_m'])-aa)@Rr.T+bb-np.array(by[n]['vertices_world_m'])).max()) for n in q['member_ids']] or [0]);rr.append({'id':q['id'],'members':len(q['member_ids']),'maxvertex_error_m':err,'det_R':np.linalg.det(Rr)})
+wr('rigidgroup_receipt.json',{'scene_SHA':sha(D/'scene.json.gz'),'groups':rr,'allcommonpropertransform':all(q['maxvertex_error_m']<1e-12 and abs(q['det_R']-1)<1e-12 for q in rr)})
+summary={'scene_SHA':sha(D/'scene.json.gz'),'parts':len(by),'native_source_gate':v['resource_contract_pass'],'resource_rejectIDs':[q['id'] for q in v['parts'] if not q['resource_contract_pass']],'ownframe_mass_kg':M,'ownframe_native_roots':fr.get('material_component_count_from_nesting'),'CADprimary':read(D/'frame_CAD_native_mapping.json'),'majorblock_overlap_count':len(blockhits),'majorblock_top10':blockhits[:10],'changed_all_positive_count':len(rows),'finite_pairs':sum(q['class_a']==q['class_b']=='finite_material' for q in rows),'fluidmaterial_pairs':sum('exclusivefluid_lumen_globalalias' in [q['class_a'],q['class_b']] and 'finite_material' in [q['class_a'],q['class_b']] for q in rows),'top10_changed_all':rows[:10],'cell_count':sum(len(q.get('cell_ids',[])) for q in s['complete_partition_slots']),'all18directional21pieces':all(len(q['member_ids'])==21 for q in s['complete_partition_slots'] if '_directional' in q['id']),'allholding_originalowner_ANDmissing4installation_notresolved':True,'allvisible111exactsource':all(json.dumps(by[n],sort_keys=True)==json.dumps(old[n],sort_keys=True) for n in s['original_visible_armor_ids']),'old26kgcarriers_NOTretired':True,'actualbodyCOM_I_defaultnotadopted':True,'assembly_admission':False};wr('audit_summary.json',summary);print('EVENT G16 audit '+json.dumps({k:summary[k] for k in ['scene_SHA','parts','majorblock_overlap_count','changed_all_positive_count','finite_pairs','resource_rejectIDs','ownframe_mass_kg','ownframe_native_roots']}),flush=True)

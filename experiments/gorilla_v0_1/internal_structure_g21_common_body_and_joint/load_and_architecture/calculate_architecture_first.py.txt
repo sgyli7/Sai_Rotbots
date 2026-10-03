@@ -1,0 +1,91 @@
+#!/usr/bin/env python3
+"""Bounded G21 macro sensitivities. No CAD, optimizer, or new whole-robot mass."""
+import json, gzip, hashlib, math, pathlib, datetime, csv
+O=pathlib.Path(__file__).resolve().parent
+R=pathlib.Path.cwd()
+def read(p):
+ p=R/p
+ return json.load(gzip.open(p,'rt') if p.suffix=='.gz' else open(p))
+def sha(p): return hashlib.sha256((R/p).read_bytes()).hexdigest()
+def emit(name,d): (O/name).write_text(json.dumps(d,indent=2,ensure_ascii=False)+'\n')
+paths={
+ 'arm_requirements':'.scratch/gorilla_internal_g19_drive_architecture/requirements.json',
+ 'legacy_mass_markers':'.scratch/gorilla_internal_g18_root_review/body_b_arm_b/function_mass_and_actual_joint_gravity.json.gz',
+ 'energy_inventory':'.scratch/gorilla_internal_g20_energy_functional_pack/comparison.json',
+ 'component_joint_inventory':'.scratch/gorilla_internal_g20_component_joint/receipt.json',
+ 'energy_same_task':'.scratch/gorilla_internal_g19_root_macro/energy_and_space_comparison_v3.json',
+ 'hydraulic_complete_probe':'.scratch/gorilla_internal_g20_hydraulic_complete_module/final_probe_report.json',
+ 'roller_screw_catalog':'.scratch/gorilla_internal_g21_load_and_architecture/official_sources/exlar_gsx_2025_catalog.pdf'}
+sources=[{'role':k,'path':p,'sha256':sha(p)} for k,p in paths.items()]
+req=read(paths['arm_requirements'])
+markers=[1520.1802748304142,1702.6602086140797,2007.7505711112137]
+# These are historic diagnostic subset markers, not new whole-mass lower/upper bounds.
+arm=[]
+for pose in req['poses']:
+ for j in pose['joint_screens']:
+  coeff=sum(a*b for a,b in zip(j['axis_world'],j['unit_hand_gravity_kg_wrench_Fxyz_Mxyz'][3:]))
+  for level in j['known_subset_levels']:
+   for payload in [0,10,25,50,100]:
+    t=level['axis_torque_Nm']+payload*coeff
+    arm.append({'pose':pose['id'],'joint':j['joint_id'],'level':level['level'],'external_mass_one_hand_kg':payload,'signed_gravity_torque_Nm':t,'absolute_torque_Nm':abs(t),'payload_torque_Nm_per_kg':coeff,'mechanical_power_W_at_rad_s':{str(w):abs(t)*w for w in [.1,.3,.5]},'axis':j['axis_world'],'pivot_world_m':j['pivot_world_m'],'missing_owner_rows':422,'qualified':False})
+leg=[]
+for mi,M in enumerate(markers):
+ for perhand in [0,25,50]:
+  mass=M+2*perhand
+  for alpha in [.5,.8,1.]:
+   for az in [0.,.5,1.5]:
+    for rx in [.05,.15,.30]:
+     for ax in [0.,.3,.5]:
+      h=1.5
+      N=alpha*mass*(9.81+az); Fx=alpha*mass*ax
+      tau=N*rx+Fx*h
+      leg.append({'historic_mass_marker_kg':M,'marker_index':mi,'hand_kg_each':perhand,'conditional_total_mass_kg':mass,'leg_support_share':alpha,'vertical_accel_m_s2':az,'horizontal_accel_m_s2':ax,'assumed_COM_height_m':h,'assumed_CoP_offset_x_m':rx,'support_vertical_N':N,'support_horizontal_N':Fx,'ankle_pitch_challenge_Nm':tau,'required_friction_ratio_without_safety':abs(Fx)/N,'not_a_new_robot_mass_or_leg_geometry':True})
+# One explicitly declared representative single-support source-linked challenge; not rating.
+case=next(x for x in leg if x['marker_index']==1 and x['hand_kg_each']==25 and x['leg_support_share']==1 and x['vertical_accel_m_s2']==.5 and x['horizontal_accel_m_s2']==.3 and x['assumed_CoP_offset_x_m']==.15)
+loads=[]
+for name,tau,flags in [('selfweight_single_support',case['ankle_pitch_challenge_Nm'],{'source_case':case}),('static_3t_compression',3000*9.81*.33,{'transmitted_force_N':3000*9.81,'r_x_m':.33,'independent_fixture_case_not_hand_payload':True})]:
+ for gamma in [1.,1.5]:
+  for J in [.10,.15,.20]:
+   for w in [.1,.3,.5]:
+    T=tau*gamma; F=T/J; v=J*w
+    loads.append({'case':name,'sensitivity_factor':gamma,'joint_torque_Nm':T,'minimum_instantaneous_force_arm_J_m_per_rad':J,'angular_speed_rad_s':w,'actuator_force_N':F,'actuator_speed_m_s':v,'positive_mechanical_W':F*v,'negative_power_abs_W_if_lowering':F*v,'load_scope':flags})
+hydro=[]
+for load in loads:
+ for d in [.05,.063,.08,.1]:
+  rod=d*.5; A=math.pi*d*d/4; Ar=A-math.pi*rod*rod/4
+  pb=1e6
+  # Requirement includes opposing backpressure; efficiency is not built into pressure again.
+  push=(load['actuator_force_N']+pb*Ar)/A
+  pull=(load['actuator_force_N']+pb*A)/Ar
+  qp=A*load['actuator_speed_m_s']; qr=Ar*load['actuator_speed_m_s']
+  hydro.append({'case':load['case'],'factor':load['sensitivity_factor'],'J':load['minimum_instantaneous_force_arm_J_m_per_rad'],'omega':load['angular_speed_rad_s'],'bore_m_assumed':d,'rod_m_assumed':rod,'return_backpressure_Pa_assumed':pb,'required_push_pressure_Pa':push,'required_pull_pressure_Pa':pull,'push_flow_L_min':qp*60000,'pull_flow_L_min':qr*60000,'mechanical_W':load['positive_mechanical_W'],'push_hydraulic_input_W':push*qp,'return_pressure_heat_push_W':pb*Ar*load['actuator_speed_m_s'],'electric_input_W_at_pump_total_eta':{str(e):push*qp/e for e in [.65,.8]},'not_actual_cylinder_or_pump_rating':True})
+screw=[]
+for load in loads:
+ for lead in [.00254,.00635,.0127]:
+  eta=.8
+  screw.append({'case':load['case'],'factor':load['sensitivity_factor'],'J':load['minimum_instantaneous_force_arm_J_m_per_rad'],'omega':load['angular_speed_rad_s'],'lead_m_assumed':lead,'force_N':load['actuator_force_N'],'speed_m_s':load['actuator_speed_m_s'],'rpm':load['actuator_speed_m_s']/lead*60,'motor_torque_Nm_at_eta_0_8':load['actuator_force_N']*lead/(2*math.pi*eta),'electric_input_W_at_total_eta_range':[load['positive_mechanical_W']/.9,load['positive_mechanical_W']/.65],'heat_W_at_total_eta_range':[load['positive_mechanical_W']*(1/.9-1),load['positive_mechanical_W']*(1/.65-1)],'unpowered_backdrive_torque_Nm_at_eta_reverse_0_5_to_0_9':[load['actuator_force_N']*lead/(2*math.pi)*e for e in [.5,.9]],'brake_and_regen_and_side_load_support_not_optional':True})
+# Same official model/stack/lead points, not independently combined family maxima.
+refs=[{'model':'GSX50 two-stack lead01','lead_m':.00254,'continuous_motor_limited_force_N':31802,'velocity_at_rated_motor_rpm_m_s':.1016,'min_stroke_m':.152,'max_stroke_m':.356,'zero_stroke_mass_kg':24.04,'mass_adder_kg_per_inch':1.36,'catalog_printed_page':7}, {'model':'GSX60 three-stack lead03','lead_m':.00635,'continuous_motor_limited_force_N':51278,'velocity_at_rated_motor_rpm_m_s':.254,'min_stroke_m':.254,'max_stroke_m':.254,'zero_stroke_mass_kg':34.47,'mass_adder_kg_per_inch':3.63,'catalog_printed_page':8}]
+for x in refs:
+ x['catalog_mass_at_min_max_stroke_kg']=[x['zero_stroke_mass_kg']+s/.0254*x['mass_adder_kg_per_inch'] for s in [x['min_stroke_m'],x['max_stroke_m']]]
+ x['force_times_speed_not_validated_joint_continuous_W']=x['continuous_motor_limited_force_N']*x['velocity_at_rated_motor_rpm_m_s']
+ x['scope']='Same table column force/lead/rated motor speed; curve/DCbus/cooling must qualify simultaneous working point; drive/brake/mount/support/cable not all included; dynamic Ca is life constant, not static capacity.'
+energy=read(paths['energy_same_task'])
+e720=next(x for x in energy['cell_count_sensitivities'] if x['topology']=='72s10p')
+budgets=[]
+for b in e720['budgets']:
+ if b['auxiliary_supply_upper_V']!=32:continue
+ avg=[]
+ for ci,V in enumerate([259.2,180]):
+  total=0
+  for p in b['phases']:
+   I=p['unchanged_bus_kW']*1000/.98/V
+   Pin=p['unchanged_bus_kW']/.98+I*I*.108/1000
+   total+=p['duty']*Pin
+  avg.append(total)
+ budgets.append({'mission':b['mission'],'same_task_bus_phases':b['phases'],'average_storage_kW_recomputed':avg,'reference_average_kW':b['average_storage_input_kW_at_nominal_cutoff'],'usable_energy_kWh':11.16*.75*.9,'conditional_runtime_min':[11.16*.75*.9/p*60 for p in avg],'with_unallocated_extra_storage_1_to_3_kW_runtime_min':[[11.16*.75*.9/(p+extra)*60 for extra in [1,3]] for p in avg],'real_runtime_accepted':False,'new_arm_or_leg_power_not_added_to_old_included_drive_budget':True})
+static={'total_transmitted_force_N':29430.,'factor_1_5_force_N':44145.,'pitch_moment_at_0_33m_Nm':9711.9,'roll_moment_at_0_1m_Nm':2943.,'pitch_stop_force_N_at_r_m':{str(r):9711.9/r for r in [.08,.12,.16]},'compression_case_does_not_require_motion_or_3t_hand_payload':True,'mechanical_hold_stops_release_under_unloaded_condition_not_yet_designed':True}
+results={'schema':'gorilla_g21_macro_allocation_v1','created_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'sources':sources,'assumptions':{'historic_mass_markers_not_new_bounds_kg':markers,'new_whole_mass_kg':None,'new_COM_m':None,'new_full_I':None,'leg_height_and_levers_parameterized_not_old_axes':True,'dynamic_mass_inertia_contact_and_422_unknown_rows_unclosed':True,'mission_targets_not_ratings':{'hand_payload_each_kg':[10,25],'joint_speed_rad_s':[.1,.3],'walking_speed_m_s':[.1,.3],'step_length_m':[.2,.4],'torso_horizontal_accel_m_s2':[.3,.5]},'linear_efficiencies_are_declared_sensitivity_not_OEM_rating':True},'eight_axis_source_gravity':arm,'leg_support_sensitivities':leg,'representative_single_support_case':case,'static_compression_fixture':static,'reciprocal_J_force_speed_power':loads,'hydraulic_rough_sizing':hydro,'roller_screw_rough_sizing':screw,'official_complete_integrated_actuator_references':refs,'same_task_energy_reproduction':budgets,'macro_routes':[{'id':'A','major_load_leg_axes':'Hydraulic linear with local mechanical/hydraulic holds; individually sized J/bore/stroke and pressure zones','upper_axes':'Rotary electric individually sized to eight source loads; support/brake/thermal functional inventory','quantity':'n_high_force_axes and n_low_force_axes not frozen; 18 not inherited','unclosed':['simultaneous flow and pump curve','differential cylinder return and regeneration','complete pressure-rated manifold and fittings','new leg contacts and continuous load carriers','new routed liquid and airflow']},{'id':'B','major_load_leg_axes':'Roller-screw electric pairs or larger complete modules where required; positive guides and holding brakes','upper_axes':'Rotary electric per-axis with source-bound torque and thermal checks','quantity':'n_high_force_axes not frozen; actuator pairs need actual equalizer/load-sharing design','unclosed':['screw buckling/criticalspeed/travel life','complete integrated OEM at required force-speed and thermal point','backdrive brake/regen/dump','long stroke occupied length and sweep','new leg contacts and carriers']}],'physical_accepted':False,'aesthetic_accepted':False,'manufacturing_accepted':False}
+emit('load_and_architecture.json',results)
+emit('first_numeric_summary.json',{'created_utc':results['created_utc'],'case':case,'static':static,'official_linear_refs':refs,'energy':budgets,'eight_axes_25kg_each_combined_nominal':[{k:v for k,v in x.items() if k not in ['axis','pivot_world_m']} for x in arm if x['pose']=='combined_reach_conditional' and x['level']=='nominal_range_marker' and x['external_mass_one_hand_kg']==25],'not_accepted':True})
+print(json.dumps({'representative':case,'3t_static':static,'refs':refs,'energy_avg':[b['average_storage_kW_recomputed'] for b in budgets],'output':str(O/'load_and_architecture.json')},indent=2))

@@ -1,0 +1,61 @@
+"""Independent F2 source-bound cylinder/pin analytic screening; no source builder import."""
+from pathlib import Path
+import json,hashlib,datetime,math,argparse
+import numpy as np
+P=Path(__file__).resolve().parent;R=P.parents[1];SRC=R/'.scratch/gorilla_internal_f2_lower_module'
+def rd(p):return json.loads(p.read_text())
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+def rot(axis,q):
+ a=np.array(axis,float);a/=np.linalg.norm(a);x,y,z=a;K=np.array([[0,-z,y],[z,0,-x],[-y,x,0]]);return np.eye(3)+math.sin(q)*K+(1-math.cos(q))*(K@K)
+def lame(a,b,pi,po=0):
+ A=(pi*a*a-po*b*b)/(b*b-a*a);B=(pi-po)*a*a*b*b/(b*b-a*a);rs=np.linspace(a,b,101);rows=[]
+ for r in rs:
+  sr=A-B/r**2;sh=A+B/r**2;sz=A;vm=math.sqrt(((sh-sr)**2+(sr-sz)**2+(sz-sh)**2)/2);rows.append({'r_m':float(r),'radial_MPa':sr/1e6,'hoop_MPa':sh/1e6,'axial_closed_end_MPa':sz/1e6,'von_mises_MPa':vm/1e6})
+ sens=[]
+ sr=rows[0]['radial_MPa']*1e6;sh=rows[0]['hoop_MPa']*1e6
+ for sz in [0,A,-A,2*A]:sens.append({'assumed_uniform_axial_MPa':sz/1e6,'inner_VM_MPa':math.sqrt(((sh-sr)**2+(sr-sz)**2+(sz-sh)**2)/2)/1e6,'not_actual_load_path_or_bound':True})
+ return {'axial_load_path_sensitivities_at_inner':sens,'closed_end_axial_condition_not_proved_for_sliding_piston_assembly':True,'inner_surface':rows[0],'outer_surface':rows[-1],'max_von_mises_MPa':max(x['von_mises_MPa'] for x in rows),'formula':'A=(pi*a^2-po*b^2)/(b^2-a^2), B=(pi-po)*a^2*b^2/(b^2-a^2); sigma_r=A-B/r^2, sigma_theta=A+B/r^2, sigma_z=A; VM principal differences','ideal_closed_end_cylinder_only':True}
+def measure(act,scene):
+ axis=np.array(act['axis_world'],float);A=np.array(act['neutral_A_world_m']);B=np.array(act['neutral_B_world_m']);u=(B-A)/np.linalg.norm(B-A);rows=[]
+ for endpoint,c in [('fixed',A),('moving',B)]:
+  pp=next(p for p in scene['parts'] if p['name'].endswith(act['id']+'_'+endpoint+'_pin'));v=np.array(pp['vertices_world_m'])-c;proj=v@axis;rad=np.linalg.norm(v-proj[:,None]*axis,axis=1)
+  ringpart=next(p for p in scene['parts'] if p['name'].endswith(act['id']+('_barrel' if endpoint=='fixed' else '_rod')));ev=np.array(ringpart['vertices_world_m'])-c;sel=ev[np.abs(ev@u)<.019];ew=sel@axis;er=np.linalg.norm(sel-ew[:,None]*axis,axis=1)
+  cheeks=[]
+  for fp in scene['frame_primitives']:
+   scope=fp['construction_scope'];match=('Fixedcylinderfork cheek' in scope) if endpoint=='fixed' else ('Completeoutput torquecrank' in scope or 'Complete rolloutput torquecrank' in scope)
+   if not match:continue
+   vv=np.array(fp['vertices_world_m']);pr=(vv-c)@axis;mid=(pr.min()+pr.max())/2;width=pr.max()-pr.min()
+   if abs(abs(mid)-.032)<2e-6 and abs(width-.014)<2e-6 and np.min(np.linalg.norm(vv-c,axis=1))<.061:cheeks.append({'id':fp['id'],'center_offset_m':float(mid),'width_m':float(width)})
+  rows.append({'endpoint':endpoint,'pin_part_name':pp['name'],'native_pin_diameter_m':float(2*rad.max()),'native_pin_axial_length_m':float(proj.max()-proj.min()),'eye_probe_part_name':ringpart['name'],'eye_probe_longitudinal_window_m':[-.019,.019],'native_eye_probe_axial_width_m':float(ew.max()-ew.min()),'native_eye_probe_inner_diameter_m':float(2*er.min()),'native_eye_probe_outer_diameter_m':float(2*er.max()),'fork_cheek_native_candidates':cheeks,'fork_center_span_from_native_m':max(x['center_offset_m'] for x in cheeks)-min(x['center_offset_m'] for x in cheeks) if len(cheeks)>=2 else None})
+ return rows
+
+def pin_screen(F,d,L,w_eye,t_cheek,eyeOD,holeD,forkOD):
+ A=math.pi*d*d/4;I=math.pi*d**4/64;Z=math.pi*d**3/32;Mdist=F*(2*L-w_eye)/8;Mpoint=F*L/4;tauavg=F/(2*A);taumax=4*tauavg/3;cases=[]
+ for name,M in [('centered_uniform_eye_load_point_reaction_centers',Mdist),('centered_point_eye_load_point_reaction_centers',Mpoint)]:
+  bend=M/Z;cases.append({'model':name,'reaction_each_N':F/2,'moment_max_Nm':M,'bending_fiber_MPa':bend/1e6,'double_shear_average_MPa':tauavg/1e6,'circular_shear_profile_max_MPa':taumax/1e6,'noncoincident_bending_shear_VM_envelope_MPa':math.sqrt(bend*bend+3*taumax*taumax)/1e6,'VM_envelope_not_actual_same_fiber':True,'ideal_midspan_deflection_m': F*L**3/(48*210e9*I) if 'point_eye' in name else None})
+ off=w_eye/2;Rmax=F*(.5+off/L);cases.append({'model':'eye_contact_point_at_axial_edge_sensitivity','load_axial_offset_m':off,'reaction_larger_N':Rmax,'reaction_smaller_N':F-Rmax,'moment_max_Nm':F*((L/2)**2-off**2)/L,'max_circular_shear_profile_MPa':4*Rmax/(3*A)/1e6,'not_verified_contact_distribution':True})
+ supports=[]
+ for Ls in [L-t_cheek,L,L+t_cheek]:
+  for shape,M in [('uniform_eye',F*(2*Ls-w_eye)/8),('point_eye',F*Ls/4)]:
+   sb=M/Z;supports.append({'reaction_span_m':Ls,'support_resultant_position':'inner_edge' if Ls<L else 'outer_edge' if Ls>L else 'fork_mid_thickness','eye_load_model':shape,'moment_max_Nm':M,'bending_fiber_MPa':sb/1e6,'noncoincident_bending_shear_VM_envelope_MPa':math.sqrt(sb*sb+3*taumax*taumax)/1e6,'contact_centroid_not_verified':True})
+ return {'load_N':F,'pin_diameter_m':d,'actual_fork_contact_reaction_span_sensitivities':supports,'reaction_center_span_m':L,'eye_contact_width_m':w_eye,'fork_contact_width_each_m':t_cheek,'models':cases,'eye_average_projected_bearing_MPa':F/(d*w_eye)/1e6,'fork_average_projected_bearing_each_MPa':F/(2*d*t_cheek)/1e6,'eye_gross_net_ligament_tension_MPa':F/((eyeOD-holeD)*w_eye)/1e6,'fork_gross_net_ligament_each_MPa':F/(2*(forkOD-holeD)*t_cheek)/1e6,'radial_pin_hole_clearance_m':(holeD-d)/2,'eye_to_each_fork_face_clearance_m':L/2-t_cheek/2-w_eye/2,'pin_torsion_axial_retention_fatigue_bushing_and_weld_unknown':True,'shaft_external_6D_wrench_not_used':True}
+def run(which):
+ path=SRC/which/'module_scene.json';scene=rd(path);cp=SRC/which/'checks.json';check=rd(cp) if cp.exists() else {};pressure=21e6;E=210e9;rows=[]
+ for a in scene['actuators']:
+  D=a['bore_m'];d=a['rod_m'];w=a['barrel_wall_m'];dp=a['pin_diameter_m'];Ac=math.pi*D*D/4;Ar=math.pi*d*d/4;Aa=Ac-Ar;force=[]
+  for back in [0,1e6,2e6,5e6,21e6]:force.append({'supply_chamber_MPa':21.,'opposite_chamber_MPa':back/1e6,'extension_net_N':pressure*Ac-back*Aa,'retraction_net_N':pressure*Aa-back*Ac,'formula':'extension=pcap*Ac-prod*Aa; retraction=prod*Aa-pcap*Ac; no efficiency reduction','friction_gravity_inertia_and_valve_losses_not_included':True})
+  push=pressure*Ac;pull=pressure*Aa;ls=a['sampled_eye_range_m'];stem=a['stroke_m']+.080;eulers=[]
+  for name,L in [('source_phi30_segment_length_before_union_piston_overlap',stem),('full_eye_distance_min_as_if_uniform_phi30',ls[0]),('full_eye_distance_max_as_if_uniform_phi30',ls[1])]:
+   for K in [.7,1.,2.]:
+    I=math.pi*d**4/64;Pcr=math.pi**2*E*I/(K*L)**2;sl=K*L/(d/4);eulers.append({'model_length_scope':name,'L_m':L,'effective_end_factor_K':K,'slenderness_KL_over_r_g':sl,'ideal_Euler_N':Pcr,'Euler_axial_stress_MPa':Pcr/Ar/1e6,'Euler_over_pressure_push_ratio':Pcr/push,'Euler_elastic_applicability_under_assumed355MPa':Pcr/Ar<355e6,'whole_eye_uniform_rod_model_is_not_actual_composite_cylinder':name.startswith('full_eye'),'actual_effective_K_unknown':True,'phi30_segment_includes_10mm_piston_union_overlap':name.startswith('source_phi30')})
+  geom=measure(a,scene);span=sum(g['fork_center_span_from_native_m'] for g in geom)/len(geom);ew=sum(g['native_eye_probe_axial_width_m'] for g in geom)/len(geom);cw=sum(c['width_m'] for g in geom for c in g['fork_cheek_native_candidates'])/sum(len(g['fork_cheek_native_candidates']) for g in geom);eyeOD=sum(g['native_eye_probe_outer_diameter_m'] for g in geom)/len(geom);holeD=sum(g['native_eye_probe_inner_diameter_m'] for g in geom)/len(geom);pin=pin_screen(push,dp,span,ew,cw,eyeOD,holeD,.100);pinpull=pin_screen(pull,dp,span,ew,cw,eyeOD,holeD,.100)
+  j=np.array(a['pivot_world_m']);axis=np.array(a['axis_world']);A=np.array(a['neutral_A_world_m']);B=np.array(a['neutral_B_world_m']);mom=[]
+  for q in np.linspace(*a['q_range_deg'],121):
+   b=j+rot(axis,math.radians(q))@(B-j);u=(b-A)/np.linalg.norm(b-A);mom.append(float(u@np.cross(axis,b-j)))
+  rows.append({'id':a['id'],'source_dimensions':{k:v for k,v in a.items() if k not in ['samples','barrel_neutral_frame_world']},'geometry_measurements':geom,'areas_m2':{'full_piston':Ac,'rod':Ar,'annular':Aa},'force_by_return_pressure':force,'wall_closed_end_lame_21MPa':lame(D/2,D/2+w,pressure),'rod_gross_axial_pressure_push_MPa':push/Ar/1e6,'rod_gross_axial_pressure_pull_MPa':pull/Ar/1e6,'rod_material_hypothetical355MPa_gross_yield_N':355e6*Ar,'rod_Euler_sensitivities':eulers,'pin_pressure_push':pin,'pin_pressure_pull':pinpull,'independent_local_J_range_m_per_rad':[min(mom),max(mom)],'no_F2_task_force_distribution_or_joint_strength_inferred':True,'assumptions':['pressure21MPa is chamber loadcase, not established maximum after holding/shock','pressure-vessel uniform straight tube has no ports/end effects/cap/gland/weld qualification','solidrod30mm compression gross section only; piston/gland guidance and misalignment unknown','fork reactions centered64mm span with either uniform44mm eye load or point load; actual contact unknown','material355MPa and E210GPa are conditional existing self-design hypotheses, not certificates'],'static_screen_qualified':False})
+ return {'layout':which,'computed_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'inputs':{str(path):sha(path),str(SRC/'build_module.py'):sha(SRC/'build_module.py'),str(cp):sha(cp) if cp.exists() else None},'source_checker_scene_binding_matches':check.get('source_sha256')==sha(path),'source_geometry_accepted':scene.get('geometry_accepted'),'source_checker_geometry_accepted':check.get('geometry_accepted'),'source_checker_physics_accepted':check.get('physics_accepted'),'source_checker_solid_component_failure_count_as_reported_not_reinterpreted':len(check.get('solid_component_failures',[])),'source_checker_neutral_material_screen_passed':check.get('neutral_own_material_screen_passed'),'source_checker_neutral_armor_screen_passed':check.get('neutral_original_armor_screen_passed'),'actuator_count':len(rows),'finite_complete_cylinder_count':sum(a.get('finite_complete_geometry_present',False) for a in scene['actuators']),'finite_complete_count_is_source_presence_metadata_not_legal_solid':True,'source_closed_cavity_orientation_rejected':True,'native_vertex_dimensions_only_not_accepted_solid_or_volume':True,'pressure_loadcase_MPa':21.,'return_pressures_MPa':[0,1,2,5,21],'efficiency_not_used_to_reduce_design_pressure_or_load':True,'lamé_pin_rod_screen_not_drive_rating_structural_or_dynamic_release':True,'rows':rows}
+if __name__=='__main__':
+ p=argparse.ArgumentParser();p.add_argument('--layouts',nargs='+',default=['a']);p.add_argument('--output',default='a_initial_screen.json');p.add_argument('--quiet',action='store_true');args=p.parse_args();d={'schema':'gorilla_f2_independent_pressure_rod_pin_screen_v1','layouts':[run(k) for k in args.layouts]};(P/args.output).write_text(json.dumps(d,indent=2)+'\n')
+ for l in d['layouts']:
+  print('LAYOUT',l['layout'],l['inputs'])
+  for r in ([] if args.quiet else l['rows']):print(r['id'],'force kN',r['force_by_return_pressure'][0]['extension_net_N']/1e3,r['force_by_return_pressure'][0]['retraction_net_N']/1e3,'wallVM MPa',r['wall_closed_end_lame_21MPa']['max_von_mises_MPa'],'rod MPa',r['rod_gross_axial_pressure_push_MPa'],'pins MPa',[(m.get('bending_fiber_MPa'),m.get('noncoincident_bending_shear_VM_envelope_MPa')) for m in r['pin_pressure_push']['models']],'pin geometry',r['geometry_measurements'])

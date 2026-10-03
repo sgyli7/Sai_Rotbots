@@ -1,0 +1,48 @@
+from pathlib import Path
+import gzip,json,hashlib,numpy as np,manifold3d as mf
+from PIL import Image,ImageDraw
+O=Path(__file__).resolve().parent;sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();T=Path('.scratch/gorilla_internal_g24_complete_thermal_energy/b_final/scene.json.gz');K=Path('.scratch/gorilla_internal_g24_connected_drive_core/b/scene.json.gz');t=json.loads(gzip.decompress(T.read_bytes()));k=json.loads(gzip.decompress(K.read_bytes()));foreign=t['parts']+[p for p in k['parts']if p['name'].startswith('g24_')];canon=json.load(open('robots/gorilla_v0_1/cad/source/appearance_c_scene.json'));cp={p['name']:p for p in canon['parts']};cache={};results=[]
+def bounds(p):v=np.array(p['vertices_world_m']);return v.min(0),v.max(0)
+def mat(p):
+ key=p['name'];
+ if key not in cache:cache[key]=mf.Manifold(mf.Mesh64(np.array(p['vertices_world_m'],dtype=np.float64),np.array(p['faces'],dtype=np.uint64)))
+ return cache[key]
+def resource(p):
+ v=np.array(p['vertices_world_m']);f=np.array(p['faces'],dtype=int);e=np.sort(np.concatenate([f[:,[0,1]],f[:,[1,2]],f[:,[2,0]]]),axis=1);_,count=np.unique(e,axis=0,return_counts=True);m=mat(p);ds=m.decompose();return {'id':p['name'],'vertices':len(v),'triangles':len(f),'kernel_status':str(m.status()),'undirected_edge_non2':int(sum(count!=2)),'triangle_area_min_m2':float(np.min(np.linalg.norm(np.cross(v[f[:,1]]-v[f[:,0]],v[f[:,2]]-v[f[:,0]]),axis=1)*.5)),'signed_surface_component_volumes_m3':[x.volume()for x in ds],'material_or_assembly_mount_not_proven_by_decompose':True}
+for lab in['a','b']:
+ D=O/lab;P=D/'vent_scene.json.gz';s=json.loads(gzip.decompress(P.read_bytes()));rows=[];selfrows=[]
+ for i,p in enumerate(s['parts']):
+  for q in s['parts'][i+1:]:
+   x,y=bounds(p);z,w=bounds(q)
+   if np.all(np.minimum(y,w)-np.maximum(x,z)>0):selfrows.append({'a':p['name'],'b':q['name'],'intersection_m3':(mat(p)^mat(q)).volume(),'same_owner_not_exempt':True})
+ candidates=[]
+ for p in s['parts']:
+  if 'original_torso'in p['name']:continue
+  x,y=bounds(p)
+  for q in foreign:
+   if 'service'in q.get('role','')or'fluid'in q.get('role',''):continue
+   z,w=bounds(q);vol=np.prod(np.maximum(0,np.minimum(y,w)-np.maximum(x,z)))
+   if vol>1e-10:candidates.append((vol,p,q))
+ candidates.sort(key=lambda x:-x[0])
+ for vol,p,q in candidates[:30]:
+  try:
+   pm,qm=mat(p),mat(q);rows.append({'a':p['name'],'b':q['name'],'a_kernel_status':str(pm.status()),'b_kernel_status':str(qm.status()),'intersection_m3':(pm^qm).volume(),'foreign_role':q.get('role'),'foreign_finite_material_flag':q.get('finite_material'),'unknown_stock_not_exempt':True})
+  except Exception as ex:rows.append({'a':p['name'],'b':q['name'],'error':repr(ex)})
+ report={'source_sha256':sha(P),'foreign_thermal_sha256':sha(T),'foreign_actualcore_B_sha256':sha(K),'all_nonservice_nonfluid_AABB_overlap_pairs':len(candidates),'top30_AABB_selected_native_queries':rows,'own_material_pairs_all_AABB':selfrows,'source_resource':list(map(resource,s['parts'])),'classification_scope':'actual new own duct material; foreign finite material vs gross/reference by role, no reference invasion exemption','physical_accepted':False,'rear_louver_ribs_mounts_unknown':True}
+ (D/'native_checks.json').write_text(json.dumps(report,indent=2));results.append({'macro':lab,'source':sha(P),'queried':len(rows),'positive':sum(x.get('intersection_m3',0)>1e-10 for x in rows),'largest':sorted([x for x in rows if 'intersection_m3'in x],key=lambda x:-x['intersection_m3'])[:4],'selfpositive':sum(x['intersection_m3']>1e-10 for x in selfrows)})
+ # exact native source render. Intact pack enclosures and screen are fixed reference context; hidden cells omitted solely from drawing.
+ shown=s['parts']+s['original_grille_parts_context']+[p for p in t['parts']if'enclosure'in p['name'].lower()]+[p for n,p in cp.items()if n.startswith('rear_control_screen_')and'glass'in n]
+ views=[]
+ for label,Q in [('FRONT',np.array([[0,1,0],[0,0,1],[1,0,0]])),('LEFT',np.array([[1,0,0],[0,0,1],[0,1,0]])),('REAR',np.array([[0,-1,0],[0,0,1],[-1,0,0]])),('TOP',np.array([[0,1,0],[1,0,0],[0,0,1]]))]:
+  im=Image.new('RGB',(650,650),'white');dr=ImageDraw.Draw(im);tri=[]
+  for p in shown:
+   v=np.array(p['vertices_world_m'])@Q.T;col=tuple(int(255*x)for x in p.get('rgba',[.12,.4,.6,1])[:3]);xy=np.column_stack([325+v[:,0]*410,615-(v[:,1]-1.45)*410])if label!='TOP'else np.column_stack([325+v[:,0]*410,325-v[:,1]*410]);ff=[]
+   for f in p['faces']:
+    for j in range(1,len(f)-1):ff.append([f[0],f[j],f[j+1]])
+   for f in ff:tri.append((v[f,2].mean(),xy[f],col))
+  for _,xy,col in sorted(tri,key=lambda x:x[0]):dr.polygon([tuple(x)for x in xy],fill=col)
+  dr.text((12,12),'G25 '+lab.upper()+' ACTUAL NATIVE '+label,fill='black');dr.text((12,32),'Front intake / rear pad-side exhaust proposal; not aesthetic adoption',fill='black');views.append(im)
+ im=Image.new('RGB',(1300,1300),'white')
+ for i,v in enumerate(views):im.paste(v,((i%2)*650,(i//2)*650))
+ im.save(D/'native_four_view.png');(D/'projection_scope.json').write_text(json.dumps({'source_sha256':sha(P),'same_scale_px_m':410,'shown_exact_ids':[p['name']for p in shown],'occluded_cells_not_projected_not_deleted':True,'original_frontshape_preserved':True,'current_exteriorproposal_NOTaccepted':True},indent=2))
+(O/'first_installation_summary.json').write_text(json.dumps(results,indent=2));print(json.dumps(results,indent=2))

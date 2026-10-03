@@ -1,0 +1,78 @@
+"""Independent read-only source identity/accounting/linear gravity audit; no root import or solve."""
+from pathlib import Path
+import json,gzip,hashlib,collections,numpy as np
+R=Path('/home/ethan/Projects/Sai_Rotbots');P=Path(__file__).resolve().parent;Q=R/'.scratch/gorilla_internal_g18_root_review'
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def read(p):return json.load(gzip.open(p,'rt')) if str(p).endswith('.gz') else json.load(open(p))
+def wr(n,j):(P/n).write_text(json.dumps(j,ensure_ascii=False,indent=2)+'\n')
+producer=Q/'build_full_composition_and_mass.py';snap=P/'root_producer_readonly_snapshot.py';(P/'root_producer_before_owner_correction_snapshot.py').write_bytes(snap.read_bytes()) if snap.exists() and not (P/'root_producer_before_owner_correction_snapshot.py').exists() else None;snap.write_bytes(producer.read_bytes());inputs={str(producer):sha(producer)}
+def geom_equal(a,b):return a['vertices_world_m']==b['vertices_world_m'] and a['faces']==b['faces'] and a.get('body')==b.get('body')
+def tetra_mom(p,rho):
+ v=np.array(p['vertices_world_m'],float);f=np.array([[face[0],face[k],face[k+1]] for face in p['faces'] for k in range(1,len(face)-1)]);t=v[f];dV=np.einsum('ij,ij->i',t[:,0],np.cross(t[:,1],t[:,2]))/6;V=dV.sum();s=t.sum(1);C=(dV[:,None]*s/4).sum(0)/V;QQ=np.einsum('n,ni,nj->ij',dV,s,s)/20+np.einsum('n,nki,nkj->ij',dV,t,t)/20;M=V*rho;I=rho*(np.trace(QQ)*np.eye(3)-QQ)-M*((C@C)*np.eye(3)-np.outer(C,C));return M,C,I
+allresults=[]
+for ver in ['a','b']:
+ D=Q/('body_b_arm_'+ver);sf=D/'scene.json.gz';rf=D/'function_mass_and_actual_joint_gravity.json.gz';summary=read(D/'summary.json');s=read(sf);j=read(rf);body=read(D/'bound_body_b.json.gz');arm=read(D/'bound_arm.json.gz');common=read(D/'bound_common_body_g17.json.gz');hist=read(D/'bound_scene_g15.json.gz');hm=read(D/'bound_mass_g15.json.gz');static=read(D/'bound_arm_static.json');therm=read(D/'bound_thermal_budget.json')
+ inputs[str(sf)]=sha(sf);inputs[str(rf)]=sha(rf);inputs[str(D/'summary.json')]=sha(D/'summary.json')
+ bind=[]
+ for k,z in s['inputs'].items():
+  f=D/z['captured_name'];inputs[str(f)]=sha(f);bind.append({'id':k,'path':str(f),'expected':z['sha256'],'actual':sha(f),'matches':z['sha256']==sha(f)})
+ by,bm,am,cm,old=[{p['name']:p for p in x['parts']} for x in [s,body,arm,common,hist]]
+ changes={n for n in am if n not in cm or not geom_equal(am[n],cm[n])};bc={n for n in bm if n not in cm or not geom_equal(bm[n],cm[n])};retired=set(arm['actual_retired_present_ids']);expected={n:p for n,p in bm.items() if n not in retired};expected.update({n:am[n] for n in changes})
+ comp={'expected_ID_count':len(expected),'actual_ID_count':len(by),'missing_IDs':sorted(set(expected)-set(by)),'unexpected_IDs':sorted(set(by)-set(expected)),'part_content_mismatch_IDs':[n for n in set(expected)&set(by) if expected[n]!=by[n]],'arm_changed_ID_delta':sorted(changes^set(s['applied_arm_change_ids'])),'body_changed_ID_delta':sorted(bc^set(s['body_change_ids'])),'retired_restored_by_arm_changes':sorted(retired&changes),'author_same_interface_conflicts':[n for n in changes&bc if n in bm and not geom_equal(am[n],bm[n])],'duplicate_geometry_ID_count':len(s['parts'])-len(by)}
+ metadata=[n for n in set(am)&set(cm) if geom_equal(am[n],cm[n]) and am[n]!=cm[n]]
+ comp['unapplied_non_geometric_metadata_changed_IDs']=metadata
+ rows=j['function_mass_rows'];membership=collections.Counter(n for r in rows for n in r['member_ids']);excluded=[x['id'] for x in j['excluded_not_additive']];account={'duplicate_additive_member_IDs':[n for n,c in membership.items() if c!=1],'additive_excluded_intersection':sorted(set(membership)&set(excluded)),'unaccounted_present_IDs':sorted(set(by)-set(membership)-set(excluded)),'accounted_absent_IDs':sorted((set(membership)|set(excluded))-set(by)),'recomputed_partial_groups':[],'historical_exact_rigid_transport':[]}
+ prev={r['id']:r for r in hm['function_mass_rows']}
+ for r in rows:
+  if r['id'].startswith('retained:'):
+   oldr=prev[r['id'][9:]];T=np.array(r['indexed_transform_from_g15']['T_world_new_from_old']);Qrot=T[:3,:3];offset=T[:3,3];err=0.
+   for n in r['member_ids']:err=max(err,float(np.linalg.norm(np.array(old[n]['vertices_world_m'])@Qrot.T+offset-np.array(by[n]['vertices_world_m']),axis=1).max()))
+   C0=oldr.get('COM_world_proxy_m');Cerr=float(np.max(np.abs(Qrot@np.array(C0)+offset-np.array(r['COM_world_proxy_m'])))) if C0 is not None else None
+   I0=oldr.get('own_material_full_I_COM_kg_m2');Ierr=float(np.max(np.abs(Qrot@np.array(I0)@Qrot.T-np.array(r['full_I_COM_kgm2'])))) if I0 is not None else None
+   account['historical_exact_rigid_transport'].append({'row':r['id'],'members':len(r['member_ids']),'source_group_fully_present':set(oldr['member_ids'])==set(r['member_ids']),'mass_basis_unchanged':r['mass_range_kg']==(oldr['mass_range_kg'] if oldr['mass_range_kg'] is not None else [None]*3),'all_indexed_vertex_transform_error_m':err,'rot_det':float(np.linalg.det(Qrot)),'rot_orthogonality_error':float(np.max(np.abs(Qrot.T@Qrot-np.eye(3)))),'COM_transport_error_m':Cerr,'fullI_transport_error':Ierr,'old_reject_or_conditional_mass_is_still_conditional':not r['physical_mass_COM_fullI_and_connection_admitted']})
+  if r['id'].startswith('recomputed:'):
+   oldr=prev[r['id'][11:]];account['recomputed_partial_groups'].append({'id':r['id'],'members_present':all(n in by for n in r['member_ids']),'retired_subset_matches':set(r.get('retired_previous_member_ids',[]))==set(oldr['member_ids'])-set(by),'same_density_source_prior_native_valid':[oldr.get('source_density_kg_m3'),oldr.get('native_material_valid')],'owners':sorted({by[n]['body'] for n in r['member_ids']}),'no_fractional_mass_per_member_credit_used':True})
+ # Strictly upper-only 480 cells, independently from present role and actual accounting decisions.
+ cellnames=[n for n,p in by.items() if p.get('role')=='OEM_cell_max_envelope_reference'];cellrows=[r for r in rows if any(n in cellnames for n in r['member_ids'])]
+ cells={'native_cell_count':len(cellnames),'row_count':len(cellrows),'wrong_nominal_or_low_rows':[r['id'] for r in cellrows if r['mass_range_kg'][:2]!=[None,None]],'upper_total_kg':sum(r['mass_range_kg'][2] for r in cellrows),'missing_cell_rows':sorted(set(cellnames)-set(n for r in cellrows for n in r['member_ids']))}
+ # Recompute all8x3 joint wrenches via first moments, not root's per-row cross products.
+ tree=s['body_tree_candidate'];children=collections.defaultdict(set)
+ for b,t in tree.items():children[t['parent']].add(b)
+ def closure(root):
+  out={root};todo=[root]
+  while todo:
+   for child in children[todo.pop()]:
+    if child not in out:out.add(child);todo.append(child)
+  return out
+ gravity=[]
+ for q in j['actual_new_joint_known_subset_gravity']:
+  joint=q['joint'];desc=closure(joint['output_body']);selected=[r for r in rows if r['owner_candidate'] in desc];origin=np.array(joint['pivot_world_m']);axis=np.array(joint['axis_world']);axis=axis/np.linalg.norm(axis);lev=[]
+  for k,rootlevel in enumerate(q['known_subset_gravity']):
+   usable=[r for r in selected if r['mass_range_kg'][k] is not None and r['COM_world_proxy_m'] is not None];M=sum(r['mass_range_kg'][k] for r in usable);first=sum((r['mass_range_kg'][k]*np.array(r['COM_world_proxy_m']) for r in usable),np.zeros(3));torque=np.array([-9.81*(first[1]-origin[1]*M),9.81*(first[0]-origin[0]*M),0]);F=np.array([0,0,-9.81*M]);w=np.r_[F,torque];target=np.array(rootlevel['known_subset_body_on_parent_Fxyz_Mxyz']);tau=float(axis@torque)
+   lev.append({'level':k,'selected_mass_kg':M,'selected_rows':len(selected),'used_rows':len(usable),'independent_wrench':w.tolist(),'root_wrench_max_abs_residual':float(np.abs(w-target).max()),'root_axis_torque_residual_Nm':tau-rootlevel['known_subset_gravity_torque_about_actual_axis_Nm'],'reported_unknown_IDs_equal_selected_missing':set(rootlevel['unknown_function_rows'])=={r['id'] for r in selected if r not in usable}})
+  gravity.append({'joint_id':joint['id'],'descendant_bodies':sorted(desc),'levels':lev})
+ # Numeric accounting total is subset-only, unknowns do not become0; reconstruct COM directly.
+ partial=[]
+ for k,r0 in enumerate(j['partial_mass_COM_screens']):
+  u=[r for r in rows if r['mass_range_kg'][k] is not None and r['COM_world_proxy_m'] is not None];M=sum(r['mass_range_kg'][k] for r in u);C=sum((r['mass_range_kg'][k]*np.array(r['COM_world_proxy_m']) for r in u),np.zeros(3))/M
+  partial.append({'level':k,'mass_kg':M,'mass_error':M-r0['known_and_budget_subset_mass_kg'],'COM_error_m':float(np.abs(C-np.array(r0['subset_geometric_COM_proxy_m'])).max()),'unknown_rows_preserved':set(r0['unknown_or_unplaced_function_rows'])=={r['id'] for r in rows if r not in u}})
+ # Actual standalone material sample, independent signed tetra integration (no trimesh/helper/root import).
+ material=[]
+ sample=[n for n in by if n=='g18_connected_cage_and_redesigned_receiver_net' or n=='g16_pack_0_coldplate' or n=='g16_pack_0_Al_enclosure']
+ for n in sample:
+  r=next(z for z in rows if z['member_ids']==[n]);rho=by[n]['density_kg_m3'];M,C,I=tetra_mom(by[n],rho)
+  material.append({'ID':n,'mass_kg':M,'mass_error_kg':M-r['mass_range_kg'][1],'COM_error_m':float(np.abs(C-np.array(r['COM_world_proxy_m'])).max()),'fullI_error_kgm2':float(np.abs(I-np.array(r['full_I_COM_kgm2'])).max()),'signed_integral_not_resource_or_connection_qualification':True})
+ unmapped=[r for r in rows if r['owner_candidate'] not in tree and r['owner_candidate'] is not None]
+ forearm=[r for r in unmapped if r['owner_candidate'] in ['left_forearm','right_forearm']]
+ forearmw=[]
+ for side in ['left','right']:
+  rr=[r for r in forearm if r['owner_candidate']==side+'_forearm'];M=sum(r['mass_range_kg'][1] for r in rr if r['mass_range_kg'][1] is not None);C=sum((r['mass_range_kg'][1]*np.array(r['COM_world_proxy_m']) for r in rr if r['mass_range_kg'][1] is not None),np.zeros(3))/M
+  for q in arm['new_joint_interfaces']:
+   if q['id'].startswith(side+'_'):
+    o=np.array(q['pivot_world_m']);a=np.array(q['axis_world'],float);a/=np.linalg.norm(a);t=np.cross(C-o,[0,0,-9.81*M]);forearmw.append({'joint':q['id'],'conditional_legacy_forearm_mass_kg':M,'COM_proxy_world_m':C.tolist(),'potential_gravity_wrench_increment_if_mapped_to_distal_notadopted':[0,0,-9.81*M,*t.tolist()],'potential_axis_torque_increment_Nm':float(a@t),'owner_mapping_notadopted_by_audit':True})
+ rejected=set(static['new_resource_rejectIDs']);rejrow=[{'ID':n,'row':[r['id'] for r in rows if n in r['member_ids']],'numeric_mass_values':[r['mass_range_kg'] for r in rows if n in r['member_ids']]} for n in rejected]
+ results={'variant':ver,'root_scene_SHA':sha(sf),'root_report_SHA':sha(rf),'producer_declared':j['producer_sha256'],'current_producer_snapshot_SHA':sha(snap),'current_producer_matches_report':j['producer_sha256']==sha(snap),'bound_input_checks':bind,'composition':comp,'accounting':account,'cells_upper_only':cells,'partial_total_reconstruction':partial,'independent_joint_gravity':gravity,'independent_signed_material_samples':material,'root_new_unmapped_owner_list_matches':{r['id'] for r in unmapped}=={r['id'] for r in j.get('unmapped_owner_rows_not_zero',[])},'root_eachjoint_unmapped_list_matches':[{'joint':q['joint']['id'],'same_unmapped_IDs':{r['id'] for r in unmapped}=={r['id'] for r in q.get('unmapped_owner_rows_not_in_numeric_loads',[])}} for q in j['actual_new_joint_known_subset_gravity']],'unmapped_motion_owner_rows':[{'id':r['id'],'owner':r['owner_candidate'],'mass_range_kg':r['mass_range_kg'],'member_ids':r['member_ids']} for r in unmapped],'legacy_forearm_rows_omitted_from_all_gravity':[{'id':r['id'],'mass_range_kg':r['mass_range_kg'],'owner':r['owner_candidate']} for r in forearm],'conditional_forearm_gravity_increment_sensitivity':forearmw,'native_reject_rows_stay_unknown':rejrow,'global_once_budget_equals_boundthermal':j['new_fluid_global_once_budget']==therm['B_proposal']['fluid_once_proxy_candidates'],'global_fluid_heldoutside_geometry_accounting_no_COM':j['fluid_distribution_COM_and_actual_routes_unknown'],'numeric_partial_excludes_global_fluid_not_wholemass':True,'oldlower_tree_and_preservedhardware_history_only_not_newartwork':True,'scope':'Read-only numerical/source accounting. No mesh collision/pose/FEM/physicalcapacity judgment. Material sample signedmass/I is not an independent fullresource admission.'}
+ wr('audit_'+ver+'.json',results);allresults.append(results)
+wr('report.json',{'schema':'gorilla_g18_accounting_review_v1','results':allresults,'finding':'The before_owner_scope_correction receipts omitted non-tree motion-owner rows; root added them explicitly in latest reports without changing known-subset gravity. The selected-row gravity math matches. Historical issue: Four retained forearm skin/marker rows (about7.999/7.792kg nominalmarkers) have left/right_forearm owner absent from newtree and are dropped from all eight arm loads. Mixed gearbox/motor/bearing-race allocations are also unmapped; cannot treat reported3/1/0 unknownrows as complete. Root should correct mapping by explicit owner evidence or append unmapped-owner sensitivity/unknowns, preserving old receipt history.','source_or_geometry_edits':False,'architecture_or_physics_conclusions_ownedby_root':True})
+wr('manifest.json',{'producer':str(P/'audit_accounting.py'),'producer_SHA':sha(P/'audit_accounting.py'),'root_producer_snapshot_SHA':sha(snap),'inputs':inputs,'outputs':{p.name:sha(p) for p in P.iterdir() if p.is_file() and p.suffix not in ['.log'] and p.name!='manifest.json'},'bounded_task_no_frozenwrites_or_solve':True})
+print(json.dumps({'variants':[z['variant'] for z in allresults],'report_SHA':sha(P/'report.json'),'manifest_SHA':sha(P/'manifest.json'),'gravity_max_residual':max(k['root_wrench_max_abs_residual'] for z in allresults for q in z['independent_joint_gravity'] for k in q['levels']),'composition_error_count':sum(len(z['composition'][k]) for z in allresults for k in ['missing_IDs','unexpected_IDs','part_content_mismatch_IDs','arm_changed_ID_delta','body_changed_ID_delta','author_same_interface_conflicts']),'forearm_unmapped_rows_each':[len(z['legacy_forearm_rows_omitted_from_all_gravity']) for z in allresults]},indent=2),flush=True)

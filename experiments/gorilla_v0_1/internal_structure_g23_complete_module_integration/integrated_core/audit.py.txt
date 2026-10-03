@@ -1,0 +1,54 @@
+from pathlib import Path
+import json,gzip,hashlib,sys,importlib.util,collections,time,argparse,math
+import numpy as np,manifold3d as mf
+R=Path.cwd();O=Path(__file__).resolve().parent;ap=argparse.ArgumentParser();ap.add_argument('variant');arg=ap.parse_args();D=O/arg.variant;sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();S=D/'scene.json.gz';s=json.loads(gzip.decompress(S.read_bytes()));B=R/'.scratch/gorilla_internal_g22_root_assembly/scene.json.gz';bs=json.loads(gzip.decompress(B.read_bytes()));own=set(s['new_member_ids']);ps={p['name']:p for p in s['parts']};old_exclude=set(bs['actual_added_core_and_joint_ids']);outside=[]
+for p in bs['parts']:
+ if p['name'] not in old_exclude:
+  p=dict(p);p['name']='retained::'+p['name'];outside.append(p);ps[p['name']]=p
+vp=R/'.scratch/gorilla_internal_g_material_contract/native_signed_material.py';sp=importlib.util.spec_from_file_location('g23mat',vp);val=importlib.util.module_from_spec(sp);sys.modules[sp.name]=val;sp.loader.exec_module(val);cache={};diag={};checks={};bounds={n:(np.array(p['vertices_world_m']).min(0),np.array(p['vertices_world_m']).max(0)) for n,p in ps.items()}
+def sem(p):
+ role=p.get('role','').lower()
+ if role=='design_domain_bulk' or p.get('is_installed_material')is False:return 'calculation_domain'
+ if 'service'in role or 'tool_after'in role:return 'service'
+ if 'fluid'in role or 'lumen'in role or 'water_functional_void'in role:return 'fluid_void'
+ if p.get('finite_material')is True or ('finite_'in role and p.get('density_kg_m3')is not None) or role in ['armor_surface','armor_cover','visible_mechanism'] or (p.get('density_kg_m3')is not None and 'thermal_routing'in role) or 'native_material'in p.get('category','') or 'native_material'in p.get('E_metadata',{}).get('category',''):return 'finite_candidate'
+ return 'complete_reference'
+def get(n):
+ if n not in cache:
+  p=ps[n];f=p['faces'];tri=all(len(x)==3 for x in f);ff=f if tri else [[x[0],x[i],x[i+1]]for x in f for i in range(1,len(x)-1)];cache[n]=mf.Manifold(mf.Mesh64(np.array(p['vertices_world_m'],float),np.array(ff,np.uint64)));diag[n]={'alltri':tri,'legacy_fan_query_not_source_repair':not tri,'kernel_status':str(cache[n].status())}
+ return cache[n]
+def qualify(n):
+ if n not in checks:
+  if not diag.get(n,{}).get('alltri',True):checks[n]={'resource_contract_pass':False,'errors':[{'code':'legacy_polygon_not_native_triangle_contract'}]}
+  else:checks[n]=val.validate_part(ps[n],require_single_material_component=True)
+ return checks[n]['resource_contract_pass']
+for n in sorted(own):get(n);qualify(n)
+pairs=[];reject=[];seen=set();queries=0;start=time.monotonic();others=sorted(ps);lows=np.array([bounds[n][0]for n in others]);highs=np.array([bounds[n][1]for n in others]);aabbs=0
+for k,a in enumerate(sorted(own)):
+ lo,hi=bounds[a];inds=np.flatnonzero(np.all(highs>lo,axis=1)&np.all(hi>lows,axis=1))
+ for j in inds:
+  b=others[int(j)];key=tuple(sorted([a,b]));
+  if a==b or key in seen:continue
+  seen.add(key);aabbs+=1;ma,mb=get(a),get(b);queries+=1
+  if ma.status()!=mf.Error.NoError or mb.status()!=mf.Error.NoError:reject.append({'a':a,'b':b,'statuses':[str(ma.status()),str(mb.status())]});continue
+  v=float((ma^mb).volume())
+  if v<=1e-10:continue
+  sa,sb=sem(ps[a]),sem(ps[b]);qa=qualify(a)if sa=='finite_candidate'else None;qb=qualify(b)if sb=='finite_candidate'else None
+  if 'calculation_domain'in [sa,sb]:cl='calculation_domain_not_hardware'
+  elif 'fluid_void'in [sa,sb]:cl='normal_fluid_void_overlap'
+  elif 'service'in [sa,sb]:cl='service_installation_conflict'
+  elif sa==sb=='finite_candidate':cl='qualified_finite_material_overlap' if qa and qb else 'invalid_or_legacy_finite_candidate_overlap'
+  else:cl='complete_reference_installation_obstacle'
+  aa,bb=bounds[a],bounds[b];moves={axis:[float(bb[1][d]-aa[0][d]),float(aa[1][d]-bb[0][d])]for d,axis in enumerate(['X','Y','Z'])}
+  pairs.append({'a':a,'b':b,'scope':'own_newnew'if b in own else'newcore_vs_complete_shoulder'if not b.startswith('retained::')else'newcore_vs_retained_whole','same_owner_never_exempt':True,'body_owners':[ps[a].get('body'),ps[b].get('body')],'semantic':[sa,sb],'resource':[qa,qb],'classification':cl,'volume_cm3':v*1e6,'bounds_a_m':[aa[0].tolist(),aa[1].tolist()],'bounds_b_m':[bb[0].tolist(),bb[1].tolist()],'AABB_move_a_plus_minus_m':moves,'not_proven_free_layout_window':True})
+ print('EVENT',arg.variant,k,'of',len(own),'queries',queries,'positive',len(pairs),flush=True)
+pairs.sort(key=lambda q:q['volume_cm3'],reverse=True)
+sections=[]
+frame=next(n for n in own if 'cage' in n)
+for axis,value in [('Z',2.24),('Z',2.49),('X',.025),('X',.143),('X',.238)]:
+ m=get(frame)
+ if axis=='X':m=m.transform([[0,1,0,0],[0,0,1,0],[1,0,0,0]])
+ c=m.slice(value);sections.append({'axis':axis,'value_m':value,'area_m2':c.area(),'polygons_m':[np.array(p).tolist()for p in c.to_polygons()]})
+(D/'literal_sections.json').write_text(json.dumps({'source_sha256':sha(S),'frame_ID':frame,'sections':sections},indent=2)+'\n')
+receipt={'variant':arg.variant,'scene_sha256':sha(S),'context_source_sha256':sha(B),'producer_sha256':sha(Path(__file__)),'scope':'All new actual core material versus complete bound shoulder and all retained whole source IDs except old246 replaced joint/core. Old arms/rest-rebind are conditional historical rest, not declared newly connected. Source arrays unchanged; same owner not exempt.','source_parts':len(s['parts']),'new_own_count':len(own),'retained_whole_context_count':len(outside),'old_replaced_exact_ids':sorted(old_exclude),'new_material_resource_checks':{n:checks[n]for n in sorted(own)},'new_all_pass':all(checks[n]['resource_contract_pass']for n in own),'aabb_candidates':aabbs,'native_queries':queries,'threshold_m3':1e-10,'classification_counts':dict(collections.Counter(p['classification']for p in pairs)),'scope_counts':dict(collections.Counter(p['scope']for p in pairs)),'positive_pairs':pairs,'kernel_rejected_queries':reject,'touched_finite_resource_checks':checks,'query_diagnostics':diag,'waist_rotating_output_source_absent':True,'physical_accepted':False,'aesthetic_accepted':False,'elapsed_s':time.monotonic()-start}
+(D/'installation_receipt.json').write_text(json.dumps(receipt,indent=2,allow_nan=False)+'\n');print(json.dumps({'source':sha(S),'ownpass':receipt['new_all_pass'],'count':receipt['classification_counts'],'scope':receipt['scope_counts'],'largest':pairs[:3]},indent=2),flush=True)

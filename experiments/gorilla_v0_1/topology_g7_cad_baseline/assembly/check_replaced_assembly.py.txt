@@ -1,0 +1,93 @@
+"""G7 new-source child export plus unchanged G4 inventory; no repairs or old pass inheritance."""
+from pathlib import Path
+import copy, gzip, hashlib, json, sys, time
+import numpy as np
+import trimesh as tr
+import manifold3d as mf
+
+OUT=Path(__file__).resolve().parent; ROOT=OUT.parents[1]
+sys.path.insert(0,str(ROOT/'.scratch/gorilla_internal_g_material_contract'))
+import native_signed_material as gate
+G4=ROOT/'.scratch/gorilla_internal_g4_pitch_module/module_scene.json'
+CAD=ROOT/'.scratch/gorilla_internal_g7_cad_carrier/cad_source_manifest.json'
+BOUNDARY=ROOT/'.scratch/gorilla_internal_g7_cad_carrier/coarse/carrier_boundary.npz'
+TET=ROOT/'.scratch/gorilla_internal_g7_cad_carrier/coarse/carrier_tetra.npz'
+TARGET='g4_child_load_carrier'; THRESHOLD=1e-10
+def sha(p): return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def dump(name,x): (OUT/name).write_text(json.dumps(x,ensure_ascii=False,indent=2,allow_nan=False)+'\n')
+def M(p): return mf.Manifold(mf.Mesh64(np.asarray(p['vertices_world_m'],dtype=np.float64,order='C'),np.asarray(p['faces'],dtype=np.uint64,order='C')))
+def box(p):
+ v=np.asarray(p['vertices_world_m']); return np.array([v.min(0),v.max(0)])
+def overlap(a,b): return bool(np.all(a[1]>=b[0]) and np.all(b[1]>=a[0]))
+def mp(p):
+ m=tr.Trimesh(p['vertices_world_m'],p['faces'],process=False);r=m.mass_properties;V=float(r.volume)
+ masses=[V*p['density_kg_m3']]*3 if p.get('density_kg_m3') is not None else p['mass_range_kg']
+ return {'id':p['name'],'owner':p['body'],'role':p['role'],'volume_m3':V,'mass_range_kg':masses,'com_world_m':r.center_mass.tolist(),'inertia_at_COM_world_range_kg_m2':[(r.inertia*x/V).tolist() for x in masses]}
+def total(rows):
+ out=[]
+ for k in range(3):
+  m=sum(r['mass_range_kg'][k] for r in rows);c=sum(np.asarray(r['com_world_m'])*r['mass_range_kg'][k] for r in rows)/m;I=np.zeros((3,3))
+  for r in rows:
+   d=np.asarray(r['com_world_m'])-c;I+=np.asarray(r['inertia_at_COM_world_range_kg_m2'][k])+r['mass_range_kg'][k]*(np.dot(d,d)*np.eye(3)-np.outer(d,d))
+  out.append({'case':['low','nominal','high'][k],'mass_kg':m,'com_world_m':c.tolist(),'inertia_at_COM_world_kg_m2':I.tolist(),'inertia_eigenvalues_kg_m2':np.linalg.eigvalsh(I).tolist()})
+ return out
+def transform_part(part,T):
+ p=copy.copy(part);v=np.asarray(part['vertices_world_m']);p['vertices_world_m']=(v@T[:3,:3].T+T[:3,3]).tolist();return p
+
+start=time.monotonic();s=json.loads(G4.read_text());cad=json.loads(CAD.read_text());old=next(p for p in s['parts'] if p['name']==TARGET)
+assert sha(G4)==cad['source_G4_scene_sha256']
+b=np.load(BOUNDARY);n=np.load(TET);v=b['vertices_world_m'];f=b['faces'];tv=n['points_m'];t=n['tetra']
+assert np.array_equal(v,tv) and np.array_equal(f,n['boundary_faces'])
+assert f.dtype.kind in 'iu' and t.dtype.kind in 'iu'
+tet_xyz=tv[t];det=np.linalg.det(np.stack([tet_xyz[:,1]-tet_xyz[:,0],tet_xyz[:,2]-tet_xyz[:,0],tet_xyz[:,3]-tet_xyz[:,0]],axis=2));positive=bool(np.all(det>0))
+assert positive,'new-source tetra exporter requires all positive stored tetrahedra; no orientation repair permitted'
+new=copy.copy(old);new['vertices_world_m']=v.tolist();new['faces']=f.tolist();new['source_generation']={
+ 'method':'New OCC BREP/STEP Gmsh tetra export; outward boundary induced from all positive tetrahedra using [0,2,1],[0,1,3],[0,3,2],[1,2,3]; CAD boundary elements matched by undirected triple',
+ 'boundary_npz_sha256':sha(BOUNDARY),'tetra_npz_sha256':sha(TET),'CAD_manifest_sha256':sha(CAD),'CAD_brep_sha256':cad['CAD_files']['brep'],'CAD_step_sha256':cad['CAD_files']['step'],
+ 'all_tetra_positive_direct_determinant':positive,'minimum_tetra_determinant_m3':float(det.min()),'source_vertices_kept_including_unused_interior_nodes':True,'repair_normals_split_merge_or_remove_faces':False}
+parts=[new if p['name']==TARGET else p for p in s['parts']]
+assert len(parts)==30 and len({p['name'] for p in parts})==30
+neutral={'robot_id':'gorilla_v0_1','scope':'Single G4 pitch bench with one independently generated true-circle CAD child export; not full leg/robot or exterior','parts':parts,'G4_scene_sha256':sha(G4),'new_child_boundary_sha256':sha(BOUNDARY),'physical_accepted':False,'geometry_accepted':False}
+encoded=json.dumps(neutral,ensure_ascii=False,separators=(',',':')).encode()
+with (OUT/'candidate_scene.json.gz').open('wb') as raw:
+ with gzip.GzipFile(filename='',fileobj=raw,mode='wb',mtime=0) as gz:gz.write(encoded)
+print('SOURCE_READY',sha(OUT/'candidate_scene.json.gz'),'native faces',len(f),'positive tets',len(t),flush=True)
+contract=gate.validate_scene(neutral,require_single_material_component=True)
+dump('native_resource_contract.json',{'candidate_scene_stored_sha256':sha(OUT/'candidate_scene.json.gz'),'candidate_scene_uncompressed_sha256':hashlib.sha256(encoded).hexdigest(),'boundary_sha256':sha(BOUNDARY),'G4_source_sha256':sha(G4),'checker_sha256':sha(__file__),'gate_sha256':sha(ROOT/'.scratch/gorilla_internal_g_material_contract/native_signed_material.py'),'contract':contract})
+invalid=[p['id'] for p in contract['parts'] if not p['resource_contract_pass']]
+print('NEW_RESOURCE_GATE',contract['resource_contract_pass'],'invalid',invalid,flush=True)
+meshrow=mp(new);exact={'volume_m3':cad['actual_volume_m3'],'mass_kg':cad['conditional_mass_kg'],'com_world_m':cad['center_world_m'],'inertia_at_COM_world_kg_m2':cad['inertia_at_COM_world_kg_m2']}
+dump('native_vs_exact_properties.json',{'boundary_sha256':sha(BOUNDARY),'CAD_manifest_sha256':sha(CAD),'native_child':meshrow,'exact_CAD_child':exact,'relative_volume_delta':meshrow['volume_m3']/exact['volume_m3']-1,'mass_delta_kg':meshrow['mass_range_kg'][1]-exact['mass_kg'],'COM_delta_m':(np.asarray(meshrow['com_world_m'])-exact['com_world_m']).tolist(),'fullI_delta_kg_m2':(np.asarray(meshrow['inertia_at_COM_world_range_kg_m2'][1])-exact['inertia_at_COM_world_kg_m2']).tolist(),'scope':'Piecewise-planar boundary tessellation versus nominal exact CAD; conditional same density; no physical certification'})
+basevol={p['name']:M(p).volume() for p in parts};poses=[];withdraw=[]
+if not invalid:
+ for po in s['pose_scenes']:
+  T=np.asarray(po['child_transform_world']);pp=[transform_part(new,T) if p['name']==TARGET else p for p in po['parts']]
+  assert len(pp)==30 and len({p['name'] for p in pp})==30
+  mm={p['name']:M(p) for p in pp};boxes={p['name']:box(p) for p in pp};pairs=[]
+  for i,a in enumerate(pp):
+   for bb in pp[i+1:]:
+    if not overlap(boxes[a['name']],boxes[bb['name']]):continue
+    iv=float((mm[a['name']]^mm[bb['name']]).volume())
+    if iv>THRESHOLD:pairs.append({'a':a['name'],'b':bb['name'],'a_owner':a['body'],'b_owner':bb['body'],'volume_m3':iv,'volume_cm3':iv*1e6,'classification':'catalogue_bearing_reference_envelope' if 'bearing_reference_envelope' in [a['role'],bb['role']] else 'native_material_positive_intersection','intended_interference_qualified':False})
+  contacts=[]
+  for stop in s['static_stop_interfaces']:
+   for target in ['g4_parent_load_housing',TARGET]:
+    shoe=stop['part'];gap=float(mm[shoe].min_gap(mm[target],.3));iv=float((mm[shoe]^mm[target]).volume())
+    contacts.append({'shoe':shoe,'target':target,'gap_query_cap_m':.3,'minimum_gap_m':gap,'positive_volume_m3':iv,'zero_gap_no_positive_volume_under_tolerance':gap<=1e-9 and iv<=THRESHOLD,'closed_neutral_expected':not po['stop_open_unloaded_only'],'pressure_and_retention_qualified':False})
+  pr={'id':po['id'],'q_deg':po['q_deg'],'child_actual_transform_world':T.tolist(),'intersections':sorted(pairs,key=lambda x:-x['volume_m3']),'native_material_pairs':sum(x['classification']=='native_material_positive_intersection' for x in pairs),'bearing_reference_pairs':sum(x['classification']=='catalogue_bearing_reference_envelope' for x in pairs),'stop_contact_queries':contacts,'maximum_piece_volume_invariance_error_m3':max(abs(mm[p['name']].volume()-basevol[p['name']]) for p in pp),'native_same_scope_mass_COM_fullI':total([mp(p) for p in pp]),'pose_is_discrete_sample_not_continuous_sweep':True}
+  poses.append(pr);print('POSE',po['id'],'material/reference',pr['native_material_pairs'],pr['bearing_reference_pairs'],flush=True)
+ fixed={p['name']:M(p) for p in parts if p['role']!='manual_static_stop_shoe'};boxes={p['name']:box(p) for p in parts if p['role']!='manual_static_stop_shoe'};roles={p['name']:p['role'] for p in parts}
+ for fraction in np.linspace(0.,1.,21):
+  collisions=[]
+  for p in parts:
+   if p['role']!='manual_static_stop_shoe':continue
+   offset=np.asarray(p['unlock_translation_world_m'])*fraction;mm=M(p).translate(offset);bb=box(p)+offset
+   for name,target in fixed.items():
+    if not overlap(bb,boxes[name]):continue
+    iv=float((mm^target).volume())
+    if iv>THRESHOLD:collisions.append({'shoe':p['name'],'target':name,'volume_m3':iv,'classification':'catalogue_bearing_reference_envelope' if roles[name]=='bearing_reference_envelope' else 'native_material_positive_intersection'})
+  withdraw.append({'fraction':float(fraction),'translation_world_m':[float(fraction*.28),0.,0.],'intersections':collisions})
+ print('WITHDRAW',sum(bool(x['intersections']) for x in withdraw),'of 21 collision samples',flush=True)
+result={'robot_id':'gorilla_v0_1','candidate':'g7_true_circle_child_in_same_g4_pitch_bench','scope':neutral['scope'],'G4_source_sha256':sha(G4),'new_child_boundary_sha256':sha(BOUNDARY),'tetra_npz_sha256':sha(TET),'CAD_manifest_sha256':sha(CAD),'candidate_scene_stored_sha256':sha(OUT/'candidate_scene.json.gz'),'candidate_scene_uncompressed_sha256':hashlib.sha256(encoded).hexdigest(),'checker_sha256':sha(__file__),'native_gate_sha256':sha(OUT/'native_resource_contract.json'),'native_resource_contract_pass':contract['resource_contract_pass'],'rejected_parts':invalid,'retained_part_count':29,'replacement_part_count':1,'counted_bearing_mass_once_kg':2.3,'pose_checks':poses,'manual_shoe_withdrawal_21_samples':withdraw,'sampled_shoe_withdrawal_clear':bool(withdraw) and not any(x['intersections'] for x in withdraw),'collision_threshold_m3':THRESHOLD,'old_collision_resource_pass_inherited':False,'pressure_load_cases_unchanged_input_only_source_sha256':sha(ROOT/'.scratch/gorilla_internal_g4_pitch_module/report.json'),'geometry_accepted':False,'physical_accepted':False,'new_leg_or_robot_exterior_adopted':False,'remaining_redlines':['Conditional steel strength/stiffness and real bearing reaction/contact not qualified','Shoes need full unload to withdraw, side retention/stow not qualified','Cylinder pressure/holding/fluid/fittings/upstream not integrated','Discrete posture and withdrawal samples do not prove continuous trajectory','Catalogue bearing geometry remains envelope, not actual roller material'],'elapsed_s':time.monotonic()-start}
+dump('assembly_receipt.json',result)
+print('DONE',sha(OUT/'assembly_receipt.json'),'seconds',result['elapsed_s'],flush=True)

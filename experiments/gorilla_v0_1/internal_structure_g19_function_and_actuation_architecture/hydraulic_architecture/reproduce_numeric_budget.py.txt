@@ -1,0 +1,13 @@
+"""Reproduce numeric budget to a separate output, keeping the frozen folder read-only."""
+import argparse,contextlib,io,json,hashlib
+from pathlib import Path
+p=argparse.ArgumentParser();p.add_argument('--output-dir',required=True);a=p.parse_args()
+HERE=Path(__file__).resolve().parent;OUT=Path(a.output_dir).resolve()
+if OUT==HERE:raise SystemExit('Refuse overwrite of frozen source folder')
+OUT.mkdir(parents=True,exist_ok=True)
+producer=HERE/'build_architecture_budget_v3.py';code=producer.read_text().replace("(O/'architecture_budget_v3.json')","(OUT/'architecture_budget_v3.json')")
+stream=io.StringIO()
+with contextlib.redirect_stdout(stream):exec(compile(code,str(producer),'exec'),{'__file__':str(producer),'__name__':'__main__','OUT':OUT})
+reference=json.loads((HERE/'architecture_budget_v3.json').read_text());new=json.loads((OUT/'architecture_budget_v3.json').read_text());reference.pop('created_utc');new.pop('created_utc')
+r={'producer_sha256':hashlib.sha256(producer.read_bytes()).hexdigest(),'reference_sha256':hashlib.sha256((HERE/'architecture_budget_v3.json').read_bytes()).hexdigest(),'numeric_scope_equal_except_UTC':reference==new,'producer_stdout':stream.getvalue()}
+(OUT/'reproduction_receipt.json').write_text(json.dumps(r,indent=2)+'\n');print(json.dumps({k:v for k,v in r.items() if k!='producer_stdout'},indent=2))

@@ -1,0 +1,48 @@
+"""Capture selected, immutable Gorilla G/G1 inputs; downloaded media stays in scratch."""
+from pathlib import Path
+import gzip
+import hashlib
+import json
+
+ROOT = Path('/home/ethan/Projects/Sai_Rotbots')
+OUT = ROOT / 'experiments/gorilla_v0_1/internal_structure_g_studies'
+GROUPS = {
+    'material_contract': 'gorilla_internal_g_material_contract',
+    'stack_brief': 'gorilla_internal_g_stack_brief',
+    'output_support_reference': 'gorilla_internal_g_output_support_reference',
+    'oem_installation': 'gorilla_internal_g1_oem_installation',
+    'waist_chain': 'gorilla_internal_g1_waist_chain',
+    'lower_chain': 'gorilla_internal_g1_lower_chain',
+    'hand_allocation': 'gorilla_internal_g1_hand_allocation',
+    'root_macro': 'gorilla_internal_g_root_macro',
+}
+sha = lambda b: hashlib.sha256(b).hexdigest()
+rows = []
+excluded = []
+OUT.mkdir(parents=True, exist_ok=True)
+for label, dirname in GROUPS.items():
+    base = ROOT / '.scratch' / dirname
+    for source in sorted(base.iterdir()):
+        if not source.is_file():
+            continue
+        selected = source.suffix in {'.json', '.md', '.py', '.svg', '.png'} or source.name.endswith('.py.txt')
+        if source.suffix == '.png' and label in {'oem_installation', 'output_support_reference'}:
+            selected = False
+        if source.name in {'csg50_cached_drawing.png', 'csg65_cached_drawing.png', 'csg_rating_p12.png'}:
+            selected = False
+        if not selected:
+            excluded.append({'original_path': str(source.relative_to(ROOT)), 'sha256': sha(source.read_bytes()), 'reason': 'downloaded source/cache/log; not a designed reproduction input'})
+            continue
+        raw = source.read_bytes()
+        name = source.name + '.txt' if source.suffix == '.py' else source.name
+        encoding = 'gzip' if source.suffix == '.json' and len(raw) > 250_000 else 'raw'
+        stored = gzip.compress(raw, compresslevel=9, mtime=0) if encoding == 'gzip' else raw
+        target = OUT / label / (name + '.gz' if encoding == 'gzip' else name)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if target.exists() and target.read_bytes() != stored:
+            raise ValueError('Refuse overwriting frozen bytes: ' + str(target))
+        target.write_bytes(stored)
+        rows.append({'original_path': str(source.relative_to(ROOT)), 'original_sha256': sha(raw), 'original_bytes': len(raw), 'stored_path': str(target.relative_to(OUT)), 'stored_sha256': sha(stored), 'stored_bytes': len(stored), 'encoding': encoding})
+manifest = {'robot_id': 'gorilla_v0_1', 'scope': 'G material/OEM/macro research and rejected G1 waist/lower/hand candidates, not an integrated robot', 'files': rows, 'excluded_cached_records': excluded, 'physical_accepted': False, 'aesthetic_accepted': False, 'stable_si': False, 'restore_dependency_note': 'Restore C15/E2a/F macro/F1/F2 first. OEM PDFs are excluded cached primary sources; supplied URLs and SHA hashes bind their exact contents. Some historical source dependencies remain explicitly unavailable; no recursive reproduction claim.'}
+(OUT / 'snapshot_manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+print(json.dumps({'files': len(rows), 'stored_bytes': sum(r['stored_bytes'] for r in rows), 'manifest_sha256': sha((OUT/'snapshot_manifest.json').read_bytes())}))

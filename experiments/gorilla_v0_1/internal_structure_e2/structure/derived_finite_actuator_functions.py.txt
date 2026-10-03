@@ -1,0 +1,81 @@
+def shape_cylinder(r, L, center, axis, inner=0):
+    m = trimesh.creation.annulus(r_min=inner, r_max=r, height=L, sections=48) if inner > 0 else trimesh.creation.cylinder(radius=r, height=L, sections=48)
+    m.apply_transform(trimesh.geometry.align_vectors([0, 0, 1], axis))
+    m.apply_translation(center)
+    return m
+
+def assembly(defn, side, pose):
+    f = defn['family']
+    sign = 1 if side == 'left' else -1
+    A = np.array(defn['neutral_A_world_m'])
+    B = np.array(defn['neutral_B_world_m'])
+    J = np.array(defn['pivot_world_m'])
+    A[1] *= sign
+    B[1] *= sign
+    J[1] *= sign
+    basebody = defn['base_body'].replace('left_', side + '_')
+    outbody = defn['output_body'].replace('left_', side + '_')
+    T = {k: np.array(v) for k, v in pose['body_transforms'].items()}
+    a = h.transformed(T[basebody], A)
+    b = h.transformed(T[outbody], B)
+    j = h.transformed(T[basebody], J)
+    axis = T[basebody][:3, :3] @ np.array(defn['axis_world'])
+    axis = axis / np.linalg.norm(axis)
+    u = (b - a) / np.linalg.norm(b - a)
+    targetL = float(np.linalg.norm(b - a))
+    q_actual = targetL - defn['allocated_custom_zero_extension_eye_length_m']
+    extension = float(np.clip(q_actual, 0, defn['actual_stroke_design_m']))
+    Lactual = defn['allocated_custom_zero_extension_eye_length_m'] + extension
+    actual_b = a + u * Lactual
+    p = defn['params']
+    R = p['bore'] / 2 + p['wall']
+    r = p['rod'] / 2
+    pinr = p['pin'] / 2
+    tail = defn['additional_fixed_tail_sleeve_m']
+    S = defn['actual_stroke_design_m']
+    s_rear = ear + tail
+    s_tube = s_rear + rearcap
+    s_gland = s_tube + S + pistonw
+    s_seal = s_gland + frontcap
+    s_rodout = s_seal + seal
+    mats = []
+    parts = []
+
+    def add(name, kind, radius, s0, s1, inner=0, motion='fixed'):
+        m = shape_cylinder(radius, s1 - s0, a + u * ((s0 + s1) / 2), u, inner)
+        emit(name, kind, m, motion)
+
+    def emit(name, kind, m, motion):
+        assert m.is_watertight and m.is_winding_consistent and (m.volume > 0)
+        n = side + '_' + f + '_' + name
+        part = {'name': n, 'body': basebody if motion == 'fixed' else outbody, 'role': 'finite_actuator_material_design_probe', 'vertices_world_m': m.vertices.tolist(), 'faces': m.faces.tolist(), 'rgba': [0.2, 0.38, 0.55, 1.0] if motion == 'fixed' else [0.65, 0.7, 0.73, 1.0], 'actuator_family': f, 'actuator_side': side, 'motion_group': motion, 'part_kind': kind, 'assumed_density_kg_m3': 7850.0, 'body_field_is_display_mass_owner_not_frozen_rigid_body_contract': True, 'actual_barrel_base_eye_hinge_and_rod_prismatic_topology_not_implemented': True, 'manufacturing_and_material_accepted': False, 'volume_m3': float(m.volume)}
+        parts.append(part)
+        mats.append((part, m))
+    eyeR = pinr + 0.012
+    eyeW = 0.03
+    hole = pinr + 0.001
+    emit('fixed_eye', 'ear', shape_cylinder(eyeR, eyeW, a, axis, hole), 'fixed')
+    add('fixed_neck', 'ear_to_shoulder', min(r, 0.018), hole + 0.001, ear + tail)
+    add('rear_cap', 'blind_rear_cap', R, s_rear, s_tube)
+    add('barrel', 'finite_barrel_wall', R, s_tube, s_gland, inner=p['bore'] / 2)
+    add('front_cap', 'front_gland_cover', R, s_gland, s_seal, inner=r + 0.0005)
+    add('seal_housing', 'separate_seal_pack_housing', R, s_seal, s_rodout, inner=r + 0.0005)
+    piston_start = s_tube + extension
+    add('piston', 'piston_disk', p['bore'] / 2 - 0.0005, piston_start, piston_start + pistonw, motion='rod')
+    add('rod', 'solid_rod', r, piston_start + 0.01, Lactual - ear, motion='rod')
+    add('moving_neck', 'moving_shoulder_to_eye', min(r, 0.018), Lactual - ear, Lactual - hole - 0.001, motion='rod')
+    emit('moving_eye', 'ear', shape_cylinder(eyeR, eyeW, actual_b, axis, hole), 'rod')
+    arm = float((b - a) / targetL @ np.cross(axis, b - j))
+    forces = []
+    for case in c2['same_LP_witness_cases']:
+        if case['pose'] != pose['id']:
+            continue
+        ext = next((x['signed_pitch_torque_Nm_at_same_LP_witness'] for x in case['joint_witnesses'] if x['id'] == side + '_' + f))
+        F = -ext / arm
+        area = math.pi * ((p['bore'] / 2) ** 2 - (p['rod'] / 2) ** 2) if F < 0 else math.pi * (p['bore'] / 2) ** 2
+        forces.append({'payload_kg': case['payload_kg'], 'pressure_kg': case['pressure_kg'], 'gravity_factor': case['gravity_factor_sensitivity'], 'source_LP_drive_hypotheses_feasible': case['recorded_contact_drive_hypotheses_feasible'], 'same_C2_witness_external_pitch_Nm': ext, 'signed_extension_force_N': F, 'effective_arm_m': arm, 'additional_Y_offset_bending_magnitude_Nm': abs(F) * abs(defn['neutral_A_world_m'][1] - points['left_' + f][1]), 'ideal_pressure_required_Pa': abs(F) / area, 'exceeds_21MPa_ideal_pressure_hypothesis': abs(F) / area > P, 'no_capacity_qualification': True})
+    union_by_motion = {}
+    for motion in ['fixed', 'rod']:
+        union = trimesh.boolean.union([m for p, m in mats if p['motion_group'] == motion], engine='manifold')
+        union_by_motion[motion] = {'net_material_volume_m3': float(union.volume), 'mass_kg_if_7850kg_m3': float(union.volume) * 7850, 'positive_volume_components_above_1e_minus10_m3': sum((float(x.volume) > 1e-10 for x in union.split(only_watertight=False))), 'tiny_signed_boolean_islands_below_1e_minus10_m3': len([x for x in union.split(only_watertight=False) if abs(float(x.volume)) <= 1e-10]), 'union_is_watertight': bool(union.is_watertight), 'coplanar_interface_boolean_numeric_fragments_do_not_prove_connections': True, 'material_connectivity_is_not_connection_qualification': True}
+    return (parts, mats, {'family': f, 'side': side, 'pose': pose['id'], 'A_world_m': a.tolist(), 'B_requested_world_m': b.tolist(), 'B_untrimmed_geometry_world_m': actual_b.tolist(), 'eye_endpoint_error_m': float(np.linalg.norm(actual_b - b)), 'target_eye_length_m': targetL, 'unclipped_extension_m': q_actual, 'actual_geometry_extension_m': extension, 'working_margin_failure': not margin - 1e-09 <= q_actual <= S - margin + 1e-09, 'same_LP_force_cases': forces, 'net_union_material_by_motion': union_by_motion, 'fixed_eye_force_reaction_path': 'Ear -> finite neck/tail -> rear cap/barrel; eye pin/bushing to parent carrier must be rebuilt by root. Geometry contact/overlap is not a qualified connection.', 'moving_eye_force_reaction_path': 'Piston/rod -> moving neck/eye -> output crank and bearing carrier at unchanged joint; root must add continuous carrier, reaction and off-axis bending path.', 'Y_offset_added_m': float(A[1] - sign * points['left_' + f][1]), 'carrier_additional_lateral_bending_rule': 'M_offset=F*Y_bias; real local force vector and bearing spread required, not absorbed by armor.'})

@@ -1,0 +1,52 @@
+from pathlib import Path
+import json,gzip,copy,hashlib,datetime
+import numpy as np
+R=Path.cwd();O=Path(__file__).resolve().parent;sha=lambda b:hashlib.sha256(b).hexdigest()
+def readbind(label,raw,expected):
+ p=R/raw;b=p.read_bytes();assert sha(b)==expected,(label,sha(b));q=O/'bound_inputs'/label/p.name;q.parent.mkdir(parents=True,exist_ok=True);q.write_bytes(b);bindings.append({'path':raw,'bound_path':str(q.relative_to(R)),'sha256':expected});return json.loads(gzip.decompress(b))
+bindings=[]
+core=readbind('connected_core_b','.scratch/gorilla_internal_g24_connected_drive_core/b/scene.json.gz','1856a56b36a4fe85c860a2c5dc3bbadd327bb77cbb6beed44ac46c7c3dc9a64d')
+thermal=readbind('complete_thermal_energy_b','.scratch/gorilla_internal_g24_complete_thermal_energy/b_final/scene.json.gz','d899e2a91e9d567d93689ad7a63080f629cdc8b8bae374d5230b2bb5aecfbee4')
+hv=readbind('complete_hv','.scratch/gorilla_internal_g24_complete_hv_routes/scene.json.gz','e85e45140bbfcd6f6c4538ccdf5b6dce188eb5f60b9b4a9b4d1335673cedae89')
+old=readbind('g23_baseline','.scratch/gorilla_internal_g23_root_assembly/b/scene.json.gz','6bedcd06cd6729fad71d6e26dfad99ae588e6745db295c0658da44ddc077efa9')
+# The core source already contains a full read-only body context. Never append that context twice.
+parts=copy.deepcopy(core['parts']);tree=copy.deepcopy(old['body_tree_candidate']);existing={p['name']:p for p in parts}
+thermal_old=set(n for g in thermal['complete_groups'] for n in g['exact_member_IDs'])
+thermal_old.update(row['id'] for row in thermal['retired_custom_ports_exact'])
+assert len(thermal_old)==1120
+retire=thermal_old|set(hv['old_stale_route_IDs_conditionally_replaced'])
+missing=retire-set(existing);assert not missing,missing
+parts=[p for p in parts if p['name'] not in retire]
+parts+=copy.deepcopy(thermal['parts'])+copy.deepcopy(hv['parts'])
+coreids=set(core['new_actual_parts_IDs']);thermalids={p['name']for p in thermal['parts']};hvids={p['name']for p in hv['parts']};names=[p['name']for p in parts];assert len(names)==len(set(names))
+for side,sign in [('left',1),('right',-1)]:
+ S=np.diag([1.,float(sign),1.])
+ for j in core['joint_interfaces']:
+  node=j['output_body'].replace('left_',side+'_');parent=j['parent_body'].replace('left_',side+'_')
+  tree[node]={'parent':parent,'joint_id':j['id'].replace('left_',side+'_'),'pivot_world_m':(S@j['pivot_world_m']).tolist(),'axis_world':(np.linalg.det(S)*S@j['axis_world']).tolist(),'actual_world_neutral_source_basis':True,'encoder_sign_limits_ratio_calibration_unknown':True}
+  inp=side+'_'+j['id'].split('_',1)[1]+'_input';tree[inp]={'parent':parent,'fixed_geometric_detail_parked':True,'gear_coupling_sign_and_dynamic_mass_split_unknown':True}
+ # Parts already use neutral world positions. The old C15/G22 rest transform must not be applied again.
+ tree[side+'_upper_arm']={'parent':side+'_shoulder_yaw_carrier','fixed_world_neutral_source_geometry':True,'actual_mount_source_present_not_contact_or_load_admitted':True,'old_rest_transform_quarantined':old['body_tree_candidate'][side+'_upper_arm'].get('rest_world_transform_4x4')}
+ for b,n in tree.items():
+  if b==side+'_forearm' or n.get('joint_id')==side+'_elbow_pitch':
+   # Actual source elbow has a sloped neutral axis; retain documented commanded sign from the original candidate.
+   n['actual_source_elbow_datum_m']=(S@np.array([.0186709373,.7383146493,1.7969347877])).tolist();n['actual_source_elbow_axis_line_world']=(S@np.array([.0144919741,.9365976134,-.3501069740])).tolist();n['axis_line_not_equivalent_to_calibrated_joint_positive_command']=True
+stale_liquid=[];moment_quarantine=[]
+for p in parts:
+ if p['body'].startswith('g24_') and p['body'].endswith('_input'):
+  p['original_candidate_owner_quarantined']=p['body'];p['body']='left_'+p['body'].split('g24_',1)[1]
+ if p['body']=='torso_candidate':p['original_candidate_owner_quarantined']='torso_candidate';p['body']='torso';p['moving_consumer_feed_attachment_unknown']=True
+ if p['name'] in coreids|thermalids|hvids:
+  keys=[k for k in p if any(t in k for t in ['COM','full_I','exact_CAD'])]
+  if keys:
+   p['upstream_unqualified_moment_metadata']={k:p.pop(k)for k in keys};moment_quarantine.append(p['name'])
+ if p.get('role') in ['E_thermal_routing_candidate','fluid_lumen_global_alias'] and p['name']not in thermalids:
+  p['old_body_liquid_geometry_not_reconnected_to_g24_moved_groups']=True;stale_liquid.append(p['name'])
+# Keep both central-bearing duplicate reference pairs from the author source, explicitly identifying them for audit.
+central_mirror=[p['name']for p in parts if p['name'].startswith('g24_right_')and'waist_SKF'in p['name']]
+cellids=[p['name']for p in parts if p.get('g23_local_module_name','').startswith('g23_cell_')];assert len(cellids)==720
+unknownowners=sorted({p['body']for p in parts if p['body']not in tree})
+s={'robot_id':'gorilla_v0_1','candidate':'g24_actual_common_b','coordinate_frame':'SI Xforward Yleft Zup','parts':parts,'body_tree_candidate':tree,'input_bindings':bindings,'actual_added_core_and_joint_ids':sorted(coreids),'actual_thermal_and_energy_ids':sorted(thermalids),'actual_added_hv_ids':sorted(hvids),'actual_added_ids':sorted(coreids|thermalids|hvids),'conditional_retire_exact_ids_from_core_context':sorted(retire),'conditional_core_probe_retire_ids':core['conditional_retire_exact_IDs'],'qualified_function_retirement_credit':0,'actual_720_cell_ids':cellids,'old_liquid_geometry_retained_unconnected_ids':stale_liquid,'central_waist_mirrored_duplicate_reference_candidates':central_mirror,'whole_robot_M_COM_I':None,'source_dynamic_owner_missing_tree':unknownowners,'old_lower_history_only':True,'physical_aesthetic_stable_si_admitted':False,'root_world_neutral_arm_transform_not_reapplied':True,'upstream_moment_metadata_quarantined_ids':moment_quarantine,'source_complete_hv_workingpoint_and_true_contact_not_closed':True}
+b=(json.dumps(s,separators=(',',':'),allow_nan=False)+'\n').encode();(O/'scene.json.gz').write_bytes(gzip.compress(b,mtime=0))
+receipt={'source_sha256':sha((O/'scene.json.gz').read_bytes()),'producer_sha256':sha(Path(__file__).read_bytes()),'assembled_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'input_bindings':bindings,'core_full_context_count':len(core['parts']),'core_new_unique_count':len(coreids),'core_context_retire_count':len(retire),'thermal_final_count':len(thermalids),'hv_count':len(hvids),'actual_unique_parts':len(parts),'actual_cells':len(cellids),'whole_body_context_not_duplicated':True,'central_duplicate_reference_candidates_not_silently_removed':central_mirror,'missing_tree_owner_labels':unknownowners,'function_retire_mass_credit':0,'physical_accepted':False}
+(O/'composition_receipt.json').write_text(json.dumps(receipt,indent=2)+'\n');(O/'input_bindings.json').write_text(json.dumps(bindings,indent=2)+'\n');print(json.dumps(receipt),flush=True)

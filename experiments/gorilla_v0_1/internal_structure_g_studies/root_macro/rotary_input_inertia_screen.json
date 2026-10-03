@@ -1,0 +1,80 @@
+{
+  "schema": "gorilla_g_rotary_input_inertia_sensitivity_v1",
+  "source_hashes": {
+    ".scratch/gorilla_internal_g1_oem_installation/csg_csf_gear_units.pdf": "517160deff3bc6272980fef807212d29ee2301ce819b4388df540fcd3ce7d97b",
+    "robots/gorilla_v0_1/configs/internal_structure_d_system_spec.json": "d988ef1a248405f47f34510a4f6191f4c6ea505cc7502c62905670cab81f6ad1"
+  },
+  "source_pages": [
+    12,
+    13
+  ],
+  "source_table_units": "moment of inertia x1e-4 kg m^2, not x1e-5 kgf m s^2",
+  "rows": [
+    {
+      "family": "csg50",
+      "ratio": 100.0,
+      "catalogue_CSG_input_reflected_inertia_kg_m2": 0.00125,
+      "published_bare_motor_rotor_inertia_kg_m2": 0.0014,
+      "ideal_fixed_parent_reflected_input_total_at_output_kg_m2": 26.5,
+      "accelerations": [
+        {
+          "joint_acceleration_rad_s2": 0.25,
+          "extra_ideal_fixed_parent_input_acceleration_torque_Nm": 6.625
+        },
+        {
+          "joint_acceleration_rad_s2": 0.5,
+          "extra_ideal_fixed_parent_input_acceleration_torque_Nm": 13.25
+        },
+        {
+          "joint_acceleration_rad_s2": 1.0,
+          "extra_ideal_fixed_parent_input_acceleration_torque_Nm": 26.5
+        },
+        {
+          "joint_acceleration_rad_s2": 2.0,
+          "extra_ideal_fixed_parent_input_acceleration_torque_Nm": 53.0
+        }
+      ],
+      "not_full_body_spatial_inertia": true,
+      "gear_source_scope": "July2026 CSG rating table p12, definition p13 refers to wave-generator/input. Additional own shafts/couplings/brake rotor are not included here.",
+      "motor_source": "https://www.tecnotion.com/wp-content/uploads/2022/05/Torque_Brochure_EN_2-5.pdf pp20-21/35"
+    },
+    {
+      "family": "csg65",
+      "ratio": 100.0,
+      "catalogue_CSG_input_reflected_inertia_kg_m2": 0.00468,
+      "published_bare_motor_rotor_inertia_kg_m2": 0.009,
+      "ideal_fixed_parent_reflected_input_total_at_output_kg_m2": 136.79999999999998,
+      "accelerations": [
+        {
+          "joint_acceleration_rad_s2": 0.25,
+          "extra_ideal_fixed_parent_input_acceleration_torque_Nm": 34.199999999999996
+        },
+        {
+          "joint_acceleration_rad_s2": 0.5,
+          "extra_ideal_fixed_parent_input_acceleration_torque_Nm": 68.39999999999999
+        },
+        {
+          "joint_acceleration_rad_s2": 1.0,
+          "extra_ideal_fixed_parent_input_acceleration_torque_Nm": 136.79999999999998
+        },
+        {
+          "joint_acceleration_rad_s2": 2.0,
+          "extra_ideal_fixed_parent_input_acceleration_torque_Nm": 273.59999999999997
+        }
+      ],
+      "not_full_body_spatial_inertia": true,
+      "gear_source_scope": "July2026 CSG rating table p12, definition p13 refers to wave-generator/input. Additional own shafts/couplings/brake rotor are not included here.",
+      "motor_source": "https://www.tecnotion.com/wp-content/uploads/2025/11/QTL210_Specsheet_EN_2.4.pdf"
+    }
+  ],
+  "own_formula": "J_reflected=(Jgear_input+Jmotor_rotor)*N^2; extra torque=J_reflected*qddot in fixed-parent ideal reduction.",
+  "decision_input": "Retain published motor and gear input inertias before defining drive acceleration; do not replace them with an arbitrary solid-cylinder mass or omit input inertia.",
+  "stable_physical_contract": false,
+  "physical_accepted": false,
+  "limits": [
+    "Catalogue scalar input inertia is not a complete installed gear fixed/input/output COM and 3x3 inertia split.",
+    "Rotor spatial mass/COM and transmission constraints need one consistent model; naive parent rotor mass plus armature can miss free-base coupling or double count.",
+    "Fixed-parent ideal reflection omits actual floating-base and multi-axis cross terms, losses, flexibility and added coupling/shaft/brake inertias.",
+    "No motor torque-speed/voltage/thermal, gearbox duty or trajectory qualification follows from this acceleration sensitivity."
+  ]
+}

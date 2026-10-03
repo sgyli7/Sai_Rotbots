@@ -1,0 +1,37 @@
+from pathlib import Path
+import json,gzip,hashlib,numpy as np,manifold3d as mf
+from PIL import Image,ImageDraw
+P=Path(__file__).resolve().parent
+s=json.load(gzip.open(P/'scene_a.json.gz','rt'));parts=s['parts'];shapes={};resources=[];pairs=[]
+for p in parts:
+ v=np.asarray(p['vertices_world_m']);f=np.asarray(p['faces']);m=mf.Manifold(mf.Mesh64(v,f));shapes[p['name']]=m
+ e=np.sort(np.concatenate([f[:,[0,1]],f[:,[1,2]],f[:,[2,0]]]),1);u,c=np.unique(e,axis=0,return_counts=True)
+ resources.append({'id':p['name'],'role':p['role'],'status':str(m.status()),'native_edges_not_2':int((c!=2).sum()),'native_volume_m3':float(np.einsum('ij,ij->i',v[f[:,0]],np.cross(v[f[:,1]],v[f[:,2]])).sum()/6),'material_gate_pass':bool(p['finite_material'] and m.status()==mf.Error.NoError and np.all(c==2)),'no_repair':True})
+physical=[p for p in parts if p['role'] not in ['service_stock','fluid_lumen_reference']]
+for i,a in enumerate(physical):
+ va=np.array(a['vertices_world_m']);lo=va.min(0);hi=va.max(0)
+ for b in physical[i+1:]:
+  vb=np.array(b['vertices_world_m']);gap=np.minimum(hi,vb.max(0))-np.maximum(lo,vb.min(0))
+  if not np.all(gap>0):continue
+  ma=shapes[a['name']];mb=shapes[b['name']]
+  if ma.status()!=mf.Error.NoError or mb.status()!=mf.Error.NoError:continue
+  vol=mf.Manifold.batch_boolean([ma,mb],mf.OpType.Intersect).volume()
+  if vol>1e-10:pairs.append({'a':a['name'],'b':b['name'],'volume_m3':vol,'owners':[a['body'],b['body']],'roles':[a['role'],b['role']],'finite_material_pair':a['finite_material'] and b['finite_material'],'same_owner':a['body']==b['body']})
+report={'scene_sha256':hashlib.sha256((P/'scene_a.json.gz').read_bytes()).hexdigest(),'resources':resources,'pairs':sorted(pairs,key=lambda x:-x['volume_m3']),'finite_material_pairs':sum(x['finite_material_pair'] for x in pairs),'reference_function_intersections':sum(not x['finite_material_pair'] for x in pairs),'exact_different_owners_not_exempt':True,'raw_source_resource_gate':all(x['material_gate_pass'] for x in resources if x['role']=='finite_custom_material'),'physical_assembly_qualified':False}
+(P/'audit_a.json').write_text(json.dumps(report,indent=2)+'\n')
+# Actual triangles, 4 orthographic same scale, opaque materials, gross reference gold/purple. Services hidden explicitly.
+W,H=1800,1500;im=Image.new('RGB',(W,H),'#f4f2eb');dr=ImageDraw.Draw(im);drawn=[p for p in parts if p['role'] not in ['service_stock','fluid_lumen_reference']]
+allv=np.concatenate([np.array(p['vertices_world_m']) for p in drawn]);center=(allv.min(0)+allv.max(0))/2;scale=1750
+views=[('FRONT XY',np.array([1,0,0]),np.array([0,0,1]),np.array([0,-1,0])),('LEFT YZ',np.array([0,1,0]),np.array([0,0,1]),np.array([1,0,0])),('REAR',np.array([-1,0,0]),np.array([0,0,1]),np.array([0,1,0])),('TOP',np.array([1,0,0]),np.array([0,1,0]),np.array([0,0,-1]))]
+for k,(label,ux,uy,dep) in enumerate(views):
+ cx=450+(k%2)*900;cy=430+(k//2)*700;tris=[]
+ for p in drawn:
+  v=np.array(p['vertices_world_m'])-center;f=np.array(p['faces']);xy=np.column_stack([v@ux,-v@uy])*scale+[cx,cy];d=v@dep;rgb=tuple(int(t*255) for t in p['rgba'][:3]);norm=np.cross(v[f[:,1]]-v[f[:,0]],v[f[:,2]]-v[f[:,0]]);light=np.abs(norm@dep)/np.maximum(np.linalg.norm(norm,axis=1),1e-30)
+  for q,z,li in zip(f,d[f].mean(1),light):tris.append((z,xy[q],tuple(int(c*(.62+.38*li)) for c in rgb)))
+ for z,pts,col in sorted(tris,key=lambda x:x[0]):dr.polygon([tuple(x) for x in pts],fill=col)
+ dr.text((cx-400,cy-320),label+' / SAME SCALE actual native triangles',fill='black')
+dr.text((25,15),'GORILLA G20 | ONE DISTRIBUTED TECHNICAL MODULE | NOT ROBOT GEOMETRY / NOT PHYSICAL ADOPTION',fill='black')
+dr.text((25,35),'OEM gross and historical CAD references are drawn; services/fluid void hidden; complete real host/hoses/interfaces still open.',fill='black')
+im.save(P/'native_module_four_view_a.png')
+print('EVENT audit',report['finite_material_pairs'],report['reference_function_intersections'],len(resources))
+print(json.dumps(report['pairs'][:12],indent=2))

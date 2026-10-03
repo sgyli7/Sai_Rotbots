@@ -1,0 +1,35 @@
+from pathlib import Path
+import json,gzip,hashlib,numpy as np
+O=Path(__file__).resolve().parent;R=Path.cwd();C=R/'robots/gorilla_v0_1/cad/source/appearance_c_scene.json';s=json.loads(C.read_text());ps={p['name']:p for p in s['parts']};sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def area(v):return .5*abs(np.sum(v[:,0]*np.roll(v[:,1],-1)-v[:,1]*np.roll(v[:,0],-1)))if len(v)>2 else 0.
+def clip(poly,ax,cut,sg):
+ out=[]
+ for a,b in zip(poly,np.roll(poly,-1,axis=0)):
+  ia=sg*(a[ax]-cut)>=-1e-12;ib=sg*(b[ax]-cut)>=-1e-12
+  if ia:out.append(a)
+  if ia!=ib:out.append(a+(b-a)*(cut-a[ax])/(b[ax]-a[ax]))
+ return np.array(out)
+meas=[]
+for side in ['left','right']:
+ p=ps[side+'_radiator_black_well'];v=np.array(p['vertices_world_m']);poly=v[:8,1:].copy();lou=[]
+ for i in range(11):
+  q=ps[side+f'_radiator_louver_{i:02}'];vv=np.array(q['vertices_world_m']);z=poly.copy()
+  for ax,val,sg in [(0,vv[:,1].min(),1),(0,vv[:,1].max(),-1),(1,vv[:,2].min(),1),(1,vv[:,2].max(),-1)]:z=clip(z,ax,val,sg)if len(z)else z
+  lou.append({'id':q['name'],'projection_obstruction_m2':area(z)})
+ meas.append({'id':p['name'],'mesh_vertices':len(v),'faces':len(p['faces']),'SI_bounds_world_m':[v.min(0).tolist(),v.max(0).tolist()],'inner_native_loop0to7_world_m':v[:8].tolist(),'aperture_projection_YZ_m2':area(poly),'native_louver_open_projection_m2':area(poly)-sum(x['projection_obstruction_m2']for x in lou),'louver_details':lou,'effective_flow_area_unknown':True,'not_blackwell_grossAABBfreecavity':True})
+p=ps['continuous_ivory_torso_armor_cover'];v=np.array(p['vertices_world_m']);original_polygon_ids=[];ff=[]
+for original_id,face in enumerate(p['faces']):
+ for j in range(1,len(face)-1):ff.append([face[0],face[j],face[j+1]]);original_polygon_ids.append(original_id)
+f=np.array(ff);t=v[f];cross=np.cross(t[:,1]-t[:,0],t[:,2]-t[:,0]);norm=np.linalg.norm(cross,axis=1);nx=np.divide(cross[:,0],norm,out=np.zeros(len(f)),where=norm>0);rear=[]
+for case,inner,outer,zlo,zhi in [('A',.17,.275,2.06,2.32),('B',.17,.30,2.045,2.365)]:
+ for sg in[-1,1]:
+  ymin,ymax=sorted([sg*inner,sg*outer]);patch=[];surf=proj=0
+  for k,tri in enumerate(t):
+   if nx[k]>-.6 or tri[:,0].mean()>-.2:continue
+   poly=tri.copy()
+   for ax,val,sign in [(1,ymin,1),(1,ymax,-1),(2,zlo,1),(2,zhi,-1)]:poly=clip(poly,ax,val,sign)if len(poly)else poly
+   if len(poly)<3:continue
+   a=sum(np.linalg.norm(np.cross(poly[j]-poly[0],poly[j+1]-poly[0]))*.5 for j in range(1,len(poly)-1));b=area(poly[:,1:]);surf+=a;proj+=b;patch.append({'source_triangle_id':k,'original_polygon_id':original_polygon_ids[k],'clipped_surface_polygon_world_m':poly.tolist(),'area_m2':a,'projected_YZ_m2':b})
+  vv=np.concatenate([np.array(q['clipped_surface_polygon_world_m'])for q in patch])if patch else np.zeros((1,3));rear.append({'macro':case,'side':sg,'requested_side_strip_YZ_world_m':[ymin,ymax,zlo,zhi],'source_surface_id':p['name'],'native_outer_rear_selected_normalX_below_minus0p6':True,'surface_patch_area_m2':surf,'projected_patch_area_m2':proj,'surface_spans_world_m':[vv.min(0).tolist(),vv.max(0).tolist()],'nominal_rectangle_gross_area_m2':(outer-inner)*(zhi-zlo),'actual_patch_segments':patch,'this_is_unopened_armor_not_existing_free_exhaust':True,'proposal_requires_aesthetic_review':True})
+obj={'C15_source':str(C.relative_to(R)),'C15_sha256':sha(C),'front':meas,'front_pair_open_projection_m2':sum(q['native_louver_open_projection_m2']for q in meas),'rear':rear,'image_intent_only_source':'/tmp/codex-clipboard-7a91ce92-f30f-4d61-8640-2b65c1820e15.png','image_sha256':sha('/tmp/codex-clipboard-7a91ce92-f30f-4d61-8640-2b65c1820e15.png'),'normalized_intents':{'intake':[[.211,.092],[.32,.084]],'rear_side_exhaust':[[.227,.556],[.309,.566]]},'pixels_not_SI_or_capacity':True,'native_rear_control_dimensions_pending_new_source':True,'physical_accepted':False}
+(O/'native_surface_map.json').write_text(json.dumps(obj,indent=2));print(json.dumps({'C15_sha256':obj['C15_sha256'],'front_net_projection':obj['front_pair_open_projection_m2'],'rear':[{k:q[k]for k in['macro','side','projected_patch_area_m2','surface_spans_world_m']}for q in rear]},indent=2))

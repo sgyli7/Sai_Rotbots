@@ -1,0 +1,70 @@
+"""Ideal profile alternatives: source-informed macro inputs, not actual G1 stress qualification."""
+from pathlib import Path
+import json, math, hashlib
+
+ROOT=Path(__file__).resolve().parents[2]
+OUT=Path(__file__).resolve().parent
+upper_path=OUT/'torso_support_sensitivity.json'
+upper=json.loads(upper_path.read_text())['upper_profiles']
+hydro_url='https://www.hydro.com/globalassets/08-about-hydro/hydro-worldwide/austria/nenzing/alloy-data-sheets/hydro-en-aw-6082.pdf'
+materials=[
+    {'id':'steel_density_modulus_reference','rho':7850.,'E':210e9,'nu':.3,'conditional_yield_Pa':200e6,
+     'basis':'Own lower-yield sensitivity, not a verified steel grade or heat treatment.'},
+    {'id':'6082_extruded_unwelded_t4_floor_sensitivity','rho':2710.,'E':70e9,'nu':70/52-1,'conditional_yield_Pa':110e6,
+     'basis':'Hydro 6082 Rev4 03/2023: T4 t<=25mm. Hypothesis of stock extruded profile and bolted/machined joint, not a welded or cast assembly.'},
+    {'id':'6082_extruded_unwelded_t6_sensitivity','rho':2710.,'E':70e9,'nu':70/52-1,'conditional_yield_Pa':250e6,
+     'basis':'Same primary source: hollow T6 <=5mm250MPa, >5..15mm260MPa. Conservatively250 here for ideal eligible stock profile, not finished assembly certificate.'},
+]
+profiles=[('box_80_100_6',.080,.100,.006),('box_100_140_6',.100,.140,.006),('old_bridge_box_380_110_6_reference',.380,.110,.006)]
+rows=[]
+arm_nominal_kg=167.6516928905429
+arm_high_kg=207.2700137956521
+for name,b,h,t in profiles:
+    area=b*h-(b-2*t)*(h-2*t)
+    I=(b*h**3-(b-2*t)*(h-2*t)**3)/12
+    other_I=(h*b**3-(h-2*t)*(b-2*t)**3)/12
+    for m in materials:
+        for arm in [arm_nominal_kg,arm_high_kg]:
+            for per_hand in [25.,50.]:
+                for factor in [1.,1.5]:
+                    span=.46
+                    F=(arm+per_hand)*9.80665*factor
+                    M=F*span
+                    sigma=M*(h/2)/I
+                    delta=F*span**3/(3*m['E']*I)
+                    # This checks only an ideal local compressive spine; no assembly buckling claim.
+                    N=(upper[-1]['mass_kg']+100+3000)*9.80665
+                    column_length=.35
+                    euler=math.pi**2*m['E']*min(I,other_I)/(2*column_length)**2
+                    max_wall_width=max(b-2*t,h-2*t)
+                    plate_elastic=4*math.pi**2*m['E']/(12*(1-m['nu']**2))*(t/max_wall_width)**2
+                    rows.append({'profile':name,'outer_b_h_m':[b,h],'wall_m':t,'material':m['id'],
+                        'area_m2':area,'I_bending_m4':I,'ideal_full_1_14m_bridge_mass_kg':area*1.14*m['rho'],
+                        'arm_historical_source_listed_mass_kg':arm,'declared_per_hand_load_kg':per_hand,
+                        'declared_load_factor':factor,'cantilever_span_m':span,'cantilever_force_N':F,
+                        'cantilever_moment_Nm':M,'ideal_bending_stress_MPa':sigma/1e6,
+                        'ideal_tip_deflection_mm':delta*1000,
+                        'conditional_gross_yield_ratio':m['conditional_yield_Pa']/sigma,
+                        'explicit_separate_external_compression_kg':3000,
+                        'ideal_short_spine_compression_N':N,'ideal_gross_compression_stress_MPa':N/area/1e6,
+                        'uniform_pinned_equivalent_K2_Euler_N':euler,
+                        'simply_supported_long_flat_wall_k4_elastic_buckling_MPa':plate_elastic/1e6,
+                        'not_actual_G1_geometry_or_strength':True})
+report={'schema':'gorilla_g_frame_profile_and_material_sensitivity_v1',
+    'input_hashes':{str(upper_path.relative_to(ROOT)):hashlib.sha256(upper_path.read_bytes()).hexdigest()},
+    'primary_material_source':{'url':hydro_url,'version':'Hydro6082_Rev4_03_2023','scope':'extruded products, page1 mechanical/page2 typical physical; no fatigue guarantee'},
+    'materials':materials,'cases':rows,
+    'formulas':['A=bh-(b-2t)(h-2t)','I=(bh^3-(b-2t)(h-2t)^3)/12','M=FL','sigma=M(h/2)/I','delta=FL^3/(3EI)','Euler=pi^2 E Imin/(K L)^2', 'sigma_plate=k*pi^2 E/[12(1-nu^2)]*(t/bwall)^2'],
+    'decision_input':'Compare real net profiles and material/housing co-design before growing all-steel boxes. No mass credit until a complete new assembly uses the alternative and closes its geometry/load interfaces.',
+    'physical_accepted':False,'source_candidate_modified':False,'limits':[
+        'Arm/upper inventory statistics are historical unqualified proxies, not inevitable G loads.',
+        'The ideal source bridge dimensions are a comparison section, not a beam extracted from actual new G geometry.',
+        'Finite connections, combined bending/torsion, joints/bolt load spreading, cutouts, local prying/contact and weld HAZ are absent.',
+        'The upper mass plus separate3t external compression is a declared sensitivity, not payload or posture qualification.',
+        'Euler and flat-wall plate assumptions do not certify real cast/bolted irregular carriers or mounting seats.',
+        'Material tables do not transfer automatically to cast/welded/overtemperature parts. Conditional frame alternative requires defined stock/temper/process.',
+        'A new mass/inertia ledger and complete motions/loads must be rebuilt before any material alternative is adopted.']}
+(OUT/'frame_material_screen.json').write_text(json.dumps(report,indent=2)+'\n')
+for r in rows:
+    if r['arm_historical_source_listed_mass_kg']==arm_high_kg and r['declared_per_hand_load_kg']==50 and r['declared_load_factor']==1.5:
+        print(r['profile'],r['material'],'mass',round(r['ideal_full_1_14m_bridge_mass_kg'],3),'stress',round(r['ideal_bending_stress_MPa'],3),'deflectionmm',round(r['ideal_tip_deflection_mm'],3))

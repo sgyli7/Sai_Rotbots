@@ -1,0 +1,18 @@
+from pathlib import Path
+import json,hashlib,numpy as np
+from OCP.TopoDS import TopoDS_Shape
+from OCP.BRep import BRep_Builder
+from OCP.BRepTools import BRepTools
+from OCP.BRepBndLib import BRepBndLib
+from OCP.Bnd import Bnd_Box
+from OCP.STEPControl import STEPControl_Reader
+from OCP.IFSelect import IFSelect_RetDone
+from OCP.GProp import GProp_GProps
+from OCP.BRepGProp import BRepGProp
+p=Path(__file__).resolve().parent;d=p.parent/'gorilla_internal_g11_body_design_domain';sha=lambda x:hashlib.sha256(x.read_bytes()).hexdigest()
+def measure(s):
+ b=Bnd_Box();BRepBndLib.AddOptimal_s(s,b,False,False);q=GProp_GProps();BRepGProp.VolumeProperties_s(s,q);return np.asarray(b.Get()),q.Mass()
+s=TopoDS_Shape();assert BRepTools.Read_s(s,str(d/'design_domain_bulk.brep'),BRep_Builder());bb,v=measure(s)
+r=STEPControl_Reader();assert r.ReadFile(str(d/'design_domain_bulk_si.step'))==IFSelect_RetDone;assert r.TransferRoots()>0;rb,rv=measure(r.OneShape());err=float(np.max(np.abs(bb-rb/1000.)));ve=float(abs(v-rv/1e9)/abs(v))
+receipt=dict(scope='Independent actual STEP readback only; conditional exterior closure remains unqualified',BREP_sha256=sha(d/'design_domain_bulk.brep'),STEP_sha256=sha(d/'design_domain_bulk_si.step'),BREP_coordinate_contract='SI metre',actual_reader_internal_unit='default OCC millimetre',physical_bbox_error_m=err,physical_volume_relative_error=ve,unit_readback_pass=err<1e-6 and ve<1e-7,cavity_or_frame_or_load_admission=False)
+(p/'domain_actual_step_units_review.json').write_text(json.dumps(receipt,indent=2)+'\n');print(json.dumps(receipt,indent=2));assert receipt['unit_readback_pass']

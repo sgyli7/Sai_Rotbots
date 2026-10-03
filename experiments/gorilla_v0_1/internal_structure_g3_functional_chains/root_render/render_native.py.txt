@@ -1,0 +1,46 @@
+"""Blender native SI geometry preview, isolated outputs; no geometry modifiers."""
+from pathlib import Path
+import argparse,sys,json,hashlib,math
+import bpy
+from mathutils import Vector
+parser=argparse.ArgumentParser();parser.add_argument('--scene',type=Path,required=True);parser.add_argument('--output',type=Path,required=True);parser.add_argument('--views',default='front,left,rear,top');parser.add_argument('--resolution',type=int,default=800);parser.add_argument('--samples',type=int,default=24);parser.add_argument('--scale',type=float,default=3.04);parser.add_argument('--target',default='0,0,1.325');args=parser.parse_args(sys.argv[sys.argv.index('--')+1:])
+source=args.scene.resolve();out=args.output.resolve();root=Path('/home/ethan/Projects/Sai_Rotbots')
+assert out.is_relative_to(root/'.scratch'),out
+sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest();before=sha(source);data=json.loads(source.read_text());parts=data['parts'];assert len({p['name'] for p in parts})==len(parts)
+out.mkdir(parents=True,exist_ok=True)
+bpy.ops.object.select_all(action='SELECT');bpy.ops.object.delete(use_global=False);sc=bpy.context.scene
+sc.render.engine='CYCLES';sc.cycles.device='CPU';sc.cycles.samples=args.samples;sc.cycles.use_denoising=False
+sc.render.resolution_x=sc.render.resolution_y=args.resolution;sc.render.resolution_percentage=100;sc.render.image_settings.file_format='PNG';sc.render.image_settings.color_mode='RGBA';sc.render.film_transparent=False
+sc.view_settings.view_transform='Standard';sc.view_settings.look='None';sc.view_settings.exposure=-.25
+world=bpy.data.worlds.new('native_studio');world.use_nodes=True;world.node_tree.nodes['Background'].inputs['Color'].default_value=(1,1,1,1);world.node_tree.nodes['Background'].inputs['Strength'].default_value=.45;sc.world=world
+linear=lambda c:c/12.92 if c<=.04045 else ((c+.055)/1.055)**2.4
+mats={};objects=[];records=[]
+for p in parts:
+ mesh=bpy.data.meshes.new(p['name']+'_native_mesh');mesh.from_pydata(p['vertices_world_m'],[],p['faces']);mesh.update();ob=bpy.data.objects.new(p['name'],mesh);sc.collection.objects.link(ob);objects.append(ob)
+ color=p.get('rgba',p.get('color_rgba',[.18,.2,.22,1]));key=(tuple(color),p.get('role',''))
+ if key not in mats:
+  mat=bpy.data.materials.new('source_material_'+str(len(mats)));mat.use_nodes=True;rgba=tuple(linear(c) for c in color[:3])+(color[3],);mat.diffuse_color=rgba;bsdf=mat.node_tree.nodes.get('Principled BSDF');bsdf.inputs['Base Color'].default_value=rgba;bsdf.inputs['Metallic'].default_value=.15 if 'armor' in p.get('role','') else .45;bsdf.inputs['Roughness'].default_value=.30;mats[key]=mat
+ mesh.materials.append(mats[key]);mesh.use_auto_smooth=True;mesh.auto_smooth_angle=math.radians(p.get('auto_smooth_angle_deg',45))
+ for face in mesh.polygons:face.use_smooth=p.get('surface_shading') in ('mechanical_smooth','curved_hard_surface') or p.get('role','').startswith('finite')
+ for pair in p.get('sharp_surface_edge_pairs',[]):
+  pair=tuple(sorted(pair))
+  for e in mesh.edges:
+   if tuple(sorted(e.vertices))==pair:e.use_edge_sharp=True
+ ob['source_scene_sha256']=before;ob['source_part_name']=p['name'];ob['physical_accepted']=False;ob['geometry_modifiers_applied']=False
+ error=max((Vector(v)-w.co).length for v,w in zip(p['vertices_world_m'],mesh.vertices));assert error<5e-7,(p['name'],error)
+ records.append({'name':p['name'],'role':p.get('role'),'body':p.get('body'),'vertices':len(mesh.vertices),'faces':len(mesh.polygons),'float_import_max_delta_m':error})
+target=Vector([float(x) for x in args.target.split(',')])
+for name,pos,power,size in [('key',(4,-3,6),450,4),('fill',(2,4,3),260,3),('rim',(-3,-2,5),300,3)]:
+ ld=bpy.data.lights.new(name,'AREA');ld.energy=power;ld.shape='DISK';ld.size=size;ob=bpy.data.objects.new(name,ld);sc.collection.objects.link(ob);ob.location=pos;ob.rotation_euler=(target-ob.location).to_track_quat('-Z','Y').to_euler()
+bpy.ops.mesh.primitive_plane_add(size=200,location=(0,0,-.004));floor=bpy.context.object;floor.name='studio_floor_not_robot';mat=bpy.data.materials.new('white_floor');mat.diffuse_color=(.94,.94,.94,1);floor.data.materials.append(mat)
+cd=bpy.data.cameras.new('source_orthographic');cam=bpy.data.objects.new('source_orthographic',cd);sc.collection.objects.link(cam);sc.camera=cam;cd.type='ORTHO';cd.ortho_scale=args.scale
+positions={'front':target+Vector((8,0,0)),'left':target+Vector((0,8,0)),'rear':target+Vector((-8,0,0)),'top':target+Vector((0,0,8)),'threequarter':target+Vector((4,6,2.7))}
+views=[]
+for view in args.views.split(','):
+ cam.location=positions[view];cam.rotation_euler=(target-cam.location).to_track_quat('-Z','Y').to_euler()
+ if view=='top':cam.rotation_euler=(0,0,math.pi/2)
+ path=out/('native_'+view+'.png');sc.render.filepath=str(path);bpy.ops.render.render(write_still=True);views.append({'view':view,'path':str(path.relative_to(root)),'sha256':sha(path),'ortho_scale_m':args.scale,'position_world_m':list(cam.location),'target_world_m':list(target),'all_source_parts_visible':True})
+assert sha(source)==before
+sc['source_scene_sha256']=before;sc['scope']=data.get('scope','Native candidate preview; not an accepted integrated robot');bpy.context.preferences.filepaths.save_version=0;bpy.ops.wm.save_as_mainfile(filepath=str(out/'native_candidate.blend'))
+receipt={'robot_id':'gorilla_v0_1','source_path':str(source.relative_to(root)),'source_sha256':before,'source_unchanged':True,'renderer':'Blender '+bpy.app.version_string+' Cycles CPU','entry_sha256':sha(Path(__file__)),'geometry_modifiers_applied':False,'images':views,'native_parts':records,'physical_accepted':False,'aesthetic_accepted':False,'stable_si':False,'scope':data.get('scope','Scoped native appearance/layout preview'),'not_a_manufacturing_or_capacity_render':True}
+(out/'render_manifest.json').write_text(json.dumps(receipt,indent=2)+'\n');print('NATIVE_RENDER_READY',before,len(parts),flush=True)

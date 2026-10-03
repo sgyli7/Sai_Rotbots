@@ -1,0 +1,46 @@
+"""New signed native boundary/material and seven true-CAD interface checks."""
+from pathlib import Path
+import hashlib,json,sys
+import numpy as np
+import trimesh as tr
+
+O=Path(__file__).resolve().parent;ROOT=next(p for p in O.parents if (p/'sai_robots_engineering_rules.md').exists())
+sys.path.insert(0,str(ROOT/'.scratch/gorilla_internal_g_material_contract'))
+import native_signed_material as gate
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+cad=json.loads((O/'cad_source_manifest.json').read_text());out=[]
+for lev in ['coarse','fine']:
+    D=O/lev;d=np.load(D/'carrier_tetra.npz');v=d['points_m'];faces=d['boundary_faces'];tags=d['boundary_physical_tags']
+    # A boundary-only indexed representation with a declared exact node-index map; no coordinate/face repair.
+    used=np.unique(faces);index=np.full(len(v),-1,dtype=np.int64);index[used]=np.arange(len(used));vv=v[used];ff=index[faces]
+    np.savez_compressed(D/'carrier_native_boundary.npz',vertices_world_m=vv,faces=ff,
+        original_tetra_node_indices=used,boundary_physical_tags=tags,boundary_cad_surface_tags=d['boundary_cad_surface_tags'])
+    p={'name':'g7_child_load_carrier_'+lev,'body':'child','vertices_world_m':vv.tolist(),'faces':ff.tolist()}
+    g=gate.validate_part(p,require_single_material_component=True)
+    mesh=tr.Trimesh(vv,ff,process=False);props=mesh.mass_properties
+    ports=[]
+    for i in range(1,8):
+        sel=faces[tags==i];node=np.unique(sel);pt=v[node];tri=v[sel];normal=np.cross(tri[:,1]-tri[:,0],tri[:,2]-tri[:,0]);area=np.linalg.norm(normal,axis=1)/2
+        normal/=np.linalg.norm(normal,axis=1)[:,None];center=tri.mean(1);pg=next(x for x in json.loads((D/'port_groups.json').read_text())['groups'] if x['physical_tag']==i)
+        if i in [1,2,3,4]:
+            cx,cz,rad=(-.06,.30,.02995) if i<3 else (.26,.34,.02020)
+            err=np.hypot(pt[:,0]-cx,pt[:,2]-cz)-rad
+            cd=np.hypot(center[:,0]-cx,center[:,2]-cz)-rad
+            analytic={'maximum_vertex_radius_error_m':float(abs(err).max()),'triangle_centroid_radial_chord_error_range_m':[float(cd.min()),float(cd.max())]}
+        else:
+            ax,value=(2,.388) if i in [5,6] else (0,.290)
+            analytic={'maximum_vertex_plane_error_m':float(abs(pt[:,ax]-value).max()),'outward_normal_axis_range':[float(normal[:,ax].min()),float(normal[:,ax].max())]}
+        ports.append({'physical_tag':i,'name':pg['name'],'CAD_surface_tags':pg['cad_surface_tags'],'actual_CAD_area_m2':pg['cad_area_m2'],
+            'linear_triangle_area_m2':float(area.sum()),'mesh_vs_CAD_area_relative_error':float(area.sum()/pg['cad_area_m2']-1),
+            'actual_area_centroid_world_m':np.average(center,axis=0,weights=area).tolist(),
+            'boundary_material_outward_orientation_from_positive_tet':True,**analytic})
+    row={'level':lev,'new_cad_brep_sha256':sha(O/'carrier_exact.brep'),'input_tetra_sha256':sha(D/'carrier_tetra.npz'),
+        'native_boundary_sha256':sha(D/'carrier_native_boundary.npz'),'native_export_method':'Exact referenced-node subset and index map of already outward tet boundary; no smoothing/normal fix/triangle deletion',
+        'signed_native_material_gate':g,'conditional_density_kg_m3':7850,'linear_native_volume_m3':float(props.volume),
+        'linear_native_mass_kg':float(props.volume*7850),'linear_native_COM_world_m':props.center_mass.tolist(),
+        'linear_native_inertia_COM_world_kg_m2':(props.inertia*7850).tolist(),'exact_CAD_volume_m3':cad['actual_volume_m3'],
+        'exact_CAD_mass_kg':cad['conditional_mass_kg'],'linear_mass_delta_vs_exact_CAD_kg':float(props.volume*7850-cad['conditional_mass_kg']),
+        'seven_ports_actual_surface_checks':ports,'source_G4_gate_not_inherited':True,'physical_accepted':False}
+    (D/'new_material_gate.json').write_text(json.dumps(row,indent=2)+'\n');out.append({k:row[k] for k in ['level','input_tetra_sha256','native_boundary_sha256','linear_native_mass_kg','linear_mass_delta_vs_exact_CAD_kg']})
+    print('NEW_GATE',lev,g['resource_contract_pass'],'roots',g.get('material_component_count_from_nesting'),'errors',g['errors'],flush=True)
+(O/'new_material_summary.json').write_text(json.dumps({'robot_id':'gorilla_v0_1','checker_sha256':sha(Path(__file__)),'outputs':out},indent=2)+'\n')

@@ -1,0 +1,2719 @@
+{
+  "robot_id": "gorilla_v0_1",
+  "stage": "g11_functional_macro_budget",
+  "producer_sha256": "eac669cf82723e2e1fbbfac72d6468a9d750d0d8d626b7ce0db3fa7146c0c810",
+  "source_hashes": {
+    "/home/ethan/Projects/Sai_Rotbots/.scratch/gorilla_internal_g9_upper_load_scope/upper_load_scope.json": "c91e46f23a592b089942746c5d7d48427d068f8283a8c95680c36f1ad76f17c5",
+    "/home/ethan/Projects/Sai_Rotbots/.scratch/gorilla_internal_g9_module_placement/layout_1/moved_group_mass_positions.json": "a800f6b4f5b9b5f0409f794139fe7cb07f7f3cc2ec9fbfd0a9b3892e30578ca6",
+    "/home/ethan/Projects/Sai_Rotbots/.scratch/gorilla_internal_d_system/system_modules.json": "d988ef1a248405f47f34510a4f6191f4c6ea505cc7502c62905670cab81f6ad1",
+    "/home/ethan/Projects/Sai_Rotbots/.scratch/gorilla_internal_g_root_macro/flow_heat_screen.json": "620187d3e619036035e81e011716efa99ac9114e7a600109866bd70d8560dd37",
+    "/home/ethan/Projects/Sai_Rotbots/robots/gorilla_v0_1/design/current_decisions.md": "9aa73d72bbfbaa1142863d5c3f88ff1a0d643cf5ccc5ce82f0a073787b402c0b",
+    "/home/ethan/Projects/Sai_Rotbots/robots/gorilla_v0_1/hardware/internal_module_research.md": "7fd307b1ba69606ac65b674ebcb99370b40126a77abfd12ecb4ee031276e23f6",
+    "/home/ethan/Projects/Sai_Rotbots/artifacts/gorilla_v0_1/internal_module_sources/victron_lithium_ng_25_6_manual.pdf": "364b88de54dc130a6bb8614af419d9dd8a43e043ca9c088d4c60e2fe1110cad9",
+    "/home/ethan/Projects/Sai_Rotbots/.scratch/gorilla_internal_d_sources/hawe_z_pumps_d6820_en.pdf": "eb12235f90d93f9c08f1c08d7bee27427ce1338cd5429ae019420844e77307dd",
+    "/home/ethan/Projects/Sai_Rotbots/.scratch/gorilla_internal_g11_functional_budget/molicel_p45b_datasheet_1_4.pdf": "54832eb1684991f097578f02dd9ecfc3ba49cbc8bea40beacd7103092b717e69"
+  },
+  "source_facts": {
+    "battery_reference": {
+      "source": {
+        "exact_source": "robots/gorilla_v0_1/hardware/internal_module_research.md, A actual Victron NG imported CAD manifest",
+        "capacity_kWh": 2.56,
+        "m": 19,
+        "dims": [
+          0.16026079406,
+          0.235795325916,
+          0.341202481542
+        ],
+        "scope": "25.6V benchmark maxseries2; custom HV pack is new design, not four-series OEM packs"
+      },
+      "full4_core_AABB_L": 51.574455866075375,
+      "full4_complete_group_AABB_sum_L": 61.830597684705346,
+      "full2_complete_pump_AABB_sum_L": 68.76090135566353,
+      "full4energy_plus2pump_AABB_sum_L": 130.5914990403689,
+      "old130_6L_was_energy_plus_pumps_not_four_packs": true,
+      "full4_complete_group_mass_range_kg": [
+        80.16711166681941,
+        97.8301240742438,
+        120.75614888909254
+      ],
+      "capacity10_24_not_user_frozen": true,
+      "series_limit_of_actual25_6V_Victron_ref": 2,
+      "old_102_4V_not_inherited": true
+    },
+    "high_power_cell_official_reference": {
+      "url": "https://www.molicel.com/wp-content/uploads/INR21700P45B_1.4_Product-Data-Sheet-of-INR-21700-P45B-80109.pdf",
+      "pdf_sha256": "54832eb1684991f097578f02dd9ecfc3ba49cbc8bea40beacd7103092b717e69",
+      "minimum_energy_Wh": 15.5,
+      "minimum_capacity_Ah": 4.3,
+      "max_mass_kg": 0.07,
+      "max_diameter_m": 0.02155,
+      "max_height_m": 0.07015,
+      "nominal_V": 3.6,
+      "discharge_cutoff_V": 2.5,
+      "discharge_current_A": 45,
+      "discharge_cutoff_C": 80,
+      "discharge_environment_C": [
+        -40,
+        60
+      ],
+      "charge_environment_C": [
+        0,
+        60
+      ],
+      "typical_DC_50percentSOC_ohm": 0.015,
+      "physical_pack_and_supply_not_selected": true
+    },
+    "nine_complete_groups": [
+      {
+        "id": "left_upper_energy",
+        "complete_member_ids": [
+          "ds_left_upper_custom_hv_pack",
+          "ds_left_upper_custom_hv_pack_bms_fuse_service",
+          "e_ds_left_upper_custom_hv_pack_coldplate"
+        ],
+        "mass_range_kg": [
+          20.041777790643316,
+          24.457530878492573,
+          30.189037054191086
+        ],
+        "gross_group_AABB_volume_L": 15.457649421176331,
+        "group_AABB_dimensions_m": [
+          0.19213039702999996,
+          0.23579532591599994,
+          0.34120248154200006
+        ],
+        "source_candidate_center_world_m": [
+          -0.23,
+          0.14,
+          2.47
+        ],
+        "owner": "torso",
+        "installation_or_route_accepted": false
+      },
+      {
+        "id": "left_lower_energy",
+        "complete_member_ids": [
+          "ds_left_lower_custom_hv_pack",
+          "ds_left_lower_custom_hv_pack_bms_fuse_service",
+          "e_ds_left_lower_custom_hv_pack_coldplate"
+        ],
+        "mass_range_kg": [
+          20.04177804276639,
+          24.457531158629322,
+          30.189037390355182
+        ],
+        "gross_group_AABB_volume_L": 15.457649421176345,
+        "group_AABB_dimensions_m": [
+          0.19213039702999996,
+          0.23579532591600016,
+          0.34120248154200006
+        ],
+        "source_candidate_center_world_m": [
+          -0.23,
+          0.14,
+          2.12
+        ],
+        "owner": "torso",
+        "installation_or_route_accepted": false
+      },
+      {
+        "id": "left_pump",
+        "complete_member_ids": [
+          "ds_left_hydraulic_input_z16_pump",
+          "ds_left_hydraulic_input_inverter",
+          "ds_left_hydraulic_input_emrax188_lc",
+          "ds_left_hydraulic_input_motor_mount_case",
+          "ds_left_hydraulic_input_return_filter",
+          "ds_left_hydraulic_input_coupling",
+          "ds_left_hydraulic_input_pump_mount"
+        ],
+        "mass_range_kg": [
+          14.099306101344142,
+          16.02145122371571,
+          19.22681402964464
+        ],
+        "gross_group_AABB_volume_L": 34.38045067783177,
+        "group_AABB_dimensions_m": [
+          0.32650000214576735,
+          0.23400000214576722,
+          0.45000000178813915
+        ],
+        "source_candidate_center_world_m": [
+          0.04,
+          0.16,
+          2.32
+        ],
+        "owner": "torso",
+        "installation_or_route_accepted": false
+      },
+      {
+        "id": "right_upper_energy",
+        "complete_member_ids": [
+          "ds_right_upper_custom_hv_pack",
+          "ds_right_upper_custom_hv_pack_bms_fuse_service",
+          "e_ds_right_upper_custom_hv_pack_coldplate"
+        ],
+        "mass_range_kg": [
+          20.041777790643312,
+          24.45753087849257,
+          30.189037054191083
+        ],
+        "gross_group_AABB_volume_L": 15.457649421176331,
+        "group_AABB_dimensions_m": [
+          0.19213039702999996,
+          0.23579532591599994,
+          0.34120248154200006
+        ],
+        "source_candidate_center_world_m": [
+          -0.23,
+          -0.14,
+          2.47
+        ],
+        "owner": "torso",
+        "installation_or_route_accepted": false
+      },
+      {
+        "id": "right_lower_energy",
+        "complete_member_ids": [
+          "ds_right_lower_custom_hv_pack",
+          "ds_right_lower_custom_hv_pack_bms_fuse_service",
+          "e_ds_right_lower_custom_hv_pack_coldplate"
+        ],
+        "mass_range_kg": [
+          20.041778042766396,
+          24.45753115862933,
+          30.189037390355193
+        ],
+        "gross_group_AABB_volume_L": 15.45764942117634,
+        "group_AABB_dimensions_m": [
+          0.19213039702999996,
+          0.23579532591599994,
+          0.3412024815420003
+        ],
+        "source_candidate_center_world_m": [
+          -0.23,
+          -0.14,
+          2.12
+        ],
+        "owner": "torso",
+        "installation_or_route_accepted": false
+      },
+      {
+        "id": "right_pump",
+        "complete_member_ids": [
+          "ds_right_hydraulic_input_motor_mount_case",
+          "ds_right_hydraulic_input_pump_mount",
+          "ds_right_hydraulic_input_inverter",
+          "ds_right_hydraulic_input_z16_pump",
+          "ds_right_hydraulic_input_return_filter",
+          "ds_right_hydraulic_input_emrax188_lc",
+          "ds_right_hydraulic_input_coupling"
+        ],
+        "mass_range_kg": [
+          14.09930610134414,
+          16.02145122371571,
+          19.226814029644636
+        ],
+        "gross_group_AABB_volume_L": 34.38045067783177,
+        "group_AABB_dimensions_m": [
+          0.32650000214576735,
+          0.23400000214576722,
+          0.45000000178813915
+        ],
+        "source_candidate_center_world_m": [
+          0.04,
+          -0.16,
+          2.32
+        ],
+        "owner": "torso",
+        "installation_or_route_accepted": false
+      },
+      {
+        "id": "HX",
+        "complete_member_ids": [
+          "e2_dual_fluid_HX_material",
+          "e2_oil_HX_out_actual_hollow_port",
+          "e2_oil_HX_in_actual_hollow_port",
+          "e2_oil_HX_water_return_actual_hollow_port",
+          "e2_oil_HX_water_supply_actual_hollow_port"
+        ],
+        "mass_range_kg": [
+          10.86617442918764,
+          12.073527143541822,
+          14.488232572250185
+        ],
+        "gross_group_AABB_volume_L": 7.466398484838055,
+        "group_AABB_dimensions_m": [
+          0.14999997615814206,
+          0.24400000274181366,
+          0.20399998873472214
+        ],
+        "source_candidate_center_world_m": [
+          0.22,
+          0.0,
+          1.9
+        ],
+        "owner": "pelvis",
+        "installation_or_route_accepted": false
+      },
+      {
+        "id": "compute",
+        "complete_member_ids": [
+          "ds_compute"
+        ],
+        "mass_range_kg": [
+          1.2,
+          2.0,
+          3.5
+        ],
+        "gross_group_AABB_volume_L": 1.7550000000000106,
+        "group_AABB_dimensions_m": [
+          0.15,
+          0.18,
+          0.06500000000000039
+        ],
+        "source_candidate_center_world_m": [
+          0.2,
+          0.0,
+          2.61
+        ],
+        "owner": "torso",
+        "installation_or_route_accepted": false
+      },
+      {
+        "id": "screen",
+        "complete_member_ids": [
+          "ds_back_screen"
+        ],
+        "mass_range_kg": [
+          1.0,
+          1.7,
+          2.7
+        ],
+        "gross_group_AABB_volume_L": 3.393,
+        "group_AABB_dimensions_m": [
+          0.030000000000000027,
+          0.29,
+          0.3899999999999997
+        ],
+        "source_candidate_center_world_m": [
+          -0.386,
+          0.0,
+          2.225
+        ],
+        "owner": "torso",
+        "installation_or_route_accepted": false
+      }
+    ],
+    "dry633_families": {
+      "hydraulic_thermal_air_and_lines_dry_hardware": {
+        "row_count": 271,
+        "mass_range_kg": [
+          119.59710411464381,
+          142.17919830221655,
+          180.5241239069522
+        ],
+        "nominal_gravity_M_at_roll_reference_Nm": [
+          -0.03084450743648732,
+          -360.87206022708654,
+          0.0
+        ],
+        "row_ids": [
+          "f1_waist_pitch_pair_0_directional__d1fb_c_obe_core_reference",
+          "f1_waist_pitch_pair_0_directional__d1fb_c_obe_four_channel_baseplate",
+          "f1_waist_pitch_pair_0_directional__d1fb_c_obe_mount_seal_P",
+          "f1_waist_pitch_pair_0_directional__d1fb_c_obe_mount_seal_T",
+          "f1_waist_pitch_pair_0_directional__d1fb_c_obe_mount_seal_A",
+          "f1_waist_pitch_pair_0_directional__d1fb_c_obe_mount_seal_B",
+          "f1_waist_pitch_pair_0_directional__d1fb_c_obe_fitting_P",
+          "f1_waist_pitch_pair_0_directional__d1fb_c_obe_fitting_T",
+          "f1_waist_pitch_pair_0_directional__d1fb_c_obe_fitting_A",
+          "f1_waist_pitch_pair_0_directional__d1fb_c_obe_fitting_B",
+          "f1_waist_pitch_pair_0_directional__d1fb_c_obe_M5_fastener_0",
+          "f1_waist_pitch_pair_0_directional__d1fb_c_obe_M5_fastener_1",
+          "f1_waist_pitch_pair_0_directional__d1fb_c_obe_M5_fastener_2",
+          "f1_waist_pitch_pair_0_directional__d1fb_c_obe_M5_fastener_3",
+          "f1_waist_pitch_pair_0_directional__d1fb_c_obe_mating_plug_shell",
+          "f1_waist_pitch_pair_0_directional__d1fb_c_obe_connector_pin_0",
+          "f1_waist_pitch_pair_0_directional__d1fb_c_obe_connector_pin_1",
+          "f1_waist_pitch_pair_0_directional__d1fb_c_obe_connector_pin_2",
+          "f1_waist_pitch_pair_0_directional__d1fb_c_obe_connector_pin_3",
+          "f1_waist_pitch_pair_0_directional__d1fb_c_obe_heat_spreader",
+          "f1_waist_pitch_pair_0_directional__d1fb_c_obe_guard",
+          "f1_waist_pitch_pair_1_directional__d1fb_c_obe_core_reference",
+          "f1_waist_pitch_pair_1_directional__d1fb_c_obe_four_channel_baseplate",
+          "f1_waist_pitch_pair_1_directional__d1fb_c_obe_mount_seal_P",
+          "f1_waist_pitch_pair_1_directional__d1fb_c_obe_mount_seal_T",
+          "f1_waist_pitch_pair_1_directional__d1fb_c_obe_mount_seal_A",
+          "f1_waist_pitch_pair_1_directional__d1fb_c_obe_mount_seal_B",
+          "f1_waist_pitch_pair_1_directional__d1fb_c_obe_fitting_P",
+          "f1_waist_pitch_pair_1_directional__d1fb_c_obe_fitting_T",
+          "f1_waist_pitch_pair_1_directional__d1fb_c_obe_fitting_A",
+          "f1_waist_pitch_pair_1_directional__d1fb_c_obe_fitting_B",
+          "f1_waist_pitch_pair_1_directional__d1fb_c_obe_M5_fastener_0",
+          "f1_waist_pitch_pair_1_directional__d1fb_c_obe_M5_fastener_1",
+          "f1_waist_pitch_pair_1_directional__d1fb_c_obe_M5_fastener_2",
+          "f1_waist_pitch_pair_1_directional__d1fb_c_obe_M5_fastener_3",
+          "f1_waist_pitch_pair_1_directional__d1fb_c_obe_mating_plug_shell",
+          "f1_waist_pitch_pair_1_directional__d1fb_c_obe_connector_pin_0",
+          "f1_waist_pitch_pair_1_directional__d1fb_c_obe_connector_pin_1",
+          "f1_waist_pitch_pair_1_directional__d1fb_c_obe_connector_pin_2",
+          "f1_waist_pitch_pair_1_directional__d1fb_c_obe_connector_pin_3",
+          "f1_waist_pitch_pair_1_directional__d1fb_c_obe_heat_spreader",
+          "f1_waist_pitch_pair_1_directional__d1fb_c_obe_guard",
+          "f1_right_hip_roll_pair_0_directional__d1fb_c_obe_core_reference",
+          "f1_right_hip_roll_pair_0_directional__d1fb_c_obe_four_channel_baseplate",
+          "f1_right_hip_roll_pair_0_directional__d1fb_c_obe_mount_seal_P",
+          "f1_right_hip_roll_pair_0_directional__d1fb_c_obe_mount_seal_T",
+          "f1_right_hip_roll_pair_0_directional__d1fb_c_obe_mount_seal_A",
+          "f1_right_hip_roll_pair_0_directional__d1fb_c_obe_mount_seal_B",
+          "f1_right_hip_roll_pair_0_directional__d1fb_c_obe_fitting_P",
+          "f1_right_hip_roll_pair_0_directional__d1fb_c_obe_fitting_T",
+          "f1_right_hip_roll_pair_0_directional__d1fb_c_obe_fitting_A",
+          "f1_right_hip_roll_pair_0_directional__d1fb_c_obe_fitting_B",
+          "f1_right_hip_roll_pair_0_directional__d1fb_c_obe_M5_fastener_0",
+          "f1_right_hip_roll_pair_0_directional__d1fb_c_obe_M5_fastener_1",
+          "f1_right_hip_roll_pair_0_directional__d1fb_c_obe_M5_fastener_2",
+          "f1_right_hip_roll_pair_0_directional__d1fb_c_obe_M5_fastener_3",
+          "f1_right_hip_roll_pair_0_directional__d1fb_c_obe_mating_plug_shell",
+          "f1_right_hip_roll_pair_0_directional__d1fb_c_obe_connector_pin_0",
+          "f1_right_hip_roll_pair_0_directional__d1fb_c_obe_connector_pin_1",
+          "f1_right_hip_roll_pair_0_directional__d1fb_c_obe_connector_pin_2",
+          "f1_right_hip_roll_pair_0_directional__d1fb_c_obe_connector_pin_3",
+          "f1_right_hip_roll_pair_0_directional__d1fb_c_obe_heat_spreader",
+          "f1_right_hip_roll_pair_0_directional__d1fb_c_obe_guard",
+          "f1_right_hip_roll_pair_1_directional__d1fb_c_obe_core_reference",
+          "f1_right_hip_roll_pair_1_directional__d1fb_c_obe_four_channel_baseplate",
+          "f1_right_hip_roll_pair_1_directional__d1fb_c_obe_mount_seal_P",
+          "f1_right_hip_roll_pair_1_directional__d1fb_c_obe_mount_seal_T",
+          "f1_right_hip_roll_pair_1_directional__d1fb_c_obe_mount_seal_A",
+          "f1_right_hip_roll_pair_1_directional__d1fb_c_obe_mount_seal_B",
+          "f1_right_hip_roll_pair_1_directional__d1fb_c_obe_fitting_P",
+          "f1_right_hip_roll_pair_1_directional__d1fb_c_obe_fitting_T",
+          "f1_right_hip_roll_pair_1_directional__d1fb_c_obe_fitting_A",
+          "f1_right_hip_roll_pair_1_directional__d1fb_c_obe_fitting_B",
+          "f1_right_hip_roll_pair_1_directional__d1fb_c_obe_M5_fastener_0",
+          "f1_right_hip_roll_pair_1_directional__d1fb_c_obe_M5_fastener_1",
+          "f1_right_hip_roll_pair_1_directional__d1fb_c_obe_M5_fastener_2",
+          "f1_right_hip_roll_pair_1_directional__d1fb_c_obe_M5_fastener_3",
+          "f1_right_hip_roll_pair_1_directional__d1fb_c_obe_mating_plug_shell",
+          "f1_right_hip_roll_pair_1_directional__d1fb_c_obe_connector_pin_0",
+          "f1_right_hip_roll_pair_1_directional__d1fb_c_obe_connector_pin_1",
+          "f1_right_hip_roll_pair_1_directional__d1fb_c_obe_connector_pin_2",
+          "f1_right_hip_roll_pair_1_directional__d1fb_c_obe_connector_pin_3",
+          "f1_right_hip_roll_pair_1_directional__d1fb_c_obe_heat_spreader",
+          "f1_right_hip_roll_pair_1_directional__d1fb_c_obe_guard",
+          "f1_right_foot_roll_pair_0_directional__d1fb_c_obe_core_reference",
+          "f1_right_foot_roll_pair_0_directional__d1fb_c_obe_four_channel_baseplate",
+          "f1_right_foot_roll_pair_0_directional__d1fb_c_obe_mount_seal_P",
+          "f1_right_foot_roll_pair_0_directional__d1fb_c_obe_mount_seal_T",
+          "f1_right_foot_roll_pair_0_directional__d1fb_c_obe_mount_seal_A",
+          "f1_right_foot_roll_pair_0_directional__d1fb_c_obe_mount_seal_B",
+          "f1_right_foot_roll_pair_0_directional__d1fb_c_obe_fitting_P",
+          "f1_right_foot_roll_pair_0_directional__d1fb_c_obe_fitting_T",
+          "f1_right_foot_roll_pair_0_directional__d1fb_c_obe_fitting_A",
+          "f1_right_foot_roll_pair_0_directional__d1fb_c_obe_fitting_B",
+          "f1_right_foot_roll_pair_0_directional__d1fb_c_obe_M5_fastener_0",
+          "f1_right_foot_roll_pair_0_directional__d1fb_c_obe_M5_fastener_1",
+          "f1_right_foot_roll_pair_0_directional__d1fb_c_obe_M5_fastener_2",
+          "f1_right_foot_roll_pair_0_directional__d1fb_c_obe_M5_fastener_3",
+          "f1_right_foot_roll_pair_0_directional__d1fb_c_obe_mating_plug_shell",
+          "f1_right_foot_roll_pair_0_directional__d1fb_c_obe_connector_pin_0",
+          "f1_right_foot_roll_pair_0_directional__d1fb_c_obe_connector_pin_1",
+          "f1_right_foot_roll_pair_0_directional__d1fb_c_obe_connector_pin_2",
+          "f1_right_foot_roll_pair_0_directional__d1fb_c_obe_connector_pin_3",
+          "f1_right_foot_roll_pair_0_directional__d1fb_c_obe_heat_spreader",
+          "f1_right_foot_roll_pair_0_directional__d1fb_c_obe_guard",
+          "f1_right_foot_roll_pair_1_directional__d1fb_c_obe_core_reference",
+          "f1_right_foot_roll_pair_1_directional__d1fb_c_obe_four_channel_baseplate",
+          "f1_right_foot_roll_pair_1_directional__d1fb_c_obe_mount_seal_P",
+          "f1_right_foot_roll_pair_1_directional__d1fb_c_obe_mount_seal_T",
+          "f1_right_foot_roll_pair_1_directional__d1fb_c_obe_mount_seal_A",
+          "f1_right_foot_roll_pair_1_directional__d1fb_c_obe_mount_seal_B",
+          "f1_right_foot_roll_pair_1_directional__d1fb_c_obe_fitting_P",
+          "f1_right_foot_roll_pair_1_directional__d1fb_c_obe_fitting_T",
+          "f1_right_foot_roll_pair_1_directional__d1fb_c_obe_fitting_A",
+          "f1_right_foot_roll_pair_1_directional__d1fb_c_obe_fitting_B",
+          "f1_right_foot_roll_pair_1_directional__d1fb_c_obe_M5_fastener_0",
+          "f1_right_foot_roll_pair_1_directional__d1fb_c_obe_M5_fastener_1",
+          "f1_right_foot_roll_pair_1_directional__d1fb_c_obe_M5_fastener_2",
+          "f1_right_foot_roll_pair_1_directional__d1fb_c_obe_M5_fastener_3",
+          "f1_right_foot_roll_pair_1_directional__d1fb_c_obe_mating_plug_shell",
+          "f1_right_foot_roll_pair_1_directional__d1fb_c_obe_connector_pin_0",
+          "f1_right_foot_roll_pair_1_directional__d1fb_c_obe_connector_pin_1",
+          "f1_right_foot_roll_pair_1_directional__d1fb_c_obe_connector_pin_2",
+          "f1_right_foot_roll_pair_1_directional__d1fb_c_obe_connector_pin_3",
+          "f1_right_foot_roll_pair_1_directional__d1fb_c_obe_heat_spreader",
+          "f1_right_foot_roll_pair_1_directional__d1fb_c_obe_guard",
+          "left_radiator_ivory_socket",
+          "left_radiator_gold_trim",
+          "left_radiator_black_well",
+          "left_radiator_turning_plenum",
+          "right_radiator_ivory_socket",
+          "right_radiator_gold_trim",
+          "right_radiator_black_well",
+          "right_radiator_turning_plenum",
+          "ds_left_shoulder_pitch_wire_coolant_connector",
+          "ds_left_shoulder_roll_wire_coolant_connector",
+          "ds_left_shoulder_yaw_wire_coolant_connector",
+          "ds_left_elbow_pitch_wire_coolant_connector",
+          "ds_left_forearm_roll_wire_coolant_connector",
+          "ds_left_wrist_pitch_wire_coolant_connector",
+          "ds_left_wrist_yaw_wire_coolant_connector",
+          "ds_right_shoulder_pitch_wire_coolant_connector",
+          "ds_right_shoulder_roll_wire_coolant_connector",
+          "ds_right_shoulder_yaw_wire_coolant_connector",
+          "ds_right_elbow_pitch_wire_coolant_connector",
+          "ds_right_forearm_roll_wire_coolant_connector",
+          "ds_right_wrist_pitch_wire_coolant_connector",
+          "ds_right_wrist_yaw_wire_coolant_connector",
+          "ds_left_hydraulic_input_emrax188_lc",
+          "ds_left_hydraulic_input_z16_pump",
+          "ds_left_hydraulic_input_coupling",
+          "ds_left_hydraulic_input_motor_mount_case",
+          "ds_left_hydraulic_input_pump_mount",
+          "ds_left_hydraulic_input_inverter",
+          "ds_left_hydraulic_input_return_filter",
+          "ds_right_hydraulic_input_emrax188_lc",
+          "ds_right_hydraulic_input_z16_pump",
+          "ds_right_hydraulic_input_coupling",
+          "ds_right_hydraulic_input_motor_mount_case",
+          "ds_right_hydraulic_input_pump_mount",
+          "ds_right_hydraulic_input_inverter",
+          "ds_right_hydraulic_input_return_filter",
+          "ds_custom_oil_tank",
+          "d_left_rear_exhaust_guard",
+          "d_right_rear_exhaust_guard",
+          "e_compute_coldplate",
+          "e_power_aux_coldplate",
+          "e2_dual_fluid_HX_material",
+          "e2_oil_HX_in_actual_hollow_port",
+          "e2_oil_HX_out_actual_hollow_port",
+          "e2_oil_HX_water_supply_actual_hollow_port",
+          "e2_oil_HX_water_return_actual_hollow_port",
+          "e_main_supply_header",
+          "e_main_return_header",
+          "e_ds_waist_yaw_return_hose",
+          "e_ds_waist_roll_return_hose",
+          "e_ds_left_shoulder_pitch_supply_hose",
+          "e_ds_left_shoulder_pitch_return_hose",
+          "e_ds_left_shoulder_roll_supply_hose",
+          "e_ds_left_shoulder_roll_return_hose",
+          "e_ds_left_shoulder_yaw_supply_hose",
+          "e_ds_left_shoulder_yaw_return_hose",
+          "e_ds_left_elbow_pitch_supply_hose",
+          "e_ds_left_elbow_pitch_return_hose",
+          "e_ds_left_forearm_roll_supply_hose",
+          "e_ds_left_forearm_roll_return_hose",
+          "e_ds_left_wrist_pitch_supply_hose",
+          "e_ds_left_wrist_pitch_return_hose",
+          "e_ds_left_wrist_yaw_supply_hose",
+          "e_ds_left_wrist_yaw_return_hose",
+          "e_ds_left_hip_yaw_return_hose",
+          "e_ds_right_shoulder_pitch_supply_hose",
+          "e_ds_right_shoulder_pitch_return_hose",
+          "e_ds_right_shoulder_roll_supply_hose",
+          "e_ds_right_shoulder_roll_return_hose",
+          "e_ds_right_shoulder_yaw_supply_hose",
+          "e_ds_right_shoulder_yaw_return_hose",
+          "e_ds_right_elbow_pitch_supply_hose",
+          "e_ds_right_elbow_pitch_return_hose",
+          "e_ds_right_forearm_roll_supply_hose",
+          "e_ds_right_forearm_roll_return_hose",
+          "e_ds_right_wrist_pitch_supply_hose",
+          "e_ds_right_wrist_pitch_return_hose",
+          "e_ds_right_wrist_yaw_supply_hose",
+          "e_ds_right_wrist_yaw_return_hose",
+          "e_ds_right_hip_yaw_return_hose",
+          "e_left_emrax188_lc_supply_hose",
+          "e_left_emrax188_lc_return_hose",
+          "e_right_emrax188_lc_supply_hose",
+          "e_right_emrax188_lc_return_hose",
+          "e_compute_supply_hose",
+          "e_compute_return_hose",
+          "e_power_aux_supply_hose",
+          "e_power_aux_return_hose",
+          "e_e2_true_oil_water_HX_supply_hose",
+          "e_e2_true_oil_water_HX_return_hose",
+          "e_coolant_reservoir_shell",
+          "e_coolant_pump_complete_reserve",
+          "e_reservoir_pump_tee",
+          "e_pump_to_cold_header",
+          "e_left_rear_exhaust_collar",
+          "e_left_rear_fan",
+          "e_right_rear_exhaust_collar",
+          "e_right_rear_fan",
+          "e_core_to_pump_0",
+          "e_core_to_pump_1",
+          "e_core_to_pump_2",
+          "e_core_to_pump_3",
+          "e2_P_header_end_-1_fitting",
+          "e2_P_header_end_1_fitting",
+          "e2_P_header_unload_port_fitting",
+          "e2_P_header_tap_0_boss",
+          "e2_P_header_tap_1_boss",
+          "e2_P_header_tap_2_boss",
+          "e2_P_header_tap_3_boss",
+          "e2_P_header_tap_4_boss",
+          "e2_P_header_tap_5_boss",
+          "e2_P_header_tap_6_boss",
+          "e2_P_header_tap_7_boss",
+          "e2_P_header_tap_8_boss",
+          "e2_P_header_tap_9_boss",
+          "e2_P_header_tap_10_boss",
+          "e2_P_header_tap_11_boss",
+          "e2_P_header_tap_12_boss",
+          "e2_P_header_tap_13_boss",
+          "e2_P_header_tap_14_boss",
+          "e2_P_header_tap_15_boss",
+          "e2_P_header_tap_16_boss",
+          "e2_P_header_tap_17_boss",
+          "e2_oil_P_18port_header",
+          "e2_T_header_end_-1_fitting",
+          "e2_T_header_end_1_fitting",
+          "e2_T_header_tap_0_boss",
+          "e2_T_header_tap_1_boss",
+          "e2_T_header_tap_2_boss",
+          "e2_T_header_tap_3_boss",
+          "e2_T_header_tap_4_boss",
+          "e2_T_header_tap_5_boss",
+          "e2_T_header_tap_6_boss",
+          "e2_T_header_tap_7_boss",
+          "e2_T_header_tap_8_boss",
+          "e2_T_header_tap_9_boss",
+          "e2_T_header_tap_10_boss",
+          "e2_T_header_tap_11_boss",
+          "e2_T_header_tap_12_boss",
+          "e2_T_header_tap_13_boss",
+          "e2_T_header_tap_14_boss",
+          "e2_T_header_tap_15_boss",
+          "e2_T_header_tap_16_boss",
+          "e2_T_header_tap_17_boss",
+          "e2_oil_T_18port_header"
+        ],
+        "source_nominal_proxy_COM_world_m": [
+          -0.028730835269408072,
+          2.2114278305431874e-05,
+          2.1655369656057437
+        ]
+      },
+      "other_installation_and_reference_inventory": {
+        "row_count": 101,
+        "mass_range_kg": [
+          53.53872856731805,
+          82.76848230287047,
+          120.12837127965682
+        ],
+        "nominal_gravity_M_at_roll_reference_Nm": [
+          -2.588724664100849,
+          -224.2852145444213,
+          0.0
+        ],
+        "row_ids": [
+          "left_deltoid_gold_marker",
+          "left_upper_arm_gold_marker",
+          "left_forearm_gold_marker",
+          "right_deltoid_gold_marker",
+          "right_upper_arm_gold_marker",
+          "right_forearm_gold_marker",
+          "left_blue_rear_shoulder_edge_cover",
+          "right_blue_rear_shoulder_edge_cover",
+          "left_ivory_hood_window_side_lip",
+          "right_ivory_hood_window_side_lip",
+          "rear_service_door_shadow",
+          "rear_blue_service_door",
+          "ivory_crown_inset",
+          "left_blue_continuous_shoulder_sweep",
+          "left_blue_shoulder_upper_return",
+          "left_blue_rear_shoulder_guard",
+          "left_blue_shoulder_diagonal_front_wing",
+          "left_blue_chest_cheek_wrap",
+          "left_blue_chest_cheek_side_return",
+          "left_dark_torso_side_housing",
+          "left_blue_forearm_wrap",
+          "left_blue_deltoid_wrap",
+          "left_ivory_shoulder_cap",
+          "left_ivory_lower_upper_arm",
+          "left_blue_elbow_yoke",
+          "right_blue_continuous_shoulder_sweep",
+          "right_blue_shoulder_upper_return",
+          "right_blue_rear_shoulder_guard",
+          "right_blue_shoulder_diagonal_front_wing",
+          "right_blue_chest_cheek_wrap",
+          "right_blue_chest_cheek_side_return",
+          "right_dark_torso_side_housing",
+          "right_blue_forearm_wrap",
+          "right_blue_deltoid_wrap",
+          "right_ivory_shoulder_cap",
+          "right_ivory_lower_upper_arm",
+          "right_blue_elbow_yoke",
+          "ds_low_voltage_converter",
+          "ds_oil_baffles_ports_breather",
+          "d_left_arm_electrical_harness_00",
+          "d_left_arm_electrical_harness_01",
+          "d_left_arm_electrical_harness_02",
+          "d_left_arm_electrical_harness_03",
+          "d_left_arm_electrical_harness_04",
+          "d_left_arm_electrical_harness_05",
+          "d_left_arm_electrical_harness_06",
+          "d_left_arm_electrical_harness_07",
+          "d_left_arm_electrical_harness_08",
+          "d_left_arm_electrical_harness_09",
+          "d_left_arm_electrical_harness_10",
+          "d_left_arm_electrical_harness_11",
+          "d_left_leg_electrical_harness_00",
+          "d_right_arm_electrical_harness_00",
+          "d_right_arm_electrical_harness_01",
+          "d_right_arm_electrical_harness_02",
+          "d_right_arm_electrical_harness_03",
+          "d_right_arm_electrical_harness_04",
+          "d_right_arm_electrical_harness_05",
+          "d_right_arm_electrical_harness_06",
+          "d_right_arm_electrical_harness_07",
+          "d_right_arm_electrical_harness_08",
+          "d_right_arm_electrical_harness_09",
+          "d_right_arm_electrical_harness_10",
+          "d_right_arm_electrical_harness_11",
+          "d_right_leg_electrical_harness_00",
+          "d_left_routing_fastener_plate_00",
+          "d_left_routing_connector_block_00",
+          "d_left_routing_fastener_plate_02",
+          "d_left_routing_connector_block_02",
+          "d_left_routing_fastener_plate_03",
+          "d_left_routing_connector_block_03",
+          "d_left_routing_fastener_plate_08",
+          "d_left_routing_connector_block_08",
+          "d_right_routing_fastener_plate_00",
+          "d_right_routing_connector_block_00",
+          "d_right_routing_fastener_plate_02",
+          "d_right_routing_connector_block_02",
+          "d_right_routing_fastener_plate_03",
+          "d_right_routing_connector_block_03",
+          "d_right_routing_fastener_plate_08",
+          "d_right_routing_connector_block_08",
+          "e_left_emrax_port_brackets",
+          "e_right_emrax_port_brackets",
+          "e_left_original_grille_core",
+          "e_left_supplement_rear_core",
+          "e_left_original_intake",
+          "e_left_original_to_emrax_air",
+          "e_left_emrax_air_exit",
+          "e_left_side_intake_plenum",
+          "e_right_original_grille_core",
+          "e_right_supplement_rear_core",
+          "e_right_original_intake",
+          "e_right_original_to_emrax_air",
+          "e_right_emrax_air_exit",
+          "e_right_side_intake_plenum",
+          "e_hot_to_core_0",
+          "e_hot_to_core_1",
+          "e_hot_to_core_2",
+          "e_hot_to_core_3",
+          "e2_shared_unload_relief_accumulator_reserve",
+          "e_two_emrax_unknown_internal_liquid_allowance"
+        ],
+        "source_nominal_proxy_COM_world_m": [
+          -0.04622733000476333,
+          0.003188246285135391,
+          2.053312577794678
+        ]
+      },
+      "load_frames_shells_and_retained_armor": {
+        "row_count": 15,
+        "mass_range_kg": [
+          165.7283845169091,
+          173.96200677442656,
+          184.15757506873223
+        ],
+        "nominal_gravity_M_at_roll_reference_Nm": [
+          -0.1099565219679291,
+          -468.3448432851211,
+          0.0
+        ],
+        "row_ids": [
+          "continuous_ivory_torso_armor_cover",
+          "ds_hv_distribution",
+          "e2_upper_net_left_shoulder_pitch_carrier",
+          "e2_upper_net_left_shoulder_roll_carrier",
+          "e2_upper_net_left_upper_arm",
+          "e2_upper_net_left_proximal_forearm",
+          "e2_upper_net_left_distal_forearm",
+          "e2_upper_net_left_wrist_pitch_carrier",
+          "e2_upper_net_right_shoulder_pitch_carrier",
+          "e2_upper_net_right_shoulder_roll_carrier",
+          "e2_upper_net_right_upper_arm",
+          "e2_upper_net_right_proximal_forearm",
+          "e2_upper_net_right_distal_forearm",
+          "e2_upper_net_right_wrist_pitch_carrier",
+          "g9_torso_core_b"
+        ],
+        "source_nominal_proxy_COM_world_m": [
+          -0.04443678722883319,
+          6.443140146918413e-05,
+          2.0461878783309357
+        ]
+      },
+      "hand_function_structure_drives_and_sensing": {
+        "row_count": 36,
+        "mass_range_kg": [
+          10.519819117606694,
+          14.781957003943504,
+          21.344400302614158
+        ],
+        "nominal_gravity_M_at_roll_reference_Nm": [
+          -0.6509209032750967,
+          -29.768739773363645,
+          0.0
+        ],
+        "row_ids": [
+          "left_ivory_palm_dorsal",
+          "left_ivory_palm_reverse_cover",
+          "left_finger_1_ivory_first_pad",
+          "left_finger_1_ivory_reverse_first_pad",
+          "left_finger_2_ivory_first_pad",
+          "left_finger_2_ivory_reverse_first_pad",
+          "left_finger_3_ivory_first_pad",
+          "left_finger_3_ivory_reverse_first_pad",
+          "left_thumb_ivory_first_pad",
+          "right_ivory_palm_dorsal",
+          "right_ivory_palm_reverse_cover",
+          "right_finger_1_ivory_first_pad",
+          "right_finger_1_ivory_reverse_first_pad",
+          "right_finger_2_ivory_first_pad",
+          "right_finger_2_ivory_reverse_first_pad",
+          "right_finger_3_ivory_first_pad",
+          "right_finger_3_ivory_reverse_first_pad",
+          "right_thumb_ivory_first_pad",
+          "ds_left_finger_1_distal_link_compact_drive",
+          "ds_left_finger_1_proximal_link_compact_drive",
+          "ds_left_finger_2_distal_link_compact_drive",
+          "ds_left_finger_2_proximal_link_compact_drive",
+          "ds_left_finger_3_distal_link_compact_drive",
+          "ds_left_finger_3_proximal_link_compact_drive",
+          "ds_left_thumb_distal_link_compact_drive",
+          "ds_left_thumb_proximal_link_compact_drive",
+          "ds_right_finger_1_distal_link_compact_drive",
+          "ds_right_finger_1_proximal_link_compact_drive",
+          "ds_right_finger_2_distal_link_compact_drive",
+          "ds_right_finger_2_proximal_link_compact_drive",
+          "ds_right_finger_3_distal_link_compact_drive",
+          "ds_right_finger_3_proximal_link_compact_drive",
+          "ds_right_thumb_distal_link_compact_drive",
+          "ds_right_thumb_proximal_link_compact_drive",
+          "e2_upper_net_left_palm",
+          "e2_upper_net_right_palm"
+        ],
+        "source_nominal_proxy_COM_world_m": [
+          0.024713917281478506,
+          0.004488769205894007,
+          1.057198983061093
+        ]
+      },
+      "joint_drive_complete_function_inventory": {
+        "row_count": 182,
+        "mass_range_kg": [
+          238.4333963274281,
+          265.9797736971425,
+          323.918261265239
+        ],
+        "nominal_gravity_M_at_roll_reference_Nm": [
+          -0.013694314631343296,
+          -921.6737568511961,
+          0.0
+        ],
+        "row_ids": [
+          "ds_left_shoulder_pitch_gear",
+          "ds_left_shoulder_pitch_motor",
+          "ds_left_shoulder_pitch_gear_load_shell",
+          "ds_left_shoulder_pitch_input_hub_reserve",
+          "ds_left_shoulder_pitch_hollow_output_adapter",
+          "ds_left_shoulder_pitch_brake",
+          "ds_left_shoulder_pitch_encoder",
+          "ds_left_shoulder_pitch_controller",
+          "ds_left_shoulder_pitch_carrier_lower",
+          "ds_left_shoulder_pitch_carrier_upper",
+          "ds_left_shoulder_roll_gear",
+          "ds_left_shoulder_roll_motor",
+          "ds_left_shoulder_roll_gear_load_shell",
+          "ds_left_shoulder_roll_input_hub_reserve",
+          "ds_left_shoulder_roll_hollow_output_adapter",
+          "ds_left_shoulder_roll_brake",
+          "ds_left_shoulder_roll_encoder",
+          "ds_left_shoulder_roll_controller",
+          "ds_left_shoulder_roll_carrier_lower",
+          "ds_left_shoulder_roll_carrier_upper",
+          "ds_left_shoulder_yaw_gear",
+          "ds_left_shoulder_yaw_motor",
+          "ds_left_shoulder_yaw_gear_load_shell",
+          "ds_left_shoulder_yaw_input_hub_reserve",
+          "ds_left_shoulder_yaw_hollow_output_adapter",
+          "ds_left_shoulder_yaw_brake",
+          "ds_left_shoulder_yaw_encoder",
+          "ds_left_shoulder_yaw_controller",
+          "ds_left_shoulder_yaw_carrier_lower",
+          "ds_left_shoulder_yaw_carrier_upper",
+          "ds_left_elbow_pitch_gear",
+          "ds_left_elbow_pitch_motor",
+          "ds_left_elbow_pitch_gear_load_shell",
+          "ds_left_elbow_pitch_input_hub_reserve",
+          "ds_left_elbow_pitch_hollow_output_adapter",
+          "ds_left_elbow_pitch_brake",
+          "ds_left_elbow_pitch_encoder",
+          "ds_left_elbow_pitch_controller",
+          "ds_left_elbow_pitch_carrier_lower",
+          "ds_left_elbow_pitch_carrier_upper",
+          "ds_left_forearm_roll_gear",
+          "ds_left_forearm_roll_motor",
+          "ds_left_forearm_roll_gear_load_shell",
+          "ds_left_forearm_roll_input_hub_reserve",
+          "ds_left_forearm_roll_hollow_output_adapter",
+          "ds_left_forearm_roll_brake",
+          "ds_left_forearm_roll_encoder",
+          "ds_left_forearm_roll_controller",
+          "ds_left_forearm_roll_carrier_lower",
+          "ds_left_forearm_roll_carrier_upper",
+          "ds_left_wrist_pitch_gear",
+          "ds_left_wrist_pitch_motor",
+          "ds_left_wrist_pitch_gear_load_shell",
+          "ds_left_wrist_pitch_input_hub_reserve",
+          "ds_left_wrist_pitch_hollow_output_adapter",
+          "ds_left_wrist_pitch_brake",
+          "ds_left_wrist_pitch_encoder",
+          "ds_left_wrist_pitch_controller",
+          "ds_left_wrist_pitch_carrier_lower",
+          "ds_left_wrist_pitch_carrier_upper",
+          "ds_left_wrist_yaw_gear",
+          "ds_left_wrist_yaw_motor",
+          "ds_left_wrist_yaw_gear_load_shell",
+          "ds_left_wrist_yaw_input_hub_reserve",
+          "ds_left_wrist_yaw_hollow_output_adapter",
+          "ds_left_wrist_yaw_brake",
+          "ds_left_wrist_yaw_encoder",
+          "ds_left_wrist_yaw_controller",
+          "ds_left_wrist_yaw_carrier_lower",
+          "ds_left_wrist_yaw_carrier_upper",
+          "ds_right_shoulder_pitch_gear",
+          "ds_right_shoulder_pitch_motor",
+          "ds_right_shoulder_pitch_gear_load_shell",
+          "ds_right_shoulder_pitch_input_hub_reserve",
+          "ds_right_shoulder_pitch_hollow_output_adapter",
+          "ds_right_shoulder_pitch_brake",
+          "ds_right_shoulder_pitch_encoder",
+          "ds_right_shoulder_pitch_controller",
+          "ds_right_shoulder_pitch_carrier_lower",
+          "ds_right_shoulder_pitch_carrier_upper",
+          "ds_right_shoulder_roll_gear",
+          "ds_right_shoulder_roll_motor",
+          "ds_right_shoulder_roll_gear_load_shell",
+          "ds_right_shoulder_roll_input_hub_reserve",
+          "ds_right_shoulder_roll_hollow_output_adapter",
+          "ds_right_shoulder_roll_brake",
+          "ds_right_shoulder_roll_encoder",
+          "ds_right_shoulder_roll_controller",
+          "ds_right_shoulder_roll_carrier_lower",
+          "ds_right_shoulder_roll_carrier_upper",
+          "ds_right_shoulder_yaw_gear",
+          "ds_right_shoulder_yaw_motor",
+          "ds_right_shoulder_yaw_gear_load_shell",
+          "ds_right_shoulder_yaw_input_hub_reserve",
+          "ds_right_shoulder_yaw_hollow_output_adapter",
+          "ds_right_shoulder_yaw_brake",
+          "ds_right_shoulder_yaw_encoder",
+          "ds_right_shoulder_yaw_controller",
+          "ds_right_shoulder_yaw_carrier_lower",
+          "ds_right_shoulder_yaw_carrier_upper",
+          "ds_right_elbow_pitch_gear",
+          "ds_right_elbow_pitch_motor",
+          "ds_right_elbow_pitch_gear_load_shell",
+          "ds_right_elbow_pitch_input_hub_reserve",
+          "ds_right_elbow_pitch_hollow_output_adapter",
+          "ds_right_elbow_pitch_brake",
+          "ds_right_elbow_pitch_encoder",
+          "ds_right_elbow_pitch_controller",
+          "ds_right_elbow_pitch_carrier_lower",
+          "ds_right_elbow_pitch_carrier_upper",
+          "ds_right_forearm_roll_gear",
+          "ds_right_forearm_roll_motor",
+          "ds_right_forearm_roll_gear_load_shell",
+          "ds_right_forearm_roll_input_hub_reserve",
+          "ds_right_forearm_roll_hollow_output_adapter",
+          "ds_right_forearm_roll_brake",
+          "ds_right_forearm_roll_encoder",
+          "ds_right_forearm_roll_controller",
+          "ds_right_forearm_roll_carrier_lower",
+          "ds_right_forearm_roll_carrier_upper",
+          "ds_right_wrist_pitch_gear",
+          "ds_right_wrist_pitch_motor",
+          "ds_right_wrist_pitch_gear_load_shell",
+          "ds_right_wrist_pitch_input_hub_reserve",
+          "ds_right_wrist_pitch_hollow_output_adapter",
+          "ds_right_wrist_pitch_brake",
+          "ds_right_wrist_pitch_encoder",
+          "ds_right_wrist_pitch_controller",
+          "ds_right_wrist_pitch_carrier_lower",
+          "ds_right_wrist_pitch_carrier_upper",
+          "ds_right_wrist_yaw_gear",
+          "ds_right_wrist_yaw_motor",
+          "ds_right_wrist_yaw_gear_load_shell",
+          "ds_right_wrist_yaw_input_hub_reserve",
+          "ds_right_wrist_yaw_hollow_output_adapter",
+          "ds_right_wrist_yaw_brake",
+          "ds_right_wrist_yaw_encoder",
+          "ds_right_wrist_yaw_controller",
+          "ds_right_wrist_yaw_carrier_lower",
+          "ds_right_wrist_yaw_carrier_upper",
+          "e_ds_left_shoulder_pitch_motor_cooling_case_supply_port_shell",
+          "e_ds_left_shoulder_pitch_motor_cooling_case_return_port_shell",
+          "e_ds_left_shoulder_pitch_motor_cooling_case",
+          "e_ds_left_shoulder_roll_motor_cooling_case_supply_port_shell",
+          "e_ds_left_shoulder_roll_motor_cooling_case_return_port_shell",
+          "e_ds_left_shoulder_roll_motor_cooling_case",
+          "e_ds_left_shoulder_yaw_motor_cooling_case_supply_port_shell",
+          "e_ds_left_shoulder_yaw_motor_cooling_case_return_port_shell",
+          "e_ds_left_shoulder_yaw_motor_cooling_case",
+          "e_ds_left_elbow_pitch_motor_cooling_case_supply_port_shell",
+          "e_ds_left_elbow_pitch_motor_cooling_case_return_port_shell",
+          "e_ds_left_elbow_pitch_motor_cooling_case",
+          "e_ds_left_forearm_roll_motor_cooling_case_supply_port_shell",
+          "e_ds_left_forearm_roll_motor_cooling_case_return_port_shell",
+          "e_ds_left_forearm_roll_motor_cooling_case",
+          "e_ds_left_wrist_pitch_motor_cooling_case_supply_port_shell",
+          "e_ds_left_wrist_pitch_motor_cooling_case_return_port_shell",
+          "e_ds_left_wrist_pitch_motor_cooling_case",
+          "e_ds_left_wrist_yaw_motor_cooling_case_supply_port_shell",
+          "e_ds_left_wrist_yaw_motor_cooling_case_return_port_shell",
+          "e_ds_left_wrist_yaw_motor_cooling_case",
+          "e_ds_right_shoulder_pitch_motor_cooling_case_supply_port_shell",
+          "e_ds_right_shoulder_pitch_motor_cooling_case_return_port_shell",
+          "e_ds_right_shoulder_pitch_motor_cooling_case",
+          "e_ds_right_shoulder_roll_motor_cooling_case_supply_port_shell",
+          "e_ds_right_shoulder_roll_motor_cooling_case_return_port_shell",
+          "e_ds_right_shoulder_roll_motor_cooling_case",
+          "e_ds_right_shoulder_yaw_motor_cooling_case_supply_port_shell",
+          "e_ds_right_shoulder_yaw_motor_cooling_case_return_port_shell",
+          "e_ds_right_shoulder_yaw_motor_cooling_case",
+          "e_ds_right_elbow_pitch_motor_cooling_case_supply_port_shell",
+          "e_ds_right_elbow_pitch_motor_cooling_case_return_port_shell",
+          "e_ds_right_elbow_pitch_motor_cooling_case",
+          "e_ds_right_forearm_roll_motor_cooling_case_supply_port_shell",
+          "e_ds_right_forearm_roll_motor_cooling_case_return_port_shell",
+          "e_ds_right_forearm_roll_motor_cooling_case",
+          "e_ds_right_wrist_pitch_motor_cooling_case_supply_port_shell",
+          "e_ds_right_wrist_pitch_motor_cooling_case_return_port_shell",
+          "e_ds_right_wrist_pitch_motor_cooling_case",
+          "e_ds_right_wrist_yaw_motor_cooling_case_supply_port_shell",
+          "e_ds_right_wrist_yaw_motor_cooling_case_return_port_shell",
+          "e_ds_right_wrist_yaw_motor_cooling_case"
+        ],
+        "source_nominal_proxy_COM_world_m": [
+          -0.12323164374426497,
+          5.248348703720696e-06,
+          1.9117040088279857
+        ]
+      },
+      "energy_pack_BMS_fuse_coldplate": {
+        "row_count": 20,
+        "mass_range_kg": [
+          80.42549782610521,
+          98.11721980678352,
+          121.10066376814025
+        ],
+        "nominal_gravity_M_at_roll_reference_Nm": [
+          -0.04353492189699966,
+          -451.08813785168877,
+          0.0
+        ],
+        "row_ids": [
+          "ds_left_lower_custom_hv_pack",
+          "ds_left_lower_custom_hv_pack_bms_fuse_service",
+          "ds_left_upper_custom_hv_pack",
+          "ds_left_upper_custom_hv_pack_bms_fuse_service",
+          "ds_right_lower_custom_hv_pack",
+          "ds_right_lower_custom_hv_pack_bms_fuse_service",
+          "ds_right_upper_custom_hv_pack",
+          "ds_right_upper_custom_hv_pack_bms_fuse_service",
+          "e_ds_left_lower_custom_hv_pack_coldplate",
+          "e_ds_left_upper_custom_hv_pack_coldplate",
+          "e_ds_right_lower_custom_hv_pack_coldplate",
+          "e_ds_right_upper_custom_hv_pack_coldplate",
+          "e_ds_left_lower_custom_hv_pack_supply_hose",
+          "e_ds_left_lower_custom_hv_pack_return_hose",
+          "e_ds_left_upper_custom_hv_pack_supply_hose",
+          "e_ds_left_upper_custom_hv_pack_return_hose",
+          "e_ds_right_lower_custom_hv_pack_supply_hose",
+          "e_ds_right_lower_custom_hv_pack_return_hose",
+          "e_ds_right_upper_custom_hv_pack_supply_hose",
+          "e_ds_right_upper_custom_hv_pack_return_hose"
+        ],
+        "source_nominal_proxy_COM_world_m": [
+          -0.23864842902449515,
+          4.5229681391976754e-05,
+          2.2725195359573975
+        ]
+      },
+      "compute_perception_control_and_display": {
+        "row_count": 8,
+        "mass_range_kg": [
+          2.908,
+          4.842,
+          7.986
+        ],
+        "nominal_gravity_M_at_roll_reference_Nm": [
+          -1.1102230246251565e-16,
+          -18.340579800000008,
+          0.0
+        ],
+        "row_ids": [
+          "ds_compute",
+          "ds_network_switch",
+          "ds_imu",
+          "ds_back_screen",
+          "ds_left_depth_camera",
+          "ds_left_camera_bracket_window",
+          "ds_right_depth_camera",
+          "ds_right_camera_bracket_window"
+        ],
+        "source_nominal_proxy_COM_world_m": [
+          -0.15611730689797623,
+          1.4330635902328023e-18,
+          2.4087195373812524
+        ]
+      }
+    },
+    "conditional_dry_subset_mass_range_kg": [
+      671.1509304700119,
+      782.6306378873836,
+      959.1593955913356
+    ],
+    "whole_robot_mass_COM_I": null,
+    "missing_upper_member_ids": [
+      {
+        "id": "crown_top_panel_line_00",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "crown_top_panel_line_01",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "crown_top_panel_line_02",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "crown_fastener_0",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "crown_fastener_1",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "crown_fastener_2",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "crown_fastener_3",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "central_indicator_recess",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "central_indicator_gold_frame",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "central_indicator_lit_strip",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "rear_crown_panel_seam_00",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "rear_crown_panel_seam_01",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "rear_crown_panel_seam_02",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "rear_control_screen_module_envelope",
+        "owner": "torso",
+        "role": "display_module_envelope",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "display_visual_proxy_requires_module_inclusion_map"
+      },
+      {
+        "id": "rear_control_screen_glass",
+        "owner": "torso",
+        "role": "control_display_glass",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "display_visual_proxy_requires_module_inclusion_map"
+      },
+      {
+        "id": "rear_control_screen_header",
+        "owner": "torso",
+        "role": "control_display_ui",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "display_visual_proxy_requires_module_inclusion_map"
+      },
+      {
+        "id": "rear_control_screen_touch_zone_status",
+        "owner": "torso",
+        "role": "control_display_ui",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "display_visual_proxy_requires_module_inclusion_map"
+      },
+      {
+        "id": "rear_control_screen_label_status",
+        "owner": "torso",
+        "role": "control_display_ui",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "display_visual_proxy_requires_module_inclusion_map"
+      },
+      {
+        "id": "rear_control_screen_zone_indicator_status",
+        "owner": "torso",
+        "role": "control_display_ui",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "display_visual_proxy_requires_module_inclusion_map"
+      },
+      {
+        "id": "rear_control_screen_touch_zone_task",
+        "owner": "torso",
+        "role": "control_display_ui",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "display_visual_proxy_requires_module_inclusion_map"
+      },
+      {
+        "id": "rear_control_screen_label_task",
+        "owner": "torso",
+        "role": "control_display_ui",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "display_visual_proxy_requires_module_inclusion_map"
+      },
+      {
+        "id": "rear_control_screen_zone_indicator_task",
+        "owner": "torso",
+        "role": "control_display_ui",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "display_visual_proxy_requires_module_inclusion_map"
+      },
+      {
+        "id": "rear_control_screen_touch_zone_local",
+        "owner": "torso",
+        "role": "control_display_ui",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "display_visual_proxy_requires_module_inclusion_map"
+      },
+      {
+        "id": "rear_control_screen_label_local",
+        "owner": "torso",
+        "role": "control_display_ui",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "display_visual_proxy_requires_module_inclusion_map"
+      },
+      {
+        "id": "rear_control_screen_zone_indicator_local",
+        "owner": "torso",
+        "role": "control_display_ui",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "display_visual_proxy_requires_module_inclusion_map"
+      },
+      {
+        "id": "rear_service_latch",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "rear_door_upper_tab",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "rear_door_screw_0",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "rear_door_screw_1",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "rear_door_screw_2",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "rear_door_screw_3",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "left_radiator_louver_00",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "left_radiator_louver_01",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "left_radiator_louver_02",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "left_radiator_louver_03",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "left_radiator_louver_04",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "left_radiator_louver_05",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "left_radiator_louver_06",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "left_radiator_louver_07",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "left_radiator_louver_08",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "left_radiator_louver_09",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "left_radiator_louver_10",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "left_vent_fastener_0",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "left_vent_fastener_1",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "left_vent_fastener_2",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "left_vent_fastener_3",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "left_torso_side_layer_00",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "left_torso_side_layer_lip_00",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "left_torso_side_layer_01",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "left_torso_side_layer_lip_01",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "left_torso_side_layer_02",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "left_torso_side_layer_lip_02",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "left_torso_side_layer_03",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "left_torso_side_layer_lip_03",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "right_radiator_louver_00",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "right_radiator_louver_01",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "right_radiator_louver_02",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "right_radiator_louver_03",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "right_radiator_louver_04",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "right_radiator_louver_05",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "right_radiator_louver_06",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "right_radiator_louver_07",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "right_radiator_louver_08",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "right_radiator_louver_09",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "right_radiator_louver_10",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "right_vent_fastener_0",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "right_vent_fastener_1",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "right_vent_fastener_2",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "right_vent_fastener_3",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "right_torso_side_layer_00",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "right_torso_side_layer_lip_00",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "right_torso_side_layer_01",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "right_torso_side_layer_lip_01",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "right_torso_side_layer_02",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "right_torso_side_layer_lip_02",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "right_torso_side_layer_03",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      },
+      {
+        "id": "right_torso_side_layer_lip_03",
+        "owner": "torso",
+        "role": "visible_mechanism",
+        "function_state": "retained_complete_system_candidate_not_physically_installed",
+        "mass_kg": null,
+        "COM_world_m": null,
+        "I_kg_m2": null,
+        "macro_function_class": "visible_detail_or_vent_hardware_material_scope_unknown"
+      }
+    ],
+    "missing_mass_classes": {
+      "visible_detail_or_vent_hardware_material_scope_unknown": [
+        "crown_top_panel_line_00",
+        "crown_top_panel_line_01",
+        "crown_top_panel_line_02",
+        "crown_fastener_0",
+        "crown_fastener_1",
+        "crown_fastener_2",
+        "crown_fastener_3",
+        "central_indicator_recess",
+        "central_indicator_gold_frame",
+        "central_indicator_lit_strip",
+        "rear_crown_panel_seam_00",
+        "rear_crown_panel_seam_01",
+        "rear_crown_panel_seam_02",
+        "rear_service_latch",
+        "rear_door_upper_tab",
+        "rear_door_screw_0",
+        "rear_door_screw_1",
+        "rear_door_screw_2",
+        "rear_door_screw_3",
+        "left_radiator_louver_00",
+        "left_radiator_louver_01",
+        "left_radiator_louver_02",
+        "left_radiator_louver_03",
+        "left_radiator_louver_04",
+        "left_radiator_louver_05",
+        "left_radiator_louver_06",
+        "left_radiator_louver_07",
+        "left_radiator_louver_08",
+        "left_radiator_louver_09",
+        "left_radiator_louver_10",
+        "left_vent_fastener_0",
+        "left_vent_fastener_1",
+        "left_vent_fastener_2",
+        "left_vent_fastener_3",
+        "left_torso_side_layer_00",
+        "left_torso_side_layer_lip_00",
+        "left_torso_side_layer_01",
+        "left_torso_side_layer_lip_01",
+        "left_torso_side_layer_02",
+        "left_torso_side_layer_lip_02",
+        "left_torso_side_layer_03",
+        "left_torso_side_layer_lip_03",
+        "right_radiator_louver_00",
+        "right_radiator_louver_01",
+        "right_radiator_louver_02",
+        "right_radiator_louver_03",
+        "right_radiator_louver_04",
+        "right_radiator_louver_05",
+        "right_radiator_louver_06",
+        "right_radiator_louver_07",
+        "right_radiator_louver_08",
+        "right_radiator_louver_09",
+        "right_radiator_louver_10",
+        "right_vent_fastener_0",
+        "right_vent_fastener_1",
+        "right_vent_fastener_2",
+        "right_vent_fastener_3",
+        "right_torso_side_layer_00",
+        "right_torso_side_layer_lip_00",
+        "right_torso_side_layer_01",
+        "right_torso_side_layer_lip_01",
+        "right_torso_side_layer_02",
+        "right_torso_side_layer_lip_02",
+        "right_torso_side_layer_03",
+        "right_torso_side_layer_lip_03"
+      ],
+      "display_visual_proxy_requires_module_inclusion_map": [
+        "rear_control_screen_module_envelope",
+        "rear_control_screen_glass",
+        "rear_control_screen_header",
+        "rear_control_screen_touch_zone_status",
+        "rear_control_screen_label_status",
+        "rear_control_screen_zone_indicator_status",
+        "rear_control_screen_touch_zone_task",
+        "rear_control_screen_label_task",
+        "rear_control_screen_zone_indicator_task",
+        "rear_control_screen_touch_zone_local",
+        "rear_control_screen_label_local",
+        "rear_control_screen_zone_indicator_local"
+      ]
+    },
+    "oil_inventory": {
+      "old_L": 30,
+      "old_mass_range_kg": [
+        24.6,
+        26.4
+      ],
+      "global_once_not_each_line": true
+    },
+    "water_inventory": {
+      "old_net_L": 12.482,
+      "not_constant_heat_rejection_capacity": true
+    },
+    "legacy_control_function_inventory": {
+      "directional_count": 18,
+      "local_holding_count": 18,
+      "count_not_required_next_architecture": true,
+      "four_holding_mount_barrel_owners_absent": true,
+      "no_function_removed_or_missing_hardware_zero_counted": true
+    },
+    "heatpath": {
+      "source_two_core_mm": [
+        35,
+        90,
+        195
+      ],
+      "source_two_fan_mm": [
+        25,
+        90,
+        90
+      ],
+      "eight_finite_duct_groups": true,
+      "two_intake_gross_projected_area_m2": 0.0062344906210489446,
+      "airflow_UA_fan_curve_and_recirculation_unknown": true
+    }
+  },
+  "parameters_and_status": {
+    "soc_window": {
+      "nominal": 0.75,
+      "sensitivity": [
+        0.65,
+        0.85
+      ],
+      "status": "design reserve incl unused SOC/headroom; not OEM allowed window or regen qualification"
+    },
+    "battery_to_bus_efficiency": {
+      "nominal": 0.95,
+      "sensitivity": [
+        0.9,
+        0.98
+      ],
+      "status": "total stored-energy to bus efficiency incl cell/internal and DC path losses; not terminal-current conversion"
+    },
+    "terminal_to_bus_DC_efficiency": {
+      "nominal": 0.98,
+      "sensitivity": [
+        0.9,
+        0.98
+      ],
+      "status": "explicit BMS/cabling/converter terminal power condition; total energy efficiency already includes this loss"
+    },
+    "pump_total_efficiency": {
+      "nominal": 0.8,
+      "sensitivity": [
+        0.765,
+        0.873
+      ],
+      "basis": "old eta_v .90.. .97 times eta_mech .85.. .90, not measured installed maps"
+    },
+    "motor_inverter_efficiency": {
+      "nominal": 0.9,
+      "sensitivity": [
+        0.8,
+        0.97
+      ],
+      "status": "task sensitivity, not source continuous certification"
+    },
+    "rotary_electromechanical_efficiency": {
+      "nominal": 0.85,
+      "sensitivity": [
+        0.75,
+        0.92
+      ],
+      "status": "positive mechanical-motion efficiency only; static hold copper loss separately required"
+    },
+    "valve_or_line_pressure_drop_MPa": {
+      "nominal": 1.5,
+      "sensitivity": [
+        0.5,
+        3.0
+      ],
+      "status": "conditional loss on commanded branch flow; return/backpressure must be real"
+    },
+    "ambient_rise_air_K": {
+      "nominal": 15.0,
+      "sensitivity": [
+        10.0,
+        25.0
+      ]
+    },
+    "air_density_kg_m3": 1.2,
+    "air_cp_J_kg_K": 1005.0,
+    "water_cp_J_kg_K": 4180.0,
+    "all_motion_flow_torque_duty_inputs": "assumptions to solve with same-version mass/contact/actuator J(q); no payload or gait release"
+  },
+  "two_conditional_macro_choices": [
+    {
+      "id": "a_30min_deliberate_mission",
+      "duration_h": 0.5,
+      "description": "30min budget window: move/turn25%, grasp/environment35%, supported planning/hold40%; speeds and external loads not rated",
+      "duties": [
+        0.25,
+        0.35,
+        0.4
+      ],
+      "phase_hydraulic_p_MPa": [
+        16.0,
+        14.0,
+        0.0
+      ],
+      "phase_Q_L_min": [
+        45.0,
+        25.0,
+        0.0
+      ],
+      "phase_rotary_mechanical_kW": [
+        1.5,
+        1.0,
+        0.0
+      ],
+      "phase_hold_input_kW": [
+        0.0,
+        0.0,
+        1.5
+      ],
+      "auxiliary_kW": 0.65,
+      "phase_pump_outlet_hydraulic_kW": [
+        12.0,
+        5.833333333333333,
+        0.0
+      ],
+      "phase_bus_demand_kW": [
+        19.081372549019605,
+        9.928322440087145,
+        2.15
+      ],
+      "average_bus_demand_kW": 9.105255991285402,
+      "phase_battery_delivered_power_kW": [
+        19.47078831532613,
+        10.130941265395046,
+        2.193877551020408
+      ],
+      "phase_hydraulic_throttle_heat_kW": [
+        1.125,
+        0.625,
+        0.0
+      ],
+      "phase_conversion_and_aux_heat_kW": [
+        7.710655314757478,
+        4.242532393074186,
+        2.263157894736842
+      ],
+      "average_conversion_and_aux_heat_kW": 4.317813324160071,
+      "peak_conversion_and_aux_heat_kW": 7.710655314757478,
+      "required_nameplate_energy_kWh": 6.389653327217827,
+      "usable_energy_kWh": 4.552627995642701,
+      "nameplate_energy_efficiency_SOC_sensitivity_kWh": [
+        4.796974774954623,
+        8.935627432359455
+      ],
+      "old10_24kWh_conditional_runtime_min": 48.077725702492934,
+      "benchmark_complete_energy_mass_range_kg": [
+        50.02344255813825,
+        61.04497830010984,
+        75.35057895812514
+      ],
+      "benchmark_complete_energy_group_envelope_equivalent_L": 38.581648849603944,
+      "custom_shape_planning_space_L": [
+        38.581648849603944,
+        50.15614350448513
+      ],
+      "custom_shape_scope": "benchmark-equivalent volume plus0..30% geometry/insulation/cooling planning penalty, not true custom pack CAD/density guarantee; capacity and peak power both must close",
+      "current_complete_pump_pair_diagnostic": "At3000rpm old2Z16 deliver59.4..64.02Lmin only under assumed efficiency; Q and motor cooling/current maps still conditional",
+      "peak_bus_current_A_at_unassigned_voltage_examples": {
+        "100": 190.81372549019605,
+        "300": 63.604575163398685,
+        "500": 38.16274509803921
+      },
+      "bus_examples_are_not_selected_topology": true,
+      "holding_zero_mechanical_speed_is_not_zero_electric_or_leak_loss": true,
+      "regen_credited_in_energy_kWh": 0.0,
+      "task_or_installed_physical_accepted": false,
+      "coolant_flow_L_min_for_peak_heat_at_10K": 11.067926289125566,
+      "airflow_m3_s_for_peak_heat_at_15K": 0.42623854697387936,
+      "radiator_required_UA_W_K_at_20K": 385.5327657378739,
+      "phase_stored_energy_equivalent_input_power_kW": [
+        20.08565531475748,
+        10.450865726407521,
+        2.263157894736842
+      ],
+      "phase_battery_delivered_power_scope": "terminal-to-bus DCeta=.98; energy depletion uses totaleta=.95, not summed a second time",
+      "phase_peak_power_efficiency_sensitivity_kW": [
+        16.78700421469008,
+        24.730936819172108
+      ],
+      "peak_heat_efficiency_and_valve_loss_sensitivity_kW": [
+        3.6620042146900786,
+        13.480936819172108
+      ],
+      "runtime_energy_is_not_power_qualified_pack": true,
+      "reference1C_continuous_min_nameplate_energy_kWh": 19.47078831532613,
+      "required_continuous_C_rate_if_only_runtime_sized": 3.0472370437355276,
+      "reference1C_power_sized_complete_pack_envelope_equivalent_L": 117.56742958290933,
+      "high_power_custom_cell_budget": {
+        "reference": "Molicel INR21700P45B version1.4; not a selected supplier/complete pack",
+        "cell_count_energy_minimum": 413,
+        "stored_energy_min_kWh": 6.4014999999999995,
+        "max_cell_mass_kg": 28.910000000000004,
+        "max_cell_cylindrical_envelope_L": 10.567254265318631,
+        "proposed_complete_pack_space_L": [
+          16.90760682450981,
+          28.8197843599599
+        ],
+        "space_scope": "explicit55..75% cell cylindrical-envelope packing plus20..50% package/BMS/cooling/insulation allowance; requires native layout, not guaranteed fit",
+        "conditional_cell_terminal_current_at_peak_nominal_or_2_5V_A": [
+          13.095768304631509,
+          18.857906358669375
+        ],
+        "source45A_is_80C_cutoff_cell_not_pack_continuous_gate": true,
+        "source_typical15mOhm_DC_loss_at_peak_nominal_or_2_5V_W": [
+          1062.4372186918226,
+          2203.069816679364
+        ],
+        "DC_resistance_temperature_SOC_aging_current_and_cooling_still_red": true,
+        "peak_cell_loss_must_replace_unverified_total_battery_efficiency_not_double_count": true,
+        "mass_allowance_kg": {
+          "cell_max": 28.910000000000004,
+          "full_HV_BMS_contactors_disconnect_current_sensors_enclosure": [
+            3.0,
+            8.0
+          ],
+          "mounts_busbars_insulation_liquid_cooling_and_sensor_allowance": [
+            10.0,
+            20.0
+          ]
+        },
+        "physical_or_installation_or_manufacturing_accepted": false,
+        "typical_DC_loss_duty_averaged_W_nominal_or_2_5V": [
+          371.67554678845534,
+          770.706413820541
+        ],
+        "provisional_energy_kWh_from_wire_eta0_98_and_typical_DC_loss_nominal_or_2_5V": [
+          6.441835392610945,
+          6.707855970632335
+        ]
+      },
+      "old_two_pump_equal_share_match": {
+        "required_rpm_at_etaV_0_93": [
+          2199.4134897360705,
+          1221.8963831867059,
+          0.0
+        ],
+        "required_each_motor_shaft_torque_Nm_at_etaMech_0_8_div_0_93": [
+          32.563101356601784,
+          28.492713687026562,
+          0.0
+        ],
+        "running_phase_source_rpm_and_pressure_bounds_only": true,
+        "shaft_input_controller_LC_air_inlet_routes_not_qualified": true
+      },
+      "conditional_power_and_energy_sized_custom_pack": {
+        "thermal_design_cell_current_A": [
+          18.0,
+          27.0
+        ],
+        "current_ceiling_is_unverified_design_derating_not_OEM_rating": true,
+        "cell_current_power_scope": "terminal-to-bus \u03b7DC .98 nominal/.90.. .98 sensitivity; loaded cellV\u22652.5 assumed; rated C/SOC/current/thermal maps remain open",
+        "nominal_cell_count": 433,
+        "nominal_minimum_energy_kWh": 6.7115,
+        "full_energy_efficiency_SOC_current_sensitivity_cell_counts": [
+          310,
+          577
+        ],
+        "conditional_energy_range_kWh": [
+          4.805,
+          8.9435
+        ],
+        "nominal_pack_complete_allowance_mass_kg": [
+          44.910000000000004,
+          64.11
+        ],
+        "full_sensitivity_pack_complete_allowance_mass_kg": [
+          36.300000000000004,
+          74.19
+        ],
+        "nominal_pack_complete_planning_volume_L": [
+          17.726377130781472,
+          30.215415563832053
+        ],
+        "full_sensitivity_pack_complete_planning_volume_L": [
+          12.690939747210752,
+          40.26396023171153
+        ],
+        "segmentation_candidate": 4,
+        "design_local_BMS_fuse_mass_each_kg": [
+          0.45,
+          1.4
+        ],
+        "design_global_HV_cabinet_kg": [
+          2.0,
+          6.0
+        ],
+        "design_LV_converter_kg": [
+          0.8,
+          2.2
+        ],
+        "HV_LV_function_mass_status": "explicit finite design allowance, no new module CAD/source mass guarantee",
+        "full_HV_LV_local_BMS_fuse_allowance_kg": [
+          4.6,
+          13.8
+        ],
+        "mount_busbar_insulation_liquid_cooling_sensor_allowance": "max(10kg,20%maxcellmass)..max(20kg,45%maxcellmass); design allowance, no supplier/design mass claim",
+        "allocation_regions": [
+          "left_lower_chest_back",
+          "right_lower_chest_back",
+          "left_pelvis",
+          "right_pelvis"
+        ],
+        "equal_sector_nominal_energy_kWh": 1.677875,
+        "equal_sector_nominal_volume_L": [
+          4.431594282695368,
+          7.553853890958013
+        ],
+        "split_is_not_actual_CAD_or_freecavity_or_installed_gravity_owner": true,
+        "physical_mass_loss_bus_SOC_thermal_hold_regen_and_pack_qualification_still_open": true,
+        "typical_resistance_loss_crosscheck": {
+          "cell_typical_R_ohm": 0.015,
+          "R_not_design_bound": true,
+          "peak_cell_loss_W_nominal_or_endloadedV": [
+            1013.363906050168,
+            2101.3113955856284
+          ],
+          "required_nameplate_energy_kWh_from_wireloss_and_typical_R_nominal_or_endloadedV": [
+            6.430390418113994,
+            6.684123671515459
+          ],
+          "peak_system_heat_kW_replacing_totaleta_with_wire_and_cell_losses": [
+            8.109152221376295,
+            9.197099710911756
+          ],
+          "does_not_add_R_loss_onto_already_loss_inclusive_totaleta": true,
+          "loadV_Soc_voltagecurve_aging_parallelsharing_and_thermal_maps_open": true
+        }
+      },
+      "root_selected_next_layout_integer_topology_condition": {
+        "series": 80,
+        "parallel": 6,
+        "cells": 480,
+        "modules": 4,
+        "each_module_series": 20,
+        "each_module_parallel": 6,
+        "modules_connected_in_series": true,
+        "minimum_nameplate_energy_kWh": 7.44,
+        "cell_voltage_condition_V": [
+          2.5,
+          4.2
+        ],
+        "loaded_pack_voltage_condition_V": [
+          200,
+          336
+        ],
+        "nominal_pack_V": 288,
+        "one_module_voltage_condition_V": [
+          50,
+          84
+        ],
+        "one_module_minimum_energy_kWh": 1.86,
+        "phase_terminal_current_A_at200V": [
+          97.35394157663065,
+          50.65470632697523,
+          10.96938775510204
+        ],
+        "phase_cell_current_A_at200V": [
+          16.22565692943844,
+          8.442451054495871,
+          1.8282312925170068
+        ],
+        "peak_terminal_current_A_at288V": 67.60690387266017,
+        "peak_cell_current_A_at288V": 11.267817312110028,
+        "source_typical15mOhm_series_parallel_equivalent_R_ohm": 0.19999999999999998,
+        "peak_cell_total_loss_kW_nominal288_or_loaded200V": [
+          0.9141386902494224,
+          1.8955579881012024
+        ],
+        "totaleta_nominal_usable_bus_energy_kWh": 5.301,
+        "nominal_task_bus_energy_kWh": 4.552627995642701,
+        "nominal_bus_energy_reserve_kWh": 0.7483720043572992,
+        "nominal_totaleta_runtime_min": 34.931472580717525,
+        "required_energy_using_wire_eta_and_typical_R_at288_or200V_kWh": [
+          6.407248918118131,
+          6.636137457124035
+        ],
+        "worst_stated_efficiency_SOC_energy_requirement_kWh": 8.935627432359455,
+        "worst_stated_efficiency_SOC_30min_met": false,
+        "complete_function_allowance_mass_kg": [
+          48.2,
+          67.4
+        ],
+        "complete_planning_volume_L": [
+          19.650487350519874,
+          33.4951488929316
+        ],
+        "one_module_complete_planning_volume_L": [
+          4.912621837629969,
+          8.3737872232329
+        ],
+        "comparison_with_18A_design_current_ceiling": "loaded200V peak16.226A/cell < provisional18A, not an installed thermal rating",
+        "requires_real_voltage_curve_SOC_current_R_temperature_aging_and_parallel_sharing": true,
+        "BMS_HV_fuse_contactor_coldplate_insulation_brackets_sensor_and_tool_allowances_nonzero": true,
+        "regen_energy_credit_kWh": 0,
+        "regen_charge_headroom_current_cell_charge_bound_DC_link_and_dump_unclosed": true,
+        "bus_drive_motor_controller_compatibility_unclosed": true,
+        "root_nextCAD_reference_not_selectedSKU_or_frozenbus_or_qualifiedpack": true
+      },
+      "original_gross_two_throat_air_velocity_m_s_diagnostic": 68.36782231010322,
+      "throat_freearea_fraction_sensitivity_50_to80_velocity_m_s": [
+        85.45977788762903,
+        136.73564462020644
+      ]
+    },
+    {
+      "id": "b_60min_high_concurrency_mission",
+      "duration_h": 1.0,
+      "description": "60min sustained work question: move40%, bimanual manipulation40%, supported hold20%; not user-frozen duration/concurrency or accepted drive capability",
+      "duties": [
+        0.4,
+        0.4,
+        0.2
+      ],
+      "phase_hydraulic_p_MPa": [
+        21.0,
+        18.0,
+        0.0
+      ],
+      "phase_Q_L_min": [
+        60.0,
+        40.0,
+        0.0
+      ],
+      "phase_rotary_mechanical_kW": [
+        3.0,
+        2.0,
+        0.0
+      ],
+      "phase_hold_input_kW": [
+        0.0,
+        0.0,
+        2.5
+      ],
+      "auxiliary_kW": 0.8,
+      "phase_pump_outlet_hydraulic_kW": [
+        21.0,
+        12.0,
+        0.0
+      ],
+      "phase_bus_demand_kW": [
+        33.496078431372545,
+        19.819607843137252,
+        3.3
+      ],
+      "average_bus_demand_kW": 21.98627450980392,
+      "phase_battery_delivered_power_kW": [
+        34.1796718687475,
+        20.224089635854337,
+        3.36734693877551
+      ],
+      "phase_hydraulic_throttle_heat_kW": [
+        1.5,
+        1.0,
+        0.0
+      ],
+      "phase_conversion_and_aux_heat_kW": [
+        12.75902992776057,
+        7.862745098039211,
+        3.4736842105263155
+      ],
+      "average_conversion_and_aux_heat_kW": 8.943446852425177,
+      "peak_conversion_and_aux_heat_kW": 12.75902992776057,
+      "required_nameplate_energy_kWh": 30.85792913656691,
+      "usable_energy_kWh": 21.986274509803923,
+      "nameplate_energy_efficiency_SOC_sensitivity_kWh": [
+        22.88334372874502,
+        43.650075414781284
+      ],
+      "old10_24kWh_conditional_runtime_min": 19.910603763488805,
+      "benchmark_complete_energy_mass_range_kg": [
+        241.5811573142539,
+        294.8081089945863,
+        363.8949887914395
+      ],
+      "benchmark_complete_energy_group_envelope_equivalent_L": 186.32462908459135,
+      "custom_shape_planning_space_L": [
+        186.32462908459135,
+        242.22201780996878
+      ],
+      "custom_shape_scope": "benchmark-equivalent volume plus0..30% geometry/insulation/cooling planning penalty, not true custom pack CAD/density guarantee; capacity and peak power both must close",
+      "current_complete_pump_pair_diagnostic": "At3000rpm old2Z16 deliver59.4..64.02Lmin only under assumed efficiency; Q and motor cooling/current maps still conditional",
+      "peak_bus_current_A_at_unassigned_voltage_examples": {
+        "100": 334.96078431372547,
+        "300": 111.65359477124181,
+        "500": 66.99215686274509
+      },
+      "bus_examples_are_not_selected_topology": true,
+      "holding_zero_mechanical_speed_is_not_zero_electric_or_leak_loss": true,
+      "regen_credited_in_energy_kWh": 0.0,
+      "task_or_installed_physical_accepted": false,
+      "coolant_flow_L_min_for_peak_heat_at_10K": 18.314397025493644,
+      "airflow_m3_s_for_peak_heat_at_15K": 0.7053084537181078,
+      "radiator_required_UA_W_K_at_20K": 637.9514963880285,
+      "phase_stored_energy_equivalent_input_power_kW": [
+        35.25902992776057,
+        20.862745098039213,
+        3.473684210526316
+      ],
+      "phase_battery_delivered_power_scope": "terminal-to-bus DCeta=.98; energy depletion uses totaleta=.95, not summed a second time",
+      "phase_peak_power_efficiency_sensitivity_kW": [
+        29.448796861067,
+        43.459694989106744
+      ],
+      "peak_heat_efficiency_and_valve_loss_sensitivity_kW": [
+        5.948796861066999,
+        22.459694989106744
+      ],
+      "runtime_energy_is_not_power_qualified_pack": true,
+      "reference1C_continuous_min_nameplate_energy_kWh": 34.1796718687475,
+      "required_continuous_C_rate_if_only_runtime_sized": 1.1076463270584251,
+      "reference1C_power_sized_complete_pack_envelope_equivalent_L": 206.38179104607104,
+      "high_power_custom_cell_budget": {
+        "reference": "Molicel INR21700P45B version1.4; not a selected supplier/complete pack",
+        "cell_count_energy_minimum": 1991,
+        "stored_energy_min_kWh": 30.8605,
+        "max_cell_mass_kg": 139.37,
+        "max_cell_cylindrical_envelope_L": 50.94286499333994,
+        "proposed_complete_pack_space_L": [
+          81.50858398934389,
+          138.93508634547254
+        ],
+        "space_scope": "explicit55..75% cell cylindrical-envelope packing plus20..50% package/BMS/cooling/insulation allowance; requires native layout, not guaranteed fit",
+        "conditional_cell_terminal_current_at_peak_nominal_or_2_5V_A": [
+          4.768635508224161,
+          6.866835131842793
+        ],
+        "source45A_is_80C_cutoff_cell_not_pack_continuous_gate": true,
+        "source_typical15mOhm_DC_loss_at_peak_nominal_or_2_5V_W": [
+          679.1266538864991,
+          1408.2370294990449
+        ],
+        "DC_resistance_temperature_SOC_aging_current_and_cooling_still_red": true,
+        "peak_cell_loss_must_replace_unverified_total_battery_efficiency_not_double_count": true,
+        "mass_allowance_kg": {
+          "cell_max": 139.37,
+          "full_HV_BMS_contactors_disconnect_current_sensors_enclosure": [
+            3.0,
+            8.0
+          ],
+          "mounts_busbars_insulation_liquid_cooling_and_sensor_allowance": [
+            27.874000000000002,
+            62.7165
+          ]
+        },
+        "physical_or_installation_or_manufacturing_accepted": false,
+        "typical_DC_loss_duty_averaged_W_nominal_or_2_5V": [
+          368.0760838954369,
+          763.2425675655779
+        ],
+        "provisional_energy_kWh_from_wire_eta0_98_and_typical_DC_loss_nominal_or_2_5V": [
+          30.40406676465503,
+          30.93095540954855
+        ]
+      },
+      "old_two_pump_equal_share_match": {
+        "required_rpm_at_etaV_0_93": [
+          2932.551319648094,
+          1955.0342130987294,
+          0.0
+        ],
+        "required_each_motor_shaft_torque_Nm_at_etaMech_0_8_div_0_93": [
+          42.73907053053984,
+          36.63348902617701,
+          0.0
+        ],
+        "running_phase_source_rpm_and_pressure_bounds_only": true,
+        "shaft_input_controller_LC_air_inlet_routes_not_qualified": true
+      },
+      "conditional_power_and_energy_sized_custom_pack": {
+        "thermal_design_cell_current_A": [
+          18.0,
+          27.0
+        ],
+        "current_ceiling_is_unverified_design_derating_not_OEM_rating": true,
+        "cell_current_power_scope": "terminal-to-bus \u03b7DC .98 nominal/.90.. .98 sensitivity; loaded cellV\u22652.5 assumed; rated C/SOC/current/thermal maps remain open",
+        "nominal_cell_count": 1991,
+        "nominal_minimum_energy_kWh": 30.8605,
+        "full_energy_efficiency_SOC_current_sensitivity_cell_counts": [
+          1477,
+          2817
+        ],
+        "conditional_energy_range_kWh": [
+          22.8935,
+          43.6635
+        ],
+        "nominal_pack_complete_allowance_mass_kg": [
+          173.644,
+          221.4865
+        ],
+        "full_sensitivity_pack_complete_allowance_mass_kg": [
+          130.46800000000002,
+          305.32550000000003
+        ],
+        "nominal_pack_complete_planning_volume_L": [
+          81.50858398934389,
+          138.93508634547254
+        ],
+        "full_sensitivity_pack_complete_planning_volume_L": [
+          60.4661871181622,
+          196.57465506539234
+        ],
+        "segmentation_candidate": 8,
+        "design_local_BMS_fuse_mass_each_kg": [
+          0.45,
+          1.4
+        ],
+        "design_global_HV_cabinet_kg": [
+          2.0,
+          6.0
+        ],
+        "design_LV_converter_kg": [
+          0.8,
+          2.2
+        ],
+        "HV_LV_function_mass_status": "explicit finite design allowance, no new module CAD/source mass guarantee",
+        "full_HV_LV_local_BMS_fuse_allowance_kg": [
+          6.3999999999999995,
+          19.4
+        ],
+        "mount_busbar_insulation_liquid_cooling_sensor_allowance": "max(10kg,20%maxcellmass)..max(20kg,45%maxcellmass); design allowance, no supplier/design mass claim",
+        "allocation_regions": [
+          "left_lower_chest_back",
+          "right_lower_chest_back",
+          "left_mid_chest_back",
+          "right_mid_chest_back",
+          "left_pelvis",
+          "right_pelvis",
+          "left_proximal_thigh",
+          "right_proximal_thigh"
+        ],
+        "equal_sector_nominal_energy_kWh": 3.8575625,
+        "equal_sector_nominal_volume_L": [
+          10.188572998667986,
+          17.366885793184068
+        ],
+        "split_is_not_actual_CAD_or_freecavity_or_installed_gravity_owner": true,
+        "physical_mass_loss_bus_SOC_thermal_hold_regen_and_pack_qualification_still_open": true,
+        "typical_resistance_loss_crosscheck": {
+          "cell_typical_R_ohm": 0.015,
+          "R_not_design_bound": true,
+          "peak_cell_loss_W_nominal_or_endloadedV": [
+            679.126653886499,
+            1408.2370294990442
+          ],
+          "required_nameplate_energy_kWh_from_wireloss_and_typical_R_nominal_or_endloadedV": [
+            30.40406676465503,
+            30.93095540954855
+          ],
+          "peak_system_heat_kW_replacing_totaleta_with_wire_and_cell_losses": [
+            12.358798522633993,
+            13.087908898246539
+          ],
+          "does_not_add_R_loss_onto_already_loss_inclusive_totaleta": true,
+          "loadV_Soc_voltagecurve_aging_parallelsharing_and_thermal_maps_open": true
+        }
+      },
+      "original_gross_two_throat_air_velocity_m_s_diagnostic": 113.13008497227327,
+      "throat_freearea_fraction_sensitivity_50_to80_velocity_m_s": [
+        141.41260621534158,
+        226.26016994454653
+      ]
+    }
+  ],
+  "hydraulic_hold_and_regen": {
+    "old_Z16_each_displacement_cc_rev": 11.0,
+    "manufacturer_rpm_range": [
+      700,
+      3500
+    ],
+    "manufacturer_continuous_pressure_MPa": 23.0,
+    "old_design_pressure_MPa": 21.0,
+    "two_Q_at3000rpm_Lmin": [
+      59.4,
+      64.02
+    ],
+    "two_Q_at3500rpm_Lmin": [
+      69.3,
+      74.69
+    ],
+    "old18_axis_neutral_0_5rad_s_Q_Lmin": 196.555,
+    "all18_0_5rad_s_at21MPa_hydraulic_kW": 68.79424999999999,
+    "reason_not_new_required_performance": "old J(q)/18 topology is superseded; new gait/skills must allocate actual concurrent flow",
+    "local_hold_and_stop": "Full actual pressure-holding/anti-cavitation/shock relief, passive brake/stop support and unload/release path required; pump shutdown assumed only when these installed functions close",
+    "backdrive_regen": "Directional throttling normally converts negative mechanical work to oil heat; hydraulic electrical recovery needs reversible pump/motor and routing not provided. Rotor regen requires DC-link/battery SOC-current-voltage limit and dump resistor/control.",
+    "idle": {
+      "pair_min_source_running_rpm": 700,
+      "pair_flow_etaV_Lmin": [
+        13.86,
+        14.938
+      ],
+      "loaded_at21MPa_outlet_kW": [
+        4.851,
+        5.228300000000001
+      ],
+      "unloaded_at1MPa_outlet_kW": [
+        0.23099999999999998,
+        0.24896666666666667
+      ],
+      "n0_off_is_not_source_running_point": true
+    },
+    "source_EMRAX": {
+      "each_continuous_torque_Nm": 52,
+      "each_continuous_power_kW": 34,
+      "LC_min_each_Lmin": 6,
+      "inlet_max_C": 50,
+      "requires_air_circulation_even_LC": true,
+      "nominal_not_joint_controller_bus_qualified": true
+    }
+  },
+  "COM_and_gravity_leverage": {
+    "scope": "diagnostic same633 dry B rows / source COM proxies only; no new whole robot COM",
+    "source_pivot_m": [
+      0.23,
+      0,
+      1.91
+    ],
+    "four_energy_nominal_mass_kg": 97.8301240742438,
+    "move_whole_energy_X_forward_0_23m_changes_My_Nm": 220.7341089487163,
+    "move_whole_energy_Z_down_0_645m_changes_dry_subset_COM_z_m": -0.08062606672059146,
+    "dry_subset_reference_mass_range_kg": [
+      671.1509304700119,
+      782.6306378873836,
+      959.1593955913356
+    ],
+    "dry_subset_reference_rows": 633,
+    "no_actual_candidate_move_or_source_modification": true
+  },
+  "formulas": {
+    "Eusable": "Ename*SOCwindow*eta_battery_to_bus",
+    "mission_energy": "sum(duty*(pQ/(eta_pump*eta_motor)+positive_sum_tau_omega/eta_rotary+holdloss+aux))*duration / (SOCwindow*eta_battery_to_bus)",
+    "terminal_power": "Pbus/etaDC; etaDC is included in total stored-energy efficiency, not separately multiplied into mission_energy",
+    "pack_cell_count": "ceil(max(Erequired_minWh/15.5, Pterminal_peakW/(Vloaded_min*Icell_design_max))); parallel/series integer layout not yet designed",
+    "hydraulic_kW": "p_MPa*Q_Lmin/60",
+    "mechanical": "sum(tau_Nm*omega_rad_s)/1000; negative work separately to recovery/dump heat",
+    "conversion_heat": "Pbus-Ppump_outlet-Ppositive_rotary + delta_p_valve*Q/60 + Pbus*(1/eta_battery-1); hold/aux already in Pbus; external dissipative tool work excluded",
+    "water_flow": "q/(rho*cp*deltaT)",
+    "air_flow": "q/(rho_air*cp_air*deltaT)",
+    "gravity": "delta M=(delta COM) cross (0,0,-mg)"
+  },
+  "physical_unknown_red": [
+    "full mass/contact/J(q)/task torques/loads/duty and speed",
+    "exact pump motor controller bus cooling current match",
+    "new actual tank/lines/cavitation/backpressure and localholding",
+    "negative power/DC-link SOC absorption/dump and emergency release",
+    "actual pack cells shape insulation HV protection C-rate and thermal",
+    "real core UA fan pressure-flow free throat duct and ambient",
+    "complete connected mounting/moving coils/support/frame net material and inertia"
+  ],
+  "task_payload_or_ton_rating_defined": false,
+  "whole_robot_or_SI_or_Bevy_or_physical_accepted": false
+}

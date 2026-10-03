@@ -1,0 +1,125 @@
+"""Read-only local Gorilla canonical D ankle/foot material review."""
+from pathlib import Path
+import json,hashlib,collections
+import numpy as np
+import trimesh as tr
+ROOT=Path(__file__).resolve().parents[2];OUT=Path(__file__).resolve().parent
+DIR=ROOT/'robots/gorilla_v0_1/cad/source'
+NAMES=['internal_structure_d_scene.json','internal_structure_d_leg_scene.json','internal_structure_d_foot_scene.json']
+VOLUME_THRESHOLD_M3=1e-10;AABB_EPS_M=1e-9
+
+def sha(b):return hashlib.sha256(b).hexdigest()
+def write(n,data):(OUT/n).write_text(json.dumps(data,indent=2,allow_nan=False)+'\n')
+raw={n:(DIR/n).read_bytes() for n in NAMES};inputs={n:json.loads(b) for n,b in raw.items()}
+inputhash={str((DIR/n).relative_to(ROOT)):sha(b) for n,b in raw.items()}
+# Immutable byte snapshots ensure a later metadata write cannot change inputs mid-run.
+for n,b in raw.items():(OUT/('input_'+n)).write_bytes(b)
+main=inputs[NAMES[0]];leg=inputs[NAMES[1]];foot=inputs[NAMES[2]]
+mp={p['name']:p for p in main['parts']};lp={p['name']:p for p in leg['parts']};fn=next(p for p in foot['pose_scenes'] if p['id']=='neutral_locked');fp={p['name']:p for p in fn['parts']}
+
+def tm(p):
+ ff=[]
+ for f in p['faces']:
+  for k in range(1,len(f)-1):ff.append([f[0],f[k],f[k+1]])
+ return tr.Trimesh(p['vertices_world_m'],ff,process=False)
+def reference(p):return p.get('D_leg_metadata',{}).get('component')=='bearing_pack_reserve' or p.get('role')=='bearing_design_envelope'
+def material(p):return not reference(p) and (p.get('density_kg_m3',p.get('D_metadata',{}).get('density_kg_m3')) is not None)
+def category(p):
+ if reference(p):return 'reference_bearing_envelope'
+ role=p.get('role','');component=p.get('D_leg_metadata',{}).get('component','')
+ if p.get('endpoint_driven_geometry'):return 'leg_endpoint_driven_actuator_material'
+ if role=='moving_load_tray':return 'moving_tray'
+ if 'brace' in role:return 'foot_endpoint_driven_brace_material'
+ if 'pin' in role or component=='actuator_eye_pin':return 'pin_or_lock_material'
+ if role=='fixed_load_arch':return 'root_fixed_arch'
+ return 'pitch_frame_support_material'
+def geometry_equal(a,b):
+ return np.array_equal(np.asarray(a['vertices_world_m']),np.asarray(b['vertices_world_m'])) and a['faces']==b['faces']
+def inter(a,b):
+ if np.any(a.bounds[1]<=b.bounds[0]+AABB_EPS_M) or np.any(b.bounds[1]<=a.bounds[0]+AABB_EPS_M):return None
+ z=tr.boolean.intersection([a,b],engine='manifold');return z if z is not None and z.volume>VOLUME_THRESHOLD_M3 else None
+errors=[];identity=[]
+for source,ps in [('canonical_leg',leg['parts']),('canonical_foot_neutral',fn['parts'])]:
+ for p in ps:
+  identity.append({'source':source,'name':p['name'],'exists_in_main':p['name'] in mp,'mesh_equal_main':p['name'] in mp and geometry_equal(p,mp[p['name']])})
+# Main neutral actual meshes are authoritative; canonical leg supplies pose-driving data.
+leg_names=set(lp);foot_names=set(fp)
+poses=[{'id':'main_neutral_baseline','body_transforms':leg['pose_scenes'][0]['body_transforms'],'parts':[]}]+leg['pose_scenes']
+checks=[];topology=[];materialunion=[]
+for side in ['left','right']:
+ parent=side+'_distal_shank'
+ use=[mp[n] for n in leg_names if n in mp and mp[n]['body']==parent]+[mp[n] for n in foot_names if n in mp and mp[n]['body'].startswith(side+'_')]
+ for p in use:
+  m=tm(p);topology.append({'name':p['name'],'category':category(p),'watertight':bool(m.is_watertight),'winding_consistent':bool(m.is_winding_consistent),'positive_signed_volume':bool(m.volume>0),'volume_m3':float(m.volume)})
+for ps in poses:
+ pid=ps['id'];Ts=ps['body_transforms'];pose_mesh_lookup={p['name']:p for p in ps['parts']};by_side=[]
+ for side in ['left','right']:
+  parent=side+'_distal_shank';footbody=side+'_foot';tf=np.asarray(Ts[footbody]);tp=np.asarray(Ts[parent])
+  parents=[];footpieces=[]
+  for n in sorted(leg_names):
+   if n not in mp or mp[n]['body']!=parent:continue
+   p=mp[n]
+   if p.get('endpoint_driven_geometry'):
+    # World vertices are endpoint solved for this pose, never rotate by gravity-owner body.
+    source=pose_mesh_lookup.get(n,p)
+    m=tm(source)
+   else:m=tm(p);m.apply_transform(tp)
+   parents.append((p,m))
+  for n in sorted(foot_names):
+   if n not in mp or not mp[n]['body'].startswith(side+'_'):continue
+   p=mp[n];m=tm(p);m.apply_transform(tf)
+   footpieces.append((p,m))
+  # Also include the leg-side moving output shaft/collars/crank attached to main ankle.
+  childparts=[]
+  for n in sorted(leg_names):
+   if n not in mp or mp[n]['body']!=footbody:continue
+   p=mp[n]
+   if p.get('endpoint_driven_geometry'):m=tm(pose_mesh_lookup.get(n,p))
+   else:m=tm(p);m.apply_transform(tf)
+   childparts.append((p,m))
+  actual_pairs=[];reference_pairs=[];childframe_pairs=[]
+  for p,m in parents:
+   for q,n in footpieces+childparts:
+    try:
+     z=inter(m,n)
+     if z is None:continue
+     rec={'parent_part':p['name'],'parent_body':p['body'],'parent_category':category(p),'foot_part':q['name'],'foot_body':q['body'],'foot_category':category(q),'intersection_volume_m3':float(z.volume),'intersection_volume_cm3':float(z.volume*1e6),'intersection_bounds_world_m':z.bounds.tolist(),'reference_envelope_pair':reference(p) or reference(q)}
+     if rec['reference_envelope_pair']:reference_pairs.append(rec)
+     elif material(p) and material(q):
+      if q['name'] in leg_names:childframe_pairs.append(rec)
+      else:actual_pairs.append(rec)
+    except Exception as e:errors.append({'pose':pid,'side':side,'pair':[p['name'],q['name']],'error':str(e)})
+  # Net material union for collision accounting, not a claim parts are welded/rigid.
+  parent_m=[m for p,m in parents if material(p)]
+  root_foot_m=[m for p,m in footpieces if material(p)]
+  child_m=[m for p,m in childparts if material(p)]
+  unions={}
+  for group,ms in [('parent_actual_material',parent_m),('root_foot_actual_material',root_foot_m),('ankle_child_actual_material',child_m)]:
+   try:
+    u=tr.boolean.union(ms,engine='manifold');unions[group]=u
+    materialunion.append({'pose':pid,'side':side,'group':group,'volume_m3':float(u.volume),'aggregate_geometry_only_not_physical_join_proof':True})
+   except Exception as e:errors.append({'pose':pid,'side':side,'group':group,'error':str(e)})
+  unionhits=[]
+  if 'parent_actual_material' in unions:
+   for group in ['root_foot_actual_material','ankle_child_actual_material']:
+    if group not in unions:continue
+    z=inter(unions['parent_actual_material'],unions[group])
+    unionhits.append({'target':group,'positive_material_interference':z is not None,'net_intersection_volume_m3':float(z.volume) if z is not None else 0,'net_intersection_volume_cm3':float(z.volume*1e6) if z is not None else 0,'bounds_world_m':z.bounds.tolist() if z is not None else None})
+  by_side.append({'side':side,'parent_material_part_names':[p['name'] for p,m in parents if material(p)],'parent_reference_bearing_names':[p['name'] for p,m in parents if reference(p)],'root_foot_material_part_names':[p['name'] for p,m in footpieces if material(p)],'root_foot_reference_bearing_names':[p['name'] for p,m in footpieces if reference(p)],'actual_material_pairs':actual_pairs,'reference_bearing_envelope_pairs':reference_pairs,'leg_parent_vs_leg_child_material_pairs':childframe_pairs,'net_union_interference':unionhits})
+ checks.append({'pose':pid,'root_z_aligned':True,'extra_root_shift_m':0,'foot_mode':'canonical neutral_locked actual geometry, all pieces transformed by main foot T; no independent foot folding tested','sides':by_side})
+ print(pid,[(q['side'],len(q['actual_material_pairs']),len(q['reference_bearing_envelope_pairs']),[(v['target'],round(v['net_intersection_volume_cm3'],6)) for v in q['net_union_interference']]) for q in by_side],flush=True)
+ result={'robot_id':'gorilla_v0_1','scope':'canonical D actual local ankle parent vs neutral_locked composite foot, read-only','input_hashes':inputhash,'analysis_script_sha256':sha(Path(__file__).read_bytes()),'triangle_engine':'trimesh.boolean manifold native mesh','positive_volume_threshold_m3':VOLUME_THRESHOLD_M3,'aabb_only_prefilter_epsilon_m':AABB_EPS_M,'material_scope':'Explicit density finite material; bearing envelopes excluded from material union and separately reported; pins are physical material but aggregate union is not a welded connection claim','neutral_mesh_identity':identity,'topology':topology,'checks':checks,'material_union_accounting':materialunion,'unresolved_boolean':errors,'geometry_accepted':False,'physics_accepted':False,'candidate_status':'rejected','AA3_required_external_change_proved':False,'current_input_hashes_at_finish':{str((DIR/n).relative_to(ROOT)):sha((DIR/n).read_bytes()) for n in NAMES},'baseline_neutral_is_duplicate_of_neutral_T':True,'previous_scratch_result_inherited':False}
+ write('report.json',result)
+
+lines=['# Gorilla canonical D 腿—脚接口只读复核','', '本轮重新读取当前canonical整机、腿、脚源，使用actual triangles与Manifold材料布尔；未继承旧.scratch脚报告。输入快照与确切SHA在report.json。未改受控几何。', '', '按中立脚neutral_locked与4组canonical腿T检查；另列整机neutral baseline，它与neutral T重复，不能算作额外独立姿态。所有腿姿态已root-z aligned，无二次平移。执行器fixed/rod采用各pose端点解算world mesh，未用重力body字段错误转动。', '', '阈值：正材料相交>1e-10m³；AABB仅1e-9m预筛。密度明确的候选金属进入材料union，参考轴承包络单独列出。union只避免重复计算交体积，不证明焊接、刚接或额定载荷。', '', '|姿态|侧|真材料对|参考包络对|父材料∩root脚净cm³|父材料∩踝子输出净cm³|','|---|---|---:|---:|---:|---:|']
+for c in checks:
+ for q in c['sides']:
+  uu={v['target']:v['net_intersection_volume_cm3'] for v in q['net_union_interference']}
+  lines.append(f"|{c['pose']}|{q['side']}|{len(q['actual_material_pairs'])}|{len(q['reference_bearing_envelope_pairs'])}|{uu.get('root_foot_actual_material',0):.6f}|{uu.get('ankle_child_actual_material',0):.6f}|")
+neutral=checks[0]
+lines+=['', '中立实际材料交点（逐件、未用参考轴承当材料）：']
+for q in neutral['sides']:
+ for x in sorted(q['actual_material_pairs'],key=lambda x:x['intersection_volume_m3'],reverse=True):lines.append(f"- {x['parent_part']} → {x['foot_part']}：{x['intersection_volume_cm3']:.6f} cm³；bounds={x['intersection_bounds_world_m']}")
+lines+=['', f"主源与canonical组件mesh逐值一致：{all(q['exists_in_main'] and q['mesh_equal_main'] for q in identity)}；参与件WT/绕序/正体积均成立={all(q['watertight'] and q['winding_consistent'] and q['positive_signed_volume'] for q in topology)}。布尔未解项={len(errors)}。", '', '**当前候选拒绝。** 固定踝父件与脚承件的正材料相交必须解决；这不是轴承接触许可，更不是AA3必须改形的证据。轴座、脚承件及完整传动包的内部重排仍待判断，未给外壳改形必需性结论。', '', '本轮未检查前掌/后跟卸载折叠，未推断吨载、疲劳、销配合、轴承能力或整机行走；材料union不得替代真实机械连接证明。']
+(OUT/'report.md').write_text('\n'.join(lines)+'\n')
+print('DONE',len(identity),len(topology),len(errors),flush=True)

@@ -1,0 +1,136 @@
+"""Gorilla G15 readonly source-bound mass/load handoff, no geometry/FE changes."""
+from pathlib import Path
+import json,gzip,hashlib,copy,collections,itertools,time
+import numpy as np,trimesh
+R=Path(__file__).resolve().parents[2];O=Path(__file__).resolve().parent
+B=R/'.scratch/gorilla_internal_g15_thorax_functional_colayout/b/scene.json.gz'
+EXPECTED='27141a30dd2533516558d177ed784067b42cbe5d5626b2c897ae13f467739221'
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def read(p):return json.loads(gzip.decompress(Path(p).read_bytes()) if str(p).endswith('.gz') else Path(p).read_bytes())
+def put(n,x):(O/n).write_text(json.dumps(x,ensure_ascii=False,indent=2,allow_nan=False)+'\n')
+def vv(p):return np.asarray(p.get('vertices_world_m',p.get('vertices')),float)
+def faces(p):return [[q[0],q[k],q[k+1]]for q in p['faces']for k in range(1,len(q)-1)]
+def geometry(p):
+ v=vv(p);return {'COM_world_proxy_m':((v.min(0)+v.max(0))/2).tolist(),'COM_world_geometric_bounds_m':[v.min(0).tolist(),v.max(0).tolist()],'COM_method':'actual current source AABB-centre proxy; true OEM COM unknown'}
+def fit(ps,qs):
+ if any(p['faces']!=q['faces'] or vv(p).shape!=vv(q).shape for p,q in zip(ps,qs)):return {'proper_rigid_transform_verified':False,'reason':'indexed topology changed; no automatic alias'}
+ a=np.concatenate([vv(p)for p in ps]);b=np.concatenate([vv(q)for q in qs]);ca=a.mean(0);cb=b.mean(0);u,s,vh=np.linalg.svd((a-ca).T@(b-cb));rr=vh.T@u.T;err=float(np.linalg.norm((a-ca)@rr.T+cb-b,axis=1).max());T=np.eye(4);T[:3,:3]=rr;T[:3,3]=cb-rr@ca
+ return {'proper_rigid_transform_verified':bool(err<2e-8 and np.linalg.det(rr)>.999999),'max_vertex_error_m':err,'world_T_new_from_previous':T.tolist(),'rotation_determinant':float(np.linalg.det(rr))}
+def good(r):return r.get('mass_range_kg') is not None and all(x is not None for x in r['mass_range_kg'])
+def total(rs):return np.asarray([r['mass_range_kg']for r in rs if good(r)]).sum(0).tolist() if any(good(r)for r in rs) else [0.,0.,0.]
+def wrench(m,c,p):f=np.array([0.,0.,-9.81*m]);return np.r_[f,np.cross(np.array(c)-np.array(p),f)]
+def wforce(f,c,p):return np.r_[f,np.cross(np.array(c)-np.array(p),f)]
+def main():
+ t=time.time();base=read(O/'mass_contract.json');old=read(O/'bound_current_scene.json.gz');op={p['name']:p for p in old['parts']};gs=read(R/'.scratch/gorilla_internal_g9_whole_source/scene.json.gz');g9m=read(R/'.scratch/gorilla_internal_g9_whole_source/mass_inventory.json');u=read(R/'.scratch/gorilla_internal_g9_upper_load_scope/upper_load_scope.json');bd=read(R/'.scratch/gorilla_internal_g14_root_topology_review/report.json')
+ if sha(B)!=EXPECTED:raise ValueError('G15B source changed')
+ audit_path=B.parent/'audit_summary.json';audit=read(audit_path)
+ if audit['scene_sha256']!=EXPECTED:raise ValueError('current resource audit source mismatch')
+ rejectIDs=set(audit['resource_rejectIDs']);put('bound_B_resource_summary.json',audit)
+ s=read(B);(O/'bound_g15_b_scene.json.gz').write_bytes(B.read_bytes());pm={p['name']:p for p in s['parts']};coverage={n:[]for n in pm};rows=[];removed=[];trs={};excluded=[]
+ for r0 in base['function_mass_rows']:
+  r=copy.deepcopy(r0);ids=r['member_ids'];alive=[n for n in ids if n in pm]
+  if ids and not alive:removed.append({'old_function_id':r['id'],'old_member_ids':ids,'old_range_not_a_replacement_credit':r['mass_range_kg']});continue
+  if ids and len(alive)!=len(ids):r.update({'member_ids':alive,'mass_range_kg':None,'partial_replacement_requires_split':True,'old_full_function_mass_range_kg_not_reused':r0['mass_range_kg']})
+  if alive:
+   tr=fit([op[n]for n in alive],[pm[n]for n in alive]);trs[r['id']]=tr;v=np.concatenate([vv(pm[n])for n in alive]);r['COM_world_geometric_bounds_m']=[v.min(0).tolist(),v.max(0).tolist()]
+   if tr['proper_rigid_transform_verified']:
+    T=np.array(tr['world_T_new_from_previous']);c=r0.get('COM_world_proxy_m');r['COM_world_proxy_m']=(T[:3,:3]@np.array(c)+T[:3,3]).tolist() if c is not None else ((v.min(0)+v.max(0))/2).tolist();r['COM_method']='previous mass basis transported by exact indexed-geometry proper rigid transform; OEM proxy remains unknown'
+    I=r.get('own_material_full_I_COM_kg_m2')
+    if I is not None:r['own_material_full_I_COM_kg_m2']=(T[:3,:3]@np.array(I)@T[:3,:3].T).tolist()
+   else:r.update({'mass_range_kg':None,'COM_world_proxy_m':((v.min(0)+v.max(0))/2).tolist(),'full_assembly_I_unknown':True,'changed_geometry_requires_new_material_ledger':True})
+   r['actual_rigid_transform_from_g14']=tr
+  for n in alive:coverage[n].append(r['id'])
+  rows.append(r)
+ for e in base['excluded_rows_not_additive']:
+  if e['id']in pm:coverage[e['id']].append('explicit_alias_or_empty_space');excluded.append(e)
+ for nr in s['new_module_mass_rows']:
+  n=nr['id']
+  if n in pm and coverage[n]:raise ValueError('new/retained mass overlap:'+n)
+  q={'id':'g15_current_function:'+n,'member_ids':[n] if n in pm else [],'mass_range_kg':nr['mass_range_kg'],'gravity_owner_candidate':nr['body'],'mass_basis':nr['source_scope'],'source_new_mass_row':nr,'full_assembly_I_unknown':True,'physical_owner_connection_or_mass_accepted':False,'finite_material_basis':bool(n in pm and pm[n].get('finite_material'))}
+  if n in pm:
+   p=pm[n];q.update(geometry(p));coverage[n].append(q['id'])
+   if p.get('finite_material') and p.get('density_kg_m3') and n=='g15_chest_shoulder_waist_net_cage':
+    pr=trimesh.Trimesh(vv(p),np.asarray(faces(p)),process=False).mass_properties;rho=p['density_kg_m3'];q.update({'COM_world_proxy_m':pr.center_mass.tolist(),'own_material_full_I_COM_kg_m2':(pr.inertia*rho).tolist(),'signed_native_mass_kg':float(pr.volume*rho),'COM_method':'actual signed own finite material moments, conditional density; separate resource audit required','included_anchor_adapter_once':True})
+  else:q.update({'COM_world_proxy_m':None,'COM_world_geometric_bounds_m':None,'COM_method':'logical global fluid inventory; actual operating distribution unknown','global_inventory_once':True,'fluid_COM_parameter_required':True})
+  if n in rejectIDs:
+   q.update({'prior_planning_mass_range_kg_NOT_adopted':q['mass_range_kg'],'mass_range_kg':None,'native_material_rejected':True,'unresolved_parameter':'m_required_valid_'+n,'resource_audit_source_sha256':EXPECTED,'resource_rejection_does_not_remove_required_function':True})
+  rows.append(q)
+ for n,p in pm.items():
+  if coverage[n]:continue
+  q={'id':'new_unresolved_present:'+n,'member_ids':[n],'mass_range_kg':None,'gravity_owner_candidate':p['body'],'mass_basis':'no complete functional allocation; mass not zero','full_assembly_I_unknown':True,'unresolved_parameter':'m_'+n};q.update(geometry(p));rows.append(q);coverage[n].append(q['id'])
+ errors={n:v for n,v in coverage.items()if len(v)!=1}
+ if errors:raise ValueError('coverage not unique')
+ # Ghost history is tested by member identity, not removed by a percentage.
+ ghost_ids=set(n for e in g9m['excluded_historical_rows']for n in e.get('native_member_ids',e.get('member_ids',[e['id']])));ghost_overlap=sorted(ghost_ids&set(pm))
+ upper=set(u['candidate_upper_body_names']);arm={side:{b for b in upper if b.startswith(side+'_')}for side in ['left','right']}
+ def scope(r):
+  body=r.get('gravity_owner_candidate');ids=r['member_ids']
+  for side in ['left','right']:
+   if body in arm[side] or any(n.startswith('g13_'+side+'_')for n in ids):return side
+  if body=='torso':return 'central'
+  if r.get('global_inventory_once'):return 'fluid_unknown_owner'
+  return 'other_or_owner_unknown'
+ for r in rows:
+  r['actual_native_body_owners']=sorted({pm[n]['body'] for n in r['member_ids']})
+  r['gravity_owner_assignment_source']='historical mass-owner candidate plus current indexed rigid geometry; actual native bodies separately recorded; not SI ownership acceptance'
+  r['owner_label_mismatch_unresolved']=bool(len(r['actual_native_body_owners'])==1 and r.get('gravity_owner_candidate') not in r['actual_native_body_owners'])
+  r['current_static_scope']=scope(r)
+ # Separate current finite own packs from unknown OEM cell masses.
+ packaux=[];cellparameters=[]
+ for r in rows:
+  if 'own_function_range_kg'not in r:continue
+  for sub in r['complete_function_subrow_members']:
+   n=sub['id']
+   if n not in pm:continue
+   q={'id':'pack_own_aux:'+n,'member_ids':[n],'mass_range_kg':sub['source_mass_range_kg'],'current_static_scope':'central','gravity_owner_candidate':'torso','full_assembly_I_unknown':True};q.update(geometry(pm[n]));packaux.append(q)
+  vvcell=np.concatenate([vv(pm[n])for n in r['member_ids']if pm[n]['role']=='OEM_cell_max_envelope_reference']);cellparameters.append({'id':r['unresolved_parameter'],'count':r['cell_count'],'single_mass_kg_low_nom_high':[None,None,.07],'mass_formula':'120*m_cell_kg','source_COM_proxy_m':((vvcell.min(0)+vvcell.max(0))/2).tolist(),'COM_geometric_bounds_m':[vvcell.min(0).tolist(),vvcell.max(0).tolist()],'unresolved_true_cell_COM_and_I':True})
+ buckets=collections.defaultdict(list)
+ for r in rows:buckets[r['id'].split(':')[0]].append(r)
+ top=sorted([r for r in rows if good(r)],key=lambda r:-r['mass_range_kg'][1])[:20]
+ # Explicit catalogue-vs-own-role pairing; no deduction for merely shared owner.
+ catalogs=[r for r in rows if r['id'].startswith(('legacy_reference:','g13_shoulder_reference:')) or ('OEM' in r.get('mass_basis','')and not r.get('finite_material_basis'))]
+ pairs=[]
+ for r in catalogs:
+  ns=r['member_ids'];n=ns[0]if ns else r['id'];prefix=n.rsplit('_',1)[0];near=[x for x in rows if x is not r and x.get('finite_material_basis')and any(k.startswith(prefix)for k in x['member_ids'])]
+  pairs.append({'complete_function_id':r['id'],'component_mass_range_kg':r['mass_range_kg'],'reference_member_ids':ns,'nearby_own_finite_material_rows':[x['id']for x in near],'shared_body_is_not_alias_proof':True,'OEM_internal_mesh_density_used':False})
+ suspected=[{'id':r['id'],'member_ids':r['member_ids'],'mass_range_kg':r['mass_range_kg'],'reason':'retained old arm/carrier function coexists with new G13 shoulder; requires interface/function mapping, not an automatic mass credit'}for r in rows if any(n.startswith('e2_upper_net_') and 'shoulder'in n for n in r['member_ids'])]
+ diagnosis={'source_g14_sha256':base['sources']['current']['sha256'],'source_g15B_sha256':EXPECTED,'all_present_ids_count':len(pm),'all_native_IDS_unique':len(pm)==len(s['parts']),'current_numeric_subset_not_whole_kg':total(rows),'own_pack_known_aux_separate_kg':total(packaux),'pack_cells_not_nominal_mass':cellparameters,'mass_buckets':[{'name':k,'rows':len(v),'complete_numeric_rows':sum(good(r)for r in v),'numeric_subset_range_kg':total(v)}for k,v in buckets.items()],'top20_function_rows':top,'ghost_E2_historical_count':g9m['ghost_E2_structure_count'],'ghost_historical_range_NOT_added_kg':g9m['ghost_E2_structure_range_kg'],'ghost_native_member_overlap_current':ghost_overlap,'current_new_resource_rejectIDs':sorted(rejectIDs),'bound_resource_audit_path':str(audit_path),'bound_resource_audit_sha256':sha(audit_path),'functional_aliases':excluded,'current_removed_function_rows':removed,'catalogue_versus_own_material_pairs':pairs,'suspected_same_function_different_ID_unresolved':suspected,'same_scope_receipt':{'old_G13A_745_841_994_scope':'historical upper subset, NOT whole robot','g14_current_old_G9_upper_owner_subset_kg':total([r for r in base['function_mass_rows']if r['gravity_owner_candidate']in upper]),'g14_whole_numeric_subset_kg':total(base['function_mass_rows']),'g15_current_legacy_upper_owner_subset_kg':total([r for r in rows if r.get('gravity_owner_candidate')in upper]),'comparison_includes_new_G13_mixed_OEM_separately':True,'no_mass_growth_conclusion_from_different_scopes':True},'actual_body_label_mismatches_not_silently_resolved':[{'id':r['id'],'mass_owner_candidate':r.get('gravity_owner_candidate'),'actual_native_body_owners':r['actual_native_body_owners'],'scope_assignment_not_SI_accepted':True}for r in rows if r['owner_label_mismatch_unresolved']], 'null_mass_rows':[{'id':r['id'],'members':r['member_ids'],'owner':r.get('gravity_owner_candidate'),'parameter':r.get('unresolved_parameter'),'old_range_rejected_or_unsplit':r.get('historical_nonqualified_group_mass_kg',r.get('old_full_function_mass_range_kg_not_reused'))}for r in rows if not good(r)],'functional_complete_or_mass_accepted':False}
+ put('mass_diagnosis.json',diagnosis)
+ contract={'schema':'gorilla_g15B_source_bound_function_mass_contract_v1','source':{'path':str(B),'sha256':EXPECTED},'preceding_contract_sha256':sha(O/'mass_contract.json'),'producer_sha256':sha(Path(__file__)),'function_mass_rows':rows,'present_id_accounting_decisions':coverage,'excluded_aliases_not_additive':excluded,'proper_rigid_transform_checks':trs,'source_rigid_group_transforms':s['rigid_group_transforms'],'whole_mass_range_kg':None,'whole_COM_world_m':None,'whole_full_I_kg_m2':None,'resource_and_physical_accepted':False,'current_resource_rejectIDs':sorted(rejectIDs),'current_resource_audit_sha256':sha(audit_path)}
+ put('g15_b_mass_contract.json',contract)
+ # Two macros only: source neutral gravity and task-force sensitivity at same source.
+ waist=np.array([.2475,0,1.91]);ports={'left':np.array([.115,.3203276555,2.28899855994]),'right':np.array([.115,-.3203276555,2.28899855994]),'waist':waist};known=[r for r in rows if good(r)and scope(r)in ['central','left','right']and r.get('COM_world_proxy_m')is not None]+packaux
+ def resultant(rr,origin,level):return sum((wrench(r['mass_range_kg'][level],r['COM_world_proxy_m'],origin)for r in rr),np.zeros(6))
+ known_scopes={k:[r for r in known if r['current_static_scope']==k]for k in ['central','left','right']};grav=[]
+ for li,level in enumerate(['low','nominal_range_marker','high']):
+  sw={k:resultant(v,ports[k],li)for k,v in known_scopes.items()if k!='central'};cw=resultant(known_scopes['central'],waist,li);transported=cw.copy()
+  for k,w in sw.items():transported[:3]+=w[:3];transported[3:]+=w[3:]+np.cross(ports[k]-waist,w[:3])
+  direct=resultant(known,waist,li);grav.append({'level':level,'numeric_known_mass_kg':sum(r['mass_range_kg'][li]for r in known),'shoulder_body_on_core_Fxyz_Mxyz':{k:w.tolist()for k,w in sw.items()},'central_module_and_core_Fxyz_Mxyz_at_waist':cw.tolist(),'upper_known_Fxyz_Mxyz_at_waist':direct.tolist(),'waist_on_upper_balancing_reaction':(-direct).tolist(),'decomposition_transport_residual6':(direct-transported).tolist(),'equilibrium_residual6':(direct-direct).tolist(),'unresolved_mass_and_fluid_terms_NOT_zero':True})
+ unit_terms=[]
+ for r in rows:
+  if good(r)or 'own_function_range_kg' in r or scope(r)not in ['central','left','right','fluid_unknown_owner']:continue
+  c=r.get('COM_world_proxy_m');p=ports.get(scope(r),waist)
+  unit_terms.append({'id':r['id'],'scope':scope(r),'mass_parameter':r.get('unresolved_parameter','m_'+r['id']),'source_owner':r.get('gravity_owner_candidate'),'COM_world_proxy_m':c,'COM_world_bounds_m':r.get('COM_world_geometric_bounds_m'),'unit_kg_gravity_wrench_at_scope_port':wrench(1,c,p).tolist()if c is not None else None,'unit_kg_at_waist':wrench(1,c,waist).tolist()if c is not None else None,'scope_assignment_unqualified':True})
+ for r in rows:
+  if r.get('global_inventory_once'):unit_terms.append({'id':r['id'],'mass_range_kg':r['mass_range_kg'],'owner_split_parameter':'alpha_upper_'+r['id'],'COM_parameter_world_m':'c_operating_'+r['id'],'formula':'w=alpha_upper*m*[0,0,-9.81,-9.81*(cy-oy),9.81*(cx-ox),0]','one_global_inventory_not_added_to_tank_or_jackets_again':True})
+ for cp in cellparameters:unit_terms.append({'id':cp['id'],'scope':'central','mass_parameter':cp['id'],'count':120,'unit_single_cell_kg_wrench_at_waist':wrench(120,cp['source_COM_proxy_m'],waist).tolist(),'cell_mass_cap_kg':.07,'low_and_nominal_kg':None})
+ hand={}
+ for side in ['left','right']:
+  ps=[p for p in pm.values()if p['body']==side+'_palm'];vs=np.concatenate([vv(p)for p in ps]);hand[side]={'candidate_application_point_m':((vs.min(0)+vs.max(0))/2).tolist(),'actual_current_palm_geometry_bounds_m':[vs.min(0).tolist(),vs.max(0).tolist()],'true_grasp_contact_frame_unknown':True}
+ task=[]
+ for kg in [10.,50.,100.]:
+  for mode,split in [('single_left',{'left':1.,'right':0.}),('bimanual_equal',{'left':.5,'right':.5})]:
+   w={side:wforce(np.array([0,0,-9.81*kg*share]),hand[side]['candidate_application_point_m'],ports[side])for side,share in split.items()};wa=sum((wforce(np.array([0,0,-9.81*kg*share]),hand[side]['candidate_application_point_m'],waist)for side,share in split.items()),np.zeros(6));task.append({'mode':mode,'downward_task_force_equivalent_kg_parameter_only':kg,'shoulder_increment6':{k:q.tolist()for k,q in w.items()},'waist_increment6':wa.tolist(),'not_a_payload_rating_or_new_pose':True})
+ bounds=[]
+ for portid,p in ports.items():
+  rr=known if portid=='waist'else known_scopes[portid];lo=np.zeros(6);hi=np.zeros(6)
+  for r in rr:
+   box=r.get('COM_world_geometric_bounds_m');cs=list(itertools.product(*zip(box[0],box[1])))if box and not r.get('finite_material_basis')else[r['COM_world_proxy_m']];ws=np.array([wrench(m,c,p)for m in [r['mass_range_kg'][0],r['mass_range_kg'][2]]for c in cs]);lo+=ws.min(0);hi+=ws.max(0)
+  bounds.append({'port':portid,'componentwise_known_mass_geometric_COM_bounds':[lo.tolist(),hi.tolist()],'not_simultaneous_feasible_extrema':True,'unknown_mass_excluded_NOT_assumed_zero':True})
+ loads={'schema':'gorilla_g15B_two_macro_static_load_contract','source_sha256':EXPECTED,'mass_contract_sha256':sha(O/'g15_b_mass_contract.json'),'gravity_m_s2':9.81,'axes_and_owner_source':'actual G13 shoulder axisXZ[-.13,2.29],axisY; legacy52tree historical/unaccepted, not new SI/FK','ports':{k:{'origin_world_m':v.tolist(),'interface_scope':'G14 geometry-derived port retained only as next-FE reference; G15 changed frame actual mate patch must be remapped before FE'}for k,v in ports.items()},'macro1_source_neutral_gravity_known_subset':grav,'macro2_same_source_hand_force_sensitivity':{'application_points':hand,'parameterized_examples':task,'general_external_wrench_formula':'[F, M_hand+(p_hand-p_port)crossF]','arbitrary6D_task_force_supported':True},'unresolved_mass_or_owner_terms':unit_terms,'known_componentwise_bounds':bounds,'ownership_freebody_member_IDs':{k:[r['id']for r in v]for k,v in known_scopes.items()},'whole_torso_or_shoulder_wrench_accepted':False,'upper_unknowns_affect_loads':True,'fluid_distribution_unknown':True,'no_arm_gravity_and_arm_resultant_double_count':True,'no_ground_3t_force_added_to_upper_torso':True,'new_pose_contract_accepted':False}
+ put('sixd_load_contract.json',loads)
+ fe={'schema':'gorilla_g15_next_broad3D_FE_entry_only','source_sha256':EXPECTED,'force_contract_sha256':sha(O/'sixd_load_contract.json'),'material_design_domain_source':str(R/'.scratch/gorilla_internal_g14_root_topology_review/report.json'),'G14_domain_3d_sample_not_current_freecavity':True,'G14_3p245mm_sample_is_historical_not_G15_minwall':True,'must_rebuild_on_same_G15_source':['actual shoulder anchor-to-core mating patches','actual waistadapter pressure-centre/mate patches','complete module motor/gear/cell/HX/routes keepouts','assembly and service swept volumes','broad native armor ray/normal constrained design envelope','actual finite CAD geometry tet quality and body-volume identity'],'preserve_nondesign':['receiver mounting/bearing/journal datum surfaces','fullOEM functional/kinematic/thermal spaces','electrical isolation/TIM and fluidpressure-wall volumes','actual bolt bores,seats,keeper/access release paths','current original visiblearmor until separate approved styling change'],'designable':['own internal walls,ribs and transition mass inside broad3D domain','material supporting module interfaces without changing mechanical functionality'],'multiload_macros':['current-source own/core,module,shoulder neutral gravity','same-source explicit6D single/bimanual hand task force sensitivity'],'force_mapping':['bodyforce rho*g for source-own core material','real module seat/interface loads for central modules','arm+selfshoulder resultant traction only; exclude those arm masses from FE bodyforce','waist resultant reaction opposite current sumF/sumM, pressurecentre/contact split unknown'],'avoid_overconstraint':'balanced tractions plus minimal six gauge/nullspace constraints; never full-fix waist and both shoulder faces together','unknowns_blocking_FEphysicalinterpretation':['OEM trueCOM/internal inertia/output split','functional redundancy and installed-owner mapping','global operating fluiddistribution','fourmissingcylinders','thread/preload/weld/bolted mating paths','currentport surface mesh and load distribution','initialassembly/maintenance/cooling still rejected'],'FE_or_topopt_run':False,'3t_strength_pass':False}
+ put('FE_input_handoff.json',fe)
+ summary={'source_sha256':EXPECTED,'parts':len(pm),'numeric_subset_not_whole_kg':total(rows),'pack_own_aux_separate_kg':total(packaux),'unknown_function_rows':sum(not good(r)for r in rows),'unknown_present_member_count':sum(len(r['member_ids'])for r in rows if not good(r)),'ghostoverlap':ghost_overlap,'coverage_errors':errors,'actual_source_rigid_transform_failures':[k for k,v in trs.items()if not v['proper_rigid_transform_verified']],'shoulder_and_waist_known_subset':grav,'whole_mass_or_force_accepted':False,'19_resource_rejects_mass_null':sorted(rejectIDs),'elapsed_s':time.time()-t};put('final_summary.json',summary)
+ print(json.dumps({k:v for k,v in summary.items()if k!='shoulder_and_waist_known_subset'},ensure_ascii=False),flush=True)
+if __name__=='__main__':main()

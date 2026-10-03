@@ -1,0 +1,68 @@
+"""Native whole-source four views and actual triangle/plane section segments."""
+from pathlib import Path
+import gzip,json,hashlib,sys
+import numpy as np
+from PIL import Image,ImageDraw,ImageFont
+O=Path(__file__).resolve().parent
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+font=lambda n:ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',n)
+def main():
+ layout=int(sys.argv[1]);D=O/f'layout_{layout}';s=json.loads(gzip.decompress((D/'scene.json.gz').read_bytes()))
+ fluid={'oil_inventory_once','coolant_inventory','coolant_inventory_unknown_internal'};refonly=set(s['reference_only_pending_complete_functional_replacement_ids'])
+ shown=[p for p in s['parts'] if p['name'] not in refonly and p.get('category') not in fluid and p.get('role')!='holding_mount_window']
+ group={n:r['id'] for r in s['new_complete_group_placements'] for n in r['complete_member_ids']};core=s['new_core_part_id']
+ native=[]
+ for p in shown:
+  v=np.asarray(p['vertices_world_m']);f=np.array([[f[0],f[j],f[j+1]] for f in p['faces'] for j in range(1,len(f)-1)]);tri=v[f]
+  n=np.cross(tri[:,1]-tri[:,0],tri[:,2]-tri[:,0]);nn=np.linalg.norm(n,axis=1);rgb=np.asarray(p.get('rgba',[.55,.38,.18,1])[:3])*255
+  native.append((p,tri,n,nn,rgb))
+ vv=np.vstack([np.asarray(p['vertices_world_m']) for p in shown]);span=max(3.05,2*max(abs(vv[:,0]).max(),abs(vv[:,1]).max())+.1,vv[:,2].max()-min(0,vv[:,2].min())+.16);zmax=vv[:,2].max()+.08
+ W,H,side=1600,1710,690;ppm=side/span;origins=[(70,160),(840,160),(70,935),(840,935)]
+ views=[('FRONT +X',np.array([[0,1,0],[0,0,1.]]),np.array([1.,0,0])),('LEFT +Y',np.array([[-1.,0,0],[0,0,1.]]),np.array([0,1.,0])),('REAR -X',np.array([[0,-1.,0],[0,0,1.]]),np.array([-1.,0,0])),('TOP +Z',np.array([[0,1.,0],[1.,0,0]]),np.array([0,0,1.]))]
+ im=Image.new('RGB',(W,H),(250,251,252));dr=ImageDraw.Draw(im)
+ dr.text((60,20),f'GORILLA G9 | ACTUAL COMPLETE GROUP PLACEMENT {layout} + B CORE',font=font(24),fill=(24,41,56))
+ dr.text((60,61),'4 whole packs, 2 whole pumps, HX, compute, screen. No scale, function or capacity changes.',font=font(18),fill=(66,78,91))
+ dr.text((60,96),'UNACCEPTED. Old shoulder bridge reference-only. All other active hardware retained. Routes invalid.',font=font(17),fill=(139,48,40))
+ for k,(title,cam,depth) in enumerate(views):
+  ox,oy=origins[k];dr.text((ox,oy-33),title,font=font(21),fill=(24,41,56));xy=[];dep=[];colors=[]
+  for p,t,n,nn,rgb in native:
+   uv=t@cam.T;a=uv[:,1]-uv[:,0];b=uv[:,2]-uv[:,0];good=(np.abs(a[:,0]*b[:,1]-a[:,1]*b[:,0])>1e-12)&(nn>1e-12)
+   u=uv[good].copy();u[:,:,0]=ox+(u[:,:,0]+span/2)*ppm;u[:,:,1]=oy+((span/2 if k==3 else zmax)-u[:,:,1])*ppm
+   shade=.68+.32*np.abs(n[good]@depth/nn[good]);xy.append(u);dep.append(np.mean(t[good]@depth,axis=1));colors.append(np.clip(shade[:,None]*rgb,0,255).astype('uint8'))
+  points=np.concatenate(xy);zz=np.concatenate(dep);cols=np.concatenate(colors)
+  for idx in np.argsort(zz):dr.polygon([tuple(q) for q in points[idx]],fill=tuple(cols[idx]))
+  dr.rectangle((ox,oy,ox+side,oy+side),outline=(154,171,185),width=2)
+ dr.text((60,H-50),'Actual vertices; original 111 armor unchanged. Interference and absent interfaces remain redlines.',font=font(17),fill=(72,89,105))
+ dr.text((60,H-26),f'{len(shown)} shown native hardware/reference/visible rows; oil/water/window and old bridge not rendered as active solid. {ppm:.6f} px/m.',font=font(15),fill=(72,89,105))
+ fp=D/'native_four_view.png';im.save(fp)
+ # Plane intersection, not a schematic or inferred free cavity.
+ sections=[('TRANSVERSE Z = 2.120 m',2,2.12,(0,1),(-.46,.46,-.62,.62)),('TRANSVERSE Z = 2.470 m',2,2.47,(0,1),(-.46,.46,-.62,.62)),
+           ('SAGITTAL Y = 0.140 m',1,.14,(0,2),(-.46,.46,1.78,2.69)),('SAGITTAL Y = 0 m',1,0.,(0,2),(-.46,.46,1.78,2.69))]
+ wi,he=1600,1430;sec=Image.new('RGB',(wi,he),(250,251,252));dw=ImageDraw.Draw(sec)
+ dw.text((45,15),f'GORILLA G9 PLACEMENT {layout} | ACTUAL NATIVE PLANE SECTIONS',font=font(25),fill=(24,41,56))
+ dw.text((45,52),'Source triangle-plane intersections. Core slate; packs green; pumps orange; HX cyan; compute/screen purple.',font=font(17),fill=(72,89,105))
+ counts=[]
+ for k,(title,axis,val,coord,roi) in enumerate(sections):
+  ox=65+(k%2)*775;oy=130+(k//2)*630;pw,ph=660,555;x0,x1,y0,y1=roi;scale=min(pw/(x1-x0),ph/(y1-y0));dw.text((ox,oy-33),title,font=font(20),fill=(24,41,56));total=0;owners=set()
+  for p,t,n,nn,rgb in native:
+   d=t[:,:,axis]-val;valid=(d.min(1)<-1e-11)&(d.max(1)>1e-11);tr=t[valid];dd=d[valid]
+   if len(tr)==0:continue
+   gid=group.get(p['name'],'')
+   col=(72,95,129) if p['name']==core else (39,141,73) if 'energy' in gid else (191,107,34) if 'pump' in gid else (22,147,169) if gid=='HX' else (129,73,153) if gid in ['compute','screen'] else (160,163,168) if p['name'] in s['authoritative_visible_armor_ids'] else (133,133,135)
+   for triangle,dist in zip(tr,dd):
+    pts=[]
+    for a,b in [(0,1),(1,2),(2,0)]:
+     if dist[a]*dist[b]<0:pts.append(triangle[a]+(triangle[b]-triangle[a])*dist[a]/(dist[a]-dist[b]))
+    if len(pts)!=2:continue
+    uv=np.array(pts)[:,coord]
+    if np.any(uv[:,0]>x1) or np.any(uv[:,0]<x0) or np.any(uv[:,1]>y1) or np.any(uv[:,1]<y0):continue
+    xy=np.column_stack((ox+(uv[:,0]-x0)*scale,oy+(y1-uv[:,1])*scale))
+    dw.line([tuple(a) for a in xy],fill=col,width=2 if gid or p['name']==core else 1);total+=1;owners.add(p['name'])
+  dw.rectangle((ox,oy,ox+pw,oy+ph),outline=(154,171,185),width=2);counts.append({'plane':title,'segments':total,'intersected_visible_native_ids':sorted(owners),'ROI_world_m':roi})
+ dw.text((45,he-39),'Finite material/reference contours; stock envelopes are not true OEM material. ROI crops upper-body section only.',font=font(17),fill=(139,48,40));sp=D/'actual_internal_sections.png';sec.save(sp)
+ manifest={'scene_stored_sha256':sha(D/'scene.json.gz'),'outputs':{fp.name:sha(fp),sp.name:sha(sp)},'pixels_per_metre':ppm,
+    'shown_native_ids':[p['name'] for p in shown],'reference_only_old_shoulder_not_active':sorted(refonly),'section_planes_and_contours':counts,
+    'source_outer_geometry_changed_mm':0,'no_source_mesh_repair':True,'projection_is_actual_native_geometry_not_new_aesthetic_authority':True,
+    'no_reference_hardware_or_compulsory_parts_hidden_to_resolve_collisions':True,'physical_or_aesthetic_accepted':False,'producer_sha256':sha(__file__)}
+ (D/'render_manifest.json').write_text(json.dumps(manifest,indent=2)+'\n');print('RENDERED',layout,sha(sp),flush=True)
+if __name__=='__main__':main()

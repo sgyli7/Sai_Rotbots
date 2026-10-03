@@ -1,0 +1,73 @@
+#!/usr/bin/env python3
+"""Readonly G17 exact source identity, actual interface/stock/tank diagnostics; no modifications."""
+import pathlib,json,gzip,hashlib,importlib.util,copy,collections,numpy as np,manifold3d as mf
+P=pathlib.Path(__file__).resolve().parent;R=P.parents[1]
+def sha(p):return hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
+def read(p):return json.load(gzip.open(p,'rt')) if str(p).endswith('.gz') else json.loads(pathlib.Path(p).read_text())
+def wr(p,d):pathlib.Path(p).write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n')
+sp=importlib.util.spec_from_file_location('g17diaghelpers',R/'.scratch/gorilla_internal_g14_complete_thermal_colayout/geometry_helpers.py');g=importlib.util.module_from_spec(sp);sp.loader.exec_module(g)
+basefile=R/'.scratch/gorilla_internal_g17_connected_cage_layout/b/scene.json.gz';base=read(basefile);old={p['name']:p for p in base['parts']};histfile=R/'.scratch/gorilla_internal_g15_thorax_functional_colayout/b/scene.json.gz';history={p['name']:p for p in read(histfile)['parts']}
+def geomSHA(p):return hashlib.sha256(json.dumps({k:p[k] for k in ['vertices_world_m','faces']},sort_keys=True,separators=(',',':')).encode()).hexdigest()
+def patches(q):
+ if isinstance(q,dict):
+  if 'triangle_indices' in q and 'source_part_id' in q:yield q
+  else:
+   for v in q.values():yield from patches(v)
+ elif isinstance(q,list):
+  for v in q:yield from patches(v)
+for vname in ['a','b']:
+ D=P/vname;s=read(D/'scene.json.gz');by={p['name']:p for p in s['parts']};frame=by['g18_connected_cage_and_redesigned_receiver_net'];v,f=g.h.triangles(frame);tri=v[f];cross=np.cross(tri[:,1]-tri[:,0],tri[:,2]-tri[:,0]);area=np.linalg.norm(cross,axis=1)/2;cen=tri.mean(1)
+ # Re-select NEW actual face regions. Never copy sourceG15 triangleindices as G17 face IDs.
+ raw=read(D/'source_interface_contract.json');interfaces=[]
+ for rec in raw['interfaces']:
+  rows=[]
+  for patch in patches(rec):
+   oldID=patch['source_part_id'];src=history.get(oldID)
+   if src is None:rows.append({'historical_source_ID':oldID,'unresolved_source_for_patch':True});continue
+   sv,sf=g.h.triangles(src);orig=sv[sf[np.array(patch['triangle_indices'])]];lo=orig.reshape(-1,3).min(0);hi=orig.reshape(-1,3).max(0)
+   axis=patch.get('plane_axis');value=patch.get('plane_value_m');targetID=oldID if oldID in by else 'g18_connected_cage_and_redesigned_receiver_net';dst=by[targetID];dv,df=g.h.triangles(dst);tt=dv[df];aa=np.linalg.norm(np.cross(tt[:,1]-tt[:,0],tt[:,2]-tt[:,0]),axis=1)/2;cc=tt.mean(1)
+   if axis is None or value is None:rows.append({'historical_source_ID':oldID,'native_target_ID':targetID,'plane_selector_unavailable_NOT_reused_indices':True});continue
+   mask=(np.max(np.abs(tt[:,:,int(axis)]-value),axis=1)<2e-8)&np.all(cc>=lo-2e-8,axis=1)&np.all(cc<=hi+2e-8,axis=1);ids=np.flatnonzero(mask);A=float(aa[ids].sum());C=(cc[ids]*aa[ids,None]).sum(0)/A if A>0 else np.full(3,np.nan)
+   rows.append({'historical_source_ID':oldID,'actual_target_ID':targetID,'actual_target_geometrySHA':geomSHA(dst),'plane_axis':axis,'plane_value_m':value,'world_region_bbox_m':[lo.tolist(),hi.tolist()],'actual_new_triangle_indices':ids.tolist(),'actual_new_patch_area_m2':A,'actual_new_centroid_world_m':None if A==0 else C.tolist(),'historical_patch_area_m2':patch.get('area_m2'),'area_difference_m2':None if 'area_m2' not in patch else A-patch['area_m2'],'old_indices_NOT_used_for_new_faces':True,'selector_scope':'newplane+historicalworldregion centroids; uncuttriangles, not exactclippedcontact or FE traction surface','qualification':False})
+  IDs=rec.get('source_part_ids',[rec.get('source_part_id')]);identity=[]
+  for n in IDs:
+   if n is None:continue
+   identity.append({'source_ID':n,'actual_ID':n if n in by else ('g18_connected_cage_and_redesigned_receiver_net' if n in ['g15_chest_shoulder_waist_net_cage','g13_left_fixed_reaction_closed_anchor','g13_right_fixed_reaction_closed_anchor'] else None),'unchanged_geometry_vsG16':n in by and n in old and geomSHA(by[n])==geomSHA(old[n]),'historicalsource_NOT_current_interface_pass':True})
+  interfaces.append({'id':rec['id'],'functional_roles':rec.get('functional_roles'),'source_DATUM_only':True,'current_part_bindings':identity,'new_native_patch_queries':rows,'physical_contact_fastener_preload_andbodygraph_qualified':False})
+ fm=g.mm(frame);ownJoin=[]
+ for word in ['left','right']:
+  oldanchor=g.mm({p['name']:p for p in read(R/'.scratch/gorilla_internal_g13_shoulder_cooling_zones/a/scene.json.gz')['parts']}[f'g13_{word}_fixed_reaction_closed_anchor']);miss=oldanchor-fm;ownJoin.append({'sourceanchor_ID':f'g13_{word}_fixed_reaction_closed_anchor','source_anchor_V_m3':oldanchor.volume(),'source_anchor_material_missing_from_new_net_m3':miss.volume(),'anchor_integrated_once_NOstandalonepart':f'g13_{word}_fixed_reaction_closed_anchor' not in by,'ownreceiver_redesigned_expected_originaldifference_noidentityinheritance':True,'only_geometric_material_inclusion_not_joint_strength':True})
+ ownOEM=[]
+ for p in s['parts']:
+  if not p['name'].startswith('g13_') or p['name'].endswith('bounded_water_region'):continue
+  vv=np.array(p['vertices_world_m']);lo=vv.min(0);hi=vv.max(0)
+  if np.all(v.max(0)>lo)&np.all(hi>v.min(0)):
+   mm=g.mm(p)
+   if mm.status()==mf.Error.NoError:
+    V=float((fm^mm).volume())
+    if V>1e-12:ownOEM.append({'id':p['name'],'role':p['role'],'positive_overlap_m3':V,'sameowner_NOwaiver':True})
+ wr(D/'current_interface_mapping_receipt.json',{'source_SHA':sha(D/'scene.json.gz'),'historical_contract_sha':sha(D/'source_interface_contract.json'),'new_exact17functional_DATUM_queries':interfaces,'original_anchor_material_inclusion':ownJoin,'newframe_vs_all_independentG13_positive':ownOEM,'noOEMA_B_BEARINGcase_unioned':True,'geometric_continuity_not_assembly_or_strength':True,'old17faces_are_NOT_new_FE_boundary':True})
+ # Tankcapacity/workingfill directlybound to finite shell and physicalalias, global once remains unresolved.
+ tanks=[]
+ for label in ['oil','low_water','hot_water']:
+  sh=by[f'g16_{label}_working_tank_shell'];fill=by[f'g16_{label}_workingfluid_alias'];vv=np.array(sh['vertices_world_m']);dm=vv.max(0)-vv.min(0);cap=np.prod(dm-.006)*1000;F=g.mm(fill).volume()*1000
+  tanks.append({'id':sh['name'],'source_shellSHA':geomSHA(sh),'externalXYZ_m':dm.tolist(),'innerXYZ_m':(dm-.006).tolist(),'ownwall_m':.003,'calculatedinnercapacity_L':cap,'actual_native_workingfill_L':F,'cold_airvolume_L':cap-F,'fill_touch_shell_positive_m3':float((g.mm(sh)^g.mm(fill)).volume()),'source_metadata_capacity_L':sh.get('capacity_L'),'routing/headspace/NPSH/return/unqualified':True,'global_fluid_NOT_allstored_here':True})
+ wr(D/'fluid_installation_receipt.json',{'source_SHA':sha(D/'scene.json.gz'),'tanks':tanks,'globalinventory_literal':s['globalfluidinventory'],'active_global_logical_rows':[r for r in s['new_module_mass_rows'] if 'globalfluid_logical' in r['geometry_role']],'actualnewroute_inventory_unknown_NOTzero':True,'historical12p482_30_NOTnewfixedmassCOM':True})
+ # Currentinventory + actualretirement versus frozenbaseline; source material/reference/ownranges distinguish.
+ rows=s['new_module_mass_rows'];keys=[x['id'] for x in rows];present=[r for r in rows if r['id'] in by];logical=[r for r in rows if r['id'] not in by and r['geometry_role'].startswith('globalfluid_logical')];ghost=[r for r in rows if r['id'] not in by and r not in logical]
+ ledger={'source_SHA':sha(D/'scene.json.gz'),'current_new_and_retainedG16module_rows':rows,'partial_function_mass_range_kg_NOTwhole':np.sum([r['mass_range_kg'] for r in rows],axis=0).tolist(),'duplicates':dict((n,c) for n,c in collections.Counter(keys).items() if c>1),'ghost_rows':ghost,'logical_inventory_withoutphysicalCOM':logical,'frame_net_includesanchors_once_not_extra30kg':True,'whole_retainedOEM_mass_partition_androtorCOM_I_unknown':True,'actual_retired_ids':s['proposed_retired_ids'],'removed_native_IDs_vs_G16':sorted(set(old)-set(by)),'new_native_IDs_vs_G16':sorted(set(by)-set(old)),'retiredfunction_scopes':{'G17_net_cage_and_receivers':'one currentnet g18_connected_cage_and_redesigned_receiver_net, ownmaterial not OEM; noextraanchor masses','pumproute':'A retains complete two150; B retires exacttwo150stock replacingtwoWP32/thirddegas, physicalinstallation/NPSH unknown','oldglobalfluid_rows':'newconditionalrange once, noanonymousgeometry/COM assignment'},'old_serial_carriers_remain_as_baseline_challenge':True,'G17_newserial_candidate_not_integrated':'.scratch/gorilla_internal_g17_serial_shoulder_assembly/b/scene.json.gz; separate source, root must use exactreplacementIDs not stacknew/old'}
+ wr(D/'function_mass_retirement_receipt.json',ledger)
+ # OriginalwhiteVISIBLE outer source exactx-ray; missingfaces remain unknown, sample-only lowerbound packaging delta.
+ white=by['continuous_ivory_torso_armor_cover'];wv,wf=g.h.triangles(white,True);wt=wv[wf];exposure=[]
+ want=[q for q in s['complete_partition_slots'] if q['id'].startswith(('g16_pack','g16_low_es','g16_hot_es','g17_low_series','g18_low_es','g18_WP32'))]
+ want += [{'id':'connected_frame','member_ids':['g18_connected_cage_and_redesigned_receiver_net']},{'id':'auxiliaries','member_ids':[p['name'] for p in s['parts'] if p['name'].startswith('g16_') and any(t in p['name'] for t in ['tank_shell','pump_controller','filter_regulator'])]+['ds_compute']}]
+ for q in want:
+  pp=[by[n] for n in q['member_ids'] if n in by];vv=np.concatenate([np.array(p['vertices_world_m']) for p in pp]);samples=vv[np.linspace(0,len(vv)-1,min(200,len(vv)),dtype=int)];front=[];rear=[];known=0;missing=0
+  for xyz in samples:
+   hh=g.h.xhits(wt,float(xyz[1]),float(xyz[2]));ff=hh[hh>.02];rr=hh[hh<-.06]
+   if len(ff) and len(rr):known+=1;front.append({'delta_m':float(xyz[0]-max(ff)),'actualpartpoint_m':xyz.tolist(),'actualsurfaceX_m':float(max(ff))});rear.append({'delta_m':float(min(rr)-xyz[0]),'actualpartpoint_m':xyz.tolist(),'actualsurfaceX_m':float(min(rr))})
+   else:missing+=1
+  maxf=max(front,key=lambda x:x['delta_m']) if front else None;maxr=max(rear,key=lambda x:x['delta_m']) if rear else None
+  exposure.append({'group':q['id'],'actual_member_ids':[p['name'] for p in pp],'sample_rule':'atmost200 actualnativevertices deterministicindex acrossmembers; notAABB/hull or certifiedallpoints','sample_count':len(samples),'pairedvisible_outer_ray_count':known,'missingvisible_face_unknown_count':missing,'max_sample_front_exposure':maxf,'max_sample_rear_exposure':maxr,'thisis_sample_lowerbound_NOTcover_clearance_oracceptedvisiblechange':True})
+ wr(D/'visible_surface_exposure_samples.json',{'source_SHA':sha(D/'scene.json.gz'),'actual_visible_sourceID':white['name'],'actual_surface_geometrySHA':geomSHA(white),'outer_vertex_rule':'firsthalf originalcover andfaces whollyinside; no innerlip nointerpolation','groups':exposure,'opening/frontfan_guard_minimalpackaging_proposals_unadopted':['retainedfrontoriginalsurface cannot be calledfit atpositiveexposure; propose local side/front module packaging envelope atactualshownstock or anothercompletefunctionalarchitecture','rearairchannels require actualopenings/isolatedintakeexhaust; oldwhitewindows/missingrays not freevent area'],'must_show_same_source_fourviews_to_user_beforevisible_adoption':True})
+ print('EVENT G17diag',vname,'interfaces',len(interfaces),'massghost',len(ghost),'fluid',[(x['id'],x['actual_native_workingfill_L']) for x in tanks],flush=True)

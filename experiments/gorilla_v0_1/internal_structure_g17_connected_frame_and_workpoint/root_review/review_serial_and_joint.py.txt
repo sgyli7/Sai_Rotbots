@@ -1,0 +1,121 @@
+from pathlib import Path
+import json, gzip, hashlib, math
+from collections import Counter
+import numpy as np
+import trimesh
+import manifold3d as mf
+
+R=Path.cwd(); O=Path(__file__).resolve().parent
+S=R/'.scratch/gorilla_internal_g17_serial_shoulder_assembly/b'
+B=R/'.scratch/gorilla_internal_g17_connected_cage_layout/b'
+T=R/'.scratch/gorilla_internal_g17_thermal_joint_workpoint'
+def sha(p): return hashlib.sha256(p.read_bytes()).hexdigest()
+def read(p): return json.loads(gzip.decompress(p.read_bytes()) if p.suffix=='.gz' else p.read_bytes())
+def geom(p):
+    v=np.asarray(p['vertices_world_m'],dtype=np.float64)
+    f=np.asarray([[a[0],a[k],a[k+1]] for a in p['faces'] for k in range(1,len(a)-1)],dtype=np.uint64)
+    return trimesh.Trimesh(v,f,process=False),mf.Manifold(mf.Mesh64(v,f))
+checks=[]
+def ck(n,c,d=None): checks.append({'check':n,'pass':bool(c),'details':d})
+serial=read(S/'scene.json.gz'); body=read(B/'scene.json.gz')
+sm={p['name']:p for p in serial['parts']}; bm={p['name']:p for p in body['parts']}
+ck('serial_exact_current_source_producer',sha(S/'producer_source.py')==serial['producer_sha256'])
+ck('serial_own_IDs_unique',len(sm)==len(serial['parts']))
+ck('no_earned_carrier_mass_credit',serial['G16_26kg_replacement_credit_kg']==0)
+new=[p for p in serial['parts'] if p['name'].startswith('g17_')]
+native=[]
+for p in new:
+    tm,k=geom(p); props=tm.mass_properties
+    ck('signed_new_native:'+p['name'],tm.is_watertight and props.volume>0 and k.status()==mf.Error.NoError)
+    rho=p.get('density_kg_m3')
+    native.append({'id':p['name'],'native_volume_m3':props.volume,'mass_kg_uniform_source_density_hypothesis':props.volume*rho if rho is not None else None,'COM_m':props.center_mass.tolist(),'full_I_COM_kgm2':(props.inertia*rho).tolist() if rho is not None else None})
+cad=read(S/'cad_part_manifest.json')
+for p in cad:
+    n=next(x for x in native if x['id']==p['name'])
+    ck('CAD_vs_independent_native_volume:'+p['name'],abs(n['native_volume_m3']-p['native_volume_m3'])<1e-10)
+    ck('CAD_curve_facet_delta_bounded:'+p['name'],abs((n['native_volume_m3']-p['exact_CAD_volume_m3'])/p['exact_CAD_volume_m3'])<.001)
+# FK is recomputed about actual world axes; children retain parent motion.
+poses=read(S/'pose_collision_report.json'); fk=[]
+for pose in poses['poses']:
+    tr={'torso':np.eye(4)}
+    for side in ['left','right']:
+        for j,q in zip(['pitch','roll','yaw'],pose['q_rad']):
+            z=next(x for x in serial['joint_interfaces'] if x['id']==side+'_'+j)
+            a=np.asarray(z['axis_world'],float); a/=np.linalg.norm(a)
+            K=np.array([[0,-a[2],a[1]],[a[2],0,-a[0]],[-a[1],a[0],0]])
+            rr=np.eye(3)+math.sin(q)*K+(1-math.cos(q))*(K@K)
+            p=np.asarray(z['pivot_world_m']); local=np.eye(4);local[:3,:3]=rr;local[:3,3]=p-rr@p
+            tr[z['output_body']]=tr[z['parent_body']]@local
+    err=max(np.max(np.abs(m-np.asarray(pose['body_transforms_world'][n]))) for n,m in tr.items())
+    ck('independent_new_serial_FK:'+pose['id'],err<1e-12)
+    fk.append({'pose':pose['id'],'max_matrix_error':float(err)})
+# Diagnostic full-source composition. Original full body is untouched.
+# Local historical cage/upper-arm context never overrides the new integral cage.
+retired=set(serial['nominated_replaced_part_ids']); contextual={p['name'] for p in serial['parts'] if p.get('g17_context_only')}
+changed={p['name'] for p in serial['parts'] if not p.get('g17_context_only') and (p['name'].startswith('g17_') or p['name'] in bm and (p['vertices_world_m']!=bm[p['name']]['vertices_world_m'] or p['faces']!=bm[p['name']]['faces'] or p['body']!=bm[p['name']]['body']))}
+composed={n:p for n,p in bm.items() if n not in retired}
+for n in changed: composed[n]=sm[n]
+ck('integral_body_cage_remains_once','g17_connected_cage_and_fixed_anchor_net' in composed and 'g15_chest_shoulder_waist_net_cage' not in composed)
+ck('original_visible_armor_unchanged',all(composed[n]==bm[n] for n in body['original_visible_armor_ids']))
+ck('complete_body_partition_slots_survive',all(n in composed for s in body['complete_partition_slots'] for n in s['member_ids']))
+cache={n:geom(p)[1] for n,p in composed.items()}; bounds={n:np.asarray(k.bounding_box()) for n,k in cache.items()}
+def scope(p):
+    role=p.get('role','')
+    if role in ['design_domain_bulk','service_after_shell_removal']:return 'not_permanent_material'
+    if role=='fluid_lumen_global_alias' or p['name'].endswith('bounded_water_region'):return 'fluid_lumen'
+    # OEM envelope/source labels outrank a generic new finite-mesh flag.
+    if any(word in role for word in ['reference','envelope','stock','budget']) or p.get('reference_not_net_material'):return 'reference_or_scope_unknown'
+    if p['name'] in body['original_visible_armor_ids']:return 'original_visible_armor'
+    if p.get('finite_material') or role=='E2_finite_load_material' or role.startswith('finite_'):return 'finite_material'
+    return 'reference_or_scope_unknown'
+pairs=[]; queried=set()
+for n in sorted(changed):
+    a=cache[n];aa=bounds[n]
+    for m,b in cache.items():
+        if 'not_permanent_material' in [scope(composed[n]),scope(composed[m])]:continue
+        key=tuple(sorted([n,m]))
+        if n==m or key in queried:continue
+        queried.add(key);bb=bounds[m]
+        if np.any(aa[3:]<=bb[:3]) or np.any(bb[3:]<=aa[:3]):continue
+        if a.status()!=mf.Error.NoError or b.status()!=mf.Error.NoError:continue
+        v=(a^b).volume()
+        if v>1e-10:
+            p,q=composed[n],composed[m]
+            sa,sb=scope(p),scope(q)
+            pairs.append({'a':n,'b':m,'intersection_cm3':v*1e6,'scope':'finite_material' if sa==sb=='finite_material' else '|'.join(sorted([sa,sb])),'scope_basis_roles':[p.get('role'),q.get('role')],'same_owner':p['body']==q['body'],'same_owner_not_exempted':True})
+# Old anchor now inside one cage still invades the untouched OEM gross flange.
+anchor_queries=[]
+for side in ['left','right']:
+    n='g13_'+side+'_CSG65_complete_reference';v=(cache[n]^cache['g17_connected_cage_and_fixed_anchor_net']).volume()
+    anchor_queries.append({'OEM_source':n,'new_own_net':'g17_connected_cage_and_fixed_anchor_net','reference_intersection_cm3':v*1e6,'actual_OEM_internal_recess_unknown_not_material_waiver':True})
+therm=read(T/'joint_workpoint_v3.json'); base15=read(R/'.scratch/gorilla_internal_g15_thermal_operating_domain/operating_domain.json'); base16=read(R/'.scratch/gorilla_internal_g16_compact_thermal_scope/compact_module_scope.json')
+ck('59L_min_source_branches',sum(x['count']*x['Q_each_L_min'] for x in therm['complete_59Lmin_branches'])==59)
+def pipe(Q,D,L,K,rho,mu):
+    vv=Q/60000/(math.pi*D*D/4);rr=rho*vv*D/mu
+    ff=64/rr if rr<2300 else .3164/rr**.25
+    return rho*vv*vv/2*(ff*L/D+K)
+for x in therm['pressure_two_candidates']:
+    pp=base16['DOW_SR1_2002_50volEG_typical_properties'][str(x['T_C'])];rh=pp['rho_kg_m3'];mu=pp['mu_mPa_s']/1000
+    dp=pipe(59,.032,2,3,rh,mu)+pipe(6,.010,1,3,rh,mu)+20000
+    lo=dp+26000*x['ES_core_cold_dp_multiplier']+5000;hi=dp+34000*x['ES_core_cold_dp_multiplier']+12000
+    ck('independent_liquid_same_Q_head:'+x['candidate']+':'+str(x['T_C'])+':'+x['conditional_ES_internal_regime'],max(abs(lo-x['system_dp_Pa_range'][0]),abs(hi-x['system_dp_Pa_range'][1]))<1e-7)
+for b in therm['same_task_heat_energy_budgets']:
+    dm=next(x for x in base15['two_physical_budget_domains'] if x['id']==b['domain'])
+    for p in b['phases']:
+        old=next(x for x in dm['phases'] if x['phase']==p['phase']);bus=old['Pbus_kW']-old['legacy_aux_low_or_air_unallocated_kW']+b['aux_kW']
+        ck('independent_complete_task_bus:'+b['domain']+':'+b['aux_scope']+':'+p['phase'],abs(bus-p['Pbus_kW'])<1e-10)
+    avg=[sum(p['duty']*(p['Pbus_kW']/.98+(p['Pbus_kW']*1000/.98/V)**2*.2/1000) for p in b['phases']) for V in [288,200]]
+    ck('independent_30min_nameplate:'+b['domain']+':'+b['aux_scope'],max(abs(avg[k]*dm['duration_h']/.75-b['nameplate_required_kWh_SOC75_288_200'][k]) for k in range(2))<1e-10)
+    for res,targets in b['480_min7p44_time_cap_min_with_reserve_fraction'].items():
+        ck('independent_SOC_and_reserve_duration:'+b['domain']+':'+b['aux_scope']+':'+res,max(abs(60*7.44*.75*(1-float(res))/avg[k]-targets[k]) for k in range(2))<1e-10)
+for x in therm['actual_pump_motor_joint_points']:
+    ps=2*x['each_actual_pump_shaft_kW_conditional'];eta=x['motor_eta_own_samecombined0p9'];loss=ps*(1/eta-1)
+    ck('motor_inverter_partition:'+x['domain']+':'+x['phase']+':'+str(eta),abs(loss-x['two_motor_loss_kW'])<1e-12 and abs(loss/3-x['two_motor_LC_rotor_air_kW_conditional'])<1e-12 and abs(.4*ps/2-x['required_air_each_m3min'])<1e-12)
+prop=base16['DOW_SR1_2002_50volEG_typical_properties']['50'];cwater=59/60000*prop['rho_kg_m3']*prop['cp_J_kgK'];chot=10/60000*prop['rho_kg_m3']*prop['cp_J_kgK']
+for i,x in enumerate(therm['same_task_joint_temperature_screens']):
+    effective=x['ambient_C']+860/(26/60*1.2*1005)+.5*x['two_rotor_air_W']/(13/60*1.2*1005)
+    ret=[effective+q/x['Hwhole_low_W_K_conditional'] for q in x['water_low_W_288_200']];sup=[ret[k]-x['water_low_W_288_200'][k]/cwater for k in range(2)]
+    ck('independent_source_conserved_joint_temp:'+str(i),max(abs(ret[k]-x['low_return_C_288_200'][k]) for k in range(2))<1e-10 and max(abs(sup[k]-x['low_supply_C_288_200'][k]) for k in range(2))<1e-10)
+out={'checks':checks,'all_identity_and_formula_checks_pass':all(x['pass'] for x in checks),'source_hashes':{'serialB':sha(S/'scene.json.gz'),'bodyB':sha(B/'scene.json.gz'),'thermal_v3':sha(T/'joint_workpoint_v3.json')},'independent_serial_known_own_net_material_mass_kg':sum(x['mass_kg_uniform_source_density_hypothesis'] for x in native if x['mass_kg_uniform_source_density_hypothesis'] is not None),'new_material_density_unknown_IDs':[x['id'] for x in native if x['mass_kg_uniform_source_density_hypothesis'] is None],'new_material_properties':native,'actual_source_FK':fk,'diagnostic_composition':{'parts':len(composed),'changedIDs':sorted(changed),'retired_presentIDs':sorted(retired.intersection(bm)),'retired_already_absentIDs':sorted(retired-set(bm)),'context_not_overlayed':sorted(contextual),'all_changed_vs_all_static_query':pairs,'positive_query_counts':dict(Counter(x['scope'] for x in pairs)),'native_kernel_unknown_IDs':[n for n,k in cache.items() if k.status()!=mf.Error.NoError],'unchanged_vs_unchanged_pairs_not_tested':True,'original_armor_scope_kept_separate_not_OEM_netmaterial':True,'own_density_hypothesis_does_not_qualify_material_or_manufacturing':True,'old_upper_arm_port_transition_not_closed':True,'neutral_full_assembled_physics_not_adopted':True},'current_anchor_OEM_reference_conflicts':anchor_queries,'thermal_conclusions_conditional':therm['compact_conclusions'],'no_geometric_physical_or_aesthetic_admission':True}
+(O/'independent_serial_and_joint.json').write_text(json.dumps(out,indent=2,allow_nan=False)+'\n')
+print(json.dumps({'checks':len(checks),'failed':[x for x in checks if not x['pass']],'composed_parts':len(composed),'composition_scope_counts':out['diagnostic_composition']['positive_query_counts'],'known_steel_kg':out['independent_serial_known_own_net_material_mass_kg'],'density_unknownIDs':out['new_material_density_unknown_IDs'],'anchor_gross_queries':anchor_queries},indent=2))

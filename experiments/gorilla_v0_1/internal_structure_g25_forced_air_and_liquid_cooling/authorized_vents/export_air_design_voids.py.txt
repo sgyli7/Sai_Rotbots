@@ -1,0 +1,45 @@
+from pathlib import Path
+import json,gzip,hashlib,numpy as np,manifold3d as mf
+O=Path(__file__).resolve().parent;C=Path.cwd()/'robots/gorilla_v0_1/cad/source/appearance_c_scene.json';c=json.loads(C.read_text());cp={p['name']:p for p in c['parts']};B=Path('.scratch/gorilla_internal_g24_complete_thermal_energy/b_final/scene.json.gz');b=json.loads(gzip.decompress(B.read_bytes()));sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def box(lo,hi):lo=np.array(lo);hi=np.array(hi);return mf.Manifold.cube(hi-lo,False).translate(lo)
+def combine(xs):return mf.Manifold.batch_boolean(xs,mf.OpType.Add)
+def poly_mesh(p):
+ ff=[]
+ for f in p['faces']:
+  for j in range(1,len(f)-1):ff.append([f[0],f[j],f[j+1]])
+ return mf.Manifold(mf.Mesh64(np.array(p['vertices_world_m'],dtype=np.float64),np.array(ff,dtype=np.uint64)))
+def outpart(n,m,role='finite_custom_air_structure',rho=2700):
+ mesh=m.to_mesh64();return {'name':n,'body':'torso','owner':'torso_conditional','role':role,'vertices_world_m':np.array(mesh.vert_properties[:,:3]).tolist(),'faces':np.array(mesh.tri_verts).tolist(),'rgba':[.12,.42,.5,1],'finite_material':True,'native_kernel_status':str(m.status()),'signed_material_volume_m3':m.volume(),'conditional_mass_kg':m.volume()*rho,'material_density_kgm3_assumption':rho,'source_basis':'G25 self-designed pressure-wall geometry, no assembly or endurance acceptance','physical_accepted':False}
+inputs=[box([.069,-.263,1.49],[.142,.263,2.60])];iv=[box([.071,-.261,1.492],[.140,.261,2.598])]
+# rearward fan intake faces at exact original complete core group boxes; holes not invented OEM material.
+for i in range(6):
+ y=(-1 if i%2==0 else 1)*.145;z=[1.92,2.19,2.46][i//2];iv.append(box([.063,y-.09,z-.10],[.074,y+.09,z+.10]))
+iv.append(box([.063,-.20,1.515],[.074,.20,1.705]))
+for sg in[-1,1]:
+ # continuous square-segment hidden branch, keep visible original grille shape unchanged.
+ inputs.extend([box([.128,sg*.31-.054,2.045],[.294,sg*.31+.054,2.265]),box([.128,min(sg*.31,sg*.20)-.05,2.065],[.148,max(sg*.31,sg*.20)+.05,2.245])])
+ iv.extend([box([.126,sg*.31-.052,2.047],[.300,sg*.31+.052,2.263]),box([.126,min(sg*.31,sg*.20)-.048,2.067],[.150,max(sg*.31,sg*.20)+.048,2.243])])
+input_shell=combine(inputs)-combine(iv)
+baseout=[box([-.150,-.263,1.49],[-.110,.263,2.60])];basevoid=[box([-.148,-.261,1.492],[-.112,.261,2.598])]
+for i in range(6):
+ y=(-1 if i%2==0 else 1)*.145;z=[1.92,2.19,2.46][i//2];basevoid.append(box([-.115,y-.09,z-.10],[-.104,y+.09,z+.10]))
+basevoid.append(box([-.115,-.20,1.515],[-.104,.20,1.705]))
+original_armor=poly_mesh(cp['continuous_ivory_torso_armor_cover']);orig_status=str(original_armor.status())
+for label,w,zlo,zhi in [('a',.105,2.06,2.32),('b',.130,2.045,2.365)]:
+ D=O/label;D.mkdir(exist_ok=True);outer=baseout.copy();void=basevoid.copy();cut=[];gr=[];port=[]
+ for sg in[-1,1]:
+  yc=sg*(.17+w/2);lo,hi=sorted([sg*.17,sg*(.17+w)]);zl=2.035;zh=2.395
+  outer.extend([box([-.415,min(sg*.235,sg*.390)-.025,zlo],[-.345,max(sg*.235,sg*.390)+.025,zhi]),box([-.380,sg*.390-.052,zlo],[-.130,sg*.390+.052,zhi]),box([-.152,min(sg*.390,sg*.245)-.052,zlo],[-.108,max(sg*.390,sg*.245)+.052,zhi]),box([-.447,lo,zlo],[-.377,hi,zhi])])
+  void.extend([box([-.413,min(sg*.235,sg*.390)-.023,zlo+.002],[-.343,max(sg*.235,sg*.390)+.023,zhi-.002]),box([-.382,sg*.390-.05,zlo+.002],[-.128,sg*.390+.05,zhi-.002]),box([-.154,min(sg*.390,sg*.245)-.05,zlo+.002],[-.106,max(sg*.390,sg*.245)+.05,zhi-.002]),box([-.455,lo+.002,zlo+.002],[-.375,hi-.002,zhi-.002])])
+  cut.append(box([-.52,lo,zlo],[-.36,hi,zhi]));port.append({'side':sg,'world_YZ_bounds_m':[lo,hi,zlo,zhi],'pressure_boundary_exit_X_range_m':[-.447,-.429],'gross_rectangle_area_m2':w*(zhi-zlo),'new_opening_not_adopted_aesthetics':True,'actual_louver_geometry_proposed':True})
+  # retain 3mm horizontal ribs at 20mm pitch: actual new grill finite native, curved mount missing.
+  for z in np.arange(zlo+.012,zhi-.007,.020):gr.append(box([-.454,lo+.003,z],[-.444,hi-.003,z+.003]))
+ output_shell=combine(outer)-combine(void);shield=box([-.430,-.154,2.035],[-.350,.154,2.445])-box([-.432,-.152,2.037],[-.352,.152,2.443]);armor_candidate=original_armor-combine(cut)
+
+ fresh=combine(iv)^combine(inputs);heated=combine(void)^combine(outer)
+ arrays={}
+ for name,m in [('fresh',fresh),('heated',heated)]:
+  q=m.to_mesh64();arrays[name+'_vertices_world_m']=np.array(q.vert_properties[:,:3]);arrays[name+'_faces']=np.array(q.tri_verts)
+ np.savez_compressed(D/'air_design_voids.npz',**arrays)
+ (D/'air_void_scope.json').write_text(json.dumps({'vent_source_sha256':sha(D/'vent_scene.json.gz'),'fresh_controlvolume_m3':fresh.volume(),'heated_controlvolume_m3':heated.volume(),'role':'normal open-flow design occupancy; not hardware material, not reserved freecavity qualification','mass_not_added_to_hardware':True,'fluid_airflow_inside_OEMcore_unknown':True,'producer':str(Path(__file__).name)},indent=2))
+ print(label,sha(D/'air_design_voids.npz'),flush=True)

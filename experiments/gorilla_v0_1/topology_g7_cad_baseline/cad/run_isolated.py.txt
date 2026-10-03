@@ -1,0 +1,10 @@
+"""Run only extracted ARM64 Gmsh, without installing system/project packages."""
+from pathlib import Path
+import os,subprocess,sys
+O=Path(__file__).resolve().parent;E=O/'tools/extract'
+env=os.environ.copy();env['LD_LIBRARY_PATH']=str(E/'usr/lib/aarch64-linux-gnu')
+env['PYTHONPATH']=str(E/'usr/lib/python3/dist-packages')
+args=sys.argv[1:]
+if args and args[0]=='--gmsh':cmd=[str(E/'usr/bin/gmsh')]+args[1:]
+else:cmd=[str(next(p for p in O.parents if (p/'sai_robots_engineering_rules.md').exists())/'.venv/bin/python')]+args
+raise SystemExit(subprocess.run(cmd,env=env).returncode)

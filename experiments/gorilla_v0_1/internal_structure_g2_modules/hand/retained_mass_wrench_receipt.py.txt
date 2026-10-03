@@ -1,0 +1,44 @@
+from pathlib import Path
+import json,math,runpy
+import numpy as np
+import trimesh
+B=Path(__file__).resolve().parent;n=runpy.run_path(str(B/'screen_forearm_hand.py'),run_name='retained_mass_helpers');old=n['old'];native=n['native'];sha=n['sha']
+
+def run(l):
+ s=json.loads((B/f'scene_{l}.json').read_text());tree=s['body_tree'];ids={p['name']:p for p in old['parts']};removed={r['id'] for r in s['replacement_inventory']};newmods={r['id']:r for r in s['modules']}
+ retained=[];mismatch=[]
+ for r in old['mass_rows']:
+  id=r['id'];body=r['body']
+  if body not in tree or body=='left_proximal_forearm' or id in removed:continue
+  if id not in ids:
+   mismatch.append({'id':id,'issue':'massrowwithoutsameIDnative; no arbitrary assignment or credit'});continue
+  p=ids[id];m=native(p);c=np.asarray(m.center_mass);diff=float(np.linalg.norm(c-r['COM_world_m']))
+  retained.append(dict(source_id=id,body=body,mass_range_kg=r['mass_range_kg'],native_geometric_COM_world_m=c.tolist(),source_massrow_COM_world_m=r['COM_world_m'],COM_agreement_m=diff,source=r['source'],scope='exact retained source assigned mass range at actual native uniformgeometryCOM, not certified physical manufactured mass'))
+ def below(b,child):
+  while b in tree:
+   if b==child:return True
+   b=tree[b].get('parent')
+  return False
+ rows=[];pt=np.array([f['contact'] for f in n['features']]).mean(0)
+ for pn,angles in n['POSES'].items():
+  ts=n['transforms'](s,angles);payloadbase=trimesh.transform_points([pt],ts['left_palm'])[0]
+  for kg in [25,50]:
+   for dx in [-.1,0,.1]:
+    loadp=payloadbase+ts['left_palm'][:3,:3]@np.array([dx,0,0]);Fload=np.array([0,0,-kg*9.80665])
+    for j in s['joints']:
+     T=ts[j['parent']];c=trimesh.transform_points([j['pivot_world_m']],T)[0];a=T[:3,:3]@j['axis_world'];pc0=np.array(j['output_A_face_world_m'])+np.array(j['axis_world'])*j['input_face_B_sign']*.013;pc=trimesh.transform_points([pc0],T)[0]
+     for mi,label in enumerate(['low','nominal','high']):
+      Ft=Fload.copy();Mt=np.cross(loadp-pc,Fload);retF=np.zeros(3);retM=np.zeros(3);newmass=0;oldmass=0
+      for p in s['parts']:
+       if below(p['body'],j['child']):
+        mass=newmods[p['name']]['mass_range_kg'][mi];com=n['moved'](p,ts,s).center_mass;f=np.array([0,0,-mass*9.80665]);Ft+=f;Mt+=np.cross(com-pc,f);newmass+=mass
+      for r in retained:
+       if below(r['body'],j['child']):
+        mass=r['mass_range_kg'][mi];com=trimesh.transform_points([r['native_geometric_COM_world_m']],ts[r['body']])[0];f=np.array([0,0,-mass*9.80665]);retF+=f;retM+=np.cross(com-pc,f);oldmass+=mass
+      Ft+=retF;Mt+=retM;Mc=np.linalg.norm(Mt-a*np.dot(Mt,a));Fa=abs(np.dot(Ft,a));Fr=np.linalg.norm(Ft-a*np.dot(Ft,a));P0=Fr+2*Mc/.080+.44*Fa;tau=float(np.dot(Mt+np.cross(pc-c,Ft),a))
+      rows.append({'pose':pn,'joint':j['id'],'payload_kg_sensitivity':kg,'object_localX_offset_m':dx,'mass_bound':label,'new_child_lumped_mass_kg':newmass,'retained_exact_native_assigned_mass_kg':oldmass,'force_N':Ft.tolist(),'moment_at_source_pressure_center_Nm':Mt.tolist(),'retained_only_force_N':retF.tolist(),'retained_only_moment_at_pressurecenter_Nm':retM.tolist(),'pressure_center_world_m':pc.tolist(),'joint_center_world_m':c.tolist(),'axis_world':a.tolist(),'joint_torque_Nm':tau,'gear_Tr_baseline178_normalization':abs(tau)/178,'gear_Tav281_reference_normalization_only':abs(tau)/281,'source_bearing_overturn_Nm':float(Mc),'source_Mc313_reference_normalization':float(Mc)/313,'source_P0_N':float(P0),'source_fs_C0_25kN':25000/P0 if P0 else None,'motor_input_torque_eta55_70_85_Nm':[abs(tau)/(100*e) for e in [.55,.7,.85]],'scope':'gravity sourcebound exact retainedparts + new modules. Sourcebare/gear lumped parent-output allocation unqualified, originalC15 unretained finger frames/joints/contactpads/complete palm loadmaterial missing SI masses. Contact forceapplication and objectCOM sensitivity unverified. Not fullhandmass, neither static/dynamic certification nor a gearabsolute178limit.'})
+ return {'input_scene_sha256':sha(B/f'scene_{l}.json'),'input_E2a_sha256':sha(n['n']['ns']['E2']),'retained_source_rows':retained,'retained_source_mass_range_kg':np.array([r['mass_range_kg'] for r in retained]).sum(0).tolist(),'max_retained_COM_agreement_m':max([r['COM_agreement_m'] for r in retained],default=0),'unmapped_mass_rows':mismatch,'rows':rows,'gear_source_conditions':{'SKU':'CSG-32-100-2UH','official_catalogue':'TI26024REV1 July2026 printedp11 Table3','Tr_Nm_at_input2000rpm':178,'repeated_peak_Nm':433,'limit_average_torque_Nm':281,'momentary_peak_Nm':841,'max_input_oil_rpm':7000,'max_input_grease_rpm':4800,'average_input_oil_rpm':4600,'average_input_grease_rpm':3500,'input_inertia_kg_m2':.000169,'scope':'Tr at ratingconditions/life baseline is not static ceiling. Tav/repeated/peak have independent lifeduty/temp/lubrication constraints. No dutycycle/thermal life or installed motorcurve closed.'},'physical_acceptance':False}
+
+if __name__=='__main__':
+ for l in ['a','b']:
+  r=run(l);(B/f'retained_mass_wrench_receipt_{l}.json').write_text(json.dumps(r,indent=2)+'\n');print('RETAINED_MASS_RECEIPT',l,len(r['retained_source_rows']),r['retained_source_mass_range_kg'],'COMerr',r['max_retained_COM_agreement_m'],flush=True)

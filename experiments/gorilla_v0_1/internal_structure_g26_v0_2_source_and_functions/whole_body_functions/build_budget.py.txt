@@ -1,0 +1,147 @@
+from pathlib import Path
+from collections import defaultdict,Counter
+from datetime import datetime,timezone
+import hashlib,json,gzip,math
+R=Path('/home/ethan/Projects/Sai_Rotbots');O=Path(__file__).resolve().parent
+def sha(p):
+ h=hashlib.sha256()
+ with Path(p).open('rb')as f:
+  for b in iter(lambda:f.read(2**20),b''):h.update(b)
+ return h.hexdigest()
+P={'rules':R/'sai_robots_engineering_rules.md','current_decisions_observed':R/'robots/gorilla_v0_1/design/current_decisions.md',
+'b7_json':Path('/home/ethan/Projects/Sai_Art/docs/uri_style/gorilla_v0_2/lower_modular_components_b7.json'),
+'b7_blend':Path('/home/ethan/Projects/Sai_Art/docs/uri_style/gorilla_v0_2/source/lower_modular_components_b7.blend'),
+'actual_lower_scene':R/'.scratch/gorilla_internal_g26_v0_2_lower_source_inventory/native_lower_scene.json',
+'actual_lower_interfaces':R/'.scratch/gorilla_internal_g26_v0_2_lower_source_inventory/inventory_and_interfaces.json',
+'legacy_whole_function_context':R/'.scratch/gorilla_internal_g24_root_assembly/scene.json.gz',
+'legacy_function_identity':R/'.scratch/gorilla_internal_g19_function_architecture/function_buckets.json',
+'existing_primary_component_conditions':R/'.scratch/gorilla_internal_g19_function_architecture/existing_primary_reference_conditions.json',
+'legacy_macro_arithmetic':R/'.scratch/gorilla_internal_g24_macro_budget_review/report.json'}
+bindings={k:{'path':str(p),'sha256':sha(p)}for k,p in P.items()}
+assert bindings['b7_json']['sha256']=='6e91d2e97ff26483995e8ff886667276a890b38c93869d910271eba287fef7a0'
+assert bindings['b7_blend']['sha256']=='b75b3f29aa0a91145ed6dacf2cd25e1caece7527155146dd00507cd70edb6beb'
+assert bindings['actual_lower_scene']['sha256']=='432a7db289fcb90022cdf464d76443545d3ff8b87dafe94256780835a5121041'
+src=json.loads(P['b7_json'].read_text());low=json.loads(P['actual_lower_scene'].read_text())
+whole=json.loads(gzip.decompress(P['legacy_whole_function_context'].read_bytes()));parts={p['name']:p for p in whole['parts']}
+old=json.loads(P['legacy_function_identity'].read_text());aliases=defaultdict(list)
+for b in old['buckets']:
+ for n in b['exact_source_member_ids']:
+  if n in parts:aliases[n].append({'bucket':b['id'],'function':b['task_function']})
+def kind(p):
+ r=p.get('role','')
+ if 'fluid'in r or 'water_functional_void'in r:return'fluid_void_exclusion_not_metal'
+ if 'service'in r or 'holding_mount_window'in r:return'service_not_material'
+ if r=='design_domain_bulk':return'computational_domain_not_cavity'
+ if p.get('finite_material')or'finite_'in r:return'own_finite_candidate_no_adoption'
+ if r.startswith('armor')or r=='visible_mechanism':return'historical_visible_or_mechanism'
+ return'component_reference_or_unknown'
+groups=defaultdict(list)
+for n,p in parts.items():
+ if n in whole['actual_added_hv_ids']:g='power_regen_isolation_new_hv_probe'
+ elif str(p.get('g24_complete_group','')).startswith('energy_'):g='energy_complete_module_reference'
+ elif n in whole['actual_thermal_and_energy_ids']:g='active_thermal_energy_aux_probe'
+ elif n in whole['actual_added_core_and_joint_ids']:g='closed_load_paths_complete_joint_probe'
+ elif aliases[n]:
+  f=sorted(set(x['function']for x in aliases[n]));g=f[0]if len(f)==1 else'cross_function_alias_unknown'
+ else:g='retained_unassigned_function_unknown_not_zero'
+ groups[g].append({'id':n,'source_owner':p.get('body'),'source_role':p.get('role'),'source_kind':kind(p),
+ 'historical_function_aliases':aliases[n],'reference_mass_range_kg_literal':p.get('mass_range_kg'),
+ 'mass_counted_elsewhere_literal':p.get('mass_counted_elsewhere'),
+ 'source_dynamic_owner_missing_tree':p.get('body') in whole.get('source_dynamic_owner_missing_tree',[]),
+ 'g24_complete_group_literal':p.get('g24_complete_group'),
+ 'new_v0_2_owner_mass_COM_I':None})
+rows=[{'function':g,'exact_source_ids':[x['id']for x in xs],'piece_count_not_actuator_count':len(xs),
+'source_owner_counts':dict(Counter(x['source_owner']for x in xs)),'source_kind_counts':dict(Counter(x['source_kind']for x in xs)),
+'complete_new_M_COM_I':None,'retirement_credit':0}for g,xs in sorted(groups.items())]
+flat=[n for b in rows for n in b['exact_source_ids']];assert len(flat)==len(set(flat))==3072 and set(flat)==set(parts)
+valves=[]
+for fn,token in [('holding','_holding__'),('directional','_directional__')]:
+ vg=defaultdict(list)
+ for n in parts:
+  if token in n:vg[n.split('__')[0]].append(n)
+ for g,names in sorted(vg.items()):valves.append({'function':fn,'id':g,'exact_source_ids':sorted(names),
+ 'source_owners':sorted(set(parts[n]['body']for n in names)),'new_v0_2_active_owner_count':None,'qualified_retirement_credit':0})
+assert Counter(x['function']for x in valves)=={'holding':18,'directional':18}
+lo,hi=low['lower_bounds_world_normalized'];order=['hip','knee','hock','ankle'];lengths=[]
+for a,b in zip(order,order[1:]):
+ d=[src['joints'][b][i]-src['joints'][a][i]for i in range(3)]
+ lengths.append({'from':a,'to':b,'delta_normalized':d,'length_normalized':math.sqrt(sum(x*x for x in d)),
+ 'length_m_formula':'s_m_per_unit * length_normalized'})
+lower_ids=defaultdict(list)
+for x in src['master_topology']:lower_ids[x['owner']]+=[x['name'],x['name'].replace('L_','R_',1)]
+source_scope={'actual_normalized_lower_dimensions_XYZ':[hi[i]-lo[i]for i in range(3)],'sourceX_lateral_Y_depth_Zup_not_adopted_robot_frame':True,
+'metric_scale_s_m_per_unit':None,'whole_v0_2_H_W_D_m':[None,None,None],'transform':'pSI=s*R*pn+t ; complete wholeV0.2 registration required',
+'exact_physical_OEM_stock_does_not_scale':True,'Blender_METRIC_scale1_UI_not_SI_evidence':True,'lower_objects':76,
+'38master_sharedmirror_owners':dict(lower_ids),'joint_markers_normalized':src['joints'],'intermarker_lengths':lengths,
+'4appearance_pitch_axes_per_leg_not4_engineering_DOF':True,'source_hierarchy_not_actual_loadchain':True,
+'no_independent_toe_locator_in_actual_source':'three sole pieces share foot_pitch; compound foot folding remains engineering candidate',
+'original_nonmanifold_parts':[{'id':x['name'],'nonmanifold_edges':x['nonmanifold_edges']}for x in src['master_topology']if x['nonmanifold_edges']],
+'original_selfcrossing_observed':src['master_self_intersections_observed'],'appearance_volume_not_material_mass':True}
+coverage=[
+('closed_load_paths','broad torso closed walls/nodes->pelvis->hip/thigh/return/shank/foot arches; preserve actual shoulder+waist seats','finite material/bolts/preload/weld seats/stop reactions, OEM support independent; new material and6D interfaces unknown'),
+('leg_configuration_contact','hip orientation+four appearance pitch markers+foot orientation/composite contacts','coupling FK/Jacobian and actual foot contacts; no old leg DOF/count/load/rating inheritance'),
+('arm_wrist','shoulder3/elbow1/forearmroll1/wristpitch1/yaw1 perarm comparison','full motor/gear/input/output/support/brake/encoder/controller/cooling/connection/service;3true wrist orientation freedoms'),
+('hands','3fingers+opposablethumb; distributed tendon/screw or alternative','real opposition/grasp/release/tool contact, force/guide/pulley/compliance/feedback and crosswrist routes;5drives research, notuser contract'),
+('hydraulic_power_control','proximal pump zones + actuator-local holding, metering owner-based','motor/pump/coupler/inverter/tank/filter/relief/manifold/pilot/return/fault/hoses; no fixed18stock layout'),
+('energy_complete_pack','4long180cell vs8short90cell; torso/pelvis/proximal limbs, no distal feet','all polarity/Cu/sense/BMS/fuse/insulation/HVlug/coldplate/TIM/vent/mount/extraction functions; no barecell box'),
+('HV_LV_safety','one mainPDU+packlocal protection; zoned motor branches; critical/aux rails','precharge/DC-link/fault discrimination/IMD/current/HVIL/residual energy/regen or dump/safe stop; no silent duplicate retirement'),
+('active_liquid_air','sensitive motor loop+joint/pack/compute loop+oilHX hot loop','all coldplates/TIM/pumps/headers/filter/degas/expansion/relief/hose/fan/guard/sealed ducts, frontin->rear pad-sideout'),
+('autonomy_sensor_compute','torso/pelvis compute thermally separated, IMU/depth/windows and limbforce sensing','FOV/calibration/clock/network/real-time IO/power/service timeout/safety stop/replan; complex Bevy nativephysics tasks retained'),
+('routing_service','body-owned fixed/flexible bundles through every moving joint','complete HV+return+all taps/P-T-pilot/coolant supply-return/communication/earth, strain relief/bend/extraction; service void notmass')]
+coverage=[{'function':a,'deployment':b,'must_cover':c,'new_installed_mass_COM_I':None}for a,b,c in coverage]
+energy=[]
+for tag,M,Ns,nx,nz in [('four_long',4,18,30,6),('eight_short',8,9,15,6)]:
+ assert M*Ns==72 and M*nx*nz==720 and nx*nz==Ns*10
+ energy.append({'id':tag,'modules':M,'per_module_series_parallel':[Ns,10],'cells_per_module':Ns*10,'cell_grid_XZ':[nx,nz],
+ 'groups_5x2_parallel':[nx//5,nz//2],'own_pitch_m':.0225,'minimum_cell_array_XYZ_not_full_package_m':[.02155+(nx-1)*.0225,.07015,.02155+(nz-1)*.0225],
+ 'minimum_cell_energy_wh_total':11160,'cell_mass_lower_nominal_upper_kg':[None,None,50.4],'local_sense_inputs_total':M*(Ns+1),
+ 'BMS_protection_coldplate_vent_mount_sets':M,'module_HV_poles':2*M,'series_external_links':M-1,
+ 'whole_M_COM_I':None,'complete_mounted_geometry_not_generated_here':True})
+energy[0]['actual_historical_complete_module_dimension_XYZ_m']=[.770025,.195,.227025]
+energy[0]['source_dimension_scope']='G23 full262members/180cells; source ports/cover/TIM retained, service separately; not newV0.2 cavity'
+energy[1]['extra_vs_four_long']={'BMS_protection_vent_mount_sets':4,'coldplates':4,'HV_poles':8,'waterports_if2_perplate':8,'externalserieslinks':4,'senseinterfaces':4}
+energy[1]['added_mass_formula']='4*(m_caseoverhead+BMS+fuse+vent+mount+coldplateoverhead)+8*m_HVpole+8*m_waterport+4*m_serieslink+flexibleHV/coolant/support; no zeros or cellcount scaling of auxiliary masses'
+energy[1]['new_full_module_package_dims_mass_unknown']=True
+candidates=[
+{'id':'A_central_hybrid_four_long','energy':'four_long','full_zoning':'4full packs torso front/rear; pumps/oil/filter/controllers proximal torso/pelvis; localholds on actual leg cylinders; fullwide frame avoids OEM/service; compute cold isolated',
+'leg_task_route':'four independent pitch marker mechanisms perleg hydraulic candidate, hipyaw/roll+footroll electric candidate, not fixed old18cyl; actual linear linkage must fit new geometry',
+'count_comparison_only':{'hydraulic_leg_pitch_axes':8,'cylinders_per_axis':[1,2],'additional_leg_rotary_axes':6,'arm_axes':14,'waist_axes':3,'hand_drive_research':10},
+'control_counts':'holding per independent pressure actuator; metering peractual required independent force channels, pairedactuation shared only withJacobian/fault proof',
+'advantages':'fewer complete pack interfaces; highforce remote/proximal power can reduce distal electrical package burden',
+'burdens':'4long fullpack+central hydraulics compete with torso/pelvisclosed sections; allpump losses/returntank/holding/hoses remain nonzero',
+'retirement_gate':'no18stock/hydraulic oroldleg retirement credit before newfull force-speed/hold/safety/source substitute'},
+{'id':'B_distributed_short_proximal_electric','energy':'eight_short','full_zoning':'4short packs torso+2pelvis+2proximal thigh as unplaced zones; proximal motors/transmissions; localhydraulic only where same-task wins; fullactive thermal+PDU+compute preserved',
+'leg_task_route':'compare electrically driven highcycle leg axes via proximal rotary/linear transmission; optional knee-hock closedrelation, both appearance axes retained',
+'count_comparison_only':{'independent7axes_per_leg':14,'if1knee_hock_constraint_eachleg':12,'arm_axes':14,'waist_axes':3,'hand_drive_research':10,'selected_hydraulic_axes':None},
+'coupling_gate':'qhock=f(qknee) needs realFK/rank/singular/workspace/contact and safety proof; not automatically deleting a task freedom',
+'advantages':'short integer packs may reserve wideclosed paths and distribute proximalbody volume; no blanket need for18industrial valves orhydraulic axes',
+'burdens':'4extra fullaux sets/8extraHV poles/8extra coolantports/4extra serieslinks; proximal thigh energy adds swing inertia and moving routes. Full motor Ts/Tc/gear/support/negativework may dominate',
+'retirement_gate':'existing hydraulic function inventory remains historical unknown until a full electrical force-speed/hold/fault/regen substitute; no percentage mass savings'}]
+model={'scale':'length=s*Ln ; fixedpayload torque~s; geometric same-ratio structure M~s^3/selfweight torque~s^4. Exact OEMstock does not scale.',
+'mass':'sum actualdisjoint netmaterial+OEM actualcomponent masses+activefluid once; anyactiveunknown=>wholeM/COM/I null; rotor/gear/fluid body split explicit',
+'joint_wrench':'sum actualdescendant task/gravity/inertial6D wrench shifted to output+support; tau=axis dot moment; newowner tree/contact required',
+'electric':'tauout=N*eta*tauMotor, omegaMotor=N*qdot; Ts/Tc/bus/temperature/time plus gearlife/support6D allsame workpoint, no peak/gearalone continuous',
+'hydraulic':'Fextend=pA*A-pB*annulus;Fretract=pB*annulus-pA*A; tau=Jlength(q).T@F; Qports=actualarea*lengthrate; pressureproof no eta discount',
+'power':'Pbus=sum actualmechanical input+loss+aux-provenregen; Ipack=Pterminal/V, Icell=Ipack/Np, qcell=Ncells*R(T,SOC,SOH)*Icell²; idle unloading/negative work explicit',
+'thermal':'allbattery/motor/gear/drive/pump/valve/compute/aux losses partition once;rho*cp*Qvol*deltaT;air ultimately rejectsall loss+fan heat at realfan point',
+'fluid':'all actualnonintersecting lumens+devicechambers+workingfill once;return/expansion/headspace/motion-displacement separate; noold12.482/30L default',
+'interconnect':'rhoCu*A*L and jacket/hose/terminals/support masses+fluid added; branchcurrent/bend/motion/service lengths nonzero'}
+result={'schema':'gorilla_g26_whole_body_function_budget_v1','created_utc':datetime.now(timezone.utc).isoformat(),'inputs':bindings,
+'latest_requirement_precedence':'user/rootV0.2 H/W/D supersede stale2.65m/1.93m/currentdecisions text; no canonical edits',
+'source_scope':source_scope,'complete_whole_function_coverage':coverage,'current_exact_source_function_groups':rows,
+'current_member_metadata_by_group':dict(groups),'current_hydraulic_complete_control_groups':valves,
+'energy_integer_topology_comparison':energy,'whole_architecture_comparison':candidates,'conservation_model':model,
+'existing_primary_reference_conditions_not_new_selection':json.loads(P['existing_primary_component_conditions'].read_text()),
+'checks':{'3072currentpieces_uniquelycovered':True,'720cells_same72s10p_preserved':True,'holding18_directional18_historical_not_requirement':True},
+'source_group_scope_receipt':{'energy_complete_modules_by_actual_g24_complete_group':{g:[p['name']for p in parts.values()if p.get('g24_complete_group')==g]for g in ['energy_0','energy_1','energy_2','energy_3']},'first_table_name_prefix_grouping_history_preserved':'first_table_snapshot/; first table grouped non-cell energy auxiliaries with thermal; exact all3072 identity and architecture arithmetic unchanged; current grouping uses literal rigid group identity'},
+'legacy_dynamic_owner_scope':{'missing_owner_names_literal':whole.get('source_dynamic_owner_missing_tree',[]),'source_tree_is_candidate_not_physical_owner_admission':True,'new_v0_2_actual_owner_mapping':None},
+'limits':['legacy M/COM/I/55missingowners/mixedraces and lowerfootloads are not newV0.2 SI','oldhand16drive->5perhand is research only, capability replacement required',
+'possible2.3kg centralwaist duplicate scope andrightCSG13.1kg missingledger notzero/deletion','mainPDU/localBMS/criticalaux rails functioncomplete not pinout/rating',
+'oldmission energy or3tcompression sensitivity is not newwholebodytask orendurance','fluidstock/globalaliases no totaldistribution COM untilactualrouteinventory'],
+'whole_M_COM_I':None,'qualified_retirement_mass_credit':0,'new_geometry_or_CAD_generated':False,'architecture_selected':False,'physical_acceptance':False}
+(O/'function_budget.json').write_text(json.dumps(result,indent=2)+'\n')
+summary={k:v for k,v in result.items()if k not in['current_member_metadata_by_group','current_exact_source_function_groups','current_hydraulic_complete_control_groups','existing_primary_reference_conditions_not_new_selection']}
+summary['source_function_group_summary']=[{k:v for k,v in b.items()if k!='exact_source_ids'}for b in rows]
+(O/'summary.json').write_text(json.dumps(summary,indent=2)+'\n')
+(O/'input_bindings.json').write_text(json.dumps(bindings,indent=2)+'\n')
+print(json.dumps({'function_budget_sha256':sha(O/'function_budget.json'),'summary_sha256':sha(O/'summary.json'),'groups':len(rows),'sourcepieces':len(flat),'source_scale':'unknown s,not2.65m','energy_comparison':energy},indent=2))

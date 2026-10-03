@@ -1,0 +1,25 @@
+"""Orthographic painter projection of actual tetra boundary triangles; no invented geometry."""
+import argparse,json,hashlib
+from pathlib import Path
+import numpy as np
+from PIL import Image,ImageDraw
+OUT=Path(__file__).resolve().parent
+MESH=OUT.parents[1]/'.scratch/gorilla_internal_g8_carrier_variants/b/coarse/carrier_tetra.npz'
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def main():
+ ap=argparse.ArgumentParser();ap.add_argument('--field',required=True);ap.add_argument('--name',required=True);ap.add_argument('--binary',action='store_true');a=ap.parse_args();fp=Path(a.field);d=np.load(fp)
+ if a.binary:
+  p=d['points_m'];t=d['tetra'];f=d['boundary_faces'];rho=np.ones(len(t));surface_rho=np.ones(len(f))
+ else:
+  z=np.load(MESH);p=z['points_m'];t=z['tetra'];f=z['boundary_faces'];rho=d['physical_density'];allf=np.vstack([t[:,[0,2,1]],t[:,[0,1,3]],t[:,[0,3,2]],t[:,[1,2,3]]]);keys=np.sort(allf,axis=1);dt=np.dtype([('a',keys.dtype),('b',keys.dtype),('c',keys.dtype)]);view=np.ascontiguousarray(keys).view(dt).ravel();order=np.argsort(view);bkeys=np.ascontiguousarray(np.sort(f,axis=1)).view(dt).ravel();ix=np.searchsorted(view[order],bkeys);assert np.array_equal(view[order[ix]],bkeys);owner=np.tile(np.arange(len(t)),4)[order[ix]];surface_rho=rho[owner]
+ image=Image.new('RGB',(1320,520),'white');draw=ImageDraw.Draw(image);original_points=np.load(MESH)['points_m'];bounds=np.array([original_points.min(0),original_points.max(0)]);scale=760.;views=[('Front: along -X',1,2,0),('Side: along -Y',0,2,1),('Top: along -Z',0,1,2)]
+ for k,(name,u,v,dep) in enumerate(views):
+  centre=(bounds[0]+bounds[1])/2;xy=np.stack([(p[:,u]-centre[u])*scale+(k+.5)*440,420-(p[:,v]-bounds[0,v])*scale],axis=1);depth=p[f,dep].mean(1)
+  for i in np.argsort(depth):
+   q=float(surface_rho[i]);col=(int(30+215*q),int(65+150*q),int(210-165*q)) if not a.binary else (100,125,145)
+   draw.polygon([tuple(x) for x in xy[f[i]]],fill=col)
+  draw.text((k*440+15,25),name,fill='black');draw.text((k*440+15,45),'Same scale: 760 px/m',fill='black')
+ draw.text((15,455),'Actual tetra boundary projection; painter ordering by face mean depth.',fill='black');draw.text((15,477),'rho 0=blue, 1=yellow; Density = virtual modulus/material inventory; not manufactured wall thickness.' if not a.binary else 'Binary = retained true material tetrahedra; all islands retained; no repair.',fill='black');out=OUT/(a.name+'.png');image.save(out)
+ (OUT/(a.name+'_receipt.json')).write_text(json.dumps({'field_path':str(fp.resolve()),'field_sha256':sha(fp),'mesh_source_sha256':sha(MESH),'image_sha256':sha(out),'projection':'actual tetra boundary triangles; orthographic face-centroid depth painter; occlusion approximate','producer_sha256':sha(__file__),'camera_bounds_world_m':bounds.tolist(),'same_original_B_camera_for_density_and_binary':True,'scale_px_per_m':scale,'virtual_density_not_wall_thickness':not a.binary,'not_AI_art_or_CAD_qualification':True},indent=2)+'\n')
+ print(out)
+if __name__=='__main__':main()

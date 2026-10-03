@@ -1,0 +1,85 @@
+#!/usr/bin/env python3
+"""Seal actual G22 evidence; no geometry generation or source modification."""
+import pathlib,json,hashlib,datetime,gzip
+R=pathlib.Path('/home/ethan/Projects/Sai_Rotbots');D=pathlib.Path(__file__).resolve().parent
+sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+load=lambda n:json.loads((D/n).read_text())
+a=load('typed_route_audit.json');i=load('independent_typed_check.json');n=load('native_signed_resource.json');w=load('water_channel_literal_review.json')
+s=json.load(gzip.open(D/'scene.json.gz','rt'));S=D/'scene.json.gz';G21=R/'.scratch/gorilla_internal_g21_whole_body_space_allocation/b/scene.json.gz'
+assert all(x['source_scene_SHA']==sha(S) for x in [n])
+assert a['scene_SHA']==i['scene_SHA']==w['frozen_typed_source_SHA']==sha(S)
+assert all(x['resource_contract_pass'] and x['material_component_count_from_nesting']==1 for x in n['parts'])
+assert len(n['parts'])==len(s['parts'])==17
+assert not a['all_pair_positive_V_above1e12_m3'] and not a['interpotential_Cu_positive_V_above1e12_m3']
+assert i['native_source_edges_non2_sum']==0
+assert sha(G21)=='683da8b329db49bdd25a36725a71619eb92b4646f090da033e3430840e0d94cb'
+receipt={
+ 'schema':'gorilla_g22_typed_routes_final_receipt_v1','freeze_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+ 'scene_sha256':sha(S),'frozen_G21_body_B_sha256':sha(G21),'geometry_writes_stopped':True,
+ 'scope':'Pack0 own-source terminal net00 + two adjacent sense nets01/02; source-cropped Cu lands, not OEM cell terminal CAD; source barrier copies alone receive bores. G21 and robot shell untouched.',
+ 'typed_generation':'Same-net COMPLETE Cu union is subtracted from COMPLETE outer sweep union; no per-segment jacket, no other-net subtraction.',
+ 'admission':{'limited_17_part_native_signed_resource':True,'each_material_root_count':1,'native_non2_edges_total':0,'all136_native_pair_positive_volume_above_tolerance':0,'positive_volume_tolerance_m3':1e-12,'mathematical_exact_zero_claimed':False,'electrical_rating':False,'thermal_rating':False,'water_pressure_seal_strength':False,'whole720_pack_electrical_thermal_or_installation':False,'robot_SI_or_total_mass_COM_inertia':False},
+ 'typed_overlap':{'producer_aggregate_Cu_vs_dielectric_union_residual_m3':a['typed_Cu_vs_all_insulation_V_m3'],'independent_max_individual_Cu_dielectric_pair_residual_m3':i['actual_max_Cu_vs_dielectric_V_m3'],'all_interpotential_positive_pairs_above_1e_minus12':0,'historical_field_name_above1e12_means_code_comparison_V_greater_than_1e_minus12':True},
+ 'endpoint_connectivity':a['actual_endpoint_material_overlaps'],
+ 'new_routing_space':{'frame':'Frozen G21 pack0 local SI; C=[.3,0,2.145], R=[[0,-1,0],[1,0,0],[0,0,1]]','routing_local_AABB_m':a['ownedrouting_local_AABB_m'],'original_full_pack_plus_prototype_routing_AABB_dimensions_m':a['oldslot_plusnewrouting_AABB_dimensions_m'],'extra_low_high_m':a['newrouting_outside_originalslot_low_high_m'],'new_same_shape_minimum_route_only_not_whole_720_harness_or_freecavity':True,'outer_radii_m':[.005,.00065,.00065],'own_nominal_bend_radii_m':[.050,.006,.006],'outer_clearance':a['outer_clearance'],'wire_vendor_minimum_bend_radius_certification_unknown':True},
+ 'mass_once':{'three_route_Cu_wire_dielectric_feedthrough_and_bank_kg':a['ownedrouting_caps_wire_pin_sleeve_bank_only_mass_kg'],'full_17_part_prototype_including_five_modified_source_barrier_copies_kg':a['prototype_all_material_once_mass_kg'],'independent_signed_integral_kg':i['total_signed_mass_kg'],'maximum_part_mass_disagreement_kg':i['max_mass_difference_kg'],'own_density_assumptions':{'Cu':8960,'dielectric':1200,'TIM':2500,'Al':2700},'source_original_barriers_not_added_again':True,'not_whole_pack_mass_or_mass_credit':True},
+ 'frozen_source_without_proposed_holes_fails':a['original_source_without_proposedholes_failure_crossings'],
+ 'water_hole_status':{'first_wrong_datum_stock_query_preserved_in_typed_route_audit':True,'literal_source_channel_review':w,'geometry_only_minimum_hole_channel_gap_m':[x['literal_G21_channel_to_hole_min_gap_m'] for x in w['body_channel_clearance_checks']],'water_pressure_thin_wall_seal_or_thermal_admission':False},
+ 'source_change_and_history':{'G21_geometry_modified':False,'robot_shell_adopted':False,'original_full_pack_retirement_or_replacement_credit':False,'initial_syntax_error_exact_producer':'build_before_syntax_correction.py.txt','render_filename_only_correction_history':'check_and_render_before_filename_correction.py.txt','scene_bytes_changed_after_first_geometry':False,'additional_macro_layouts':0},
+ 'root_layout_handoff':['Reserve OD10 terminal path with own R50 bend and real 13.2mm hole / 12.6OD-10.4ID sleeve, not a zero-volume line.','Reserve two OD1.3 sense paths / own R6 bends, separate 3.4mm holes / 2.8OD-1.8ID sleeves; 12mm two-pin bank pitch plus actual 32x24x16mm body.','Combined local mounted pack+this subset is 781.05x274x220.5mm. The subset grows prior low X71.25mm, low Y90.925mm, high Y58.650239mm and high Z24.7mm. This is not the full 19-tap/HV/BMS harness allowance.','New source bores require electrical/feedthrough isolation, cooling pressure and local ligament validation; original immutable G21 cannot accept these paths as-is.','Configure each net using actual outer radii and a stated surface gap; do not use a universal 0.1mm centerline distance.'],
+ 'redline_close_conditions':['Source-confirmed cell polarity/can/vent/contact land and assembly procedure; bonded Cu pad is a geometry hypothesis only.','Voltage, current, short-circuit, fusing, creepage/clearance, dielectric thermal/flame compatibility and connector ratings; 3mm is only an own geometry target.','Real wire minimum bend radius, route clamp/strain relief, vibration/fatigue and tolerance; arc chords are a finite approximation.','Feedthrough pressure/seal/water boundary and locally remaining plate strength/thermal performance; 2.875/7.775mm gaps alone do not qualify these.','Remaining terminal return, all18s taps, HV series bridges/PDU and BMS true pinout/routes, installation/extraction/service and pack/robot clearance.'],
+ 'reproduction_commands':[f'{R}/.venv/bin/python {D}/build_typed_route.py',f'{R}/.venv/bin/python {D}/check_and_render.py'],
+ 'reproduction_warning':'Run the same producers from a copied replay subdirectory; do not overwrite this frozen receipt. Source inputs are read-only and absolute. Geometry builder does not import safely because it executes on load.'}
+(D/'final_receipt.json').write_text(json.dumps(receipt,ensure_ascii=False,indent=2)+'\n')
+readme=f'''# G22 typed copper and dielectric routing prototype
+
+One terminal and two adjacent sense nets from frozen G21 B pack0 now have executable finite routes. This is a limited geometry prototype; it does not qualify the 720-cell pack, robot electrical system, cooling plate or installation.
+
+Frozen native scene SHA256: `{sha(S)}`. Input G21 B SHA256: `{sha(G21)}`. G21, the robot shell and earlier frozen branches were not changed. No additional whole-body layout was generated.
+
+## Actual geometry and checks
+
+`build_typed_route.py` unions all copper segments, bend pieces, cropped source lands and end lug/pins for each net, then subtracts that **complete same-net copper union** from the complete outer sweep. It never subtracts another net to hide a collision. The 17 original native meshes pass the signed-source contract, each has one material root and all edges have degree two. All 136 part pairs have no positive intersection above `1e-12 m³`; the producer's aggregate Cu/dielectric union residual is `8.44e-15 m³`, while the independent 27 individual Cu/dielectric queries have maximum positive residual `5.02e-22 m³`. These are numerical tolerance statements, not an exact-zero proof.
+
+The copper routes positively join their source-cropped collector land and end lug/pin, with one copper material root each. These are self-designed source lands, not validated OEM cell terminals or certified welded contacts. Source polarity/can/vent and actual terminal contact remain unknown.
+
+| Item | Own finite prototype value |
+|---|---:|
+| Terminal Cu / outer radii | 3.35 / 5.00 mm |
+| Sense Cu / outer radii | 0.25 / 0.65 mm |
+| Nominal centerline bend radius | terminal 50 mm; sense 6 mm |
+| Derived centerline spacing requirement with own 3 mm surface target | terminal/sense 8.65 mm; sense/sense 4.30 mm |
+| Actual complete-outer minimum gaps | 70.15, 82.50 and 10.70 mm |
+| New route, Cu land/pin/lug, sleeves and connector-bank mass | 0.142416 kg |
+| Full prototype with five modified barrier copies | 5.395234 kg |
+
+Mass is counted once from finite signed volume with own density assumptions (Cu8960, polymer1200, TIM2500, Al2700 kg/m³). Independent tetrahedral integration differs by at most `4.49e-12 kg` per part. The five source-barrier copies are included once in the full prototype figure; original full-pack barriers are not added again. Neither mass figure is a complete pack mass or a retirement credit.
+
+## Real holes and added space
+
+The immutable G21 skin/TIM/coldplate/enclosure genuinely conflict with these paths. Independent source copies contain real 13.2 mm terminal and 3.4 mm sense bores, finite insulating annuli, and a 32×24×16 mm two-pin bank with actual bores. There is no same-owner waiver. These copies are a feedthrough proposal and do not replace the robot's frozen pack or shell.
+
+This subset's local routing box is `[-430,-153,-57] → [-153.75,121,123] mm`. Combined with the prior complete mounted pack, the actual local envelope is **781.05×274×220.5 mm**. Compared with that original slot, lower-side extensions are X71.25/Y90.925 mm, upper-side extensions Y58.650239/Z24.7 mm. This already excludes the unbuilt remaining HV return/series links, full19 taps, BMS and clamps. Actual package space must grow or routes/components must be jointly redistributed; nominal case dimensions cannot cover this subset.
+
+The first stock-minus-source water query used incorrect port datums and its zero gap is retained as a rejected diagnostic. Independent literal reconstruction from frozen `build_b.py` gives real candidate channel-to-bore gaps **2.875 mm (terminal)** and **7.775 mm (sense2)**, and no positive channel/bore intersection. This does not verify pressure, seal, thermal performance, thin-wall strength or the full water boundary.
+
+## Evidence and replay
+
+- `scene.json.gz`, `input_and_route_spec.json`: same-source actual finite geometry and path parameters.
+- `native_signed_resource.json`, `typed_route_audit.json`: original topology, all pair volumes, holes, endpoint joins and spacing.
+- `independent_typed_check.json`: independent signed integrals and pair check, without modifying source topology.
+- `water_channel_literal_review.json`: literal-source correction to the earlier stock query; initial query remains in the original audit.
+- `native_typed_route_four_view.png`, `native_cu_cutaway_four_view.png`, `native_feedthrough_sections.png`: actual native triangles and 0.5 mm slice geometry. Barrier clipping and explicitly withdrawn dielectric layers are visualization only.
+- `final_receipt.json`, `freeze_manifest.json`: bounded scope, input/output hashes and replay commands.
+
+To replay, copy the two exact Python producers to a fresh directory under this branch and run them with `/home/ethan/Projects/Sai_Rotbots/.venv/bin/python`. They use absolute frozen inputs and write beside the copied producer. Do not import the geometry builder or overwrite this frozen directory. The initial syntax-error source and render filename correction are preserved as exact history. No failed geometry was discarded.
+
+Electrical ampacity/short circuit/creepage, true cell contact/vent, wire bend/fatigue, attachment and strain relief, fluid pressure/seal/thermal performance, remaining routes and full installation remain red lines. The configured 3 mm gap and own bend radii are geometric hypotheses, not manufacturer ratings. Whole M/COM/I and stable SI remain unqualified.
+'''
+(D/'README.md').write_text(readme)
+inputs=[G21,R/'.scratch/gorilla_internal_g21_whole_body_space_allocation/build_b.py',R/'.scratch/gorilla_internal_g21_whole_body_space_allocation/freeze_manifest.json',R/'.scratch/gorilla_internal_g14_complete_thermal_colayout/geometry_helpers.py',R/'.scratch/gorilla_internal_g11_body_design_domain/build_domain.py',R/'experiments/gorilla_v0_1/internal_structure_g_studies/material_contract/native_signed_material.py.txt',R/'sai_robots_engineering_rules.md']
+outputs=sorted(p for p in D.iterdir() if p.is_file() and p.name!='freeze_manifest.json' and p.suffix!='.log')
+manifest={'schema':'gorilla_g22_typed_route_freeze_v1','freeze_utc':receipt['freeze_utc'],'geometry_scene_sha256':sha(S),'geometry_writes_stopped':True,'selected_module_only_notwholepack':True,'excluded':['logs','__pycache__'],'inputs':[{'path':str(p),'sha256':sha(p),'bytes':p.stat().st_size} for p in inputs],'outputs':[{'path':str(p),'sha256':sha(p),'bytes':p.stat().st_size} for p in outputs]}
+(D/'freeze_manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+errors=[str(p) for row in manifest['inputs']+manifest['outputs'] for p in [pathlib.Path(row['path'])] if not p.exists() or sha(p)!=row['sha256']]
+print('EVENT G22 frozen',sha(D/'freeze_manifest.json'),'inputs',len(inputs),'outputs',len(outputs),'hash_errors',errors,'geometry',sha(S),flush=True)

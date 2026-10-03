@@ -1,0 +1,109 @@
+{
+  "robot_id": "gorilla_v0_1",
+  "candidate": "internal_structure_d",
+  "scene_sha256": "2933318e60dfe786f5cae61d88682519589f1eb5f8a23c999e6f7c6566cdd280",
+  "gates": [
+    {
+      "id": "geometry_assembly",
+      "line": "red",
+      "status": "failed",
+      "evidence": [
+        "internal_structure_d_screen.json",
+        "independent_interface_report.json",
+        "independent_foot_math_review.json"
+      ],
+      "scope": "595/599/603/596 native geometry-envelope/armor hits; current foot/ankle true finite material overlaps and independent motion-group collisions.",
+      "close_condition": "Same-version whole serial assembly, type-aware internal fit, actual finite material clearance, motion sweeps and full air/fluid/line routes with no unresolved intersections."
+    },
+    {
+      "id": "load_structure",
+      "line": "red",
+      "status": "unqualified",
+      "evidence": [
+        "internal_structure_d_leg_scene.json",
+        "internal_structure_d_foot_scene.json"
+      ],
+      "scope": "Positive material connectedness is verified only as geometry. Full serial hip/foot-roll carriers, brace support/bearing/hole/buckling/fatigue and flange reactions are unclosed.",
+      "close_condition": "Continuous fixed/output/serial load paths and complete gravity/dynamic/contact load cases, qualified section/connection/bearing/buckling/fatigue margins without shrinking the robot."
+    },
+    {
+      "id": "mass_inertia",
+      "line": "red",
+      "status": "partly_accounted_unqualified",
+      "evidence": [
+        "internal_structure_d_screen.json",
+        "independent_mass_report.json"
+      ],
+      "scope": "901 listed mass rows/8aliases independently reconciled;1258.194/1421.815/1675.855kg. Full manufactured list, rotor/gear/carrier partition, true COM/fluid motion and complete inertias not qualified.",
+      "close_condition": "Same-version nonduplicate manufactured modules and rigid/articulated body allocation, full tensor and independent interval/COM propagation; no homogeneous envelope substituted for actual internal dynamics."
+    },
+    {
+      "id": "contact_drive",
+      "line": "red",
+      "status": "conditional_static_only",
+      "evidence": [
+        "internal_structure_d_screen.json",
+        "independent_foot_math_math_review.json"
+      ],
+      "scope": "48 normal-only eight-hydraulic/four-equal-brace-capacity LP cases have restricted witnesses. No horizontal, friction, complete-axis, closed-chain reactions or dynamic proof; unshifted single-foot rejects.",
+      "close_condition": "Free-root native physical contact, complete axes and driven closed chains, load/speed/friction/contact-change/stop/recovery tests within actual hardware limits."
+    },
+    {
+      "id": "continuous_electrothermal",
+      "line": "red",
+      "status": "unqualified",
+      "evidence": [
+        "internal_structure_d_power.json",
+        "internal_structure_d_system_spec.json"
+      ],
+      "scope": "108 endpoint power-flow samples are not trajectories. Motor installed T-n, shared pump/cylinder flow, valves/holding, negative power and full limb cooling are unclosed.",
+      "close_condition": "One duty/temperature/voltage/workpoint with motor+transmission+valve+battery+inverter+holding+regen and thermal circuit/airflow margins; actual driven task tests separate from material calculations."
+    },
+    {
+      "id": "energy_bus_regen",
+      "line": "red",
+      "status": "unqualified",
+      "evidence": [
+        "internal_structure_d_system_spec.json"
+      ],
+      "scope": "10.24kWh custom pack hypothesis and HV reserves do not select/qualify cell bus/current/insulation/short-circuit/regeneration/stop.",
+      "close_condition": "Complete electrical architecture and true pack/current/SOC/peak/continuous/regen/stop heat ranges tied to source and native assembly."
+    },
+    {
+      "id": "bevy_contract",
+      "line": "red",
+      "status": "not_entered",
+      "evidence": [
+        "internal_structure_d_screen.json"
+      ],
+      "scope": "D is not stable SI; packaging body allocation and partial hierarchy cannot be used for control. No native Bevy D action/task test.",
+      "close_condition": "Same-version true per-body mass/full inertia/axis/order/limits/drive/collision/sensor/timing contract;50Hz20ms once-native-integration compatibility and real contact task evidence."
+    },
+    {
+      "id": "custom_components",
+      "line": "yellow",
+      "status": "open",
+      "evidence": [
+        "distributed_internal_component_references.md"
+      ],
+      "scope": "Finite custom cylinders, carrier/load shells, braces/bearings, HV pack, thermal and hand modules lack selected supply. Their physics remain the red gates above.",
+      "close_condition": "Credible bounded dimension/mass/output/thermal data and all applicable red gates satisfied. Exact purchasing/vendor finalization may remain deferred."
+    },
+    {
+      "id": "aesthetic_baseline",
+      "line": "design",
+      "status": "not_approved",
+      "evidence": [
+        "user_confirmed_four_view.jpg",
+        "internal_structure_d_four_view.png"
+      ],
+      "scope": "AA3 remains authority; D preserves111armor but current package intrusions/lines harm assembled appearance; no proof that exterior must change.",
+      "close_condition": "Original design fidelity preserved or evidence-bound constrained packaging alternative shown in same-source/same-scale four views and approved by the user. Visual acceptance does not close physics."
+    }
+  ],
+  "geometry_accepted": false,
+  "physics_accepted": false,
+  "stable_physical_contract": false,
+  "simulated_hardware_validation": "only stated static mathematical and geometry diagnostics",
+  "physical_hardware_validation": "none"
+}

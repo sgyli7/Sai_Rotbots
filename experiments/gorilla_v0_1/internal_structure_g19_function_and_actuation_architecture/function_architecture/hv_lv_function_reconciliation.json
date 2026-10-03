@@ -1,0 +1,146 @@
+{
+  "source_scene_SHA": "9873e9db2a6a5c20d9466216577c69a6c7afcab9c2db4ce22b88b4181c40e694",
+  "source_records": [
+    {
+      "id": "ds_hv_distribution",
+      "owner": "torso",
+      "source_role": "component_module_envelope",
+      "whole_current_mass_rows": [
+        {
+          "id": "retained:legacy_inventory:ds_hv_distribution",
+          "range_kg": [
+            2,
+            3.5,
+            6
+          ]
+        }
+      ],
+      "source_function": "Custom contactors/precharge/DC-link/isolation-monitor/full cabinet",
+      "exact_source": "own co-design geometry/mass allowance; no SKU selected",
+      "physically_accepted": false
+    },
+    {
+      "id": "g16_HV_contactors_fuse_precharge_disconnect_current",
+      "owner": "torso",
+      "source_role": "complete_custom_function_envelope",
+      "whole_current_mass_rows": [
+        {
+          "id": "current_budget:g16_HV_contactors_fuse_precharge_disconnect_current",
+          "range_kg": [
+            2,
+            4,
+            6
+          ]
+        }
+      ],
+      "source_function": "nonzeroownboundedcompletefunction allocation; noindividualroute closed",
+      "exact_source": null,
+      "physically_accepted": false
+    },
+    {
+      "id": "ds_low_voltage_converter",
+      "owner": "torso",
+      "source_role": "component_module_envelope",
+      "whole_current_mass_rows": [
+        {
+          "id": "retained:legacy_inventory:ds_low_voltage_converter",
+          "range_kg": [
+            0.8,
+            1.3,
+            2.2
+          ]
+        }
+      ],
+      "source_function": "Complete DC/DC24V auxiliaries and thermal reserve",
+      "exact_source": "own co-design geometry/mass allowance; no SKU selected",
+      "physically_accepted": false
+    },
+    {
+      "id": "g16_LV_converter",
+      "owner": "torso",
+      "source_role": "complete_custom_function_envelope",
+      "whole_current_mass_rows": [
+        {
+          "id": "current_budget:g16_LV_converter",
+          "range_kg": [
+            0.8,
+            1.2,
+            2.2
+          ]
+        }
+      ],
+      "source_function": "nonzeroownboundedcompletefunction allocation; noindividualroute closed",
+      "exact_source": null,
+      "physically_accepted": false
+    }
+  ],
+  "overlap_is_functional_candidate_not_duplicateID_mass_error": true,
+  "no_retirement_or_mass_credit": true,
+  "candidate_central_single_system": [
+    {
+      "group": "HV",
+      "sourceIDs": [
+        "ds_hv_distribution",
+        "g16_HV_contactors_fuse_precharge_disconnect_current"
+      ],
+      "new_function_host_proposal": "one explicit main HV PDU plus separate local packBMS/fuse; hostID/geometric implementation not selected",
+      "all_must_cover": [
+        "main contactors with full bus DC fault capacity",
+        "precharge resistor/switch/time/current limiting and DC-link",
+        "fuse/disconnect/current measurement",
+        "insulation/isolation monitoring",
+        "regen acceptance/dump/control-energy return and residual-energy discharge",
+        "hardwired safety-stop policy and local pack isolation"
+      ],
+      "retirement_gate": "existing g16 envelope is not evidence of ds isolation/DC-link coverage; source-bound new whole PDU/ports/connection/heat/fault proof required before retiring either old reference; do not remove localBMS/fuse"
+    },
+    {
+      "group": "LV",
+      "sourceIDs": [
+        "ds_low_voltage_converter",
+        "g16_LV_converter"
+      ],
+      "new_function_host_proposal": "one multirail LV conversion system with source-owned required point-of-load regulators",
+      "all_must_cover": [
+        "12V hot EWP80 separate from24V WP32/fans/valves source ranges",
+        "compute/perception/encoder/network rail identities and transients still unknown",
+        "continuous currents, simultaneous peaks, inrush/EMI/isolation/thermal",
+        "loss-power handling: localhold/brakes/task stop; emergency power duration if required"
+      ],
+      "retirement_gate": "only after full rail/current/fault/thermal requirements and new source/module geometry prove both existing functions replaced; 24V name does not cover12V and no current converter nominal rating assumed"
+    }
+  ],
+  "candidate_zoned_or_redundant_system": [
+    {
+      "group": "HV",
+      "sourceIDs": [
+        "ds_hv_distribution",
+        "g16_HV_contactors_fuse_precharge_disconnect_current"
+      ],
+      "proposed_distinction": "main PDU and selective branch safety/distribution instead of two undefined main-precharge units",
+      "evidence_needed": [
+        "one explicit battery/powerflow topology and contactor responsibility",
+        "branch fuse discrimination/DC fault clearing",
+        "precharge/DC-link ownership and permissible parallel/converter interactions",
+        "actual redundancy mechanism and independent failure isolation when claimed",
+        "extra conductor/connector/service/arc and regen scope mass included"
+      ],
+      "mass_rule": "both original packages retained in conditional inventory until actual distinct responsibilities or replacement established; duplication is not justified by two labels"
+    },
+    {
+      "group": "LV",
+      "sourceIDs": [
+        "ds_low_voltage_converter",
+        "g16_LV_converter"
+      ],
+      "proposed_distinction": "critical autonomy/control rail vs pump/fan/valve auxiliaries; redundancy only if independently fed/isolated",
+      "evidence_needed": [
+        "actual safe-state logic with required sensors/compute alive and mechanical hold afteraux failure",
+        "cross-rail backfeed/isolation/selective protection",
+        "duration/energy and load currents at temperatures/voltage",
+        "new wiring/cooling/points-of-load and physical packaging"
+      ],
+      "mass_rule": "no splitting original range by count; actual two-module design may cost more and no availability claim from two boxes"
+    }
+  ]
+}

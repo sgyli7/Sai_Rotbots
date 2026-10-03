@@ -1,0 +1,25 @@
+"""Read-only Gorilla F1/F2 sampling through G's native signed-material prototype."""
+from pathlib import Path
+from collections import Counter
+import json,hashlib,copy
+from native_signed_material import validate_part,validate_scene
+O=Path(__file__).resolve().parent;ROOT=O.parents[1]
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def read(p):return json.loads(Path(p).read_text())
+f1p=ROOT/'.scratch/gorilla_internal_f1_structure/structure_scene.json';a=ROOT/'.scratch/gorilla_internal_f2_lower_module/a/module_scene.json';b=ROOT/'.scratch/gorilla_internal_f2_lower_module/b/module_scene.json';receiptp=ROOT/'.scratch/gorilla_internal_f2_lower_module/closed_cavity_receipt.json';f1=read(f1p);ns={p['name']:p for p in f1['parts']};r={'robot_id':'gorilla_v0_1','script_sha256':sha(__file__),'validator_sha256':sha(O/'native_signed_material.py'),'input_hashes':{str(p.relative_to(ROOT)):sha(p) for p in [f1p,a,b,receiptp]},'samples':{},'all_sources_unchanged':False,'physical_accepted':False}
+trays=[f'f1_{side}_{seg}_tray_with_segment_plate' for side in ('left','right') for seg in ('forefoot','heel')]
+waist=['f1_ds_waist_yaw_gear_load_shell','f1_ds_waist_roll_gear_load_shell']
+for name in trays+waist:
+ result=validate_part(ns[name],diagnose_parity=True);r['samples'][name]=result;print(name,result['resource_contract_pass'],[x['code'] for x in result['errors']],flush=True)
+receipt=read(receiptp)
+for label,path in [('a',a),('b',b)]:
+ src=read(path);ps={p['name']:p for p in src['parts']}
+ for name in receipt['layouts'][label]['affected_parts']:
+  result=validate_part(ps[name],diagnose_parity=True);r['samples'][name]=result;print(name,result['resource_contract_pass'],[x['code'] for x in result['errors']],flush=True)
+legal=copy.deepcopy(ns[waist[0]]);duplicate=copy.deepcopy(legal);ds=validate_scene({'robot_id':'gorilla_v0_1','parts':[legal,duplicate]});assert not ds['resource_contract_pass'] and ds['duplicate_ids'][0]['count']==2;r['intentional_duplicate_actual_source_part_case']=ds
+r['f1_native_source_duplicate_ids']=[{'id':name,'count':n} for name,n in Counter(p['name'] for p in f1['parts']).items() if n>1]
+assert all(not r['samples'][n]['resource_contract_pass'] for n in trays)
+assert all(r['samples'][n]['resource_contract_pass'] for n in waist)
+for label in ['a','b']:assert all(not r['samples'][n]['resource_contract_pass'] for n in receipt['layouts'][label]['affected_parts'])
+r['all_sources_unchanged']=all(sha(ROOT/p)==h for p,h in r['input_hashes'].items());assert r['all_sources_unchanged'];r['historical_assertions_passed']=True
+(O/'historical_sample_report.json').write_text(json.dumps(r,indent=2)+'\n');print('HISTORICAL PASS',len(r['samples']),flush=True)

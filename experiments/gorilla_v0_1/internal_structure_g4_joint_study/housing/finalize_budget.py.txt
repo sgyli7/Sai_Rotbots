@@ -1,0 +1,34 @@
+from pathlib import Path
+import json,hashlib,math
+O=Path(__file__).resolve().parent;R=O.parents[1]
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def write(n,d):(O/n).write_text(json.dumps(d,indent=2,ensure_ascii=False)+'\n')
+d=json.loads((O/'housing_budget.json').read_text());plate=[]
+for t in [.003,.004,.006]:
+ for b in [.08,.12,.136,.18,.272]:plate.append({'wall_m':t,'unbraced_compression_plate_width_m':b,'ideal_long_simple_uniform_k4_cr_MPa':4*math.pi**2*210e9/(12*(1-.3**2))*(t/b)**2,'not_a_perforated_or_welded_node_strength_or_postbuckling_qualification':True})
+d['local_plate_buckling_sensitivity']=plate;d['primary_sources']=[{'url':'https://eurocodes.jrc.ec.europa.eu/sites/default/files/2021-12/EUR22898EN.pdf','cache':'jrc_steel_plate_commentary_2007.pdf','scope':'Historical technical commentary, printed48 uniform plate equations; not claimed current standard check'},{'url':'https://cdn.skfmediahub.skf.com/api/public/0901d196802809de/pdf_preview_medium/0901d196802809de_pdf_preview_medium.pdf','cache':'.scratch/gorilla_internal_g3_root_mechanics/skf_tapered_metric.pdf','scope':'printed700-701 geometry/abutment;680-682 P0 and induced axial conditional;107 conditional s0 criteria'}]
+stop=find=next(r for r in d['parameterized_mechanical_assembly_budget']if r['id']=='stop_lugs_seats_and_local_ribs');rows=[]
+for face_t,box_t,box_L,rib_t in [(.010,.006,.030,.006),(.012,.008,.035,.008),(.016,.010,.045,.010)]:
+ face_v=4*.03*.04*face_t; box_A=.08*.06-(.08-2*box_t)*(.06-2*box_t);stub_v=2*box_A*box_L;rib_v=4*.05*.06*rib_t
+ rows.append({'contact_face_count':4,'face_dimensions_m':[.03,.04,face_t],'fixed_support_stub_count':2,'stub_box_m':[.08,.06,box_t,box_L],'rib_count':4,'rib_dimensions_m':[.05,.06,rib_t],'unassembled_disjoint_allocation_volume_m3':face_v+stub_v+rib_v,'mass_kg':(face_v+stub_v+rib_v)*7850,'all_native_contact_and_stress_qualification_false':True})
+stop['mass_kg_range']=[r['mass_kg']for r in rows];stop['finite_unassembled_stop_material_geometries']=rows;stop['scope']='Finite parameterized contact pads, closed reaction stubs and ribs; actual assembly/no overlap/force introduction unresolved. No geometry generated or strength credit.'
+d['mechanical_assembly_mass_range_kg']=[sum(r['mass_kg_range'][i]for r in d['parameterized_mechanical_assembly_budget'])for i in range(3)];d['finalizer_sha256']=sha(__file__);write('housing_budget.json',d)
+# Keep the prose output synchronized with the explicit finite stop material budget.
+p=O/'housing_budget.md';s=p.read_text();s=s.replace('23.20–43.44kg，中点32.08kg',f"{d['mechanical_assembly_mass_range_kg'][0]:.2f}–{d['mechanical_assembly_mass_range_kg'][2]:.2f}kg，中点{d['mechanical_assembly_mass_range_kg'][1]:.2f}kg");s=s.replace('单节点23–43kg','单节点24–44kg');p.write_text(s)
+checks=[]
+checks.append({'name':'all_current_input_hashes_match','pass':all(sha(R/k)==v for k,v in d['source_inputs'].items())})
+checks.append({'name':'neutral6Dfreebody_residuals','pass':all(r['force_residual_absmax_N']<1e-7 and r['moment_residual_absmax_Nm']<1e-7 for r in d['actual_neutral_freebody_cases'])})
+checks.append({'name':'actual_B_neutral_pitch_force_matches_frozen_report','pass':abs(next(r['cylinder_force_signed_N']for r in d['actual_neutral_freebody_cases']if r['joint']=='ankle_pitch'and r['load_factor']==1 and r['CoP_world_m'][1]==.65 and r['geometric_seat_center_span_m']==.28)+61153.455415661025)<1e-7})
+checks.append({'name':'60_28_full_pitch_torque_independent_parent_challenge','pass':abs(d['journal_full_torque_challenges'][0]['pure_torsion_vm_MPa']-416.3734162020131)<.002})
+checks.append({'name':'mass_budget_ranges_ordered_and_finite','pass':all(all(math.isfinite(v)and v>0 for v in row['mass_kg_range'])and row['mass_kg_range']==sorted(row['mass_kg_range'])for row in d['parameterized_mechanical_assembly_budget'])})
+checks.append({'name':'no_new_CAD_created','pass':not any(p.suffix.lower()in ['.step','.stl','.glb','.gltf','.obj']for p in O.iterdir())})
+write('budget_verification.json',{'source_budget_sha256':sha(O/'housing_budget.json'),'checks':checks,'analytical_consistency_only':True,'physical_installation_or_aesthetic_accepted':False})
+files=[];parse_errors=[]
+for p in sorted(O.iterdir()):
+ if p.is_file()and p.name!='snapshot_manifest.json':
+  files.append({'path':str(p.relative_to(R)),'bytes':p.stat().st_size,'sha256':sha(p)})
+  if p.suffix=='.json':
+   try:json.loads(p.read_text())
+   except Exception as e:parse_errors.append({'path':str(p),'error':str(e)})
+write('snapshot_manifest.json',{'files':files,'source_inputs':d['source_inputs'],'no_upstream_mutation':True,'new_illustration_received_or_adopted':False,'scope':'read-only macro loadbearing housing and interfaces; no current outershape or axes frozen','reproduce_sequence':['.venv/bin/python .scratch/gorilla_internal_g4_ankle_housing_budget/build_budget.py','.venv/bin/python .scratch/gorilla_internal_g4_ankle_housing_budget/finalize_budget.py'],'checks':checks,'JSON_parse_errors':parse_errors,'all_geometry_physical_and_aesthetic_accepted':False})
+print('mass',d['mechanical_assembly_mass_range_kg']);print('checks',checks);print('JSONerrs',parse_errors);print('budget',sha(O/'housing_budget.json'),'md',sha(O/'housing_budget.md'),'manifest',sha(O/'snapshot_manifest.json'))

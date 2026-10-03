@@ -1,0 +1,172 @@
+{
+  "representative": {
+    "historic_mass_marker_kg": 1702.6602086140797,
+    "marker_index": 1,
+    "hand_kg_each": 25,
+    "conditional_total_mass_kg": 1752.6602086140797,
+    "leg_support_share": 1.0,
+    "vertical_accel_m_s2": 0.5,
+    "horizontal_accel_m_s2": 0.3,
+    "assumed_COM_height_m": 1.5,
+    "assumed_CoP_offset_x_m": 0.15,
+    "support_vertical_N": 18069.926750811162,
+    "support_horizontal_N": 525.7980625842239,
+    "ankle_pitch_challenge_Nm": 3499.1861064980103,
+    "required_friction_ratio_without_safety": 0.029097963142580018,
+    "not_a_new_robot_mass_or_leg_geometry": true
+  },
+  "3t_static": {
+    "total_transmitted_force_N": 29430.0,
+    "factor_1_5_force_N": 44145.0,
+    "pitch_moment_at_0_33m_Nm": 9711.9,
+    "roll_moment_at_0_1m_Nm": 2943.0,
+    "pitch_stop_force_N_at_r_m": {
+      "0.08": 121398.75,
+      "0.12": 80932.5,
+      "0.16": 60699.375
+    },
+    "compression_case_does_not_require_motion_or_3t_hand_payload": true,
+    "mechanical_hold_stops_release_under_unloaded_condition_not_yet_designed": true
+  },
+  "refs": [
+    {
+      "model": "GSX50 two-stack lead01",
+      "lead_m": 0.00254,
+      "continuous_motor_limited_force_N": 31802,
+      "velocity_at_rated_motor_rpm_m_s": 0.1016,
+      "min_stroke_m": 0.1524,
+      "max_stroke_m": 0.254,
+      "zero_stroke_mass_kg": 24.04,
+      "mass_adder_kg_per_inch": 1.36,
+      "catalog_printed_page": 7,
+      "catalog_mass_at_min_max_stroke_kg": [
+        32.2,
+        37.64
+      ],
+      "force_times_speed_not_validated_joint_continuous_W": 3231.0832,
+      "scope": "Same table column force/lead/rated motor speed; curve/DCbus/cooling must qualify simultaneous working point; drive/brake/mount/support/cable not all included; dynamic Ca is life constant, not static capacity."
+    },
+    {
+      "model": "GSX60 three-stack lead03",
+      "lead_m": 0.00635,
+      "continuous_motor_limited_force_N": 51278,
+      "velocity_at_rated_motor_rpm_m_s": 0.254,
+      "min_stroke_m": 0.254,
+      "max_stroke_m": 0.254,
+      "zero_stroke_mass_kg": 34.47,
+      "mass_adder_kg_per_inch": 3.63,
+      "catalog_printed_page": 8,
+      "catalog_mass_at_min_max_stroke_kg": [
+        70.77,
+        70.77
+      ],
+      "force_times_speed_not_validated_joint_continuous_W": 13024.612000000001,
+      "scope": "Same table column force/lead/rated motor speed; curve/DCbus/cooling must qualify simultaneous working point; drive/brake/mount/support/cable not all included; dynamic Ca is life constant, not static capacity."
+    }
+  ],
+  "energy_avg": [
+    [
+      12.277040493044378,
+      12.60431725592375
+    ],
+    [
+      26.173487860897588,
+      27.473029822514906
+    ]
+  ],
+  "output": "/home/ethan/Projects/Sai_Rotbots/.scratch/gorilla_internal_g21_load_and_architecture/load_and_architecture.json"
+}
+{
+  "formula_checks": {
+    "all_Fv_equal_tauomega_relative_max": 2.1659672518417716e-16,
+    "arm_payload_delta_dot_r_cross_F_max_Nm": 1.1368683772161603e-13,
+    "energy_average_reproduction_max_kW": 3.552713678800501e-15,
+    "new_wholeM_null": true,
+    "no_OEMgross_inertia_generated": true,
+    "calculation_scope_pass": true,
+    "physical_acceptance": false
+  },
+  "complete_modules": 6,
+  "new_own_linear_budget_not_CAD": [
+    {
+      "model": "GSX50 two-stack lead01",
+      "OEM_frame_square_m": 0.1397,
+      "OEM_zero_stroke_body_I_m": 0.212,
+      "OEM_rod_projection_E_m": 0.054,
+      "OEM_brake_add_to_H_and_I_m": 0.0635,
+      "axial_I_plus_stroke_E_brake_question_m": [
+        0.4819,
+        0.5835
+      ],
+      "dimension_stack_options_and_mount_transforms_still_unverified": true,
+      "official_clevis_pin_mass_kg": 2.3,
+      "official_rod_eye_or_clevis_mass_kg": 0.7,
+      "custom_driver_cable_guard_support_brake_mass_allowance_kg": [
+        7,
+        12,
+        22
+      ],
+      "conditional_complete_booking_mass_kg": [
+        42.2,
+        62.64
+      ],
+      "conditional_install_booking_LXYZ_m": [
+        [
+          0.6,
+          0.9
+        ],
+        [
+          0.22,
+          0.28
+        ],
+        [
+          0.22,
+          0.28
+        ]
+      ],
+      "scope": "Planning budget only: source frame/body/brake additions, declared nonzero extra functions. Not exact OEM options/CAD and not certified force-speed point; actual hydraulic lubrication cooling if needed additional",
+      "rated_env": "catalog thrust curves ambient25C with GSX50 12x12x0.5in Al heatsink /GSX60 16x16x1in heatsink; these boundary heat sinks not in robot booking",
+      "installation_or_bus_qualified": false
+    },
+    {
+      "model": "GSX60 three-stack lead03",
+      "OEM_frame_square_m": 0.1778,
+      "OEM_zero_stroke_body_I_m": 0.235,
+      "OEM_rod_projection_E_m": 0.0494,
+      "OEM_brake_add_to_H_and_I_m": 0.0909,
+      "axial_I_plus_stroke_E_brake_question_m": [
+        0.6293,
+        0.6293
+      ],
+      "dimension_stack_options_and_mount_transforms_still_unverified": true,
+      "official_clevis_pin_mass_kg": 6.2,
+      "official_rod_eye_or_clevis_mass_kg": 3.7,
+      "custom_driver_cable_guard_support_brake_mass_allowance_kg": [
+        7,
+        12,
+        22
+      ],
+      "conditional_complete_booking_mass_kg": [
+        87.67,
+        102.67
+      ],
+      "conditional_install_booking_LXYZ_m": [
+        [
+          0.8,
+          1.1
+        ],
+        [
+          0.28,
+          0.35
+        ],
+        [
+          0.28,
+          0.35
+        ]
+      ],
+      "scope": "Planning budget only: source frame/body/brake additions, declared nonzero extra functions. Not exact OEM options/CAD and not certified force-speed point; actual hydraulic lubrication cooling if needed additional",
+      "rated_env": "catalog thrust curves ambient25C with GSX50 12x12x0.5in Al heatsink /GSX60 16x16x1in heatsink; these boundary heat sinks not in robot booking",
+      "installation_or_bus_qualified": false
+    }
+  ]
+}

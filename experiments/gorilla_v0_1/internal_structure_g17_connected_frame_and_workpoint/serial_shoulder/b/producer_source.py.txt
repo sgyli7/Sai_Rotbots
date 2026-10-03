@@ -1,0 +1,126 @@
+"""Gorilla G17 paired finite CSG/OCC serial shoulder candidate; no OEM net material fiction."""
+from pathlib import Path
+import argparse,json,gzip,hashlib,copy,math,time
+import numpy as np,manifold3d as mf,gmsh
+ROOT=next(p for p in Path(__file__).resolve().parents if(p/'sai_robots_engineering_rules.md').is_file());O=Path(__file__).resolve().parent
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def load(p):return json.loads(gzip.decompress(Path(p).read_bytes())if str(p).endswith('.gz')else Path(p).read_bytes())
+def put(p,d):Path(p).write_text(json.dumps(d,indent=2,allow_nan=False)+'\n')
+def gz(p,d):
+ with Path(p).open('wb')as f:
+  with gzip.GzipFile(filename='',mode='wb',fileobj=f,mtime=0)as z:z.write(json.dumps(d,separators=(',',':'),allow_nan=False).encode())
+ap=argparse.ArgumentParser();ap.add_argument('--variant',choices=['a','b'],required=True);a=ap.parse_args();D=O/a.variant;D.mkdir(exist_ok=False)
+# Every variant keeps its own producer bytes before any native export/render.
+(D/'producer_source.py').write_bytes(Path(__file__).read_bytes());shift=0. if a.variant=='a'else .065
+BPATH=ROOT/'.scratch/gorilla_internal_g15_mass_load_contract/bound_g15_b_scene.json.gz';SP=ROOT/'.scratch/gorilla_internal_g9_whole_source/scene.json.gz';B=load(BPATH);pm={p['name']:p for p in B['parts']};tree=load(SP)['body_tree'];N=128
+# Newly constructed parts only enter CAD; legacy exact references remain independent native source.
+gmsh.initialize([],False,False);gmsh.option.setNumber('General.Terminal',0);gmsh.model.add('gorilla_g17_'+a.variant);oc=gmsh.model.occ
+class Shape:
+ def __init__(self,m,t):self.m=m;self.t=t
+ def copy(self):return Shape(self.m,[t for d,t in oc.copy([(3,t)for t in self.t])])
+ def op(self,b,k):
+  fn={'add':oc.fuse,'sub':oc.cut,'int':oc.intersect}[k];ts,_=fn([(3,t)for t in self.t],[(3,t)for t in b.t],removeObject=True,removeTool=True);return Shape(self.m+b.m if k=='add'else self.m-b.m if k=='sub'else self.m^b.m,[t for d,t in ts])
+ def __add__(self,b):return self.op(b,'add')
+ def __sub__(self,b):return self.op(b,'sub')
+def box(c,d):return Shape(mf.Manifold.cube(d,True).translate(c),[oc.addBox(*(np.array(c)-np.array(d)/2),*d)])
+def cylinder(c,r,L,axis):
+ ax=np.array(axis,float);ax/=np.linalg.norm(ax);u=np.cross([0,1,0],ax)
+ if np.linalg.norm(u)<1e-8:u=np.cross([1,0,0],ax)
+ u/=np.linalg.norm(u);v=np.cross(ax,u);Q=np.column_stack([u,v,ax]);m=mf.Manifold.cylinder(L,r,r,N,True).transform(np.column_stack([Q,c]));p=np.array(c)-ax*L/2;return Shape(m,[oc.addCylinder(*p,*(ax*L),r)])
+def ring(c,ro,ri,L,ax):return cylinder(c,ro,L,ax)-cylinder(c,ri,L+.004,ax)
+def closed(c,d,w=.006):return box(c,d)-box(c,np.asarray(d)-2*w)
+def union(xs):
+ q=xs[0]
+ for x in xs[1:]:q=q+x
+ return q
+parts=[];rows=[];interfaces=[];replace=[];retained=[];splitunknown=[]
+def add(name,s,body,role,rho=7850,mass=None,**kw):
+ assert s.m.status()==mf.Error.NoError,(name,s.m.status());assert s.m.volume()>1e-10,name
+ me=s.m.to_mesh64();p={'name':'g17_'+name,'body':body,'role':role,'vertices_world_m':np.array(me.vert_properties)[:,:3].tolist(),'faces':np.array(me.tri_verts).tolist(),'rgba':[.27,.48,.57,1]if rho else[.58,.53,.38,1],'finite_material':rho is not None,'density_kg_m3':rho,'material_hypothesis':'S355 steel condition rho7850'if rho==7850 else None,'unqualified_connections':True,**kw}
+ if mass is not None:p['mass_range_kg']=mass;p['OEM_internal_full_I_unknown']=True;p['reference_not_net_material']=True
+ parts.append(p);ts=[t for d,t in oc.copy([(3,t)for t in s.t])];rows.append({'name':p['name'],'OCC_solid_tags':ts,'density_kg_m3':rho,'native_volume_m3':float(s.m.volume()),'role':role});return p
+# All original G13 component pieces except its moving short-box source, plus original core context.
+for p in B['parts']:
+ if p['name']=='g15_chest_shoulder_waist_net_cage' or p['name'].startswith('g13_')and'output_flange_journals_closed_arm_carrier'not in p['name']:
+  q=copy.deepcopy(p);q['g17_original_source_sha256']=sha(BPATH);q['original_part_fields_unchanged']=True;q['g17_context_only']=p['name'].startswith('g15_');parts.append(q);retained.append(p['name'])
+for side,sg in [('left',1),('right',-1)]:
+ pitch=side+'_shoulder_pitch_carrier';roll=side+'_shoulder_roll_carrier';arm=side+'_upper_arm';ax=np.array([0.,sg,0.]);p0=np.array([-.13,sg*.3735,2.29]);cr=np.array([-.12,sg*(.675+shift),2.19]);cy=np.array([-.1,sg*(.64+shift),1.955]);ay=np.array([-.1344496302205832,sg*.44816543406861076,-.8837822359833004]);xr=np.array([1.,0,0]);localstock=[]
+ # Keep complete gear/motor/brain/brake/input-coupler/connector stock. Rewrite own load cases and output paths only.
+ for n,p in pm.items():
+  if not n.startswith((f'ds_{side}_shoulder_roll_',f'ds_{side}_shoulder_yaw_')):continue
+  if any(k in n for k in ['gear_load_shell','hollow_output_adapter','carrier_lower','carrier_upper']):replace.append(n);continue
+  q=copy.deepcopy(p);q['vertices_world_m']=(np.array(q.get('vertices_world_m',q.get('vertices')))+[0,sg*shift,0]).tolist();q.pop('vertices',None);q['g17_source_original_part_id']=n;q['g17_original_reference_mass_scope_unchanged']=True;q['g17_neutral_rigid_translation_world_m']=[0,sg*shift,0];q['g17_geometric_owner_NOT_OEM_stator_rotor_partition']=True;parts.append(q);retained.append(n);localstock.append(q)
+ for j in ['pitch','roll']:replace.append(f'e2_upper_net_{side}_shoulder_{j}_carrier')
+ replace.append(f'g13_{side}_output_flange_journals_closed_arm_carrier')
+ # Existing pitch A flange, holes, full journals remain identical functional dimensions; new broad transition replaces old short box.
+ Nsave=N
+ if a.variant=='b':N=64
+ out=ring(p0+ax*.1135,.100,.0141,.014,ax)+ring(p0+ax*.1255,.035,.0141,.018,ax)+ring(p0+ax*.18375,.02995,.0141,.1395,ax)
+ for i in range(8):
+  t=i*math.pi/4;out=out-cylinder(p0+ax*.1135+[.055*math.cos(t),0,.055*math.sin(t)],.00875,.018,ax)
+ N=Nsave
+ # Closed 6 mm upper bridge, rootboss and dry-fixedB roll face: broad continuous path, not thin isolated rods.
+ bridge=closed([-.095,sg*(.645+shift/2),2.365],[.250,.160+shift,.180],.006) if a.variant=='a'else closed([-.095,sg*(.7225+shift/2),2.3663],[.250,.195+shift,.148],.006)
+ bridge=bridge+ring(p0+ax*.264,.055,.0141,.040,ax)
+ bridge=bridge+closed([-.065,sg*(.720+shift),2.300 if a.variant=='a'else 2.3085],[.110,.180,.042 if a.variant=='a'else .040],.006)
+ # Roll fixed cup/bearing seats. Full gear protected envelope is not silently cut.
+ rollfixed=ring(cr+[-.0645-cr[0],0,0],.110,.081,.012,xr)+ring(cr+[-.171-cr[0],0,0],.108,.101,.213,xr)
+ for xx in [-.203,-.263]:
+  rollfixed=rollfixed+ring([xx,cr[1],cr[2]],.070,.05515,.03575,xr)+ring([xx-.015,cr[1],cr[2]],.108,.065,.006,xr)
+ # Continuous outer path to roll flange; voids correspond to retained full electronics/connectors, not moved/hidden.
+ parent=out+bridge+rollfixed
+ if a.variant=='b':
+  parent=parent-cylinder(cr,.096,.092,xr)
+  for k in range(8):
+   t=k*math.pi/4;parent=parent-cylinder([-.0645,cr[1]+.090*math.cos(t),cr[2]+.090*math.sin(t)],.0053,.018,xr)
+ for p in localstock:
+  if any(x in p['name']for x in ['motor','brake','encoder','controller','wire_coolant']):
+   vv=np.array(p['vertices_world_m']);lo=vv.min(0)-.001;hi=vv.max(0)+.001;parent=parent-box((lo+hi)/2,hi-lo)
+ add(side+'_pitch_to_roll_closed_load_path',parent,pitch,'finite_pitch_output_and_complete_roll_fixed_support',journal_OD_ID_m=[.0599,.0282],A_PCD_m=.110,source_A_face_Y_m=sg*.480,source_pitch_bearing_seat_and_Aflange_retained=True,threads_weld_and_pressure_split_unknown=True)
+ # Separate roll output flange and journal, connected through wide rear/downward closed path to yaw parent case.
+ rc=ring(cr+[-.1712-cr[0],0,0],.080,.0141,.012,xr)+ring(cr+[-.229-cr[0],0,0],.02995,.0141,.120,xr)
+ rc=rc+closed([-.308,cr[1],2.095],[.050,.160,.260],.006)+closed([-.135,sg*(.66+shift),1.992],[.395,.215,.055],.006)
+ yawfixed=ring(cy-ay*(.039 if a.variant=='a'else .0512),.110,.081,.012,ay)+ring(cy+ay*.060,.108,.101,.210 if a.variant=='a'else .214,ay)
+ for u in [.082,.142]:yawfixed=yawfixed+ring(cy+ay*u,.070,.05515,.03575,ay)+ring(cy+ay*(u+.015),.108,.065,.006,ay)
+ rc=rc+yawfixed
+ if a.variant=='b':
+  rc=rc-cylinder(cy,.096,.092,ay)-ring([-.282,cr[1],cr[2]],.0413,.02995,.0046,xr)
+  for k in range(8):
+   t=k*math.pi/4;rc=rc-cylinder([-.1712,cr[1]+.045*math.cos(t),cr[2]+.045*math.sin(t)],.0053,.018,xr)
+ for p in localstock:
+  if 'shoulder_yaw_'in p['name']and any(x in p['name']for x in ['motor','brake','encoder','controller','wire_coolant']):
+   vv=np.array(p['vertices_world_m']);lo=vv.min(0)-.001;hi=vv.max(0)+.001;rc=rc-box((lo+hi)/2,hi-lo)
+ add(side+'_roll_to_yaw_closed_load_path',rc,roll,'finite_roll_output_and_complete_yaw_fixed_support',new_components_unqualified=True)
+ yo=ring(cy+ay*.0512,.080,.0141,.012,ay)+ring(cy+ay*.109,.02995,.0141,.120,ay)+ring(cy+ay*.178,.065,.0141,.020,ay)
+ if a.variant=='b':
+  ux=np.cross([0,1,0],ay);ux/=np.linalg.norm(ux);vy=np.cross(ay,ux)
+  for k in range(8):
+   t=k*math.pi/4;yo=yo-cylinder(cy+ay*.0512+ux*.045*math.cos(t)+vy*.045*math.sin(t),.0053,.018,ay)
+ # Actual downstream interface to unchanged upper-arm source; connection obligation recorded, not fixed by owner.
+ add(side+'_yaw_output_upper_arm_datum',yo,arm,'finite_yaw_output_journals_downstream_mount',upperarm_attachment_port_world_m=(cy+ay*.188).tolist(),upperarm_existing_material_id=f'e2_upper_net_{side}_upper_arm',arm_to_output_actual_fasteners_or_weld_unclosed=True)
+ for j,cc,aa,centers in [('roll',cr,xr,[-.203,-.263]),('yaw',cy,ay,[.082,.142])]:
+  for k,u in enumerate(centers):
+   mid=np.array([u,cc[1],cc[2]])if j=='roll'else cc+aa*u
+   add(side+'_'+j+'_external_bearing_'+str(k),ring(mid,.055,.030,.02975,aa),'mixed_'+j+'_bearing_races','SKF32212_complete_reference',rho=None,mass=[1.15]*3,SKF_family_dimensions_m=[.060,.110,.02975],roller_pressurecentre_fit_preload_unknown=True)
+   add(side+'_'+j+'_axial_keeper_'+str(k),ring(mid+aa*(-.019 if j=='roll'else .019),.041,.02995,.004,aa),roll if j=='roll'else arm,'finite_external_journal_keeper',thread_or_bolted_keeper_unknown=True)
+  # Real own mounting holes and finite bolts. OEM threaded ends unknown and protectedstock query retained.
+  outplane=-.1712 if j=='roll'else .0512
+  for k in range(8):
+   t=k*math.pi/4;uu=np.cross([0,1,0],aa);uu/=np.linalg.norm(uu);vv=np.cross(aa,uu);rad=uu*.045*math.cos(t)+vv*.045*math.sin(t);pos=(np.array([outplane,cc[1],cc[2]])if j=='roll'else cc+aa*outplane)+rad
+   add(side+'_'+j+'_output_mount_bolt_'+str(k),cylinder(pos,.0049,.024,aa)+cylinder(pos-aa*.014 if a.variant=='a'else pos+aa*(-.009 if j=='roll'else .009),.008,.006,aa),roll if j=='roll'else arm,'finite_M10_candidate_output_bolt',OEM_Athread_PC_depth_unknown=True,nominal_PCD_m=.090)
+ interfaces.extend([{'id':side+'_pitch','parent_body':'torso','output_body':pitch,'axis_world':[0,sg,0],'pivot_world_m':[-.13,sg*.56,2.29],'legacy_pivot_world_m':[-.13,sg*.46,2.36],'axis_delta_Z_m':-.070,'neutral_downstream_transform':'identity except stated Ygroupoffset, not oldkinematics inherited'}, {'id':side+'_roll','parent_body':pitch,'output_body':roll,'pivot_world_m':cr.tolist(),'axis_world':[1,0,0],'neutral_DSand_axis_translation_world_m':[0,sg*shift,0],'fixed_Bdatum_hypothesis_world_m':[-.075,cr[1],cr[2]],'OEM_A_B_exactdrawing_interface_unknown':True}, {'id':side+'_yaw','parent_body':roll,'output_body':arm,'pivot_world_m':cy.tolist(),'axis_world':ay.tolist(),'neutral_DSand_axis_translation_world_m':[0,sg*shift,0],'OEM_A_B_exactdrawing_interface_unknown':True}])
+ # Downstream upper-arm own source retained for explicit material contact query, never union by bodylabel.
+ q=copy.deepcopy(pm[f'e2_upper_net_{side}_upper_arm']);q['g17_original_part_fields_unchanged']=True;q['g17_context_only']=True;parts.append(q)
+ print('SIDE_READY',side,len(parts),flush=True)
+oc.synchronize();keep={t for row in rows for t in row['OCC_solid_tags']};assert len(keep)==sum(len(r['OCC_solid_tags'])for r in rows);oc.remove([(3,t)for _,t in oc.getEntities(3)if t not in keep],recursive=True);oc.synchronize();gmsh.write(str(D/'assembly.brep'))
+for row in rows:
+ ts=row['OCC_solid_tags'];vs=np.array([oc.getMass(3,t)for t in ts]);V=vs.sum();C=np.average([oc.getCenterOfMass(3,t)for t in ts],axis=0,weights=vs);I=np.zeros((3,3))
+ for t,v in zip(ts,vs):
+  r=np.array(oc.getCenterOfMass(3,t))-C;I+=np.array(oc.getMatrixOfInertia(3,t)).reshape(3,3)+v*((r@r)*np.eye(3)-np.outer(r,r))
+ row.update(exact_CAD_volume_m3=float(V),exact_CAD_COM_world_m=C.tolist(),exact_CAD_I_per_density_m5=I.tolist(),actual_CAD_solid_count=len(ts),native_vs_CAD_relative_volume_error=row['native_volume_m3']/V-1)
+ p=next(p for p in parts if p['name']==row['name'])
+ if row['density_kg_m3']is not None:p['mass_range_kg']=[float(V*row['density_kg_m3'])]*3;p['exact_CAD_COM_world_m']=C.tolist();p['exact_CAD_full_I_at_COM_world_kg_m2']=(I*row['density_kg_m3']).tolist()
+put(D/'cad_part_manifest.json',rows);put(D/'joint_interfaces.json',interfaces)
+for q in interfaces:tree[q['output_body']]={k:q[k]for k in ['parent_body','pivot_world_m','axis_world']};tree[q['output_body']]['parent']=tree[q['output_body']].pop('parent_body');tree[q['output_body']]['joint_id']=q['id']
+s={'robot_id':'gorilla_v0_1','candidate':'g17_serial_shoulder_'+a.variant,'parts':parts,'joint_interfaces':interfaces,'body_tree_candidate':tree,'source_current_B_sha256':sha(BPATH),'source_G16_interfaces_sha256':sha(ROOT/'.scratch/gorilla_internal_g16_load_interface_domain/interface_contract.json'),'producer_sha256':sha(D/'producer_source.py'),'CAD_BREP_sha256':sha(D/'assembly.brep'),'nominated_replaced_part_ids':sorted(set(replace)),'retained_complete_function_ids':sorted(set(retained)),'macro_roll_yaw_Yoffset_m':shift,'visible_armor_change_mm':0,'full_output_Bfixed_functions_preserved_as_source_scopes':True,'G16_26kg_replacement_credit_kg':0,'current_SI_or_load_capacity_accepted':False,'reference_mass_not_uniform_full_I':True,'missing_input_feedback_brake_actualcapacity_keep_red':True}
+gz(D/'scene.json.gz',s);gmsh.finalize();print('SOURCE',a.variant,len(parts),sha(D/'scene.json.gz'),flush=True)

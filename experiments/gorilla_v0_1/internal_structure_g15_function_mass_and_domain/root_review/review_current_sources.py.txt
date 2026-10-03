@@ -1,0 +1,42 @@
+from pathlib import Path
+import json,gzip,hashlib,collections
+import numpy as np,trimesh,manifold3d as mf
+R=Path.cwd();O=Path(__file__).resolve().parent
+B=R/'.scratch/gorilla_internal_g15_thorax_functional_colayout/b'
+T=R/'.scratch/gorilla_internal_g15_thermal_operating_domain'
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+def read(p):return json.loads(gzip.decompress(p.read_bytes()) if p.suffix=='.gz' else p.read_bytes())
+def out(n,d):(O/n).write_text(json.dumps(d,indent=2,allow_nan=False)+'\n')
+s=read(B/'scene.json.gz');pm={p['name']:p for p in s['parts']};old=read(Path(s['sources']['G14_final']['path']));om={p['name']:p for p in old['parts']}
+checks=[]
+def check(n,v,details=None):checks.append({'check':n,'pass':bool(v),'details':details})
+check('no_duplicate_native_ids',len(pm)==len(s['parts']))
+check('all111_original_armor_bytes_equal',len(s['original_visible_armor_ids'])==111 and all(pm[n]==om[n] for n in s['original_visible_armor_ids']))
+check('producer_originalbytes_retained',sha(B/'build_layout.py')==s['producer_sha256'])
+for k,v in s['sources'].items():check('bound_source:'+k,sha(Path(v['path']))==v['sha256'])
+for pack in s['new_pack_info']:
+ ids=pack['cell_ids'];check(pack['id']+':complete120cell',len(ids)==120 and all(n in pm for n in ids));v=np.concatenate([np.array(pm[n]['vertices_world_m']) for n in ids]);check(pack['id']+':proper_rotation',abs(np.linalg.det(pack['rotation_world_from_source'])-1)<1e-10)
+frame=pm['g15_chest_shoulder_waist_net_cage'];v=np.array(frame['vertices_world_m']);f=np.array([[q[0],q[k],q[k+1]] for q in frame['faces'] for k in range(1,len(q)-1)],np.uint64);m=trimesh.Trimesh(v,f,process=False);p=m.mass_properties;rho=frame['density_kg_m3'];native=mf.Manifold(mf.Mesh64(v,f));check('frame_manifold_resource_valid',native.status()==mf.Error.NoError);check('frame_signed_volume_positive',p.volume>0)
+I=p.inertia*rho
+out('independent_frame_geometry.json',{'source_scene_sha256':sha(B/'scene.json.gz'),'actual_mesh_no_repair':True,'frame_id':frame['name'],'native_kernel_status':str(native.status()),'signed_net_volume_m3':p.volume,'declared_density_kg_m3':rho,'conditional_own_frame_mass_kg':p.volume*rho,'COM_world_m':p.center_mass.tolist(),'full_I_at_COM_kg_m2':I.tolist(),'principal_I_kg_m2':np.linalg.eigvalsh(I).tolist(),'watertight_indexed_mesh':bool(m.is_watertight),'CAD_native_solid_connection_or_strength_admitted':False})
+ret=set(s['proposed_retired_ids']);check('all_declared_retired_IDs_absent',not ret.intersection(pm))
+led=s['replacement_ledger'];newids=led['newthermalreplacementIDs']+led['newhydraulicreplacementIDs'];check('replacement_ledger_native_members_present',all(n in pm for n in newids))
+fluidrows=[x for x in s['new_module_mass_rows'] if 'global' in x['id'] and 'inventory' in x['id']];check('only_two_additive_globalfluid_reference_rows',len(fluidrows)==2,[x['id'] for x in fluidrows])
+# Changed x all author receipt remains diagnostics only; owner or aliases do not waive material exclusions.
+out('source_identity_and_function_review.json',{'source_scene_sha256':sha(B/'scene.json.gz'),'checks':checks,'all_identity_checks_pass':all(x['pass'] for x in checks),'preserved_original_armor_does_not_prove_assembled_appearance':True,'original_service_or_final_visible_style_adopted':False,'current_B_actual_system_installed_or_physical_accepted':False,'guard_plenum_pump_port_true_function_assembly_unqualified':True,'red': ['Full body internal service/motion exclusion still required','Complete OEM reference bounds and port datums unknown are protected, not material cutouts','Real valve routing/support ownership must be connected and pressure-qualified','Fluid alias is a mass decision, not geometry overlap waiver']})
+if (T/'operating_domain.json').exists():
+ d=read(T/'operating_domain.json');maths=[]
+ def near(n,a,b):maths.append({'check':n,'actual':a,'reconstructed':b,'pass':abs(a-b)<1e-9*max(1,abs(b))})
+ for q in d['two_physical_budget_domains']:
+  near(q['id']+':duties',sum(p['duty'] for p in q['phases']),1)
+  near(q['id']+':bus_average',q['average_bus_kW'],sum(p['duty']*p['Pbus_kW'] for p in q['phases']))
+  for a in q['explicit_nonduplicated_aux_replacements']:
+   name=q['id']+':'+a['auxiliary_case']['id'];near(name+':aux_sum',a['auxiliary_case']['total_bus_auxiliary_kW'],sum(v for k,v in a['auxiliary_case'].items() if k.endswith('_kW') and k not in ['total_bus_auxiliary_kW','liquid_lowT_aux_kW','liquid_hot_aux_kW']))
+   near(name+':bus_average',a['average_bus_kW'],sum(p['duty']*p['bus_kW'] for p in a['phases']))
+   for j in range(2):near(name+':energy'+str(j),a['required_nameplate_kWh_at_SOC75_288_200V'][j],q['duration_h']*sum(p['duty']*(p['bus_kW']/.98+p['cell_R_kW_at288_200V'][j]) for p in a['phases'])/.75)
+ for z in d['public_reference_temperature_domains']:
+  for j in range(2):near(str((z['choice'],z['load_scope'],z['ambient_C'],j)),z['lowT_radiator_return_C_at288_200V'][j],z['ambient_C']+z['lowT_kW_at288_200V'][j]*1000/166-z['lowT_kW_at288_200V'][j]*1000/(15.1/60*4180))
+ for q in d['three_inventory_candidates']:
+  w=q['water'];o=q['oil'];near(q['id']+':water_stock',w['global_cold_stock_L'],w['external_chambers_lines_L']+w['reservoir_cold_working_fill_L']);near(q['id']+':oil_stock',o['global_cold_stock_L'],o['external_chambers_lines_L']+o['tank_cold_working_fill_L'])
+ out('independent_thermal_arithmetic.json',{'source_sha256':sha(T/'operating_domain.json'),'checks':maths,'all_pass':all(x['pass'] for x in maths),'check_count':len(maths),'not_qualified_flow_or_temperatures_or_cooling_admission':True,'same_purewater_reference_H_not_glycol_or_installed_rating':True,'not_mass_COM_or_biped_performance':True})
+print(json.dumps({'body_sha':sha(B/'scene.json.gz'),'identity_check_count':len(checks),'failed':[x for x in checks if not x['pass']],'frame_mass_kg':p.volume*rho}))

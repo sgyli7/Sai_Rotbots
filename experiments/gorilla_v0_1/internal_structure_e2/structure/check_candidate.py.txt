@@ -1,0 +1,99 @@
+"""Read-only Gorilla E2 native material/pose/skin audit; no acceptance implied."""
+from pathlib import Path
+import json, hashlib, math, itertools, copy
+import numpy as np, trimesh as tr
+from PIL import Image, ImageDraw
+ROOT=Path(__file__).resolve().parents[2];OUT=Path(__file__).resolve().parent
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+read=lambda p:json.loads(Path(p).read_text())
+def write(n,o): (OUT/n).write_text(json.dumps(o,indent=2,allow_nan=False)+'\n')
+def mesh(p):return tr.Trimesh(p['vertices_world_m'],[[f[0],f[i],f[i+1]] for f in p['faces'] for i in range(1,len(f)-1)],process=False)
+source=OUT/'structure_scene.json';S=read(source);basep=ROOT/'experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_scene.json';base=read(basep);sysfile=ROOT/'robots/gorilla_v0_1/configs/internal_structure_d_system_spec.json';dsys=read(sysfile);masterp=ROOT/'robots/gorilla_v0_1/cad/source/internal_structure_d_scene.json';master=read(masterp)
+# Refresh only functional deletion metadata, preserving every native mesh and every pose.
+conv=['waist_pitch','left_hip_roll','right_hip_roll','left_foot_roll','right_foot_roll'];elec=['waist_yaw','waist_roll','left_hip_yaw','right_hip_yaw'];retain=[r['id'] for r in dsys['modules'] if any(r['id'].startswith('ds_'+k+'_') for k in conv) and r['id'].endswith(('_brake','_encoder','_controller','_wire_coolant_connector'))]
+S['removed_D_system_module_ids']=[r['id'] for r in dsys['modules'] if any(r['id'].startswith('ds_'+k+'_') for k in elec) or(any(r['id'].startswith('ds_'+k+'_') for k in conv) and r['id'] not in retain)];S['retained_converted_D_control_feedback_brake_connector_ids']=retain;S['retained_converted_function_scope']='Old brake/controller/angular encoder/wire-coolant masses retained with unresolved mounting. New hold valves are not automatic brake replacements; new hydraulic position sensing remains red.';S['builder_sha256']=sha(OUT/'build_structure.py');write('structure_scene.json',S)
+ports=read(OUT/'motor_cooling_interfaces.json');ports['builder_sha256']=S['builder_sha256'];write('motor_cooling_interfaces.json',ports)
+TH=1e-10
+R={'robot_id':'gorilla_v0_1','candidate':'E2 first native selective-hybrid serial lower/waist candidate','source_path':str(source.relative_to(ROOT)),'source_sha256':sha(source),'checker_sha256':sha(__file__),'inputs':{str(p.relative_to(ROOT)):sha(p) for p in [basep,sysfile,masterp,OUT/'interface.json']},'positive_volume_threshold_m3':TH,'geometry_accepted':False,'physics_accepted':False,'AA3_outer_change_required_proved':False,'poses':[],'old_D_context_scope':'Neutral actual D native energy/cooling/controller geometry is checked as inherited installation context, not a proposed E2 placement or proof AA3 fails.'}
+armor=[p for p in base['parts'] if p['role'] in ['armor_cover','armor_surface']];print('ARMOR',len(armor),flush=True)
+modulemap={r['id']:r for r in dsys['modules']}
+oldcontext=[]
+for p in master['parts']:
+ mid=p.get('D_system_module_id') or p.get('module_id') or p.get('source_module_id')
+ if mid is None:
+  name=p['name'];mid=name[4:] if name.startswith('isd_ds_') else name if name.startswith('ds_') else None
+ row=modulemap.get(mid,{})
+ if row.get('category') in ['energy','cooling','thermal','power','compute','hydraulic'] or any(w in p['name'].lower() for w in ['battery','reservoir','radiator','heat_exchanger','coolant','pump','accumulator']):oldcontext.append((p,mesh(p),row.get('category','old_D_energy_context')))
+print('OLD CONTEXT',len(oldcontext),[(p['name'],c) for p,m,c in oldcontext][:8],flush=True)
+def overlap(a,b):return bool(np.all(a.bounds[1]>b.bounds[0]+1e-9) and np.all(b.bounds[1]>a.bounds[0]+1e-9))
+def inter(a,b):
+ if not overlap(a,b):return None
+ try:
+  m=tr.boolean.intersection([a,b],engine='manifold');v=float(m.volume)
+  return {'volume_m3':v,'volume_cm3':v*1e6,'bounds_world_m':m.bounds.tolist()} if v>TH else None
+ except Exception as e:return {'unknown':str(e)}
+def unions(pp):
+ gs={}
+ for p in pp:
+  if 'density_kg_m3' in p:gs.setdefault(p['material_union_group'],[]).append(p)
+ out={}
+ for k,ps in gs.items():
+  mm=[mesh(p) for p in ps]
+  try:
+   m=tr.boolean.union(mm,engine='manifold') if len(mm)>1 else mm[0];components=[x for x in m.split(only_watertight=False) if x.volume>TH]
+   out[k]={'m':m,'ids':[p['name'] for p in ps],'bodies':sorted(set(p['body'] for p in ps)),'role':sorted(set(p['role'] for p in ps)),'component_count':len(components),'component_bounds':[x.bounds.tolist() for x in components],'net_mass_kg':float(m.volume*7850),'net_volume_m3':float(m.volume),'watertight':bool(m.is_watertight)}
+  except Exception as e:print('UNION UNKNOWN',k,str(e),flush=True)
+ return out
+def projection(pp,name,body=None,armorpp=None):
+ width=1260;height=1040;im=Image.new('RGB',(width,height),'white');dr=ImageDraw.Draw(im);scale=290;views=[('FRONT',[1,2],0,1),('LEFT',[0,2],1,-1),('REAR',[1,2],0,-1)]
+ for vi,(label,axes,dep,sgn) in enumerate(views):
+  x0=vi*420+210;yy=945;draw=[]
+  for p in pp:
+   v=np.array(p['vertices_world_m']);u=sgn*v[:,axes[0]];z=v[:,axes[1]];xy=np.c_[x0+u*scale,yy-z*scale]
+   color=(85,111,129) if 'density_kg_m3' in p else (157,187,205)
+   if p['role']=='finite_actuator_material':color=(133,140,146)
+   if 'lock' in p['name']:color=(191,112,44)
+   for f in p['faces']:draw.append((float(np.mean(v[f,dep]))*sgn,xy[f].tolist(),color))
+  for _,poly,color in sorted(draw,key=lambda x:x[0]):dr.polygon([tuple(x) for x in poly],fill=color,outline=(62,73,80))
+  if armorpp:
+   for p in armorpp:
+    v=np.array(p['vertices_world_m']);xy=np.c_[x0+sgn*v[:,axes[0]]*scale,yy-v[:,2]*scale]
+    for f in p['faces']:dr.line([tuple(x) for x in xy[f]]+[tuple(xy[f[0]])],fill=(53,160,209),width=1)
+  dr.text((vi*420+15,15),label+' native material / refs only',fill='black');dr.line((vi*420+5,945,(vi+1)*420-5,945),fill=(190,190,190))
+ dr.text((15,1005),'Gorilla E2 | 3D source projection; structural/contact/assembly qualification NOT established',fill=(90,0,0));im.save(OUT/name)
+for pose in S['pose_scenes']:
+ pid=pose['id'];pp=pose['parts'];top=[]
+ for p in pp:
+  m=mesh(p);v=float(m.volume);top.append({'name':p['name'],'finite':bool(np.isfinite(m.vertices).all()),'watertight':bool(m.is_watertight),'winding_consistent':bool(m.is_winding_consistent),'positive_volume':bool(v>TH),'volume_m3':v})
+ fail=[r for r in top if not all(r[k] for k in ['finite','watertight','winding_consistent','positive_volume'])]
+ print('TOPO',pid,len(pp),'fail',len(fail),flush=True)
+ G=unions(pp);mass=float(sum(g['net_mass_kg'] for g in G.values()));refs=np.array([p.get('mass_range_kg',[0,0,0]) for p in pp if 'density_kg_m3' not in p]).sum(axis=0)
+ con=[]
+ for (ka,a),(kb,b) in itertools.combinations(G.items(),2):
+  hit=inter(a['m'],b['m'])
+  if hit:con.append({'group_a':ka,'group_b':kb,'body_a':a['bodies'],'body_b':b['bodies'],'roles_a':a['role'],'roles_b':b['role'],**hit})
+ Ts={k:np.array(v) for k,v in pose['body_transforms'].items()};am=[];unmapped=[]
+ for p in armor:
+  q=copy.deepcopy(p);b=p['body'];b=b.replace('_foot','_foot_roll_arch') if b in ['left_foot','right_foot'] else b
+  m=mesh(p)
+  if b in Ts:m.apply_transform(Ts[b])
+  elif pid!='neutral':unmapped.append(p['body'])
+  q['vertices_world_m']=m.vertices.tolist();am.append((q,m))
+ sk=[]
+ for k,g in G.items():
+  for p,m in am:
+   hit=inter(g['m'],m)
+   if hit:sk.append({'material_group':k,'body':g['bodies'],'armor_name':p['name'],'armor_body':p['body'],**hit})
+ old=[]
+ if pid=='neutral':
+  for k,g in G.items():
+   for p,m,cat in oldcontext:
+    hit=inter(g['m'],m)
+    if hit:old.append({'material_group':k,'context_part':p['name'],'context_category':cat,**hit})
+ uu=[{'group':k,**{kk:vv for kk,vv in g.items() if kk!='m'}} for k,g in G.items()]
+ frame=[u for u in uu if u['role']==['finite_frame_material']]
+ result={'id':pid,'part_count':len(pp),'root_shift_z_m':pose['root_shift_z_m'],'all_geometry_already_world_posed':True,'topology_failures':fail,'material_union_groups':uu,'net_material_mass_kg':mass,'reference_component_mass_range_kg':refs.tolist(),'branch_total_mass_range_kg':(refs+mass).tolist(),'fixed_frame_disconnected_groups':[u for u in frame if u['component_count']>1],'material_intersections':sorted(con,key=lambda x:x.get('volume_m3',0),reverse=True),'material_armor_intersections':sorted(sk,key=lambda x:x.get('volume_m3',0),reverse=True),'armor_pose_unmapped_bodies':sorted(set(unmapped)),'old_D_context_material_intersections':sorted(old,key=lambda x:x.get('volume_m3',0),reverse=True),'reference_envelope_installation_intersection':'UNKNOWN here; material-material and original armor are independently checked. OEM reference envelope containment/contact is not component fit acceptance.'}
+ R['poses'].append(result);write('checks.json',R);print('CHECK',pid,'groups',len(G),'mass',round(mass,3),'new-new',len(con),'armor',len(sk),'old',len(old),'disconnected',[u['group'] for u in frame if u['component_count']>1],flush=True)
+ projection(pp,pid+'_native_threeview.png');
+ if pid=='neutral':projection(pp,'neutral_original_armor_wire_overlay.png',armorpp=[p for p,m in am])
+write('checks.json',R);print('CHECKS READY',sha(OUT/'checks.json'),flush=True)

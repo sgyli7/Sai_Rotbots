@@ -1,0 +1,103 @@
+"""Independent exact-CAD validation and finite material/function checks, no repair."""
+from pathlib import Path
+import hashlib,json,math
+import numpy as np
+from OCP.STEPControl import STEPControl_Reader
+from OCP.IFSelect import IFSelect_RetDone
+from OCP.BRepCheck import BRepCheck_Analyzer
+from OCP.TopExp import TopExp_Explorer
+from OCP.TopAbs import TopAbs_SOLID,TopAbs_SHELL,TopAbs_FACE,TopAbs_IN
+from OCP.TopoDS import TopoDS
+from OCP.BRepAdaptor import BRepAdaptor_Surface
+from OCP.GeomAbs import GeomAbs_Cylinder,GeomAbs_Torus,GeomAbs_Sphere
+from OCP.BRepGProp import BRepGProp
+from OCP.GProp import GProp_GProps
+from OCP.Bnd import Bnd_Box
+from OCP.BRepBndLib import BRepBndLib
+from OCP.BRepClass3d import BRepClass3d_SolidClassifier
+from OCP.IntCurvesFace import IntCurvesFace_ShapeIntersector
+from OCP.gp import gp_Pnt,gp_Dir,gp_Lin
+
+O=Path(__file__).resolve().parent
+ROOT=next(p for p in O.parents if (p/'sai_robots_engineering_rules.md').is_file())
+C=np.array([-.06,.65,.30])
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+
+def load(path):
+    r=STEPControl_Reader();assert r.ReadFile(str(path))==IFSelect_RetDone
+    r.TransferRoots();return r.OneShape()
+
+def count(shape,kind):
+    ex=TopExp_Explorer(shape,kind);n=0
+    while ex.More():n+=1;ex.Next()
+    return n
+
+def bounds(shape):
+    b=Bnd_Box();BRepBndLib.AddOptimal_s(shape,b,False,False)
+    return np.asarray(b.Get()).reshape(2,3)
+
+def inside(shape,p):
+    return BRepClass3d_SolidClassifier(shape,gp_Pnt(*p),1e-9).State()==TopAbs_IN
+
+def ray(shape,origin,direction,length):
+    q=IntCurvesFace_ShapeIntersector();q.Load(shape,1e-9)
+    q.Perform(gp_Lin(gp_Pnt(*origin),gp_Dir(*direction)),0,length)
+    assert q.IsDone();raw=sorted(q.WParameter(i+1) for i in range(q.NbPnt()));hits=[]
+    for x in raw:
+        if not hits or abs(x-hits[-1])>1e-8:hits.append(x)
+    spans=[]
+    for a,b in zip(hits,hits[1:]):
+        if inside(shape,np.asarray(origin)+np.asarray(direction)*(a+b)/2):spans.append([a,b])
+    return {'hits_m':hits,'material_intervals_m':spans,'interval_lengths_m':[b-a for a,b in spans]}
+
+baseline=load(ROOT/'.scratch/gorilla_internal_g7_cad_carrier/carrier_exact.step')
+baseline_bounds=bounds(baseline);summary=[]
+for variant in ['a','b']:
+    d=O/variant;s=load(d/'carrier_exact.step');cad=json.loads((d/'cad_source_manifest.json').read_text())
+    prop=GProp_GProps();BRepGProp.VolumeProperties_s(s,prop)
+    validity=BRepCheck_Analyzer(s).IsValid();types=[];ex=TopExp_Explorer(s,TopAbs_FACE)
+    while ex.More():
+        face=TopoDS.Face_s(ex.Current());a=BRepAdaptor_Surface(face,True);kind=a.GetType();row={'type':str(kind)}
+        if kind==GeomAbs_Cylinder:row['radius_m']=a.Cylinder().Radius()
+        elif kind==GeomAbs_Torus:row['minor_radius_m']=a.Torus().MinorRadius();row['major_radius_m']=a.Torus().MajorRadius()
+        elif kind==GeomAbs_Sphere:row['radius_m']=a.Sphere().Radius()
+        types.append(row);ex.Next()
+    fillet_faces=[r for r in types if abs(r.get('radius_m',r.get('minor_radius_m',-1))-.008)<1e-9]
+    tests=[]
+    def probe(label,p,expect):
+        actual=inside(s,C+np.asarray(p));tests.append({'name':label,'point_world_m':(C+p).tolist(),'expected_material':expect,'actual_material':actual,'matches':actual==expect})
+    probe('central_free_cavity',[.1375,0,-.015],False)
+    probe('side_skin',[.1375,.117,-.03],True)
+    for side in [-1,1]:
+        for y in np.linspace(.02,.174,13):probe(f'journal_bore_{side}_{y}',[0,side*y,0],False)
+        for y in [.108,.122,.150,.180,.198,.212]:probe(f'pin_bore_{side}_{y}',[.320,side*y,.040],False)
+        for k in range(3):
+            angle=2*math.pi*k/3
+            probe(f'keeper_bore_{side}_{k}',[.022*math.cos(angle),side*.169,.022*math.sin(angle)],False)
+        probe(f'stop_lug_{side}',[.150,side*.075,.075],True)
+        if variant=='a':
+            probe(f'local_pad_added_inward_{side}',[.190,side*.075,.052],True)
+            probe(f'old_cavity_below_pad_still_open_{side}',[.190,side*.075,.045],False)
+        else:
+            for x,z in [[-.065,-.015],[.1375,-.030],[.340,-.015],[.1375,.050],[.1375,-.080]]:
+                probe(f'continuous_web_{side}_{x}_{z}',[x,side*.075,z],True)
+            probe(f'adjacent_clear_cavity_{side}',[.1375,side*.05,-.030],False)
+    sections=[]
+    for side in [-1,1]:
+        x=.190 if variant=='a' else .1375
+        q=ray(s,C+[x,side*.075,-.150],[0,0,1],.300)
+        sections.append({'local_x_y_m':[x,side*.075],**q})
+    row={'robot_id':'gorilla_v0_1','variant':variant,'STEP_sha256':sha(d/'carrier_exact.step'),'BREP_sha256':sha(d/'carrier_exact.brep'),
+         'CAD_manifest_sha256':sha(d/'cad_source_manifest.json'),'checker_sha256':sha(__file__),'independent_engine':'OCCT7.9 raw STEP without healing',
+         'raw_BRepCheck_valid':validity,'actual_solid_count':count(s,TopAbs_SOLID),'actual_shell_count':count(s,TopAbs_SHELL),
+         'exact_volume_m3':prop.Mass(),'volume_error_vs_producer_m3':prop.Mass()-cad['actual_volume_m3'],
+         'exact_component_bounds_world_m':bounds(s).tolist(),'G7_component_bounds_world_m':baseline_bounds.tolist(),
+         'maximum_outer_component_AABB_delta_m':float(abs(bounds(s)-baseline_bounds).max()),
+         'actual_radius_8mm_faces':fillet_faces,'surface_analytic_type_inventory':types,
+         'functional_holes_and_material_probes':tests,'all_probes_match':all(t['matches'] for t in tests),
+         'selected_pad_or_web_sections':sections,'actual_fillet_r8_confirmed':bool(fillet_faces) if variant=='a' else None,
+         'same_port_positions_not_real_fit_acceptance':True,'strength_stiffness_or_physical_accepted':False}
+    (d/'independent_cad_checks.json').write_text(json.dumps(row,indent=2)+'\n')
+    summary.append({k:row[k] for k in ['variant','raw_BRepCheck_valid','actual_solid_count','exact_volume_m3','maximum_outer_component_AABB_delta_m','actual_fillet_r8_confirmed','all_probes_match']})
+    print(summary[-1],flush=True)
+(O/'cad_check_summary.json').write_text(json.dumps(summary,indent=2)+'\n')

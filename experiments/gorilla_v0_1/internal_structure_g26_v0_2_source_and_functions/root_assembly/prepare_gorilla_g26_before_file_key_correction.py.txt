@@ -1,0 +1,66 @@
+from pathlib import Path
+import json, hashlib, datetime, shutil
+R=Path.cwd(); sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+root=R/'.scratch/gorilla_internal_g26_root_review';root.mkdir(exist_ok=True)
+dirs=['gorilla_internal_g26_v0_2_lower_source_inventory','gorilla_internal_g26_whole_body_function_budget','gorilla_internal_g26_perception_modules']
+inputs=[];checks=[];aliases=[]
+aliasdir=R/'.scratch/gorilla_g26_external_source_aliases';aliasdir.mkdir(exist_ok=True)
+for name in dirs:
+ d=R/'.scratch'/name;mp=d/('freeze_manifest.json' if (d/'freeze_manifest.json').exists() else 'source_manifest.json');m=json.loads(mp.read_text());inputs.append(dict(path=str(mp.relative_to(R)),sha256=sha(mp)))
+ for row in m['inputs']:
+  expected=row.get('sha256',row.get('captured_sha256')); rp=Path(row['path']); p=rp if rp.is_absolute() else R/rp
+  if row.get('captured'): p=d/row['captured']
+  if row.get('id')=='current_decisions_observed':p=R/'.scratch/gorilla_g26_root_bound_observations/current_decisions_observed.md'
+  if sha(p)!=expected:raise RuntimeError('Input identity '+str(p))
+  if not p.is_relative_to(R):
+   a=aliasdir/expected[:16]/p.name;a.parent.mkdir(exist_ok=True);shutil.copyfile(p,a);p=a
+  aliases.append(dict(referenced_path=row['path'],bound_exact_bytes_path=str(p.relative_to(R)),sha256=expected,scope='Frozen exact input version, not necessarily current canonical state'))
+ for row in m['outputs']:
+  rp=Path(row['path']);p=rp if rp.is_absolute() else next((q for q in [d/rp,R/rp] if q.is_file()),d/rp)
+  actual=sha(p);checks.append(dict(path=str(p.relative_to(R)),sha256_expected=row['sha256'],sha256_actual=actual,pass_=actual==row['sha256']))
+  if actual!=row['sha256']:raise RuntimeError('Author output identity '+str(p))
+receipt={'checked_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'inputs':aliases,'frozen_output_checks':checks,'identity_errors':0,
+ 'root_viewed':['.scratch/gorilla_internal_g26_v0_2_lower_source_inventory/native_normalized_four_view.png','robots/gorilla_v0_1/design/concepts/lower_body_redesign/user_reference_20261004_v0_2_refined.jpg'],
+ 'module_subset_arithmetic':{'mass_kg':(.056+2*.091+.265+2*.060+.015+2*.0917),'low_W':1.8+2*3+6.5+2*1.55+.22,'high_W':1.8+2*7.5+6.5+2*1.55+.22,'separate_peak_reserve_W':3+2*15+14+2*1.55+.22},
+ 'whole_M_COM_I':None,'installed_FOV_or_continuous_rating_accepted':False,'physics_accepted':False}
+(root/'input_aliases.json').write_text(json.dumps(aliases,indent=2)+'\n');(root/'root_review_receipt.json').write_text(json.dumps(receipt,indent=2)+'\n')
+(root/'integration_decision.md').write_text('''# Gorilla V0.2 G26 全身输入检查点
+
+最新微调四视作为唯一当前外观参考，胸金边感知区、暖白膝甲、踝橙点和pad侧排风按用户新版接续，正式交接包仍待到。root实际查看图片和b7原生同尺度四视；原生下身76实例/38网格/8外观pitch定位已完整保留，单位归一化，不从旧2.65m等尺寸恢复SI。3坏主壳及右镜像仍是原始资源缺口，外形体积不等于合法承力材料。
+
+完整历史功能账逐ID引用G24，但其owner、质量与物理资格不进入新版。两全身路线比较同720芯的四长包与八短包；后者增加完整保护/冷板/接口/线管，不因芯数分半而缩OEM或省去模块功能。新的原生短包、全身配准及腿载荷/驱动正在G27构造，尚未安装或选为稳定架构。
+
+胸前RGB/LWIR、前后主动NIR深度、腕近距、周边LiDAR和身体IMU/力反馈按各自窗口与任务分配。已知模块子集0.8214kg，运行规划17.62–26.62W、独立峰预留相加50.32W；宿主、脚/关节传感、AFE、安装、窗口、网络及DC转换另计，整机预算未闭。64MP60官方数据冲突保留；10Hz点云不可伪造50Hz新扫描，时间戳分辨率不等于同步精度。原光窗/安装/FOV/延迟和净6D足量程仍红。
+
+root核冻结输出身份与子集算术。功能研究绑定的旧current_decisions观察在root更新后按实际明文编辑逆变换恢复，精确SHA6278c395…；另保存重构receipt，不冒充作者当时私有复制、不覆盖活canonical。原厂网页与下载出版物仅保存事实/链接/身份，不随Git保存全文。所选实际源及生产器为复现输入；restore验证字节不等于完整Blender环境、生成链或物理重播。
+
+G27以全身比例、骨盆/关节连续接口、完整短包、主动风液路和感知模块共同建立新版骨架与包装。实际允许的承力、运动、热和服务空域逐块分配，不能空皮或假填充；拓扑只用于有载荷与合法三维域的材料分配。当前没有整机质量/COM/惯量、审美候选采用、持续驱动/热、行走抓持或自主Bevy任务放行，长期完整目标与10小时检查点继续。
+''')
+outs=[dict(path=p.name,sha256=sha(p),bytes=p.stat().st_size) for p in root.iterdir() if p.is_file() and p.name!='freeze_manifest.json']
+(root/'freeze_manifest.json').write_text(json.dumps(dict(robot_id='gorilla_v0_1',design_revision='gorilla_v0_2',frozen_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),inputs=inputs,outputs=outs,physics_accepted=False),indent=2)+'\n')
+
+text=(R/'.scratch/preserve_gorilla_g25.py').read_text().replace('G25','G26').replace('g25','g26')
+start=text.index('ROOTS={');end=text.index('\nHASH_KEYS',start)
+text=text[:start]+"ROOTS={\n 'native_lower_inventory':R/'.scratch/gorilla_internal_g26_v0_2_lower_source_inventory',\n 'whole_body_functions':R/'.scratch/gorilla_internal_g26_whole_body_function_budget',\n 'perception_modules':R/'.scratch/gorilla_internal_g26_perception_modules',\n 'root_assembly':R/'.scratch/gorilla_internal_g26_root_review',\n}\n"+text[end:]
+text=text.replace('internal_structure_g26_forced_air_and_liquid_cooling','internal_structure_g26_v0_2_source_and_functions')
+text=text.replace("HASH_KEYS=('sha256_expected','sha256','SHA256','sha','SHA')","HASH_KEYS=('sha256_expected','sha256','captured_sha256','original_sha256_at_freeze','SHA256','sha','SHA')")
+# Frozen observed/input aliases are checked instead of changed live canonical or source endpoints.
+text=text.replace("p=resolve(raw,d)\n    if k=='sources'", "p=resolve(raw,d)\n    candidate=next((R/a['bound_exact_bytes_path'] for a in ALIASES if a['referenced_path']==raw and a['sha256']==h),None)\n    if candidate is not None:p=candidate\n    if k=='sources'")
+text=text.replace("HASH_KEYS=(", "ALIASES=json.loads((ROOTS['root_assembly']/'input_aliases.json').read_text())\nHASH_KEYS=(",1)
+text=text.replace("if row.get('captured')", "if row.get('captured')")
+# Lower author's output list includes captured original inputs; no helper from the older CAD pipeline is needed.
+i=text.index(' # Exact finite material/helper inputs');j=text.index('\n return m',i);text=text[:i]+text[j:]
+# Limit immutable stored block size while preserving full source bytes and original input identity.
+old="  if len(encoded)>=100000000:raise RuntimeError('Single stored artifact >=100MB; explicit chunk scheme needed, not silently truncate: '+original)"
+new="""  if len(encoded)>=45000000:
+   chunks=[]
+   for n,off in enumerate(range(0,len(data),32000000)):
+    raw_chunk=data[off:off+32000000];packed=gzip.compress(raw_chunk,mtime=0)
+    cp=Path(str(dest)+'.chunk_%03d.gz'%n);pp=O/cp;pp.parent.mkdir(parents=True,exist_ok=True);pp.write_bytes(packed)
+    chunks.append({'stored_path':str(cp),'stored_sha256':sha(packed),'stored_bytes':len(packed),'original_chunk_bytes':len(raw_chunk),'original_chunk_sha256':sha(raw_chunk)})
+   files.append({'original_path':original,'original_sha256':h,'original_bytes':len(data),'encoding':'gzip_chunks','storage_chunks':chunks});continue"""
+if old not in text:raise RuntimeError('Chunk substitution not matched')
+text=text.replace(old,new)
+text=text.replace("'scope':'G26 user-authorized front-intake/rear-pad-side forced-air architecture: two actual duct/armor-opening candidates, source-bound pressure/flow sensitivities, advanced liquid-cooling research and official active blower curve facts. Original vendor publications and screenshots excluded. Installation/continuous heat/aesthetic adoption remain false; V0.2 wholebody next.'", "'scope':'G26 exact normalized V0.2 lower source, complete whole-body function architecture comparison, source-backed perception facts/contracts and root review. Formal refined package pending; SI/install/physical/aesthetic qualification false.'")
+(R/'.scratch/preserve_gorilla_g26.py').write_text(text)
+print(json.dumps({'frozen_checks':len(checks),'input_aliases':len(aliases),'root_manifest_sha256':sha(root/'freeze_manifest.json')}))

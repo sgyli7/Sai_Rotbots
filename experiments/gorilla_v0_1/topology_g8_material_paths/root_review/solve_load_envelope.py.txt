@@ -1,0 +1,118 @@
+"""Linear 3D response of ALL original load cases from exact actual load columns.
+
+Column basis reduces solve count only, never projects or replaces external loads.
+Free-body gauge eliminates rigid modes and must produce negligible reactions.
+Generic traction, uniform elastic material and prescribed reaction allocation
+remain assumptions: no contact, yield, buckling, fatigue or robot qualification.
+"""
+from pathlib import Path
+import argparse, hashlib, importlib.util, json, sys, time
+import numpy as np
+from scipy.sparse import diags
+from scipy.sparse.linalg import cg
+from scipy.linalg import qr
+
+OUT = Path(__file__).resolve().parent
+ROOT = OUT.parents[1]
+sys.path.insert(0, str(ROOT/'.scratch/gorilla_topology_runtime'))
+import pyamg
+P1PATH = ROOT/'.scratch/gorilla_internal_g6_root_fem/verify_tet_elasticity.py'
+spec = importlib.util.spec_from_file_location('verified_p1', P1PATH)
+p1 = importlib.util.module_from_spec(spec); spec.loader.exec_module(p1)
+sha = lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def event(what, **values): print(json.dumps(dict(EVENT=what, **values)), flush=True)
+def vm_of(stress):
+    xx,yy,zz,xy,yz,zx=stress.T
+    return np.sqrt(.5*((xx-yy)**2+(yy-zz)**2+(zz-xx)**2)+3*(xy*xy+yz*yz+zx*zx))
+
+def main():
+    ap=argparse.ArgumentParser()
+    for name in ['name','mesh','cad','loads','load-report','admission']:
+        ap.add_argument('--'+name,required=True)
+    a=ap.parse_args(); start=time.monotonic()
+    meshpath, cadpath, loadpath = map(Path,[a.mesh,a.cad,a.loads])
+    loadreport=json.loads(Path(a.load_report).read_text())
+    admission=json.loads(Path(a.admission).read_text())
+    assert admission['structural_FE_admissible'] is True
+    assert admission['mesh_sha256']==sha(meshpath)==loadreport['mesh_sha256']
+    assert loadreport['CAD_source_sha256']==sha(cadpath)
+    # Report binds actual face groups; assert those bytes have not changed.
+    assert sha(loadreport['physicalgroup_report_path'])==loadreport['physicalgroup_report_sha256']
+    mesh, loads = np.load(meshpath), np.load(loadpath)
+    nodes,cells=mesh['points_m'],mesh['tetra']
+    allF=loads['F_xyz_N_cases'].reshape((3*len(nodes),-1))
+    basisF=loads['basis_F_xyz_N_cases'].reshape((3*len(nodes),-1))
+    coeff=loads['original_case_coefficients']; indices=loads['basis_case_indices']
+    assert allF.shape[1]==42 and coeff.shape==(basisF.shape[1],42)
+    assert np.array_equal(basisF,allF[:,indices])
+    reconstruction=basisF@coeff-allF
+    reconstruct_rel=float(np.linalg.norm(reconstruction)/np.linalg.norm(allF))
+    assert reconstruct_rel<1e-12
+    del reconstruction
+    event('assemble',name=a.name,nodes=len(nodes),tets=len(cells),actual_cases=42,actual_basis_cases=indices.tolist())
+    K,volumes,B,D,dofs,_=p1.assemble(nodes,cells)
+    rigid,centre,length=p1.rigid_matrix(nodes)
+    _,_,pivots=qr(rigid.T,pivoting=True,mode='economic');fixed=pivots[:6]
+    assert np.linalg.matrix_rank(rigid[fixed])==6
+    mask=np.ones(K.shape[0]);mask[fixed]=0;P=diags(mask)
+    A=(P@K@P+diags((1-mask)*float(np.median(K.diagonal())))).tobsr(blocksize=(3,3))
+    near_null=rigid.copy();near_null[fixed]=0
+    event('amg_setup',name=a.name,nonzeros=K.nnz)
+    ml=pyamg.smoothed_aggregation_solver(A,B=near_null,symmetry='symmetric',
+        smooth=('jacobi',{'omega':4/3}),presmoother=('block_gauss_seidel',{'sweep':'symmetric'}),
+        postsmoother=('block_gauss_seidel',{'sweep':'symmetric'}),max_coarse=100,coarse_solver='pinv')
+    M=ml.aspreconditioner(cycle='V')
+    lump=np.bincount(cells.ravel(),weights=np.repeat(volumes/4,4),minlength=len(nodes))
+    weights=np.repeat(lump/lump.sum(),3);gram=(rigid.T*weights)@rigid
+    U=np.zeros_like(basisF);STRESS=np.zeros((len(cells),6,basisF.shape[1]))
+    basis_receipts=[]
+    for j,original_index in enumerate(indices):
+        F=basisF[:,j]
+        balance=float(np.linalg.norm(rigid.T@F)/(np.linalg.norm(F)+1e-30))
+        if balance>1e-8:raise ValueError('Literal load unbalanced; no force projection allowed')
+        begin=time.monotonic();count=[0]
+        def callback(u):
+            count[0]+=1
+            if count[0]%40==0:event('solve_progress',name=a.name,basis=j,case=int(original_index),iteration=count[0],seconds=time.monotonic()-begin)
+            if time.monotonic()-begin>300:raise TimeoutError('300s actual basis solve timebox')
+        u,info=cg(A,F*mask,M=M,rtol=1e-9,atol=0,maxiter=2000,callback=callback)
+        residual=K@u-F;rel=float(np.linalg.norm(residual)/np.linalg.norm(F))
+        reaction=float(abs(residual[fixed]).max())
+        if info!=0 or rel>1e-7 or reaction>1e-4:raise ValueError('Numerical solve/gauge rejection')
+        U[:,j]=u-rigid@np.linalg.solve(gram,(rigid.T*weights)@u)
+        STRESS[:,:,j]=np.einsum('eij,ej->ei',B,u[dofs])@D.T
+        receipt=dict(original_case_index=int(original_index),iterations=count[0],CG_info=int(info),
+                     normalized_load_balance=balance,original_K_relative_residual=rel,
+                     gauge_reaction_max_N=reaction,seconds=time.monotonic()-begin)
+        basis_receipts.append(receipt);event('basis_complete',name=a.name,**receipt)
+    # All original rows are evaluated, including both load factors and every CoP.
+    G=U.T@(K@U);case_rows=[]
+    for j,metadata in enumerate(loadreport['case_reports']):
+        assert metadata['case_index']==j
+        alpha=coeff[:,j];u=U@alpha
+        stress=np.einsum('eij,j->ei',STRESS,alpha);vm=vm_of(stress)
+        C=float(allF[:,j]@u);energy2=float(alpha@G@alpha)
+        result=dict(case_index=j,q_deg=metadata['q_deg'],load_factor=metadata['load_factor'],
+                    CoP_world_m=metadata['CoP_world_m'],mode=metadata['mode'],compliance_J=C,
+                    twice_strain_energy_J=energy2,energy_relative_error=abs(energy2-C)/(abs(C)+1e-30),
+                    rigid_removed_max_displacement_m=float(np.linalg.norm(u.reshape((-1,3)),axis=1).max()),
+                    element_VM_max_diagnostic_Pa=float(vm.max()),VM_p99_diagnostic_Pa=float(np.quantile(vm,.99)),
+                    maximum_VM_tetra_index=int(vm.argmax()),maximum_VM_centroid_m=nodes[cells[int(vm.argmax())]].mean(axis=0).tolist())
+        assert result['energy_relative_error']<1e-7
+        case_rows.append(result)
+    fieldpath=OUT/(a.name+'_basis_fields.npz')
+    np.savez_compressed(fieldpath,U_m=U.reshape((len(nodes),3,-1)),element_stress_Pa=STRESS,
+                       basis_case_indices=indices,original_case_coefficients=coeff)
+    report=dict(robot_id='gorilla_v0_1',name=a.name,scope=__doc__.strip(),
+                mesh_sha256=sha(meshpath),CAD_brep_sha256=sha(cadpath),load_array_sha256=sha(loadpath),
+                load_report_sha256=sha(a.load_report),mesh_admission_sha256=sha(a.admission),
+                producer_sha256=sha(__file__),verified_P1_assembler_sha256=sha(P1PATH),basis_fields_sha256=sha(fieldpath),
+                E_Pa=210e9,nu=.3,density_kg_m3=7850,actual_case_count=42,basis_case_count=len(indices),
+                actual_force_reconstruction_relative_error=reconstruct_rel,basis_receipts=basis_receipts,cases=case_rows,
+                force_projection_performed=False,gauge_is_not_support=True,gravity_dynamics_contact_fatigue_included=False,
+                stress_mesh_convergence_proven=False,topology_optimization_executed=False,
+                physical_or_whole_robot_accepted=False,elapsed_seconds=time.monotonic()-start)
+    (OUT/(a.name+'_envelope_baseline.json')).write_text(json.dumps(report,indent=2)+'\n')
+    event('complete',name=a.name,case_count=42,basis_count=len(indices),elapsed_seconds=report['elapsed_seconds'],
+          worst_compliance_J=max(r['compliance_J'] for r in case_rows),worst_VM_diagnostic_MPa=max(r['element_VM_max_diagnostic_Pa'] for r in case_rows)/1e6)
+if __name__=='__main__':main()

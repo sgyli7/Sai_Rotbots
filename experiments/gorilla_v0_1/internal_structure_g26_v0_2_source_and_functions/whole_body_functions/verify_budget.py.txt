@@ -1,0 +1,44 @@
+from pathlib import Path
+from collections import Counter
+import json,gzip,hashlib,math
+O=Path(__file__).resolve().parent
+D=json.loads((O/'function_budget.json').read_text())
+def sha(p):
+ h=hashlib.sha256()
+ with Path(p).open('rb')as f:
+  for b in iter(lambda:f.read(2**20),b''):h.update(b)
+ return h.hexdigest()
+errors=[];checks=[]
+def ck(k,v,actual=None):
+ checks.append({'check':k,'pass':bool(v),'actual':actual})
+ if not v:errors.append(k)
+for k,b in D['inputs'].items():ck('input_identity_'+k,sha(b['path'])==b['sha256'])
+w=json.loads(gzip.decompress(Path(D['inputs']['legacy_whole_function_context']['path']).read_bytes()));ps={p['name']:p for p in w['parts']}
+a=[i for b in D['current_exact_source_function_groups']for i in b['exact_source_ids']]
+ck('unique_once_all3072',len(a)==len(set(a))==len(ps)==3072 and set(a)==set(ps))
+meta=[r for a in D['current_member_metadata_by_group'].values()for r in a]
+ck('member_metadata_once',len(meta)==len({r['id']for r in meta})==3072)
+ck('exact_source_owner_and_literal_mass',all(r['source_owner']==ps[r['id']].get('body')and r['reference_mass_range_kg_literal']==ps[r['id']].get('mass_range_kg')for r in meta))
+missing=w['source_dynamic_owner_missing_tree'];flagged=[r['id']for r in meta if r['source_dynamic_owner_missing_tree']]
+ck('unknown_owner_scope_preserved',set(flagged)=={n for n,p in ps.items()if p.get('body')in missing},{'owner_names':len(missing),'affected_source_pieces':len(flagged)})
+fullgroups=D['source_group_scope_receipt']['energy_complete_modules_by_actual_g24_complete_group']
+for k,ids in fullgroups.items():
+ orig=[n for n,p in ps.items()if p.get('g24_complete_group')==k]
+ ck('exact_complete_group_'+k,len(ids)==len(set(ids))==262 and set(ids)==set(orig))
+ ck('cells180_'+k,sum('_cell_'in n for n in ids)==180)
+ct=Counter(r['function']for r in D['current_hydraulic_complete_control_groups']);ck('historical_valves18plus18',ct=={'holding':18,'directional':18},dict(ct))
+for row in D['energy_integer_topology_comparison']:
+ M=row['modules'];Ns,Np=row['per_module_series_parallel'];nx,nz=row['cell_grid_XZ'];grid={(x,z)for x in range(nx)for z in range(nz)}
+ groupmap=Counter((x//5,z//2)for x,z in grid)
+ ck(row['id']+'_integer_groups',len(grid)==Ns*Np and len(groupmap)==Ns and set(groupmap.values())=={10})
+ ck(row['id']+'_same72s10p720',M*Ns==72 and M*len(grid)==720)
+ dims=[.02155+(nx-1)*.0225,.07015,.02155+(nz-1)*.0225]
+ ck(row['id']+'_cell_array_only_dimension',max(abs(a-b)for a,b in zip(dims,row['minimum_cell_array_XYZ_not_full_package_m']))<1e-12)
+ ck(row['id']+'_energy_and_unknown_mass',row['minimum_cell_energy_wh_total']==M*Ns*Np*15.5 and row['cell_mass_lower_nominal_upper_kg'][:2]==[None,None] and abs(row['cell_mass_lower_nominal_upper_kg'][2]-720*.07)<1e-12)
+ ck(row['id']+'_all_aux_and_links',row['BMS_protection_coldplate_vent_mount_sets']==M and row['module_HV_poles']==2*M and row['series_external_links']==M-1 and row['local_sense_inputs_total']==M*(Ns+1))
+ck('no_new_metric_or_whole_rating',D['source_scope']['metric_scale_s_m_per_unit']is None and D['whole_M_COM_I']is None and not D['physical_acceptance']and not D['architecture_selected']and D['qualified_retirement_mass_credit']==0)
+low=json.loads(Path(D['inputs']['actual_lower_scene']['path']).read_text());lo,hi=low['lower_bounds_world_normalized'];dims=[b-a for a,b in zip(lo,hi)]
+ck('actual_lower_normalized_bounds',dims==D['source_scope']['actual_normalized_lower_dimensions_XYZ'],dims)
+report={'method':'Independent metadata/identity/integer arithmetic only; imports no producer functions; no geometry or force rating test','input_report_sha256':sha(O/'function_budget.json'),'checks':checks,'failures':errors,'checks_count':len(checks),'failure_count':len(errors),'whole_M_COM_I':None,'physical_acceptance':False}
+(O/'verification.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps({'checks':len(checks),'errors':errors,'unknown_owners':len(missing),'affected_pieces':len(flagged)}))
+assert not errors

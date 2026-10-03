@@ -1,0 +1,29 @@
+from pathlib import Path
+import json,sys,hashlib,time,collections
+import numpy as np,trimesh as tm,manifold3d as mf
+O=Path(__file__).resolve().parent;sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();name=sys.argv[1] if len(sys.argv)>1 else 'a';sp=O/f'candidate_{name}_scene.json';d=json.loads(sp.read_text());parts=d['parts'];armor=d['original_armor_comparator'];PM={p['name']:p for p in parts+armor};materialroles={'finite_module_material','finite_frame_material','finite_actuator_material','finite_pin_material','bearing_rolling_element_reference'}
+def mesh(p):return tm.Trimesh(p['vertices_world_m'],[[f[0],f[j],f[j+1]] for f in p['faces'] for j in range(1,len(f)-1)],process=False)
+mm={p['name']:mesh(p) for p in parts+armor};ids=list(mm);lo=np.array([mm[n].bounds[0] for n in ids]);hi=np.array([mm[n].bounds[1] for n in ids]);seen=set();hits=[];errors=[];tests=0
+for p in parts:
+ n=p['name'];a=mm[n];sel=np.where(np.all(np.minimum(a.bounds[1],hi)-np.maximum(a.bounds[0],lo)>1e-6,axis=1))[0]
+ for kk in sel:
+  other=ids[kk];q=PM[other]
+  if other==n or q.get('role') not in ['armor_cover','armor_surface'] and p.get('body')==q.get('body'):continue
+  pair=tuple(sorted([n,other]))
+  if pair in seen:continue
+  seen.add(pair);tests+=1
+  try:v=float(tm.boolean.intersection([a,mm[other]],engine='manifold').volume)
+  except Exception as e:errors.append({'a':n,'b':other,'error':str(e)});continue
+  if v>1e-9:hits.append({'a':n,'owner_a':p.get('body'),'role_a':p.get('role'),'b':other,'owner_b':q.get('body'),'role_b':q.get('role'),'positive_volume_m3':v,'armor':q['role'] in ['armor_cover','armor_surface'],'true_finite_material_pair':p.get('role') in materialroles and q.get('role') in materialroles,'reference_envelope_involved':p.get('role')=='complete_component_reference' or q.get('role')=='complete_component_reference','hydraulic_context_involved':p.get('retained_actuation_context_challenge',False) or q.get('retained_actuation_context_challenge',False)})
+# Volume includes all signed cavity boundaries; connectivity counts positive outer shells only. Never count an inner cavity as a disconnected member.
+owners=collections.defaultdict(list);refs=[]
+for p in parts:
+ if p['role'] in materialroles:owners[p['body']].append(p['name'])
+ elif p['role']=='complete_component_reference':refs.append({'id':p['name'],'source_id':p.get('F1_source_part_id'),'owner':p['body'],'mass_range_kg':p['mass_range_kg'],'source_scope':'complete unscaled component ref mass once; true installed COM/inertia/interface unknown'})
+ledger=[];net=0.
+for body,ns in owners.items():
+ u=tm.boolean.union([mm[n] for n in ns],engine='manifold');man=mf.Manifold(mf.Mesh(vert_properties=np.array(u.vertices,dtype=np.float32),tri_verts=np.array(u.faces,dtype=np.uint32)));comp=man.decompose();pos=[c for c in comp if c.volume()>1e-10];neg=[c for c in comp if c.volume()<-1e-10];v=float(man.volume());net+=v*7850
+ ledger.append({'owner':body,'member_ids':ns,'net_signed_material_volume_m3':v,'density_assumption_kg_m3':7850,'net_material_mass_kg':v*7850,'positive_outer_surface_components':len(pos),'negative_inner_cavity_shells_not_counted_as_disconnected_members':len(neg),'expected_separate_rolling_elements':body.endswith('_rolling_elements'),'connected_outer_material_not_proof_of_qualified_joint_assembly':True,'union_mesh_sha256':hashlib.sha256(u.vertices.tobytes()+u.faces.tobytes()).hexdigest()})
+by=collections.defaultdict(lambda:[0,0.])
+for h in hits:by[(h['owner_a'],h['owner_b'],h['armor'])][0]+=1;by[(h['owner_a'],h['owner_b'],h['armor'])][1]+=h['positive_volume_m3']
+summary={'schema':'gorilla_f2_stack_neutral_geometry_screen_v1','scene_sha256':sha(sp),'actual_boolean_tests':tests,'positive_pairs':hits,'positive_pair_count':len(hits),'different_owner_true_finite_material_pairs':sum(h['true_finite_material_pair'] for h in hits),'original_armor_pairs':sum(h['armor'] for h in hits),'hydraulic_context_pairs':sum(h['hydraulic_context_involved'] for h in hits),'reference_envelope_pair_scope_is_not_actual_OEM_material':True,'errors':errors,'largest_owner_pair_groups':sorted([{'owner_a':k[0],'owner_b':k[1],'armor':k[2],'pair_count':v[0],'pair_volume_sum_m3':v[1]} for k,v in by.items()],key=lambda r:-r['pair_volume_sum_m3'])[:15],'same_owner_material_is_counted_by_net_union_not_hidden_as_connection_proof':True,'own_union_mass_rows':ledger,'source_component_mass_rows':refs,'net_own_material_mass_kg':net,'source_component_reference_mass_range_kg':np.sum([r['mass_range_kg'] for r in refs],axis=0).tolist(),'sum_is_only_this_module_plus8context_not_whole_robot_mass':True,'no_E2_union_mass_rows_inherited':True,'geometry_accepted':False,'physics_accepted':False,'installed_module':False};(O/f'candidate_{name}_neutral_screen.json').write_text(json.dumps(summary,indent=2)+'\n');print(name,'material',summary['different_owner_true_finite_material_pairs'],'armor',summary['original_armor_pairs'],'all',len(hits),'netkg',net,'errors',len(errors),flush=True)

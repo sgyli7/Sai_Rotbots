@@ -1,0 +1,43 @@
+from pathlib import Path
+import json,hashlib,sys
+import numpy as np
+from PIL import Image,ImageDraw,ImageFont
+import trimesh as tm
+import manifold3d as mf
+R=Path('/home/ethan/Projects/Sai_Rotbots');O=Path(__file__).resolve().parent;assert O.name=='gorilla_internal_g3_waist_input'
+sys.path.insert(0,str(R/'.scratch/gorilla_internal_g_material_contract'));from native_signed_material import kernel
+d=json.loads((O/'scene.json').read_text());sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();B=np.array(d['local_axis_contract']['B_case_input_face_world_m'])
+font=lambda n:ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',n)
+out={};span=.340;side=540;ppm=side/span;orig=[(45,100),(650,100),(45,730),(650,730)];views=[('AXIAL +X',[1,2],[1,0,0]),('SIDE +Y',[0,2],[0,1,0]),('AXIAL -X',[1,2],[-1,0,0]),('TOP +Z',[0,1],[0,0,1])]
+for include,label in [(False,'finite_material'),(True,'complete_reference_context')]:
+ parts=d['parts']+(d['complete_OEM_reference_context'] if include else []);im=Image.new('RGB',(1250,1355),'white');dr=ImageDraw.Draw(im)
+ dr.text((40,18),'GORILLA G3 ROLL INPUT | '+label.upper(),font=font(23),fill=(30,45,58));dr.text((40,52),'Actual native triangles. Fixed / input / bearing / brake paths; conditional interfaces. No installation acceptance.',font=font(14),fill=(141,46,38))
+ for i,(title,idx,dep) in enumerate(views):
+  ox,oy=orig[i];dr.text((ox,oy-25),title,font=font(18),fill=(25,45,60));alltri=[];alls=[];cols=[]
+  for p in parts:
+   vv=np.asarray(p['vertices_world_m'])-B;f=np.asarray(p['faces']);t=vv[f];n=np.cross(t[:,1]-t[:,0],t[:,2]-t[:,0]);nn=np.linalg.norm(n,axis=1);uv=t[:,:,idx].copy()
+   if i in [1,3]:uv[:,:,0]+=.04
+   uv[:,:,0]=ox+(uv[:,:,0]+span/2)*ppm;uv[:,:,1]=oy+(span/2-uv[:,:,1])*ppm;dd=np.asarray(dep);shade=.64+.36*np.abs(n@dd/np.maximum(nn,1e-12));rgb=np.asarray(p.get('rgba',[.65,.65,.65,1])[:3])*255
+   alltri.append(uv);alls.append(np.mean(t@dd,axis=1));cols.append(np.clip(shade[:,None]*rgb,0,255).astype('uint8'))
+  tri=np.concatenate(alltri);z=np.concatenate(alls);c=np.concatenate(cols)
+  for j in np.argsort(z):dr.polygon([tuple(x) for x in tri[j]],fill=tuple(c[j]))
+  dr.rectangle((ox,oy,ox+side,oy+side),outline=(145,160,173),width=1)
+ dr.text((40,1320),f'Same {ppm:.6f} px/m. Local module only; OEM internals not reproduced. All source collision pairs retained.',font=font(15),fill=(60,80,96));p=O/(label+'_native_four_view.png');im.save(p);out[p.name]=sha(p)
+# Exact native material intersection with the local radial plane, not a hand-drawn mechanism.
+im=Image.new('RGB',(1450,840),'white');dr=ImageDraw.Draw(im);dr.text((40,18),'GORILLA G3 | NATIVE AXIAL SECTION v=0',font=font(25),fill=(25,45,58));dr.text((40,52),'True candidate material polygons; complete OEM gross references outlined, internal solid material unknown.',font=font(16),fill=(132,44,36));pp=3300;ox=810;oy=430
+for p in d['parts']:
+ v=np.asarray(p['vertices_world_m'])-B;v=v[:,[0,1,2]];m=kernel(v,p['faces']);polys=m.slice(0).to_polygons()
+ layer=Image.new('RGBA',im.size,(0,0,0,0));ld=ImageDraw.Draw(layer);ordered=[]
+ for polygon in polys:
+  aa=np.asarray(polygon);signed=.5*np.sum(aa[:,0]*np.roll(aa[:,1],-1)-np.roll(aa[:,0],-1)*aa[:,1]);ordered.append((signed,aa))
+ for signed,aa in sorted(ordered,key=lambda x:-x[0]):
+  coords=[(ox+x*pp,oy-y*pp) for x,y in aa];col=tuple((np.array(p['rgba'][:3])*255).astype(int))+(255,) if signed>0 else (0,0,0,0);ld.polygon(coords,fill=col)
+ im.paste(layer,(0,0),layer)
+ dr=ImageDraw.Draw(im)
+for ref in d['complete_OEM_reference_context']:
+ v=np.asarray(ref['vertices_world_m'])-B;polys=kernel(v,ref['faces']).slice(0).to_polygons()
+ for poly in polys:
+  coords=[(ox+x*pp,oy-y*pp) for x,y in np.asarray(poly)];dr.line(coords+[coords[0]],fill=(35,142,99),width=3)
+dr.line((40,oy,1360,oy),fill=(75,100,119),width=1);dr.line((ox,95,ox,745),fill=(40,90,125),width=1);dr.text((ox+8,95),'B face q=0',font=font(17),fill=(25,55,90));dr.text((ox+425,110),'A small-PCD plane q=84 mm (conditional)' ,font=font(16),fill=(25,55,90))
+dr.text((45,780),'Blade / bonding / input bearing / brake / encoder are finite conditional geometry. NO OEM interface or continuous-duty approval.',font=font(15),fill=(125,43,33));p=O/'axial_native_section.png';im.save(p);out[p.name]=sha(p)
+(O/'projection_manifest.json').write_text(json.dumps({'source_scene_sha256':sha(O/'scene.json'),'producer_sha256':sha(__file__),'outputs':out,'fourview_pixels_per_m':ppm,'section_pixels_per_m':pp,'native_material_section_axis_world':'Z=2.05 through input axis','all_geometry_and_aesthetic_acceptance':False},indent=2)+'\n');print('rendered',list(out),flush=True)

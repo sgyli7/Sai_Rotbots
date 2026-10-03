@@ -1,0 +1,75 @@
+#!/usr/bin/env python3
+"""Gorilla C2 constraints from recorded contact/drive LP witness, not corner maxima."""
+from pathlib import Path
+import json,hashlib,importlib.util,math
+import numpy as np
+ROOT=Path(__file__).resolve().parents[2];OUT=Path(__file__).resolve().parent
+ROBOT=ROOT/'robots/gorilla_v0_1'
+scene_path=ROBOT/'cad/source/internal_structure_c_scene.json';screen_path=ROBOT/'evidence/internal_structure_c_screen.json';spec_path=ROBOT/'configs/internal_structure_c_spec.json';geometry_path=ROBOT/'configs/appearance_c_spec.json'
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+scene=json.loads(scene_path.read_text());screen=json.loads(screen_path.read_text());spec=json.loads(spec_path.read_text());points=json.loads(geometry_path.read_text())['points_world_m']
+assert sha(scene_path)==screen['scene_sha256']=='e7281d2bf5ece116e6a88b8c8fc5e7c4c16c8e5ab230fb0ad3b9bd8427cac3bc'
+assert sha(spec_path)==screen['spec_sha256'];assert sha(geometry_path)==spec['geometry_spec_sha256']
+helper_path=ROOT/'scripts/evaluation/evaluate_gorilla_internal_structure.py';definition=importlib.util.spec_from_file_location('c2_pose',helper_path);h=importlib.util.module_from_spec(definition);definition.loader.exec_module(h)
+contacts=[]
+for p in scene['parts']:
+ if p['name'].endswith(('_composite_forepad','_composite_heel_pad')):
+  contacts.extend((p['body'],v) for v in np.asarray(p['vertices_world_m']) if abs(v[2])<1e-8)
+def rv(loads,origin):
+ f=sum((r['f'] for r in loads),np.zeros(3));m=sum((np.cross(r['p']-origin,r['f']) for r in loads),np.zeros(3));return f,m
+records=[];family_req={f:0. for f in ['hip','knee','fold','ankle']};all_witness_req=dict(family_req)
+for pose in screen['poses']:
+ parents,_=h.transforms(points,pose['angles_deg']);T={k:np.array(v) for k,v in pose['body_transforms'].items()}
+ pc=sorted({(b,tuple(np.round(h.transformed(T[b],v),12))) for b,v in contacts});bodies=[b for b,v in pc];vertices=np.array([v for b,v in pc])
+ assert np.allclose(vertices,np.array([x['position_world_m'] for x in pose['cases'][0]['double_normal_contact']['contacts']]),atol=1e-11)
+ for case in pose['cases']:
+  witness=next(x for x in case['contact_and_drive_hypotheses'] if x['speed_rad_s']==0 and x['efficiency_hypothesis']==.7 and x['motor_reference_factor']==.9)
+  reactions=np.array(witness['normal_reactions_at_actual_vertices_N']);factor=case['gravity_factor_sensitivity'];g=spec['gravity_m_s2'];loads=[{'body':r['body'],'p':h.transformed(T[r['body']],r['COM_world_m']),'f':np.array([0.,0.,-r['mass_range_kg'][1]*g*factor])} for r in screen['mass_rows']]
+  payload=case['payload_kg_hypothesis'];pressure=case['external_pressure_demand_kg']
+  for side in ('left','right'):
+   if payload:loads.append({'body':side+'_palm','p':h.transformed(T[side+'_palm'],points[side+'_palm']),'f':np.array([0.,0.,-payload/2*g*factor])})
+  if pressure:loads.append({'body':'torso','p':h.transformed(T['torso'],[0,0,2.45]),'f':np.array([0.,0.,-pressure*g*factor])})
+  F,M=rv(loads,np.zeros(3));assert np.linalg.norm(F+np.array([0,0,reactions.sum()]))<1e-5
+  assert np.linalg.norm(M+np.cross(vertices,np.array([0,0,1])) .T@reactions)<1e-5
+  jr=[]
+  for j in scene['joint_supports']:
+   distal=h.descendants(parents,j['output_body']);origin=h.transformed(T[j['parent_body']],j['center_world_m']);axis=T[j['parent_body']][:3,:3]@j['axis_world']
+   f,m=rv([r for r in loads if r['body'] in distal],origin);active=reactions*np.array([b in distal for b in bodies]);f=f+np.array([0,0,active.sum()]);m=m+np.cross(vertices-origin,np.array([0,0,1])).T@active;torque=float(m@axis);family=j['id'].split('_')[1]
+   cap=min(j['catalogue_gear_rated_Nm'],.7*j['ratio']*.9*j['catalogue_motor_Ts_Nm']);frac=abs(torque)/cap;all_witness_req[family]=max(all_witness_req[family],abs(torque))
+   if witness['feasible_under_contact_and_mapped_torque_hypotheses']:family_req[family]=max(family_req[family],abs(torque))
+   jr.append({'id':j['id'],'signed_pitch_torque_Nm_at_same_LP_witness':torque,'resultant_joint_force_N':f.tolist(),'off_axis_moment_Nm':(m-torque*axis).tolist(),'mapped_capacity_hypothesis_Nm':cap,'fraction':frac})
+  assert abs(max(x['fraction'] for x in jr)-witness['minimum_peak_mapped_capacity_fraction'])<1e-6
+  byside={side:float(sum(reactions[i] for i,b in enumerate(bodies) if b.startswith(side))) for side in ['left','right']}
+  records.append({'pose':pose['id'],'payload_kg':payload,'pressure_kg':pressure,'gravity_factor_sensitivity':factor,'recorded_LP_basis':{'speed_rad_s':0,'efficiency_hypothesis':.7,'motor_reference_factor':.9},'min_peak_mapped_capacity_fraction':witness['minimum_peak_mapped_capacity_fraction'],'recorded_contact_drive_hypotheses_feasible':witness['feasible_under_contact_and_mapped_torque_hypotheses'],'normal_only_equilibrium_valid':True,'reaction_per_side_N':byside,'reactions_at_actual_vertices_N':reactions.tolist(),'vertices_world_m':vertices.tolist(),'joint_witnesses':jr,'physics_accepted':False})
+# Candidate single-joint 2D pin-to-pin rods; no solid actuator body or fit proof.
+linear=[]
+upstream={'hip':None,'knee':'hip','fold':'knee','ankle':'fold'};parents_body={'hip':'pelvis','knee':'left_thigh','fold':'left_middle_shank','ankle':'left_distal_shank'};children={'hip':'left_thigh','knee':'left_middle_shank','fold':'left_distal_shank','ankle':'left_foot'}
+a_dist={'hip':.20,'knee':.28,'fold':.24,'ankle':.16};b_dist={'hip':.10,'knee':.11,'fold':.085,'ankle':.075}
+for family in ['hip','knee','fold','ankle']:
+ J=np.asarray(points['left_'+family]);up=np.array([0.,0.,1.]) if upstream[family] is None else np.asarray(points['left_'+upstream[family]])-J;up[1]=0;up=up/np.linalg.norm(up);A=J+a_dist[family]*up;B=J+[b_dist[family],0,0]
+ amin=min(x['angles_deg'][family] for x in screen['poses']);amax=max(x['angles_deg'][family] for x in screen['poses']);samples=[]
+ for angle in np.linspace(amin,amax,121):
+  R=h.rotation(J,float(angle));b=h.transformed(R,B);ell=np.linalg.norm(b-A);direction=(b-A)/ell;reff=float(direction@np.cross([0,1,0],b-J));samples.append({'angle_deg':float(angle),'length_m':float(ell),'signed_effective_arm_m':reff})
+ lens=[r['length_m'] for r in samples];arms=[abs(r['signed_effective_arm_m']) for r in samples];armmin=min(arms);needed=family_req[family]/armmin if armmin>1e-9 else None
+ linear.append({'family':family,'neutral_base_world_m':A.tolist(),'neutral_output_world_m':B.tolist(),'pivot_world_m':J.tolist(),'base_body':parents_body[family],'output_body':children[family],'axis_world':[0,1,0],'fixed_anchor_distance_m':a_dist[family],'crank_radius_m':b_dist[family],'angle_range_deg':[amin,amax],'sampled_pin_length_range_m':[min(lens),max(lens)],'minimum_sampled_required_stroke_m':max(lens)-min(lens),'minimum_sampled_effective_arm_m':armmin,'max_effective_arm_m':max(arms),'constant_family_LP_witness_torque_Nm_bound_for_feasible_cases':family_req[family],'required_push_pull_force_N_conservative_across_independent_angles':needed,'required_force_N_if_all_recorded_normal_LP_witness_cases_included':all_witness_req[family]/armmin if armmin>1e-9 else None,'sign_change_or_dead_center_sampled':min(r['signed_effective_arm_m'] for r in samples)<=0<=max(r['signed_effective_arm_m'] for r in samples),'neutral_and_sampled_links_inside_skin_proved':False,'full_actuator_eye_length_force_buckling_qualified':False,'samples':samples})
+# Pose-correlated rod force uses this exact same LP reaction vector; conservative
+# arm-min bound is separately labelled and is not a same-time operating demand.
+for link in linear:
+ J=np.asarray(link['pivot_world_m']);A=np.asarray(link['neutral_base_world_m']);B=np.asarray(link['neutral_output_world_m']);forces=[]
+ for record in records:
+  q=next(p['angles_deg'][link['family']] for p in screen['poses'] if p['id']==record['pose']);b=h.transformed(h.rotation(J,q),B);d=(b-A)/np.linalg.norm(b-A);arm=float(d@np.cross([0,1,0],b-J));vector=[]
+  for side in ['left','right']:
+   torque=next(j['signed_pitch_torque_Nm_at_same_LP_witness'] for j in record['joint_witnesses'] if j['id']==side+'_'+link['family']);vector.append({'side':side,'signed_actuator_extension_force_N_to_balance_external_pitch':-torque/arm})
+  forces.append({'pose':record['pose'],'payload_kg':record['payload_kg'],'pressure_kg':record['pressure_kg'],'gravity_factor':record['gravity_factor_sensitivity'],'effective_arm_m':arm,'same_LP_contact_drive_hypotheses_feasible':record['recorded_contact_drive_hypotheses_feasible'],'both_side_forces':vector})
+ link['pose_correlated_force_requirements_at_same_recorded_LP_witness']=forces
+ link['peak_abs_pose_correlated_force_N_only_feasible_cases']=max(abs(x['signed_actuator_extension_force_N_to_balance_external_pitch']) for f in forces if f['same_LP_contact_drive_hypotheses_feasible'] for x in f['both_side_forces'])
+context_categories={}
+for r in scene['context_module_probes']:
+ m=r['source_module'];category=m['category'];a=context_categories.setdefault(category,{'count':0,'mass_range_kg':[0.,0.,0.]});a['count']+=1
+ for i,value in enumerate(m['mass_range_kg']):a['mass_range_kg'][i]+=value
+replacement=scene['catalogue_constituent_and_auxiliary_rows'];replace_mass=[sum(x['mass_range_kg'][i] for x in replacement) for i in range(3)];remaining=[screen['conditional_mass_range_kg'][i]-replace_mass[i] for i in range(3)];masslimits=[{'total_mass_ceiling_kg_hypothesis':v,'eight_full_drive_and_transmission_block_nominal_mass_upper_bound_kg':v-remaining[1],'status':'No mass goal approved; arithmetic with unchanged remainder only. Recompute LP when actual masses/COM change.'} for v in [1800,2000,screen['conditional_mass_range_kg'][1]]]
+lever_force=[{'family':f,'feasible_LP_witness_torque_Nm':family_req[f],'force_per_effective_arm_N':{str(r):family_req[f]/r for r in [.05,.08,.10,.15]},'case_pose_correlation_preserved_in_records':True} for f in family_req]
+paths=[scene_path,screen_path,spec_path,geometry_path,helper_path,Path(__file__),OUT/'skin_sections.json',OUT/'component_probes.json'];inputhash={str(p.relative_to(ROOT)):sha(p) for p in paths}
+result={'robot_id':'gorilla_v0_1','candidate':'c2_macro_constraints','input_sha256':inputhash,'basis':'Recorded constrained minimax LP witness reactions, reconstructed same-load forces and moments. No unconstrained extreme reused as minimum demand. Feasible comparison still normal-only gravity with eight pitch axes; no full T-n/heat/friction/contact-pressure/holding/structure qualification.','same_LP_witness_cases':records,'family_peak_abs_torque_Nm_across_only_feasible_recorded_hypotheses':family_req,'family_peak_abs_torque_Nm_across_all_recorded_minimax_witnesses_including_rejected_drive_cases':all_witness_req,'independent_arm_force_sensitivity':lever_force,'candidate_2d_linear_links':linear,'mass_block_constraint':{'conditional_whole_mass_range_kg':screen['conditional_mass_range_kg'],'current_net_steel_kg':scene['steel_net_frame_mass_kg'],'current_gear_motor_kg':330.,'replaced_all_24_gear_motor_aux_rows_mass_range_kg':replace_mass,'unchanged_remainder_mass_range_kg_hypothesis':remaining,'inherited_context_categories':context_categories,'context_mass_is_not_a_goal_or_verified_limit':True,'remaining_51_A_reserves_kg':[sum(x['source_module']['mass_range_kg'][i] for x in scene['context_module_probes']) for i in range(3)],'ceilings':masslimits,'actual_new_carriers_or_frame_mass_delta_must_be_added':True},'route_constraints':{'direct_integrated_joint':{'torque':'Each full output must meet all simultaneously reconstructed case vectors plus separately derived dynamics. Do not replace vector by independent per-axis corner maxima.','geometry':'One same-source fixed housing/paired support/output flange/motor/reducer/brake/encoder/seals/cable and cooling module; actual inner-skin collision check includes complete axial stack.','serial_carrier':'Hip yaw/roll and shoulder multiaxis require true serial intermediate moving bodies and reaction paths; eight pitch components do not constitute whole robot.'},'proximal_offset_rotary':{'transmission_force':'Tangential force=tau_output/r_output; branch capacity/load sharing not automatically 50/50.','speed_torque':'N_total=N_reducer*N_remote; tau_motor=tau_joint/(eta_reducer*eta_remote*N_total); omega_motor=N_total*omega_joint.','geometry':'Keep actual joint output shaft/bearings/brake and proximal complete motor/reducer; model gear/belt/shaft full swept path and tension/preload/spacing reaction into carrier. Remote drive does not remove output support or create free torso volume.','series_crossing':'Transmission crossing upstream axes needs explicit orientation invariant routing or Jacobian coupling; same body label is insufficient.'},'linear_or_linkage':{'jacobian':'tau=J_length^T*f; each candidate here is single joint parent/child and |dL/dq|. Coupled paths require full matrix at every pose.','force_stroke':'F >= |tau|/|dL/dq| with force-speed/duty/tension/compression limits. |dL/dq| approaching zero rejects; eye length/stroke/mounts/rod buckling/end stop/cable or hose bend remain unknown.','shell':'Line segment is not actuator package; body/rod/clevis plus fixed and moving mounts need actual volume and continuous sweep check.'}},'minimum_next_native_candidate':'One full left hip-knee-fold-ankle leg with real serial hip yaw/roll carrier reserves, thin C15 armor, fixed/output supports and selected complete drive path, plus knee direct vs proximal-offset vs rod alternatives under same axis/load case and explicit torso/shoulder/waist/arms energy-thermal-drive occupancy ledger with serial intermediate carriers. Do not simply retain or scale-delete the 51 old A reserves. Duplicate only after native interfaces and full-pose shell sweep; keep AA3 authority.','OEM_or_new_capacity_accepted':False,'geometry_accepted':False,'physics_accepted':False,'AA3_external_change_necessity_proved':False}
+(OUT/'c2_macro_constraints.json').write_text(json.dumps(result,indent=2,allow_nan=False)+'\n')
+print(json.dumps({'feasible_witness_max_torque':family_req,'all_minimax_witness_max_torque':all_witness_req,'linear_summary':[{k:r[k] for k in ['family','sampled_pin_length_range_m','minimum_sampled_required_stroke_m','minimum_sampled_effective_arm_m','required_push_pull_force_N_conservative_across_independent_angles','sign_change_or_dead_center_sampled']} for r in linear],'mass_limits':masslimits},indent=2))

@@ -1,0 +1,36 @@
+"""Independent SI conservation/inventory checks; no producer import or physics release."""
+from pathlib import Path
+import json,hashlib,math
+R=Path('/home/ethan/Projects/Sai_Rotbots');O=R/'.scratch/gorilla_internal_g11_functional_budget'
+d=json.loads((O/'functional_budget.json').read_text());checks=[]
+def check(name,observed,expected,tol=1e-9):
+ err=abs(observed-expected);checks.append({'check':name,'observed':observed,'expected':expected,'absolute_error':err,'accepted_numerical_arithmetic_only':err<=tol*max(1,abs(expected))})
+f=d['source_facts'];fam=f['dry633_families'];check('conditional_scope633_rows',sum(v['row_count'] for v in fam.values()),633)
+ids=[x for v in fam.values() for x in v['row_ids']];check('scope_rows_unique',len(set(ids)),633)
+for j in range(3):check('family_mass_same_scope_'+str(j),sum(v['mass_range_kg'][j] for v in fam.values()),f['conditional_dry_subset_mass_range_kg'][j])
+g=f['nine_complete_groups'];check('full_groups',len(g),9);check('complete_members',len([x for q in g for x in q['complete_member_ids']]),33)
+for s in d['two_conditional_macro_choices']:
+ key=s['id'];check(key+'_duty_sum',sum(s['duties']),1)
+ for j,(p,q,b,h,r) in enumerate(zip(s['phase_hydraulic_p_MPa'],s['phase_Q_L_min'],s['phase_bus_demand_kW'],s['phase_hold_input_kW'],s['phase_rotary_mechanical_kW'])):
+  hydraulic_W=(p*1e6)*(q*1e-3/60)
+  check(key+'_hydraulic_SI_'+str(j),hydraulic_W,s['phase_pump_outlet_hydraulic_kW'][j]*1000)
+  terminal=s['phase_battery_delivered_power_kW'][j];check(key+'_terminal_power_'+str(j),terminal*.98,b)
+  stored=s['phase_stored_energy_equivalent_input_power_kW'][j];check(key+'_stored_energy_draw_'+str(j),stored*.95,b)
+  useful=hydraulic_W/1000-s['phase_hydraulic_throttle_heat_kW'][j]+r
+  check(key+'_energy_conservation_heat_'+str(j),stored-useful,s['phase_conversion_and_aux_heat_kW'][j])
+ check(key+'_mission_integral_kWh',sum(p*t for p,t in zip(s['phase_bus_demand_kW'],s['duties']))*s['duration_h'],s['usable_energy_kWh'])
+ check(key+'_storage_window_energy',s['required_nameplate_energy_kWh']*.75*.95,s['usable_energy_kWh'])
+ cp=s['conditional_power_and_energy_sized_custom_pack'];n=cp['nominal_cell_count'];check(key+'_pack_minWh',cp['nominal_minimum_energy_kWh']*1000,n*15.5)
+ check(key+'_min_power_cell_current_bound',max(s['phase_battery_delivered_power_kW'])*1000/(n*2.5)<=18,True)
+ check(key+'_thermal_water_massflow',s['coolant_flow_L_min_for_peak_heat_at_10K']/60*4180*10,s['peak_conversion_and_aux_heat_kW']*1000)
+ check(key+'_thermal_air_massflow',s['airflow_m3_s_for_peak_heat_at_15K']*1.2*1005*15,s['peak_conversion_and_aux_heat_kW']*1000)
+a=d['two_conditional_macro_choices'][0];t=a['root_selected_next_layout_integer_topology_condition'];check('integer_total_cells',t['series']*t['parallel'],t['cells']);check('series_module_count',t['modules']*t['each_module_series'],t['series']);check('480energy',t['cells']*15.5/1000,t['minimum_nameplate_energy_kWh']);check('series_equiv_R',80*.015/6,t['source_typical15mOhm_series_parallel_equivalent_R_ohm'])
+for j in range(3):
+ check('KVL_power_'+str(j),t['phase_terminal_current_A_at200V'][j]*200/1000,a['phase_battery_delivered_power_kW'][j]);check('parallel_sharing_'+str(j),6*t['phase_cell_current_A_at200V'][j],t['phase_terminal_current_A_at200V'][j])
+check('480I2R200',max(t['phase_terminal_current_A_at200V'])**2*(80*.015/6)/1000,t['peak_cell_total_loss_kW_nominal288_or_loaded200V'][1])
+check('whole_mass_unclaimed',f['whole_robot_mass_COM_I'] is None,True);check('whole_acceptance_false',d['whole_robot_or_SI_or_Bevy_or_physical_accepted'],False)
+sourcecheck=[]
+for path,want in d['source_hashes'].items():
+ got=hashlib.sha256(Path(path).read_bytes()).hexdigest();sourcecheck.append({'path':path,'observed_sha256':got,'bound_sha256':want,'unchanged_at_review':got==want})
+r={'method':'independent direct SI power/energy conservation, full member identity and integer circuit arithmetic; no builder import','budget_sha256':hashlib.sha256((O/'functional_budget.json').read_bytes()).hexdigest(),'checks':checks,'source_hash_checks':sourcecheck,'failed_arithmetic_checks':sum(not x['accepted_numerical_arithmetic_only'] for x in checks),'changed_source_hashes':sum(not x['unchanged_at_review'] for x in sourcecheck),'rated_physics_or_pack_or_whole_robot_accepted':False}
+(O/'arithmetic_verification.json').write_text(json.dumps(r,indent=2)+'\n');print(r['failed_arithmetic_checks'],r['changed_source_hashes'],len(checks))

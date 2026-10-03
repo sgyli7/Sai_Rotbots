@@ -1,0 +1,865 @@
+{
+  "robot": "Gorilla V0.1",
+  "stage": "G19 hydraulic architecture research reset",
+  "created_utc": "2026-10-03T12:10:34.159894+00:00",
+  "producer_sha256": "51adeca2c067858aed14b6ab0ae8390a202009b9c27b581a70f37a6446ec93bc",
+  "source_hashes": {
+    "baseline_templates": {
+      "path": "/home/ethan/Projects/Sai_Rotbots/.scratch/gorilla_internal_f1_system/module_templates/module_templates_spec.json",
+      "sha256": "71a8589b3e91c2613d7b3c7d299e95a6bdb761db68e8656363a6f56aeafe96cf"
+    },
+    "baseline_flow": {
+      "path": "/home/ethan/Projects/Sai_Rotbots/.scratch/gorilla_internal_f1_system/flow_and_power.json",
+      "sha256": "db5a8af60c768e7b8f0709dbb04196cf5fa489ae2c6a6e232be939adf5006d3d"
+    },
+    "hsp12": {
+      "path": "/home/ethan/Projects/Sai_Rotbots/.scratch/gorilla_internal_g19_hydraulic_architecture/hydraforce_hsp12_47c.pdf",
+      "sha256": "128d6f24ad60bca6698cfcdbf8cacc30439e740bf458ec464d8b82bffffbec02"
+    },
+    "hsp10": {
+      "path": "/home/ethan/Projects/Sai_Rotbots/.scratch/gorilla_internal_g19_hydraulic_architecture/hydraforce_hsp10_47c.pdf",
+      "sha256": "5e67cc2ba57756a7ae0e692af6be706b2a768765eb61af7e0beeed333bf7a6f7"
+    },
+    "sp10": {
+      "path": "/home/ethan/Projects/Sai_Rotbots/.scratch/gorilla_internal_g19_hydraulic_architecture/hydraforce_sp10_47c_v2.pdf",
+      "sha256": "368f3c3ccbdfe783a7ce2285f4c9f5f3cd45fdae606b913a81a50f0579bdba9b"
+    },
+    "holding": {
+      "path": "/home/ethan/Projects/Sai_Rotbots/.scratch/gorilla_internal_g19_hydraulic_architecture/hydraforce_dual_counterbalance_18307_56.pdf",
+      "sha256": "38365d887ad088008fd168a00c6cc69f0a6837a9a398d73423ffe2187b78838c"
+    },
+    "coil_e": {
+      "path": "/home/ethan/Projects/Sai_Rotbots/.scratch/gorilla_internal_g19_hydraulic_architecture/hydraforce_coil10_e_2026.pdf",
+      "sha256": "eacfce2de2215c30bb42b462570d811be9168c224b5d25353cedca3d777a5fea"
+    },
+    "moog": {
+      "path": "/home/ethan/Projects/Sai_Rotbots/.scratch/gorilla_internal_g19_hydraulic_architecture/moog_epu_catalog.pdf",
+      "sha256": "150b310d9b32958c50976b39d1bec506a1ff95967db52767416f70223ebdf4de"
+    },
+    "g11_task": {
+      "path": "/home/ethan/Projects/Sai_Rotbots/.scratch/gorilla_internal_g11_functional_budget/functional_budget.json",
+      "sha256": "090b84b12d178e3ab0e580068fe787568348197e2fe4e54b4e35366ae82f3290"
+    },
+    "g18_previous": {
+      "path": "/home/ethan/Projects/Sai_Rotbots/.scratch/gorilla_internal_g18_cooling_architecture/architecture_comparison_v3.json",
+      "sha256": "f3a0851642ccfe2371290304f14c9f5724812e25d4ed6d72c14ea6db16163a4d"
+    }
+  },
+  "architecture_count": 2,
+  "baseline_18holding18directional_complete_reference_kg": 213.05891107156788,
+  "baseline_scope": "historical F1 full dry template only; OEM and installation not qualified; not robot mass",
+  "A_complete_design_budget_variants": [
+    {
+      "id": "A250_limited",
+      "architecture": "A distributed cartridge/manifold",
+      "main_pressure_boundary_bar": 250,
+      "OEM_parts": {
+        "cartridge_kg": 0.27,
+        "E_coils_qty": 2,
+        "E_coil_each_kg": 0.37,
+        "complete_dual_counterbalance_kg": 1.2
+      },
+      "OEM_subtotal_not_complete_kg": 2.21,
+      "own_steel_body_material_budget": {
+        "outer_m": [
+          0.06,
+          0.06,
+          0.085
+        ],
+        "outer_L": 0.306,
+        "conditional_removed_cavity_galleries_L": [
+          0.045,
+          0.08
+        ],
+        "conditional_mass_kg": [
+          1.7741,
+          2.04885
+        ],
+        "source": "explicit custom dimensional hypothesis around OEM cavity length; no exact pressure-rated manifold or native CAD",
+        "pressure_ports_wall_thread_strength_accepted": false
+      },
+      "complete_auxiliary_budget": [
+        {
+          "function": "nuts,seals,gasket,axial retention",
+          "mass_range_kg": [
+            0.04,
+            0.09
+          ]
+        },
+        {
+          "function": "six rated fittings/short rigid links",
+          "mass_range_kg": [
+            0.35,
+            0.8
+          ]
+        },
+        {
+          "function": "two mounts and fasteners",
+          "mass_range_kg": [
+            0.22,
+            0.5
+          ]
+        },
+        {
+          "function": "impact/connector guards",
+          "mass_range_kg": [
+            0.18,
+            0.4
+          ]
+        },
+        {
+          "function": "current drivers, three pressure sensors, safety I/O and connectors",
+          "mass_range_kg": [
+            0.2,
+            0.5
+          ]
+        },
+        {
+          "function": "local thermal/shock relief or isolation supplement beyond OEM dual counterbalance",
+          "mass_range_kg": [
+            0.15,
+            0.35
+          ]
+        },
+        {
+          "function": "allocated local filter/service isolation hardware (global filters not double counted)",
+          "mass_range_kg": [
+            0.1,
+            0.25
+          ]
+        },
+        {
+          "function": "reserved pressure-compensation hardware or equivalent independent differential-pressure control function; unqualified custom physical reserve",
+          "mass_range_kg": [
+            0.4,
+            1.2
+          ]
+        }
+      ],
+      "complete_per_axis_dry_design_budget_kg": [
+        5.624099999999999,
+        8.348849999999999
+      ],
+      "18_example_dry_modules_only_kg": [
+        101.23379999999999,
+        150.27929999999998
+      ],
+      "local_holding_stock_m": [
+        0.23,
+        0.08,
+        0.065
+      ],
+      "proximal_control_stock_m": [
+        0.13,
+        0.13,
+        0.24
+      ],
+      "per_axis_two_stock_boxes_L": 5.252000000000001,
+      "local_holding_service": {
+        "adjuster_tool_keepout_m": 0.04,
+        "gasket_bolt_access_m": 0.035
+      },
+      "control_service": {
+        "cartridge_axial_extraction_m": 0.14,
+        "plug_hand_clearance_m": 0.03
+      },
+      "services_are_not_hardware_or_free_cavity": true,
+      "complete_mass_budget_not_native_geometry": true,
+      "installed_or_thermal_or_pressure_rating_accepted": false
+    },
+    {
+      "id": "A350_reference",
+      "architecture": "A distributed cartridge/manifold",
+      "main_pressure_boundary_bar": 350,
+      "OEM_parts": {
+        "cartridge_kg": 0.44,
+        "E_coils_qty": 2,
+        "E_coil_each_kg": 0.37,
+        "complete_dual_counterbalance_kg": 1.2
+      },
+      "OEM_subtotal_not_complete_kg": 2.38,
+      "own_steel_body_material_budget": {
+        "outer_m": [
+          0.07,
+          0.07,
+          0.115
+        ],
+        "outer_L": 0.5635000000000001,
+        "conditional_removed_cavity_galleries_L": [
+          0.03,
+          0.11
+        ],
+        "conditional_mass_kg": [
+          3.559975000000001,
+          4.187975000000001
+        ],
+        "source": "explicit custom dimensional hypothesis around OEM cavity length; no exact pressure-rated manifold or native CAD",
+        "pressure_ports_wall_thread_strength_accepted": false
+      },
+      "complete_auxiliary_budget": [
+        {
+          "function": "nuts,seals,gasket,axial retention",
+          "mass_range_kg": [
+            0.04,
+            0.09
+          ]
+        },
+        {
+          "function": "six rated fittings/short rigid links",
+          "mass_range_kg": [
+            0.35,
+            0.8
+          ]
+        },
+        {
+          "function": "two mounts and fasteners",
+          "mass_range_kg": [
+            0.22,
+            0.5
+          ]
+        },
+        {
+          "function": "impact/connector guards",
+          "mass_range_kg": [
+            0.18,
+            0.4
+          ]
+        },
+        {
+          "function": "current drivers, three pressure sensors, safety I/O and connectors",
+          "mass_range_kg": [
+            0.2,
+            0.5
+          ]
+        },
+        {
+          "function": "local thermal/shock relief or isolation supplement beyond OEM dual counterbalance",
+          "mass_range_kg": [
+            0.15,
+            0.35
+          ]
+        },
+        {
+          "function": "allocated local filter/service isolation hardware (global filters not double counted)",
+          "mass_range_kg": [
+            0.1,
+            0.25
+          ]
+        },
+        {
+          "function": "reserved pressure-compensation hardware or equivalent independent differential-pressure control function; unqualified custom physical reserve",
+          "mass_range_kg": [
+            0.4,
+            1.2
+          ]
+        }
+      ],
+      "complete_per_axis_dry_design_budget_kg": [
+        7.579975,
+        10.657975
+      ],
+      "18_example_dry_modules_only_kg": [
+        136.43955,
+        191.84355
+      ],
+      "local_holding_stock_m": [
+        0.23,
+        0.08,
+        0.065
+      ],
+      "proximal_control_stock_m": [
+        0.16,
+        0.14,
+        0.26
+      ],
+      "per_axis_two_stock_boxes_L": 7.020000000000001,
+      "local_holding_service": {
+        "adjuster_tool_keepout_m": 0.04,
+        "gasket_bolt_access_m": 0.035
+      },
+      "control_service": {
+        "cartridge_axial_extraction_m": 0.14,
+        "plug_hand_clearance_m": 0.03
+      },
+      "services_are_not_hardware_or_free_cavity": true,
+      "complete_mass_budget_not_native_geometry": true,
+      "installed_or_thermal_or_pressure_rating_accepted": false
+    }
+  ],
+  "global_A_header_filter_safety_manifold_dry_budget_kg": [
+    3,
+    12
+  ],
+  "complete_design_mass_range_is_no_mass_credit": true,
+  "functional_chain": {
+    "A": [
+      "existing complete motor/pump plus common relief/unload/filter/reservoir",
+      "highpressure and independent return headers",
+      "per-axis metering with compensation or validated pressure feedback",
+      "direct-on-cylinder dual check/pilot assisted relief holding",
+      "two working cylinder chambers and pressure/position sensing",
+      "filtered return oil heat exchanger plus charge/return/expansion volume"
+    ],
+    "B_direct_EHA": [
+      "four-quadrant compatible drive and complete reversible pump/motor",
+      "A/B local hold, cross relief and anti-cavitation protection",
+      "differential-cylinder charge/compensation accumulator or regulated reservoir and filter",
+      "case drain/flush obey samepump pressure and temperature envelope",
+      "pump/motor/cell heat exchange and all pump cooling branches",
+      "DC acceptance or finite braking resistor for recovered power"
+    ],
+    "B_shared": [
+      "per-axis directional/metering and holding remain",
+      "different simultaneous load pressures still need independent control",
+      "common rail negative-axis energy is not automatically regenerative; actual return routing/accumulator required"
+    ]
+  },
+  "same_duty_energy_accounting": {
+    "G18_A30min_duty": [
+      0.25,
+      0.35,
+      0.4
+    ],
+    "hydraulic_supply_reference_motion_manipulation_kW": [
+      12,
+      5.833333333333333
+    ],
+    "baseline_hydraulic_throttle_heat_motion_manipulation_kW": [
+      1.125,
+      0.625
+    ],
+    "G18_upper_other_aux_kW": 0.5,
+    "A_new_source_upper_valve_electronics_W": 419.58,
+    "old_point5_other_contains_valves_unknown": true,
+    "no_silent_subtract_or_double_add": "new419.58W is a replacement inventory needing oldother=.5 breakout; no wholemission energy credit here",
+    "EHA_efficiency_is_not_given_by_catalogue_350bar85Lmin": "actual pump/motor/inverter and each pressure/flow duty must be solved; same hydraulic output retained",
+    "recovery_energy_credit_kWh": 0,
+    "old480_or_new640_energy_topology": "root-owned; this study neither shrinks capacity nor changes80s bus",
+    "hold_pump_unloading": "requires actual closedhold and pressure safe release; sourceG11 1.5kW hold remains conditional, not zero"
+  },
+  "B_proximal_shared_reference": {
+    "id": "B proximal shared EHA pump clusters, local independent control and holds",
+    "cluster_count_example": 2,
+    "cluster_count_or_18_axes_frozen": false,
+    "pump_motor_reference": {
+      "model": "Moog EPU-G013 H0W, RevL February2026",
+      "complete_pump_motor_each_kg": 49,
+      "V_m3_rev": 1.3e-05,
+      "pA_pB_max_bar": 345,
+      "rated_motor_torque_Nm": 54,
+      "continuous_stall_Nm": 60,
+      "rated_speed_rpm": 3400,
+      "max_flow_not_continuous_Lmin": 57,
+      "water_each_Lmin": 8,
+      "water_source_temperature_range_C": [
+        25,
+        40
+      ],
+      "performance_voltage_Vdc": 565,
+      "full_drawing_body_axial_reference_m": 0.569,
+      "rear_connector_projection_reserve_m": 0.032,
+      "other_radial_envelope": "must use front view/CAD; complete installation stock below is a hypothesis, not raster-scaled OEM",
+      "complete_current_drive_not_in_OEM_mass": true
+    },
+    "complete_each_cluster_stock_m": [
+      0.65,
+      0.3,
+      0.32
+    ],
+    "complete_each_cluster_dry_design_budget_kg": [
+      65,
+      85
+    ],
+    "stock_functions": [
+      "complete unscaled EPU and water ports",
+      "four-quadrant servo drive, contactor and fused DC",
+      "charge pump or accumulator, check/relief/volume-compensation manifold",
+      "drain/filter/flush and all ports",
+      "mount, guard, pressure/temperature sensors and extraction service"
+    ],
+    "cluster_power_cooling_charge_drives_and_manifold_accepted": false,
+    "independent_metering_and_cylinder_hold_retained": "each independently simultaneous cylinder still needs local A-type control+hold with a shared pump; no subtraction of18functions",
+    "18_local_catalogue_counterexample": {
+      "EPU019_S0C_each_kg": 50.1,
+      "18_OEM_only_kg": 901.8,
+      "S0C_continuous_stall_Nm": 40,
+      "S0C_rated_Nm_rpm": [
+        22,
+        3000
+      ],
+      "EPU019_M0C_each_kg": 82.7,
+      "18_M0C_OEM_only_kg": 1488.6,
+      "not_a_selected_or_qualified_robot_solution": true
+    },
+    "pressure_boundary": {
+      "case_limit_is_speed_dependent": true,
+      "housing_vs_low_side_max_delta_bar": 1,
+      "EPU19_absolute_case_max_bar": 10,
+      "EPU13_case_uses_its_own_plot_not_EPU19_10bar": true,
+      "priming_and_preload_NPSH_not_closed": true
+    },
+    "565V_graph_not_transferred_to_80s200_336V": true,
+    "rotary_EHA_same_biped_bimanual_function": "retained goal; future axis family needs actual new lowerbody design",
+    "wholebody_mass_credit_kg": null
+  },
+  "B_macro_same_function_18example_control_hold_plus2complete_pumpcluster_dry_kg": [
+    266.43955,
+    361.84355
+  ],
+  "historical_axis_pressure_flow_requirements": [
+    {
+      "historical_id": "waist_pitch_pair_0",
+      "finite_cylinder_hardware_present": true,
+      "bore_m": 0.08,
+      "rod_m": 0.04,
+      "J_abs_sampled_m_rad": [
+        0.057077713020225435,
+        0.164840349707056
+      ],
+      "cap_Lmin_at03": 14.914403471659954,
+      "rod_Lmin_at03": 11.185802603744966,
+      "cap_Lmin_at05": 24.857339119433256,
+      "new_task_actual_load_pressure_bar": null,
+      "new_axis_route_or_quantity_frozen": false
+    },
+    {
+      "historical_id": "waist_pitch_pair_1",
+      "finite_cylinder_hardware_present": true,
+      "bore_m": 0.08,
+      "rod_m": 0.04,
+      "J_abs_sampled_m_rad": [
+        0.057077713020225435,
+        0.164840349707056
+      ],
+      "cap_Lmin_at03": 14.914403471659954,
+      "rod_Lmin_at03": 11.185802603744966,
+      "cap_Lmin_at05": 24.857339119433256,
+      "new_task_actual_load_pressure_bar": null,
+      "new_axis_route_or_quantity_frozen": false
+    },
+    {
+      "historical_id": "left_hip",
+      "finite_cylinder_hardware_present": true,
+      "bore_m": 0.05,
+      "rod_m": 0.025,
+      "J_abs_sampled_m_rad": [
+        0.09486832980505139,
+        0.09999998738276192
+      ],
+      "cap_Lmin_at03": 3.5342912893585146,
+      "rod_Lmin_at03": 2.6507184670188866,
+      "cap_Lmin_at05": 5.890485482264191,
+      "new_task_actual_load_pressure_bar": null,
+      "new_axis_route_or_quantity_frozen": false
+    },
+    {
+      "historical_id": "left_knee",
+      "finite_cylinder_hardware_present": true,
+      "bore_m": 0.08,
+      "rod_m": 0.035,
+      "J_abs_sampled_m_rad": [
+        0.05510566543148742,
+        0.13492812669353235
+      ],
+      "cap_Lmin_at03": 12.208009293591383,
+      "rod_Lmin_at03": 9.871320014739908,
+      "cap_Lmin_at05": 20.34668215598564,
+      "new_task_actual_load_pressure_bar": null,
+      "new_axis_route_or_quantity_frozen": false
+    },
+    {
+      "historical_id": "left_fold",
+      "finite_cylinder_hardware_present": false,
+      "bore_m": 0.063,
+      "rod_m": 0.03,
+      "J_abs_sampled_m_rad": [
+        0.08216969677143757,
+        0.08499997024210489
+      ],
+      "cap_Lmin_at03": 4.769383655374581,
+      "rod_Lmin_at03": 3.687890762999393,
+      "cap_Lmin_at05": 7.948972758957635,
+      "new_task_actual_load_pressure_bar": null,
+      "new_axis_route_or_quantity_frozen": false
+    },
+    {
+      "historical_id": "left_ankle",
+      "finite_cylinder_hardware_present": false,
+      "bore_m": 0.063,
+      "rod_m": 0.03,
+      "J_abs_sampled_m_rad": [
+        0.12905297428111084,
+        0.1352660093227156
+      ],
+      "cap_Lmin_at03": 7.589831998222705,
+      "rod_Lmin_at03": 5.868781658489666,
+      "cap_Lmin_at05": 12.649719997037842,
+      "new_task_actual_load_pressure_bar": null,
+      "new_axis_route_or_quantity_frozen": false
+    },
+    {
+      "historical_id": "left_hip_roll_pair_0",
+      "finite_cylinder_hardware_present": true,
+      "bore_m": 0.063,
+      "rod_m": 0.03,
+      "J_abs_sampled_m_rad": [
+        0.1299691573940209,
+        0.20209697476236438
+      ],
+      "cap_Lmin_at03": 11.339745243284932,
+      "rod_Lmin_at03": 8.768374439818963,
+      "cap_Lmin_at05": 18.899575405474888,
+      "new_task_actual_load_pressure_bar": null,
+      "new_axis_route_or_quantity_frozen": false
+    },
+    {
+      "historical_id": "left_hip_roll_pair_1",
+      "finite_cylinder_hardware_present": true,
+      "bore_m": 0.063,
+      "rod_m": 0.03,
+      "J_abs_sampled_m_rad": [
+        0.12996915739402096,
+        0.20209697476236443
+      ],
+      "cap_Lmin_at03": 11.339745243284936,
+      "rod_Lmin_at03": 8.768374439818965,
+      "cap_Lmin_at05": 18.899575405474895,
+      "new_task_actual_load_pressure_bar": null,
+      "new_axis_route_or_quantity_frozen": false
+    },
+    {
+      "historical_id": "left_foot_roll_pair_0",
+      "finite_cylinder_hardware_present": true,
+      "bore_m": 0.05,
+      "rod_m": 0.025,
+      "J_abs_sampled_m_rad": [
+        0.10657656069413227,
+        0.12361868248882484
+      ],
+      "cap_Lmin_at03": 4.36904487847509,
+      "rod_Lmin_at03": 3.2767836588563175,
+      "cap_Lmin_at05": 7.28174146412515,
+      "new_task_actual_load_pressure_bar": null,
+      "new_axis_route_or_quantity_frozen": false
+    },
+    {
+      "historical_id": "left_foot_roll_pair_1",
+      "finite_cylinder_hardware_present": true,
+      "bore_m": 0.05,
+      "rod_m": 0.025,
+      "J_abs_sampled_m_rad": [
+        0.10657656069413228,
+        0.1236186824888248
+      ],
+      "cap_Lmin_at03": 4.369044878475089,
+      "rod_Lmin_at03": 3.276783658856317,
+      "cap_Lmin_at05": 7.281741464125148,
+      "new_task_actual_load_pressure_bar": null,
+      "new_axis_route_or_quantity_frozen": false
+    },
+    {
+      "historical_id": "right_hip",
+      "finite_cylinder_hardware_present": true,
+      "bore_m": 0.05,
+      "rod_m": 0.025,
+      "J_abs_sampled_m_rad": [
+        0.09486832980505139,
+        0.09999998738276192
+      ],
+      "cap_Lmin_at03": 3.5342912893585146,
+      "rod_Lmin_at03": 2.6507184670188866,
+      "cap_Lmin_at05": 5.890485482264191,
+      "new_task_actual_load_pressure_bar": null,
+      "new_axis_route_or_quantity_frozen": false
+    },
+    {
+      "historical_id": "right_knee",
+      "finite_cylinder_hardware_present": true,
+      "bore_m": 0.08,
+      "rod_m": 0.035,
+      "J_abs_sampled_m_rad": [
+        0.05510566543148742,
+        0.13492812669353235
+      ],
+      "cap_Lmin_at03": 12.208009293591383,
+      "rod_Lmin_at03": 9.871320014739908,
+      "cap_Lmin_at05": 20.34668215598564,
+      "new_task_actual_load_pressure_bar": null,
+      "new_axis_route_or_quantity_frozen": false
+    },
+    {
+      "historical_id": "right_fold",
+      "finite_cylinder_hardware_present": false,
+      "bore_m": 0.063,
+      "rod_m": 0.03,
+      "J_abs_sampled_m_rad": [
+        0.08216969677143757,
+        0.08499997024210489
+      ],
+      "cap_Lmin_at03": 4.769383655374581,
+      "rod_Lmin_at03": 3.687890762999393,
+      "cap_Lmin_at05": 7.948972758957635,
+      "new_task_actual_load_pressure_bar": null,
+      "new_axis_route_or_quantity_frozen": false
+    },
+    {
+      "historical_id": "right_ankle",
+      "finite_cylinder_hardware_present": false,
+      "bore_m": 0.063,
+      "rod_m": 0.03,
+      "J_abs_sampled_m_rad": [
+        0.12905297428111084,
+        0.1352660093227156
+      ],
+      "cap_Lmin_at03": 7.589831998222705,
+      "rod_Lmin_at03": 5.868781658489666,
+      "cap_Lmin_at05": 12.649719997037842,
+      "new_task_actual_load_pressure_bar": null,
+      "new_axis_route_or_quantity_frozen": false
+    },
+    {
+      "historical_id": "right_hip_roll_pair_0",
+      "finite_cylinder_hardware_present": true,
+      "bore_m": 0.063,
+      "rod_m": 0.03,
+      "J_abs_sampled_m_rad": [
+        0.1299691573940209,
+        0.20209697476236438
+      ],
+      "cap_Lmin_at03": 11.339745243284932,
+      "rod_Lmin_at03": 8.768374439818963,
+      "cap_Lmin_at05": 18.899575405474888,
+      "new_task_actual_load_pressure_bar": null,
+      "new_axis_route_or_quantity_frozen": false
+    },
+    {
+      "historical_id": "right_hip_roll_pair_1",
+      "finite_cylinder_hardware_present": true,
+      "bore_m": 0.063,
+      "rod_m": 0.03,
+      "J_abs_sampled_m_rad": [
+        0.12996915739402096,
+        0.20209697476236443
+      ],
+      "cap_Lmin_at03": 11.339745243284936,
+      "rod_Lmin_at03": 8.768374439818965,
+      "cap_Lmin_at05": 18.899575405474895,
+      "new_task_actual_load_pressure_bar": null,
+      "new_axis_route_or_quantity_frozen": false
+    },
+    {
+      "historical_id": "right_foot_roll_pair_0",
+      "finite_cylinder_hardware_present": true,
+      "bore_m": 0.05,
+      "rod_m": 0.025,
+      "J_abs_sampled_m_rad": [
+        0.10657656069413227,
+        0.12361868248882484
+      ],
+      "cap_Lmin_at03": 4.36904487847509,
+      "rod_Lmin_at03": 3.2767836588563175,
+      "cap_Lmin_at05": 7.28174146412515,
+      "new_task_actual_load_pressure_bar": null,
+      "new_axis_route_or_quantity_frozen": false
+    },
+    {
+      "historical_id": "right_foot_roll_pair_1",
+      "finite_cylinder_hardware_present": true,
+      "bore_m": 0.05,
+      "rod_m": 0.025,
+      "J_abs_sampled_m_rad": [
+        0.10657656069413228,
+        0.1236186824888248
+      ],
+      "cap_Lmin_at03": 4.369044878475089,
+      "rod_Lmin_at03": 3.276783658856317,
+      "cap_Lmin_at05": 7.281741464125148,
+      "new_task_actual_load_pressure_bar": null,
+      "new_axis_route_or_quantity_frozen": false
+    }
+  ],
+  "old_hardware_count": {
+    "finite": 14,
+    "unknown_or_absent": 4,
+    "18_not_user_requirement": true
+  },
+  "old_all18_Q_upper_at03_Lmin": 148.86699990345437,
+  "old_max_Q_at05_Lmin": 24.857339119433256,
+  "pressure_set_challenge": [
+    {
+      "actual_load_pressure_bar_hypothesis": 140,
+      "minimum_hold_set_bar": 182.0,
+      "350bar_hold_remaining_before_return_bar": 168.0,
+      "A250_main_supply_at_load_alone_with_0drop_possible": true,
+      "A350_main_supply_at_load_alone_with_0drop_possible": true,
+      "pressure_sup_is_not_always_load_pressure": true
+    },
+    {
+      "actual_load_pressure_bar_hypothesis": 160,
+      "minimum_hold_set_bar": 208.0,
+      "350bar_hold_remaining_before_return_bar": 142.0,
+      "A250_main_supply_at_load_alone_with_0drop_possible": true,
+      "A350_main_supply_at_load_alone_with_0drop_possible": true,
+      "pressure_sup_is_not_always_load_pressure": true
+    },
+    {
+      "actual_load_pressure_bar_hypothesis": 210,
+      "minimum_hold_set_bar": 273.0,
+      "350bar_hold_remaining_before_return_bar": 77.0,
+      "A250_main_supply_at_load_alone_with_0drop_possible": true,
+      "A350_main_supply_at_load_alone_with_0drop_possible": true,
+      "pressure_sup_is_not_always_load_pressure": true
+    },
+    {
+      "actual_load_pressure_bar_hypothesis": 250,
+      "minimum_hold_set_bar": 325.0,
+      "350bar_hold_remaining_before_return_bar": 25.0,
+      "A250_main_supply_at_load_alone_with_0drop_possible": true,
+      "A350_main_supply_at_load_alone_with_0drop_possible": true,
+      "pressure_sup_is_not_always_load_pressure": true
+    },
+    {
+      "actual_load_pressure_bar_hypothesis": 269.2307692307692,
+      "minimum_hold_set_bar": 350.0,
+      "350bar_hold_remaining_before_return_bar": 0.0,
+      "A250_main_supply_at_load_alone_with_0drop_possible": false,
+      "A350_main_supply_at_load_alone_with_0drop_possible": true,
+      "pressure_sup_is_not_always_load_pressure": true
+    },
+    {
+      "actual_load_pressure_bar_hypothesis": 300,
+      "minimum_hold_set_bar": 390.0,
+      "350bar_hold_remaining_before_return_bar": -40.0,
+      "A250_main_supply_at_load_alone_with_0drop_possible": false,
+      "A350_main_supply_at_load_alone_with_0drop_possible": true,
+      "pressure_sup_is_not_always_load_pressure": true
+    }
+  ],
+  "two_shared_EPU13_ideal_screens": [
+    {
+      "id": "taskA_motion",
+      "total_p_bar": 160,
+      "total_Q_Lmin": 45,
+      "hydraulic_supply_kW": 12.0,
+      "two_shared_pump_each_rpm_etaV095": 1821.8623481781378,
+      "each_torque_Nm_etaM09": 36.78247573679359,
+      "54Nm_rated_torque_margin_Nm": 17.217524263206407,
+      "source565V_water25_40C_conditions_not_met_by_current_robot": true,
+      "ideal_only_not_complete_operating_point": true
+    },
+    {
+      "id": "taskA_manipulation",
+      "total_p_bar": 140,
+      "total_Q_Lmin": 25,
+      "hydraulic_supply_kW": 5.833333333333333,
+      "two_shared_pump_each_rpm_etaV095": 1012.1457489878544,
+      "each_torque_Nm_etaM09": 32.18466626969439,
+      "54Nm_rated_torque_margin_Nm": 21.81533373030561,
+      "source565V_water25_40C_conditions_not_met_by_current_robot": true,
+      "ideal_only_not_complete_operating_point": true
+    },
+    {
+      "id": "taskB_motion",
+      "total_p_bar": 210,
+      "total_Q_Lmin": 60,
+      "hydraulic_supply_kW": 21.0,
+      "two_shared_pump_each_rpm_etaV095": 2429.1497975708508,
+      "each_torque_Nm_etaM09": 48.276999404541584,
+      "54Nm_rated_torque_margin_Nm": 5.723000595458416,
+      "source565V_water25_40C_conditions_not_met_by_current_robot": true,
+      "ideal_only_not_complete_operating_point": true
+    },
+    {
+      "id": "taskB_manipulation",
+      "total_p_bar": 180,
+      "total_Q_Lmin": 40,
+      "hydraulic_supply_kW": 12.0,
+      "two_shared_pump_each_rpm_etaV095": 1619.433198380567,
+      "each_torque_Nm_etaM09": 41.38028520389278,
+      "54Nm_rated_torque_margin_Nm": 12.619714796107218,
+      "source565V_water25_40C_conditions_not_met_by_current_robot": true,
+      "ideal_only_not_complete_operating_point": true
+    },
+    {
+      "id": "300bar_sensitive",
+      "total_p_bar": 300,
+      "total_Q_Lmin": 60,
+      "hydraulic_supply_kW": 30.0,
+      "two_shared_pump_each_rpm_etaV095": 2429.1497975708508,
+      "each_torque_Nm_etaM09": 68.96714200648798,
+      "54Nm_rated_torque_margin_Nm": -14.967142006487975,
+      "source565V_water25_40C_conditions_not_met_by_current_robot": true,
+      "ideal_only_not_complete_operating_point": true
+    }
+  ],
+  "auxiliary_power_scope": {
+    "E_coil_initial_source_18active_upper_W": 365.58,
+    "E_coil_room_R_regulated12V_1p2A_conditional_W": 183.7728,
+    "driver_sensors_IO_hypothesis_18_W": [
+      18,
+      54
+    ],
+    "do_not_take_PWM_saving_before_real_driver_duty_thermal": "retain source initial upper365.58W plus explicit electronics, not inherited180W nor36energized coils",
+    "two_coils_per_axis_counted_in_mass_one_direction_energized_nominal": "failed dual-coil command protection required; fault thermal upper can double",
+    "local_hold_is_not_pump_unloading_by_itself": true,
+    "G11_old_aux065_or080_W_breakout_unknown_no_arbitrary_subtraction": true
+  },
+  "neutral_leak_heat": {
+    "HSP_source_test_each_Lmin_at350bar": 0.164,
+    "all18_direct_PtoT_test_upper_Lmin": 2.952,
+    "all18_hydraulic_heat_if_test_pressure_maintained_kW": 1.722,
+    "actual210bar_or_unloaded_hold_leak_not_derived": "no linear extrapolation without pressure/viscosity and valve state"
+  },
+  "thermal_examples": {
+    "5bar_edge_60Lmin_kW": 0.5,
+    "20bar_control_and_backpressure_60Lmin_kW": 2.0,
+    "negative_mechanical_100bar20Lmin_kW": 3.3333333333333335,
+    "regen_efficiency_hypothesis": [
+      0.5,
+      0.85
+    ],
+    "negative_example_DC_recovery_kW": [
+      1.6666666666666667,
+      2.8333333333333335
+    ],
+    "no_real_duty_or_energy_credit": true
+  },
+  "formulas": {
+    "hydraulic_power_kW": "p_bar*Q_Lmin/600",
+    "per_edge_throttle_heat_kW": "delta_p_bar*Q_Lmin/600",
+    "cylinder_force_N": "p_cap*Acap-p_rod*Aann; include pressure/friction/dynamic branches",
+    "joint_torque_Nm": "sum(F_cyl*J_cyl(q))",
+    "loadhold_min_set_bar": "1.3*actual_max_load_pressure; this reference adds backpressure and must stay below350bar",
+    "pump_torque_Nm": "delta_p_Pa*V_m3_per_rev/(2*pi*eta_mechanical)",
+    "pump_speed_rpm": "Q_Lmin/(V_L_per_rev*eta_volumetric)",
+    "regen_electrical_W": "P_negative_mechanical*eta_pump_generator*eta_motor_inverter limited by DC acceptance; remainder heat/braking hardware",
+    "coil_heat_W": "I_rms^2*R(T), plus driver loss; rated source initial power is not a guaranteed steady operating measurement",
+    "oil_stock_L": "sum new line/chamber/manifold + compensating rod displacement + charge/return/expansion; tank working fill and gas headspace separately"
+  },
+  "unknown_red": [
+    "new actual cylinder or rotary joint inventory/torque/J/full task qdot and pressure",
+    "custom complete manifold cavity walls/plugs/pressure fatigue and physically coinstalled ranges",
+    "direct cylinder gasket boss/bolt, hose-break/thermal/shock relief and controlled emergency release",
+    "return pressure/overrunning stability and continuous cold/hot oil flow curves",
+    "shared simultaneous pressure compensation/load sensing; pump head covers all drops",
+    "EHA drive565V-vs80s, preload/charge/case/drain/cooling and regen bus acceptance",
+    "actual pressure-flow duty and new total heat/energy/fluid routes remain open"
+  ],
+  "yellow_only": [
+    "supplier/SKU/custom manufacture once physical function and ranges are closed"
+  ],
+  "pressure_compensated_graph_scope": {
+    "HSP12_flow_current_plots_with_HEC16_32_or_EFPFS0": "external compensation present; no adoption of these curves for bare HSP or unbuilt own manifold",
+    "bare_pressure_response_and_pressure_drop_plots": "typical source reference; duty/cold flow/actual cylinder ratios still unknown",
+    "pressure_compensation_reserve": "per-axis .4..1.2kg custom complete function reserve included in mass; physical dimensions and fullpressure capability unqualified; not selected HEC exact mass",
+    "independent_pressure_sensor_velocity_loop": "alternative function within A, must verify dynamics; cannot assume same rated flow/energy"
+  },
+  "source_scope_corrections_v2": {
+    "SP10_D_style_projection31p8mm": "initial v1 obsolete/unqualified; current2026 Dcoil44mm; terminal variants use actual E .37kg percoil",
+    "HSP12_OEM_body127mm": "own115mm custom cavity housing is a redesign hypothesis, not cropped OEM body; manufacturer127mm body is retained as a reference requiring larger mass/space if selected",
+    "18_legacy_current_waist": "historical F1 18 includes previous waist hydraulic axes; current leg redraw/waist rotary design may retire them, not current whole-axis requirement"
+  },
+  "new_native_CAD": "not generated by this bounded research task",
+  "AA3_outer_change_m": 0,
+  "all_physical_hardware_or_wholebody_admission": false
+}

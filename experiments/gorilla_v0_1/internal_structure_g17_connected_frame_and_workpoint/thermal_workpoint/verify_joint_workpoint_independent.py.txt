@@ -1,0 +1,24 @@
+"""Independent arithmetic, no import of producer or geometry/solver transformations."""
+import json,math,hashlib
+from pathlib import Path
+O=Path(__file__).resolve().parent;R=O.parents[1]
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+d=json.loads((O/'joint_workpoint_v3.json').read_text());old=json.loads((R/'.scratch/gorilla_internal_g15_thermal_operating_domain/operating_domain.json').read_text());checks={};diff=[]
+for b in d['same_task_heat_energy_budgets']:
+ if b['aux_scope']!='source_upper':continue
+ dm=next(x for x in old['two_physical_budget_domains'] if x['id']==b['domain']);E=[0,0]
+ for pp in b['phases']:
+  po=next(x for x in dm['phases'] if x['phase']==pp['phase']);bus=po['Pbus_kW']-po['legacy_aux_low_or_air_unallocated_kW']+2.1475
+  for k,V in enumerate([288,200]):E[k]+=po['duty']*(bus/.98+(bus*1000/(.98*V))**2*.2/1000)*dm['duration_h']/.75
+ dif=max(abs(E[k]-b['nameplate_required_kWh_SOC75_288_200'][k]) for k in range(2));diff.append({'domain':b['domain'],'required_kWh_independent':E,'max_difference_kWh':dif});checks[b['domain']+'_energy']=dif<1e-10
+for t in d['same_task_joint_temperature_screens']:
+ b=next(b for b in d['same_task_heat_energy_budgets'] if b['domain']==t['domain'] and b['aux_scope']=='source_upper');p=next(p for p in b['phases'] if p['phase']==t['phase']);checks.setdefault('thermal_heat_conserved',True);checks['thermal_heat_conserved'] &= all(abs(t['total_low_W_288_200'][k]-p['low_liquid_kW_288_200'][k]*1000)<1e-8 for k in range(2))
+Q=6.5;n=Q/(622/60);checks['fan_anchor_same_ndpoint']=abs(475*n*n-d['air_joint_workpoint']['fan_affinity_trials'][1]['dp_Pa_affinity'])<1e-10
+checks['flow59']=18*2+2*6+4*2+3==sum(x['count']*x['Q_each_L_min'] for x in d['complete_59Lmin_branches'])
+for p in d['pressure_two_candidates']:
+ branch=p['critical_EMRAX_hose']; main=p['main']; calc=26000*p['ES_core_cold_dp_multiplier']+20000+branch['dp_Pa']+main['dp_Pa']+5000;checks.setdefault('pressure_seriesparallel_loop',True);checks['pressure_seriesparallel_loop'] &= abs(calc-p['system_dp_Pa_range'][0])<1e-8
+for p in d['fluid_new7L_working_sensitivity']:
+ calc=(7+p['oil_expansion_L_own'])/(1-p['oil_hot_air_fraction_own']);checks.setdefault('oil7L_not_oldwork',True);checks['oil7L_not_oldwork'] &= abs(calc-p['oil_required_tankcap_L_own'])<1e-10
+checks['sourcehashes_all_match']=all(sha(R/path)==h for path,h in d['source_hashes'].items());checks['A30min_energy_gap']=next(b for b in d['same_task_heat_energy_budgets'] if b['domain'].startswith('a') and b['aux_scope']=='source_upper')['nameplate_required_kWh_SOC75_288_200'][1]>7.44
+receipt={'producer_sha256':sha(__file__),'input_sha256':sha(O/'joint_workpoint_v3.json'),'independent_checks':checks,'energy_values':diff,'all_arithmetic_pass':all(checks.values()),'no_equation_checks_equal_installed_thermal_pressure_or_wholebody_admission':True}
+(O/'independent_verification.json').write_text(json.dumps(receipt,indent=2)+'\n');print(json.dumps(receipt,indent=2))

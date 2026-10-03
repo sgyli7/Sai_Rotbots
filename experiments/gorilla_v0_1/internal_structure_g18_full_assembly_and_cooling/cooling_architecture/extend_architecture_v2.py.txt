@@ -1,0 +1,67 @@
+from pathlib import Path
+import json,hashlib,math,itertools,time
+import numpy as np
+O=Path(__file__).resolve().parent;R=Path('/home/ethan/Projects/Sai_Rotbots')
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+d=json.loads((O/'architecture_comparison_v1.json').read_text());body=json.loads((O/'body_b_locked_inventory_v1.json').read_text())
+# Same B topology; conditional model now evaluates properties at mean loop temperature.
+TT=[10,40,65,90];tables={'rho':[1078.72,1064.91,1050.05,1032.15],'cp':[3245,3361,3457,3554],'mu':[.0055071,.0022567,.0012936,.0008227],'k':[.3724,.3937,.4062,.4139]}
+def prop(T):return {k:float(np.interp(T,TT,v)) for k,v in tables.items()}
+reference=prop(71.1)
+def calc(loop,heatW,airC,flow,Hwarm,r):
+ T=45
+ for _ in range(100):
+  pp=prop(T);hr=(pp['k']/reference['k'])**.6*(pp['rho']/reference['rho'])**.8*(pp['mu']/reference['mu'])**(-.4)*(pp['cp']/reference['cp'])**.4
+  fac=1/(1+r*(1/hr-1));H=Hwarm*fac;cap=flow/60000*pp['rho']*pp['cp'];ret=airC+heatW/H;sup=ret-heatW/cap;Tnew=(ret+sup)/2
+  if abs(Tnew-T)<1e-9:break
+  T=.5*T+.5*Tnew
+ return {'supply_C':sup,'return_C':ret,'mean_C_properties':T,'HROM_W_K':H,'Cdot_W_K':cap,'iteration_residual_K':abs(Tnew-T),'source_ES_internal_Re_unknown_modelnotguarantee':True,'property_range_extrapolated':T<10 or T>90,'no_thermal_capacity_credit':True}
+steady=[]
+for budget in d['B_proposal']['same_task_heat_energy']:
+ for p in budget['phases']:
+  for part in p['EMRAX_own_motor_eta_partitions']:
+   for Ta,r,endpoint in itertools.product([25,35],[.2,.6],[0,1]):
+    emrax=calc('188',part['EMRAX_liquid_kW']*1000,Ta+430/(13/60*1.2*1005),12,2*[64,75][endpoint],r)
+    airR=Ta+(860+part['EMRAX_rotor_air_kW']*1000)/(26/60*1.2*1005)
+    rest=[calc('rest',x*1000,airR,47,4*[76,85][endpoint],r) for x in part['rest_liquid_kW_at288_200']]
+    hot=calc('hot',p['hot_liquid_kW']*1000,Ta+430/(13/60*1.2*1005),10,[145.07017965,160.89601743][endpoint],r)
+    steady.append({'mission':budget['mission'],'phase':p['phase'],'supply_V_budget':budget['WP32_supply_V_budget'],'ambient_C':Ta,'motor_eta_own':part['eta_motor_own'],'effectiveRfluid_fraction_own':r,'manual_endpoint':'low' if endpoint==0 else 'high','EMRAX_loop':emrax,'rest_loop_at288_200':rest,'hot_loop':hot,'EMRAX50C_source_inlet_condition_ROM_screen':emrax['supply_C']<=50,'no_battery_compute_fullmounttemperature_qualification':True,'conditional_fixedpoint_ROM_not_validated_UA_or_rating':True})
+# Source-bound target conditions on the sensitive loop; require tolerance rather than nominal =minimum.
+flow={'nominal_minimum_loop_Lmin':12,'actual_each_required_Lmin_minmax':[6,11],'nominal6_each_has_no_unbalance_or_sensor_margin':True,'proposed_control_target_loop_Lmin':13,'target_each_Lmin':6.5,'own_total_error_and_unbalance_fraction':.05,'target_min_each_Lmin_with5pct':6.5*.95,'within_OEM_6_11_minmax':[6.5*.95>=6,6.5*1.05<=11],'source_ES_chart_neweach6p5_stillwithin1_2gpm_curves':True,'sourceWP32fullspeed_manualat13_Pa':168375,'required_retest_newpoint':True,'v1_and_fixedpoint_are_12Lmin_conservative_thermal_screens_not_adopted13qualifiedcurve':True,'not_new_architecture_or_hardware_count':True}
+# NPSH only an availability equation; no NPSHr/case qualification asserted.
+npsh=[]
+for loop,Q in [('188',12),('rest',47)]:
+ for gas,pvap,lift,lossPa in itertools.product([0,30000],[2000,20000],[.1], [1000,5000]):
+  rho=1059.;avail=(101325+gas-pvap-lossPa)/(rho*9.81)+lift
+  npsh.append({'loop':loop,'own_Q_Lmin':Q,'own_gas_gauge_Pa':gas,'own_vapor_Pa_absolute':pvap,'own_workinglevel_aboveeye_m':lift,'own_suctionloss_Pa':lossPa,'NPSHa_m':avail,'NPSHr_unknown':True,'source_liquid_andtemperature_vapor_pressure_notexact':True,'actual_body_pump_port_eye_and_floodedgeometry_unknown':True})
+# QTL vs QTR same-task copper/TIM demands, no20C ratedmount inheritance.
+thermal=[]
+for name,out,Tc,Pc,Rcoil in [('QTL210_65',1236,65,690,.116),('QTL210_65',1570,65,690,.116),('QTR160_50',611,15.3,450,.17)]:
+ for eta in [.75,.9]:
+  tin=out/(100*eta);coil=Pc*(tin/Tc)**2
+  for water in [50,60,70]:
+   maxRt=(100-water)/coil-Rcoil
+   thermal.append({'motor':name,'conditional_output_Nm':out,'ratio':100,'own_gear_eta':eta,'input_Nm':tin,'sourceTc_Nm':Tc,'sourcePc_W':Pc,'source_Rcoil_mount_K_W':Rcoil,'own_copperloss_W':coil,'water_C':water,'max_mount_to_coolant_Rth_for100coil_K_W':maxRt,'fullplate_plus_TIM_requirement_not_declared_existing':True,'coil100_mount20_source_rating_not_preserved':True,'RMSspeed_iron_andgearheatunknown':True})
+# Strong source identity: complete stocks placed, routes NOT connected and count not qualification.
+d['stage']='G18 whole cooling architecture comparison v2 final'
+d['created_utc']=time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime());d['producer_sha256']=sha(__file__)
+d['predecessor_v1']={'path':'architecture_comparison_v1.json','sha256':sha(O/'architecture_comparison_v1.json'),'source_v1_kept_unmodified':True}
+d['same_B_body_receipt']={'path':'body_b_locked_inventory_v1.json','sha256':sha(O/'body_b_locked_inventory_v1.json'),'body_source_sha':body['source_sha'],'complete_newcooling_count_matches':body['counts'],'wholebody_installation_or_pressure_thermal_admission':False,'actual_water_and_rotor_airroutes_exist':False,'count_only_doesnot_close_pump_eye_feed_or_NPSH':True,'new_native_reference_stocks_are_not_actualOEMsolid':True}
+d['B_proposal']['no_new_body_CAD_or_adopted_layout']=False
+d['B_proposal']['body_geometry_stock_adoption_scope']='source7102db0e actual body selected B has complete count/functionstock; mechanical/material/fullinterfacefit and water/air routes unqualified. This subagent did not create/changeCAD.'
+d['B_proposal']['conditional_property_mean_temperature_fixedpoint']=steady
+d['B_proposal']['actual_flow_margin_design_proposal']=flow
+d['B_proposal']['NPSHa_equation_sensitivity_not_NPSHr']=npsh
+d['B_proposal']['body_complete_aux_mass_difference_readonly']={'WP32_budget_v1_dry_each_kg':[3.63,4.13,5.23],'WP32_actualbody_dry_each_kg':[3.83,4.63,5.53],'third_filter_budget_v1_kg':[.25,.5,1],'third_filter_body_kg':[.5,1.1,1.8],'third_LV_budget_v1_kg':[.2,.35,.7],'third_LV_body_kg':[.3,.6,1.1],'third_degas_budget_v1_kg':[.6,1,1.8],'third_degas_body_shell_only_kg':.7412472,'shell_only_does_not_include_cap_relief_level_antivortex_mount_service_mass':True,'not_combined_with_wholebody_dry_mass':True}
+d['B_proposal']['source_body_globalfluid_not_updated_to_B_proxy']=body['globalfluidinventory']
+d['B_proposal']['actual_capacity_three_vessels_L']=[2.352504,1.741464,body['third_vessel_actual_capacity_L']]
+d['B_proposal']['actual_working_three_vessels_L']=[1.2,.8,.8]
+d['B_proposal']['actual_three_vessel_aggregate_hotair_after_proxy_expansion_L']=[sum(d['B_proposal']['actual_capacity_three_vessels_L'])-2.8-x['water_expansion_L_own'] for x in d['B_proposal']['fluid_once_proxy_candidates']]
+d['B_proposal']['auxiliary_once_allocation']={'fans_source_upper_W':1720,'WP32_28V_max15A_two_W':840,'WP32_32V_max15A_two_W_sensitivity':960,'hot80_sourceupper_W':97.5,'other500W_complete_nonqualified_assignment':{'compute_sensing_backscreen_W':200,'valve_coils_W':180,'brake_release_W':60,'BMS_thermal_CAN_sensors_W':60},'total28V_W':3157.5,'total32V_W':3277.5,'HV_to_LV_losses_handled_only_via_global_etaDC0p98':True,'auxiliary_actual_duty_and_converters_current_hotcurve_unqualified':True,'fanpartialPWMpower_not_used_to_solve_energy_shortage':True,'pump420_480_nameplateupper_is_not_measured_at12_47_jointpoints':True}
+d['QTL_QTR_distinct_conditional_thermal_scope']['same_task_TIM_boundary_by_water_temperature']=thermal
+d['B_proposal']['pressure_controller_not_fullspeed_forced']='Use matched flow/pressure feedback to holdeachOEMflow; publishedfullspeedhead showsconditionalcapability notdesiredrunpoint. Keepbypass/dischargepressureprotected<=180kPag own threshold with gas30/supplyvariation/waterhammerfailures unqualified. Source188allows200kPag doesnotqualifypumpcase.'
+d['scope_corrections_from_first_source']=['v1Bno_new_body_CAD_or_adopted_layout is historicalpre-bodyquery; v2bindslocked7102stockadoptiononly','v1thermalT35/50propertieswereindependentsensitivityinputs; v2addsconditionalmeanTfixedpoint, retainsno_guaranteedcoldUA','massrangebudgetvsbodyseparate; shell-degasnotcompletecap/sensor/reliefmass; noaggregateinstalledmassclaimed','coreextra.786L+degasextra.8L+newbranch/pumpunknownrange areadditiveproxy once; bodyoldglobal12.482/historicalstocknotupdated qualification']
+d['compact_conclusion']='B decouples188inletfromcell/inverterheatandremoveslowseriessecondarycaseassumption; addsrealcompletecores/pumps/thirdloop. ConditionalA30minthermalboundaryplausiblebutcoldmaps/NPSH/air/TIM/fluidroutesand30minenergyremainred; highconcurrencythermalandenergynotclosed.'
+(O/'architecture_comparison_v2.json').write_text(json.dumps(d,indent=2)+'\n')
+summary={'finalsource_sha':sha(O/'architecture_comparison_v2.json'),'fixedpoint_A35_188_C_range':[min(x['EMRAX_loop']['supply_C'] for x in steady if x['mission'].startswith('a') and x['phase']=='motion' and x['ambient_C']==35),max(x['EMRAX_loop']['supply_C'] for x in steady if x['mission'].startswith('a') and x['phase']=='motion' and x['ambient_C']==35)],'fixedpoint_high35_188_C_range':[min(x['EMRAX_loop']['supply_C'] for x in steady if x['mission'].startswith('b') and x['phase']=='motion' and x['ambient_C']==35),max(x['EMRAX_loop']['supply_C'] for x in steady if x['mission'].startswith('b') and x['phase']=='motion' and x['ambient_C']==35)],'fixedpoint_A35_rest_C_at200_range':[min(x['rest_loop_at288_200'][1]['supply_C'] for x in steady if x['mission'].startswith('a') and x['phase']=='motion' and x['ambient_C']==35),max(x['rest_loop_at288_200'][1]['supply_C'] for x in steady if x['mission'].startswith('a') and x['phase']=='motion' and x['ambient_C']==35)],'NPSHa_own_range_m':[min(x['NPSHa_m'] for x in npsh),max(x['NPSHa_m'] for x in npsh)],'not_physical_admission':True}
+(O/'final_comparison_summary.json').write_text(json.dumps(summary,indent=2)+'\n');print(json.dumps(summary,indent=2))

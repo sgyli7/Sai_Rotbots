@@ -1,0 +1,28 @@
+from pathlib import Path
+from datetime import datetime, timezone
+import hashlib, json
+
+O=Path(__file__).resolve().parent
+def sha(p):
+    h=hashlib.sha256()
+    with Path(p).open('rb') as f:
+        for b in iter(lambda:f.read(2**20),b''):h.update(b)
+    return h.hexdigest()
+r=json.loads((O/'report.json').read_text())
+inputs=r['inputs']
+for k,e in inputs.items():
+    assert sha(e['path'])==e['sha256'],k
+files=['README.md','report.json','arithmetic_detail.json','arithmetic_comparisons.json','review_budget.py','freeze_review.py']
+outputs={n:{'path':str(O/n),'sha256':sha(O/n)}for n in files}
+m={'schema':'g24_macro_budget_readonly_freeze_v1','created_utc':datetime.now(timezone.utc).isoformat(),
+ 'inputs':inputs,'outputs':outputs,'arithmetic_errors':len(r['arithmetic_comparison']['errors']),
+ 'upstream_mutations':False,'physical_acceptance':False}
+(O/'freeze_manifest.json').write_text(json.dumps(m,indent=2)+'\n')
+errors=[]
+for group in [inputs,outputs]:
+    for k,e in group.items():
+        if sha(e['path'])!=e['sha256']:errors.append(k)
+v={'manifest_sha256':sha(O/'freeze_manifest.json'),'inputs':len(inputs),'outputs':len(outputs),
+ 'hash_errors':errors,'arithmetic_errors':len(r['arithmetic_comparison']['errors'])}
+(O/'verification.json').write_text(json.dumps(v,indent=2)+'\n')
+print(json.dumps(v,indent=2))

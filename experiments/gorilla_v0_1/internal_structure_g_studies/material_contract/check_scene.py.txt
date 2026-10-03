@@ -1,0 +1,14 @@
+"""CLI for Gorilla G ignored native signed-material reports; never rewrite sources."""
+from pathlib import Path
+import argparse,json,hashlib
+from native_signed_material import validate_scene,Tolerances
+O=Path(__file__).resolve().parent
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def main():
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--scene',required=True,type=Path);p.add_argument('--output',type=Path,default=O/'scene_contract_report.json');p.add_argument('--require-single-material-component',action='store_true');p.add_argument('--diagnose-parity',action='store_true');p.add_argument('--minimum-boundary-volume-m3',type=float,default=1e-10);p.add_argument('--minimum-parent-boundary-gap-m',type=float,default=1e-8);a=p.parse_args()
+ source=a.scene.resolve();destination=a.output.resolve()
+ if not destination.is_relative_to(O):p.error('Prototype writes are restricted to its ignored G directory')
+ if destination==source:p.error('Output cannot overwrite source')
+ before=sha(source);scene=json.loads(source.read_text());t=Tolerances(min_boundary_volume_m3=a.minimum_boundary_volume_m3,minimum_parent_boundary_gap_m=a.minimum_parent_boundary_gap_m);r=validate_scene(scene,t,a.require_single_material_component,a.diagnose_parity);r['source_file']=str(source);r['source_file_sha256']=before;r['validator_sha256']=sha(O/'native_signed_material.py');r['entrypoint_sha256']=sha(__file__);r['source_file_unchanged']=sha(source)==before;assert r['source_file_unchanged'];destination.parent.mkdir(parents=True,exist_ok=True);destination.write_text(json.dumps(r,indent=2)+'\n');print(json.dumps({'resource_contract_pass':r['resource_contract_pass'],'duplicate_ids':r.get('duplicate_ids',[]),'failed_part_count':sum(not p['resource_contract_pass'] for p in r.get('parts',[])),'source_file_unchanged':True,'report':str(destination),'physical_accepted':False}))
+ return 0 if r['resource_contract_pass'] else 2
+if __name__=='__main__':raise SystemExit(main())

@@ -1,0 +1,26 @@
+{
+  "schema": "gorilla_g5_artificial_web_benchmark_v1",
+  "robot_id": "gorilla_v0_1",
+  "scope": "Artificial plate to verify a multi-load CPU SIMP implementation; not actual bearing/stop/actuator assembly boundary conditions",
+  "domain": {"dimensions_m": [0.32, 0.18], "thickness_m": 0.004, "model": "plane_stress"},
+  "mesh": {"elements_xy": [80, 45], "element": "Q4", "displacement_order": "node_major_ux_uy", "refinement_xy": [160, 90]},
+  "material": {"name": "G4_conditional_S355_baseline", "young_modulus_pa": 210000000000.0, "poisson_ratio": 0.3, "density_kg_m3": 7850.0, "yield_strength_pa": 355000000.0, "yield_verified_for_actual_part": false},
+  "alternative_alloy_sensitivity": {"young_modulus_pa": 70000000000.0, "density_kg_m3": 2710.0, "yield_range_pa": [160000000.0, 260000000.0], "scope": "G4 independent unwelded-aluminium hypothesis only; not adopted alloy, temper or thickness-qualified material"},
+  "boundary": {"clamp": "x=0 node ux/uy", "passive_solid": "20 mm left/right pads plus 8 mm top/bottom perimeter strips", "actual_bearing_boss_represented": false, "mandatory_void": []},
+  "loads": [
+    {"id": "g4_pitch_joint_reaction_magnitude", "force_n": 135855.733, "direction": "negative_y", "scope": "G4 1.5 challenge magnitude applied to artificial right centre pad, not recovered actual traction"},
+    {"id": "g4_current_cylinder_force_magnitude", "force_n": 91730.183, "direction": "positive_x", "scope": "G4 1.5 challenge magnitude applied to artificial right centre pad, not a simultaneous wrench with case one"},
+    {"id": "g4_pitch_moment_magnitude", "moment_nm": 14567.85, "direction": "positive_z", "scope": "Artificial opposite horizontal traction pads separated by measured node centroids; not actual bearing/stop interfaces"}
+  ],
+  "optimization": {
+    "objective": "weighted_sum(C_i / C_full_solid_i)", "load_weights": [0.3333333333333333, 0.3333333333333333, 0.3333333333333333],
+    "volume_fraction_of_full_domain": 0.45, "include_passive_solid_in_volume": true,
+    "simp_penalty_continuation": [1, 2, 3], "ersatz_e_min_ratio": 0.000001, "ersatz_sensitivity_ratio": 0.00000001,
+    "density_filter_radius_m": 0.012, "filter": "physical_distance_cone_row_normalized", "projection_beta_continuation": [1, 2, 4, 8],
+    "candidate_projection_thresholds": [0.3, 0.5, 0.7], "robust_formulation_implemented": false,
+    "thresholds_are_manufacturing_guarantee": false, "iteration_limit_per_stage": 80, "design_change_stop": 0.01,
+    "stress_constraint_implemented": false, "buckling_constraint_implemented": false, "out_of_plane_torsion_represented": false
+  },
+  "next_runner_contract": ["Run Q4 patch/rigid-body tests before optimization", "Check condensed linear solve residual and reaction equilibrium for every case", "Verify sensitivity with finite differences away from active bounds", "Preserve passive masks during filter/projection and volume accounting", "Repeat with half physical mesh spacing and unchanged physical filter radius", "Reanalyse thresholded exact-void material mesh; do not use soft void as a load path", "Report material components linked to every support and load pad for eroded/intermediate/dilated fields"],
+  "fem_solved": false, "topology_optimized": false, "assembly_input_ready": false, "physical_release": false
+}

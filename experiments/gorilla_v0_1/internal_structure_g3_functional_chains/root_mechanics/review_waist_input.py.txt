@@ -1,0 +1,36 @@
+"""Read-only independent final G3 roll input material and datum review."""
+from pathlib import Path
+import json,sys,hashlib,math
+import numpy as np
+R=Path('/home/ethan/Projects/Sai_Rotbots');P=R/'.scratch/gorilla_internal_g3_waist_input'
+O=Path(__file__).resolve().parent;S=P/'scene.json'
+sys.path.insert(0,str(R/'.scratch/gorilla_internal_g_material_contract'))
+from native_signed_material import validate_scene,kernel
+sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+h=sha(S);s=json.loads(S.read_text());r=validate_scene(s)
+ks={p['name']:kernel(p['vertices_world_m'],p['faces']) for p in s['parts']}
+bb={n:np.array(k.bounding_box()) for n,k in ks.items()};hits=[];names=list(ks)
+for i,a in enumerate(names):
+    for b in names[i+1:]:
+        if np.any(np.minimum(bb[a][3:],bb[b][3:])-np.maximum(bb[a][:3],bb[b][:3])<=1e-8):continue
+        v=float((ks[a]^ks[b]).volume())
+        if v>1e-10:hits.append({'a':a,'b':b,'positive_volume_m3':v})
+mass=json.loads((P/'mass_and_load_screen.json').read_text());assert mass['source_sha256']==h
+actualmass=sum(float(ks[p['name']].volume())*p['density_kg_m3'] for p in s['parts'])
+assert math.isclose(actualmass,mass['finite_material_mass_kg'],rel_tol=1e-12)
+params=s['local_axis_contract'];assert math.isclose(params['CSG50_full_bare_L_m'],.090)
+assert math.isclose(params['CSG50_WG_pilot_input_face_q_m'],-.005)
+assert math.isclose(params['CSG50_case_B_face_q_m'],0)
+assert sha(S)==h
+receipt={'robot_id':'gorilla_v0_1','source_sha256':h,'source_path':str(S.relative_to(R)),
+    'entry_sha256':sha(Path(__file__)),'part_count':len(s['parts']),
+    'native_passed_parts':sum(x['resource_contract_pass'] for x in r['parts']),
+    'native_errors':[{'id':p['id'],'errors':p['errors']} for p in r['parts'] if not p['resource_contract_pass']],
+    'independent_neutral_own_finite_material_positive_pairs':hits,'independent_net_material_mass_kg':actualmass,
+    'full_OEM_mass_once_kg':mass['complete_OEM_mass_once_kg'],
+    'independent_source_datum_bound':{'overall_m':.090,'case_q_m':0,'pilot_q_m':-.005,
+        'A_mount_conditional_q_m':params['CSG50_A_small_PCD_output_face_conditional_q_m']},
+    'scope':'Single roll input path. Does not validate OEM axial register/lamination surface, old G2 waist mount, release-spring deformation, fluid routing, controller or entire robot.',
+    'geometry_accepted':False,'physics_accepted':False,'aesthetic_accepted':False,'stable_si':False}
+(O/'review_waist_input.json').write_text(json.dumps(receipt,indent=2)+'\n')
+print('WAIST_FINAL_REVIEW',h,len(s['parts']),sum(x['resource_contract_pass'] for x in r['parts']),'neutral positive',len(hits),flush=True)

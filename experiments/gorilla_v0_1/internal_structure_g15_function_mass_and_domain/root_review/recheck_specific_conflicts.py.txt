@@ -1,0 +1,18 @@
+from pathlib import Path
+import gzip,json,hashlib
+import numpy as np,manifold3d as mf
+R=Path.cwd();B=R/'.scratch/gorilla_internal_g15_thorax_functional_colayout/b';O=Path(__file__).resolve().parent;s=json.loads(gzip.decompress((B/'scene.json.gz').read_bytes()));pm={p['name']:p for p in s['parts']};r=json.loads((B/'collision_receipt.json').read_text());cache={}
+def native(n):
+ if n not in cache:
+  p=pm[n];v=np.array(p.get('vertices_world_m',p.get('vertices')));f=np.array([[q[0],q[k],q[k+1]]for q in p['faces']for k in range(1,len(q)-1)],np.uint64);cache[n]=mf.Manifold(mf.Mesh64(v,f))
+ return cache[n]
+frame='g15_chest_shoulder_waist_net_cage';selected=[]
+for p in r['positive_pairs']:
+ names={p['a'],p['b']}
+ if frame in names and any('4320' in n or 'CSG65_complete' in n for n in names):selected.append(p)
+ if any('4320_complete' in n for n in names) and any(n in s['original_visible_armor_ids'] for n in names):selected.append(p)
+checks=[]
+for p in selected[:8]:
+ a=native(p['a']);b=native(p['b']);v=(a^b).volume();err=abs(v-p['volume_m3']);checks.append({'a':p['a'],'b':p['b'],'independent_volume_m3':v,'reported_volume_m3':p['volume_m3'],'both_kernel_resource_valid':a.status()==mf.Error.NoError and b.status()==mf.Error.NoError,'error_m3':err,'pass':v>0 and err<1e-11})
+d={'body_sha256':hashlib.sha256((B/'scene.json.gz').read_bytes()).hexdigest(),'selected_native_direct_boolean_checks':checks,'all_pass':all(x['pass']for x in checks),'no_source_repair_or_owner_exemption':True,'physical_or_assembly_admission':False}
+(O/'independent_specific_conflicts.json').write_text(json.dumps(d,indent=2)+'\n');print(json.dumps({'checks':len(checks),'failed':[q for q in checks if not q['pass']]}))

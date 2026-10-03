@@ -1,0 +1,74 @@
+#!/usr/bin/env python3
+import pathlib,json,gzip,hashlib,collections,numpy as np
+P=pathlib.Path(__file__).resolve().parent;R=P.parents[1]
+def sha(p):return hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
+def read(p):return json.load(gzip.open(p,'rt')) if str(p).endswith('.gz') else json.loads(pathlib.Path(p).read_text())
+def wr(p,d):pathlib.Path(p).write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n')
+report={'scope':'G16 two macro body partition probes; source locks preserved; no assembly/appearance/physical qualification','variants':{},'failure_history':'b_failed_input_schema contains exact failed producer/log before any fullBsource; A/B exact producers archived per variant','interpreter':str(R/'.venv/bin/python')}
+for v in ['a','b']:
+ d=P/v;s=read(d/'scene.json.gz');q=read(d/'audit_summary.json');by={p['name']:p for p in s['parts']};part=read(d/'calculation_partition_receipt.json');hits=read(d/'changed_all_collision_receipt.json');print('hitkeys',hits.keys())
+ rows=next((x for k,x in hits.items() if isinstance(x,list) and x and isinstance(x[0],dict) and 'V_m3' in x[0]),[])
+ finite=[x for x in rows if x['class_a']==x['class_b']=='finite_material']
+ profile=[x for x in rows if 'completefunction_reference_notnetmaterial' in [x['class_a'],x['class_b']]]
+ anchors=[by[n] for n in ['g13_left_fixed_reaction_closed_anchor','g13_right_fixed_reaction_closed_anchor']]
+ def signedV(p):t=np.array(p['vertices_world_m'])[np.array(p['faces'])];return np.einsum('ij,ij->i',t[:,0],np.cross(t[:,1],t[:,2])).sum()/6
+ anchorsM=[signedV(p)*7850 for p in anchors]
+ tanks=[]
+ for p in s['parts']:
+  if 'working_tank_shell' in p['name']:
+   tanks.append({'id':p['name'],'native_shell_V_L':signedV(p)*1000,'metadata':{k:x for k,x in p.items() if k not in ['vertices_world_m','faces','rgba']}})
+ functionrows=s['new_module_mass_rows'];knownsum=np.sum([x['mass_range_kg'] for x in functionrows],axis=0).tolist()
+ slots=read(d/'major_blocks_partition_receipt.json')
+ moduleouts=[{'id':x['id'],'outside_conditional_capped_domain_L':x['outside_conditionallycalculationclosed_domain_m3']*1000,'AABB_m':x['AABB_m']} for x in slots['blocks'] if x['outside_conditionallycalculationclosed_domain_m3']>1e-9]
+ rr={'source_sha256':sha(d/'scene.json.gz'),'part_count':len(s['parts']),'producer_recorded_sha256':s['producer_sha256'],'producer_current_sha256':sha(d/'build_partition.py'),'audit_summary':q,'frame_native_mass_kg':q['ownframe_mass_kg'],'independent_native_anchor_masses_kg':anchorsM,'frame_plus_anchors_mass_kg':q['ownframe_mass_kg']+sum(anchorsM),'anchors_NOT_mass_alias_in_frame':True,'new_module_rows_sum_kg_only_NOT_whole':knownsum,'new_module_rows_count':len(functionrows),'mass_sum_contains_reference_maxcells_ownfinite_density_and_customranges':True,'retained_OEMbody_split_fullmass_COM_I_unknown':True,'fluidinventory_literal':s['globalfluidinventory'],'tanks':tanks,'conditional_partition_receipt_path':str(d/'calculation_partition_receipt.json'),'conditional_partition_summary':{k:x for k,x in part.items() if not isinstance(x,list)},'major_block_scope':'four packs, eighteen directional groups, thermal segments, two hydraulic input stacks, two shoulder installed profiles; excludes separate aux/tanks/HV/compute from block-only pair test. changed-vs-all receipt separately includes all present actual geometry','major_block_outside_conditional_domain':moduleouts,'finite_material_top10':finite[:10],'reference_vs_all_top10':profile[:10],'collision_scope':'new/moved × all present retained finite/reference inventory; positive profile NOT OEMnetmaterial. after-removal service and computational domain excluded; unchanged-retained pairs, complete motion, actual routed circuits not screened','joint_path_reject':'shoulder anchorX=.115/0.0495m2 each is coplanar contact only; no shear-transmitting weld/bolts/source joint. One cage solid does not close shoulder-to-waist physical load chain','old_serial_carriers_preserved':'oldpitch supports roll; oldroll supports yaw. Neither wholesale retired; crossDOF output/roll conflict retained','global_fluid_once_NOT_geometrically_closed':'oil30L water12.481996L are distributed logical stocks, not tank fill or certified bodyCOM. actual routes/expansion/NPSH/return and all chambers unresolved','appearance_scope':'111 byte-exact original faces kept; new exposed systems alter visible assembled outline and remain failed candidate, no visible change adopted','low_loop_upgrade_missing_B':v=='b','no_native_geometry_mutation_during_diagnostics':True,'assembly_admission':False}
+ report['variants'][v]=rr
+ wr(d/'final_receipt.json',rr)
+# frozen source references via recorded inputs plus explicit independent same-scope references
+inputs={}
+for v in ['a','b']:
+ for k,path in read(P/v/'scene.json.gz')['sources'].items():
+  if isinstance(path,str) and pathlib.Path(path).is_file():inputs[path]=sha(path)
+for p in [R/'sai_robots_engineering_rules.md',R/'.scratch/gorilla_internal_g15_thorax_functional_colayout/b/scene.json.gz',R/'.scratch/gorilla_internal_g13_shoulder_cooling_zones/a/scene.json.gz',R/'.scratch/gorilla_internal_g14_complete_thermal_colayout/geometry_helpers.py',R/'.scratch/gorilla_internal_g16_compact_thermal_scope/module_scope_initial.json']:
+ if p.is_file():inputs[str(p)]=sha(p)
+report['inputs_exact_hash']=inputs
+report['latest_thermal_proposal_not_geometry_input']={'path':str(R/'.scratch/gorilla_internal_g16_compact_thermal_scope/compact_module_scope.json'),'sha256':sha(R/'.scratch/gorilla_internal_g16_compact_thermal_scope/compact_module_scope.json') if (R/'.scratch/gorilla_internal_g16_compact_thermal_scope/compact_module_scope.json').exists() else None,'missing_Bgeometry':'low2×EWP150 series reference140×190×270mm plus connection/support; B stilloneEWP80low. No geometry retrofit','aux_max_power_reference_kW':2.1475,'not_rating_or_task_actual':True}
+wr(P/'report.json',report)
+a=report['variants']['a'];b=report['variants']['b']
+md=f'''# G16 宽厚身体功能分区封存
+
+两套真实宏观候选均未采用；本轮停止几何。A/B 原 producer、native、CAD 和诊断均独立保存，不修改 G15 或受控模型。
+
+| 同版结果 | A | B |
+|---|---:|---:|
+| 实际 native 件数 | {a['part_count']} | {b['part_count']} |
+| 主要完整功能 profile 相交 | 13 | 2 |
+| changed×all 正体积（混合有限/参考/流体） | 1297 | 958 |
+| 其中有限材料×有限材料 | 74 | 45 |
+| 新 cage 净质量，假设钢7850kg/m³ | 62.9354kg | 62.9354kg |
+
+B 保留完整480芯、四套电池辅助、18套21件方向阀、原18保持组、两完整液压输入组及G13A肩完整组。S1为4×ES0707完整254×212×80mm芯+1×ES0714完整457×212×80mm芯，各176mm完整硬件厚度及6个172×51mm风机、非零plenum/guard/seal/连接器；不是缩4320继承能力。泵/脱气/控制/filter/relief/隔离/支座已画，但最新低回路双EWP150串联140×190×270mm建议**未画入**，B仍单EWP80低回路，因此不称S1完整装配或流量通过。
+
+B两处ES0707完整profile×肩各31.8175cm³；45处finite–finite主要为下电池/水罐与腰传动，详细ID/体积见b/final_receipt.json。958不是958个已知金属硬碰撞；完整OEM参考、有限自有材料、逻辑液体的范围在changed_all_collision_receipt.json分开。主要块测试未覆盖单独aux/tanks/HV/compute，不能把2pair称完整功能非交叠。
+
+计算域338.588L来自实际C15曲面采样与显式工程封口，共238条射线、120条缺面插值。封口不是真甲皮或认证可用腔；四视、真实切面和域差均保留。B按现功能profile排除后的条件剩余246.424L，仅是设计域探针；旧carrier单独作为条件挑战，没有永久锁成非设计材料，service仅拆壳后候选，不全部扣作永久空域。它仍不能证明内部空间可用或AA3全局不可行。
+
+主cage是200×80mm/5mm壁闭口宽梁与有限节点。OCC primary合法1solid，SI STEP回读体积相对差8.0e−15；native64段圆弧近似与OCC体积差−0.02609%，最大弦差0.0964mm明确保存，非逐顶点相同CAD。native资源门通过、主cage1材料root，仅证明几何资源。原G15无效CAD只读查到solid级无效、faces/edges/wires本地状态NoError；未定位单一建模根因，不把容差猜测写成已证因果。新源改用解析Cut/Fuse，未修旧源。
+
+两独立肩锚各{b['independent_native_anchor_masses_kg'][0]:.6f}kg，**未并入**新62.935418kg frame，合计{b['frame_plus_anchors_mass_kg']:.6f}kg。肩X=.115共面仅接触，未建立能传Fz/My的螺栓/焊接/剪切接面；不能由单实体宣称肩→腰承力完成。旧pitch/roll仍有下游功能，保留且干涉未关。新module质量行是子集：包含max70g芯预算、有限材料ρ和自定区间；retained完整部件质量/rotor分配、全机COM/I和真实安装质量未闭，不输出合格整机SI。
+
+A水工作填充0.6L；B低/高罐工作1.2/0.8L，总2.0L与S1建议一致；B油工作7L。global油30L/水12.481996L仅库存一次，不能全部归箱中心或把未路由液体称安装完成。有限tank尺寸/壳和当前分配见final_receipt，膨胀/回流/吸空/NPSH/全腔/工作fill与routes库存仍红。肩 bounded_water_region 即使库存alias也排他，不能因不另计质量许可框架侵入。
+
+111旧可见面字节保持只证明来源恒等。实渲可见B背屏/阀/边梁等新增装配外露；未采用外形变动，也没有证明轮廓fit。原画缺面、维护、完整参考空间和外露需要下一共同架构决定。无新增第三布局、没有FEM/SIMP/资格结论。
+
+复现：使用`/home/ethan/Projects/Sai_Rotbots/.venv/bin/python`运行a或b目录对应build_partition.py，再同目录audit_partition.py；finish_diagnostics.py重建条件设计余域与同版4视，finalize.py生成收据。复现会覆盖本目录产物，冻结审计优先读取原bytes及manifest。每版producer独立，B输入schema失败前producer/log另存b_failed_input_schema。输出位置都是scratch，未Git。
+
+冻结身份：A `{a['source_sha256']}`；B `{b['source_sha256']}`。所有输入/输出具体hash由freeze_manifest.json给出。最新thermal文档仅作为未实施建议绑定，不冒充B建模输入。
+'''
+(P/'README.md').write_text(md)
+files=[p for p in P.rglob('*') if p.is_file() and '__pycache__' not in p.parts and p.suffix!='.log' and p.name not in ['freeze_manifest.json','freeze_check.json']]
+outputs={str(p):sha(p) for p in sorted(files)}
+manifest={'scope':'two frozenG16 macro variants; no assembly admission','sourceA':a['source_sha256'],'sourceB':b['source_sha256'],'inputs':inputs,'outputs':outputs,'progress_logs_preserved_not_frozen_by_hash':sorted(str(p) for p in P.rglob('*.log')),'reproduction_interpreter':str(R/'.venv/bin/python')}
+wr(P/'freeze_manifest.json',manifest)
+errors=[p for p,h in {**inputs,**outputs}.items() if not pathlib.Path(p).exists() or sha(p)!=h]
+wr(P/'freeze_check.json',{'manifest_sha256':sha(P/'freeze_manifest.json'),'input_count':len(inputs),'output_count':len(outputs),'errors':errors,'all_source_identity_preserved':not errors})
+print('EVENT G16 FREEZE',sha(P/'freeze_manifest.json'),'receipt',sha(P/'README.md'),'hash_errors',len(errors))

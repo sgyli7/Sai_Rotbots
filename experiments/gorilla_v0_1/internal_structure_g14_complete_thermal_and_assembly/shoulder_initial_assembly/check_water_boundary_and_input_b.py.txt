@@ -1,0 +1,38 @@
+"""Same-source native pressure-boundary and manual input/release probes. No repair."""
+from pathlib import Path
+import json,gzip,hashlib,numpy as np,manifold3d as mf
+O=Path(__file__).resolve().parent;D=O/'b';S=D/'scene.json.gz';sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();s=json.loads(gzip.decompress(S.read_bytes()));by={p['name']:p for p in s['parts']};M={n:mf.Manifold(mf.Mesh64(np.array(p['vertices_world_m']),np.array(p['faces'],np.uint64))) for n,p in by.items()};threshold=1e-10
+bb={n:np.array(m.bounding_box()).reshape(2,3) for n,m in M.items()}
+def hits(moving,translation):
+ r=[]
+ for n in moving:
+  ma=M[n].translate(translation);ba=bb[n]+translation
+  for other,m in M.items():
+   if other in moving or not(np.all(ba[1]>=bb[other][0]) and np.all(bb[other][1]>=ba[0])):continue
+   v=(ma^m).volume()
+   if v>threshold:r.append({'a':n,'b':other,'volume_cm3':v*1e6,'finite_material_pair':bool(by[n].get('finite_material') and by[other].get('finite_material'))})
+ return r
+rows=[];service=[];ports=[]
+for side,sg in [('left',1),('right',-1)]:
+ prefix='g14_'+side+'_';ps={n:p for n,p in by.items() if n.startswith(prefix)}
+ walls=[n for n,p in ps.items() if p.get('finite_material') and ('water_' in n or n.endswith('fixed_motor_cooling_brake_case'))]
+ wall=M[walls[0]]
+ for n in walls[1:]:wall=wall+M[n]
+ water=ps[prefix+'bounded_water_region'];v=np.array(water['vertices_world_m']);f=np.array(water['faces']);t=v[f];nn=np.cross(t[:,1]-t[:,0],t[:,2]-t[:,0]);areas=np.linalg.norm(nn,axis=1)/2;norm=nn/(2*areas[:,None]);center=t.mean(1);open_faces=[];covered=[];gaps=[];eps=4e-6
+ primary=[ps[prefix+'water_'+label+'_fitting'] for label in ['in','out']]
+ for k,(point,normal) in enumerate(zip(center,norm)):
+  isopen=any(abs(np.dot(point-np.array(p['port_world_m']),p['axis_world']))<1e-10 and np.dot(normal,p['axis_world'])>.999 for p in primary)
+  if isopen:open_faces.append(k);continue
+  check=point+normal*eps;ray=wall.ray_cast(check.tolist(),(check+np.array([3.131,4.283,5.719])).tolist())
+  if len(ray)%2:covered.append(k)
+  else:gaps.append({'face':k,'centroid_world_m':point.tolist(),'area_m2':float(areas[k]),'outward_normal_world':normal.tolist(),'ray_hit_count':len(ray)})
+ rows.append({'side':side,'source_water_id':water['name'],'wall_source_ids':walls,'offset_m':eps,'ray_endpoint_delta_m':[3.131,4.283,5.719],'method':'Actual native triangle centroid plus outward 4um, material-inside by signed-closed source union odd exact ray crossings. Union is diagnostic, does not prove gland/thread connection. No mesh repair. Each face checked. Primary inlet/return end caps are explicitly open control surfaces.','water_triangle_count':len(f),'primary_open_control_face_count':len(open_faces),'material_covered_triangle_count':len(covered),'uncovered_triangle_count':len(gaps),'uncovered_area_m2':sum(x['area_m2'] for x in gaps),'uncovered':gaps,'closed_circuit_pressure_seal_rating_unknown':True})
+ excluded=[n for n,p in ps.items() if 'load_support_' in n or n.endswith('fixed_reaction_closed_anchor') or p['body']==side+'_shoulder_pitch_carrier' or 'independent_load_bearing_' in n or 'CSG65_complete' in n]
+ inputset=[n for n in ps if n not in excluded]
+ sample=[{'translation_m':float(d),'pairs':hits(inputset,np.array([0,-sg*d,0]))} for d in np.linspace(0,.240,21)]
+ service.append({'side':side,'operation':'complete_input_case_sleeve_coolant_source_and_functional_kit_inward240mm','exact_ids':inputset,'samples':sample,'finite_material_failure_samples':sum(any(p['finite_material_pair'] for p in r['pairs']) for r in sample),'reference_probe_samples':sum(any(not p['finite_material_pair'] for p in r['pairs']) for r in sample),'local_anchor_not_future_core_or_armor_or_actual_hose_tool_fixture_qualification':True,'fluid_source_moves_as_geometry_probe_not_new_rigid_water_body':True})
+ release=[n for n,p in ps.items() if p['body']==side+'_brake_release_plate'];sample=[{'translation_m':float(d),'pairs':hits(release,np.array([0,-sg*d,0]))} for d in np.linspace(0,.001,9)]
+ service.append({'side':side,'operation':'brake_release_plate_and_rear_lining_1mm','exact_ids':release,'samples':sample,'finite_material_failure_samples':sum(any(p['finite_material_pair'] for p in r['pairs']) for r in sample),'reference_probe_samples':sum(any(not p['finite_material_pair'] for p in r['pairs']) for r in sample),'spring_force_stroke_magnetics_hold_torque_unknown':True})
+ a=ps[prefix+'fixed_reaction_closed_anchor'];av=np.array(a['vertices_world_m']);af=np.array(a['faces']);at=av[af];ar=np.linalg.norm(np.cross(at[:,1]-at[:,0],at[:,2]-at[:,0]),axis=1)/2;mask=np.all(abs(at[:,:,0]-.115)<1e-10,axis=1);area=ar[mask].sum();c=(ar[mask,None]*at[mask].mean(1)).sum(0)/area
+ ports.append({'side':side,'anchor_id':a['name'],'candidate_core_plane_world_X_m':.115,'native_area_m2':float(area),'native_centroid_world_m':c.tolist(),'wall_m':.006,'normal_world':[1,0,0],'future_core_joint_and_loadpath_unknown':True})
+r={'robot_id':'gorilla_v0_1','source_sha256':sha(S),'producer_sha256':sha(__file__),'finite_pair_threshold_m3':threshold,'actual_water_boundary':rows,'actual_input_and_release':service,'true_core_candidate_ports':ports,'physical_accepted':False};(D/'water_boundary_and_input_report.json').write_text(json.dumps(r,indent=2)+'\n');print('WALL_INPUT_READY',sha(D/'water_boundary_and_input_report.json'),'walls',[(r['side'],r['uncovered_triangle_count']) for r in rows],'service',[(r['operation'],r['finite_material_failure_samples'],r['reference_probe_samples']) for r in service],flush=True)

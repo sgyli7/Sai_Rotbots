@@ -1,0 +1,52 @@
+"""Locked-source G22 derivatives only; no geometry mutation or new layout."""
+from pathlib import Path
+import json,gzip,hashlib,math
+import numpy as np,manifold3d as mf
+from OCP.STEPControl import STEPControl_Reader
+from OCP.BRepGProp import BRepGProp
+from OCP.GProp import GProp_GProps
+from OCP.BRepCheck import BRepCheck_Analyzer
+O=Path(__file__).resolve().parent;R=Path.cwd();S=O/'module_scene.json.gz';sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();put=lambda n,x:(O/n).write_text(json.dumps(x,indent=2,allow_nan=False)+'\n');s=json.loads(gzip.decompress(S.read_bytes()));ps={p['name']:p for p in s['parts']};new=set(s['new_member_ids']);mats={n:mf.Manifold(mf.Mesh64(np.array(p['vertices_world_m'],float),np.array(p['faces'],np.uint64)))for n,p in ps.items()}
+raw=O/'common_core_numeric_m.step';out=O/'common_core_si.step';txt=raw.read_text();assert 'SI_UNIT(.MILLI.,.METRE.)'in txt;out.write_text(txt.replace('SI_UNIT(.MILLI.,.METRE.)','SI_UNIT($,.METRE.)'));rd=STEPControl_Reader();assert int(rd.ReadFile(str(out)))==1;rd.TransferRoots();sh=rd.OneShape();pr=GProp_GProps();BRepGProp.VolumeProperties_s(sh,pr);exact=json.loads((O/'cad_scope_receipt.json').read_text())['core_exact_OCP_m3'];put('explicit_si_cad_receipt.json',{'source_sha256':sha(S),'numeric_coordinate_original_STEP_sha256':sha(raw),'explicit_metres_STEP_sha256':sha(out),'change':'Export unit declaration only, numeric geometry unchanged. OCC reader returns mm; divide volume by1e9 for SI.','original_exact_CAD_volume_m3':exact,'independent_explicit_SI_readback_volume_m3':pr.Mass()/1e9,'relative_readback_error':pr.Mass()/1e9/exact-1,'readback_OCP_valid':bool(BRepCheck_Analyzer(sh).IsValid()),'receiver_and_other_parts_native_only_not_claimed_as_complete_manufacturing_CAD':True})
+# Literal native cross-section moments from source contours, with hole winding included.
+def sec_stats(q,value,label):
+ cs=q.slice(value);poly=cs.to_polygons();A=mx=my=xx=yy=xy=0.;bounds=[]
+ for lp in poly:
+  p=np.array(lp);a=p;b=np.roll(p,-1,axis=0);c=a[:,0]*b[:,1]-b[:,0]*a[:,1];A+=c.sum()/2;mx+=np.sum((a[:,0]+b[:,0])*c)/6;my+=np.sum((a[:,1]+b[:,1])*c)/6;xx+=np.sum((a[:,0]**2+a[:,0]*b[:,0]+b[:,0]**2)*c)/12;yy+=np.sum((a[:,1]**2+a[:,1]*b[:,1]+b[:,1]**2)*c)/12;xy+=np.sum((2*a[:,0]*a[:,1]+a[:,0]*b[:,1]+b[:,0]*a[:,1]+2*b[:,0]*b[:,1])*c)/24;bounds.append(p)
+ assert abs(A-cs.area())<1e-10;(cx,cy)=(mx/A,my/A);bb=np.concatenate(bounds);return {'label':label,'area_m2':float(A),'centroid_u_v_m':[cx,cy],'Iuu_m4':float(yy-A*cy**2),'Ivv_m4':float(xx-A*cx**2),'Iuv_m4':float(xy-A*cx*cy),'Wuu_m3':float((yy-A*cy**2)/max(abs(bb[:,1]-cy))),'Wvv_m3':float((xx-A*cx**2)/max(abs(bb[:,0]-cx))),'source_polygon_count':len(poly),'coordinates_note':'native oriented contour integral, not schematic rectangle'}
+frame=mats['g22_common_core_load_cage_net'];TY=np.array([[1,0,0,0],[0,0,-1,0],[0,1,0,0]]);stats=[sec_stats(frame,2.150173,'rail_Z_2p150173_XY'),sec_stats(frame.transform(TY),.455123,'left_node_Y_0p455123_X_negZ')];screen=json.loads((O/'sixd_node_screen.json').read_text());bolt=[]
+for side,g in screen['groups'].items():
+ rad=.0068 if side=='waist'else.0058;area=math.pi*rad**2
+ for q in g['rows']:
+  normal=np.array(q['normal_N']);shear=np.linalg.norm(q['shear_YZ_N'],axis=1);vm=np.sqrt((normal/area)**2+3*(shear/area)**2);bolt.append({'group':side,'factor':q['factor'],'solid_proxy_shank_area_m2':area,'vonMises_proxy_MPa':(vm/1e6).tolist(),'max_proxy_MPa':float(vm.max()/1e6),'comparison_to_hyp235MPa_steel':float(vm.max()/235e6),'actual_fastener_thread_tensile_area_preload_propertyclass_prying_unknown':True})
+# Wrench transfer from actual pitch axes to node hole centroid is explicit geometry, not old-axis loads.
+reactions=[]
+for side,sg in [('left',1),('right',-1)]:
+ group=screen['groups'][side];c=np.array([.115,*group['centroid_YZ_m']]);p=np.array([-.04,sg*.515,2.405]);r=p-c;K=np.array([[0,-r[2],r[1]],[r[2],0,-r[0]],[-r[1],r[0],0]]);X=np.block([[np.eye(3),np.zeros((3,3))],[K,np.eye(3)]]);reactions.append({'interface':side,'actual_pitch_axis_world_m':p.tolist(),'actual_node_hole_centroid_world_m':c.tolist(),'wrench_transfer_order':['Fx','Fy','Fz','Mx','My','Mz'],'wrench_node_equals_X_times_wrench_axis':X.tolist(),'6D_actual_reaction_unknown':'Parent physical contract/loadstate must supply actual axis wrench, not old G19 FK or three-ton handpayload.'})
+put('literal_node_and_bolt_screen.json',{'source_sha256':sha(S),'sections':stats,'bolt_proxy_stress_screen':bolt,'reactions':reactions,'material_sensitivity':{'steel_hyp_E_Pa':200e9,'Al_hyp_E_Pa':69e9,'same_geometry_deflection_Al_over_steel':200/69,'stress_under_same_prescribed_resultant':'unchanged nominal N/A+M/W, elasticcontact redistribution unknown','not_density_swap_or_strength_acceptance':True},'limits':['Loaded shoulder example5000N/1000/500Nm is a parameter probe, not a computed real arm load','3t waist fixture separate from robot selfweight/handloads/gait','Matched projected area coexists with positive volume overlaps, so assembly rejected','Threads/preload/contact/fatigue/sockets/actual waist source remain unknown']})
+# Limited original actual-joint serial pose display; no old load FK or input/output inertia splitting.
+js=json.loads(gzip.decompress((R/'.scratch/gorilla_internal_g21_joint_core_interface/b/scene.json.gz').read_bytes()));joints=js['joint_interfaces'];Mirror=np.diag([1.,-1.,1.,1.])
+def rot(j,a):
+ ax=np.array(j['axis_world']);c=np.array(j['pivot_world_m']);theta=math.radians(a);K=np.array([[0,-ax[2],ax[1]],[ax[2],0,-ax[0]],[-ax[1],ax[0],0]]);Q=np.eye(3)+math.sin(theta)*K+(1-math.cos(theta))*(K@K);T=np.eye(4);T[:3,:3]=Q;T[:3,3]=c-Q@c;return T
+pose=[]
+for tag,angs in [('pitch15',[15,0,0]),('roll15',[0,15,0]),('combined15_10_10',[15,10,10])]:
+ ts=[rot(j,a)for j,a in zip(joints,angs)];mm={}
+ for n,p in ps.items():
+  if n in new or not p.get('source_original_name','').startswith('g21_b_'):mm[n]=mats[n];continue
+  old=p['source_original_name'];body=p['body'].replace('right_','left_');T=np.eye(4)
+  if old.startswith('g21_b_roll_')or old.startswith('g21_b_yaw_')or body=='left_shoulder_pitch_carrier':T=ts[0]@T
+  if old.startswith('g21_b_yaw_')or body=='left_shoulder_roll_carrier':T=T@ts[1]
+  if body=='left_shoulder_yaw_carrier':T=T@ts[2]
+  if n.startswith('g22_right_context_'):T=Mirror@T@Mirror
+  mm[n]=mats[n].transform(T[:3,:])
+ pairs=[]
+ for a in sorted(new):
+  for b in mm:
+   if b in new:continue
+   aa=np.array(mm[a].bounding_box());bb=np.array(mm[b].bounding_box())
+   if not(np.all(aa[3:]>bb[:3])and np.all(bb[3:]>aa[:3])):continue
+   v=float((mm[a]^mm[b]).volume())
+   if v>1e-10:pairs.append({'a':a,'b':b,'volume_m3':v,'same_owner_not_exempt':True})
+ pairs.sort(key=lambda x:x['volume_m3'],reverse=True);pose.append({'id':tag,'joint_degrees':angs,'changed_context_vs_all_new_pairs':pairs,'existing_new_new74neutral_overlaps_not_removed':True})
+put('limited_pose_receipt.json',{'source_sha256':sha(S),'source_joint_interfaces_scene_sha256':sha(R/'.scratch/gorilla_internal_g21_joint_core_interface/b/scene.json.gz'),'poses':pose,'scope':'Only same3 discrete G21 actual serial display poses, retained complete fields. Not continuous motion/native physics or upstream/downstream real assembly. New core remains fixed; input mass split not invented.','physical_accepted':False})
+print(json.dumps({'literal_sections':stats,'boltmax':[{'group':q['group'],'factor':q['factor'],'MPa':q['max_proxy_MPa']}for q in bolt],'pose_counts':[(q['id'],len(q['changed_context_vs_all_new_pairs']))for q in pose],'SIreadback':pr.Mass()/1e9},indent=2),flush=True)

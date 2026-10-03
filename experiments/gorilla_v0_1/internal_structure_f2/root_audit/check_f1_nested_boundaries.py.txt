@@ -1,0 +1,47 @@
+"""Check signed native F1 boundary nesting, without fixing normals or modifying source."""
+from pathlib import Path
+import json, hashlib
+import numpy as np
+import manifold3d as mm
+
+ROOT = Path(__file__).resolve().parents[2]
+SOURCE = ROOT / '.scratch/gorilla_internal_f1_structure/structure_scene.json'
+
+def mf(vertices, faces):
+    return mm.Manifold(mm.Mesh64(np.ascontiguousarray(vertices, dtype=np.float64), np.ascontiguousarray(faces, dtype=np.uint64)))
+
+def inspect(p):
+    triangles = [[f[0], f[i], f[i+1]] for f in p['faces'] for i in range(1, len(f)-1)]
+    u = mf(p['vertices_world_m'], triangles)
+    cs = u.decompose()
+    rows = []
+    for c in cs:
+        mesh = c.to_mesh64()
+        v = c.volume()
+        absolute = c if v >= 0 else mf(mesh.vert_properties[:, :3], mesh.tri_verts[:, ::-1])
+        points = np.asarray(mesh.vert_properties[:, :3])
+        rows.append({'v': v, 'absolute': absolute, 'bounds': [points.min(0), points.max(0)]})
+    bad = []
+    for j, r in enumerate(rows):
+        if abs(r['v']) < 1e-10:
+            continue
+        parents = []
+        for i, o in enumerate(rows):
+            if i == j or abs(o['v']) <= abs(r['v']) + 1e-10:
+                continue
+            if np.any(o['bounds'][0] > r['bounds'][0] + 1e-9) or np.any(o['bounds'][1] < r['bounds'][1] - 1e-9):
+                continue
+            overlap = (o['absolute'] ^ r['absolute']).volume()
+            if abs(overlap - abs(r['v'])) <= max(1e-10, abs(r['v'])*1e-8):
+                parents.append((abs(o['v']), i))
+        parent = min(parents)[1] if parents else None
+        if parent is None and r['v'] < 0 or parent is not None and r['v']*rows[parent]['v'] > 0:
+            bad.append({'boundary': j, 'volume_m3': r['v'], 'parent': parent, 'parent_volume_m3': rows[parent]['v'] if parent is not None else None})
+    return {'id': p['name'], 'density_kg_m3': p.get('density_kg_m3'), 'status': str(u.status()), 'signed_native_volume_m3': u.volume(), 'boundary_volumes_m3': [r['v'] for r in rows], 'same_orientation_nested_or_negative_root': bad}
+
+s = json.loads(SOURCE.read_text())
+rows = [inspect(p) for p in s['parts']]
+report = {'schema': 'gorilla_f1_native_boundary_nesting_audit_v1', 'source_sha256': hashlib.sha256(SOURCE.read_bytes()).hexdigest(), 'parts': len(rows), 'bad': [r for r in rows if r['same_orientation_nested_or_negative_root']], 'all_rows': rows, 'source_modified': False, 'corrected_material_mass_calculated': False, 'geometry_qualified': False}
+out = Path(__file__).parent / 'f1_native_boundary_nesting.json'
+out.write_text(json.dumps(report, indent=2) + '\n')
+print(json.dumps({'parts': len(rows), 'bad': report['bad']}, indent=2))

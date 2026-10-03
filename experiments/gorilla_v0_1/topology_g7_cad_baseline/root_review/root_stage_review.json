@@ -1,0 +1,58 @@
+{
+  "robot_id": "gorilla_v0_1",
+  "scope": "Actual single-carrier G7 conditional 3D baseline, not exterior, whole robot, or strength acceptance.",
+  "inputs": [
+    {
+      "path": ".scratch/gorilla_internal_g7_root_fem/coarse_elastic_baseline.json",
+      "sha256": "639d1468b0ecac0ad311a3fb780c09aa0d76368064de57f528715e3aac2e7904"
+    },
+    {
+      "path": ".scratch/gorilla_internal_g7_root_fem/fine_elastic_baseline.json",
+      "sha256": "b4f88466b51f9581ecb2f2042b68ec4184c27e39f41b9f8ab2d2c0446b0ed23f"
+    },
+    {
+      "path": ".scratch/gorilla_internal_g7_root_fem/independent_actual_fields.json",
+      "sha256": "743a75479b85fa0fed95036a3b3debab560619393ac478d6a862cf6b4770fa40"
+    },
+    {
+      "path": ".scratch/gorilla_internal_g8_material_layout_review/material_layout_review.json",
+      "sha256": "7c0da1f72e3865892a6ce679656ffc39a3d0bf561026d19682777c3f39d5505d"
+    }
+  ],
+  "two_mesh_comparison": [
+    {
+      "case": "case18",
+      "coarse_compliance_J": 4.143071686788351,
+      "fine_compliance_J": 4.414258375899801,
+      "compliance_change_fraction": 0.06545546628512988,
+      "coarse_rigid_removed_Umax_mm": 0.14807793221798612,
+      "fine_rigid_removed_Umax_mm": 0.15484690095787618,
+      "Umax_change_fraction": 0.04571220463779446,
+      "coarse_max_VM_MPa": 207.31330996734823,
+      "fine_max_VM_MPa": 270.54842333767766,
+      "max_VM_change_fraction": 0.3050219659330553
+    },
+    {
+      "case": "case20",
+      "coarse_compliance_J": 29.37316717234455,
+      "fine_compliance_J": 31.89726202106252,
+      "compliance_change_fraction": 0.08593199480015401,
+      "coarse_rigid_removed_Umax_mm": 0.7816460251956967,
+      "fine_rigid_removed_Umax_mm": 0.8555837865852319,
+      "Umax_change_fraction": 0.09459238454007846,
+      "coarse_max_VM_MPa": 461.3477957021558,
+      "fine_max_VM_MPa": 571.278281785208,
+      "max_VM_change_fraction": 0.2382811560110345
+    }
+  ],
+  "converged_stress_proven": false,
+  "contact_and_pressure_center_qualified": false,
+  "topology_optimization_executed": false,
+  "G8_root_choice": {
+    "A": "8mm finite toe transition and local10mm top patch; reject incompatible radius rather than fake geometry.",
+    "B": "6mm closed skin and two continuous6mm webs under stop pads, connected to roof/floor/end walls; functional bores/clearance retained.",
+    "purpose": "Compare load introduction and section stiffness before remove-only topology optimization.",
+    "exact42_G4_load_cases_required": true
+  },
+  "complete_first_checkpoint_or_whole_robot_accepted": false
+}

@@ -1,0 +1,79 @@
+from pathlib import Path
+import json,hashlib,time,copy,math,collections
+import numpy as np,trimesh
+R=Path('/home/ethan/Projects/Sai_Rotbots');O=R/'.scratch/gorilla_internal_f_packaging';MP=R/'.scratch/gorilla_internal_e2a_integrated/scene.json';SP=R/'.scratch/gorilla_internal_e2_system/system_spec.json';raw=MP.read_bytes();sha=lambda b:hashlib.sha256(b).hexdigest();M=json.loads(raw);S=json.loads(SP.read_text());assert sha(raw)=='6039922d1ab479346dd590745b78d5e176a8ecf6a039bc734cfbfeed686516f6';assert sha(SP.read_bytes())==M['input_hashes'][str(SP.relative_to(R))];pm={p['name']:p for p in M['parts']};mass={r['id']:r for r in M['mass_rows']}
+G={}
+for side in ['left','right']:
+ G[f'old_{side}_bank']=[n for n in pm if n.startswith(f'ds_{side}_') and '_valve_' in n]
+ G[f'new_{side}_bank']=[n for n,p in pm.items() if p.get('category')=='added_hydraulic_EA_valve' and (np.mean(p['vertices_world_m'],axis=0)[1]>0)==(side=='left')]
+ G[f'new_{side}_bank'] += [f'e2_added_bank_{1 if side=="left" else -1}_connection_end']
+ G[f'{side}_upper_pack']=[f'ds_{side}_upper_custom_hv_pack',f'ds_{side}_upper_custom_hv_pack_bms_fuse_service',f'e_ds_{side}_upper_custom_hv_pack_coldplate']
+G['P_header']=[n for n in pm if n.startswith('e2_P_header') or n=='e2_oil_P_18port_header'];G['T_header']=[n for n in pm if n.startswith('e2_T_header') or n=='e2_oil_T_18port_header'];G['HX']=[n for n in pm if n=='e2_dual_fluid_HX_material' or n.startswith('e2_oil_HX_') and n.endswith('actual_hollow_port')];G['back_screen']=['ds_back_screen'];assert len(set(sum(G.values(),[])))==sum(map(len,G.values()));moved=set(sum(G.values(),[]))
+fluidcats={'oil_inventory_once','coolant_inventory','coolant_inventory_unknown_internal'}
+nonexclusive={'control_display_ui','visible_mechanism','display_module_envelope'}
+# All original armor/contact and remaining real native/component source, including reservoirs/routes/holds and service reserves.
+excl={n:p for n,p in pm.items() if p.get('category') not in fluidcats and p['role'] not in nonexclusive}; fluid={n:p for n,p in pm.items() if p.get('category') in fluidcats}
+def mesh(p):return trimesh.Trimesh(p['vertices_world_m'],[[f[0],f[i],f[i+1]] for f in p['faces'] for i in range(1,len(f)-1)],process=False)
+meshes={n:mesh(p) for n,p in excl.items()};fm={n:mesh(p) for n,p in fluid.items()};own={n:g for g,ids in G.items() for n in ids}
+def test(meshes_to_test):
+ hits=[];checks=0;seen=set()
+ for n,a in meshes_to_test.items():
+  for k,b in meshes.items():
+   if n==k or k in moved and own[n]==own[k]:continue
+   pair=tuple(sorted((n,k)))
+   if pair in seen:continue
+   seen.add(pair)
+   if k in meshes_to_test:b=meshes_to_test[k]
+   if not np.all(np.minimum(a.bounds[1],b.bounds[1])-np.maximum(a.bounds[0],b.bounds[0])>1e-6):continue
+   checks+=1;v=float(trimesh.boolean.intersection([a,b],engine='manifold').volume)
+   if v>1e-9:hits.append({'a':n,'a_group':own[n],'b':k,'b_group':own.get(k),'b_role':pm[k]['role'],'b_category':pm[k].get('category'),'positive_volume_m3':v,'OEM_or_own_complete_envelope_not_exact_material':pm[k]['role'] in ['component_module_envelope','complete_component_reference','bearing_reference']})
+ return {'actual_boolean_pairs':checks,'positive_pair_count':len(hits),'positive_pairs':hits}
+def ry(q):q=math.radians(q);return np.array([[math.cos(q),0,math.sin(q)],[0,1,0],[-math.sin(q),0,math.cos(q)]])
+def rx(q):q=math.radians(q);return np.array([[1,0,0],[0,math.cos(q),-math.sin(q)],[0,math.sin(q),math.cos(q)]])
+def spec(layout,g):
+ side=1 if 'left' in g else -1
+ if g.startswith('old_'):return np.array([.26,side*.236,1.83]),np.array([.08,side*.235,1.965] if layout==1 else [-.11,side*.235,2.115]),ry(90 if layout==1 else -90)
+ if g.startswith('new_'):return np.array([.30,side*.185,1.475]),np.array([.07,side*.185,2.315] if layout==1 else [.08,side*.185,1.905]),ry(-90 if layout==1 else 90)
+ if g.endswith('_upper_pack'):return np.array([-.285,side*.17,2.395]),np.array([-.245,side*.17,2.395] if layout==1 else [-.24,side*.18,2.42]),np.eye(3) if layout==1 else rx(90)
+ if g=='P_header':return np.array([.20,0,2.245]),np.array([0,0,1.96] if layout==1 else [.07,0,2.26]),np.eye(3)
+ if g=='T_header':return np.array([.165,0,1.82]),np.array([0,0,2.08] if layout==1 else [.07,0,2.14]),np.eye(3)
+ if g=='HX':return np.array([-.20,0,1.77]),np.array([-.20,0,1.89] if layout==1 else [.08,0,1.79]),np.eye(3) if layout==1 else ry(90)
+ return np.array([-.436,0,2.205]),np.array([-.386,0,2.205] if layout==1 else [-.356,0,2.225]),np.eye(3)
+baseline=test({n:meshes[n] for n in moved});(O/'baseline_selected_group_screen.json').write_text(json.dumps(baseline,indent=2)+'\n');print('baseline',baseline['positive_pair_count'],flush=True)
+summary=[]
+for layout in [1,2]:
+ d=copy.deepcopy(M);groups=[];transforms={};moving_mesh={};changedids=[]
+ for g,ids in G.items():
+  origin,target,Q=spec(layout,g);T=np.eye(4);T[:3,:3]=Q;T[:3,3]=target-Q@origin;transforms[g]=T
+  rows=[mass[n] for n in ids if n in mass];mr=np.sum([r['mass_range_kg'] for r in rows],axis=0) if rows else np.zeros(3)
+  groups.append({'id':g,'part_ids':ids,'transform_world_4x4':T.tolist(),'source_pivot_world_m':origin.tolist(),'target_pivot_world_m':target.tolist(),'preserved_group_mass_range_kg':mr.tolist(),'installation_or_reconnection_accepted':False})
+ for p in d['parts']:
+  n=p['name']
+  if n in moved:
+   T=transforms[own[n]];v=np.asarray(p['vertices_world_m']);p['vertices_world_m']=(v@T[:3,:3].T+T[:3,3]).tolist();p['F_packaging_rigid_transform_only']=True;changedids.append(n);moving_mesh[n]=mesh(p)
+ for row in d['mass_rows']:
+  if row['id'] in moved:
+   T=transforms[own[row['id']]];old=np.asarray(row['COM_world_m']);row['COM_world_m']=(T[:3,:3]@old+T[:3,3]).tolist();row['legacy_inertia_proxy_not_requalified_after_packaging_transform']=True
+ # Complete native mass unchanged, fluids retained with explicitly stale geometry after component movement.
+ d['candidate']=f'internal_structure_f_packaging_trial_{layout}';d['F_parent_master_sha256']=sha(raw);d['F_group_transforms']=groups;d['F_fluid_geometry_and_flow_connectivity_stale_after_moves']=True;d['F_required_mounts_and_routes_not_rebuilt']=True;d['F_joint_axes_unchanged']=True;d['F_physical_mass_ranges_preserved']=True
+ assert d['joint_supports']==M['joint_supports'] and d['whole_mass_range_kg']==M['whole_mass_range_kg'];assert len(d['parts'])==len(M['parts'])
+ scene=O/f'trial_{layout}_scene.json';scene.write_text(json.dumps(d,indent=2)+'\n');check=test(moving_mesh)
+ by=collections.defaultdict(lambda:[0,0.])
+ for h in check['positive_pairs']:by[h['b']][0]+=1;by[h['b']][1]+=h['positive_volume_m3']
+ check['largest_rejection_modules']=sorted([{'other':n,'pairs':v[0],'pair_volume_sum_m3':v[1]} for n,v in by.items()],key=lambda r:-r['pair_volume_sum_m3'])[:20]
+ # Fluid is excluded from solid exclusion. Separately report intersection without falsely declaring ordinary cavity containment a material collision.
+ overlaps=[]
+ for n,a in moving_mesh.items():
+  for k,b in fm.items():
+   if not np.all(np.minimum(a.bounds[1],b.bounds[1])-np.maximum(a.bounds[0],b.bounds[0])>1e-6):continue
+   v=float(trimesh.boolean.intersection([a,b],engine='manifold').volume)
+   if v>1e-9:overlaps.append({'moved_module':n,'fluid_id':k,'overlap_L':v*1000,'interpretation':'Fluid geometry remains original distribution; overlap may be intended reservoir/envelope content or stale cavity/route intersection. Not conflated with solid collision; re-inventory required.'})
+ check.update({'master_sha256':sha(raw),'scene_sha256':sha(scene.read_bytes()),'complete_groups':groups,'original_same_selected_baseline_pairs':baseline['positive_pair_count'],'remaining_local_load_hold_count':sum(p.get('category')=='load_hold_native_reserve' for p in M['parts']),'fluid_vs_moved_geometry_report':overlaps,'all_original_111_armor_unchanged':True,'solid_exclusion_native_count':len(excl),'excluded_fluid_inventory_ids':list(fluid),'excluded_original_display_not_mass_hardware_ids':[n for n,p in pm.items() if p['role'] in nonexclusive],'not_all_remaining_pairs_checked':'Only moved groups vs every exclusive rest and moved-vs-moved; unchanged-rest pairs are inherited failures, no whole model clearance claim.','geometric_physical_and_installation_accepted':False})
+ (O/f'trial_{layout}_screen.json').write_text(json.dumps(check,indent=2)+'\n');summary.append({'trial':layout,'source':scene.name,'source_sha256':check['scene_sha256'],'positive_pairs':check['positive_pair_count'],'largest':check['largest_rejection_modules'][:5]});print('trial',layout,check['positive_pair_count'],flush=True)
+# Flow interfaces are moved targets; route meshes deliberately remain intact old source and cannot be inherited as connected.
+reroute=[]
+for typ,key in [('coolant','routes'),('oil','oil_routes')]:
+ for r in S[key]:
+  ids=[r.get('start',''),r.get('end','')]
+  if any(any(t in n for t in ['upper_custom_hv_pack','oil_HX','true_oil_water','pressure_header','return_header','_valve_','_P_tap','_T_tap','P_header','T_header']) for n in ids):reroute.append({'medium':typ,'route_id':r['id'],'start':r.get('start'),'end':r.get('end'),'needs_actual_endpoints_rerouting':True,'old_native_route_id_preserved_in_scene':r['id']})
+allmass=np.array([r['mass_range_kg'] for r in M['mass_rows']]);summary_doc={'schema':'gorilla_f_two_joint_packaging_probe_v1','input_master_path':str(MP.relative_to(R)),'input_master_sha256':sha(raw),'system_spec_path':str(SP.relative_to(R)),'system_spec_sha256':sha(SP.read_bytes()),'group_part_ids':G,'moved_part_count':len(moved),'all_source_parts_retained':len(M['parts']),'two_layout_limit':True,'original_armor_external_delta_mm':0,'trials':summary,'routes_requiring_rebuild':reroute,'backscreen_and_BMS_electrical_harness_require_retermination':True,'all_torso_electric_harness_ids_requiring_endpoint_audit':[p['name'] for p in M['parts'] if p.get('category')=='electrical_harness' and p['body']=='torso'],'whole_mass_range_kg_unchanged':M['whole_mass_range_kg'],'total_selected_nominal_mass_kg':float(sum(mass[n]['mass_range_kg'][1] for n in moved if n in mass)),'source_inertia_fields_not_modified':True,'source_fluid_inventory_mass_not_removed':True,'fluid_spatial_allocation_after_moves_unknown':True,'true_mass_COM_and_inertia_qualified':False,'physical_or_packaging_acceptance':False,'new_aesthetic_authority':False,'no_third_trial_or_local_piece_squeeze':True,'producer_sha256':sha(Path(__file__).read_bytes())};(O/'summary.json').write_text(json.dumps(summary_doc,indent=2)+'\n');print('done',sha((O/'summary.json').read_bytes()),flush=True)

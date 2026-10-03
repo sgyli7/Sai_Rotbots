@@ -1,0 +1,222 @@
+"""Gorilla E2: finite serial selective-hybrid CAD branch; no physical acceptance."""
+from pathlib import Path
+import json,math,hashlib,sys,copy,ast,importlib.util
+import numpy as np,trimesh as tr
+from PIL import Image,ImageDraw
+ROOT=Path(__file__).resolve().parents[2];OUT=Path(__file__).resolve().parent;sys.path.insert(0,str(OUT));sys.path.insert(0,str(ROOT/'src'))
+import definition as d
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();read=lambda p:json.loads(Path(p).read_text());write=lambda n,x:(OUT/n).write_text(json.dumps(x,indent=2,allow_nan=False,default=lambda y:y.tolist() if isinstance(y,np.ndarray) else y.item() if isinstance(y,np.generic) else str(y))+'\n')
+sp=importlib.util.spec_from_file_location('h',ROOT/'scripts/models/build_gorilla_internal_structure.py');h=importlib.util.module_from_spec(sp);sp.loader.exec_module(h)
+syspec=read(d.SYS);base=read(ROOT/'experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_scene.json');oldleg=read(ROOT/'robots/gorilla_v0_1/cad/source/internal_structure_d_leg_scene.json');oldfoot=read(ROOT/'robots/gorilla_v0_1/cad/source/internal_structure_d_foot_scene.json');parts=[];module_ports=[]
+def tm(p):return tr.Trimesh(p['vertices_world_m'],[[f[0],f[i],f[i+1]] for f in p['faces'] for i in range(1,len(f)-1)],process=False)
+def point(T,p):return (T@np.r_[p,1])[:3]
+def add(name,body,m,role='finite_frame_material',assembly=None,**meta):
+ m.fix_normals();p={'name':name,'body':body,'role':role,'vertices_world_m':m.vertices.tolist(),'faces':m.faces.tolist(),'rgba':[.18,.23,.27,1],'E2_metadata':meta,'physical_assembly_id':assembly or body,'material_union_group':assembly or body,'rigid_connection_qualified':False}
+ if role in ['finite_frame_material','finite_pin_material','finite_actuator_material','finite_brace_material']:p['density_kg_m3']=7850.
+ else:p['mass_range_kg']=meta.pop('mass_range_kg',[0,0,0]);p['mass_scope']='reference constituent only; installed source/fit unqualified'
+ parts.append(p);return p
+
+def ring(c,ro,ri,L,axis=[0,1,0]):
+ m=tr.creation.annulus(ri,ro,L,sections=48) if ri>0 else tr.creation.cylinder(ro,L,sections=48);m.apply_transform(tr.geometry.align_vectors([0,0,1],axis));m.apply_translation(c);return m
+
+def tube(name,body,path,w=.030,de=.040,t=.006):
+ for i,(a,b) in enumerate(zip(path[:-1],path[1:])):
+  add(name+('_'+str(i) if len(path)>2 else ''),body,h.box_tube(a,b,w,de,t),centerline_world_m=[list(a),list(b)],width_depth_wall_m=[w,de,t],joint_or_weld_unknown=True)
+
+def shell_z(stations):
+ N=48;v=[];f=[]
+ for z,ro,ri in stations:
+  for r in [ro,ri]:v.extend([[r*math.cos(2*math.pi*i/N),r*math.sin(2*math.pi*i/N),z] for i in range(N)])
+ for s in range(len(stations)-1):
+  a=s*2*N;b=a+2*N
+  for i in range(N):
+   j=(i+1)%N;f.extend([[a+i,a+j,b+j,b+i],[a+N+j,a+N+i,b+N+i,b+N+j]])
+ for s in [0,len(stations)-1]:
+  a=s*2*N
+  for i in range(N):j=(i+1)%N;f.append([a+i,a+N+i,a+N+j,a+j] if s==0 else [a+j,a+N+j,a+N+i,a+i])
+ m=tr.Trimesh(v,f,process=False);m.fix_normals();return m
+
+def transformed_mesh(m,T):q=m.copy();q.apply_transform(T);return q
+
+def stock(prefix,j,newaxis,parent,output):
+ group=[x for x in syspec['modules'] if x['id'].startswith('ds_'+prefix+'_')];ad=next(x for x in group if x['id'].endswith('hollow_output_adapter'));c0=np.array(ad['center_world_m']);oldaxis=c0-np.array(next(x for x in group if x['id'].endswith('_gear'))['center_world_m']);oldaxis=oldaxis/np.linalg.norm(oldaxis);T=tr.geometry.align_vectors(oldaxis,newaxis);T[:3,3]=j-T[:3,:3]@c0
+ gear=next(x for x in group if x['id'].endswith('_gear'));motor=next(x for x in group if x['id'].endswith('_motor'));gR=gear['geometry']['radius_m'];mR=motor['geometry']['radius_m'];gL=gear['geometry']['length_m'];mL=motor['geometry']['length_m'];zg=float((np.array(gear['center_world_m'])-c0)@oldaxis);zm=float((np.array(motor['center_world_m'])-c0)@oldaxis)
+ # One finite connected stepped case from actual motor envelope to actual gear.
+ stations=[(zm-mL/2-.004,mR+.011,mR+.003),(zm+mL/2+.004,mR+.011,mR+.003),(zg-gL/2-.004,gR+.011,gR+.003),(zg+gL/2+.004,gR+.011,gR+.003)]
+ orient=tr.geometry.align_vectors([0,0,1],newaxis);orient[:3,3]=j
+ # Split named cooling sleeve and tapered case transition, each positive-connected in parent.
+ motorcase=ring(point(T,motor['center_world_m']),mR+.011,mR+.003,mL+.008,newaxis)
+ add('e2_'+prefix+'_motor_cooling_case',parent,motorcase,center_world_m=point(T,motor['center_world_m']).tolist(),axis_world=list(newaxis),outer_inner_diameter_m=[2*(mR+.011),2*(mR+.003)],length_m=mL+.008,custom_case_wall_m=.008)
+ bridge=transformed_mesh(shell_z([(zm+mL/2+.002,mR+.011,mR+.003),(zg-gL/2-.002,gR+.011,gR+.003),(zg+gL/2+.004,gR+.011,gR+.003)]),orient)
+ add('e2_'+prefix+'_continuous_gear_case',parent,bridge,source_gear_unscaled=True,case_has_real_inner_skin=True)
+ face=zg+gL/2;adapterR=ad['geometry']['outer_radius_m'];adapterRi=ad['geometry']['inner_radius_m'];adapterL=ad['geometry']['length_m']
+ add('e2_'+prefix+'_output_moving_adapter',output,ring(j+np.array(newaxis)*(face+adapterL/2-.002),adapterR,adapterRi,adapterL,newaxis),custom_port_scope='custom adapter touches reference output plane; OEM flange detail/rating unknown',axis_world=list(newaxis))
+ add('e2_'+prefix+'_fixed_front_annular_mount',parent,ring(j+np.array(newaxis)*(face+.002),gR+.011,adapterR+.003,.008,newaxis),mount_bolts_and_integral_output_bearing_unqualified=True)
+ for row in group:
+  if row['category']=='housing':continue
+  geo=row['geometry'];kind=geo['kind'];m=tr.creation.box(geo['dimensions_xyz_m']) if kind=='box' else tr.creation.cylinder(geo['radius_m'],geo['length_m'],sections=48)
+  if kind!='box':m.apply_transform(tr.geometry.align_vectors([0,0,1],geo['axis_world']))
+  m.apply_translation(row['center_world_m']);m.apply_transform(T)
+  add('e2_'+row['id'],parent,m,'complete_component_reference',mass_range_kg=row['mass_range_kg'],source=row.get('exact_source'),source_D_module_id=row['id'],OEM_geometry_scaled=False,reference_case_containment_or_port_not_fit_acceptance=True)
+ module_ports.append({'prefix':prefix,'motor_cooling_case_id':'e2_'+prefix+'_motor_cooling_case','center_world_m':point(T,motor['center_world_m']).tolist(),'axis_world':list(newaxis),'body':parent,'outer_inner_diameter_m':[2*(mR+.011),2*(mR+.003)],'length_m':mL+.008,'replaced_D_module_ids':[x['id'] for x in group]})
+stock('waist_yaw',d.W,[0,0,1],'pelvis','waist_yaw_carrier');stock('waist_roll',d.WR,[1,0,0],'waist_pitch_carrier','torso')
+stock('left_hip_yaw',d.HY,[0,0,-1],'pelvis','left_hip_yaw_carrier')
+
+# All hydraulic output axes have real parent radial bearing space and moving shafts.
+axisdata={};
+for jt in d.joints:
+ if jt['id'] in ['waist_yaw','waist_roll','left_hip_yaw','right_hip_yaw'] or jt['id'].startswith('right_') or jt['id'].endswith(('forefoot','heel')):continue
+ j=np.array(jt['center_world_m']);u=np.array(jt['axis_world']);parent=jt['parent_body'];out=jt['output_body'];iswp=jt['id']=='waist_pitch';isfr=jt['id'].endswith('foot_roll');off=.15 if iswp else .105;collar=.190 if iswp else .135;ro=.070 if isfr else .075;ri=.050 if isfr else .055;shaftro=.040 if isfr else .045;shaftri=.028 if isfr else .032;cr=.058 if isfr else .064;L=.48 if iswp else .32
+ for i,sy in enumerate([-off,off]):
+  add('e2_'+jt['id']+'_fixed_bearing_housing_'+str(i),parent,ring(j+u*sy,ro,ri,.024,u),axis_world=list(u),pivot_world_m=list(j))
+  add('e2_'+jt['id']+'_bearing_reference_'+str(i),parent,ring(j+u*sy,ri-.0005,shaftro+.0005,.022,u),'bearing_reference',mass_range_kg=[.35,.6,1.2],integrated_support_not_selected=True)
+ add('e2_'+jt['id']+'_moving_hollow_shaft',out,ring(j,shaftro,shaftri,L,u),axis_world=list(u))
+ for i,sy in enumerate([-collar,collar]):add('e2_'+jt['id']+'_moving_collar_'+str(i),out,ring(j+u*sy,cr,shaftri,.020,u))
+ axisdata[jt['id']]={'j':j,'axis':u,'parent':parent,'out':out,'off':off,'collar':collar,'fixedR':ro,'childR':cr}
+# Same-parent pelvic saddle, continuous finite walls around the yaw packages.
+for s in [-1,1]:tube('e2_pelvis_cross_load_'+str(s),'pelvis',[[0,s*.136,1.79],[-.250,s*.205,1.94],[-.250,s*.216,2.112]],.045,.060,.008)
+# Waist yaw output -> pitch housing; pitch output -> complete roll case.
+for s in [-1,1]:
+ tube('e2_waist_yaw_pitch_cradle_'+str(s),'waist_yaw_carrier',[d.W+[0,s*.064,0],[-.075,s*.150,1.935],d.WP+[-.055,s*.150,-.050]],.030,.040,.006)
+ tube('e2_waist_pitch_roll_cradle_'+str(s),'waist_pitch_carrier',[d.WP+[0,s*.190,.060],[-.10,s*.190,2.195],[.055,s*.095,2.30]],.030,.040,.006)
+# Real serial hip yaw adapter -> hiproll fixed, hiproll output -> hip pitch fixed.
+for s in [-1,1]:
+ tube('e2_left_yaw_roll_cradle_'+str(s),'left_hip_yaw_carrier',[d.HY+[0,s*.065,0],[-.12,.354+s*.105,1.98],d.HR+[s*.105,0,.068]],.030,.040,.006)
+ tube('e2_left_roll_pitch_cradle_'+str(s),'left_hip_roll_carrier',[d.HR+[s*.135,0,-.060],d.HR+[s*.135,0,-.115],d.H+[0,s*.105,.068]],.025,.032,.006)
+# Full Z load frame: hollow members routed forward of the large actuator bays.
+framepaths={'left_thigh':[d.H+[0,0,-.115],[.160,.335,1.43],[.130,.370,1.18],d.K+[0,0,.115]],'left_middle_shank':[d.K+[0,0,-.115],[.055,.428,.755],d.F+[0,0,.115]],'left_distal_shank':[d.F+[0,0,-.110],[.020,.488,.447],d.A+[0,0,.095]]}
+for b,path in framepaths.items():
+ for s in [-1,1]:
+  pp=[np.array(q)+[0,s*.080,0] for q in path];tube('e2_'+b+'_load_frame_'+str(s),b,pp,.030,.045,.006)
+ for i,p in enumerate(path[1:-1]):tube('e2_'+b+'_rung_'+str(i),b,[np.array(p)+[.020,-.080,0],np.array(p)+[.020,.080,0]],.030,.030,.006)
+for fam in ['hip','knee','fold']:
+ q=axisdata['left_'+fam];j=q['j'];b=q['out'];path=framepaths[b]
+ for s in [-1,1]:tube('e2_left_'+fam+'_output_to_frame_'+str(s),b,[j+[0,s*.135,-.060],j+[0,s*.135,-.110],np.array(path[0])+[0,s*.080,0]],.025,.040,.006)
+for fam,prev in [('knee','left_thigh'),('fold','left_middle_shank'),('ankle','left_distal_shank')]:
+ q=axisdata['left_'+fam]
+ for s in [-1,1]:tube('e2_left_'+fam+'_incoming_house_'+str(s),q['parent'],[np.array(framepaths[prev][-1])+[0,s*.080,0],q['j']+[0,s*.105,.067]],.030,.040,.006)
+# Moving ankle output is a hollow fork about the independently moving footroll.
+for s in [-1,1]:tube('e2_left_ankle_roll_cradle_'+str(s),'left_ankle_pitch_carrier',[d.A+[0,s*.135,-.060],[d.FR[0]+s*.105,d.FR[1]+s*.135,.288],d.FR+[s*.105,0,.063]],.025,.035,.006)
+
+# Component eye mounts behind pin centers, never a blind cut through a parent chain.
+mounts={}
+def eye_mount(ad):
+ a=np.array(ad['neutral_A_world_m']);b=np.array(ad['neutral_B_world_m']);j=np.array(ad['pivot_world_m']);u=(b-a)/np.linalg.norm(b-a);ax=np.array(ad['axis_world']);pin=ad['pin_m'];R=pin/2+.016
+ for label,e,body,backdir in [('fixed',a,ad['base_body'],-u),('moving',b,ad['output_body'],-(b-j)/np.linalg.norm(b-j))]:
+  tail=e+backdir*.048;fork=[]
+  for sg in [-1,1]:
+   c=e+ax*sg*.025;fork.append(ring(c,R,pin/2+.001,.012,ax));fork.append(h.box_tube(c+backdir*.020,tail+ax*sg*.025,.024,.020,.005))
+  fm=h.united(fork);add('e2_'+ad['id']+'_'+label+'_fork',body,fm,source_eye=e.tolist(),axis_world=ax.tolist(),moving_material_back_length_m=.048)
+  add('e2_'+ad['id']+'_'+label+'_pin',body,ring(e,pin/2,0,.090,ax),'finite_pin_material',assembly='pin_'+ad['id']+'_'+label,interface_press_fit_not_known=True)
+  if ad['id'].startswith('waist'):
+   anchor=d.WP+[0,(-1 if e[1]<0 else 1)*(.150 if label=='fixed' else .190),(.067 if label=='fixed' else -.060)]
+  elif 'hip_roll' in ad['id']:
+   jj=d.HR;sign=-1 if e[1]<jj[1] else 1
+   anchor=jj+[(-.105 if label=='fixed' else .135),0,(.068 if label=='fixed' else -.060)]
+  elif 'foot_roll' in ad['id']:
+   jj=d.FR;anchor=jj+[(-.105 if e[0]<jj[0] else .105),0,(.063 if label=='fixed' else -.050)]
+  elif label=='fixed':
+   fam=ad['id'].removeprefix('left_');anchor=(d.H+[0,-.105,.068] if fam=='hip' else np.array(min(framepaths[body],key=lambda x:np.linalg.norm(np.asarray(x)-e)))+[0,-.080,0])
+  else:anchor=j+[0,(b-j)[1],0]
+  # Route long roll mounts outside the moving pitch frame; gap checks decide.
+  via=tail.copy()
+  if 'hip_roll' in ad['id'] and label=='moving':via=[d.HR[0],tail[1],d.HR[2]-.115]
+  path=[anchor,via,tail] if np.linalg.norm(np.asarray(via)-tail)>.001 else [anchor,tail]
+  tube('e2_'+ad['id']+'_'+label+'_load_mount',body,path,.025,.035,.006)
+  mounts[ad['id']+'_'+label]={'source_anchor_world_m':list(anchor),'fork_tail_world_m':list(tail),'body':body,'connection_qualified':False}
+for ad in d.acts:
+ if not ad['id'].startswith('right_'):eye_mount(ad)
+# Low fore/heel joints and separate plates keep the original ground gap.
+forepad=next(p for p in base['parts'] if p['name']=='left_composite_forepad');heelpad=next(p for p in base['parts'] if p['name']=='left_composite_heel_pad')
+def prism_pad(p,z0,z1):
+ v=np.array(p['vertices_world_m']);m=tm(p);z=v[:,2];v[:,2]=np.where(z<np.mean([z.min(),z.max()]),z0,z1);return tr.Trimesh(v,m.faces,process=False)
+footparts={}
+def foot(qf,qh):
+ pp=[];oldparts=oldfoot['pose_scenes'][0]['parts'];brace_reports=[]
+ def emit(name,b,m,role='finite_frame_material',assembly=None,**meta):
+  before=len(parts);p=add(name,b,m,role,assembly,**meta);parts.pop();pp.append(p);return p
+ arch=[]
+ arch.append(h.box_tube([-.220,.34,.210],[-.220,.78,.210],.045,.050,.008))
+ # Rear output collar is connected into the arch crossbeam; front collar shares real shaft.
+ arch.append(h.box_tube(d.FR+[-.135,0,-.050],[-.220,.5,.210],.035,.045,.006))
+ for kind,j,q,pad in [('forefoot',d.LF,qf,forepad),('heel',d.LH,qh,heelpad)]:
+  b='left_'+kind+'_display';tray0=next(p for p in oldparts if p['name']=='isd_'+kind+'_continuous_tray');m=h.united([tm(tray0),prism_pad(pad,.033,.042)])
+  T=tr.transformations.rotation_matrix(math.radians(q),[0,1,0],j);m.apply_transform(T);emit('e2_left_'+kind+'_tray_with_segment_plate',b,m,plate_span_z_m=[.033,.042],replaces_pad_upper_edge=kind=='forefoot',retained_ground_pad=pad['name'])
+  for sy in [.37,.67]:
+   c=np.array([j[0],sy,.124]);arch.extend([ring(c,.047,.026,.026),h.box_tube([-.220,sy,.210],c+[0,0,.032],.040,.032,.006)])
+   emit('e2_left_'+kind+'_bearing_'+str(sy),'left_foot_roll_arch',ring(c,.0255,.020,.024),'bearing_reference',mass_range_kg=[.35,.5,.8])
+  yvals=[.59,.75] if kind=='forefoot' else [.40,.60]
+  for i,sy in enumerate(yvals):
+   a=np.array([-.220,sy,.300 if kind=='forefoot' else .215]);b0=np.array([.365 if kind=='forefoot' else -.345,sy,.078]);bb=point(T,b0);u=(bb-a)/np.linalg.norm(bb-a);L=np.linalg.norm(bb-a);L0=np.linalg.norm(b0-a);barL=.340 if kind=='forefoot' else .100;rodL=.350 if kind=='forefoot' else .090;stations=[.285,.335] if kind=='forefoot' else [.075,.110];pid='e2_left_'+kind+'_brace_'+str(i)
+   axis=[0,1,0];fx=[ring(a,.028,.0125,.030),h.solid_along(a+u*.019,a+u*.041,.046,.034),h.box_tube(a+u*.035,a+u*(.035+barL),.064,.060,.006)]
+   pl=[h.box_tube(bb-u*(.035+rodL),bb-u*.035,.050,.044,.008),h.solid_along(bb-u*.035,bb-u*.019,.046,.034),ring(bb,.028,.0125,.030)]
+   fixed=h.united(fx);rod=h.united(pl);holes=[h.cylinder(a+u*s,.0085,.090) for s in stations];rh=[h.cylinder(a+u*(s+L-L0),.0085,.090) for s in stations]
+   fixed=tr.boolean.difference([fixed,*holes],engine='manifold');rod=tr.boolean.difference([rod,*rh],engine='manifold')
+   emit(pid+'_fixed','left_foot_roll_arch',fixed,'finite_brace_material',assembly=pid+'_barrel',endpoint_A=a.tolist(),endpoint_B=bb.tolist(),endpoint_driven=True)
+   emit(pid+'_plunger',b,rod,'finite_brace_material',assembly=pid+'_plunger',endpoint_A=a.tolist(),endpoint_B=bb.tolist(),endpoint_driven=True)
+   for e,own,label in [(a,'left_foot_roll_arch','fixed'),(bb,b,'moving')]:
+    emit(pid+'_'+label+'_pin',own,ring(e,.012,0,.080),'finite_pin_material',assembly=pid+'_'+label+'_pin')
+    if label=='fixed':
+     for sy0 in [-.026,.026]:
+      cc=e+[0,sy0,0];arch.extend([ring(cc,.035,.0125,.012),h.box_tube([-.220,cc[1],.210],cc+[0,0,-.020],.030,.024,.006)])
+   for s0 in stations:
+    c=a+u*s0
+    if q!=0:c[1]+=.110
+    emit(pid+'_lock_'+str(s0),'left_foot_roll_arch',ring(c,.008,0,.082),'finite_pin_material',assembly=pid+'_lock_'+str(s0),withdrawal_world_m=[0,.110 if q!=0 else 0,0],mass_retained_when_unlocked=True)
+   brace_reports.append({'id':pid,'A_world_m':a.tolist(),'B_world_m':bb.tolist(),'eye_length_m':float(L),'plunger_rear_clearance_m':float(L-.035-rodL-.035),'moment_arm_m':float(u@np.cross([0,1,0],bb-j)),'q_deg':q,'two_lock_stations_m':stations,'rating_and_stop_strength_unknown':True})
+ emit('e2_left_continuous_foot_roll_arch','left_foot_roll_arch',h.united(arch),real_no_crossing_sole=True)
+ return pp,brace_reports
+# All static left frames reflected; common waist/pelvis not duplicated.
+for p in list(parts):
+ if p['body'].startswith('left_') or p['name'].startswith('e2_left_'):
+  q=copy.deepcopy(p);q['name']=q['name'].replace('left_','right_');q['body']=q['body'].replace('left_','right_');q['physical_assembly_id']=q['physical_assembly_id'].replace('left_','right_');q['material_union_group']=q['material_union_group'].replace('left_','right_');m=tm(p);m.apply_transform(np.diag([1,-1,1,1]));q['vertices_world_m']=m.vertices.tolist();q['faces']=m.faces.tolist();q['E2_metadata']['mirrored_source_name']=p['name'];parts.append(q)
+# Reference gearbox fixed/moving cases positions for thermal targets.
+q=copy.deepcopy(module_ports[-1]);q['prefix']='right_hip_yaw';q['motor_cooling_case_id']=q['motor_cooling_case_id'].replace('left_','right_');q['center_world_m'][1]*=-1;q['body']='pelvis';q['replaced_D_module_ids']=[x.replace('left_','right_') for x in q['replaced_D_module_ids']];module_ports.append(q)
+write('motor_cooling_interfaces.json',{'robot_id':'gorilla_v0_1','cases':module_ports,'builder_sha256':sha(__file__),'interface_sha256':sha(OUT/'interface.json')})
+# General finite actuator construction from real endpoint transforms; axis follows its own definition.
+afile=ROOT/'.scratch/gorilla_internal_d_geometry/probe_finite_actuators.py';ats=ast.parse(afile.read_text());af=[n for n in ats.body if isinstance(n,ast.FunctionDef) and n.name in ['shape_cylinder','assembly']];src=ast.unparse(ast.Module(body=af,type_ignores=[]));src=src.replace('np.array([0, 1, 0])',"np.array(defn['axis_world'])")
+ns={'np':np,'trimesh':tr,'math':math,'h':h,'points':{**d.P,'left_waist_pitch':d.WP,'left_hip_roll':d.HR,'left_foot_roll':d.FR},'c2':{'same_LP_witness_cases':[]},'P':21e6,'ear':.020,'rearcap':.020,'frontcap':.020,'seal':.020,'pistonw':.020,'rod_min':.020,'margin':.010}
+
+for ad0 in d.acts:
+ family0=ad0['id'].removeprefix('left_').removeprefix('right_');pp0=np.array(ad0['pivot_world_m']);pp0[1]=abs(pp0[1]);ns['points']['left_'+family0]=pp0
+h.transformed=point;exec(compile(src,'E2_finite_endpoint_material','exec'),ns);(OUT/'derived_finite_actuator_functions.py').write_text(src+'\n')
+pose_defs=[('neutral',dict(hip=0,knee=0,fold=0,ankle=0,waist_pitch=0),0,0,0,0),('crouch',dict(hip=-15,knee=30,fold=-10,ankle=-5,waist_pitch=0),0,0,0,0),('forward_manipulation',dict(hip=-10,knee=20,fold=-5,ankle=-5,waist_pitch=10),0,0,0,0),('small_lateral_tilt',dict(hip=-10,knee=20,fold=-5,ankle=-5,waist_pitch=0),3,-3,0,0),('unloaded_independent_fold',dict(hip=0,knee=0,fold=0,ankle=0,waist_pitch=0),0,0,-15,10)]
+poses=[];act_reports=[]
+for pid,qs,roll,frq,qf,qh in pose_defs:
+ Ts={'pelvis':np.eye(4)}
+ for b,n in d.tree.items():
+  if b=='pelvis':continue
+  jid=n['joint_id'];sg=-1 if b.startswith('right_') else 1;key=jid.removeprefix('left_').removeprefix('right_');q=roll*sg if key=='hip_roll' else frq*sg if key=='foot_roll' else qf if key=='forefoot' else qh if key=='heel' else qs.get(key,0)
+  Ts[b]=Ts[n['parent']]@tr.transformations.rotation_matrix(math.radians(q),n['axis_world'],n['pivot_world_m'])
+ pad=[]
+ for p in base['parts']:
+  if p['name'] in ['left_composite_forepad','right_composite_forepad','left_composite_heel_pad','right_composite_heel_pad']:
+   m=tm(p);m.apply_transform(Ts[p['body']]);pad.extend(m.vertices)
+ shift=-min(v[2] for v in pad)
+ for T in Ts.values():T[2,3]+=shift
+ out=[]
+ for p in parts:
+  m=tm(p);m.apply_transform(Ts[p['body']]);q=copy.deepcopy(p);q['vertices_world_m']=m.vertices.tolist();out.append(q)
+ fs,fbr=foot(qf,qh)
+ for p in fs:
+  for sg,side in [(1,'left'),(-1,'right')]:
+   q=copy.deepcopy(p);q['name']=q['name'].replace('left_',side+'_');q['body']=q['body'].replace('left_',side+'_');q['physical_assembly_id']=q['physical_assembly_id'].replace('left_',side+'_');q['material_union_group']=q['material_union_group'].replace('left_',side+'_');q['E2_metadata']={k:(v.replace('left_',side+'_') if isinstance(v,str) else v) for k,v in q.get('E2_metadata',{}).items()};m=tm(p)
+   if sg<0:m.apply_transform(np.diag([1,-1,1,1]))
+   m.apply_transform(Ts[side+'_foot_roll_arch']);q['vertices_world_m']=m.vertices.tolist();q['faces']=m.faces.tolist();out.append(q)
+ ars=[]
+ for ad in d.acts:
+  side='right' if ad['id'].startswith('right_') else 'left';id=ad['id'];fam=id.removeprefix(side+'_');aa=np.array(ad['neutral_A_world_m']);bb=np.array(ad['neutral_B_world_m']);jj=np.array(ad['pivot_world_m']);sg=-1 if side=='right' else 1;aa[1]*=sg;bb[1]*=sg;jj[1]*=sg
+  if id.startswith('waist_'):fam=id;side='left'
+  dd={'family':fam,'neutral_A_world_m':aa,'neutral_B_world_m':bb,'pivot_world_m':jj,'base_body':ad['base_body'].replace('right_','left_'),'output_body':ad['output_body'].replace('right_','left_'),'axis_world':ad['axis_world'],'allocated_custom_zero_extension_eye_length_m':ad['allocated_custom_zero_eye_length_m'],'additional_fixed_tail_sleeve_m':ad['additional_tail_m'],'actual_stroke_design_m':ad['actual_stroke_design_m'],'params':{'bore':ad['bore_m'],'rod':ad['rod_m'],'wall':ad['wall_m'],'pin':ad['pin_m']}}
+  aa_parts,mm,rr=ns['assembly'](dd,side,{'id':pid,'body_transforms':{b:T.tolist() for b,T in Ts.items()}})
+  for p in aa_parts:
+   p['name']='e2_'+(p['name'].removeprefix('left_') if id.startswith('waist_') else p['name']);p['density_kg_m3']=7850.;p['role']='finite_actuator_material';p['physical_assembly_id']='actuator_'+id+'_'+p['motion_group'];p['material_union_group']=p['physical_assembly_id'];p['endpoint_driven_geometry']=True;p['body_field_is_mass_owner_not_rigid_attachment']=True;out.append(p)
+  ars.append(rr)
+ poses.append({'id':pid,'parts':out,'body_transforms':{b:T.tolist() for b,T in Ts.items()},'root_shift_z_m':float(shift),'already_world_posed':True,'actual_foot_brace_report_left':fbr,'unloaded_foot_q_deg':[qf,qh]});act_reports.append({'id':pid,'actuator_geometry':ars});print('POSE READY',pid,len(out),flush=True)
+converted=['waist_pitch','left_hip_roll','right_hip_roll','left_foot_roll','right_foot_roll']; electric_prefixes=[x['prefix'] for x in module_ports]
+retained_converted=[r['id'] for r in syspec['modules'] if any(r['id'].startswith('ds_'+k+'_') for k in converted) and r['id'].endswith(('_brake','_encoder','_controller','_wire_coolant_connector'))]
+removedids=[r['id'] for r in syspec['modules'] if any(r['id'].startswith('ds_'+k+'_') for k in electric_prefixes) or (any(r['id'].startswith('ds_'+k+'_') for k in converted) and r['id'] not in retained_converted)]
+original_upper_edge=['left_composite_forepad_upper_edge','right_composite_forepad_upper_edge']
+paths=[d.SYS,d.SP,d.DS,ROOT/'robots/gorilla_v0_1/cad/source/internal_structure_d_scene.json',ROOT/'robots/gorilla_v0_1/cad/source/internal_structure_d_leg_scene.json',ROOT/'robots/gorilla_v0_1/cad/source/internal_structure_d_foot_scene.json',ROOT/'experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_scene.json',afile,ROOT/'.scratch/gorilla_e_selective_route.json',OUT/'definition.py',OUT/'interface.json']
+scene={'robot_id':'gorilla_v0_1','candidate':'E2 first selective serial full lower and waist branch','input_hashes':{str(p.relative_to(ROOT)):sha(p) for p in paths},'builder_sha256':sha(__file__),'parts':poses[0]['parts'],'pose_scenes':poses,'body_tree':d.tree,'joint_supports':d.joints,'actuator_definitions':d.acts,'actuator_pose_reports':act_reports,'module_cooling_interfaces':module_ports,'component_mass_scope':'All native metal density7850, reference gear/motor/etc mass_range. Main rigid frame body union; dynamic actuator/brace fixed/rod/pins independent union groups. No bearing capacity qualification.','removed_D_system_module_ids':removedids,'retained_converted_D_control_feedback_brake_connector_ids':retained_converted,'retained_converted_function_scope':'Old angular encoder/controller/brake/wire-coolant mass retained; mounting in new carrier unresolved. New18 hold valves do not prove brake replacement; hydraulic angular/linear sensing remains red.','removed_D_all_leg_and_foot_candidate_part_ids':[p['name'] for p in oldleg['parts']]+[p['name'] for p in oldfoot['pose_scenes'][0]['parts']],'replaced_original_nonarmor_ids':original_upper_edge,'replacement_reason':'Forepad upper-edge proxy replaced by same-footprint9mm steel tray fromZ.033; contact mainpad and111 armor unchanged in comparison. No steel plate spans fore/heel ground gap.','other14_arm_electric_plus16_hand_reserved_to_root':True,'retained_original_armor_names':[p['name'] for p in base['parts'] if p['role'] in ['armor_cover','armor_surface']],'original_armor_material_not_modified':True,'geometry_accepted':False,'physics_accepted':False,'stable_contract':False,'AA3_outer_change_required_proved':False}
+write('structure_scene.json',scene);print('SCENE READY',len(scene['parts']),sha(OUT/'structure_scene.json'),flush=True)

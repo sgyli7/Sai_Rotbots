@@ -1,0 +1,40 @@
+#!/usr/bin/env python3
+"""Independent G11 inventory/boundary/volume receipt. No FEM."""
+import pathlib,json,gzip,hashlib
+import numpy as np
+import manifold3d as mf
+from collections import Counter
+P=pathlib.Path(__file__).resolve().parent;R=P.parents[1]
+def sha(p):return hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
+def read(p):return json.load(gzip.open(p,'rt')) if str(p).endswith('.gz') else json.loads(p.read_text())
+def canon(p):return json.dumps(p,sort_keys=True,separators=(',',':'))
+def mesh(p):
+ v=np.array(p['vertices_world_m'],float);f=np.array([[r[0],r[i],r[i+1]] for r in p['faces'] for i in range(1,len(r)-1)],np.uint64)
+ return v,f
+def manifold(p):v,f=mesh(p);return mf.Manifold(mf.Mesh64(v,f))
+def raw(p):
+ v,f=mesh(p);edge=np.concatenate([f[:,[0,1]],f[:,[1,2]],f[:,[2,0]]]);ue,c=np.unique(np.sort(edge,axis=1),axis=0,return_counts=True)
+ signed=float(np.einsum('ij,ij->i',v[f[:,0]],np.cross(v[f[:,1]],v[f[:,2]])).sum()/6)
+ # Incidence is on ORIGINAL emitted faces. Kernel NoError does not replace source gate.
+ return {'vertices':len(v),'faces':len(f),'edge_incidence_count':{str(k):int(np.sum(c==k)) for k in np.unique(c)},'all_edges_degree2':bool(np.all(c==2)),'independent_signed_volume_m3':signed,'repeated_index_triangles':int(np.sum((f[:,0]==f[:,1])|(f[:,1]==f[:,2])|(f[:,2]==f[:,0])))}
+def main():
+ s=read(P/'scene.json.gz');src=read(R/'.scratch/gorilla_internal_g9_module_placement/layout_1/scene.json.gz');sh=read(R/'.scratch/gorilla_internal_g10_shoulder_assembly/b/scene.json.gz');by={p['name']:p for p in s['parts']};old={p['name']:p for p in src['parts']}
+ armorcheck={n:canon(by[n])==canon(old[n]) for n in src['authoritative_visible_armor_ids']}
+ groups={g['id']:{'members':g['complete_member_ids'],'all_present_exact':all(n in by and canon(by[n])==canon(old[n]) for n in g['complete_member_ids'])} for g in src['new_complete_group_placements']}
+ shouldercheck={p['name']:p['name'] in by and canon(by[p['name']])==canon(p) for p in sh['parts']}
+ bulk=manifold(s['bulk_domain_reference']);blue=by['g11_designable_remainder']; rem=manifold(blue);categories={}
+ for c in sorted({p['category'] for p in s['parts'] if p['role']=='must_empty_stock'}):
+  pp=[p for p in s['parts'] if p['role']=='must_empty_stock' and p['category']==c];u=mf.Manifold.batch_boolean([manifold(p) for p in pp],mf.OpType.Add)
+  categories[c]={'part_count':len(pp),'union_volume_m3':u.volume(),'intersection_with_bulk_m3':(u^bulk).volume(),'volumes_between_categories_overlap_not_additive':True,'is_material_inventory_or_actual_collision':False}
+ allstock=[p for p in s['parts'] if p['role']=='must_empty_stock'];stockunion=mf.Manifold.batch_boolean([manifold(p) for p in allstock],mf.OpType.Add)
+ inter=bulk^stockunion
+ # Disjoint attribution is order-dependent. All placements remain changeable challenges.
+ ordered=[('nine_complete_group_gross',['complete_group_gross_exclusion']),('failed_shoulder_B_gross',['failed_complete_shoulder_B_gross_challenge']),('remaining_function_conservative_AABB',['retained_actual_function_conservative_AABB']),('maintenance_and_service',['own_20mm_service_reserve','retained_source_nonphysical_service'])]
+ uncut=bulk;attribution=[]
+ for label,cats in ordered:
+  pp=[p for p in allstock if p['category'] in cats];u=mf.Manifold.batch_boolean([manifold(p) for p in pp],mf.OpType.Add);v=(uncut^u).volume();uncut=uncut-u
+  attribution.append({'category':label,'exclusive_cut_m3':v,'stock_rows':len(pp),'is_net_real_material':False,'position_permanent_nondesign_constraint':False,'ordering':'9 complete groups, failed shoulder B, remaining functions, then service; change order changes marginal contribution'})
+ out={'scene_sha256':sha(P/'scene.json.gz'),'spec_sha256':sha(P/'domain_spec.json'),'report_sha256':sha(P/'report.json'),'visible_armor_111_exact':all(armorcheck.values()),'armor_checks':armorcheck,'nine_complete_groups':groups,'shoulder_B_103_exact':all(shouldercheck.values()),'shoulder_B_checks':shouldercheck,'part_count':len(s['parts']),'duplicate_ids':len(s['parts'])-len(by),'raw_bulk_boundary':raw(s['bulk_domain_reference']),'raw_remainder_boundary':raw(blue),'stock_categories':categories,'volume_conservation_absolute_error_m3':abs(bulk.volume()-inter.volume()-rem.volume()),'solid_components_method':'Manifold.decompose on emitted native remainder. Closed inner cavities are not surface-island solids.','remainder_solid_components':len(rem.decompose()),'cavity_admission':False,'manufacturer_installed_capacity_or_load_path_admission':False,'new_fixed_solid_interfaces':'No qualified anchor/fixed material secretly selected; current failed shoulder B/reference fixtures are inventory challenge only. Separate G11 anchors require source-bound installation/area/connection checks.','historical_B_reaction_frame':'g10_torso_core_and_bilateral_case_reaction retained as FAILED historical context only, never frozen nondesign steel or an accepted torso replacement.','actual_armor_material_overlap':'not computed as qualified solid collision: original main armor has336openboundaryedges; curve-ray/actual-section diagnostics only','conservative_AABB_stock_scope':'Hardware gross exclusions may over-reserve diagonal pipes/complete kits; positive stock/domain volume is NOT actual material collision. Actual retained native geometry is separately drawn; no component shrink/removal.','fixed_interface_gaps_m':{'waist_domain_min_z_minus_axis_z':.03,'shoulder_domain_ycap_to_Bfixedface':.0335},'source_curve_unknown':'238 samples include90frontmissing/34rearmissing; closure at source openings unresolved. X25mm inset not a true normal-offset cavity proof.','no_optimization_or_FEM':True}
+ out.update({'exclusive_cut_attribution':attribution,'exclusive_attribution_sum_m3':sum(r['exclusive_cut_m3'] for r in attribution),'exclusive_attribution_reconstructs_total_cut_abs_error_m3':abs(sum(r['exclusive_cut_m3'] for r in attribution)-inter.volume()),'real_net_material_intersection_m3':None,'real_net_material_unknown_reason':'OEM complete profiles are not net CAD; G10 B has17 rejected native resources; retained modules mix source-calibrated reference envelopes and own finite material. Conservative gross stock intersections cannot identify qualified real material collision.','fixed_solid_scope':'Retained complete kits have static/moving source roles but neither their historical locations nor old6mmwalls are permanent non-design material. All new load-interface anchors remain separate source-bound installation challenge.','admitted_connected_optimizer_domain':False})
+ (P/'audit_receipt.json').write_text(json.dumps(out,ensure_ascii=False,indent=2)+'\n');print(json.dumps({k:out[k] for k in ('scene_sha256','visible_armor_111_exact','shoulder_B_103_exact','part_count','duplicate_ids','raw_bulk_boundary','raw_remainder_boundary','remainder_solid_components','volume_conservation_absolute_error_m3','stock_categories','exclusive_cut_attribution')},indent=2))
+if __name__=='__main__':main()

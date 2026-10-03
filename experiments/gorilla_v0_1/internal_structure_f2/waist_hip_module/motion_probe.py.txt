@@ -1,0 +1,50 @@
+from pathlib import Path
+import json,sys,math,hashlib,collections,time
+import numpy as np,trimesh as tm
+O=Path(__file__).resolve().parent;name=sys.argv[1] if len(sys.argv)>1 else 'a';sp=O/f'candidate_{name}_scene.json';d=json.loads(sp.read_text());sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();source=d['parts']+d['original_armor_comparator'];PM={p['name']:p for p in source};T0={p['name']:tm.Trimesh(p['vertices_world_m'],[[f[0],f[j],f[j+1]] for f in p['faces'] for j in range(1,len(f)-1)],process=False) for p in source};tree=d['body_tree'];materialroles={'finite_module_material','finite_frame_material','finite_actuator_material','finite_pin_material','bearing_rolling_element_reference'}
+def basis(u,eyeax):
+ u=np.array(u,float);u/=np.linalg.norm(u);e=np.array(eyeax,float);e-=e@u*u;e/=np.linalg.norm(e);return np.column_stack([u,np.cross(e,u),e])
+def sceneT(qs):
+ cache={}
+ def get(body):
+  if body in cache:return cache[body]
+  row=tree.get(body)
+  if row is None:cache[body]=np.eye(4);return cache[body]
+  P=get(row.get('parent')) if row.get('parent') is not None else np.eye(4);jid=row.get('joint_id');rot=np.eye(4)
+  if jid and jid in qs:rot=tm.transformations.rotation_matrix(math.radians(qs[jid]),row['axis_world'],row['pivot_world_m'])
+  cache[body]=P@rot;return cache[body]
+ for b in tree:get(b)
+ links=[]
+ for a in d['actuator_source_definitions']:
+  aid=a['id'];A0=np.array(a['neutral_A_world_m']);B0=np.array(a['neutral_B_world_m']);PA=get(a['base_body']);PB=get(a['output_body']);A=tm.transformations.transform_points([A0],PA)[0];B=tm.transformations.transform_points([B0],PB)[0];u=(B-A)/np.linalg.norm(B-A);old=basis(B0-A0,a['axis_world']);new=basis(B-A,PA[:3,:3]@a['axis_world']);Q=new@old.T;L=float(np.linalg.norm(B-A));L0=float(np.linalg.norm(B0-A0));T=np.eye(4);T[:3,:3]=Q;T[:3,3]=A-Q@A0;cache[aid+'_barrel_link']=T;Tr=T.copy();Tr[:3,3]+=u*(L-L0);cache[aid+'_rod_link']=Tr;links.append({'id':aid,'A_world_m':A.tolist(),'B_world_m':B.tolist(),'barrel_transform4x4':T.tolist(),'rod_transform4x4':Tr.tolist(),'extension_change_from_neutral_m':L-L0,'actual_source_zero_eye_m':a['allocated_custom_zero_eye_length_m'],'actual_source_stroke_m':a['actual_stroke_design_m'],'eye_length_m':L,'within_source_zero_to_full_stroke_window_only':a['allocated_custom_zero_eye_length_m']<=L<=a['allocated_custom_zero_eye_length_m']+a['actual_stroke_design_m'],'not_pressure_stability_or_pin_force_qualification':True})
+ return cache,links
+poses=[('neutral',{})];angles={'waist_yaw':[-20,-10,10,20],'waist_pitch':[-25,-12.5,12.5,25],'waist_roll':[-15,-7.5,7.5,15],'left_hip_yaw':[-20,-10,10,20],'right_hip_yaw':[-20,-10,10,20],'left_hip_roll':[-12,-6,6,12],'right_hip_roll':[-12,-6,6,12],'left_hip':[-30,-15],'right_hip':[-30,-15]}
+for j,aa in angles.items():
+ for q in aa:poses.append((j+'_'+str(q),{j:q}))
+poses.append(('combined_crouch',{'waist_pitch':-10,'waist_yaw':15,'waist_roll':5,'left_hip':-20,'right_hip':-20,'left_hip_roll':6,'right_hip_roll':-6}))
+records=[];allhits=[];errors=[]
+for idx,(label,qs) in enumerate(poses):
+ bt,links=sceneT(qs);mm={};partT={}
+ for p in source:
+  owner=p.get('bearing_fixed_owner',p['body']);T=bt.get(owner,np.eye(4));a=T0[p['name']].copy();a.apply_transform(T);mm[p['name']]=a;partT[p['name']]=owner
+ ids=list(mm);lo=np.array([mm[n].bounds[0] for n in ids]);hi=np.array([mm[n].bounds[1] for n in ids]);seen=set();hits=[];checks=0
+ for p in d['parts']:
+  n=p['name'];a=mm[n];kk=np.where(np.all(np.minimum(a.bounds[1],hi)-np.maximum(a.bounds[0],lo)>1e-6,axis=1))[0]
+  for k in kk:
+   other=ids[k];r=PM[other]
+   if other==n or r.get('role') not in ['armor_cover','armor_surface'] and p['body']==r['body']:continue
+   pair=tuple(sorted([n,other]))
+   if pair in seen:continue
+   seen.add(pair);checks+=1
+   try:v=float(tm.boolean.intersection([a,mm[other]],engine='manifold').volume)
+   except Exception as e:errors.append({'pose':label,'a':n,'b':other,'error':str(e)});continue
+   if v>1e-9:hits.append({'pose_id':label,'a':n,'owner_a':p['body'],'b':other,'owner_b':r['body'],'positive_volume_m3':v,'armor':r['role'] in ['armor_cover','armor_surface'],'both_finite_material':p['role'] in materialroles and r['role'] in materialroles,'hydraulic_context_involved':p.get('retained_actuation_context_challenge',False) or r.get('retained_actuation_context_challenge',False),'reference_envelope_involved':p['role']=='complete_component_reference' or r['role']=='complete_component_reference'})
+  # Rejected samples are saved in full; no particle-size optimization / self-collision filter trained around them.
+ allhits.extend(hits);records.append({'id':label,'angles_deg':qs,'body_transforms':{b:t.tolist() for b,t in bt.items()},'actual_endpoint_barrel_rod_links':links,'part_pose_owner':partT,'source_geometry_immutable':True,'actual_boolean_tests':checks,'positive_pairs_count':len(hits),'true_finite_material_pairs':sum(h['both_finite_material'] for h in hits),'armor_pairs':sum(h['armor'] for h in hits),'context_actuation_stroke_window_violations':[l['id'] for l in links if not l['within_source_zero_to_full_stroke_window_only']]});print(name,label,'pairs',len(hits),flush=True)
+ # Selected actual posed overlays retain source solids and original comparator same body tree.
+ if label in ['waist_pitch_25','combined_crouch']:
+  ps=[]
+  for p in source:
+   cp={k:v for k,v in p.items() if k not in ['vertices_world_m','faces']};cp['vertices_world_m']=mm[p['name']].vertices.tolist();cp['faces']=mm[p['name']].faces.tolist();ps.append(cp)
+  (O/f'candidate_{name}_{label}_scene.json').write_text(json.dumps({'robot_id':'gorilla_v0_1','candidate':name+' '+label,'parts':ps,'pose_source_sha256':sha(sp),'angles_deg':qs,'physical_aesthetic_acceptance':False},indent=2)+'\n')
+report={'schema':'gorilla_f2_key_motion_sample_sweep_v1','input_source_sha256':sha(sp),'pose_count':len(poses),'poses':records,'positive_pairs':allhits,'errors':errors,'neutral_candidate_without_fluid_or_global_physics':True,'finite_sampled_sweep_not_continuous_clearance_proof':True,'actual_immediate_rejection_witnesses':True,'source_component_geometry_not_scaled_or_remeshed_for_pose':True,'source_cylinders_follow_endpoint_based_barrel_and_rod_slide_not_parentbody':True,'angular_test_hypotheses_not_new_hardlimits_ratings':angles,'no_new_SI_or_LP_qualification':True,'geometry_accepted':False,'physics_accepted':False,'producer_sha256':sha(__file__)};(O/f'candidate_{name}_motion_probe.json').write_text(json.dumps(report,indent=2)+'\n');print('finished',name,len(records),'hitrows',len(allhits),'errors',len(errors),flush=True)

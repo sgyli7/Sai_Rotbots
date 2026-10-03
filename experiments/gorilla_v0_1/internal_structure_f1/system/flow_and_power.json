@@ -1,0 +1,1019 @@
+{
+  "schema": "gorilla_f1_system_flow_power_macro_v1",
+  "input_interface_sha256": "f95096a90fa7bff442a94a22a2fe59c4406fe86d6e822fd212d809dbee64b12d",
+  "source_f1_axes_not_frozen_E2a_flow": true,
+  "formulae": {
+    "cylinder_speed": "v = |J(q)*qdot| m/s",
+    "chamber_flow": "Q=area*v*60000 L/min",
+    "pressure_power": "P_hydraulic=p_bar*Q_Lmin/600 kW",
+    "check_or_meter_loss": "P_loss=actual_delta_p_bar*actual_flow_Lmin/600 kW",
+    "force": "F=p*A; retract area deducts rod; backpressure/pilot/efficiency unknown",
+    "actuator_torque": "tau=F*J; full wrench/contact balance unknown"
+  },
+  "per_cylinder": [
+    {
+      "id": "waist_pitch_pair_0",
+      "bore_m": 0.08,
+      "rod_m": 0.04,
+      "cap_area_m2": 0.005026548245743669,
+      "annular_area_m2": 0.003769911184307752,
+      "sampled_q_range_deg": [
+        -25,
+        25
+      ],
+      "sampled_abs_J_range_m_rad": [
+        0.057077713020225435,
+        0.164840349707056
+      ],
+      "zero_eye_deficit_m": 0.0,
+      "finite_cylinder_hardware_present": true,
+      "rates": [
+        {
+          "qdot_rad_s": 0.1,
+          "max_cap_working_port_L_min": 4.971467823886652,
+          "max_rod_working_port_L_min": 3.728600867914989,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 15.028532176113348,
+          "HAWE_E16_reference_flow_margin_L_min": 11.028532176113348,
+          "HAWE_D25_reference_flow_margin_L_min": 20.028532176113348,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.041428898532388764,
+            0.031071673899291573
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        },
+        {
+          "qdot_rad_s": 0.3,
+          "max_cap_working_port_L_min": 14.914403471659954,
+          "max_rod_working_port_L_min": 11.185802603744966,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 5.085596528340046,
+          "HAWE_E16_reference_flow_margin_L_min": 1.0855965283400462,
+          "HAWE_D25_reference_flow_margin_L_min": 10.085596528340046,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.12428669559716629,
+            0.09321502169787471
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        }
+      ],
+      "conditional_21MPa_extend_force_N": 105557.51316061705,
+      "conditional_21MPa_retract_force_N": 79168.13487046279,
+      "max_abs_torque_Nm_at_21MPa_reference_only": [
+        17400.13738360328,
+        13050.10303770246
+      ],
+      "loadpressure_and_counterbalance_setting_actual_not_solved": true
+    },
+    {
+      "id": "waist_pitch_pair_1",
+      "bore_m": 0.08,
+      "rod_m": 0.04,
+      "cap_area_m2": 0.005026548245743669,
+      "annular_area_m2": 0.003769911184307752,
+      "sampled_q_range_deg": [
+        -25,
+        25
+      ],
+      "sampled_abs_J_range_m_rad": [
+        0.057077713020225435,
+        0.164840349707056
+      ],
+      "zero_eye_deficit_m": 0.0,
+      "finite_cylinder_hardware_present": true,
+      "rates": [
+        {
+          "qdot_rad_s": 0.1,
+          "max_cap_working_port_L_min": 4.971467823886652,
+          "max_rod_working_port_L_min": 3.728600867914989,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 15.028532176113348,
+          "HAWE_E16_reference_flow_margin_L_min": 11.028532176113348,
+          "HAWE_D25_reference_flow_margin_L_min": 20.028532176113348,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.041428898532388764,
+            0.031071673899291573
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        },
+        {
+          "qdot_rad_s": 0.3,
+          "max_cap_working_port_L_min": 14.914403471659954,
+          "max_rod_working_port_L_min": 11.185802603744966,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 5.085596528340046,
+          "HAWE_E16_reference_flow_margin_L_min": 1.0855965283400462,
+          "HAWE_D25_reference_flow_margin_L_min": 10.085596528340046,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.12428669559716629,
+            0.09321502169787471
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        }
+      ],
+      "conditional_21MPa_extend_force_N": 105557.51316061705,
+      "conditional_21MPa_retract_force_N": 79168.13487046279,
+      "max_abs_torque_Nm_at_21MPa_reference_only": [
+        17400.13738360328,
+        13050.10303770246
+      ],
+      "loadpressure_and_counterbalance_setting_actual_not_solved": true
+    },
+    {
+      "id": "left_hip",
+      "bore_m": 0.05,
+      "rod_m": 0.025,
+      "cap_area_m2": 0.001963495408493621,
+      "annular_area_m2": 0.0014726215563702159,
+      "sampled_q_range_deg": [
+        -30,
+        0
+      ],
+      "sampled_abs_J_range_m_rad": [
+        0.09486832980505139,
+        0.09999998738276192
+      ],
+      "zero_eye_deficit_m": 0.0,
+      "finite_cylinder_hardware_present": true,
+      "rates": [
+        {
+          "qdot_rad_s": 0.1,
+          "max_cap_working_port_L_min": 1.1780970964528383,
+          "max_rod_working_port_L_min": 0.883572822339629,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 18.821902903547162,
+          "HAWE_E16_reference_flow_margin_L_min": 14.821902903547162,
+          "HAWE_D25_reference_flow_margin_L_min": 23.821902903547162,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.009817475803773653,
+            0.007363106852830242
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        },
+        {
+          "qdot_rad_s": 0.3,
+          "max_cap_working_port_L_min": 3.5342912893585146,
+          "max_rod_working_port_L_min": 2.6507184670188866,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 16.465708710641486,
+          "HAWE_E16_reference_flow_margin_L_min": 12.465708710641486,
+          "HAWE_D25_reference_flow_margin_L_min": 21.465708710641486,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.029452427411320953,
+            0.02208932055849072
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        }
+      ],
+      "conditional_21MPa_extend_force_N": 41233.40357836604,
+      "conditional_21MPa_retract_force_N": 30925.052683774535,
+      "max_abs_torque_Nm_at_21MPa_reference_only": [
+        4123.339837584934,
+        3092.5048781887012
+      ],
+      "loadpressure_and_counterbalance_setting_actual_not_solved": true
+    },
+    {
+      "id": "left_knee",
+      "bore_m": 0.08,
+      "rod_m": 0.035,
+      "cap_area_m2": 0.005026548245743669,
+      "annular_area_m2": 0.004064435495581795,
+      "sampled_q_range_deg": [
+        0,
+        60
+      ],
+      "sampled_abs_J_range_m_rad": [
+        0.05510566543148742,
+        0.13492812669353235
+      ],
+      "zero_eye_deficit_m": 0.0,
+      "finite_cylinder_hardware_present": true,
+      "rates": [
+        {
+          "qdot_rad_s": 0.1,
+          "max_cap_working_port_L_min": 4.069336431197128,
+          "max_rod_working_port_L_min": 3.290440004913303,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 15.930663568802872,
+          "HAWE_E16_reference_flow_margin_L_min": 11.930663568802872,
+          "HAWE_D25_reference_flow_margin_L_min": 20.93066356880287,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.033911136926642736,
+            0.027420333374277527
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        },
+        {
+          "qdot_rad_s": 0.3,
+          "max_cap_working_port_L_min": 12.208009293591383,
+          "max_rod_working_port_L_min": 9.871320014739908,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 7.791990706408617,
+          "HAWE_E16_reference_flow_margin_L_min": 3.791990706408617,
+          "HAWE_D25_reference_flow_margin_L_min": 12.791990706408617,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.10173341077992819,
+            0.08226100012283256
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        }
+      ],
+      "conditional_21MPa_extend_force_N": 105557.51316061705,
+      "conditional_21MPa_retract_force_N": 85353.1454072177,
+      "max_abs_torque_Nm_at_21MPa_reference_only": [
+        14242.677509189945,
+        11516.54001719656
+      ],
+      "loadpressure_and_counterbalance_setting_actual_not_solved": true
+    },
+    {
+      "id": "left_fold",
+      "bore_m": 0.063,
+      "rod_m": 0.03,
+      "cap_area_m2": 0.0031172453105244723,
+      "annular_area_m2": 0.002410386963466769,
+      "sampled_q_range_deg": [
+        -20,
+        0
+      ],
+      "sampled_abs_J_range_m_rad": [
+        0.08216969677143757,
+        0.08499997024210489
+      ],
+      "zero_eye_deficit_m": 0.01155551737609778,
+      "finite_cylinder_hardware_present": false,
+      "rates": [
+        {
+          "qdot_rad_s": 0.1,
+          "max_cap_working_port_L_min": 1.589794551791527,
+          "max_rod_working_port_L_min": 1.2292969209997977,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 18.410205448208472,
+          "HAWE_E16_reference_flow_margin_L_min": 14.410205448208472,
+          "HAWE_D25_reference_flow_margin_L_min": 23.410205448208472,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.01324828793159606,
+            0.010244141008331648
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        },
+        {
+          "qdot_rad_s": 0.3,
+          "max_cap_working_port_L_min": 4.769383655374581,
+          "max_rod_working_port_L_min": 3.687890762999393,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 15.23061634462542,
+          "HAWE_E16_reference_flow_margin_L_min": 11.23061634462542,
+          "HAWE_D25_reference_flow_margin_L_min": 20.230616344625417,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.03974486379478818,
+            0.030732423024994945
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        }
+      ],
+      "conditional_21MPa_extend_force_N": 65462.15152101392,
+      "conditional_21MPa_retract_force_N": 50618.12623280215,
+      "max_abs_torque_Nm_at_21MPa_reference_only": [
+        5564.280931270344,
+        4302.539223499291
+      ],
+      "loadpressure_and_counterbalance_setting_actual_not_solved": true
+    },
+    {
+      "id": "left_ankle",
+      "bore_m": 0.063,
+      "rod_m": 0.03,
+      "cap_area_m2": 0.0031172453105244723,
+      "annular_area_m2": 0.002410386963466769,
+      "sampled_q_range_deg": [
+        -10,
+        0
+      ],
+      "sampled_abs_J_range_m_rad": [
+        0.12905297428111084,
+        0.1352660093227156
+      ],
+      "zero_eye_deficit_m": 0.02266663909137609,
+      "finite_cylinder_hardware_present": false,
+      "rates": [
+        {
+          "qdot_rad_s": 0.1,
+          "max_cap_working_port_L_min": 2.5299439994075685,
+          "max_rod_working_port_L_min": 1.9562605528298889,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 17.470056000592432,
+          "HAWE_E16_reference_flow_margin_L_min": 13.470056000592432,
+          "HAWE_D25_reference_flow_margin_L_min": 22.470056000592432,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.021082866661729736,
+            0.016302171273582407
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        },
+        {
+          "qdot_rad_s": 0.3,
+          "max_cap_working_port_L_min": 7.589831998222705,
+          "max_rod_working_port_L_min": 5.868781658489666,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 12.410168001777295,
+          "HAWE_E16_reference_flow_margin_L_min": 8.410168001777295,
+          "HAWE_D25_reference_flow_margin_L_min": 17.410168001777294,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.06324859998518921,
+            0.04890651382074722
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        }
+      ],
+      "conditional_21MPa_extend_force_N": 65462.15152101392,
+      "conditional_21MPa_retract_force_N": 50618.12623280215,
+      "max_abs_torque_Nm_at_21MPa_reference_only": [
+        8854.80399792649,
+        6846.9119349046105
+      ],
+      "loadpressure_and_counterbalance_setting_actual_not_solved": true
+    },
+    {
+      "id": "left_hip_roll_pair_0",
+      "bore_m": 0.063,
+      "rod_m": 0.03,
+      "cap_area_m2": 0.0031172453105244723,
+      "annular_area_m2": 0.002410386963466769,
+      "sampled_q_range_deg": [
+        -12,
+        12
+      ],
+      "sampled_abs_J_range_m_rad": [
+        0.1299691573940209,
+        0.20209697476236438
+      ],
+      "zero_eye_deficit_m": 0.0,
+      "finite_cylinder_hardware_present": true,
+      "rates": [
+        {
+          "qdot_rad_s": 0.1,
+          "max_cap_working_port_L_min": 3.7799150810949778,
+          "max_rod_working_port_L_min": 2.922791479939655,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 16.220084918905023,
+          "HAWE_E16_reference_flow_margin_L_min": 12.220084918905023,
+          "HAWE_D25_reference_flow_margin_L_min": 21.220084918905023,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.03149929234245814,
+            0.02435659566616379
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        },
+        {
+          "qdot_rad_s": 0.3,
+          "max_cap_working_port_L_min": 11.339745243284932,
+          "max_rod_working_port_L_min": 8.768374439818963,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 8.660254756715068,
+          "HAWE_E16_reference_flow_margin_L_min": 4.660254756715068,
+          "HAWE_D25_reference_flow_margin_L_min": 13.660254756715068,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.09449787702737443,
+            0.07306978699849136
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        }
+      ],
+      "conditional_21MPa_extend_force_N": 65462.15152101392,
+      "conditional_21MPa_retract_force_N": 50618.12623280215,
+      "max_abs_torque_Nm_at_21MPa_reference_only": [
+        13229.702783832423,
+        10229.77017978879
+      ],
+      "loadpressure_and_counterbalance_setting_actual_not_solved": true
+    },
+    {
+      "id": "left_hip_roll_pair_1",
+      "bore_m": 0.063,
+      "rod_m": 0.03,
+      "cap_area_m2": 0.0031172453105244723,
+      "annular_area_m2": 0.002410386963466769,
+      "sampled_q_range_deg": [
+        -12,
+        12
+      ],
+      "sampled_abs_J_range_m_rad": [
+        0.12996915739402096,
+        0.20209697476236443
+      ],
+      "zero_eye_deficit_m": 0.0,
+      "finite_cylinder_hardware_present": true,
+      "rates": [
+        {
+          "qdot_rad_s": 0.1,
+          "max_cap_working_port_L_min": 3.7799150810949795,
+          "max_rod_working_port_L_min": 2.9227914799396557,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 16.22008491890502,
+          "HAWE_E16_reference_flow_margin_L_min": 12.22008491890502,
+          "HAWE_D25_reference_flow_margin_L_min": 21.22008491890502,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.031499292342458164,
+            0.0243565956661638
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        },
+        {
+          "qdot_rad_s": 0.3,
+          "max_cap_working_port_L_min": 11.339745243284936,
+          "max_rod_working_port_L_min": 8.768374439818965,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 8.660254756715064,
+          "HAWE_E16_reference_flow_margin_L_min": 4.660254756715064,
+          "HAWE_D25_reference_flow_margin_L_min": 13.660254756715064,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.09449787702737447,
+            0.07306978699849137
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        }
+      ],
+      "conditional_21MPa_extend_force_N": 65462.15152101392,
+      "conditional_21MPa_retract_force_N": 50618.12623280215,
+      "max_abs_torque_Nm_at_21MPa_reference_only": [
+        13229.702783832427,
+        10229.770179788793
+      ],
+      "loadpressure_and_counterbalance_setting_actual_not_solved": true
+    },
+    {
+      "id": "left_foot_roll_pair_0",
+      "bore_m": 0.05,
+      "rod_m": 0.025,
+      "cap_area_m2": 0.001963495408493621,
+      "annular_area_m2": 0.0014726215563702159,
+      "sampled_q_range_deg": [
+        -10,
+        10
+      ],
+      "sampled_abs_J_range_m_rad": [
+        0.10657656069413227,
+        0.12361868248882484
+      ],
+      "zero_eye_deficit_m": 0.0,
+      "finite_cylinder_hardware_present": true,
+      "rates": [
+        {
+          "qdot_rad_s": 0.1,
+          "max_cap_working_port_L_min": 1.45634829282503,
+          "max_rod_working_port_L_min": 1.0922612196187726,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 18.54365170717497,
+          "HAWE_E16_reference_flow_margin_L_min": 14.54365170717497,
+          "HAWE_D25_reference_flow_margin_L_min": 23.54365170717497,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.012136235773541917,
+            0.009102176830156438
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        },
+        {
+          "qdot_rad_s": 0.3,
+          "max_cap_working_port_L_min": 4.36904487847509,
+          "max_rod_working_port_L_min": 3.2767836588563175,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 15.63095512152491,
+          "HAWE_E16_reference_flow_margin_L_min": 11.63095512152491,
+          "HAWE_D25_reference_flow_margin_L_min": 20.63095512152491,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.03640870732062575,
+            0.027306530490469313
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        }
+      ],
+      "conditional_21MPa_extend_force_N": 41233.40357836604,
+      "conditional_21MPa_retract_force_N": 30925.052683774535,
+      "max_abs_torque_Nm_at_21MPa_reference_only": [
+        5097.219024887605,
+        3822.9142686657046
+      ],
+      "loadpressure_and_counterbalance_setting_actual_not_solved": true
+    },
+    {
+      "id": "left_foot_roll_pair_1",
+      "bore_m": 0.05,
+      "rod_m": 0.025,
+      "cap_area_m2": 0.001963495408493621,
+      "annular_area_m2": 0.0014726215563702159,
+      "sampled_q_range_deg": [
+        -10,
+        10
+      ],
+      "sampled_abs_J_range_m_rad": [
+        0.10657656069413228,
+        0.1236186824888248
+      ],
+      "zero_eye_deficit_m": 0.0,
+      "finite_cylinder_hardware_present": true,
+      "rates": [
+        {
+          "qdot_rad_s": 0.1,
+          "max_cap_working_port_L_min": 1.4563482928250295,
+          "max_rod_working_port_L_min": 1.0922612196187722,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 18.54365170717497,
+          "HAWE_E16_reference_flow_margin_L_min": 14.54365170717497,
+          "HAWE_D25_reference_flow_margin_L_min": 23.54365170717497,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.012136235773541913,
+            0.009102176830156435
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        },
+        {
+          "qdot_rad_s": 0.3,
+          "max_cap_working_port_L_min": 4.369044878475089,
+          "max_rod_working_port_L_min": 3.276783658856317,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 15.630955121524911,
+          "HAWE_E16_reference_flow_margin_L_min": 11.630955121524911,
+          "HAWE_D25_reference_flow_margin_L_min": 20.630955121524913,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.03640870732062574,
+            0.02730653049046931
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        }
+      ],
+      "conditional_21MPa_extend_force_N": 41233.40357836604,
+      "conditional_21MPa_retract_force_N": 30925.052683774535,
+      "max_abs_torque_Nm_at_21MPa_reference_only": [
+        5097.219024887603,
+        3822.9142686657033
+      ],
+      "loadpressure_and_counterbalance_setting_actual_not_solved": true
+    },
+    {
+      "id": "right_hip",
+      "bore_m": 0.05,
+      "rod_m": 0.025,
+      "cap_area_m2": 0.001963495408493621,
+      "annular_area_m2": 0.0014726215563702159,
+      "sampled_q_range_deg": [
+        -30,
+        0
+      ],
+      "sampled_abs_J_range_m_rad": [
+        0.09486832980505139,
+        0.09999998738276192
+      ],
+      "zero_eye_deficit_m": 0.0,
+      "finite_cylinder_hardware_present": true,
+      "rates": [
+        {
+          "qdot_rad_s": 0.1,
+          "max_cap_working_port_L_min": 1.1780970964528383,
+          "max_rod_working_port_L_min": 0.883572822339629,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 18.821902903547162,
+          "HAWE_E16_reference_flow_margin_L_min": 14.821902903547162,
+          "HAWE_D25_reference_flow_margin_L_min": 23.821902903547162,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.009817475803773653,
+            0.007363106852830242
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        },
+        {
+          "qdot_rad_s": 0.3,
+          "max_cap_working_port_L_min": 3.5342912893585146,
+          "max_rod_working_port_L_min": 2.6507184670188866,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 16.465708710641486,
+          "HAWE_E16_reference_flow_margin_L_min": 12.465708710641486,
+          "HAWE_D25_reference_flow_margin_L_min": 21.465708710641486,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.029452427411320953,
+            0.02208932055849072
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        }
+      ],
+      "conditional_21MPa_extend_force_N": 41233.40357836604,
+      "conditional_21MPa_retract_force_N": 30925.052683774535,
+      "max_abs_torque_Nm_at_21MPa_reference_only": [
+        4123.339837584934,
+        3092.5048781887012
+      ],
+      "loadpressure_and_counterbalance_setting_actual_not_solved": true
+    },
+    {
+      "id": "right_knee",
+      "bore_m": 0.08,
+      "rod_m": 0.035,
+      "cap_area_m2": 0.005026548245743669,
+      "annular_area_m2": 0.004064435495581795,
+      "sampled_q_range_deg": [
+        0,
+        60
+      ],
+      "sampled_abs_J_range_m_rad": [
+        0.05510566543148742,
+        0.13492812669353235
+      ],
+      "zero_eye_deficit_m": 0.0,
+      "finite_cylinder_hardware_present": true,
+      "rates": [
+        {
+          "qdot_rad_s": 0.1,
+          "max_cap_working_port_L_min": 4.069336431197128,
+          "max_rod_working_port_L_min": 3.290440004913303,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 15.930663568802872,
+          "HAWE_E16_reference_flow_margin_L_min": 11.930663568802872,
+          "HAWE_D25_reference_flow_margin_L_min": 20.93066356880287,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.033911136926642736,
+            0.027420333374277527
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        },
+        {
+          "qdot_rad_s": 0.3,
+          "max_cap_working_port_L_min": 12.208009293591383,
+          "max_rod_working_port_L_min": 9.871320014739908,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 7.791990706408617,
+          "HAWE_E16_reference_flow_margin_L_min": 3.791990706408617,
+          "HAWE_D25_reference_flow_margin_L_min": 12.791990706408617,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.10173341077992819,
+            0.08226100012283256
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        }
+      ],
+      "conditional_21MPa_extend_force_N": 105557.51316061705,
+      "conditional_21MPa_retract_force_N": 85353.1454072177,
+      "max_abs_torque_Nm_at_21MPa_reference_only": [
+        14242.677509189945,
+        11516.54001719656
+      ],
+      "loadpressure_and_counterbalance_setting_actual_not_solved": true
+    },
+    {
+      "id": "right_fold",
+      "bore_m": 0.063,
+      "rod_m": 0.03,
+      "cap_area_m2": 0.0031172453105244723,
+      "annular_area_m2": 0.002410386963466769,
+      "sampled_q_range_deg": [
+        -20,
+        0
+      ],
+      "sampled_abs_J_range_m_rad": [
+        0.08216969677143757,
+        0.08499997024210489
+      ],
+      "zero_eye_deficit_m": 0.01155551737609778,
+      "finite_cylinder_hardware_present": false,
+      "rates": [
+        {
+          "qdot_rad_s": 0.1,
+          "max_cap_working_port_L_min": 1.589794551791527,
+          "max_rod_working_port_L_min": 1.2292969209997977,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 18.410205448208472,
+          "HAWE_E16_reference_flow_margin_L_min": 14.410205448208472,
+          "HAWE_D25_reference_flow_margin_L_min": 23.410205448208472,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.01324828793159606,
+            0.010244141008331648
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        },
+        {
+          "qdot_rad_s": 0.3,
+          "max_cap_working_port_L_min": 4.769383655374581,
+          "max_rod_working_port_L_min": 3.687890762999393,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 15.23061634462542,
+          "HAWE_E16_reference_flow_margin_L_min": 11.23061634462542,
+          "HAWE_D25_reference_flow_margin_L_min": 20.230616344625417,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.03974486379478818,
+            0.030732423024994945
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        }
+      ],
+      "conditional_21MPa_extend_force_N": 65462.15152101392,
+      "conditional_21MPa_retract_force_N": 50618.12623280215,
+      "max_abs_torque_Nm_at_21MPa_reference_only": [
+        5564.280931270344,
+        4302.539223499291
+      ],
+      "loadpressure_and_counterbalance_setting_actual_not_solved": true
+    },
+    {
+      "id": "right_ankle",
+      "bore_m": 0.063,
+      "rod_m": 0.03,
+      "cap_area_m2": 0.0031172453105244723,
+      "annular_area_m2": 0.002410386963466769,
+      "sampled_q_range_deg": [
+        -10,
+        0
+      ],
+      "sampled_abs_J_range_m_rad": [
+        0.12905297428111084,
+        0.1352660093227156
+      ],
+      "zero_eye_deficit_m": 0.02266663909137609,
+      "finite_cylinder_hardware_present": false,
+      "rates": [
+        {
+          "qdot_rad_s": 0.1,
+          "max_cap_working_port_L_min": 2.5299439994075685,
+          "max_rod_working_port_L_min": 1.9562605528298889,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 17.470056000592432,
+          "HAWE_E16_reference_flow_margin_L_min": 13.470056000592432,
+          "HAWE_D25_reference_flow_margin_L_min": 22.470056000592432,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.021082866661729736,
+            0.016302171273582407
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        },
+        {
+          "qdot_rad_s": 0.3,
+          "max_cap_working_port_L_min": 7.589831998222705,
+          "max_rod_working_port_L_min": 5.868781658489666,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 12.410168001777295,
+          "HAWE_E16_reference_flow_margin_L_min": 8.410168001777295,
+          "HAWE_D25_reference_flow_margin_L_min": 17.410168001777294,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.06324859998518921,
+            0.04890651382074722
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        }
+      ],
+      "conditional_21MPa_extend_force_N": 65462.15152101392,
+      "conditional_21MPa_retract_force_N": 50618.12623280215,
+      "max_abs_torque_Nm_at_21MPa_reference_only": [
+        8854.80399792649,
+        6846.9119349046105
+      ],
+      "loadpressure_and_counterbalance_setting_actual_not_solved": true
+    },
+    {
+      "id": "right_hip_roll_pair_0",
+      "bore_m": 0.063,
+      "rod_m": 0.03,
+      "cap_area_m2": 0.0031172453105244723,
+      "annular_area_m2": 0.002410386963466769,
+      "sampled_q_range_deg": [
+        -12,
+        12
+      ],
+      "sampled_abs_J_range_m_rad": [
+        0.1299691573940209,
+        0.20209697476236438
+      ],
+      "zero_eye_deficit_m": 0.0,
+      "finite_cylinder_hardware_present": true,
+      "rates": [
+        {
+          "qdot_rad_s": 0.1,
+          "max_cap_working_port_L_min": 3.7799150810949778,
+          "max_rod_working_port_L_min": 2.922791479939655,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 16.220084918905023,
+          "HAWE_E16_reference_flow_margin_L_min": 12.220084918905023,
+          "HAWE_D25_reference_flow_margin_L_min": 21.220084918905023,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.03149929234245814,
+            0.02435659566616379
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        },
+        {
+          "qdot_rad_s": 0.3,
+          "max_cap_working_port_L_min": 11.339745243284932,
+          "max_rod_working_port_L_min": 8.768374439818963,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 8.660254756715068,
+          "HAWE_E16_reference_flow_margin_L_min": 4.660254756715068,
+          "HAWE_D25_reference_flow_margin_L_min": 13.660254756715068,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.09449787702737443,
+            0.07306978699849136
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        }
+      ],
+      "conditional_21MPa_extend_force_N": 65462.15152101392,
+      "conditional_21MPa_retract_force_N": 50618.12623280215,
+      "max_abs_torque_Nm_at_21MPa_reference_only": [
+        13229.702783832423,
+        10229.77017978879
+      ],
+      "loadpressure_and_counterbalance_setting_actual_not_solved": true
+    },
+    {
+      "id": "right_hip_roll_pair_1",
+      "bore_m": 0.063,
+      "rod_m": 0.03,
+      "cap_area_m2": 0.0031172453105244723,
+      "annular_area_m2": 0.002410386963466769,
+      "sampled_q_range_deg": [
+        -12,
+        12
+      ],
+      "sampled_abs_J_range_m_rad": [
+        0.12996915739402096,
+        0.20209697476236443
+      ],
+      "zero_eye_deficit_m": 0.0,
+      "finite_cylinder_hardware_present": true,
+      "rates": [
+        {
+          "qdot_rad_s": 0.1,
+          "max_cap_working_port_L_min": 3.7799150810949795,
+          "max_rod_working_port_L_min": 2.9227914799396557,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 16.22008491890502,
+          "HAWE_E16_reference_flow_margin_L_min": 12.22008491890502,
+          "HAWE_D25_reference_flow_margin_L_min": 21.22008491890502,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.031499292342458164,
+            0.0243565956661638
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        },
+        {
+          "qdot_rad_s": 0.3,
+          "max_cap_working_port_L_min": 11.339745243284936,
+          "max_rod_working_port_L_min": 8.768374439818965,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 8.660254756715064,
+          "HAWE_E16_reference_flow_margin_L_min": 4.660254756715064,
+          "HAWE_D25_reference_flow_margin_L_min": 13.660254756715064,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.09449787702737447,
+            0.07306978699849137
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        }
+      ],
+      "conditional_21MPa_extend_force_N": 65462.15152101392,
+      "conditional_21MPa_retract_force_N": 50618.12623280215,
+      "max_abs_torque_Nm_at_21MPa_reference_only": [
+        13229.702783832427,
+        10229.770179788793
+      ],
+      "loadpressure_and_counterbalance_setting_actual_not_solved": true
+    },
+    {
+      "id": "right_foot_roll_pair_0",
+      "bore_m": 0.05,
+      "rod_m": 0.025,
+      "cap_area_m2": 0.001963495408493621,
+      "annular_area_m2": 0.0014726215563702159,
+      "sampled_q_range_deg": [
+        -10,
+        10
+      ],
+      "sampled_abs_J_range_m_rad": [
+        0.10657656069413227,
+        0.12361868248882484
+      ],
+      "zero_eye_deficit_m": 0.0,
+      "finite_cylinder_hardware_present": true,
+      "rates": [
+        {
+          "qdot_rad_s": 0.1,
+          "max_cap_working_port_L_min": 1.45634829282503,
+          "max_rod_working_port_L_min": 1.0922612196187726,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 18.54365170717497,
+          "HAWE_E16_reference_flow_margin_L_min": 14.54365170717497,
+          "HAWE_D25_reference_flow_margin_L_min": 23.54365170717497,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.012136235773541917,
+            0.009102176830156438
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        },
+        {
+          "qdot_rad_s": 0.3,
+          "max_cap_working_port_L_min": 4.36904487847509,
+          "max_rod_working_port_L_min": 3.2767836588563175,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 15.63095512152491,
+          "HAWE_E16_reference_flow_margin_L_min": 11.63095512152491,
+          "HAWE_D25_reference_flow_margin_L_min": 20.63095512152491,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.03640870732062575,
+            0.027306530490469313
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        }
+      ],
+      "conditional_21MPa_extend_force_N": 41233.40357836604,
+      "conditional_21MPa_retract_force_N": 30925.052683774535,
+      "max_abs_torque_Nm_at_21MPa_reference_only": [
+        5097.219024887605,
+        3822.9142686657046
+      ],
+      "loadpressure_and_counterbalance_setting_actual_not_solved": true
+    },
+    {
+      "id": "right_foot_roll_pair_1",
+      "bore_m": 0.05,
+      "rod_m": 0.025,
+      "cap_area_m2": 0.001963495408493621,
+      "annular_area_m2": 0.0014726215563702159,
+      "sampled_q_range_deg": [
+        -10,
+        10
+      ],
+      "sampled_abs_J_range_m_rad": [
+        0.10657656069413228,
+        0.1236186824888248
+      ],
+      "zero_eye_deficit_m": 0.0,
+      "finite_cylinder_hardware_present": true,
+      "rates": [
+        {
+          "qdot_rad_s": 0.1,
+          "max_cap_working_port_L_min": 1.4563482928250295,
+          "max_rod_working_port_L_min": 1.0922612196187722,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 18.54365170717497,
+          "HAWE_E16_reference_flow_margin_L_min": 14.54365170717497,
+          "HAWE_D25_reference_flow_margin_L_min": 23.54365170717497,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.012136235773541913,
+            0.009102176830156435
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        },
+        {
+          "qdot_rad_s": 0.3,
+          "max_cap_working_port_L_min": 4.369044878475089,
+          "max_rod_working_port_L_min": 3.276783658856317,
+          "meaning": "absolute local Jacobian speed at sampled single-joint angles; supply/return roles swap with direction; not simultaneous real task",
+          "20_Lmin_main_valve_reference_flow_margin_L_min": 15.630955121524911,
+          "HAWE_E16_reference_flow_margin_L_min": 11.630955121524911,
+          "HAWE_D25_reference_flow_margin_L_min": 20.630955121524913,
+          "valve_meter_edge_loss_at_5bar_kW": [
+            0.03640870732062574,
+            0.02730653049046931
+          ],
+          "holding_fullopen_50bar_at_catalogue_Qmax_is_not_same_operating_flow_loss": true
+        }
+      ],
+      "conditional_21MPa_extend_force_N": 41233.40357836604,
+      "conditional_21MPa_retract_force_N": 30925.052683774535,
+      "max_abs_torque_Nm_at_21MPa_reference_only": [
+        5097.219024887603,
+        3822.9142686657033
+      ],
+      "loadpressure_and_counterbalance_setting_actual_not_solved": true
+    }
+  ],
+  "whole_max_single_port_Q_Lmin_by_qdot": {
+    "0.1": 4.971467823886652,
+    "0.3": 14.914403471659954
+  },
+  "whole_all18_upper_sum_not_reachable_task_or_pump_requirement": {
+    "0.1": 49.62233330115146,
+    "0.3": 148.86699990345437
+  },
+  "source_component_limits": {
+    "LHDV33_D25_E16": "D25/E16 Lmin source variants; familyload350bar, DEspring50..350bar; preset>=1.2actual_maxload; return<=10bar; oscillation/damping/shock applicability not accepted",
+    "D1FB_C_OBE": "20 Lmin spool reference at5bar per edge, P/A/B350bar,T210bar; selected variant actual asymmetricmeter curves unknown; hold valve remains mandatory",
+    "EMRAX_Z16_two_pump_reference": "2x11cc/rev at3000RPM, volumetric .90..97 ->59.4..64.02 Lmin; at210bar ->20.79..22.407kW hydraulic; only700..3500RPM pump reference conditions; true efficiencies/load/duty/LC6Lmin each<=50C plus sourceair unknown"
+  },
+  "OBE_electrical_upper_not_measured_heat": {
+    "18_independent_valves": 18,
+    "range_V": [
+      18,
+      30
+    ],
+    "max_A_each": 2,
+    "upper_VtimesI_W_each": 60,
+    "upper_total_W": 1080,
+    "duty_scope": "catalogue100%ED with coil150C possible; installation cooling/guardhumanisolating unknown",
+    "24V_DCDC_breaker_wires_thermal_material_package_not_installed": true
+  },
+  "hydraulic_heat_not_all_supply_pQ_assumed": true,
+  "actual_meter_and_hold_deltaP_curves_task_not_solved": true,
+  "new_zero_eye_4cylinder_deficits_make_installed_flow_false": true,
+  "no_new_performance_ratings": true,
+  "flow_connected": false,
+  "physics_accepted": false,
+  "producer_sha256": "fd024d684e9dce315826823d3733915a3f9b171047487795a3259a2a635b3904"
+}

@@ -1,0 +1,99 @@
+#!/usr/bin/env python3
+"""Own G24 external HV candidate. World SI. No OEM circuit, ampacity, or installation qualification."""
+import pathlib,json,gzip,hashlib,importlib.util,ast,sys,math,itertools,collections
+import numpy as np,manifold3d as mf
+from importlib.machinery import SourceFileLoader
+R=pathlib.Path('/home/ethan/Projects/Sai_Rotbots');D=pathlib.Path(__file__).resolve().parent;sha=lambda p:hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
+def read(p):return json.loads(gzip.decompress(p.read_bytes()))if str(p).endswith('.gz')else json.loads(p.read_text())
+def wr(n,d):(D/n).write_text(json.dumps(d,indent=2,allow_nan=False)+'\n')
+HELP=R/'.scratch/gorilla_internal_g14_complete_thermal_colayout/geometry_helpers.py';sp=importlib.util.spec_from_file_location('g24helpers',HELP);g=importlib.util.module_from_spec(sp);sp.loader.exec_module(g)
+ROUTE=R/'.scratch/gorilla_internal_g22_typed_routes/build_typed_route.py';safe=[n for n in ast.parse(ROUTE.read_text()).body if isinstance(n,ast.FunctionDef)and n.name in ['cylseg','fillet','trim_path','sweep_union']];exec(compile(ast.Module(body=safe,type_ignores=[]),str(ROUTE),'exec'),globals())
+MAT=R/'experiments/gorilla_v0_1/internal_structure_g_studies/material_contract/native_signed_material.py.txt';loader=SourceFileLoader('g24signed',str(MAT));sp=importlib.util.spec_from_loader('g24signed',loader);mat=importlib.util.module_from_spec(sp);sys.modules[sp.name]=mat;loader.exec_module(mat)
+cfg=read(D/'route_spec.json');INPUT=pathlib.Path(cfg['context_path']);context=read(INPUT);parts=[];geoms={};rows=[];route_rows=[];connections=[];component_ports=[]
+def add(m,n,cat,rho=None,mr=None,extra=None,col=None):
+ assert m.status()==mf.Error.NoError,(n,m.status());meta={'component_class':cat,'finite_material':rho is not None,'source_or_assumption':'G24 own bounded custom external electrical geometry; not OEM assembly or circuit qualification','electrical_thermal_installation_accepted':False};meta.update(extra or {})
+ if rho:meta.update(density_kg_m3=rho,mass_once_kg=float(m.volume()*rho))
+ if mr:meta['mass_range_kg']=mr
+ p=g.nat(m,n,'torso_candidate','finite_typed_HV_material'if rho else 'bounded_custom_function_reference',col or [.5,.6,.65,1],meta);parts.append(p);geoms[n]=m;rows.append({'id':n,'scope':'finite uniform material assumption'if rho else 'bounded complete custom function','mass_range_kg':[m.volume()*rho]*3 if rho else mr,'internal_mass_COM_I_unknown':rho is None});return m
+rc=.00335;ro=.005;Rb=.050;surfacegap=.006;CuRho=8960;insRho=1200
+# Actual proper transform of original G23 ports, never stale G21 endpoint reuse.
+MOD=R/'.scratch/gorilla_internal_g23_compact_energy_routes/module_scene.json.gz';module=read(MOD);packports={};ringparts={}
+for k,q in enumerate(cfg['module_placements']):
+ M=np.array(q['proper_R']);C=np.array(q['origin_world_m']);assert np.linalg.det(M)>0.999999999
+ for p in module['HV_ports']:
+  a=C+M@np.array(p['HV_lug_center_m']);n=M@np.array([0.,0.,1.]);exitdir=M@np.array([0.,-1.,0.]);ringcenter=a+n*.010;T=np.column_stack([M[:,0],M[:,1],n,ringcenter]);ring=(mf.Manifold.cylinder(.002,.008,.008,48).translate([0,0,-.001])-mf.Manifold.cylinder(.008,.0032,.0032,48).translate([0,0,-.004])).transform(T);start=ringcenter+exitdir*.007;packports[k,p['net']]={'source_lug_center_world_m':a.tolist(),'connection_ring_center_world_m':ringcenter.tolist(),'path_start_world_m':start.tolist(),'source_lug_outerface_normal_world':n.tolist(),'proper_R':M.tolist(),'source_port_geometry_identity':module['HV_ports'],'physical_bolted_contact_unknown':True};ringparts[k,p['net']]=ring
+PC=np.array(cfg['PDU_center_world_m']);PD=np.array([.280,.220,.160]);pdu_shell=g.bx(PC,PD)-g.bx(PC,PD-.004);pdu_ports={}
+# Four actual own feedthroughs, input and switched output are deliberately distinct circuit nodes.
+for label,xy in [('battery_negative',[-.090,-.075]),('battery_positive',[.090,-.075]),('bus_negative',[-.090,.075]),('bus_positive',[.090,.075])]:
+ c=PC+np.array([xy[0],xy[1],PD[2]/2]);pdu_ports[label]=c;hole=g.cyl(c,.008,.070,'Z',48);pdu_shell=pdu_shell-hole;add(g.cyl(c,.0075,.012,'Z',48)-g.cyl(c,.0052,.020,'Z',48),'g24_'+label+'_feedthrough','connector_dielectric',insRho,extra={'own_inner_clearance_m':.00185,'pressure_voltage_creepage_HVIL_unknown':True},col=[.69,.67,.39,1]);component_ports.append({'id':label,'point_world_m':c.tolist(),'normal_world':[0,0,1],'own_custom_interface_notOEMpinout':True})
+# Real mounting holes, finite supports and separate removable service stock.
+for x in [-.11,.11]:
+ for y in [-.085,.085]:
+  bc=PC+np.array([x,y,-.079]);pdu_shell=pdu_shell-g.cyl(bc,.0033,.040,'Z',40);add(g.cyl(bc,.003,.020,'Z',40)+g.cyl(bc-[0,0,.010],.005,.003,'Z',40),f'g24_PDU_mount_bolt_{x}_{y}','mount_fastener',7850,extra={'mating_load_preload_frame_qualification_unknown':True})
+add(pdu_shell,'g24_main_PDU_bored_Al_enclosure','enclosure',2700,extra={'replace_old_PDU_only_if_complete_function_contract_closed':False},col=[.57,.63,.69,1])
+# No fabricated internal poles: complete custom function stocks have literal terminal interfaces, but switched circuit conductance/clearance is unknown.
+functions=[('positive_DC_contactor',[-.065,0,.012],[.072,.060,.078],[.4,.8,1.6],['close','open under specified DC fault; unqualified']),('negative_DC_contactor',[.065,0,.012],[.072,.060,.078],[.4,.8,1.6],['close','isolate negative; unqualified']),('main_fuse_manual_service_disconnect',[0,-.025,-.046],[.052,.080,.034],[.20,.45,.9],['pack short circuit interrupt','physical service isolation']),('precharge_resistor_relay',[0,.060,-.042],[.085,.025,.040],[.15,.35,.7],['DC link resistor controlled precharge','welded contactor detection']),('isolation_current_HVIL_control',[0,0,.065],[.20,.15,.015],[.15,.4,.8],['floating bus isolation monitor','current sensing','interlock','safe-stop control'])]
+for label,off,dm,mr,fn in functions:add(g.bx(PC+off,dm),'g24_'+label,'complete_protection_function',mr=mr,extra={'function':fn,'voltage_current_shortcircuit_temperature_response_unknown':True,'internal_component_geometry_and_COM_unknown':True},col=[.3,.43,.56,1])
+# PDU own bus/interface Cu: no fictional solid copper through switch or fuse mechanisms.
+pdu_terminal_geoms={label:g.cyl(p+[0,0,.002],.004,.040,'Z',48) for label,p in pdu_ports.items()} # merged once into its complete potential net below
+# Main route macros compare two complete external corridor families; only selected finite implementation is instantiated.
+order=cfg['series_pack_order'];net_specs=[]
+for j in range(3):
+ aa=packports[order[j],18]['path_start_world_m'];bb=packports[order[j+1],0]['path_start_world_m'];net_specs.append((f'series_{j}_{j+1}',np.array(aa),np.array(bb),[(order[j],18),(order[j+1],0)]))
+net_specs +=[('battery_negative',np.array(packports[order[0],0]['path_start_world_m']),pdu_ports['battery_negative']+[0,0,.014],[(order[0],0)]),('battery_positive',np.array(packports[order[-1],18]['path_start_world_m']),pdu_ports['battery_positive']+[0,0,.014],[(order[-1],18)])]
+# Shared positive/negative distribution nets, actual target exterior feedthroughs are OUR proposed ports; OEM inverters/controllers pinouts remain unknown.
+targets=cfg['loads'];shared={'bus_negative':[],'bus_positive':[]};extra_terminal={}
+for idx,t in enumerate(targets):
+ c=np.array(t['interface_center_world_m']);dm=np.array(t['interface_dimensions_m']);case=g.bx(c,dm)-g.bx(c,dm-.004)
+ for sg,label in [(-1,'bus_negative'),(1,'bus_positive')]:
+  ep=c+np.array([0,sg*.015,dm[2]/2]);case=case-g.cyl(ep,.0076,.045,'Z',48);add(g.cyl(ep,.0070,.012,'Z',48)-g.cyl(ep,.0052,.025,'Z',48),f'g24_load_{idx}_{label}_dielectric','connector_dielectric',insRho,extra={'consumer_source_ID':t['source_id'],'actual_OEMport_not_known':True});lug=g.cyl(ep,.004,.020,'Z',48);extra_terminal[idx,label]=lug;shared[label].append((ep+[0,0,.005],idx,t))
+ add(case,f'g24_load_{idx}_own_bored_feedthrough_case','connector_enclosure',2700,extra={'consumer_source_ID':t['source_id'],'notOEMmodified':'new own adapter must attach to an unknown source pinout; no implicit source drilling'},col=[.52,.59,.65,1]);component_ports.append({'consumer':t['source_id'],'own_connector_center_world_m':c.tolist(),'source_actual_internalport_unknown':True,'load_function':t['function']})
+# Select literal routing plane. Bend radii are geometric assumptions, not cable specification.
+plane=cfg['selected_corridor_plane_X_m'];macros=[]
+for plane_candidate in cfg['macro_planes_X_m']:
+ L=0
+ for label,a,b,ks in net_specs:L+=abs(a[0]-plane_candidate)+abs(b[0]-plane_candidate)+abs(a[1]-b[1])+abs(a[2]-b[2])
+ macros.append({'route_corridor_X_m':plane_candidate,'same_endpoints_and_full_functions':True,'unfilleted_manhattan_main_length_m':float(L),'all_cable_radii_fixed_m':[rc,ro],'minimum_bend_R_m':Rb,'material_collision_not_screened_in_analytic_macro':True})
+wr('macro_route_comparison.json',{'macros':macros,'selected_X_m':plane,'two_macro_limit':True,'candidate_notrated':True})
+# Smooth loops use common outer direction -X to obey the actual pack lug's exit direction. Each lane retains >=2ro+6mm center separation.
+def route(label,a,b,ks,lane_index=0):
+ lane=cfg['corridor_Y0_m']+lane_index*(2*ro+surfacegap);top=max(a[2],b[2])+cfg['loop_lift_m']+lane_index*.016
+ # Exit legs first use physical -X for pack; PDU paths have a declared proposed upward segment. Simple generous external loop retained if packaging fails.
+ raw=[a,a+[-.120,0,0],[plane,lane,a[2]],[plane,lane,top],[plane,b[1],top],[plane,b[1],b[2]],b]
+ # Remove exactly collinear repeated/reversing corner by a deterministic orthogonal corridor construction, NOT material clipping.
+ raw=[a,[plane,a[1],a[2]],[plane,lane,a[2]],[plane,lane,top],[plane,b[1],top],[plane,b[1],b[2]],b]
+ clean=[np.array(raw[0])]
+ for x in raw[1:]:
+  x=np.array(x,float)
+  if np.linalg.norm(x-clean[-1])>1e-8:clean.append(x)
+ try:path,arcs=fillet(clean,Rb)
+ except AssertionError:
+  # Keep an explicit unfilleted rejected macro if legs cannot support R50. Never silently reduce radius.
+  path=np.array(clean);arcs=[{'fillet_rejected':True,'required_bend_R_m':Rb}]
+ core=sweep_union(path,rc)
+ for k in ks:core=core+ringparts[k]
+ if label in pdu_terminal_geoms:core=core+pdu_terminal_geoms[label]
+ outer=sweep_union(trim_path(path,.006,.006),ro);coat=outer-core
+ add(core,'g24_'+label+'_Cu_union','conductor',CuRho,extra={'potential_label':label,'own_R50_bend_path':arcs,'source_contacts_candidate_only':ks},col=[.75,.41,.15,1]);add(coat,'g24_'+label+'_jacket','wire_dielectric',insRho,extra={'potential_label':label,'generation':'all route outer union minus COMPLETE SAME potential Cu union only'},col=[.19,.37,.56,1]);route_rows.append({'id':label,'start_world_m':a.tolist(),'end_world_m':b.tolist(),'centerline_world_m':path.tolist(),'nominal_bend_radius_m':Rb,'bend_diagnostics':arcs,'centerline_length_m':float(np.linalg.norm(np.diff(path,axis=0),axis=1).sum()),'Cu_crosssection_mm2':math.pi*rc*rc*1e6,'source_module_contacts':ks,'endpoint_contact_current_heat_unknown':True})
+ # True annular finite supports around jacket, seated on own boss; no source wall clipping.
+ for j,pos in enumerate(path[1:-1: max(1,(len(path)-2)//3)]):
+  ix=int(np.argmin(np.linalg.norm(path-pos,axis=1)));tan=path[min(ix+1,len(path)-1)]-path[max(0,ix-1)];tan=tan/np.linalg.norm(tan);holder=cylseg(pos-tan*.005,pos+tan*.005,.009)-cylseg(pos-tan*.008,pos+tan*.008,.0055);add(holder,f'g24_{label}_support_{j}','dielectric_cable_support',insRho,extra={'source_frame_attach_load_tool_unknown':True})
+for j,(label,a,b,ks)in enumerate(net_specs):route(label,a,b,ks,j)
+# Distribution branches share the same conductor potential: net-union copper and own jacket across every branch, rather than overlapping separately counted jackets.
+for sg,label in [(-1,'bus_negative'),(1,'bus_positive')]:
+ start=pdu_ports[label]+[0,0,.014];allcore=[pdu_terminal_geoms[label]];allouter=[];paths=[]
+ for j,(end,idx,t)in enumerate(shared[label]):
+  branch_start=start+np.array([0,sg*j*.020,0]);lane=cfg['corridor_Y0_m']+(.11 if sg>0 else 0)+j*.016;top=max(branch_start[2],end[2])+.13+j*.020;raw=[branch_start,[plane,branch_start[1],branch_start[2]],[plane,lane,branch_start[2]],[plane,lane,top],[plane,end[1],top],[plane,end[1],end[2]],end];clean=[np.array(raw[0])]
+  for p in raw[1:]:
+   p=np.array(p,float)
+   if np.linalg.norm(p-clean[-1])>1e-8:clean.append(p)
+  try:path,arcs=fillet(clean,Rb)
+  except AssertionError:path=np.array(clean);arcs=[{'fillet_rejected':True,'required_bend_R_m':Rb}]
+  allcore +=[sweep_union(path,rc),extra_terminal[idx,label]];allouter.append(sweep_union(trim_path(path,.006,.006),ro));paths.append({'consumer_source_ID':t['source_id'],'centerline_world_m':path.tolist(),'bend_diagnostics':arcs,'centerline_length_m':float(np.linalg.norm(np.diff(path,axis=0),axis=1).sum()),'not_actual_OEM_internalfeed':True})
+ bc=start+np.array([0,sg*.060,0]);bar=g.bx(bc,[.008,.128,.008]);allcore.append(bar);allouter.append(g.bx(bc,[.016,.138,.016]));core=mf.Manifold.batch_boolean(allcore,mf.OpType.Add);outer=mf.Manifold.batch_boolean(allouter,mf.OpType.Add);add(core,'g24_'+label+'_distribution_Cu_union','conductor',CuRho,extra={'potential_label':label,'all_targets':paths},col=[.75,.41,.15,1]);add(outer-core,'g24_'+label+'_distribution_jacket','wire_dielectric',insRho,extra={'potential_label':label,'generation':'all branch outer union minus complete same net CuUnion'},col=[.2,.39,.58,1]);route_rows.append({'id':label,'branches':paths,'source_contact_to_PDU_terminal_unknown':True})
+# Explicit separately enclosed regen dissipator and HV->critical/aux LV conversion function; HV downstream feed is included above.
+for fn in cfg['additional_functions']:
+ c=np.array(fn['center_world_m']);dm=np.array(fn['dimensions_m']);add(g.bx(c,dm),'g24_'+fn['id'],'complete_power_function_reference',mr=fn['mass_range_kg'],extra={'function':fn['function'],'voltage_current_continuous_heat_fault_energy_unknown':True},col=[.35,.46,.56,1])
+service=g.bx(PC+[0,0,.16],PD+[.06,.06,.12]);parts.append(g.nat(service,'g24_PDU_removed_cover_service','torso_candidate','service_after_shell_removal',[1,.6,.2,.15],{'finite_material':False,'mass_counted':False,'not_permanent_material':True}))
+source={'schema':'gorilla_g24_complete_external_HV_conditional_candidate_v1','declared_units':'m; world SI','context_path':str(INPUT),'context_SHA':sha(INPUT),'module_source_SHA':sha(MOD),'producer_SHA':sha(__file__),'route_spec_SHA':sha(D/'route_spec.json'),'module_placements':cfg['module_placements'],'parts':parts,'physical_mass_ledger_once':rows,'actual_module_external_ports':packports if False else [{'pack':k,'net':n,**q}for(k,n),q in packports.items()],'PDU_actual_custom_interface_ports':component_ports,'route_inventory':route_rows,'selected_series_order':order,'conditional_circuit_voltage_V':[180,259.2,302.4],'complete_actual_19net_module_geometry_unchanged':True,'old_stale_route_IDs_conditionally_replaced':cfg['old_stale_IDs'],'retirement_qualification_credit':False,'physical_electrical_thermal_installed_or_whole_accepted':False,'source_paths':{str(p):sha(p)for p in [INPUT,MOD,HELP,ROUTE,MAT,R/'sai_robots_engineering_rules.md']},'functional_graph':cfg['functional_graph'],'unknown_downstream_pinouts_and_dynamic_routes':cfg['downstream_unknowns']}
+(D/'scene.json.gz').write_bytes(gzip.compress(json.dumps(source,separators=(',',':')).encode(),mtime=0));wr('native_signed_resource.json',dict(mat.validate_scene({'parts':[p for p in parts if p.get('finite_material')]}),scene_SHA=sha(D/'scene.json.gz')));wr('external_ports_and_circuit_graph.json',{'scene_SHA':sha(D/'scene.json.gz'),'pack_ports':source['actual_module_external_ports'],'PDU_ports':component_ports,'functional_graph':cfg['functional_graph'],'no_known_internal_pole_geometry':True});print('EVENT G24 actual complete conditional source',sha(D/'scene.json.gz'),'parts',len(parts),'finite',len(geoms),'ownmass',sum(q['mass_range_kg'][1] for q in rows),flush=True)

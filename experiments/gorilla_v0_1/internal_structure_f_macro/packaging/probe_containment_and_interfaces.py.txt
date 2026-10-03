@@ -1,0 +1,23 @@
+from pathlib import Path
+import json,numpy as np,hashlib
+from scipy.spatial import ConvexHull
+R=Path('/home/ethan/Projects/Sai_Rotbots');O=R/'.scratch/gorilla_internal_f_packaging';M=json.loads((R/'.scratch/gorilla_internal_e2a_integrated/scene.json').read_text());S=json.loads((R/'.scratch/gorilla_internal_e2_system/system_spec.json').read_text());summary=json.loads((O/'summary.json').read_text());vertices=np.vstack([p['vertices_world_m'] for p in M['parts'] if p['role'] in ['armor_cover','armor_surface'] and p['body'] in ['torso','pelvis']]);h=ConvexHull(vertices);planes=h.equations;origports={**S['oil_nodes'],**S['port_nodes']};report={'strict_containment_scope':'Outside convex hull of exact original torso/pelvis armor vertices is a necessary exterior rejection; inside is not proof of a cavity or installation. Does not replace true skin/pose checks.','hull_armor_part_ids':[p['name'] for p in M['parts'] if p['role'] in ['armor_cover','armor_surface'] and p['body'] in ['torso','pelvis']],'trials':{},'all_installation_accepted':False};portdoc={'scope':'Port owner mapping by exact module name / source node names; transformed endpoints are suggested mounting points, real drilling/bend/routing/pressure not qualified. Route meshes remain original source and must be rebuilt.','trials':{}}
+for i in [1,2]:
+ d=json.loads((O/f'trial_{i}_scene.json').read_text());ps={p['name']:p for p in d['parts']};groups={g['id']:g for g in d['F_group_transforms']};outside=[];movedports=[]
+ for g in groups.values():
+  T=np.array(g['transform_world_4x4']);prefixes=[]
+  for n in g['part_ids']:
+   v=np.array(ps[n]['vertices_world_m']);signed=v@planes[:,:3].T+planes[:,3];mx=signed.max(axis=1);out=mx>1e-5
+   if out.any():outside.append({'group':g['id'],'part':n,'outside_vertex_count':int(out.sum()),'max_distance_outside_convex_hull_m':float(mx.max())})
+   if '_valve_' in n:prefixes.append(n.removeprefix('ds_').split('_valve_')[0]+'_valve_')
+  for name,node in origports.items():
+   if name.startswith(('e_main_supply_branch_','e_main_return_branch_')):continue
+   matched=any(name.startswith(a) for a in prefixes)
+   if g['id'].endswith('_upper_pack'):matched |= any('upper_custom_hv_pack' in a and (a.removeprefix('e_').removeprefix('ds_') in name or a in name) for a in g['part_ids'][:1])
+   if g['id']=='P_header':matched |= 'pressure_header' in name or 'P_tap' in name or name.startswith('e2_P_header')
+   if g['id']=='T_header':matched |= 'return_header' in name or 'T_tap' in name or name.startswith('e2_T_header')
+   if g['id']=='HX':matched |= 'oil_HX' in name or 'true_oil_water_HX' in name
+   if matched:
+    p=np.array(node['center_world_m']);movedports.append({'group':g['id'],'port_id':name,'old_point_world_m':p.tolist(),'trial_point_world_m':(T[:3,:3]@p+T[:3,3]).tolist(),'flow_connection_inherited':False})
+ report['trials'][str(i)]={'outside_convex_hull_rows':outside,'outside_part_count':len(outside),'all_installation_accepted':False};portdoc['trials'][str(i)]={'moved_port_count':len(movedports),'ports':movedports,'routes_to_rebuild':summary['routes_requiring_rebuild'],'stationary_coolant_header_branches_not_transformed':True}
+(O/'containment_necessary_screen.json').write_text(json.dumps(report,indent=2)+'\n');(O/'moved_interface_points.json').write_text(json.dumps(portdoc,indent=2)+'\n')

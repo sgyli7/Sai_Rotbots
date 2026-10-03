@@ -1,0 +1,59 @@
+"""Read G4 native child and preserve source-bound surface/load interfaces only."""
+from pathlib import Path
+import copy
+import hashlib
+import json
+import numpy as np
+import trimesh
+
+OUT = Path(__file__).resolve().parent
+ROOT = OUT.parents[1]
+paths = {name:ROOT/path for name,path in {
+ 'scene':'.scratch/gorilla_internal_g4_pitch_module/module_scene.json',
+ 'handoff':'.scratch/gorilla_internal_g4_pitch_module/optimization_handoff.json',
+ 'report':'.scratch/gorilla_internal_g4_pitch_module/report.json',
+ 'review':'.scratch/gorilla_internal_g4_root_review/review_final_pitch.json'}.items()}
+def sha(p): return hashlib.sha256(p.read_bytes()).hexdigest()
+def dump(name,d): (OUT/name).write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n')
+scene = json.loads(paths['scene'].read_text())
+handoff = json.loads(paths['handoff'].read_text())
+assert sha(paths['scene']) == '9a88efe894625e7ed3d3f15e544ead7b574382035594ab8d4b81f530fbb7b21a'
+assert handoff['source_sha256'] == sha(paths['scene'])
+part = next(p for p in scene['parts'] if p['name']=='g4_child_load_carrier')
+v=np.asarray(part['vertices_world_m'],float);f=np.asarray(part['faces'],int)
+m=trimesh.Trimesh(vertices=v,faces=f,process=False)
+tri=v[f];cent=tri.mean(1);norm=m.face_normals
+patches=[]
+def patch(identifier,mask,description):
+ ids=np.flatnonzero(mask)
+ patches.append({'id':identifier,'native_face_ids':ids.tolist(),'face_count':len(ids),'area_m2':float(m.area_faces[ids].sum()),'surface_centroid_m':np.average(cent[ids],axis=0,weights=m.area_faces[ids]).tolist() if len(ids) else None,'function':description,'actual_contact_distribution_qualified':False,'clamp':False})
+for side,cy in [(-1,.505),(1,.795)]:
+ r=np.hypot(cent[:,0]+.06,cent[:,2]-.30)
+ patch('journal_radial_'+str(side),(np.abs(r-.02995)<.00012)&(np.abs(cent[:,1]-cy)<=.014875+1e-9),'Actual finite journal outer polygon; 32212 ring/pressure-centre/preload unresolved; no all-DOF clamp')
+ ey=.49 if side<0 else .81
+ r=np.hypot(cent[:,0]-.26,cent[:,2]-.34)
+ patch('moving_pin_bore_'+str(side),(np.abs(r-.0202)<.00012)&(np.abs(cent[:,1]-ey)<=.0531),'Actual 40.4mm fork bore surface; pin traction/contact/friction not solved')
+ sy=.575 if side<0 else .725
+ patch('stop_contact_'+str(side),np.all(np.abs(tri[:,:,2]-.388)<1e-9,axis=1)&(np.abs(cent[:,0]-.09)<.0301)&(np.abs(cent[:,1]-sy)<.0226),'Actual neutral compression-shoe contact face; engaged only in separate static-hold cases')
+patch('downstream_mount',np.all(np.abs(tri[:,:,0]-.29)<1e-9,axis=1)&(np.abs(cent[:,1]-.65)<=.1201)&(np.abs(cent[:,2]-.285)<=.0751),'Actual source outer end cap; missing downstream attachment/bolt pattern, equivalent 6D wrench only')
+native_selectors=[{k:copy.deepcopy(val) for k,val in s.items() if k!='native_triangle_indices_conservative'} for s in handoff['non_design_native_material_selectors'] if s['native_part']==part['name']]
+domain={'robot_id':'gorilla_v0_1','source_sha256':sha(paths['scene']),'native_part':part['name'],'owner':'child','surface_vertices':len(v),'surface_faces':len(f),'surface_watertight':bool(m.is_watertight),'winding_consistent':bool(m.is_winding_consistent),'signed_native_volume_m3':float(m.volume),'declared_S355_baseline_mass_kg':float(m.volume*7850),'material_surface_roots':len(m.split(only_watertight=False)),'aabb_m':m.bounds.tolist(),'aabb_is_free_design_cavity':False,'baseline_domain':'Actual finite source material, not full bounding-box fill','redistribution_domain':'Future explicitly constructed wide CAD primitive union minus all hardware/motion/tool voids; not yet qualified','source_conservative_selectors_not_permanent_gross_freeze':native_selectors,'precise_surface_patch_candidates':patches,'non_design_solid_rule':'Preserve actual fits, contact lands, keeper/bolt interfaces and bounded manufacturing buffers; main walls/boss transitions/ribs remain redistributable under 3D torsion/buckling constraints','manufacturing_minimum_skin_m':{'initial_range':[.003,.006],'adopted':False,'scope':'Conditional machining/material/process choice still required, not permission to erase current 6mm torsion wall'},'full_3d_design_mask_ready':False,'functional_void_rule':'Native bores/cavities and joint clearance are exact baseline voids. Future expanded solid domain must additionally subtract actual other-owner hardware, sampled/continuous motion and service/tool volumes. Those complete void solids are not present.','motion_clearance_continuous_proof':False,'physical_release':False}
+dump('domain_interfaces.json',domain)
+
+# Transform every same-source load case into the child neutral material frame.
+T_by_q={float(p['q_deg']):np.asarray(p['child_transform_world'],float) for p in scene['pose_scenes']}
+rows=[]
+for ix,row in enumerate(handoff['actual_6D_load_interfaces']):
+ T=T_by_q[float(row['q_deg'])];R=T[:3,:3];t=T[:3,3]
+ ports=copy.deepcopy(row['actual_child_point_load_ports'])+[copy.deepcopy(row['equivalent_ground_load_at_output_mount'])]
+ converted=[]
+ for p in ports:
+  x=np.asarray(p['point_world_m']);w=np.asarray(p['wrench_Fxyz_Mxyz']);xn=R.T@(x-t);wn=np.r_[R.T@w[:3],R.T@w[3:]]
+  converted.append({'point_neutral_material_m':xn.tolist(),'wrench_neutral_Fxyz_Mxyz':wn.tolist(),'original_world_point_m':x.tolist(),'original_world_wrench_Fxyz_Mxyz':w.tolist(),'interface':p.get('interface','drive_or_stop_or_output_equivalent'),'traction_patch_qualified':False})
+ net_f=sum((np.asarray(p['wrench_neutral_Fxyz_Mxyz'][:3]) for p in converted),np.zeros(3))
+ net_m=sum((np.cross(p['point_neutral_material_m'],p['wrench_neutral_Fxyz_Mxyz'][:3])+p['wrench_neutral_Fxyz_Mxyz'][3:] for p in converted),np.zeros(3))
+ rows.append({'source_case_index':ix,'q_deg':row['q_deg'],'load_factor':row['load_factor'],'CoP_world_m':row['CoP_world_m'],'mode':row['mode'],'ports':converted,'net_force_N':net_f.tolist(),'net_moment_about_material_origin_Nm':net_m.tolist(),'source_report_gravity_included':False})
+dump('same_source_6d_load_cases.json',{'scene_sha256':sha(paths['scene']),'handoff_sha256':sha(paths['handoff']),'cases':rows,'case_count':len(rows),'max_force_balance_N':float(max(np.linalg.norm(r['net_force_N']) for r in rows)),'max_moment_balance_Nm':float(max(np.linalg.norm(r['net_moment_about_material_origin_Nm']) for r in rows)),'boundary_options':[{'id':'self_equilibrated_ports_minimal_rigid_mode_gauge','description':'Apply all output/drive-or-stop/bearing reaction wrenches as source-bound external tractions; remove only six rigid modes through an explicit rank6 gauge. No bearing all-DOF clamp; nodal patches/distribution and gauge selection not yet made.'},{'id':'conditional_parent_coupled_bearing_contact','description':'Use finite parent/rings/fit/preload or declared support compliance; bearing reactions emerge rather than applying them again. Needs contact and missing upstream attachment, not mixed with first option.'}],'loads_applied_to_FE':False,'physical_release':False})
+np.savez_compressed(OUT/'native_child_surface.npz',vertices_world_m=v,faces=f)
+dump('input_manifest.json',{'sources':[{'id':k,'path':str(p),'sha256':sha(p),'bytes':p.stat().st_size} for k,p in paths.items()],'native_surface_sha256':sha(OUT/'native_child_surface.npz'),'source_geometry_modified':False,'full_robot_or_exterior_adopted':False})
+print(json.dumps({'native_volume_m3':m.volume,'patches':[(p['id'],p['face_count'],p['area_m2']) for p in patches],'load_cases':len(rows),'load_force_residual_max':max(np.linalg.norm(r['net_force_N']) for r in rows)},ensure_ascii=False))

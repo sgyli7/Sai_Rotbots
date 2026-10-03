@@ -1,0 +1,51 @@
+from pathlib import Path
+import json,gzip,hashlib,numpy as np,math
+import manifold3d as mf
+import trimesh
+from OCP.gp import gp_Pnt
+from OCP.BRepBuilderAPI import BRepBuilderAPI_MakePolygon,BRepBuilderAPI_MakeFace,BRepBuilderAPI_Sewing,BRepBuilderAPI_MakeSolid
+from OCP.TopoDS import TopoDS
+from OCP.TopExp import TopExp_Explorer
+from OCP.TopAbs import TopAbs_SHELL
+from OCP.BRepTools import BRepTools
+from OCP.BRepCheck import BRepCheck_Analyzer
+from OCP.STEPControl import STEPControl_Writer,STEPControl_AsIs,STEPControl_Reader
+from OCP.GProp import GProp_GProps
+from OCP.BRepGProp import BRepGProp
+P=Path(__file__).resolve().parent
+
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def m(p):return mf.Manifold(mf.Mesh64(np.asarray(p['vertices_world_m']),np.asarray(p['faces'])))
+def write(d,n,x):(d/n).write_text(json.dumps(x,ensure_ascii=False,indent=2)+'\n')
+def export_one(p,d):
+ v=np.asarray(p['vertices_world_m']);f=np.asarray(p['faces']);sew=BRepBuilderAPI_Sewing(1e-9)
+ for ids in f:
+  poly=BRepBuilderAPI_MakePolygon()
+  for xyz in v[ids]:poly.Add(gp_Pnt(*xyz))
+  poly.Close();sew.Add(BRepBuilderAPI_MakeFace(poly.Wire()).Face())
+ sew.Perform();sh=sew.SewedShape();mk=BRepBuilderAPI_MakeSolid();exp=TopExp_Explorer(sh,TopAbs_SHELL);ns=0
+ while exp.More():mk.Add(TopoDS.Shell_s(exp.Current()));ns+=1;exp.Next()
+ sol=mk.Solid();name=p['name'];bp=d/(name+'.brep');BRepTools.Write_s(sol,str(bp));gp=GProp_GProps();BRepGProp.VolumeProperties_s(sol,gp)
+ step=d/(name+'_si.step');w=STEPControl_Writer();w.Transfer(sol,STEPControl_AsIs);w.Write(str(step));txt=step.read_text();n=txt.count('SI_UNIT(.MILLI.,.METRE.)');assert n>0;step.write_text(txt.replace('SI_UNIT(.MILLI.,.METRE.)','SI_UNIT($,.METRE.)'));r=STEPControl_Reader();r.ReadFile(str(step));r.TransferRoots();s=r.OneShape();gg=GProp_GProps();BRepGProp.VolumeProperties_s(s,gg)
+ return {'id':name,'BREP_sha256':sha(bp),'STEP_sha256':sha(step),'source_shape':'signed original native planar facets, not true-circle OEM manufacturing CAD','signed_shells_preserved':ns,'BRep_valid':bool(BRepCheck_Analyzer(sol).IsValid()),'native_m3':m(p).volume(),'CAD_m3_numeric':gp.Mass(),'STEP_readback_m3':gg.Mass()/1e9,'STEP_source_coordinates_m':'declaration adapter only, no geometry scale','reader_internal_units_mm':True,'geometry_valid_NOT_thread_OR_pressure_admission':True}
+for sub,scene in [(P,'scene_a.json.gz'),(P/'b','scene_b.json.gz')]:
+ s=json.load(gzip.open(sub/scene,'rt'));by={p['name']:p for p in s['parts']};inventory=[];roots=[]
+ for p in s['parts']:
+  mm=m(p);ds=mm.decompose();signs=[float(x.volume()) for x in ds];roots.append({'id':p['name'],'role':p['role'],'positive_signed_surfaces':sum(v>1e-15 for v in signs),'negative_cavity_surfaces':sum(v< -1e-15 for v in signs),'signed_surface_volumes_m3':signs,'finite_material_part_single_connected_required':p['finite_material'],'multiplepositive_rejected_for_unassembled_piece':p['finite_material'] and sum(v>1e-15 for v in signs)>1})
+  if p['finite_material']:
+   tm=trimesh.Trimesh(np.array(p['vertices_world_m']),np.array(p['faces']),process=False);rho=p['density_hypothesis_kg_m3'];mp=tm.mass_properties
+   inventory.append({'id':p['name'],'owner':p['body'],'net_volume_m3':mp.volume,'density_hypothesis':rho,'mass_kg':mp.volume*rho,'COM_m':mp.center_mass.tolist(),'fullI_at_COM_kg_m2':(mp.inertia*rho).tolist(),'volume_vs_kernel_m3':mp.volume-mm.volume(),'mass_property_scope':'own finite individual part only; incompatible assembly intersections not qualified','material_certificate/fatigue/thread_unknown':True})
+ fluid=[]
+ for p in s['parts']:
+  if p['role']=='fluid_lumen_reference':fluid.append({'id':p['name'],'geometric_void_L':m(p).volume()*1000,'installed_wetted_or_occupied_stock_L':None,'not_added_to_global_fluid':True,'OEM_insert_displacement_or_active_robot_routes_unknown':True})
+ write(sub,'individual_net_material_and_fluid_receipt.json',{'scene_sha256':sha(sub/scene),'parts':inventory,'signed_shell_roots':roots,'fluid_void_inventory':fluid,'OEM_mass_kg_once':2.38,'OEM_COM_fullI_and_internal_oil_displacement_unknown':True,'no_qualified_total_mass_COM_I_or_SI_contract':True})
+ # Editable exact signed planar BREP/STEP per custom main block and holding adapter. Frozen native not altered.
+ cad=sub/'cad';cad.mkdir(exist_ok=True);rec=[]
+ for name in ['control_block_hvc12_4_smooth_nominal','holding_direct_adapter']:rec.append(export_one(by[name],cad))
+ write(sub,'cad_receipt.json',{'source_sha256':sha(sub/scene),'per_part':rec,'not_OEM_CAD_and_not_machining_admission':True,'all_OEM_unknown_kept':True})
+ print('EVENT CAD_checks',sub.name,flush=True)
+# Limited wall/power/extraction domain, not pressure-qualified design.
+q=np.array([15.,25.]);ID=.009;area=math.pi*ID**2/4;vel=q/60000/area
+mu=np.array([.015,.040,.100]);rho=850.;Re=(rho*vel[:,None]*ID/mu[None,:]);f=np.where(Re<2300,64/Re,.3164/Re**.25);L=.50;dp=f*L/ID*rho*vel[:,None]**2/2
+p=35e6;ri=.0045;ro=.007;hoop=p*(ro**2+ri**2)/(ro**2-ri**2);rad=-p;axial=p*ri**2/(ro**2-ri**2);vm=math.sqrt(((hoop-rad)**2+(rad-axial)**2+(axial-hoop)**2)/2)
+write(P,'limited_technical_screen.json',{'applicability':'straight actual own benchwork tube ideal cylinder only; miter/curved joints, ports, fatigue, heat, housing, manifold passages NOT qualified','pressure_target_bar':350,'tube_outer_inner_radius_m':[ro,ri],'lame_ideal_inner_hoop_MPa':hoop/1e6,'lame_ideal_VM_MPa':vm/1e6,'material_yield_allowable_and_fatigue_unknown':True,'branch_Q_Lmin':q.tolist(),'tube_mean_velocity_m_s':vel.tolist(),'fluid_viscosity_Pa_s_sensitivity':mu.tolist(),'Re':Re.tolist(),'f_Darcy':f.tolist(),'straight_half_meter_dp_bar':(dp/1e5).tolist(),'method':'64/Re laminar, Blasius smooth turbulent only; transitional and entrance/joint corrections open','energy_pQ_kW':{str(p):[p*float(Q)/600 for Q in q] for p in [160,210,350]},'holding_setting_bar_needed_at_load160':1.3*160,'holding_zero_backpressure_maxload_bar':350/1.3,'holding_backpressure_effect_requires_actual_pilotratio_curve_not_omitted':True,'HSP12_spool_neutral_leak_max_Lmin':.164,'HSP12_spool350bar_leak_power_W':350*.164/600*1000,'normalcoil_initial_W_upper':20.31,'faultbothcoils_initial_W':40.62,'source_PWM_current_heat_estimate_NOT_continuous_module_rating':True,'fluid_compatibility_and_actual_pressure_T_scope_NOT_inherited':True,'still_red':['HVC thread/detailA/gasket surface unknown','all compensation/protection/filter350bar functional internals unresolved','350bar normal limit not tons payload','holding minimum200bar setting and pilot stability at low loads/backpressure','actual flow ratio/curve control/throttling/regeneration unknown','same-owner gross insert×coil intersections unknownactualmaterials']})

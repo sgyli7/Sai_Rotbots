@@ -1,0 +1,7 @@
+from pathlib import Path
+O=Path(__file__).resolve().parent;P=Path('.scratch/gorilla_internal_g21_joint_core_interface')
+s=(P/'check_joint_core.py').read_text().replace('G21','G23').replace('g21_','g23_')
+(O/'check_forward_serial.py').write_text(s)
+s=(P/'render_joint_core.py').read_text().replace('G21','G23')
+(O/'render_forward_serial.py').write_text(s)
+(O/'export_and_verify_si_step.py').write_bytes((P/'export_and_verify_si_step.py').read_bytes())

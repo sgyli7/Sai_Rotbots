@@ -1,0 +1,76 @@
+"""Gorilla F2 exact finite material/cavity/motion diagnostic, not acceptance."""
+from pathlib import Path
+import json,math,hashlib,argparse
+import numpy as np,trimesh as tr
+from PIL import Image,ImageDraw
+import build_module as b
+O=Path(__file__).resolve().parent;ROOT=b.ROOT;TH=1e-10
+SOLID_COMPONENT_MIN_VOLUME_M3=1e-10
+def intersect(m,n):
+ if not(np.all(m.bounds[1]>n.bounds[0]) and np.all(n.bounds[1]>m.bounds[0])):return None
+ x=tr.boolean.intersection([m,n],engine='manifold');return x if x.volume>TH else None
+def render(s,pose,name,axis,armor=False):
+ im=Image.new('RGB',(900,1150),'white');dr=ImageDraw.Draw(im);pr=[];scale=930;ox=450;oy=1070
+ pp=pose['parts'];Ts=pose['body_transforms'];vis=[]
+ if armor:
+  for p in b.ARM:
+   if not p['name'].startswith('left_') or p['body'] not in ['left_middle_shank','left_distal_shank','left_foot','left_foot_roll_arch','left_ankle_pitch_carrier']:continue
+   q=dict(p);T=np.array(Ts.get(p['body'],Ts['left_foot_roll_arch']));v=tr.transformations.transform_points(p['vertices_world_m'],T);q['vertices_world_m']=v.tolist();vis.append(q)
+ for p in pp+vis:
+  if p['role']=='complete_bearing_reference':col=(162,155,133)
+  elif p['role']=='finite_actuator_material':col=(183,151,67)
+  elif p['role']=='finite_pin_material':col=(130,139,147)
+  elif p['role'] in ['armor_cover','armor_surface']:col=tuple(int(255*x) for x in p.get('color_rgba',p.get('rgba',[.4,.6,.7,1]))[:3])
+  else:col=(53,84,96)
+  v=np.array(p['vertices_world_m'])
+  for face in p['faces']:
+   vv=v[face];horizontal=vv[:,1]-.470 if axis!='left' else vv[:,0]+.030;xy=[(ox-scale*x,oy-scale*z) for x,z in zip(horizontal,vv[:,2])];depth=float(vv[:,1 if axis=='left' else 0].mean());pr.append((depth,xy,col))
+ for _,xy,col in sorted(pr,key=lambda x:x[0],reverse=axis=='rear'):dr.polygon(xy,fill=col)
+ dr.text((15,15),'Gorilla F2 '+s['candidate']+' / '+name+' / candidate unqualified',fill='black');dr.text((15,38),'Same native scale930px/m; original armor0mm delta, knee->archonly',fill='black');im.save(O/name)
+def check(which):
+ path=O/which/'module_scene.json';s=b.read(path);out=O/which;fail=[];ledger=[];base={p['name']:b.mesh(p) for p in s['parts']};nm={p['name']:p for p in s['parts']}
+ for p in s['parts']:
+  m=base[p['name']];t={'id':p['name'],'finite':bool(np.isfinite(m.vertices).all()),'watertight':bool(m.is_watertight),'winding':bool(m.is_winding_consistent),'positive':bool(m.volume>TH)}
+  if not all(t[k] for k in ['finite','watertight','winding','positive']):fail.append(t)
+  if 'density_kg_m3' in p:ledger.append({'id':p['name'],'body':p['body'],'mass_owner_body':p['mass_owner_body'],'material_volume_m3':float(m.volume),'mass_kg':float(m.volume*7850),'role':p['role'],'bounds_world_m':m.bounds.tolist(),'solid_component_check':b.solid_components(m)})
+ for row in ledger:
+  d=row['solid_component_check'];vs=d['volumes_m3'];d['effective_positive_component_count']=sum(v>SOLID_COMPONENT_MIN_VOLUME_M3 for v in vs);d['meaningful_negative_component_count']=sum(v<-SOLID_COMPONENT_MIN_VOLUME_M3 for v in vs);d['numerical_sliver_count']=sum(abs(v)<=SOLID_COMPONENT_MIN_VOLUME_M3 for v in vs);d['component_volume_threshold_m3']=SOLID_COMPONENT_MIN_VOLUME_M3
+ refmass=np.sum([p['mass_range_kg'] for p in s['parts'] if 'mass_range_kg' in p],axis=0);matmass=sum(r['mass_kg'] for r in ledger);pose_rows=[]
+ for pose in s['pose_scenes']:
+  ms={p['name']:b.mesh(p) for p in pose['parts']};material=[p for p in pose['parts'] if 'density_kg_m3' in p];new=[];ahit=[];refs=[];maxvol=maxrot=0.;faces_changed=0
+  for p in pose['parts']:
+   m=ms[p['name']];m0=base[p['name']];maxvol=max(maxvol,abs(m.volume-m0.volume));R=np.array(p['applied_transform_world'])[:3,:3];maxrot=max(maxrot,float(np.max(np.abs(R.T@R-np.eye(3)))));faces_changed+=p['faces']!=nm[p['name']]['faces']
+  for i,p in enumerate(material):
+   m=ms[p['name']]
+   for q in material[i+1:]:
+    x=intersect(m,ms[q['name']])
+    if x is not None:new.append({'a':p['name'],'b':q['name'],'a_body':p['body'],'b_body':q['body'],'same_main_body':p['body']==q['body'],'volume_cm3':float(x.volume*1e6),'bounds_world_m':x.bounds.tolist()})
+   for ap in b.ARM:
+    at=np.array(pose['body_transforms'].get(ap['body'],pose['body_transforms']['left_foot_roll_arch'] if ap['body']=='left_foot' else np.eye(4)));am=b.mesh(ap);am.apply_transform(at);x=intersect(m,am)
+    if x is not None:ahit.append({'part':p['name'],'armor':ap['name'],'volume_cm3':float(x.volume*1e6),'bounds_world_m':x.bounds.tolist()})
+  for p in pose['parts']:
+   if p['role']!='complete_bearing_reference':continue
+   for q in material:
+    x=intersect(ms[p['name']],ms[q['name']])
+    if x is not None:refs.append({'bearing_reference':p['name'],'material_part':q['name'],'volume_cm3':float(x.volume*1e6)})
+  pose_native_failures=[]
+  for name,m in ms.items():
+   if not(np.isfinite(m.vertices).all() and m.is_watertight and m.is_winding_consistent and m.volume>TH):pose_native_failures.append(name)
+  ext=[]
+  for ad in s['actuators']:
+   ep=next(r for r in pose['actual_endpoint_link_transforms'] if r['id']==ad['id']);e=ep['eye_length_m']-ad['allocated_custom_zero_eye_m'];ext.append({'id':ad['id'],'extension_m':e,'stroke_m':ad['stroke_m'],'within_working_stroke':bool(-1e-9<=e<=ad['stroke_m']+1e-9),'finite_complete_geometry_present':ad.get('finite_complete_geometry_present',False)})
+  row={'id':pose['id'],'native_topology_failures':pose_native_failures,'new_material_positive_pairs':new,'original_armor_positive_pairs':ahit,'bearing_reference_material_pairs':refs,'max_part_volume_change_m3':float(maxvol),'max_rotation_orthogonal_error':maxrot,'faces_changed_count':faces_changed,'extensions':ext};pose_rows.append(row);print('POSE',which,pose['id'],len(new),len(ahit),flush=True)
+  if pose['id']=='neutral':
+   for ax in ['front','left','rear']:
+    render(s,pose,which+'/bare_'+ax+'.png',ax);render(s,pose,which+'/armor_'+ax+'.png',ax,True)
+  elif pose['id'] in ['coupled_negative_roll_end','coupled_positive_roll_end']:render(s,pose,which+'/'+pose['id']+'_left.png','left',True)
+ # Pressure21design is ahypothesis; contraction/extension use20.4/.3MPa andfriction.9 onlyforconditionalrange.
+ caps=[]
+ for ad in s['actuators']:
+  area=math.pi*.063**2/4;ann=area-math.pi*.030**2/4;push=.9*(20.4e6*area-.3e6*ann);pull=.9*(20.4e6*ann-.3e6*area);js=[r['J_m_per_rad'] for r in ad['samples']];caps.append({'id':ad['id'],'J_range_m_per_rad':[min(js),max(js)],'min_abs_J_m_per_rad':min(abs(j) for j in js),'push_hypothesis_N':push,'pull_hypothesis_N':pull,'full_eye_length_range_m':ad['sampled_eye_range_m'],'stroke_m':ad['stroke_m'],'zero_eye_m':ad['allocated_custom_zero_eye_m'],'minimum_zero_eye_m':ad['minimum_zero_eye_m'],'short_zero_deficit_m':ad['short_zero_deficit_m'],'not_drive_or_actualshaft_rating':True})
+ badsolid=[r for r in ledger if r['solid_component_check']['effective_positive_component_count']!=1 or r['solid_component_check']['meaningful_negative_component_count']>0 or r['solid_component_check']['volume_conservation_error_m3']>1e-8];neutral=pose_rows[0]
+ r={'robot_id':'gorilla_v0_1','candidate':which,'source_sha256':b.sha(path),'checker_sha256':b.sha(__file__),'original_C15_sha256':b.sha(b.BASEP),'original_armor_delta_mm':0,'native_parts':len(s['parts']),'finite_complete_cylinders':sum(a.get('finite_complete_geometry_present',False) for a in s['actuators']),'required_cylinders':4,'native_topology_failures':fail,'material_rows':ledger,'net_material_mass_kg':matmass,'unqualified_bearing_mass_range_kg':refmass.tolist(),'single_module_scope_mass_range_kg':(refmass+matmass).tolist(),'not_whole_robot_mass':True,'solid_component_failures':badsolid,'connection_method':'Manifold.decompose materialcomponents +conserved volume; no mesh split innerskinislandclaim. One component not qualification.','material_intersection_threshold_m3':TH,'material_component_threshold_m3':SOLID_COMPONENT_MIN_VOLUME_M3,'volume_conservation_tolerance_m3':1e-8,'poses':pose_rows,'conditional_drive_geometry':caps,'neutral_own_material_screen_passed':not neutral['new_material_positive_pairs'] and not badsolid and not fail,'neutral_original_armor_screen_passed':not neutral['original_armor_positive_pairs'],'candidate_complete':all(a.get('finite_complete_geometry_present',False) for a in s['actuators']),'geometry_accepted':False,'physics_accepted':False,'root_FK_LP_new_mass_axes_missing':True,'not_AA3_must_change_proof':True,'scope_limits':s['scope']}
+ (out/'checks.json').write_text(json.dumps(r,indent=2)+'\n');print('FINAL',which,'matkg',matmass,'solids',[(x['id'],x['solid_component_check']['components_count']) for x in badsolid],'topo',len(fail),flush=True)
+ return r
+if __name__=='__main__':
+ p=argparse.ArgumentParser();p.add_argument('--layout',choices=['a','b'],default='a');args=p.parse_args();check(args.layout)

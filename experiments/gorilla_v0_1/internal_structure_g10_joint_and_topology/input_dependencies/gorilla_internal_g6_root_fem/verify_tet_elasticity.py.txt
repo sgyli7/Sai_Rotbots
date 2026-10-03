@@ -1,0 +1,240 @@
+"""Independent P1 tetrahedral assembly and conditional free-body solver.
+
+Uses SI units and isotropic 3D small-strain elasticity.  The six selected
+Dirichlet DOFs remove rigid-body modes only; they are not robot supports.
+No contact, fit, yield, buckling, fatigue, or physical qualification is implied.
+"""
+import argparse
+import hashlib
+import itertools
+import json
+from pathlib import Path
+import sys
+
+import numpy as np
+from scipy.linalg import qr
+from scipy.sparse import coo_matrix
+from scipy.sparse.linalg import spsolve
+
+RUNTIME = Path(__file__).resolve().parents[1] / "gorilla_topology_runtime"
+sys.path.insert(0, str(RUNTIME))
+from skfem import Basis, ElementTetP1, ElementVector, MeshTet, asm
+from skfem.models.elasticity import linear_elasticity
+
+
+def assemble(nodes, cells, E=210e9, nu=0.3):
+    points = nodes[cells]
+    affine = np.concatenate((np.ones((*points.shape[:2], 1)), points), axis=2)
+    inverse = np.linalg.inv(affine)
+    grads = inverse[:, 1:, :].transpose(0, 2, 1)
+    signed_volume = np.linalg.det(points[:, 1:] - points[:, :1]) / 6.0
+    volume = np.abs(signed_volume)
+    if np.any(volume <= 1e-20):
+        raise ValueError("Degenerate tetrahedron; no deletion or repair allowed")
+    lam = E * nu / ((1.0 + nu) * (1.0 - 2.0 * nu))
+    mu = E / (2.0 * (1.0 + nu))
+    D = np.diag([2*mu, 2*mu, 2*mu, mu, mu, mu])
+    D[:3, :3] += lam
+    B = np.zeros((len(cells), 6, 12))
+    for j in range(4):
+        dx, dy, dz = grads[:, j].T
+        B[:, 0, 3*j] = dx
+        B[:, 1, 3*j+1] = dy
+        B[:, 2, 3*j+2] = dz
+        B[:, 3, 3*j] = dy
+        B[:, 3, 3*j+1] = dx
+        B[:, 4, 3*j+1] = dz
+        B[:, 4, 3*j+2] = dy
+        B[:, 5, 3*j] = dz
+        B[:, 5, 3*j+2] = dx
+    ke = np.einsum("eai,ab,ebj,e->eij", B, D, B, volume, optimize=True)
+    dofs = (3*cells[..., None] + np.arange(3)).reshape((-1, 12))
+    rows = np.broadcast_to(dofs[:, :, None], ke.shape)
+    cols = np.broadcast_to(dofs[:, None, :], ke.shape)
+    K = coo_matrix((ke.ravel(), (rows.ravel(), cols.ravel())),
+                   shape=(3*len(nodes), 3*len(nodes))).tocsr()
+    return K, volume, B, D, dofs, signed_volume
+
+
+def independent_skfem(nodes, cells, E=210e9, nu=0.3):
+    mesh = MeshTet(nodes.T, cells.T, sort_t=False)
+    basis = Basis(mesh, ElementVector(ElementTetP1()), intorder=2)
+    if not np.array_equal(basis.nodal_dofs.T.ravel(), np.arange(3*len(nodes))):
+        raise ValueError("Unexpected library DOF ordering")
+    lam = E*nu/((1+nu)*(1-2*nu))
+    mu = E/(2*(1+nu))
+    return asm(linear_elasticity(lam, mu), basis).tocsr()
+
+
+def rigid_matrix(nodes):
+    centre = nodes.mean(axis=0)
+    relative = nodes-centre
+    scale = np.max(np.linalg.norm(relative, axis=1))
+    if scale <= 0:
+        raise ValueError("Empty spatial extent")
+    x, y, z = (relative/scale).T
+    rigid = np.zeros((3*len(nodes), 6))
+    rigid[0::3, 0] = rigid[1::3, 1] = rigid[2::3, 2] = 1
+    rigid[0::3, 4] = z
+    rigid[0::3, 5] = -y
+    rigid[1::3, 3] = -z
+    rigid[1::3, 5] = x
+    rigid[2::3, 3] = y
+    rigid[2::3, 4] = -x
+    return rigid, centre, scale
+
+
+def freebody_solve(nodes, cells, forces, E=210e9, nu=0.3, rho=7850.):
+    K, volume, B, D, dofs, signed = assemble(nodes, cells, E, nu)
+    rigid, centre, scale = rigid_matrix(nodes)
+    _, _, pivots = qr(rigid.T, pivoting=True, mode="economic")
+    fixed = pivots[:6]
+    if np.linalg.matrix_rank(rigid[fixed]) != 6:
+        raise ValueError("Rigid-body elimination rank is not six")
+    free = np.setdiff1d(np.arange(3*len(nodes)), fixed)
+    cases = np.asarray(forces).reshape((-1, 3*len(nodes)))
+    results = []
+    fields = []
+    for f in cases:
+        resultant = f.reshape((-1, 3)).sum(axis=0)
+        moment = np.cross(nodes-centre, f.reshape((-1, 3))).sum(axis=0)
+        normalized_balance = np.linalg.norm(rigid.T@f)/(np.linalg.norm(f)+1e-30)
+        if normalized_balance > 1e-8:
+            raise ValueError(f"Unbalanced free-body force: {normalized_balance:g}")
+        u = np.zeros_like(f)
+        u[free] = spsolve(K[free][:, free], f[free])
+        if not np.isfinite(u).all():
+            raise ValueError("Nonfinite solve; disconnected body or unstable mesh")
+        residual = K@u-f
+        strain = np.einsum("eij,ej->ei", B, u[dofs])
+        stress = strain@D.T
+        xx, yy, zz, xy, yz, zx = stress.T
+        vm = np.sqrt(0.5*((xx-yy)**2+(yy-zz)**2+(zz-xx)**2)+3*(xy*xy+yz*yz+zx*zx))
+        compliance = float(f@u)
+        energy2 = float(np.einsum("ea,ab,eb,e->", strain, D, strain, volume))
+        results.append({
+            "resultant_force_N": resultant.tolist(),
+            "resultant_moment_about_node_centroid_Nm": moment.tolist(),
+            "normalized_force_moment_balance": float(normalized_balance),
+            "full_equilibrium_relative_residual": float(np.linalg.norm(residual)/(np.linalg.norm(f)+1e-30)),
+            "gauge_reaction_max_N": float(np.max(np.abs(residual[fixed]))),
+            "compliance_J": compliance,
+            "strain_energy_twice_J": energy2,
+            "energy_relative_error": abs(energy2-compliance)/(abs(compliance)+1e-30),
+            "element_VM_max_diagnostic_Pa": float(vm.max()),
+            "displacement_norm_max_in_arbitrary_gauge_m": float(np.linalg.norm(u.reshape((-1, 3)), axis=1).max()),
+        })
+        fields.append((u, stress, vm))
+    report = {
+        "nodes": len(nodes), "tets": len(cells), "DOFs": 3*len(nodes),
+        "volume_m3": float(volume.sum()), "conditional_mass_kg": float(rho*volume.sum()),
+        "signed_tet_volume_range_m3": [float(signed.min()), float(signed.max())],
+        "rigid_gauge_fixed_dofs": fixed.tolist(), "gauge_rank": 6,
+        "gauge_is_not_a_physical_support": True,
+        "force_distribution_contact_and_fits_qualified": False,
+        "stress_strength_buckling_fatigue_and_physical_accepted": False,
+        "E_Pa": E, "nu": nu, "density_kg_per_m3": rho,
+        "cases": results,
+    }
+    return report, fields
+
+
+def cube_mesh():
+    nodes = np.array(list(itertools.product(np.linspace(0, 0.02, 3), repeat=3)))
+    cells = []
+    def idx(p):
+        return int(p[0]*9+p[1]*3+p[2])
+    for lower in itertools.product(range(2), repeat=3):
+        for permutation in itertools.permutations(range(3)):
+            point = np.array(lower)
+            tet = [idx(point)]
+            for axis in permutation:
+                point = point.copy()
+                point[axis] += 1
+                tet.append(idx(point))
+            cells.append(tet)
+    return nodes, np.array(cells, dtype=int)
+
+
+def self_test():
+    nodes, cells = cube_mesh()
+    K, volume, B, D, dofs, _ = assemble(nodes, cells)
+    independent = independent_skfem(nodes, cells)
+    matrix_difference = K-independent
+    comparison = np.linalg.norm(matrix_difference.data)/np.linalg.norm(independent.data)
+    rigid, _, _ = rigid_matrix(nodes)
+    rigid_error = np.linalg.norm(K@rigid)/(np.linalg.norm(K.data)*np.linalg.norm(rigid))
+    A = np.array([[2e-4, 1e-4, -3e-5], [8e-5, -1e-4, 4e-5], [9e-5, 2e-5, 3e-4]])
+    displacement = (nodes@A.T + np.array([1e-3, -2e-3, 3e-3])).ravel()
+    strain = np.einsum("eij,ej->ei", B, displacement[dofs])
+    expected = np.array([A[0, 0], A[1, 1], A[2, 2], A[0, 1]+A[1, 0], A[1, 2]+A[2, 1], A[2, 0]+A[0, 2]])
+    strain_error = np.linalg.norm(strain-expected)/np.linalg.norm(np.broadcast_to(expected, strain.shape))
+    expected_energy = float(expected@D@expected*volume.sum())
+    raw_energy = float(displacement@(K@displacement))
+    # Large arbitrary rigid translations cause cancellation in U^T K U.
+    # Remove the six exact rigid modes before evaluating the same energy.
+    centered = displacement-rigid@np.linalg.lstsq(rigid, displacement, rcond=None)[0]
+    actual_energy = float(centered@(K@centered))
+    nodal_forces = K@displacement
+    solved, fields = freebody_solve(nodes, cells, nodal_forces)
+    solution_stress_error = np.linalg.norm(fields[0][1]-expected@D.T)/np.linalg.norm(np.broadcast_to(expected@D.T, fields[0][1].shape))
+    eigenvalues = np.linalg.eigvalsh(K.toarray())
+    normalized = eigenvalues/eigenvalues[-1]
+    result = {
+        "scope": "3D linear tetrahedral numerical unit cube only; not robot geometry or loading",
+        "self_assembler_vs_scikit_fem_relative_matrix_difference": float(comparison),
+        "rigid_mode_relative_residual": float(rigid_error),
+        "affine_strain_relative_error": float(strain_error),
+        "affine_energy_relative_error": abs(expected_energy-actual_energy)/abs(expected_energy),
+        "raw_energy_with_large_rigid_translation_relative_error": abs(expected_energy-raw_energy)/abs(expected_energy),
+        "balanced_freebody_affine_stress_relative_error": float(solution_stress_error),
+        "numerical_null_modes": int(np.sum(np.abs(normalized)<1e-10)),
+        "positive_seventh_normalized_eigenvalue": float(normalized[6]),
+        "unit_cube_freebody": solved,
+        "robot_physical_accepted": False,
+    }
+    result["numerical_test_passed"] = bool(comparison<1e-10 and rigid_error<1e-12 and strain_error<1e-10 and result["affine_energy_relative_error"]<1e-10 and solution_stress_error<1e-9 and result["numerical_null_modes"]==6 and normalized[6]>1e-5)
+    return result
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--mesh")
+    parser.add_argument("--forces")
+    parser.add_argument("--mesh-admission")
+    parser.add_argument("--out", required=True)
+    args = parser.parse_args()
+    output = Path(args.out)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    if not args.mesh:
+        report = self_test()
+    else:
+        if not args.forces:
+            raise ValueError("Balanced, source-bound nodal force file required")
+        if not args.mesh_admission:
+            raise ValueError("Independent mesh admission report required before real component solve")
+        admission = json.loads(Path(args.mesh_admission).read_text())
+        mesh_sha = hashlib.sha256(Path(args.mesh).read_bytes()).hexdigest()
+        if admission.get("structural_FE_admissible") is not True or admission.get("mesh_sha256") != mesh_sha:
+            raise ValueError("Mesh rejected or admission/source hash mismatch; no solve executed")
+        data = np.load(args.mesh)
+        nodes = data["nodes_m"] if "nodes_m" in data else data["points_m"]
+        cells = data["tetrahedra"] if "tetrahedra" in data else data["tetra"]
+        loads = np.load(args.forces)
+        force_fields = loads["nodal_forces_N"] if "nodal_forces_N" in loads else loads["F_xyz_N"]
+        report, fields = freebody_solve(nodes, cells, force_fields)
+        report["mesh_sha256"] = hashlib.sha256(Path(args.mesh).read_bytes()).hexdigest()
+        report["forces_sha256"] = hashlib.sha256(Path(args.forces).read_bytes()).hexdigest()
+        report["mesh_admission_sha256"] = hashlib.sha256(Path(args.mesh_admission).read_bytes()).hexdigest()
+        report["source_bindings_are_caller_responsibility"] = True
+        np.savez_compressed(output.with_suffix(".fields.npz"),
+                            displacement_m=np.array([v[0] for v in fields]),
+                            element_stress_Pa=np.array([v[1] for v in fields]),
+                            element_VM_diagnostic_Pa=np.array([v[2] for v in fields]))
+    report["producer_sha256"] = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+    output.write_text(json.dumps(report, indent=2)+"\n")
+    print(json.dumps({k:v for k,v in report.items() if k!='unit_cube_freebody'}, indent=2))
+
+
+if __name__ == "__main__":
+    main()
