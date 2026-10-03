@@ -1,0 +1,21 @@
+from pathlib import Path
+import json,gzip,hashlib,numpy as np,manifold3d as mf
+O=Path(__file__).resolve().parent;R=next(p for p in O.parents if(p/'sai_robots_engineering_rules.md').is_file());sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();put=lambda p,d:Path(p).write_text(json.dumps(d,indent=2,allow_nan=False)+'\n')
+base=R/'.scratch/gorilla_internal_g22_root_assembly/scene.json.gz';s=json.loads(gzip.decompress(base.read_bytes()));old=R/'.scratch/gorilla_internal_g21_joint_core_interface/b/scene.json.gz';oldsha=sha(old);oldnames={p['name']for p in json.loads(gzip.decompress(old.read_bytes()))['parts']};names=sorted(p['name']for p in s['parts']if p.get('source_scene_sha256')==oldsha and p.get('source_original_name')in oldnames and not p.get('source_original_name','').endswith('core_fixed_receiver_continuous_candidate'))
+for v in ['a','b']:
+ d=O/('native_only_'+v);f=d/'actual_interface_contract.json';(d/'actual_interface_contract_before_exact_retire_scope.json').write_bytes(f.read_bytes());c=json.loads(f.read_text());c['conditional_retire_exact_ids']=names;c['retire_list_needs_root_namespace_match']=False;c['retire_identity_method']='source_original_name member of G21B110 and source_scene_sha256 exact6652; exclude fixed receiver already merged into shared cage';c['conditional_function_mass_credit_admitted']=[];put(f,c)
+put(O/'replacement_contract.json',{'root_common_source_sha256':sha(base),'G21B_original_source_sha256':oldsha,'actual_current_LR_joint_retire_count':len(names),'exact_ids':names,'conditional_geometry_retirement_only_no_qualified_mass_credit':True,'shared_core_and_fixed_receivers_retirement_owned_by_body_agent':True,'new_local_fixed_receiver_IDs':['g23_a_core_fixed_receiver_continuous_candidate','g23_b_core_fixed_receiver_continuous_candidate'],'new_left_local_parts_106_mirror_right_not_automatically_qualified':True,'old_upperarm_after_G22_rigid_placement_not_a_true_mate':True})
+# Exact old visible-source query; fan triangulation preserves original polygon surfaces, not gate repair.
+ctx=R/'.scratch/gorilla_internal_g9_whole_source/scene.json.gz';armor=json.loads(gzip.decompress(ctx.read_bytes()))['parts'];armids=set(json.loads(gzip.decompress((R/'.scratch/gorilla_internal_g18_shoulder_arm_codesign/b/scene.json.gz').read_bytes()))['original_visible_armor_ids']);armor=[p for p in armor if p['name']in armids];am=[]
+for p in armor:
+ vv=np.array(p.get('vertices_world_m',p.get('vertices')));ff=np.array([[f[0],f[k],f[k+1]]for f in p['faces']for k in range(1,len(f)-1)],np.uint64);m=mf.Manifold(mf.Mesh64(vv,ff));am.append((p,m,np.array(m.bounding_box())))
+for v in['a','b']:
+ d=O/('native_only_'+v);scene=json.loads(gzip.decompress((d/'scene.json.gz').read_bytes()));gate=json.loads((d/'native_material_gate.json').read_text());valid={p['id']for p in gate['parts']if p['resource_contract_pass']};hits=[]
+ for p in scene['parts']:
+  mm=mf.Manifold(mf.Mesh64(np.array(p['vertices_world_m']),np.array(p['faces'],np.uint64)));bb=np.array(mm.bounding_box())
+  for q,m,aa in am:
+   if not(np.all(bb[3:]>aa[:3])and np.all(aa[3:]>bb[:3])):continue
+   vol=float((mm^m).volume())
+   if vol>1e-10:hits.append({'a':p['name'],'original_armor':q['name'],'volume_m3':vol,'new_source_finite_valid':p['name']in valid,'protected_reference':not p['finite_material'],'not_proof_AA3_must_change':True,'original_polygon_explicit_fan_query_not_resource_repair':True})
+ put(d/'original_armor_native_queries.json',{'source_sha256':sha(d/'scene.json.gz'),'old_display_armor_source_sha256':sha(ctx),'old_display_armor_count':len(armor),'producer_sha256':sha(Path(__file__)),'threshold_m3':1e-10,'query_count':len(hits),'pairs':sorted(hits,key=lambda h:h['volume_m3'],reverse=True),'old_display_vs_AA3_not_approved_identity':True,'physical_accepted':False})
+print('EXACTRETIRE',len(names),'armor',len(armor),flush=True)

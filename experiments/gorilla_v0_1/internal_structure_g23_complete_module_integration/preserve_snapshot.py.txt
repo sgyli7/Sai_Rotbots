@@ -1,0 +1,140 @@
+#!/usr/bin/env python3
+"""Stage G23 byte evidence. Default --plan writes only scratch review; root --execute saves controlled snapshot."""
+from pathlib import Path
+import argparse,json,hashlib,gzip,datetime,os,shutil,re
+R=Path.cwd(); O=R/'experiments/gorilla_v0_1/internal_structure_g23_complete_module_integration'; REVIEW=R/'.scratch/gorilla_g23_preservation_review'
+ROOTS={
+ 'forward_serial_shoulder':R/'.scratch/gorilla_internal_g23_forward_serial_shoulder',
+ 'compact_energy_routes':R/'.scratch/gorilla_internal_g23_compact_energy_routes',
+ 'integrated_core':R/'.scratch/gorilla_internal_g23_integrated_core',
+ 'composition_review':R/'.scratch/gorilla_internal_g23_root_review',
+ 'energy_scope_review':R/'.scratch/gorilla_internal_g23_energy_scope_review',
+ 'root_assembly':R/'.scratch/gorilla_internal_g23_root_assembly',
+}
+HASH_KEYS=('sha256_expected','sha256','SHA256','sha','SHA'); HEX=re.compile(r'^[0-9a-fA-F]{64}$')
+sha=lambda b:hashlib.sha256(b).hexdigest()
+checks=[];excluded=[];selected={};pending=[]
+def rel(p):return str(p.relative_to(R)) if p.is_relative_to(R) else str(p)
+def hvalue(row):
+ for k in HASH_KEYS:
+  if isinstance(row.get(k),str) and HEX.fullmatch(row[k]):return row[k].lower()
+ return None
+def resolve(raw,base):
+ p=Path(raw)
+ if p.is_absolute():return p
+ choices=[base/p,R/p]
+ return next((x for x in choices if x.is_file()),choices[0])
+def rows(obj):
+ if isinstance(obj,list):
+  for z in obj:
+   if isinstance(z,dict) and isinstance(z.get('path',z.get('file')),str):yield z.get('path',z.get('file')),hvalue(z)
+ elif isinstance(obj,dict):
+  for k,z in obj.items():
+   if isinstance(z,str) and HEX.fullmatch(z):yield k,z.lower()
+   elif isinstance(z,dict):
+    p=z.get('path',z.get('file',k));h=hvalue(z)
+    if isinstance(p,str):yield p,h
+def exclusion(p):
+ if any(x in p.parts for x in ['cache','official_sources','__pycache__','publication','publications','downloads','download']):return 'Original public/vendor cache/publication excluded; facts/source identities retained'
+ if p.suffix.lower() in ['.pdf','.html','.htm','.pyc','.zip','.bin']:return 'Publication/download/archive/runtime excluded'
+ if p.suffix.lower()=='.png' and not any(x in p.name for x in ['four_view','section','cutaway','ROI','roi','comparison','diagnostic','exposure']):return 'Redundant individual renderer view temporary; final same-source fourviews/sections retained'
+ if p.suffix.lower() in ['.log'] and 'stdout' not in p.name:return 'Renderer/runtime log excluded; explicit failed diagnostic reports/stdout retained'
+ return None
+def record_check(p,h,scope):
+ if not p.is_file():raise FileNotFoundError(p)
+ actual=sha(p.read_bytes())
+ checks.append({'path':rel(p),'expected_sha256':h,'actual_sha256':actual,'scope':scope,'pass_':actual==h})
+ if not h or actual!=h:raise RuntimeError('Frozen identity mismatch or missing SHA: '+str(p))
+def choose(p,dest,reason):
+ if not p.is_file():raise FileNotFoundError(p)
+ why=exclusion(p)
+ if why:
+  if rel(p) not in {z['original_path'] for z in excluded}:excluded.append({'original_path':rel(p),'original_sha256':sha(p.read_bytes()),'reason':why})
+  return
+ key=rel(p);dest=Path(dest)
+ if key not in selected or selected[key]['destination'].parts[0]=='input_dependencies' and dest.parts[0]!='input_dependencies':
+  selected[key]={'source':p,'destination':dest,'reason':reason}
+def collect(require_root):
+ for label,d in ROOTS.items():
+  mp=next((p for p in [d/'freeze_manifest.json',d/'manifest.json'] if p.is_file()),None)
+  if mp is None:
+   if label in ['root_assembly','energy_scope_review'] and not require_root:pending.append({'directory':rel(d),'reason':'Root review not yet frozen; no expected hash invented'});continue
+   raise RuntimeError('Missing frozen manifest: '+str(d))
+  m=json.loads(mp.read_text());choose(mp,Path(label)/mp.name,'author manifest identity')
+  outs=m.get('outputs',m.get('files',[]))
+  for raw,h in rows(outs):
+   p=resolve(raw,d);record_check(p,h,'author_frozen_output:'+label);choose(p,Path(label)/p.relative_to(d),'author frozen output')
+  for k in ['inputs','sources','input_bindings']:
+   for raw,h in rows(m.get(k,[])):
+    p=resolve(raw,d)
+    if k=='sources' and not p.is_file():
+     matches=[resolve(q,d) for q,sh in rows(outs) if sh==h and resolve(q,d).is_file()]
+     if not matches:raise RuntimeError('Unresolved source identity alias '+label+':'+raw)
+     p=matches[0]
+     record_check(p,h,'bound_source_alias:'+label+':'+raw)
+    else:record_check(p,h,'bound_upstream_input:'+label)
+    # Frozen stage copies take precedence; dependencies retained or sameSHA controlled reuse.
+    dest=Path('input_dependencies')/Path(rel(p))
+    choose(p,dest,'frozen input '+label)
+  # Producers/facts not always listed in sparse original author manifest: exact current identities recorded.
+  for p in sorted(d.rglob('*')):
+   if p.is_file():choose(p,Path(label)/p.relative_to(d),'stage artifact bytes; author manifest check where available')
+ # Exact finite material/helper inputs required by actual producers; vendor publications not brought in.
+ for raw in ['.scratch/gorilla_internal_g_material_contract/native_signed_material.py','.scratch/gorilla_internal_g14_complete_thermal_colayout/geometry_helpers.py','.scratch/gorilla_internal_g11_body_design_domain/build_domain.py']:
+  p=R/raw
+  if p.is_file():record_check(p,sha(p.read_bytes()),'explicit producer helper identity');choose(p,Path('input_dependencies')/raw,'actual producer helper')
+ return m
+
+def prior_reuse():
+ reuse={}
+ for mp in sorted((R/'experiments/gorilla_v0_1').glob('*/snapshot_manifest.json')):
+  if mp.parent==O:continue
+  try:rs=json.loads(mp.read_text()).get('files',[])
+  except (ValueError,OSError):continue
+  if not isinstance(rs,list):continue
+  for z in rs:
+   if isinstance(z,dict) and all(k in z for k in ['original_sha256','stored_path','stored_sha256','encoding','stored_bytes']) and z['encoding'] in ['identity','gzip']:
+    reuse.setdefault(z['original_sha256'],(mp.parent,z))
+ return reuse
+
+def main():
+ ap=argparse.ArgumentParser();ap.add_argument('--execute',action='store_true');ap.add_argument('--plan',action='store_true');args=ap.parse_args()
+ if args.execute and args.plan:ap.error('Choose --plan or --execute')
+ collect(args.execute)
+ REVIEW.mkdir(parents=True,exist_ok=True)
+ plan={'reviewed_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'mode':'execute' if args.execute else 'plan_only','target':rel(O),'pending':pending,'selected':[{'original_path':k,'planned_stored_path':str(z['destination']),'original_sha256':sha(z['source'].read_bytes()),'original_bytes':z['source'].stat().st_size,'reason':z['reason']} for k,z in selected.items()],'identity_checks':checks,'excluded':excluded,'controlled_directory_created':False,'root_final_physical_adjudication':True}
+ (REVIEW/'plan.json').write_text(json.dumps(plan,indent=2)+'\n')
+ if not args.execute:
+  print(json.dumps({'planned_original_files':len(selected),'checked_identities':len(checks),'excluded_files':len(excluded),'pending':pending,'controlled_write':False}));return
+ if (O/'snapshot_manifest.json').exists() or O.exists() and any(O.iterdir()):raise RuntimeError('Controlled destination already nonempty; do not overwrite')
+ O.mkdir(parents=True,exist_ok=True); reuse=prior_reuse();dedup={};files=[]
+ for original,z in selected.items():
+  data=z['source'].read_bytes();h=sha(data);dest=z['destination']
+  if h in reuse:
+   prior,row=reuse[h];p=(prior/row['stored_path']).resolve();stored=p.read_bytes()
+   if sha(stored)!=row['stored_sha256']:raise RuntimeError('Prior controlled byte mismatch '+str(p))
+   unpack=gzip.decompress(stored) if row['encoding']=='gzip' else stored
+   if sha(unpack)!=h:raise RuntimeError('Prior controlled decoded identity mismatch '+str(p))
+   files.append({'original_path':original,'original_sha256':h,'original_bytes':len(data),'stored_path':os.path.relpath(p,O),'stored_sha256':row['stored_sha256'],'stored_bytes':len(stored),'encoding':row['encoding'],'reused_controlled_dependency':True});continue
+  if dest.suffix=='.py':dest=dest.with_suffix('.py.txt')
+  encoded,encoding=data,'identity'
+  if dest.suffix.lower() in ['.step','.brep'] or dest.suffix=='.json' and len(data)>500000:
+   dest=Path(str(dest)+'.gz');encoded=gzip.compress(data,mtime=0);encoding='gzip'
+  if len(encoded)>=100000000:raise RuntimeError('Single stored artifact >=100MB; explicit chunk scheme needed, not silently truncate: '+original)
+  sh=sha(encoded)
+  if sh in dedup:dest=dedup[sh]
+  else:
+   dp=O/dest;dp.parent.mkdir(parents=True,exist_ok=True);dp.write_bytes(encoded);dedup[sh]=dest
+  files.append({'original_path':original,'original_sha256':h,'original_bytes':len(data),'stored_path':str(dest),'stored_sha256':sh,'stored_bytes':len(encoded),'encoding':encoding})
+ # Revalidate immediately before committing snapshot metadata; mutable root must already be frozen.
+ for x in checks:
+  p=R/x['path'] if not Path(x['path']).is_absolute() else Path(x['path'])
+  if sha(p.read_bytes())!=x['expected_sha256']:raise RuntimeError('Input changed during preservation: '+str(p))
+ man={'robot_id':'gorilla_v0_1','freeze_UTC':datetime.datetime.now(datetime.timezone.utc).isoformat(),'scope':'G23 actual complete 180-cell module, bilateral native-first serial shoulder and monolithic/separate core candidates; four full modules installed into two source-bound common bodies; independent composition, material, power scope and limited FK checks. Physical, aesthetic and stable SI admission remain false.','files':files,'upstream_frozen_identity_checks':checks,'excluded_original_artifact_identities':excluded,'storage_deduplicated_by_exact_stored_hash':True,'unchanged_controlled_inputs_reused':True,'original_producers_and_first_error_correction_and_failed_diagnostics_retained':True,'root_review_pending':False,'whole_generation_replayed':False,'physical_aesthetic_or_stable_si_accepted':False,'runtime_required':'Selected-byte restoration only; vendor publications/cache/runtime excluded. Tool installation and whole producer replay not performed.'}
+ (O/'snapshot_manifest.json').write_text(json.dumps(man,indent=2)+'\n')
+ restore=R/'experiments/gorilla_v0_1/internal_structure_g18_full_assembly_and_cooling/restore_snapshot.py.txt'
+ if restore.is_file():shutil.copyfile(restore,O/'restore_snapshot.py.txt')
+ shutil.copyfile(Path(__file__),O/'preserve_snapshot.py.txt')
+ (O/'README.md').write_text((ROOTS['root_assembly']/'integration_decision.md').read_text()+'\n\n保存：实际源、生产器、同源渲染、独立检查与失败修正均按 snapshot_manifest.json 的路径和 SHA 保留。运行 restore_snapshot.py.txt 可恢复所选字节；复用的旧受控文件须一并可用。原始公开出版物、下载和运行缓存不入库；未声称全生产器与运行环境已重放。\n')
+ print(json.dumps({'selected_original_files':len(files),'new_unique_stored_files':len(dedup),'reused_mappings':sum(bool(x.get('reused_controlled_dependency')) for x in files),'identity_checks':len(checks),'manifest_sha256':sha((O/'snapshot_manifest.json').read_bytes())}))
+if __name__=='__main__':main()

@@ -1,0 +1,29 @@
+from pathlib import Path
+O=Path(__file__).resolve().parent
+s=(O/'build_forward_serial.py').read_text()
+s=s.replace("D=O/arg.variant", "D=O/('native_only_'+arg.variant)")
+a=s.index('gmsh.initialize');b=s.index(';N=96;',a)
+s=s[:a]+'''class DummyOCC:
+ def __init__(self):self.n=0
+ def tag(self):self.n+=1;return self.n
+ def addCylinder(self,*a):return self.tag()
+ def addCone(self,*a):return self.tag()
+ def addBox(self,*a):return self.tag()
+ def affineTransform(self,*a):pass
+ def copy(self,ds):return[(3,self.tag())for d,t in ds]
+ def fuse(self,a,b,**kw):return([(3,self.tag())],{})
+ def cut(self,a,b,**kw):return([(3,self.tag())],{})
+oc=DummyOCC()''' +s[b:]
+a=s.index('# Independent final tags')
+s=s[:a]+'''# Actual native geometry preview; CAD producer runs independently, CAD properties UNKNOWN here.
+for row in parts:
+ if row['finite_material']:
+  row['mass_range_kg']=None
+  row['CAD_identity_pending']=True
+scene={'robot_id':'gorilla_v0_1','candidate':'g23_'+arg.variant+'_native_preview','producer_sha256':sha(D/'producer_source.py'),'paired_native_CAD_producer_sha256':sha(O/'build_forward_serial.py'),'parts':parts,'joint_interfaces':contract['joints'],'whole_component_mass_rows':ledger,'original_armor_change_mm':0,'CAD_preview_not_a_BREP':True,'physical_accepted':False}
+with(D/'scene.json.gz').open('wb')as f:
+ with gzip.GzipFile(filename='',mode='wb',fileobj=f,mtime=0)as z:z.write(json.dumps(scene,separators=(',',':'),allow_nan=False).encode())
+put(D/'interfaces.json',contract)
+print('G23_ACTUAL_NATIVE_PREVIEW',arg.variant,len(parts),sha(D/'scene.json.gz'),flush=True)
+'''
+(O/'build_native_preview.py').write_text(s)

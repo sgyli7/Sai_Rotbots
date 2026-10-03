@@ -1,0 +1,69 @@
+from pathlib import Path
+import json,gzip,hashlib
+import numpy as np
+O=Path(__file__).resolve().parent;P=Path('.scratch/gorilla_internal_g21_joint_core_interface')
+ct=json.loads((P/'b/interfaces.json').read_text())
+base={'a':json.loads(json.dumps(ct)),'b':json.loads(json.dumps(ct))}
+for key,c in base.items():
+ c['candidate']='g23_forward_serial_'+key
+ for j in c['joints']:
+  ident=j['id'].split('_')[-1];R={'pitch':np.eye(3),'roll':np.diag([-1.,-1.,1.]),'yaw':np.diag([1.,-1.,-1.])}[ident]
+  olda=np.array(j['axis_world']);oldu=np.array([1.,0,0])if abs(olda[0])<.9 else np.array([0.,1.,0]);oldv=np.cross(olda,oldu)
+  j.update(previous_source_axis_world=olda.tolist(),proper_module_rotation_world=R.tolist(),axis_world=(R@olda).tolist(),basis_u_world=(R@oldu).tolist(),basis_v_world=(R@oldv).tolist(),original_pivot_world_m=j['pivot_world_m'],physical_module_orientation_changed=True,encoder_sign_calibrated=False)
+  if key=='b':
+   new={'pitch':[-.040,.515,2.405],'roll':[.14,.83,2.350],'yaw':[.285,.83,2.040]}[ident]
+   j['pivot_delta_world_m']=(np.array(new)-np.array(j['pivot_world_m'])).tolist();j['pivot_world_m']=new
+ c['original_visible_armor_only_context']=True;c['full_internal_component_assembly_qualified']=False
+(O/'interface_contract.json').write_text(json.dumps(base,indent=2)+'\n')
+s=(P/'b/producer_source.py').read_text()
+s=s.replace('Gorilla G21 two complete functional-protection arrangements and principal joint/core CAD.','Gorilla G23 physically reoriented complete three-axis component-family candidate, limited own finite prototype.')
+s=s.replace("gmsh.model.add('gorilla_g21_'", "gmsh.model.add('gorilla_g23_'")
+s=s.replace("name='g21_'", "name='g23_'").replace("inputbody='g21_'", "inputbody='g23_'").replace("['g21_'+", "['g23_'+").replace("'candidate':'g21_'", "'candidate':'g23_'")
+s=s.replace("rho=7850 if arg.variant=='a'else 2700", "rho=2700")
+s=s.replace("U=np.array([1.,0,0])if abs(AX[0])<.9 else np.array([0.,1.,0]);U-=AX*(U@AX);U/=np.linalg.norm(U);V=np.cross(AX,U)", "U=np.array(j['basis_u_world']);V=np.array(j['basis_v_world'])")
+s=s.replace("reaction_parts={};moving=[]", "reaction_parts={};output_parts={};moving=[]")
+start=s.index(' receiver=ring((L-.115)/2')
+end=s.index(' # Water motor',start)
+s=s[:start]+''' # Continuous finite loadcase with independent actual bearing-seat branches.
+ receiver=ring((-.130+second+.058)/2,R,ri,second+.188)
+ receiver=receiver+ring(L+.006,R,rofs-.002,.012)
+ for oq in[-.050,-.110]:receiver=receiver+ring(oq,R,.0551,.008)+ring(oq,.065,.0551,.03575)
+ for iq in[first,second]:receiver=receiver+ring(iq,.036,.02605,.023)+ring(iq,R,.036,.008)
+ receiver=receiver+ring((L+second+.044)/2,.098,.091,second+.044-L)
+''' +s[end:]
+s=s.replace("R=max(g['OD_m']/2+.018,.098);ri=max(g['OD_m']/2+.002,.089)", "R=max(g['OD_m']/2+.018,.108);ri=max(g['OD_m']/2+.002,.087)")
+s=s.replace("add(id+'_output_journal_clamp_closed_ear',out,output,'finite_output_load_carrier',density=7850,downstream_mate_world_m=p(-.177).tolist(),fixed_output_CAD_real_connection_hypothesis_only=True)", "output_parts[id]=out")
+start=s.index(' shaft=cy(');end=s.index(" add(id+'_input_two_seat_stepped_shaft'",start)
+s=s[:start]+''' # True reduced WG engagement, finite shoulder transition, then full bearing shaft.
+ engagement_r=g['WG_bore_m']/2-.00005;small_a=L-.036;small_b=L+.002;main_a=L+.006;main_b=second+.018
+ shaft=cy((small_a+small_b)/2,engagement_r,small_b-small_a+.00010)
+ cc=p((small_b+main_a)/2);aa=cc-AX*(main_a-small_b)/2
+ shaft=shaft+Shape(mf.Manifold.cylinder(main_a-small_b,engagement_r,.01245,N,True).transform(np.column_stack([U,V,AX,cc])),[oc.addCone(*aa,*(AX*(main_a-small_b)),engagement_r,.01245)])
+ shaft=shaft+cy((main_a+main_b)/2,.01245,main_b-main_a+.00010)
+''' +s[end:]
+start=s.index('# Common fixed torso');end=s.index('# Independent final tags',start)
+s=s[:start]+'''# Common fixed pitch receiver and exact new candidate core face. Single actual material design.
+pitch=contract['joints'][0];C=np.array(pitch['pivot_world_m']);AX=np.array(pitch['axis_world']);U=np.array(pitch['basis_u_world']);V=np.array(pitch['basis_v_world'])
+R=max(pitch['official_component_set']['OD_m']/2+.018,.108);boxlo=C[0]+R-.007;boxhi=.115
+center=[(boxlo+boxhi)/2,C[1]-.060,C[2]];dims=[boxhi-boxlo,.220,.260]
+core=closedbox(center,dims,.008)+reaction_parts['pitch']
+add('core_fixed_receiver_continuous_candidate',core,'torso','finite_joint_core_shared_loadcase',density=rho,core_mate_plane_x_m=.115,actual_holes_on_core_plane_not_completed=True,material_grade_E_yield_fatigue_unknown=True)
+# Each moving transfer is one newly generated continuous loadcase, with terminal and downstream case seats.
+for a,b in[(0,1),(1,2)]:
+ ja,jb=contract['joints'][a],contract['joints'][b];ident=ja['id'].split('_')[-1];nident=jb['id'].split('_')[-1]
+ pc=np.array(ja['pivot_world_m'])+np.array(ja['axis_world'])*(-.166)
+ Rb=max(jb['official_component_set']['OD_m']/2+.018,.108)
+ bc=np.array(jb['pivot_world_m'])+np.array(jb['axis_world'])*(jb['official_component_set']['axial_m']+.006)+np.array(jb['basis_u_world'])*(Rb-.006)
+ mid=(pc+bc)/2;dim=np.maximum(np.abs(pc-bc)+np.array([.065,.065,.060]),[.100,.080,.100]);sh=closedbox(mid,dim,.008)
+ # Functional case void must be real, not opaque interstage steel.
+ C=np.array(jb['pivot_world_m']);AX=np.array(jb['axis_world']);U=np.array(jb['basis_u_world']);V=np.array(jb['basis_v_world'])
+ sh=sh-cy((-.130+jb['official_component_set']['axial_m']+.120)/2,Rb-.021,jb['official_component_set']['axial_m']+.250)
+ carrier=output_parts[ident]+sh+reaction_parts[nident]
+ add(ident+'_moving_loadcase_and_'+nident+'_fixed_receiver',carrier,ja['output_body'],'finite_monolithic_serial_transfer_loadcase',density=rho,source_function_components=[ident+'_output_journal',ident+'_closed_transfer',nident+'_case_support'],actual_boolean_material_roots_must_be_checked=True,upstream_FS_and_downstream_CS_bolted_connections_not_qualified=True,downstream_case_axis_world=jb['axis_world'])
+yaw=contract['joints'][2];C=np.array(yaw['pivot_world_m']);AX=np.array(yaw['axis_world']);U=np.array(yaw['basis_u_world']);V=np.array(yaw['basis_v_world'])
+add('yaw_output_journal_and_arm_terminal',output_parts['yaw'],yaw['output_body'],'finite_output_load_carrier',density=7850,downstream_mate_world_m=p(-.177).tolist(),new_upper_arm_adapter_not_completed=True)
+''' +s[end:]
+s=s.replace("print('G21SOURCE'", "print('G23SOURCE'")
+s=s.replace("'original_armor_change_mm':0", "'original_armor_change_mm':0,'scope':'upper three-axis candidate, downstream arm and whole-body coupling unqualified','input_WG_actual_reduced_engagement_implemented':True")
+(O/'build_forward_serial.py').write_text(s)
+print('producer',hashlib.sha256(s.encode()).hexdigest())

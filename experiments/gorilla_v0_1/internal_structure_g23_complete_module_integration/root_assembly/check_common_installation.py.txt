@@ -1,0 +1,60 @@
+"""Read-only G22 common static installation vs foreign body inventory. No source repair."""
+from pathlib import Path
+import json,gzip,hashlib,time,sys,importlib.util,datetime,collections
+import numpy as np,manifold3d as mf
+R=Path.cwd();O=Path(__file__).resolve().parent;import argparse
+ap=argparse.ArgumentParser();ap.add_argument('--candidate',choices=['a','b'],required=True);args=ap.parse_args();O=O/args.candidate;S=O/'scene.json.gz';sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();s=json.loads(gzip.decompress(S.read_bytes()));ps={p['name']:p for p in s['parts']};added=set(s['new_core_joint_ids'])|set(s['new_pack_ids']);rebind=set();changed=added;foreign=set(ps)-changed;assert len(ps)==len(s['parts']);vp=R/'.scratch/gorilla_internal_g_material_contract/native_signed_material.py';sp=importlib.util.spec_from_file_location('g23_installval',vp);val=importlib.util.module_from_spec(sp);sys.modules[sp.name]=val;sp.loader.exec_module(val);cache={};vg={};diag={};pairs=[];status=[];probes=0;start=time.monotonic();bounds={n:(np.array(p['vertices_world_m']).min(0),np.array(p['vertices_world_m']).max(0))for n,p in ps.items()};fnames=sorted(foreign);flo=np.array([bounds[n][0]for n in fnames]);fhi=np.array([bounds[n][1]for n in fnames]);aabb_count=0
+
+def semantic(p):
+ role=p.get('role','').lower()
+ if role=='design_domain_bulk' or p.get('is_installed_material')is False:return 'calculation_domain_nonhardware'
+ if 'service'in role or 'tool_after'in role:return 'service_clearance_only'
+ if 'fluid'in role or 'lumen'in role or 'water_functional_void'in role:return 'normal_fluid_or_void_inventory'
+ if p.get('finite_material')is True or ('finite_'in role and p.get('density_kg_m3')is not None) or role in ['armor_surface','armor_cover','visible_mechanism'] or (p.get('density_kg_m3')is not None and 'thermal_routing'in role) or 'native_material'in p.get('category','') or 'native_material'in p.get('E_metadata',{}).get('category',''):return 'declared_finite_candidate'
+ return 'complete_gross_or_unqualified_reference'
+
+def get(n):
+ if n in cache:return cache[n]
+ p=ps[n];f=p['faces'];tri=all(len(x)==3 for x in f)
+ ff=f if tri else [[x[0],x[i],x[i+1]]for x in f for i in range(1,len(x)-1)]
+ # Native polygon fan is an explicit legacy diagnostic query only, not a repaired/qualified material resource.
+ m=mf.Manifold(mf.Mesh64(np.array(p['vertices_world_m'],float),np.array(ff,np.uint64)));cache[n]=m;diag[n]={'source_faces_all_triangles':tri,'query_polygon_fan_triangulation_only':not tri,'source_arrays_untouched':True,'kernel_status':str(m.status())};return m
+
+def qualified(n):
+ if n in vg:return vg[n]['resource_contract_pass']
+ p=ps[n]
+ if not diag.get(n,{}).get('source_faces_all_triangles',False):vg[n]={'id':n,'resource_contract_pass':False,'errors':[{'code':'legacy_polygon_source_not_native_triangle_material_contract'}]};return False
+ local=p.get('g23_local_module_name','');allowed=2 if local in ['g23_sense_net_00_jacket','g23_sense_net_18_jacket'] else 1
+ vg[n]=val.validate_part(p,require_single_material_component=allowed==1)
+ vg[n]['source_explicit_material_component_count']=allowed
+ if allowed==2 and vg[n].get('material_component_count_from_nesting')!=2:vg[n]['resource_contract_pass']=False
+ return vg[n]['resource_contract_pass']
+
+def historical(p):
+ b=p.get('body','');n=p['name'];return any(q in b for q in ['hip_','thigh','shank','ankle','foot','forefoot','heel'])or any(q in n for q in ['_knee_','_fold_','_ankle_','_hip_','_thigh_','_forefoot_','_heel_'])
+
+# Changed versus retained hardware, then all new core versus complete pack, then distinct pack instances. Local shoulder/core and local-module pair checks remain their source-bound reports.
+cross_targets={a:set(fnames) for a in changed}
+for a in s['new_core_joint_ids']:cross_targets[a].update(s['new_pack_ids'])
+for a in s['new_pack_ids']:
+ ia=ps[a]['module_instance_index'];cross_targets[a].update(b for b in s['new_pack_ids'] if ps[b]['module_instance_index']>ia)
+for k,a in enumerate(sorted(changed)):
+ lo,hi=bounds[a];targets=sorted(cross_targets[a]);tlo=np.array([bounds[b][0] for b in targets]);thi=np.array([bounds[b][1] for b in targets]);idx=np.flatnonzero(np.all(thi>lo+1e-12,axis=1)&np.all(hi>tlo+1e-12,axis=1));aabb_count+=len(idx)
+ for j in idx:
+  b=targets[int(j)];ma,mb=get(a),get(b);probes+=1
+  if ma.status()!=mf.Error.NoError or mb.status()!=mf.Error.NoError:status.append({'a':a,'b':b,'kernel_rejected':'unqualified query, not ignored geometry'});continue
+  inter=ma^mb;v=float(inter.volume())
+  if v<=1e-12:continue
+  ca,cb=semantic(ps[a]),semantic(ps[b]);qa=qualified(a)if ca=='declared_finite_candidate'else None;qb=qualified(b)if cb=='declared_finite_candidate'else None
+  if 'calculation_domain_nonhardware'in [ca,cb]:cl='calculation_domain_overlap_not_hardware'
+  elif 'normal_fluid_or_void_inventory'in [ca,cb]:cl='fluid_or_void_overlap_not_solid_collision'
+  elif 'service_clearance_only'in [ca,cb]:cl='service_clearance_conflict_not_static_material'
+  elif ca==cb=='declared_finite_candidate':cl='qualified_finite_material_overlap'if qa and qb else'legacy_or_invalid_finite_candidate_overlap'
+  else:cl='complete_reference_installation_obstacle'
+  aa,bb=bounds[a],bounds[b];ilo=np.maximum(aa[0],bb[0]);ihi=np.minimum(aa[1],bb[1]);ov=ihi-ilo
+  # Separating either full AABB needs at least one overlap depth, not a proven collision-free cavity/layout.
+  moves={}
+  for d,axis in enumerate(['X','Y','Z']):moves[axis]={'move_a_positive_m':float(bb[1][d]-aa[0][d]),'move_a_negative_m':float(aa[1][d]-bb[0][d])}
+  pairs.append({'a':a,'b':b,'changed_scope':'rest_rebind'if a in rebind else'actual_added_joint_core','body_owners':[ps[a].get('body'),ps[b].get('body')],'same_owner_not_exempt':True,'semantic_classes':[ca,cb],'resource_contract_pass':[qa,qb],'classification':cl,'native_query_volume_m3':v,'volume_cm3':v*1e6,'bounds_a_m':[aa[0].tolist(),aa[1].tolist()],'bounds_b_m':[bb[0].tolist(),bb[1].tolist()],'overlap_AABB_dimensions_m':ov.tolist(),'full_AABB_separation_displacement_options_m':moves,'minimum_axis_AABB_separation_m':min(min(x.values())for x in moves.values()),'aabb_separation_not_proven_available_layout_window':True,'foreign_old_lower_body_history_only':historical(ps[b]),'query_legacy_polygon_fan':[diag[a]['query_polygon_fan_triangulation_only'],diag[b]['query_polygon_fan_triangulation_only']]})
+ if k%100==0:print('EVENT',k,len(changed),'nativeprobes',probes,'positive',len(pairs),flush=True)
+pairs.sort(key=lambda p:p['native_query_volume_m3'],reverse=True);counts=collections.Counter(p['classification']for p in pairs);receipt={'robot_id':'gorilla_v0_1','source':str(S.relative_to(R)),'source_sha256':sha(S),'producer_sha256':sha(Path(__file__)),'scope':'All actual new core/joint and four complete pack instances versus retained body; new core-versus-pack and separate pack-versus-pack. Internal common-core/shoulder pairs and one complete pack own pairs belong to source-bound upstream reports; not repeated or waived.','actual_source_parts':len(ps),'changed_count':len(changed),'added_count':len(added),'rest_rebind_count':len(rebind),'foreign_count':len(foreign),'source_module_same_instance_own_pairs_delegated_only':True,'aabb_candidates':aabb_count,'native_positive_query_count':probes,'positive_threshold_m3':1e-12,'classification_counts':dict(counts),'pairs':pairs,'kernel_rejected_queries':status,'material_resource_checks':vg,'query_geometry_diagnostics':diag,'old_lower_body_foreign_pair_count':sum(p['foreign_old_lower_body_history_only']for p in pairs),'all_body_owners_kept_no_exemption':True,'legacy_ngon_query_is_not_native_material_qualification':True,'no_source_geometry_or_density_changed':True,'full_robot_M_COM_I':None,'waist_output_arm_transfer_and_new_external_wiring_missing':True,'physical_accepted':False,'elapsed_seconds':time.monotonic()-start};(O/'static_foreign_installation_receipt.json').write_text(json.dumps(receipt,indent=2,allow_nan=False)+'\n');print(json.dumps({'counts':dict(counts),'aabb':aabb_count,'probes':probes,'positive':len(pairs),'elapsed_s':receipt['elapsed_seconds'],'largest':[{k:v for k,v in q.items()if k not in ['bounds_a_m','bounds_b_m','full_AABB_separation_displacement_options_m']}for q in pairs[:5]]},indent=2),flush=True)
