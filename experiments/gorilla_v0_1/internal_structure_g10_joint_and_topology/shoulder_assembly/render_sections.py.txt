@@ -1,0 +1,26 @@
+"""Bound actual triangle section traces: no outer AABB or hull cavity inference."""
+from pathlib import Path
+import json,gzip,hashlib,math
+import numpy as np
+from PIL import Image,ImageDraw,ImageFont
+O=Path(__file__).resolve().parent;R=next(p for p in O.parents if (p/'sai_robots_engineering_rules.md').is_file());D=O/'b';sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest();S=D/'scene.json.gz';C=R/'.scratch/gorilla_internal_g9_whole_source/scene.json.gz';s=json.loads(gzip.decompress(S.read_bytes()));c=json.loads(gzip.decompress(C.read_bytes()));alloc=json.loads((R/'.scratch/gorilla_internal_g8_system_allocation/whole_system_allocation.json').read_text());ids={n for g in alloc['actual_F1_nine_moved_group_bounds'] for n in g['exact_member_ids']}
+parts=[(p,'new') for p in s['parts']]+[(p,'armor' if p.get('role') in ('armor_surface','armor_cover') else 'nine') for p in c['parts'] if p.get('role') in ('armor_surface','armor_cover') or p['name'] in ids]
+font=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',17);outputs=[]
+for ax,plane,ij,label in [(1,.310,(0,2),'XZ_Y310mm'),(1,.480,(0,2),'XZ_Y480mm'),(0,-.130,(1,2),'YZ_Xm130mm')]:
+ im=Image.new('RGB',(1280,900),'white');d=ImageDraw.Draw(im);cen=[0.,2.23];ppm=850 if ax==1 else 690;trace=[]
+ for p,kind in parts:
+  v=np.asarray(p['vertices_world_m']);f=np.asarray([[f[0],f[i],f[i+1]] for f in p['faces'] for i in range(1,len(f)-1)]);tr=v[f];inter=[]
+  for t in tr:
+   pts=[]
+   for a,b in zip(t,np.roll(t,-1,axis=0)):
+    da=a[ax]-plane;db=b[ax]-plane
+    if da*db<0:pts.append(a+(b-a)*(-da/(db-da)))
+    elif abs(da)<1e-12 and abs(db)>1e-12:pts.append(a)
+   if len(pts)==2 and np.linalg.norm(pts[0]-pts[1])>1e-10:
+    q=[(640+(x[ij[0]]-cen[0])*ppm,470-(x[ij[1]]-cen[1])*ppm) for x in pts]
+    color=(35,50,58) if kind=='new' and p.get('finite_material') else (174,130,30) if kind=='new' else (0,128,210) if kind=='armor' else (200,45,56)
+    d.line(q,fill=color,width=2);inter.append([x.tolist() for x in pts])
+  if inter:trace.append({'name':p['name'],'kind':kind,'segment_count':len(inter)})
+ d.text((25,20),'Gorilla G10 B / '+label+' / actual native material traces',font=font,fill='black');d.text((25,50),'Grey own material; amber OEM/unknown reference; blue original armor; red original nine groups.',font=font,fill='black');d.text((25,80),'Same-source finite slices; no material/interface/fit acceptance; camera crop is diagnostic.',font=font,fill='black')
+ d.text((25,858),'source '+sha(S)[:16]+' / context '+sha(C)[:16]+' / '+str(ppm)+' px/m',font=font,fill='black');path=D/('section_'+label+'.png');im.save(path);outputs.append({'path':str(path),'sha256':sha(path),'plane_axis':ax,'plane_world_m':plane,'pixels_per_m':ppm,'actual_section_parts':trace})
+(D/'section_manifest.json').write_text(json.dumps({'source_sha256':sha(S),'context_sha256':sha(C),'producer_sha256':sha(Path(__file__)),'outputs':outputs,'physical_accepted':False},indent=2)+'\n');print('sections',len(outputs))

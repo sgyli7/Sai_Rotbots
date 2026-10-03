@@ -1,0 +1,140 @@
+"""Bounded SIMP stiffness experiment on the literal G8 B material/tet/load domain.
+Not contact, strength, manufacturing, fatigue or whole-robot qualification.
+"""
+from pathlib import Path
+import sys,importlib.util,json,hashlib,time,traceback
+import numpy as np
+from scipy.spatial import cKDTree
+from scipy.sparse import coo_matrix,csr_matrix,diags,save_npz
+from scipy.sparse.linalg import cg
+from scipy.linalg import qr
+OUT=Path(__file__).resolve().parent;ROOT=OUT.parents[1]
+sys.path.insert(0,str(ROOT/'.scratch/gorilla_topology_runtime'))
+import pyamg
+P1=ROOT/'.scratch/gorilla_internal_g6_root_fem/verify_tet_elasticity.py'
+spec=importlib.util.spec_from_file_location('p1',P1);p1=importlib.util.module_from_spec(spec);spec.loader.exec_module(p1)
+MESH=ROOT/'.scratch/gorilla_internal_g8_carrier_variants/b/coarse/carrier_tetra.npz'
+LOAD=ROOT/'.scratch/gorilla_internal_g8_load_envelope/g8_b_full42_loads.npz'
+BASE=ROOT/'.scratch/gorilla_internal_g8_root_fem/b_envelope_baseline.json'
+FIELD=ROOT/'.scratch/gorilla_internal_g8_root_fem/b_basis_fields.npz'
+PORT=ROOT/'.scratch/gorilla_internal_g8_carrier_variants/b/coarse/port_groups.json'
+ADMIT=ROOT/'.scratch/gorilla_internal_g8_root_fem/b_mesh_admission.json'
+CAD=ROOT/'.scratch/gorilla_internal_g8_carrier_variants/b/carrier_exact.brep'
+E=210e9;NU=.3;RHO=7850.;PENAL=3.;EMIN=1e-6;RF=.015;MOVE=.1;CAP=.85
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def save(name,d):(OUT/name).write_text(json.dumps(d,indent=2,allow_nan=False)+'\n')
+def event(stage,**d):print(json.dumps(dict(EVENT=stage,**d)),flush=True)
+def assemble_factor(B,D,V,dofs,factor,n):
+    ke=np.einsum('eai,ab,ebj,e->eij',B,D,B,V*factor,optimize=True)
+    rows=np.broadcast_to(dofs[:,:,None],ke.shape);cols=np.broadcast_to(dofs[:,None,:],ke.shape)
+    return coo_matrix((ke.ravel(),(rows.ravel(),cols.ravel())),shape=(n,n)).tocsr()
+def independent_variable_test():
+    from skfem import MeshTet,Basis,ElementTetP1,ElementVector,BilinearForm,asm
+    from skfem.helpers import sym_grad,ddot,trace
+    n,t=p1.cube_mesh();K,V,B,D,df,_=p1.assemble(n,t);fac=np.linspace(.2,1.1,len(t));own=assemble_factor(B,D,V,df,fac,len(n)*3)
+    basis=Basis(MeshTet(n.T,t.T,sort_t=False),ElementVector(ElementTetP1()),intorder=2)
+    lam=E*NU/((1+NU)*(1-2*NU));mu=E/(2*(1+NU))
+    @BilinearForm
+    def form(u,v,w):return w.factor*(2*mu*ddot(sym_grad(u),sym_grad(v))+lam*trace(sym_grad(u))*trace(sym_grad(v)))
+    independent=asm(form,basis,factor=np.repeat(fac[:,None],basis.X.shape[1],axis=1)).tocsr()
+    rel=float(np.linalg.norm((own-independent).data)/np.linalg.norm(independent.data));rigid,_,_=p1.rigid_matrix(n)
+    report={'actual_test':'variable positive element modulus numerical cube assembly against independent scikit-fem12.0.2','matrix_relative_error':rel,'six_rigid_modes_relative_error':float(np.linalg.norm(own@rigid)/(np.linalg.norm(own.data)*np.linalg.norm(rigid))),'pass':bool(rel<1e-11),'not_robot_mesh_or_physical_test':True}
+    save('variable_assembly_test.json',report)
+    if not report['pass']:raise ValueError('variable assembly test failed')
+    event('variable_assembly_verified',relative_matrix_error=rel)
+    return report
+class Engine:
+ def __init__(self,nodes,cells,F,coeff,C0,B,D,V,dofs):
+    self.nodes=nodes;self.cells=cells;self.F=F;self.coeff=coeff;self.C0=C0;self.B=B;self.D=D;self.V=V;self.dofs=dofs
+    self.rigid,_,_=p1.rigid_matrix(nodes);_,_,piv=qr(self.rigid.T,pivoting=True,mode='economic');self.fixed=piv[:6];assert np.linalg.matrix_rank(self.rigid[self.fixed])==6
+    self.mask=np.ones(len(nodes)*3);self.mask[self.fixed]=0;self.P=diags(self.mask)
+    lump=np.bincount(cells.ravel(),weights=np.repeat(V/4,4),minlength=len(nodes));self.w=np.repeat(lump/lump.sum(),3);self.gram=(self.rigid.T*self.w)@self.rigid
+ def solve(self,factor,warm=None,label='state',maxseconds=420):
+    begin=time.monotonic();K=assemble_factor(self.B,self.D,self.V,self.dofs,factor,len(self.nodes)*3)
+    A=(self.P@K@self.P+diags((1-self.mask)*float(np.median(K.diagonal())))).tobsr(blocksize=(3,3));near=self.rigid.copy();near[self.fixed]=0
+    event('amg_setup',label=label,nnz=int(K.nnz))
+    ml=pyamg.smoothed_aggregation_solver(A,B=near,symmetry='symmetric',smooth=('jacobi',{'omega':4/3}),presmoother=('block_gauss_seidel',{'sweep':'symmetric'}),postsmoother=('block_gauss_seidel',{'sweep':'symmetric'}),max_coarse=100,coarse_solver='pinv')
+    pre=ml.aspreconditioner(cycle='V');U=np.zeros_like(self.F);receipts=[]
+    for j in range(self.F.shape[1]):
+      f=self.F[:,j];count=[0];st=time.monotonic()
+      if np.linalg.norm(self.rigid.T@f)/(np.linalg.norm(f)+1e-30)>1e-8:raise ValueError('literal F unbalanced, no projection')
+      def cb(u):
+       count[0]+=1
+       if time.monotonic()-st>300 or time.monotonic()-begin>maxseconds:raise TimeoutError('bounded 8-basis state solve budget')
+      x0=None if warm is None else warm[:,j]-self.rigid@np.linalg.solve(self.rigid[self.fixed],warm[self.fixed,j])
+      u,info=cg(A,f*self.mask,x0=x0,M=pre,rtol=1e-9,atol=0,maxiter=1500,callback=cb)
+      res=K@u-f;rel=float(np.linalg.norm(res)/np.linalg.norm(f));reaction=float(abs(res[self.fixed]).max())
+      if info or rel>2e-7 or reaction>1e-3:raise ValueError(f'PCG failed {info} {rel} {reaction}')
+      U[:,j]=u-self.rigid@np.linalg.solve(self.gram,(self.rigid.T*self.w)@u)
+      rr={'basis_column':j,'iterations':count[0],'relative_full_K_residual':rel,'gauge_reaction_max_N':reaction,'seconds':time.monotonic()-st};receipts.append(rr);event('basis_complete',label=label,**rr)
+    gram=self.F.T@U;C=np.einsum('iq,ij,jq->q',self.coeff,gram,self.coeff);rat=C/self.C0;phi=float(np.mean(rat**8)**(1/8))
+    if not(np.isfinite(C).all() and (C>0).all()):raise ValueError('nonpositive compliance')
+    strain=np.einsum('eai,eij->eaj',self.B,U[self.dofs]);weights=rat**7/(42*self.C0*phi**7);W=(self.coeff*weights)@self.coeff.T
+    sensitivity_energy=np.einsum('eai,ab,ebj,ij,e->e',strain,self.D,strain,W,self.V,optimize=True)
+    report={'label':label,'objective_p8':phi,'compliance_J_all42':C.tolist(),'relative_to_own_baseline_all42':rat.tolist(),'basis_receipts':receipts,'elapsed_seconds':time.monotonic()-begin,'literal_loads_projected':False,'gauge_is_not_physical_support':True}
+    return U,sensitivity_energy,report
+
+def build_filter(cent,V,design,fixed):
+ tree=cKDTree(cent);ids=np.flatnonzero(design);mapidx=np.full(len(cent),-1,dtype=np.int32);mapidx[ids]=np.arange(len(ids));rows=[];cols=[];vals=[];fixedsum=np.zeros(len(ids));hs=np.zeros(len(ids));begin=time.monotonic()
+ for st in range(0,len(ids),1024):
+  ii=ids[st:st+1024];nb=tree.query_ball_point(cent[ii],RF,workers=1)
+  rr=np.repeat(np.arange(st,st+len(ii),dtype=np.int32),[len(q) for q in nb]);jj=np.concatenate(nb).astype(np.int32);dist=np.linalg.norm(cent[jj]-cent[ids[rr]],axis=1);w=np.maximum(0,RF-dist)*V[jj];hs+=np.bincount(rr,weights=w,minlength=len(ids));ff=fixed[jj];fixedsum+=np.bincount(rr[ff],weights=w[ff],minlength=len(ids));ok=~ff;rows.append(rr[ok]);cols.append(mapidx[jj[ok]]);vals.append(w[ok])
+  if st%30000<1024:event('filter_progress',rows=st,total=len(ids),seconds=time.monotonic()-begin)
+ H=coo_matrix((np.concatenate(vals),(np.concatenate(rows),np.concatenate(cols))),shape=(len(ids),len(ids))).tocsr();save_npz(OUT/'density_filter_design_design.npz',H);np.savez_compressed(OUT/'filter_fixed_inventory.npz',design_element_ids=ids,denominator=hs,fixed_weight_sum=fixedsum)
+ event('filter_complete',design_rows=len(ids),nonzeros=int(H.nnz),seconds=time.monotonic()-begin)
+ return ids,H,hs,fixedsum
+
+def boundary_binary(nodes,cells,fixed,rho,F):
+ keep=(rho>.5)|fixed;kt=cells[keep];faces=np.vstack([kt[:,[0,2,1]],kt[:,[0,1,3]],kt[:,[0,3,2]],kt[:,[1,2,3]]]);ordered=np.sort(faces,axis=1);keys,inv,count=np.unique(ordered,axis=0,return_inverse=True,return_counts=True);boundary=faces[count[inv]==1]
+ from scipy.sparse.csgraph import connected_components
+ # Face-connected solids, including all islands (none silently removed).
+ order=np.argsort(inv);facecell=np.tile(np.arange(len(kt)),4);ss=np.flatnonzero(count[inv[order]]==2);pair=ss[::2];aa=facecell[order[pair]];bb=facecell[order[pair+1]];graph=coo_matrix((np.ones(len(aa)),(aa,bb)),shape=(len(kt),len(kt))).tocsr();roots,labels=connected_components(graph,directed=False)
+ edges=np.sort(np.vstack([boundary[:,[0,1]],boundary[:,[1,2]],boundary[:,[2,0]]]),axis=1);_,ec=np.unique(edges,axis=0,return_counts=True)
+ active=np.unique(kt);mapping=np.full(len(nodes),-1,dtype=int);mapping[active]=np.arange(len(active));loaded=np.flatnonzero(np.any(F.reshape(len(nodes),3,-1)!=0,axis=(1,2)));loadedpresent=bool(np.all(mapping[loaded]>=0));bodyvol=abs(np.linalg.det(nodes[kt[:,1:]]-nodes[kt[:,0,None]]))/6
+ np.savez_compressed(OUT/'binary_native_tet_domain.npz',points_m=nodes[active],tetra=mapping[kt],boundary_faces=mapping[boundary],original_kept_element_ids=np.flatnonzero(keep),original_kept_node_ids=active,fixed_original_element_ids=np.flatnonzero(fixed),component_labels=labels)
+ report={'threshold_strict_rho_greater_than':.5,'fixed_elements_always_retained':bool(np.all(keep[fixed])),'kept_elements':len(kt),'kept_nodes':len(active),'actual_material_volume_m3':float(bodyvol.sum()),'actual_material_mass_kg':float(bodyvol.sum()*RHO),'face_connected_material_components':int(roots),'all_component_element_counts':np.bincount(labels).tolist(),'boundary_edges_not_degree2':int(np.count_nonzero(ec!=2)),'face_counts_above2':int(np.count_nonzero(count>2)),'loaded_nodes_retained':loadedpresent,'ersatz_in_binary':False,'islands_deleted_or_repaired':False,'CAD_or_manufacturing_qualified':False,'conditional_FE_admission':bool(roots==1 and np.all(ec==2) and np.all(count<=2) and loadedpresent)}
+ save('binary_native_gate.json',report);return keep,active,mapping,report
+
+def main():
+ start=time.monotonic();independent_variable_test();base=json.loads(BASE.read_text());admit=json.loads(ADMIT.read_text());assert admit['structural_FE_admissible'] and sha(MESH)==base['mesh_sha256']==admit['mesh_sha256'];assert sha(LOAD)==base['load_array_sha256'];assert sha(FIELD)==base['basis_fields_sha256'];assert sha(CAD)==base['CAD_brep_sha256']
+ z=np.load(MESH);nodes=z['points_m'];cells=z['tetra'];forces=np.load(LOAD);F=forces['basis_F_xyz_N_cases'].reshape(3*len(nodes),8);coeff=forces['original_case_coefficients'];allF=forces['F_xyz_N_cases'].reshape(3*len(nodes),42);recon=np.linalg.norm(F@coeff-allF)/np.linalg.norm(allF);assert recon<1e-12;C0=np.array([q['compliance_J'] for q in base['cases']]);warm=np.load(FIELD)['U_m'].reshape(3*len(nodes),8)
+ K,V,B,D,dofs,_=p1.assemble(nodes,cells);del K;cent=nodes[cells].mean(1);face=z['boundary_faces'][z['boundary_physical_tags']>0];loadedvertices=nodes[np.unique(face)];maxedge=max(np.linalg.norm(nodes[face[:,j]]-nodes[face[:,(j+1)%3]],axis=1).max() for j in range(3));radius=np.linalg.norm(nodes[cells]-cent[:,None],axis=2).max(1);distance=cKDTree(loadedvertices).query(cent)[0];fixed=distance<=.01+maxedge+radius;design=~fixed
+ config={'input_hashes':{str(q.resolve()):sha(q) for q in [MESH,LOAD,BASE,FIELD,PORT,ADMIT,CAD,P1]},'producer_sha256':sha(__file__),'E_Pa':E,'nu':NU,'density_kg_m3':RHO,'SIMP_p':PENAL,'Emin_over_E':EMIN,'3D_volume_weighted_conic_filter_radius_m':RF,'move_limit':MOVE,'volume_cap_total_baseline_fraction':CAP,'baseline_volume_m3':float(V.sum()),'baseline_material_mass_kg':float(V.sum()*RHO),'fixed_element_count':int(fixed.sum()),'fixed_volume_fraction':float(V[fixed].sum()/V.sum()),'fixed_region_rule':'All 7 actual physicalgroups, conservative cell intersection with a 10mm surface neighbourhood: centroid distance to a surface vertex <=10mm+maximum loaded triangle edge+individual cell circumextent. This supersets the exact 10mm surface band; no original loaded/interface cell can be removed.','loaded_surface_max_edge_m':float(maxedge),'preserved_42_literal_force_reconstruction_relative_error':float(recon),'gauge_is_not_physical_support':True,'all_original_cavities_preserved':True,'design_is_existing_material_only':True,'physical_accepted':False,'compute_budget_seconds':2100,'max_iterations':12}
+ save('input.json',config);np.savez_compressed(OUT/'material_domain.npz',element_centroids_m=cent,element_volume_m3=V,fixed_elements=fixed,design_elements=design);assert config['fixed_volume_fraction']<CAP
+ engine=Engine(nodes,cells,F,coeff,C0,B,D,V,dofs);U,sens,baseline=engine.solve(np.ones(len(cells)),warm,'iteration_0_baseline');relU=np.linalg.norm(U-warm)/np.linalg.norm(warm);baseline['G8_basis_U_relative_difference']=float(relU);baseline['all42_baseline_compliance_max_relative_error']=float(np.max(abs(np.array(baseline['relative_to_own_baseline_all42'])-1)));save('iteration_00_baseline.json',baseline);np.savez_compressed(OUT/'iteration_00_fields.npz',U_basis_m=U,physical_density=np.ones(len(cells)))
+ if relU>1e-6 or baseline['all42_baseline_compliance_max_relative_error']>1e-6:raise ValueError('iteration0 G8 baseline mismatch')
+ event('iteration_0_verified',U_relative_difference=relU,objective_p8=baseline['objective_p8'],fixed_volume_fraction=config['fixed_volume_fraction'])
+ ids,H,hs,fs=build_filter(cent,V,design,fixed);x=np.ones(len(ids));rho=np.ones(len(cells));history=[{'iteration':0,**baseline,'density_volume_fraction':1.,'design_change':0.}]
+ def physical(xx):
+  rr=np.ones(len(cells));rr[ids]=(H@xx+fs)/hs;return rr
+ dV=np.asarray(H.T@(V[ids]/hs)).ravel();gradient=np.asarray(H.T@(-3*(1-EMIN)*sens[ids]/hs)).ravel()
+ # One actual-domain selected high-sensitivity directional FD; +/- is numerical derivative only, outside design box on + branch.
+ direction=np.zeros(len(ids));top=np.argsort(-abs(gradient))[:max(1000,len(ids)//10)];direction[top]=1;h=.001;analytic=float(gradient@direction);fd=[]
+ for sign in [-1,1]:
+  rr=physical(x+sign*h*direction);_,_,q=engine.solve(EMIN+(1-EMIN)*rr**3,U,f'actual_gradient_fd_{sign:+d}');fd.append(q['objective_p8']);save(f'gradient_fd_{sign:+d}.json',q)
+ numeric=(fd[1]-fd[0])/(2*h);gradreport={'selected_direction':'highest absolute design gradient 10% elements (minimum1000), exact filter adjoint; no load change','selected_design_element_ids':ids[top].tolist(),'h':h,'analytic_directional_derivative':analytic,'central_difference':numeric,'relative_error':abs(analytic-numeric)/(abs(analytic)+1e-30),'pass':bool(abs(analytic-numeric)/(abs(analytic)+1e-30)<.015),'positive_branch_above1_is_only_numerical_test':True};save('actual_gradient_check.json',gradreport);event('gradient_verified',**{k:v for k,v in gradreport.items() if k!='selected_design_element_ids'})
+ if not gradreport['pass']:raise ValueError('actual derivative failed')
+ lastreport=baseline
+ for it in range(1,13):
+  if time.monotonic()-start>2100:break
+  grad=np.asarray(H.T@(-3*(1-EMIN)*rho[ids]**2*sens[ids]/hs)).ravel();lo=0.;hi=max(1.,float(np.max(-grad/(dV+1e-30))))
+  xmin=np.maximum(.001,x-MOVE);xmax=np.minimum(1.,x+MOVE)
+  for _ in range(80):
+   lm=(lo+hi)/2;xx=np.clip(x*np.sqrt(np.maximum(0,-grad)/(lm*dV+1e-30)),xmin,xmax);rr=physical(xx)
+   if V@rr>CAP*V.sum():lo=lm
+   else:hi=lm
+  change=float(abs(xx-x).max());x=xx;rho=physical(x);np.savez_compressed(OUT/f'iteration_{it:02d}_density.npz',design_x=x,physical_density=rho,fixed_elements=fixed,element_centroids_m=cent)
+  U,sens,q=engine.solve(EMIN+(1-EMIN)*rho**3,U,f'iteration_{it:02d}');q.update(iteration=it,density_volume_fraction=float(V@rho/V.sum()),virtual_material_mass_kg=float(V@rho*RHO),design_change=change,volume_cap_feasible_with_this_move=bool(V@physical(xmin)<=CAP*V.sum()+1e-15));history.append(q);lastreport=q;save('iteration_history.json',history);save(f'iteration_{it:02d}_report.json',q);event('iteration_complete',iteration=it,objective_p8=q['objective_p8'],density_volume_fraction=q['density_volume_fraction'],design_change=change,compute_seconds=time.monotonic()-start)
+  if change<.01 and q['density_volume_fraction']<=CAP+1e-6:break
+ np.savez_compressed(OUT/'final_density_fields.npz',physical_density=rho,design_x=x,U_basis_m=U,fixed_elements=fixed,element_volume_m3=V,element_centroids_m=cent)
+ keep,active,mapping,bingate=boundary_binary(nodes,cells,fixed,rho,allF)
+ binary=None
+ if bingate['conditional_FE_admission'] and time.monotonic()-start<2550:
+  tn=mapping[cells[keep]];nn=nodes[active];_,bv,bB,bD,bdf,_=p1.assemble(nn,tn);ben=Engine(nn,tn,F.reshape(len(nodes),3,8)[active].reshape(-1,8),coeff,C0,bB,bD,bv,bdf);bu,bs,binary=ben.solve(np.ones(len(tn)),U.reshape(len(nodes),3,8)[active].reshape(-1,8),'binary_true_void',maxseconds=420);save('binary_true_void_solve.json',binary);np.savez_compressed(OUT/'binary_true_void_fields.npz',U_basis_m=bu)
+ else:save('binary_true_void_solve.json',{'executed':False,'reason':'native binary material admission rejected or remaining bounded compute time insufficient','actual_gate':bingate,'no_ersatz_or_island_deletion':True})
+ report={'scope':__doc__,'baseline_verified':True,'actual_gradient_verified':True,'iterations_completed':len(history)-1,'converged_change_below_point01':bool(history[-1].get('design_change',0)<.01 and len(history)>1),'elapsed_seconds':time.monotonic()-start,'density_volume_fraction':float(V@rho/V.sum()),'virtual_density_mass_kg':float(V@rho*RHO),'actual_binary_material_mass_kg':bingate['actual_material_mass_kg'],'last_objective_p8':lastreport['objective_p8'],'binary_conditional_solve_executed':binary is not None,'load_cases':42,'actual_basis_columns':8,'contact_gravity_yield_buckling_fatigue_manufacturing_qualified':False,'whole_robot_optimized_or_accepted':False,'all_iterations_actual_8_basis_solves_and_42_reconstruction':True}
+ save('report.json',report);event('complete',**report)
+if __name__=='__main__':
+ try:main()
+ except Exception as e:
+  save('rejection.json',{'exception':type(e).__name__,'message':str(e),'traceback':traceback.format_exc(),'no_physical_acceptance':True});event('rejected',exception=type(e).__name__,message=str(e));raise

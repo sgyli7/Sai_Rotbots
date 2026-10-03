@@ -1,0 +1,59 @@
+"""One bounded immutable-output audit of true-cell void, without island deletion.
+No second optimization, equilibrium solve, stiffness import or geometry repair.
+"""
+from pathlib import Path
+import time,json,hashlib
+import numpy as np
+from scipy.sparse import coo_matrix
+from scipy.sparse.csgraph import connected_components
+from verify_actual_operator import independent_action
+
+R=Path('/home/ethan/Projects/Sai_Rotbots');S=R/'.scratch/gorilla_topology_g10_actual_simp';O=R/'.scratch/gorilla_topology_g10_independent_review'
+M=R/'.scratch/gorilla_internal_g8_carrier_variants/b/coarse/carrier_tetra.npz';L=R/'.scratch/gorilla_internal_g8_load_envelope/g8_b_full42_loads.npz';BASE=R/'.scratch/gorilla_internal_g8_root_fem/b_envelope_baseline.json'
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def main():
+ started=time.monotonic();bp=S/'binary_native_tet_domain.npz';fp=S/'final_density_fields.npz'
+ if not bp.exists():
+  report={'binary_native_exists':False,'physical_or_whole_robot_accepted':False,'reason':'producer did not supply completed binary native at bounded audit time'}
+ else:
+  bh=sha(bp);fh=sha(fp);b=np.load(bp);f=np.load(fp);z=np.load(M);load=np.load(L)
+  n=b['points_m'];t=b['tetra'];faces=b['boundary_faces'];nodes=b['original_kept_node_ids'];ids=b['original_kept_element_ids'];rho=f['physical_density'];fixed=f['fixed_elements'];expected=np.flatnonzero((rho>.5)|fixed)
+  correct_ids=np.array_equal(ids,expected);native_coord=np.array_equal(n,z['points_m'][nodes]);mapping=np.full(len(z['points_m']),-1,dtype=int);mapping[nodes]=np.arange(len(nodes));native_tet=np.array_equal(t,mapping[z['tetra'][ids]])
+  pts=n[t];signed=np.linalg.det(np.transpose(pts[:,1:]-pts[:,0,None],(0,2,1)))/6
+  tf=np.vstack([t[:,[0,2,1]],t[:,[0,1,3]],t[:,[0,3,2]],t[:,[1,2,3]]]);keys,inv,count=np.unique(np.sort(tf,axis=1),axis=0,return_inverse=True,return_counts=True)
+  expected_faces=tf[count[inv]==1];bfkey=np.sort(faces,axis=1)
+  dtype=np.dtype([('a',bfkey.dtype),('b',bfkey.dtype),('c',bfkey.dtype)])
+  bfkeyv=np.ascontiguousarray(bfkey).view(dtype).ravel();efkeyv=np.ascontiguousarray(np.sort(expected_faces,axis=1)).view(dtype).ravel();boundary_equal=np.array_equal(np.sort(bfkeyv),np.sort(efkeyv))
+  # Explicit cyclic orientation, no normal repair. Compare raw induced oriented faces.
+  def cyclic_canonical(q):
+   k=np.argmin(q,axis=1);return np.take_along_axis(q,(k[:,None]+np.arange(3))%3,axis=1)
+  oriented=np.ascontiguousarray(cyclic_canonical(faces)).view(dtype).ravel();exp_oriented=np.ascontiguousarray(cyclic_canonical(expected_faces)).view(dtype).ravel();orientation_equal=np.array_equal(np.sort(oriented),np.sort(exp_oriented))
+  edges=np.sort(np.vstack([faces[:,[0,1]],faces[:,[1,2]],faces[:,[2,0]]]),axis=1);_,degree=np.unique(edges,axis=0,return_counts=True)
+  owners=np.tile(np.arange(len(t)),4);sort=np.argsort(inv);s_inv=inv[sort];s_owner=owners[sort];where=np.flatnonzero(np.diff(s_inv)==0);aa=s_owner[where];bb=s_owner[where+1];adj=coo_matrix((np.ones(2*len(aa)),(np.r_[aa,bb],np.r_[bb,aa])),shape=(len(t),len(t))).tocsr();roots,labels=connected_components(adj,directed=False)
+  F0=load['F_xyz_N_cases'];loaded=np.flatnonzero(np.any(F0!=0,axis=(1,2)));retained=bool(np.all(np.isin(loaded,nodes)))
+  V0=np.load(S/'material_domain.npz')['element_volume_m3'];v=float(signed.sum());basev=float(V0.sum());mass=v*7850
+  report={'binary_native_exists':True,'binary_source_sha256':bh,'final_density_sha256':fh,'source_mesh_sha256':sha(M),'source_load_sha256':sha(L),'producer_sha256':sha(__file__),
+   'source_original_element_ids_exact_threshold_or_fixed':correct_ids,'source_coordinates_bytewise_same':native_coord,'source_tetra_connectivity_exact':native_tet,
+   'nodes':len(n),'tetra':len(t),'signed_tetra_all_positive':bool(np.all(signed>0)),'native_material_volume_m3':v,'native_conditional_steel_mass_kg':mass,
+   'native_volume_fraction_of_B':v/basev,'density_virtual_volume_fraction_of_B':float(V0@rho/basev),'density_virtual_mass_kg':float(V0@rho*7850),
+   'actual_binary_85percent_volume_cap_met':bool(v<=.85*basev+1e-14),
+   'actual_boundary_equals_tet_induced_keys':boundary_equal,'actual_boundary_outward_orientation_equals_positive_tet_export':orientation_equal,
+   'boundary_edges_not_degree2':int(np.count_nonzero(degree!=2)),'material_faces_incidence_above2':int(np.count_nonzero(count>2)),
+   'face_connected_components':int(roots),'component_element_counts':np.bincount(labels).tolist(),'all_original_loaded_nodes_retained':retained,'all_fixed_native_cells_retained':bool(np.all(np.isin(np.flatnonzero(fixed),ids))),
+   'no_ersatz_in_binary_material':True,'no_island_removal_or_source_repair':True,
+   'binary_source_stable_after_query':sha(bp)==bh,'density_source_stable_after_query':sha(fp)==fh,
+   'thin_path_manufacturing_stress_buckling_or_physical_qualified':False,'physical_or_whole_robot_accepted':False}
+  up=S/'binary_true_void_fields.npz'
+  if up.exists():
+   uh=sha(up);u=np.load(up)['U_basis_m'].reshape(len(n),3,8);coeff=load['original_case_coefficients'];F=load['basis_F_xyz_N_cases'][nodes].reshape(-1,8);allF=F0[nodes].reshape(-1,42)
+   C0=np.array([x['compliance_J'] for x in json.loads(BASE.read_text())['cases']])
+   Fi,V,c,G,C,obj,g,ew=independent_action(n,t,u,np.ones(len(t)),coeff,C0,210e9,.3)
+   report.update(binary_field_sha256=uh,binary_field_source_stable_after_query=sha(up)==uh,
+     independent_true_void_basis_operator_max_residual=float(np.max(np.linalg.norm(Fi-F,axis=0)/np.linalg.norm(F,axis=0))),
+     independent_true_void_all42_operator_max_residual=float(np.max(np.linalg.norm(Fi@coeff-allF,axis=0)/np.linalg.norm(allF,axis=0))),
+     independent_true_void_objective_p8=obj,
+     independent_true_void_case_compliance_J=C.tolist(),
+     independent_true_void_internal_external_energy_max_relative=float(np.max(abs(C-np.einsum('rq,rs,sq->q',coeff,F.T@u.reshape(-1,8),coeff,optimize=True))/C)))
+  else:report['completed_binary_displacement_field_available']=False
+ report['elapsed_seconds']=time.monotonic()-started;(O/'binary_output_review.json').write_text(json.dumps(report,indent=2,allow_nan=False)+'\n');print(json.dumps(report,indent=2))
+if __name__=='__main__':main()

@@ -1,0 +1,57 @@
+"""Read-only inventory, fixed-volume band, 42-case and density constraint audit."""
+from pathlib import Path
+import hashlib,json,time
+import numpy as np
+from scipy.spatial import cKDTree
+from scipy.sparse import load_npz
+
+R=Path('/home/ethan/Projects/Sai_Rotbots');S=R/'.scratch/gorilla_topology_g10_actual_simp';O=R/'.scratch/gorilla_topology_g10_independent_review'
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def main():
+ start=time.monotonic();cfg=json.loads((S/'input.json').read_text());hashes=[]
+ for p,h in cfg['input_hashes'].items():
+  got=sha(Path(p));hashes.append({'path':p,'expected_sha256':h,'actual_sha256':got,'equal':got==h})
+ mesh=R/'.scratch/gorilla_internal_g8_carrier_variants/b/coarse/carrier_tetra.npz';z=np.load(mesh);n=z['points_m'];t=z['tetra'];f=z['boundary_faces'];tags=z['boundary_physical_tags'];dom=np.load(S/'material_domain.npz');fixed=dom['fixed_elements'];V=dom['element_volume_m3'];cent=n[t].mean(axis=1)
+ tagged=f[tags>0];pids=np.unique(tagged);rad=np.linalg.norm(n[t]-cent[:,None],axis=2).max(axis=1)
+ edge=max(np.linalg.norm(n[tagged[:,i]]-n[tagged[:,(i+1)%3]],axis=1).max() for i in range(3))
+ dist=cKDTree(n[pids]).query(cent)[0];reconstructed=dist<=.01+edge+rad
+ # Native facet incidence, independently keyed by node triples; original tags untouched.
+ fs=np.sort(tagged,axis=1);port_node_set=set(map(int,pids));has_any_interface_node=np.array([any(int(k) in port_node_set for k in q) for q in t])
+ exact_candidate=dist<=.01
+ H=load_npz(S/'density_filter_design_design.npz');q=np.load(S/'filter_fixed_inventory.npz');ids=q['design_element_ids'];hs=q['denominator'];fw=q['fixed_weight_sum'];slope=float(V[ids]@((H@np.ones(len(ids)))/hs));constant=float(V[fixed].sum()+V[ids]@(fw/hs));uniform=(.85*V.sum()-constant)/slope
+ load=R/'.scratch/gorilla_internal_g8_load_envelope/g8_b_full42_loads.npz';ld=np.load(load);basis=ld['basis_F_xyz_N_cases'].reshape(-1,8);coeff=ld['original_case_coefficients'];allF=ld['F_xyz_N_cases'].reshape(-1,42);real_loaded=np.flatnonzero(np.any(allF.reshape(len(n),3,42)!=0,axis=(1,2)))
+ fields=[];previous=None
+ # Only complete displacement+density snapshots, not unfinished density-only candidates.
+ names=['feasible_uniform_0_fields.npz']+sorted(p.name for p in S.glob('optimization_*_fields.npz'))
+ for name in names:
+  p=S/name;h0=sha(p);a=np.load(p);rho=a['physical_density'];x=a['design_x'];new={'path':str(p),'sha256':h0,'complete_displacement_snapshot':True,'density_min':float(rho.min()),'density_max':float(rho.max()),'design_x_min':float(x.min()),'design_x_max':float(x.max()),'total_volume_fraction':float(V@rho/V.sum()),'fixed_density_all_one':bool(np.all(rho[fixed]==1)),'filter_error_max':float(np.max(abs(rho[ids]-(H@x+fw)/hs))),'move_max_from_previous':None if previous is None else float(np.max(abs(x-previous))),'source_hash_stable':sha(p)==h0};fields.append(new);previous=x
+ coeff_basis=coeff[:,np.array(ld['basis_case_indices'])]
+ report={
+ 'scope':'current B existing-material-only domain and mathematical constraints; not full Gorilla new-volume layout, fit/contact, strength or production qualification',
+ 'producer_sha256':sha(__file__),'source_input_hashes':hashes,'all_source_hashes_match':all(q['equal'] for q in hashes),
+ 'native_material_volume_m3':float(V.sum()),'native_conditional_steel_mass_kg':float(V.sum()*7850),
+ 'actual_42_cases':ld['case_indices'].tolist(),'basis8_cases':ld['basis_case_indices'].tolist(),'coefficient_rank':int(np.linalg.matrix_rank(coeff)),
+ 'basis_coeff_identity_max_error':float(np.max(abs(coeff_basis-np.eye(8)))),
+ 'full42_force_reconstruction_relative':float(np.linalg.norm(basis@coeff-allF)/np.linalg.norm(allF)),
+ 'basis_matrix_rank':int(np.linalg.matrix_rank(basis.T@basis)),'force_arrays_projected_by_this_audit':False,
+ 'physical_port_tags':list(map(int,np.unique(tags[tags>0]))),'port_boundary_faces':len(tagged),'port_vertex_count':len(pids),
+ 'loaded_node_count':len(real_loaded),'all_loaded_nodes_in_tagged_source_ports':bool(np.all(np.isin(real_loaded,pids))),
+ 'independent_max_loaded_surface_edge_m':float(edge),'fixed_band_mask_mismatch_count':int(np.count_nonzero(fixed!=reconstructed)),
+ 'fixed_elements':int(fixed.sum()),'design_elements':int((~fixed).sum()),
+ 'any_interface_node_touching_tetra_not_fixed_count':int(np.count_nonzero(has_any_interface_node & ~fixed)),
+ 'fixed_volume_fraction':float(V[fixed].sum()/V.sum()),
+ 'vertices_near_10mm_subset_volume_fraction_not_exact_surface_distance':float(V[exact_candidate].sum()/V.sum()),
+ 'fixed_band_is_conservative_superband_not_exact_10mm':True,
+ 'filter_affine_volume_constant_m3':constant,'filter_affine_uniform_slope_m3':slope,
+ 'filter_affine_constant_volume_fraction':constant/float(V.sum()),
+ 'independently_solved_uniform_x_for_total_cap85':uniform,
+ 'unfiltered_uniform_x_for_cap85_does_not_enforce_filtered_cap':float((.85-V[fixed].sum()/V.sum())/(1-V[fixed].sum()/V.sum())),
+ 'completed_field_constraint_receipts':fields,
+ 'original_full_material_pilot_not_feasible_optimization_start':True,
+ 'initialization_correction_source_sha256':sha(S/'pilot_initialization_correction.json'),
+ 'mechanical_support': 'Conditional balanced traction free body; QR six rigid DOFs only. Journal/bearing/contact laws are not replaced by clamps.',
+ 'preserved_42_scope':'all original angles, CoP, static load factors and actuator/stop modes retained; no new gravity, dynamics, fatigue, contact or wholebody qualification',
+ 'design_void_and_manufacturing':'Only original tetra material is designable; no allocation of original CAD cavity/wholebody volume. Density/Ersatz is not true void; binary topology must be independently remeshed/refined and rechecked, never discard islands to pass.',
+ 'physical_or_whole_robot_accepted':False,'elapsed_seconds':time.monotonic()-start}
+ (O/'domain_constraint_review.json').write_text(json.dumps(report,indent=2,allow_nan=False)+'\n');print(json.dumps({k:v for k,v in report.items() if k not in ['source_input_hashes','completed_field_constraint_receipts']},indent=2))
+if __name__=='__main__':main()

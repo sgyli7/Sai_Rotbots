@@ -1,0 +1,42 @@
+"""Feasible uniform initial filtered density + bounded real G8 B 3D SIMP.
+Imports only our unfrozen implementation functions; inputs and verifier are immutable.
+"""
+from pathlib import Path
+import json,time,hashlib,traceback
+import numpy as np
+from scipy.sparse import load_npz
+import run_actual_simp as m
+OUT=m.OUT
+
+def main():
+ start=time.monotonic();config=json.loads((OUT/'input.json').read_text());gradient=json.loads((OUT/'actual_gradient_check.json').read_text());assert gradient['pass'];z=np.load(m.MESH);n=z['points_m'];t=z['tetra'];loads=np.load(m.LOAD);F=loads['basis_F_xyz_N_cases'].reshape(len(n)*3,8);allF=loads['F_xyz_N_cases'].reshape(len(n)*3,42);coeff=loads['original_case_coefficients'];C0=np.array([q['compliance_J'] for q in json.loads(m.BASE.read_text())['cases']]);K,V,B,D,dof,_=m.p1.assemble(n,t);del K
+ dom=np.load(OUT/'material_domain.npz');fixed=dom['fixed_elements'];cent=dom['element_centroids_m'];ff=np.load(OUT/'filter_fixed_inventory.npz');ids=ff['design_element_ids'];hs=ff['denominator'];fs=ff['fixed_weight_sum'];H=load_npz(OUT/'density_filter_design_design.npz');warm=np.load(OUT/'iteration_00_fields.npz')['U_basis_m'];engine=m.Engine(n,t,F,coeff,C0,B,D,V,dof)
+ def physical(x):
+  rho=np.ones(len(t));rho[ids]=(H@x+fs)/hs;return rho
+ vc=float(V[fixed].sum()+V[ids]@(fs/hs));vs=float(V[ids]@((H@np.ones(len(ids)))/hs));uniform=(m.CAP*V.sum()-vc)/vs;assert 0<uniform<1;x=np.full(len(ids),uniform);rho=physical(x);dV=np.asarray(H.T@(V[ids]/hs)).ravel();init={'uniform_design_x':float(uniform),'filtered_volume_fraction':float(V@rho/V.sum()),'rho_min_max':[float(rho.min()),float(rho.max())],'fixed_physical_rho_all1':bool(np.all(rho[fixed]==1)),'source_gradient_verifier_sha256':m.sha(OUT/'actual_gradient_check.json'),'source_domain_sha256':m.sha(OUT/'material_domain.npz'),'source_filter_sha256':m.sha(OUT/'density_filter_design_design.npz'),'producer_sha256':m.sha(__file__),'total_material_volume_cap_fraction':m.CAP,'exact_filter_affine_volume_constant_m3':vc,'exact_filter_affine_volume_uniform_slope_m3':vs,'unfiltered_approximate_uniform_x_not_used':(m.CAP-config['fixed_volume_fraction'])/(1-config['fixed_volume_fraction']),'compute_budget_seconds_including_binary':2100,'max_optimization_steps':12,'binary_compute_reserve_seconds':420,'stop_to_return_to_root_before_0600_UTC':True};m.save('feasible_initialization.json',init);m.event('feasible_uniform_initialization',**init)
+ U,sens,report=engine.solve(m.EMIN+(1-m.EMIN)*rho**3,warm,'feasible_uniform_0');report.update(iteration=0,density_volume_fraction=float(V@rho/V.sum()),virtual_material_mass_kg=float(V@rho*m.RHO),design_change=None);history=[report];m.save('feasible_uniform_0_report.json',report);np.savez_compressed(OUT/'feasible_uniform_0_fields.npz',physical_density=rho,design_x=x,U_basis_m=U,fixed_elements=fixed);m.save('optimization_history.json',history)
+ for it in range(1,13):
+  if time.monotonic()-start>1680:break
+  grad=np.asarray(H.T@(-3*(1-m.EMIN)*rho[ids]**2*sens[ids]/hs)).ravel();lower=np.maximum(.001,x-m.MOVE);upper=np.minimum(1.,x+m.MOVE);lo=0.;hi=max(1.,float(np.max(-grad/(dV+1e-30))))
+  if V@physical(lower)>m.CAP*V.sum()+1e-14:raise ValueError('move-limited feasible OC bound rejected')
+  for _ in range(80):
+   lm=(lo+hi)/2;xx=np.clip(x*np.sqrt(np.maximum(0,-grad)/(lm*dV+1e-30)),lower,upper)
+   if V@physical(xx)>m.CAP*V.sum():lo=lm
+   else:hi=lm
+  change=float(np.max(abs(xx-x)));x=xx;rho=physical(x);assert V@rho<=m.CAP*V.sum()+1e-14;assert np.all(rho[fixed]==1)
+  np.savez_compressed(OUT/f'optimization_{it:02d}_density.npz',design_x=x,physical_density=rho,fixed_elements=fixed,element_centroids_m=cent)
+  U,sens,report=engine.solve(m.EMIN+(1-m.EMIN)*rho**3,U,f'optimization_{it:02d}',maxseconds=360);report.update(iteration=it,density_volume_fraction=float(V@rho/V.sum()),virtual_material_mass_kg=float(V@rho*m.RHO),design_change=change);history.append(report);m.save('optimization_history.json',history);m.save(f'optimization_{it:02d}_report.json',report)
+  np.savez_compressed(OUT/f'optimization_{it:02d}_fields.npz',U_basis_m=U,physical_density=rho,design_x=x)
+  m.event('optimization_step_complete',iteration=it,objective_p8=report['objective_p8'],volume_fraction=report['density_volume_fraction'],change=change,seconds=time.monotonic()-start)
+  if change<.01:break
+ np.savez_compressed(OUT/'final_density_fields.npz',physical_density=rho,design_x=x,U_basis_m=U,fixed_elements=fixed,element_volume_m3=V,element_centroids_m=cent,original_case_coefficients=coeff,original_basis_case_indices=loads['basis_case_indices'])
+ keep,active,mapping,binarygate=m.boundary_binary(n,t,fixed,rho,allF);binary=None;timeleft=2100-(time.monotonic()-start)
+ if binarygate['conditional_FE_admission'] and timeleft>120:
+  bt=mapping[t[keep]];bn=n[active];K,bv,bB,bD,bdf,_=m.p1.assemble(bn,bt);del K;be=m.Engine(bn,bt,F.reshape(len(n),3,8)[active].reshape(-1,8),coeff,C0,bB,bD,bv,bdf);bu,_,binary=be.solve(np.ones(len(bt)),U.reshape(len(n),3,8)[active].reshape(-1,8),'binary_true_void',maxseconds=min(420,timeleft));m.save('binary_true_void_solve.json',binary);np.savez_compressed(OUT/'binary_true_void_fields.npz',U_basis_m=bu)
+ else:m.save('binary_true_void_solve.json',{'executed':False,'reason':'binary native material admission failed or bounded compute time insufficient','gate':binarygate,'real_void_no_Emin':True,'no_island_deletion_or_geometry_repair':True})
+ m.save('report.json',{'scope':__doc__,'baseline_real_material_verified_against_G8':True,'actual_gradient_verified':True,'optimization_steps_completed':len(history)-1,'change_converged':bool(history[-1]['design_change'] is not None and history[-1]['design_change']<.01),'initial_uniform_ersatz_objective_p8':history[0]['objective_p8'],'final_ersatz_objective_p8':history[-1]['objective_p8'],'total_density_material_volume_fraction':float(V@rho/V.sum()),'virtual_density_material_mass_kg':float(V@rho*m.RHO),'binary_material_mass_kg':binarygate['actual_material_mass_kg'],'binary_conditional_FE_admission':binarygate['conditional_FE_admission'],'binary_true_void_solve_executed':binary is not None,'binary_gate':binarygate,'actual_cases':42,'actual_basis_columns':8,'all_original_F_unchanged':True,'no_force_projection':True,'gauge_is_not_support':True,'all_original_cavities_preserved':True,'no_material_added_outside_B':True,'manufacturing_contact_yield_fatigue_buckling_or_whole_robot_accepted':False,'elapsed_optimization_and_binary_seconds':time.monotonic()-start})
+ m.event('complete',steps=len(history)-1,elapsed_seconds=time.monotonic()-start)
+if __name__=='__main__':
+ try:main()
+ except Exception as e:
+  m.save('optimization_rejection.json',{'exception':type(e).__name__,'message':str(e),'traceback':traceback.format_exc(),'no_physical_acceptance':True});m.event('rejected',exception=type(e).__name__,message=str(e));raise
