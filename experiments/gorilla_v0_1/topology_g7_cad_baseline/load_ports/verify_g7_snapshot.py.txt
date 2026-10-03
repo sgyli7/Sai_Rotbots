@@ -1,0 +1,167 @@
+"""Independent vector/radial checks; reads frozen sources without solver import."""
+from pathlib import Path
+from datetime import datetime,timezone
+import hashlib,json
+import numpy as np
+
+P=Path(__file__).resolve().parent;ROOT=P.parents[1]
+CAD=ROOT/'.scratch/gorilla_internal_g7_cad_carrier';G4=ROOT/'.scratch/gorilla_internal_g4_pitch_module'
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+def save(name,obj):(P/name).write_text(json.dumps(obj,indent=2,ensure_ascii=False,allow_nan=False)+'\n')
+
+def independent_check(stem,handoff):
+    r=json.loads((P/(stem+'_report.json')).read_text());a=np.load(P/(stem+'_loads.npz'))
+    mesh_level='coarse' if stem.startswith('coarse') else 'fine'
+    source_mesh=CAD/mesh_level/'carrier_tetra.npz';source=np.load(source_mesh)
+    groups=json.loads((CAD/mesh_level/'port_groups.json').read_text())
+    group={q['physical_tag']:q for q in groups['groups']}
+    case=handoff['actual_6D_load_interfaces'][r['case_index'] if 'case_index' in r else 18]
+    if case['q_deg']!=0:raise RuntimeError('independent original-source comparison is restricted to the selected neutral cases')
+    original=case['actual_child_point_load_ports']+[case['equivalent_ground_load_at_output_mount']]
+    points=a['points_m'];faces=a['boundary_faces'];tags=a['boundary_physical_tags']
+    tri=points[faces];area=np.linalg.norm(np.cross(tri[:,1]-tri[:,0],tri[:,2]-tri[:,0]),axis=1)/2
+    rows=[];radial_mode='radial_pressure' in stem
+    for i,(tag,port) in enumerate(zip(a['port_physical_tags'],original)):
+        target=np.asarray(port['wrench_Fxyz_Mxyz']);center=np.asarray(port['point_world_m']);f=a['port_forces_xyz_N'][i]
+        actual=np.r_[f.sum(0),np.cross(points-center,f).sum(0)];idx=np.flatnonzero(tags==tag)
+        w=np.zeros(len(points));np.add.at(w,faces[idx].ravel(),np.repeat(area[idx]/3,3));nodes=np.flatnonzero(w>0)
+        outside=np.ones(len(points),dtype=bool);outside[nodes]=False
+        row={'physical_tag':int(tag),'name':group[int(tag)]['name'],'literal_original_G4_load_center_m':center.tolist(),
+             'literal_original_G4_wrench_F_M':target.tolist(),'independent_actual_F_M':actual.tolist(),
+             'independent_F_M_residual':(actual-target).tolist(),'actual_new_CAD_surface_nodes':len(nodes),
+             'force_outside_actual_physicalgroup_absmax_N':float(abs(f[outside]).max()),
+             'mesh_area_independent_m2':float(w.sum()),'exact_CAD_area_m2':group[int(tag)]['cad_area_m2'],
+             'surface_centroid_independent_m':np.average(points[nodes],axis=0,weights=w[nodes]).tolist()}
+        if int(tag) in [1,2,3,4]:
+            geo=group[int(tag)]['analytic_geometry'];xz=np.asarray(geo['centerline_xz_world_m'])
+            radial=points[nodes]-np.r_[xz[0],0.,xz[1]];radial[:,1]=0;radial/=np.linalg.norm(radial,axis=1)[:,None]
+            direction=(-1 if int(tag) in [1,2] else 1)*radial
+            ff=f[nodes];component=np.einsum('ij,ij->i',ff,direction)
+            nonradial=ff-component[:,None]*direction
+            rel=points[nodes]-center;ell=max(.01,float(np.linalg.norm(rel,axis=1).max()))
+            operator=np.vstack((direction.T,np.cross(rel,direction).T/ell))*np.sqrt(w[nodes])[None]
+            U,s,_=np.linalg.svd(operator,full_matrices=False);rank=int(np.sum(s>s[0]*1e-11))
+            b=np.r_[target[:3],target[3:]/ell]
+            error=b-U[:,:rank]@(U[:,:rank].T@b)
+            # Negative tests use the actual operator; no resulting load applied.
+            tests=[]
+            for axis,value in [(1,1.),(4,1./ell)]:
+                bad=b.copy();bad[axis]+=value;ee=bad-U[:,:rank]@(U[:,:rank].T@bad)
+                tests.append({'perturbation':'Fy1N' if axis==1 else 'My1Nm','range_residual_N_equivalent':float(np.linalg.norm(ee)),'rejected_radial_target':bool(np.linalg.norm(ee)>1e-7)})
+            row.update({'radial_operator_independent_rank':rank,'literal_target_radial_range_residual_N_equivalent':error.tolist(),
+                        'max_axial_node_force_N':float(abs(ff[:,1]).max()),
+                        'max_nonradial_node_force_N':float(np.linalg.norm(nonradial,axis=1).max()),
+                        'L2_nonradial_fraction':float(np.linalg.norm(nonradial)/np.linalg.norm(ff)),
+                        'negative_radial_force_nodes':int((component< -1e-10).sum()),
+                        'unreachable_radial_target_negative_tests':tests})
+            if radial_mode:
+                pressure=a['port_pressure_Pa'][i];predicted=w[nodes,None]*pressure[nodes,None]*direction
+                row.update({'independent_pressure_min_Pa':float(pressure.min()),'independent_pressure_max_Pa':float(pressure.max()),
+                            'independent_pressure_negative_nodes':int((pressure<0).sum()),
+                            'node_area_pressure_direction_force_absmax_error_N':float(abs(predicted-ff).max()),
+                            'pressure_on_outside_group_absmax_Pa':float(abs(pressure[outside]).max())})
+        rows.append(row)
+    total=a['F_xyz_N'];F=total.sum(0);M=np.cross(points,total).sum(0)
+    C=a['gauge_rows'];R=a['rigid_mode_matrix']
+    result={'stem':stem,'mesh_geometry_payload_equal_to_new_source':{
+            k:bool(np.array_equal(a[k],source[k])) for k in ['points_m','tetra','boundary_faces','boundary_physical_tags']},
+            'new_CAD_brep_sha256':sha(CAD/'carrier_exact.brep'),'new_mesh_sha256':sha(source_mesh),
+            'actual_CAD_groups_sha256':sha(CAD/mesh_level/'port_groups.json'),
+            'direct_original_G4_case_index':r['case_index'],'case_index':r['case_index'],'q_deg':case['q_deg'],
+            'port_checks':rows,'total_F_N':F.tolist(),'total_M_origin_Nm':M.tolist(),
+            'total_equals_sum_all_five_ports_absmax_N':float(abs(total-a['port_forces_xyz_N'].sum(0)).max()),
+            'gauge_times_rigid_modes_rank':int(np.linalg.matrix_rank(C@R)),
+            'rigid_virtual_work_independent':(R.T@total.ravel()).tolist(),
+            'report_sha256':sha(P/(stem+'_report.json')),'load_arrays_sha256':sha(P/(stem+'_loads.npz')),
+            'contact_qualified':False,'FE_solver_executed_here':False,'physical_release':False}
+    return result
+
+def main():
+    handoff=json.loads((G4/'optimization_handoff.json').read_text())
+    stems=['coarse_case18','coarse_case20','fine_case18','fine_case20',
+           'coarse_case18_radial_pressure','fine_case18_radial_pressure']
+    checks=[independent_check(s,handoff) for s in stems]
+    maxF=max(abs(v) for c in checks for v in c['total_F_N']);maxM=max(abs(v) for c in checks for v in c['total_M_origin_Nm'])
+    maxportF=max(abs(v) for c in checks for p in c['port_checks'] for v in p['independent_F_M_residual'][:3])
+    maxportM=max(abs(v) for c in checks for p in c['port_checks'] for v in p['independent_F_M_residual'][3:])
+    if maxF>1e-6 or maxM>1e-7 or maxportF>1e-6 or maxportM>1e-7:raise RuntimeError('source conservation failed; never repair target')
+    if any(not all(c['mesh_geometry_payload_equal_to_new_source'].values()) for c in checks):raise RuntimeError('new actual mesh payload changed')
+    if any(c['gauge_times_rigid_modes_rank']!=6 for c in checks):raise RuntimeError('rigid gauge lost rank6')
+    if any(p['force_outside_actual_physicalgroup_absmax_N']>1e-10 for c in checks for p in c['port_checks']):raise RuntimeError('force outside actual new group')
+    for c in checks:
+        if 'radial_pressure' not in c['stem']:continue
+        for p in c['port_checks']:
+            if p['physical_tag'] not in [1,2,3,4]:continue
+            if p['radial_operator_independent_rank']!=4 or p['independent_pressure_negative_nodes'] or p['negative_radial_force_nodes']:
+                raise RuntimeError('radial nonnegative condition failed')
+            if p['max_axial_node_force_N']>1e-10 or p['max_nonradial_node_force_N']>1e-10:
+                raise RuntimeError('radial port acquired axial/tangential force')
+            if not all(t['rejected_radial_target'] for t in p['unreachable_radial_target_negative_tests']):
+                raise RuntimeError('invalid radial target was not rejected')
+    receipt={'schema':'G7_independent_CAD_port_load_receipt','created_UTC':datetime.now(timezone.utc).isoformat(),
+             'G4_load_reference_scene_sha256':sha(G4/'module_scene.json'),'G4_load_reference_handoff_sha256':sha(G4/'optimization_handoff.json'),
+             'new_CAD_brep_sha256':sha(CAD/'carrier_exact.brep'),'new_CAD_source_manifest_sha256':sha(CAD/'cad_source_manifest.json'),
+             'generic_mapper_sha256':sha(P/'assemble_g7_load_ports.py'),'radial_probe_sha256':sha(P/'radial_pressure_probe.py'),
+             'independent_checker_sha256':sha(Path(__file__)),'checks':checks,
+             'max_force_balance_component_N':maxF,'max_moment_balance_component_Nm':maxM,
+             'max_port_force_residual_N':maxportF,'max_port_moment_residual_Nm':maxportM,
+             'old_native_facet_markers_or_geometry_source_reused':False,'all_target_wrenches_literal_unchanged':True,
+             'actual_contact_qualified':False,'strength_qualified':False,'physical_release':False,'FEM_executed_here':False}
+    save('verification_receipt.json',receipt)
+    radial=[]
+    for c in checks:
+        if 'radial_pressure' not in c['stem']:continue
+        for p in c['port_checks']:
+            if p['physical_tag'] not in [1,2,3,4]:continue
+            radial.append(f"| {c['stem']} | {p['name']} | {p['radial_operator_independent_rank']} | {p['independent_pressure_max_Pa']/1e6:.6f} | {p['independent_pressure_negative_nodes']} |")
+    area=[]
+    coarse=checks[0];fine=checks[2]
+    for cp,fp in zip(coarse['port_checks'],fine['port_checks']):
+        area.append(f"| {cp['name']} | {cp['exact_CAD_area_m2']:.9f} | {cp['mesh_area_independent_m2']:.9f} | {fp['mesh_area_independent_m2']:.9f} |")
+    md=f'''# G7 new OCC carrier load-port mapping
+
+Actual new CAD BREP `{receipt['new_CAD_brep_sha256']}` and independently supplied Gmsh physical groups are the geometry source. G4 `9a88efe8…` is used only for two literal conditional reaction allocations at unchanged interfaces: neutral case18 (equal cylinders, bearing roll/yaw reactions) and static-shoe case20, both with29430N upward at CoP[.25,.75,0]m and no module/robot gravity. No new geometry is tagged using old facet IDs or nearest pivots.
+
+Coarse(96645nodes/376820tet) and fine(247675nodes/1085296tet) both have actual generic nodal F/Fport and rank6 integral rigid gauges in `*_loads.npz`. Reports bind new BREP/mesh/physicalgroup hashes. Seven actual circle/plane regions are independently checked for new world-SI coordinates, radius, material-outward normals, area and centroid. Cylindrical vertices lie on true CAD circles; planar mesh chords and CAD areas are distinguished.
+
+| Actual active physical group | Exact new CAD area m² | Coarse triangle area m² | Fine triangle area m² |
+|---|---:|---:|---:|
+{chr(10).join(area)}
+
+Generic arbitrary-vector traction can transmit rank6 but is not a physical radial bearing/pin pressure distribution. Independent decomposition records its axial/tangential components and negative radial projections. The separate case18 probe instead uses the four actual new journal/pin groups, their complete real axial regions and a load-direction compressive nodal half surface. Pressure acts strictly opposite the analytic material normal: inward on the outer journal, outward on the pin bore, with no axial force, tangential force or negative pressure.
+
+The radial operator has rank4 (Fx/Fz/Mx/Mz); Fy and local-axis My are null invariants. Every literal source6D target is checked as reachable, and all original components remain unchanged. Four physical equations are solved by minimizing integral area*p² over the chosen nodal half surface. In these actual cases the unconstrained minimum is already nonnegative, so the fallback Dykstra branch was not needed. Independent negative tests adding Fy1N or My1Nm are outside the radial range and rejected. No target projection or total-force/moment repair is used.
+
+| Radial condition | Actual group | Operator rank | Nodal equivalent pressure maximum MPa | Negative-pressure nodes |
+|---|---|---:|---:|---:|
+{chr(10).join(radial)}
+
+These nodal equivalent **contact pressures are not hydraulic circuit pressures or bearing/roller contact ratings**. Minimum-pressure regularization is a chosen condition, not solved elastic contact. Real bearing loading width/pressure center/preload, both fork-face pin compliance/clearance, friction and actual reaction allocation remain unknown. Maximum pressure is mesh-sensitive, even though this particular coarse/fine regularized field changes little. The downstream mount remains arbitrary6D equivalent traction because actual bolts/foot attachment are omitted; the static shoe route also needs compression fit/retention/unload-release evidence.
+
+Independent vector summation against the original frozen G4 handoff, without importing either distribution solver, gives port-force residual≤{maxportF:.3g}N, port-moment residual≤{maxportM:.3g}Nm, whole-body force components≤{maxF:.3g}N and moments≤{maxM:.3g}Nm. Every loading array's node/tet/boundary/group payload exactly equals its new source mesh. All seven patches retain actual physical-group provenance. Integral C=RᵀW gives rank(CR)=6, removes only six rigid motions and is not a bearing clamp. The premise of a valid free-body elastic K with only six rigid modes belongs to root's separate mesh admission/FEM checks.
+
+Reproduction from repository root:
+
+```bash
+.venv/bin/python .scratch/gorilla_internal_g7_load_ports/assemble_g7_load_ports.py --mesh .scratch/gorilla_internal_g7_cad_carrier/coarse/carrier_tetra.npz --cad-source .scratch/gorilla_internal_g7_cad_carrier/carrier_exact.brep --cad-port-report .scratch/gorilla_internal_g7_cad_carrier/coarse/port_groups.json --prefix coarse
+.venv/bin/python .scratch/gorilla_internal_g7_load_ports/assemble_g7_load_ports.py --mesh .scratch/gorilla_internal_g7_cad_carrier/fine/carrier_tetra.npz --cad-source .scratch/gorilla_internal_g7_cad_carrier/carrier_exact.brep --cad-port-report .scratch/gorilla_internal_g7_cad_carrier/fine/port_groups.json --prefix fine
+.venv/bin/python .scratch/gorilla_internal_g7_load_ports/radial_pressure_probe.py --generic-prefix coarse
+.venv/bin/python .scratch/gorilla_internal_g7_load_ports/radial_pressure_probe.py --generic-prefix fine
+.venv/bin/python .scratch/gorilla_internal_g7_load_ports/verify_g7_snapshot.py
+```
+
+Only load mapping and independent conservation were executed here. Root chooses whether and how to apply these conditions after independent mesh admission. No FEM/optimization, bearing/pin/stop qualification, robot strength, payload/walking capacity, topology weight saving, source mutation, Git or GPU work is claimed.
+'''
+    (P/'load_port_review.md').write_text(md)
+    input_paths=[G4/'module_scene.json',G4/'optimization_handoff.json',CAD/'carrier_exact.brep',CAD/'cad_source_manifest.json',
+                 CAD/'coarse/carrier_tetra.npz',CAD/'coarse/port_groups.json',CAD/'fine/carrier_tetra.npz',CAD/'fine/port_groups.json',
+                 ROOT/'.scratch/gorilla_internal_g6_load_ports/assemble_load_ports.py']
+    files=[{'path':str(f.relative_to(P)),'bytes':f.stat().st_size,'sha256':sha(f)} for f in sorted(P.iterdir()) if f.is_file() and f.name!='manifest.json']
+    save('manifest.json',{'schema':'G7_new_CAD_load_ports_snapshot','created_UTC':datetime.now(timezone.utc).isoformat(),
+                         'inputs':[{'path':str(q),'sha256':sha(q)} for q in input_paths],'outputs':files,
+                         'manifest_self_hash_excluded':True,'physical_release':False,'FEM_executed_here':False})
+    print(json.dumps({'receipt_sha256':sha(P/'verification_receipt.json'),'manifest_sha256':sha(P/'manifest.json'),
+                      'review_sha256':sha(P/'load_port_review.md'),'max_port_F_N':maxportF,'max_port_M_Nm':maxportM,
+                      'max_body_F_N':maxF,'max_body_M_Nm':maxM},indent=2))
+
+if __name__=='__main__':main()

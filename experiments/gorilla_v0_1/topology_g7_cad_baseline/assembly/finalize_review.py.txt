@@ -1,0 +1,72 @@
+"""Freeze one-source G7 assembly and mass review; no edits outside this directory."""
+from pathlib import Path
+import hashlib,json,gzip
+import numpy as np
+OUT=Path(__file__).resolve().parent;ROOT=OUT.parents[1]
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def read(n):return json.loads((OUT/n).read_text())
+def dump(n,x):(OUT/n).write_text(json.dumps(x,ensure_ascii=False,indent=2,allow_nan=False)+'\n')
+a=read('assembly_receipt.json');m=read('same_scope_mass_difference.json');i=read('inventory_and_sources.json');e=read('boundary_export_identity.json');p=read('native_vs_exact_properties.json')
+assert a['native_resource_contract_pass'] and e['export_identity_qualified']
+assert len(a['pose_checks'])==4 and len(a['manual_shoe_withdrawal_21_samples'])==21
+assert len(i['parts'])==30 and len({r['id'] for r in i['parts']})==30
+assert sum(r['replacement'] for r in i['parts'])==1
+i['native_boundary_received']=True;i['new_boundary_sha256']=a['new_child_boundary_sha256'];i['actual_native_resource_contract_sha256']=sha(OUT/'native_resource_contract.json');i['actual_native_resource_contract_pass']=a['native_resource_contract_pass'];i['CAD_manifest_sha256']=a['CAD_manifest_sha256'];dump('inventory_and_sources.json',i)
+rows=[]
+for po in a['pose_checks']:
+ old=next(x for x in m['poses'] if x['id']==po['id'])['old_same_scope_mass_COM_fullI'][1];new=po['native_same_scope_mass_COM_fullI'][1]
+ assert new is not None
+ rows.append({'pose':po['id'],'q_deg':po['q_deg'],'old':old,'new_native':new,'mass_delta_kg':new['mass_kg']-old['mass_kg'],'COM_delta_m':(np.asarray(new['com_world_m'])-old['com_world_m']).tolist(),'fullI_delta_kg_m2':(np.asarray(new['inertia_at_COM_world_kg_m2'])-old['inertia_at_COM_world_kg_m2']).tolist()})
+dump('same_scope_native_mass_difference.json',{'assembly_receipt_sha256':sha(OUT/'assembly_receipt.json'),'exact_CAD_vs_old_receipt_sha256':sha(OUT/'same_scope_mass_difference.json'),'inventory_sha256':sha(OUT/'inventory_and_sources.json'),'scope':'Identical 30-piece G4 standalone pitch bench; 29 old source pieces unchanged; new true-circle planar exported child only; 2 SKF reference catalogue masses once. Exact CAD values are separately stored, not substituted silently for native boundary.','native_pose_mass_COM_fullI_differences':rows,'physical_accepted':False})
+with gzip.open(OUT/'candidate_scene.json.gz','rb') as f:scene=json.loads(f.read())
+raw_g4=ROOT/'.scratch/gorilla_internal_g4_pitch_module/module_scene.json';old_scene=json.loads(raw_g4.read_text());old_by_id={x['name']:x for x in old_scene['parts']}
+assert sum(q['name']!='g4_child_load_carrier' for q in scene['parts'])==29
+for q in scene['parts']:
+ if q['name']=='g4_child_load_carrier':continue
+ assert q==old_by_id[q['name']],f'Retained part changed: {q["name"]}'
+external=[raw_g4,ROOT/'.scratch/gorilla_internal_g4_pitch_module/report.json',ROOT/'.scratch/gorilla_internal_g7_cad_carrier/cad_source_manifest.json',ROOT/'.scratch/gorilla_internal_g7_cad_carrier/carrier_exact.brep',ROOT/'.scratch/gorilla_internal_g7_cad_carrier/carrier_exact.step',ROOT/'.scratch/gorilla_internal_g7_cad_carrier/build_cad_carrier.py',ROOT/'.scratch/gorilla_internal_g7_cad_carrier/coarse/carrier_boundary.npz',ROOT/'.scratch/gorilla_internal_g7_cad_carrier/coarse/carrier_tetra.npz',ROOT/'.scratch/gorilla_internal_g_material_contract/native_signed_material.py']
+external += [ROOT/'.scratch/gorilla_internal_g7_cad_carrier/mesh_cad_carrier.py',ROOT/'.scratch/gorilla_internal_g7_cad_carrier/coarse/mesh_receipt.json',ROOT/'.scratch/gorilla_internal_g7_cad_carrier/tool_runtime_manifest.json',ROOT/'.scratch/gorilla_internal_g7_cad_carrier/coarse/port_groups.json']
+sources=[{'path':str(x.relative_to(ROOT)),'sha256':sha(x),'size_bytes':x.stat().st_size} for x in external]
+cad=json.loads((ROOT/'.scratch/gorilla_internal_g7_cad_carrier/cad_source_manifest.json').read_text())
+mesh_receipt=json.loads(external[10].read_text());assert sources[9]['sha256']==mesh_receipt['producer_sha256'];assert sources[11]['sha256']==mesh_receipt['runtime_manifest_sha256'];assert sources[6]['sha256']==mesh_receipt['boundary_mesh_sha256'];assert sources[7]['sha256']==mesh_receipt['mesh_sha256']
+assert sources[0]['sha256']==a['G4_source_sha256'];assert sources[2]['sha256']==a['CAD_manifest_sha256'];assert sources[3]['sha256']==cad['CAD_files']['brep'];assert sources[4]['sha256']==cad['CAD_files']['step'];assert sources[6]['sha256']==a['new_child_boundary_sha256'];assert sources[7]['sha256']==a['tetra_npz_sha256']
+report=f'''# G7 single-carrier assembly review
+
+This replaces only `g4_child_load_carrier` in G4 source `9a88efe8…`. The other 29 parts, material assumptions, catalogue bearing masses, gravity owners, and stored four-pose transforms remain exactly unchanged. This is one pitch bench, not the new leg/foot illustration or an assembled robot. No exterior was adopted or changed.
+
+## New-source identity
+
+World-SI exact-circle OCC BREP/STEP is a new source. The coarse boundary is induced directly from 376,820 positive tetrahedra; all 139,606 supplied faces match the independently extracted outward cyclic orientation. Incidence is at most two. All 96,645 coordinates are retained, including 26,854 unused interior nodes. There was no normal repair, splitting, merging, tiny-face deletion, or reuse of the old resource/collision pass. The finite native signed-material contract passes all 30 parts, with one material root in the new child. This predicate is not a manufacturing or strength certificate.
+
+Boundary SHA: `{a['new_child_boundary_sha256']}`. Tetra SHA: `{a['tetra_npz_sha256']}`. Assembly receipt SHA: `{sha(OUT/'assembly_receipt.json')}`.
+
+## Actual assembly queries
+
+Neutral closed, neutral open, pitch +25° open, and pitch −25° open each have **zero** positive-volume native material pairs and **zero** bearing-reference-envelope pairs at `1e−10 m³`. The +X 0–280 mm shoe withdrawal has zero collisions in 21 samples. These are discrete queries; continuous motion, tolerance stacks, and tool/stow paths are not thereby qualified.
+
+Both neutral shoes have zero gap to parent and child, with intersection volume below the declared tolerance. Shoe release still requires full unload; lateral retention and loaded contact pressure are open. New child–bearing-envelope minimum gaps are about 13.864 µm, versus a fresh old-source query of 49.940 µm. This difference comes from true-circle child against the retained faceted bearing envelope and **is not an SKF fit/preload result**. Actual circle-circle nominal radial clearance remains a separate conditional dimensional assumption.
+
+## Geometry and same-scope mass
+
+Nominal axes and planar port positions moved 0 mm. Existing hollow-box, through-journal, keeper, and fork-pin void functions remain; no new route/axis void is introduced. True-circle faces replace old polygonal circles, so this does change local material and bore surfaces. Old 64-facet radial chord bounds are 24.33–66.25 µm for the documented pin bore, journal, boss, and fork rounds.
+
+| Scope | Old G4 | New exact CAD | New coarse boundary |
+|---|---:|---:|---:|
+| Child conditional steel mass | {m['old_child']['mass_range_kg'][1]:.9f} kg | {m['new_exact_CAD_child']['mass_range_kg'][1]:.9f} kg | {p['native_child']['mass_range_kg'][1]:.9f} kg |
+| Same 30-item neutral total | {rows[0]['old']['mass_kg']:.9f} kg | {m['poses'][0]['new_exact_CAD_same_scope_mass_COM_fullI'][1]['mass_kg']:.9f} kg | {rows[0]['new_native']['mass_kg']:.9f} kg |
+
+Exact-CAD child change is +8.301 g. Coarse tessellation differs from exact CAD by −0.427 g and volume −0.001336%. Its tetra-integrated COM/full inertia agrees with independently integrated boundary values within {max(abs(x) for x in e['COM_formula_difference_m']):.3g} m / {np.abs(e['fullI_formula_difference_kg_m2']).max():.3g} kg·m². Full per-piece and four-pose COM/full-I changes are in the JSON receipts; exact CAD and native-boundary values are never silently substituted.
+
+The two bearing masses are counted once (2.3 kg total); their inertia remains a uniform reference-envelope approximation. No oil, fittings, holding, hoses, retention/stow tools, upstream mounting bolts, full-leg or whole-robot mass was added or declared complete.
+
+## Remaining gates and next use
+
+Physical acceptance remains false: real bearing/contact traction and preload, paired-cylinder pressure/holding, load-dependent stiffness and local strength, bolt/keeper and shoe retention, upstream interfaces, continuous swept clearance, and full-leg/system integration are open. This source may support root's separate FE-boundary choice and same-version load mapping. No FE result or capacity claim is made here, and this limited evidence does not require a change to AA3 exterior.
+
+Reproduction order: `prepare_mass_and_inventory.py` → `check_replaced_assembly.py` → `verify_boundary_export.py` → `finalize_review.py`, using the source hashes in `snapshot_manifest.json`. Only the present G7 review directory is written.
+'''
+(OUT/'README.md').write_text(report)
+files=[{'path':x.name,'sha256':sha(x),'size_bytes':x.stat().st_size} for x in sorted(OUT.iterdir()) if x.is_file() and x.name!='snapshot_manifest.json']
+manifest={'scope':'Frozen G7 independent assembly review; one coarse true-circle CAD child replacement in unchanged G4 standalone pitch bench','original_G4_rewritten':False,'old_Git_or_canonical_or_exterior_changed':False,'fullbody_or_FE_or_physical_qualified':False,'candidate_scene_stored_sha256':sha(OUT/'candidate_scene.json.gz'),'candidate_scene_uncompressed_sha256':a['candidate_scene_uncompressed_sha256'],'files':files,'external_input_files':sources,'retained_inventory_29_exact_equality_verified':True,'source_export_producer_hash_verified_against_mesh_receipt':True,'source_snapshot_scope':'All new review artifacts retained locally; external exact source inputs remain referenced by immutable path+hash, not copied here'}
+dump('snapshot_manifest.json',manifest)
+print(json.dumps({'README_sha256':sha(OUT/'README.md'),'snapshot_sha256':sha(OUT/'snapshot_manifest.json'),'assembly_receipt_sha256':sha(OUT/'assembly_receipt.json'),'files':len(files),'external_inputs':len(sources),'retained_29_exact':True},indent=2))

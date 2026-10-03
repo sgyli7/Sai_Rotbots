@@ -1,0 +1,49 @@
+"""Independent scikit-fem gradients for actual G7 fields; no new solve."""
+from pathlib import Path
+import hashlib, json, sys
+import numpy as np
+
+OUT = Path(__file__).resolve().parent
+ROOT = OUT.parents[1]
+sys.path.insert(0, str(ROOT / '.scratch/gorilla_topology_runtime'))
+from skfem import Basis, ElementTetP1, ElementVector, MeshTet
+sha = lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()
+E, nu = 210e9, .3
+lam, mu = E*nu/((1+nu)*(1-2*nu)), E/(2*(1+nu))
+rows = []
+for level in ['coarse', 'fine']:
+    meshpath = ROOT / '.scratch/gorilla_internal_g7_cad_carrier' / level / 'carrier_tetra.npz'
+    fieldpath = OUT / (level + '_elastic_fields.npz')
+    mesh, fields = np.load(meshpath), np.load(fieldpath)
+    nodes, cells = mesh['points_m'], mesh['tetra']
+    basis = Basis(MeshTet(nodes.T, cells.T, sort_t=False), ElementVector(ElementTetP1()), intorder=1)
+    assert np.array_equal(basis.nodal_dofs.T.ravel(), np.arange(3*len(nodes)))
+    for key in fields.files:
+        if not key.endswith('_u_m'):
+            continue
+        case = key[:-4]
+        grad = basis.interpolate(fields[key].ravel()).grad[..., 0]
+        strain = (grad + grad.swapaxes(0, 1)) / 2
+        stress = 2*mu*strain
+        trace = np.einsum('iie->e', strain)
+        for i in range(3):
+            stress[i, i] += lam*trace
+        independent = np.array([stress[0,0], stress[1,1], stress[2,2], stress[0,1], stress[1,2], stress[2,0]]).T
+        old = fields[case + '_stress_Pa']
+        xx, yy, zz, xy, yz, zx = independent.T
+        vm = np.sqrt(.5*((xx-yy)**2 + (yy-zz)**2 + (zz-xx)**2) + 3*(xy*xy+yz*yz+zx*zx))
+        old_vm = fields[case + '_VM_Pa']
+        stress_error = float(np.linalg.norm(independent-old)/np.linalg.norm(old))
+        vm_error = float(np.linalg.norm(vm-old_vm)/np.linalg.norm(old_vm))
+        item = dict(level=level, case=case, mesh_sha256=sha(meshpath), fields_sha256=sha(fieldpath),
+                    independent_full_stress_relative_error=stress_error, independent_VM_relative_error=vm_error,
+                    numeric_field_comparison_passed=stress_error<1e-9 and vm_error<1e-9)
+        rows.append(item)
+        print(json.dumps(item), flush=True)
+        assert item['numeric_field_comparison_passed']
+    del basis, mesh, fields
+out = dict(scope='Actual canonical displacement gradients and all element stress/VM only; no physical acceptance.',
+           producer_sha256=sha(__file__), scikit_fem_version='12.0.2', results=rows,
+           actual_field_comparison_passed=all(r['numeric_field_comparison_passed'] for r in rows),
+           strength_contact_convergence_or_whole_robot_accepted=False)
+(OUT / 'independent_actual_fields.json').write_text(json.dumps(out, indent=2)+'\n')

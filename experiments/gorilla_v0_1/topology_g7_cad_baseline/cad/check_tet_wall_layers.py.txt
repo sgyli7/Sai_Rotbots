@@ -1,0 +1,47 @@
+"""Actual line/tetra clipping through selected uncut6mm wall regions, no mesh edits."""
+from pathlib import Path
+import itertools,json,hashlib
+import numpy as np
+O=Path(__file__).resolve().parent;C=np.array([-.06,.65,.30]);sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+
+def intervals(points,cells,start,direction,L):
+    pts=points[cells];lo=pts.min(1);hi=pts.max(1);end=start+direction*L
+    keep=np.all((lo<=np.maximum(start,end)+1e-12)&(hi>=np.minimum(start,end)-1e-12),axis=1)
+    pts=pts[keep];ids=np.flatnonzero(keep)
+    E=np.stack([pts[:,1]-pts[:,0],pts[:,2]-pts[:,0],pts[:,3]-pts[:,0]],axis=2)
+    aa=np.linalg.solve(E,(start-pts[:,0])[...,None])[...,0]
+    bb=np.linalg.solve(E,np.broadcast_to(direction,(len(pts),3))[...,None])[...,0]
+    aa=np.column_stack([1-aa.sum(1),aa]);bb=np.column_stack([-bb.sum(1),bb])
+    lower=np.zeros(len(pts));upper=np.full(len(pts),L);valid=np.ones(len(pts),bool)
+    for a,b in zip(aa.T,bb.T):
+        pos=b>1e-10;neg=b<-1e-10;zero=~(pos|neg)
+        lower[pos]=np.maximum(lower[pos],-a[pos]/b[pos]);upper[neg]=np.minimum(upper[neg],-a[neg]/b[neg]);valid[zero&a.__lt__(-1e-9)]=False
+    valid&=upper-lower>1e-10
+    data=sorted([[float(a),float(b),int(i)] for a,b,i in zip(lower[valid],upper[valid],ids[valid])])
+    chains=[]
+    for a,b,i in data:
+        if chains and a<=chains[-1]['end']+1e-8:
+            chains[-1]['end']=max(chains[-1]['end'],b);chains[-1]['tetra_indices'].append(i)
+        else:chains.append({'start':a,'end':b,'tetra_indices':[i]})
+    for c in chains:c['material_interval_length_m']=c['end']-c['start'];c['actual_intersected_tet_count']=len(c['tetra_indices'])
+    return chains
+
+rays=[]
+for y,z in itertools.product([-.0537,.0027,.0441],[-.06337,-.02731,.00889]):rays.append(('X',[-.10,y,z],[1.,0.,0.],.50))
+for x,z in itertools.product([.08471,.17731,.24789],[-.06931,-.03177,.02663]):rays.append(('Y',[x,-.18,z],[0.,1.,0.],.36))
+for x,y in itertools.product([.07731,.21793,.24411],[-.05791,.00579,.04493]):rays.append(('Z',[x,y,-.13],[0.,0.,1.],.24))
+outputs=[]
+for level in ['coarse','fine']:
+    D=O/level;path=D/'carrier_tetra.npz';d=np.load(path);rows=[]
+    for axis,loc,di,L in rays:
+        seg=intervals(d['points_m'],d['tetra'],C+loc,np.asarray(di),L)
+        rows.append({'axis':axis,'origin_world_m':(C+loc).tolist(),'direction':di,'material_intervals':seg})
+    vals=[c['actual_intersected_tet_count'] for r in rows for c in r['material_intervals']]
+    result={'level':level,'mesh_sha256':sha(path),'checker_sha256':sha(Path(__file__)),
+        '27_straight_wall_ray_samples':rows,'selected_material_interval_count':len(vals),
+        'minimum_intersected_tetra_count_per6mm_interval':min(vals),'maximum_intersected_tetra_count_per6mm_interval':max(vals),
+        'all_selected_material_intervals_match_nominal6mm':all(abs(c['material_interval_length_m']-.006)<1e-8 for r in rows for c in r['material_intervals']),
+        'all_selected_intervals_have_at_least_two_elements':min(vals)>=2,
+        'uniform_everywhere_thickness_or_FEM_convergence_proof':False}
+    (D/'wall_layer_checks.json').write_text(json.dumps(result,indent=2)+'\n');outputs.append({k:result[k] for k in ['level','selected_material_interval_count','minimum_intersected_tetra_count_per6mm_interval','maximum_intersected_tetra_count_per6mm_interval','all_selected_material_intervals_match_nominal6mm','all_selected_intervals_have_at_least_two_elements']});print(outputs[-1],flush=True)
+(O/'wall_layer_summary.json').write_text(json.dumps(outputs,indent=2)+'\n')

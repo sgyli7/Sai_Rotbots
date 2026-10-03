@@ -1,0 +1,176 @@
+"""World-SI G7 OCC physical-group load mapper; conditional, no contact solve.
+
+Geometry is supplied by a NEW CAD file, physical-group report and tagged mesh.
+Only pure wrench/gauge algebra is reused from frozen G6. Old facet numbers and
+old geometry source hashes are never used to select a G7 loading surface.
+"""
+from pathlib import Path
+import argparse
+import hashlib
+import importlib.util
+import json
+import numpy as np
+
+OUT=Path(__file__).resolve().parent
+ROOT=OUT.parents[1]
+G6=ROOT/'.scratch/gorilla_internal_g6_load_ports/assemble_load_ports.py'
+_spec=importlib.util.spec_from_file_location('frozen_g6_wrench_algebra',G6)
+algebra=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(algebra)
+
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+def save(path,data):path.write_text(json.dumps(data,indent=2,ensure_ascii=False,allow_nan=False)+'\n')
+
+def physical_group_rows(data):
+    """Normalize a source evidence JSON, preserving the original file hash."""
+    found={}
+    def walk(x):
+        if isinstance(x,dict):
+            tag=x.get('physical_tag',x.get('physical_id',x.get('tag')))
+            name=x.get('name',x.get('physical_name',x.get('id')))
+            if isinstance(tag,int) and tag in range(1,8) and isinstance(name,str):found[tag]=x
+            for v in x.values():walk(v)
+        elif isinstance(x,list):
+            for v in x:walk(v)
+    walk(data)
+    return found
+
+def regions_from_physical_groups(nodes,faces,tags,contract):
+    tri=nodes[faces];cross=np.cross(tri[:,1]-tri[:,0],tri[:,2]-tri[:,0])
+    area=np.linalg.norm(cross,axis=1)/2
+    if len(tags)!=len(faces):raise ValueError('one physical tag per actual boundary triangle required')
+    if np.any(area<=0):raise ValueError('degenerate boundary triangles; do not project/repair the input')
+    normals=cross/(2*area[:,None]);regions={};checks=[]
+    tolerance=contract['coordinate_check_tolerance_m']
+    for port in contract['ports']:
+        tag=port['physical_tag'];idx=np.flatnonzero(tags==tag)
+        if not len(idx):raise ValueError('actual physical group missing: '+port['name'])
+        q=tri[idx];normal=normals[idx];g=port['geometry'];w=np.zeros(len(nodes))
+        np.add.at(w,faces[idx].ravel(),np.repeat(area[idx]/3,3))
+        ids=np.flatnonzero(w>0)
+        regions[tag]={'nodes':ids,'lumped_area_m2':w[ids],'surface_face_indices':idx,
+                      'area_m2':float(area[idx].sum()),'surface_centroid_m':np.average(nodes[ids],axis=0,weights=w[ids])}
+        c={'physical_tag':tag,'name':port['name'],'owner':'new_G7_child_CAD_material','boundary_triangle_count':len(idx),
+           'nodes':len(ids),'mesh_surface_area_m2':regions[tag]['area_m2'],
+           'mesh_surface_centroid_m':regions[tag]['surface_centroid_m'].tolist(),
+           'actual_patch_min_xyz_m':q.min((0,1)).tolist(),'actual_patch_max_xyz_m':q.max((0,1)).tolist(),
+           'not_old_native_facet_marker':True,'geometry_expectation_source':'interface_contract; agreed G7 new-OCC port coordinates, checked against actual new nodes'}
+        if g['kind']=='cylinder':
+            a=np.asarray(g['axis_xz_m']);radius=np.linalg.norm(q[:,:,[0,2]]-a,axis=2)
+            radial=q.mean(1)-np.r_[a[0],0.,a[1]];radial[:,1]=0
+            radial/=np.linalg.norm(radial,axis=1)[:,None]
+            dot=np.einsum('ij,ij->i',normal,radial)*g['material_outward_radial_sign']
+            c.update({'nominal_true_CAD_circle_radius_m':g['radius_m'],
+                      'vertex_radius_min_max_m':[float(radius.min()),float(radius.max())],
+                      'max_vertex_radial_error_m':float(abs(radius-g['radius_m']).max()),
+                      'normal_material_radial_dot_min_max':[float(dot.min()),float(dot.max())],
+                      'normal_max_abs_axis_component':float(abs(normal[:,1]).max()),
+                      'linear_triangle_normal_is_chord_approximation_to_true_CAD':True,
+                      'actual_vertex_radial_geometry_matches_contract':bool(abs(radius-g['radius_m']).max()<tolerance),
+                      'axial_interval_matches_contract':bool(q[:,:,1].min()>=g['y_interval_m'][0]-tolerance and q[:,:,1].max()<=g['y_interval_m'][1]+tolerance),
+                      'mesh_material_outward_orientation_verified':bool(dot.min()>0),
+                      'contact_pressure_distribution_qualified':False})
+            c['geometry_region_matches_contract']=c['actual_vertex_radial_geometry_matches_contract'] and c['axial_interval_matches_contract']
+        else:
+            p=np.asarray(g['point_m']);n=np.asarray(g['normal']);dist=np.einsum('ijk,k->ij',q-p,n)
+            dot=normal@n;c.update({'plane_point_m':p.tolist(),'plane_normal':n.tolist(),
+                                  'max_point_plane_distance_m':float(abs(dist).max()),
+                                  'normal_material_outward_dot_min_max':[float(dot.min()),float(dot.max())],
+                                  'geometry_region_matches_contract':bool(abs(dist).max()<tolerance),
+                                  'mesh_material_outward_orientation_verified':bool(dot.min()>.999999),
+                                  'contact_pressure_distribution_qualified':False})
+        checks.append(c)
+    return regions,checks
+
+def assemble_case(nodes,faces,tags,tetra,contract,case):
+    source_F=sum(np.asarray(p['target_wrench_Fxyz_Mxyz'])[:3] for p in case['ports'])
+    source_M=sum(np.cross(p['load_center_world_m'],np.asarray(p['target_wrench_Fxyz_Mxyz'])[:3])+np.asarray(p['target_wrench_Fxyz_Mxyz'])[3:] for p in case['ports'])
+    if np.max(abs(source_F))>1e-6 or np.max(abs(source_M))>1e-7:
+        raise ValueError('source case not six-dimensionally balanced; refuse correction/projection of total imbalance')
+    regions,checks=regions_from_physical_groups(nodes,faces,tags,contract)
+    if not all(p['geometry_region_matches_contract'] for p in checks):
+        raise ValueError('actual new port coordinate/radius differs from declared same-interface load assumption')
+    total=np.zeros_like(nodes);forces=[];reports=[]
+    names={p['physical_tag']:p['name'] for p in contract['ports']}
+    for p in case['ports']:
+        tag=p['physical_tag'];w=np.asarray(p['target_wrench_Fxyz_Mxyz']);center=np.asarray(p['load_center_world_m'])
+        geometry=next(c['geometry'] for c in contract['ports'] if c['physical_tag']==tag)
+        if geometry['kind']=='cylinder':
+            if np.max(abs(center[[0,2]]-geometry['axis_xz_m']))>contract['coordinate_check_tolerance_m']:
+                raise ValueError('reference load centre no longer on actual expected journal/pin axis')
+            patch=regions[tag];low=nodes[patch['nodes'],1].min();high=nodes[patch['nodes'],1].max()
+            if center[1]<low-1e-7 or center[1]>high+1e-7:
+                raise ValueError('reference pressure/eye centre outside actual new axial port region')
+        else:
+            if abs((center-np.asarray(geometry['point_m']))@np.asarray(geometry['normal']))>contract['coordinate_check_tolerance_m']:
+                raise ValueError('reference load centre no longer lies on declared actual new port plane')
+        f,r=algebra.distribute_wrench(nodes,regions[tag],center,w[:3],w[3:])
+        r.update({'physical_tag':tag,'name':names[tag],'same_reaction_allocation_assumed':True})
+        total+=f;forces.append(f);reports.append(r)
+    C,R,gauge=algebra.rigid_mode_gauge(nodes,faces,tetra)
+    targets=case['ports']
+    F=total.sum(0);M=np.cross(nodes,total).sum(0)
+    report={'case_index':case['case_index'],'q_deg':case['q_deg'],'CoP_world_m':case['CoP_world_m'],
+            'load_factor':case['load_factor'],'allocation':case['mode'],'gravity_included':False,
+            'source_F_N':source_F.tolist(),'source_M_origin_Nm':source_M.tolist(),
+            'nodal_F_N':F.tolist(),'nodal_M_origin_Nm':M.tolist(),
+            'nodal_minus_source_F_N':(F-source_F).tolist(),'nodal_minus_source_M_origin_Nm':(M-source_M).tolist(),
+            'rigid_virtual_work_six_residual':(R.T@total.ravel()).tolist(),'minimal_rigid_gauge':gauge,
+            'port_reports':reports,'actual_new_CAD_geometry_checks':checks,
+            'all_port_coordinate_regions_verified':all(p['geometry_region_matches_contract'] for p in checks),
+            'all_raw_boundary_face_outward_orientations_verified':all(p['mesh_material_outward_orientation_verified'] for p in checks),
+            'FE_solver_executed':False,'physical_release':False,'strength_qualification':False,
+            'traction_scope':'Actual new CAD physicalgroup triangles; area-lumped vector traction plus per-port wrench-preserving correction. Arbitrary tangential/tensile components/couples are conditional, not solved physical contact. No projection of net six-dimensional imbalance.',
+            'inactive_actual_physicalgroups':[p for p in names if p not in [q['physical_tag'] for q in targets]]}
+    arrays={'points_m':nodes,'tetra':tetra,'boundary_faces':faces,'boundary_physical_tags':tags,
+            'F_xyz_N':total,'F_dofs_xyz_N':total.ravel(),'port_forces_xyz_N':np.asarray(forces),
+            'port_physical_tags':np.asarray([p['physical_tag'] for p in targets]),'gauge_rows':C,'rigid_mode_matrix':R}
+    return arrays,report
+
+def main():
+    p=argparse.ArgumentParser();p.add_argument('--mesh',type=Path,required=True)
+    p.add_argument('--cad-source',type=Path,required=True);p.add_argument('--cad-port-report',type=Path,required=True)
+    p.add_argument('--prefix',default='g7');p.add_argument('--case-indices',nargs='+',type=int,default=[18,20]);a=p.parse_args()
+    data=np.load(a.mesh);nodes=data['points_m'];tetra=data['tetra'];faces=data['boundary_faces'];tags=data['boundary_physical_tags']
+    contract=json.loads((OUT/'interface_contract.json').read_text());loadref=json.loads((OUT/'selected_load_cases.json').read_text())
+    if sha(a.cad_source) in [loadref['load_source_G4_scene_sha256'],loadref['load_source_G4_handoff_sha256']]:
+        raise ValueError('old G4 is a load reference only, not the new G7 CAD source')
+    evidence=json.loads(a.cad_port_report.read_text());records=physical_group_rows(evidence)
+    if evidence.get('cad_brep_sha256') and sha(a.cad_source)!=evidence['cad_brep_sha256']:
+        raise ValueError('new CAD source does not match actual port-group CAD hash')
+    if evidence.get('mesh_sha256') and sha(a.mesh)!=evidence['mesh_sha256']:
+        raise ValueError('new tagged mesh does not match actual CAD port-group mesh hash')
+    if evidence.get('world_SI') is False:raise ValueError('source tagged mesh is not world SI')
+    for q in contract['ports']:
+        record=records.get(q['physical_tag'])
+        if not record:raise ValueError('new CAD physical group evidence missing '+q['name'])
+        name=record.get('name',record.get('physical_name',record.get('id')))
+        if name!=q['name']:raise ValueError('new CAD physicalgroup name mismatch')
+    binding={'mesh_path':str(a.mesh.resolve()),'new_mesh_sha256':sha(a.mesh),
+             'new_CAD_source_path':str(a.cad_source.resolve()),'new_CAD_source_sha256':sha(a.cad_source),
+             'new_CAD_physicalgroup_report_path':str(a.cad_port_report.resolve()),'new_CAD_physicalgroup_report_sha256':sha(a.cad_port_report),
+             'load_reference_G4_scene_sha256':loadref['load_source_G4_scene_sha256'],
+             'load_reference_G4_handoff_sha256':loadref['load_source_G4_handoff_sha256'],
+             'selected_load_reference_sha256':sha(OUT/'selected_load_cases.json'),'interface_contract_sha256':sha(OUT/'interface_contract.json'),
+             'mapper_sha256':sha(Path(__file__)),'frozen_G6_pure_algebra_sha256':sha(G6),
+             'new_geometric_source_is_not_G4':True,'old_native_face_numbers_used':False,
+             'new_mesh_nodes':len(nodes),'new_mesh_tetra':len(tetra),'new_boundary_faces':len(faces),
+             'same_actual_interface_positions_and_reaction_allocation_assumed':True}
+    for ci in a.case_indices:
+        case=next(c for c in loadref['cases'] if c['case_index']==ci)
+        arrays,report=assemble_case(nodes,faces,tags,tetra,contract,case);report.update(binding)
+        for check in report['actual_new_CAD_geometry_checks']:
+            record=records[check['physical_tag']];cad_area=record.get('cad_area_m2',record.get('area_m2'))
+            check['new_CAD_source_physicalgroup_record']=record
+            check['new_CAD_exact_area_m2']=cad_area
+            if cad_area is not None:check['linear_mesh_minus_exact_CAD_area_m2']=check['mesh_surface_area_m2']-cad_area
+        stem=f'{a.prefix}_case{ci}'
+        np.savez_compressed(OUT/(stem+'_loads.npz'),**arrays)
+        report['load_array_sha256']=sha(OUT/(stem+'_loads.npz'));save(OUT/(stem+'_report.json'),report)
+        print(json.dumps({'stem':stem,'new_CAD_sha':binding['new_CAD_source_sha256'],'mesh_sha':binding['new_mesh_sha256'],
+                          'max_port_residual':max(abs(x) for pr in report['port_reports'] for x in pr['residual_Fxyz_Mxyz']),
+                          'net_F_N':report['nodal_F_N'],'net_M_Nm':report['nodal_M_origin_Nm'],
+                          'gauge_rank':report['minimal_rigid_gauge']['constraint_on_rigid_modes_rank'],
+                          'raw_boundary_face_orientation_verified':report['all_raw_boundary_face_outward_orientations_verified'],
+                          'report_sha256':sha(OUT/(stem+'_report.json'))},indent=2))
+
+if __name__=='__main__':main()

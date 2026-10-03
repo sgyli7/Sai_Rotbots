@@ -1,0 +1,37 @@
+"""Independent OCCT STEP solid/cavity and actual nominal wall/bores, no healing."""
+from pathlib import Path
+import json,hashlib,math
+import numpy as np
+from OCP.STEPControl import STEPControl_Reader
+from OCP.IFSelect import IFSelect_RetDone
+from OCP.IntCurvesFace import IntCurvesFace_ShapeIntersector
+from OCP.BRepClass3d import BRepClass3d_SolidClassifier
+from OCP.TopAbs import TopAbs_IN
+from OCP.gp import gp_Pnt,gp_Dir,gp_Lin
+O=Path(__file__).resolve().parent;C=np.array([-.06,.65,.30])
+r=STEPControl_Reader();assert r.ReadFile(str(O/'carrier_exact.step'))==IFSelect_RetDone;r.TransferRoots();solid=r.OneShape()
+def inside(p):return BRepClass3d_SolidClassifier(solid,gp_Pnt(*p),1e-9).State()==TopAbs_IN
+def ray(origin,direction,L):
+    ray=IntCurvesFace_ShapeIntersector();ray.Load(solid,1e-9);ray.Perform(gp_Lin(gp_Pnt(*origin),gp_Dir(*direction)),0,L)
+    assert ray.IsDone();t=sorted(ray.WParameter(i+1) for i in range(ray.NbPnt()));u=[]
+    for x in t:
+        if not u or abs(x-u[-1])>1e-8:u.append(x)
+    material=[]
+    for a,b in zip(u,u[1:]):
+        if inside(np.asarray(origin)+np.asarray(direction)*(a+b)/2):material.append([a,b])
+    return {'intersections_from_origin_m':u,'actual_material_intervals_m':material,'interval_lengths_m':[b-a for a,b in material]}
+rays=[]
+for axis,origin,di,L in [('X',[-.200,0,-.020],[1,0,0],.7),('Y',[.1375,-.2,-.030],[0,1,0],.4),('Z',[.1375,0,-.150],[0,0,1],.3)]:
+    q=ray(C+origin,di,L);rays.append({'axis':axis,'origin_world_m':(C+origin).tolist(),'direction':di,**q})
+probes=[]
+for name,local,expect in [('main_closed_cavity',[.1375,0,-.015],False),('main_side_wall',[.1375,.117,-.03],True),
+    ('negative_journal_hole',[0,-.150,0],False),('positive_journal_hole',[0,.150,0],False),
+    ('negative_pin_bore',[.320,-.122,.040],False),('positive_pin_bore',[.320,.198,.040],False),
+    ('journal_bolt_hole',[.022,.169,0],False),('negative_stop_lug',[.150,-.075,.075],True),('positive_stop_lug',[.150,.075,.075],True)]:
+    hit=inside(C+local);probes.append({'name':name,'point_world_m':(C+local).tolist(),'expected_material':expect,'actual_material':hit,'matches':hit==expect})
+out={'robot_id':'gorilla_v0_1','STEP_sha256':hashlib.sha256((O/'carrier_exact.step').read_bytes()).hexdigest(),
+    'checker_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'independent_engine':'OCCT7.9 STEP import, exact line/face intersection and solid classifier',
+    'selected_straight_box_section_rays':rays,'bores_cavity_and_material_probes':probes,
+    'all_selected_box_material_intervals_6mm':all(all(abs(x-.006)<1e-8 for x in r['interval_lengths_m']) for r in rays),
+    'all_material_probes_match':all(x['matches'] for x in probes),'everywhere_wall_or_strength_qualification':False}
+(O/'cad_section_checks.json').write_text(json.dumps(out,indent=2)+'\n');print('SECTIONS',out['all_selected_box_material_intervals_6mm'],'PROBES',out['all_material_probes_match'],flush=True)

@@ -1,0 +1,126 @@
+"""Conditional nonnegative, radial-only compression on new OCC port groups.
+
+An exact target wrench must lie in the radial operator's rank-four range.
+No target projection, tangential/axial force, tensile pressure or net repair.
+"""
+from pathlib import Path
+import argparse
+import hashlib
+import json
+import time
+import numpy as np
+import assemble_g7_load_ports as mapper
+
+OUT=Path(__file__).resolve().parent
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+def save(p,x):p.write_text(json.dumps(x,indent=2,ensure_ascii=False,allow_nan=False)+'\n')
+
+def nonnegative_minimum_pressure(A,b,maxiter=10000):
+    """Project the zero pressure field to {Au=b,u>=0} using Dykstra.
+
+    Target b stays literal. u=sqrt(area)*p minimizes integral area*p^2.
+    The last small equality solve uses only positive pressure variables.
+    """
+    G=A@A.T
+    if np.linalg.matrix_rank(G)!=4:raise ValueError('four-equation radial matrix rank lost')
+    unconstrained=A.T@np.linalg.solve(G,b)
+    if unconstrained.min()>=0:return unconstrained,{'iterations':0,'unconstrained_all_nonnegative':True,'conservation_refinement_used':False}
+    x=np.zeros(A.shape[1]);p=np.zeros_like(x);q=np.zeros_like(x);start=time.time()
+    for i in range(1,maxiter+1):
+        xp=x+p;y=xp+A.T@np.linalg.solve(G,b-A@xp);p=xp-y
+        yq=y+q;xn=np.maximum(0,yq);q=yq-xn
+        change=np.max(abs(xn-x));x=xn
+        error=np.max(abs(A@x-b))
+        if error<1e-7 and change<1e-7:break
+        if time.time()-start>30:break
+    free=x>max(1e-12,float(x.max())*1e-12)
+    AF=A[:,free]
+    if np.linalg.matrix_rank(AF)!=4:
+        return x,{'iterations':i,'failure':'positive-pressure equality span lost','conservation_refinement_used':False}
+    correction=AF.T@np.linalg.solve(AF@AF.T,b-A@x)
+    if np.min(x[free]+correction)<0:
+        return x,{'iterations':i,'failure':'equality refinement would require negative pressure','conservation_refinement_used':False}
+    x[free]+=correction
+    return x,{'iterations':i,'last_Dykstra_max_equality_error_N_equivalent':error,'last_max_u_change':change,
+              'unconstrained_negative_variables':int((unconstrained<0).sum()),'conservation_refinement_used':True,
+              'refinement_only_positive_pressure_dofs':True,'target_wrench_changed':False}
+
+def solve_port(nodes,region,geometry,center,target):
+    idx=region['nodes'];q=nodes[idx];area=region['lumped_area_m2']
+    radial=q-np.r_[geometry['axis_xz_m'][0],0.,geometry['axis_xz_m'][1]];radial[:,1]=0
+    radial/=np.linalg.norm(radial,axis=1)[:,None]
+    direction=-geometry['material_outward_radial_sign']*radial
+    load_dir=target[:3]/np.linalg.norm(target[:3]);half=direction@load_dir>1e-12
+    selected=np.flatnonzero(half);j=idx[half];Ai=area[half];d=direction[half];r=nodes[j]-center
+    ell=max(.01,float(np.linalg.norm(r,axis=1).max()));torque=np.cross(r,d)
+    full=np.vstack((d.T,torque.T/ell))*np.sqrt(Ai)[None]
+    singular,Urank=None,None
+    U,singular,_=np.linalg.svd(full,full_matrices=False);rank=int(np.sum(singular>singular[0]*1e-11))
+    b=np.r_[target[:3],target[3:]/ell]
+    reach_error=b-U[:,:rank]@(U[:,:rank].T@b)
+    allowed=bool(rank==4 and np.max(abs(reach_error))<1e-7 and abs(target[1])<1e-12 and abs(target[4])<1e-12)
+    report={'target_Fxyz_Mxyz':target.tolist(),'center_m':center.tolist(),'radial_operator_expected_rank':4,
+            'radial_operator_actual_rank':rank,'radial_scaled_singular_values':singular.tolist(),
+            'literal_full6D_target_range_error_F_Mscaled':reach_error.tolist(),'literal_target_reachable_in_radial_range':allowed,
+            'target_projected_or_changed':False,'all_port_nodes':len(idx),'compression_half_surface_nodes':len(j),
+            'whole_source_group_area_m2':float(area.sum()),'candidate_half_lumped_area_m2':float(Ai.sum()),
+            'loading_half_rule':'analytic compressive radial direction dot literal targetF direction >0; true new-CAD circles, actual Y node regions retained',
+            'pressure_or_contact_qualified':False}
+    output=np.zeros_like(nodes);p=np.zeros(len(nodes))
+    if not allowed:report['solver_success']=False;return output,p,report
+    # Explicit active physical components Fx,Fz,Mx,Mz; omitted Fy/My are known
+    # null invariants, checked on the literal full target before solving.
+    active=np.array([0,2,3,5]);A=full[active];bb=b[active]
+    u,solver=nonnegative_minimum_pressure(A,bb);pressure=u/np.sqrt(Ai)
+    forces=Ai[:,None]*pressure[:,None]*d;output[j]=forces;p[j]=pressure
+    actual=np.r_[forces.sum(0),np.cross(nodes[j]-center,forces).sum(0)]
+    residual=actual-target
+    report.update({'solver':solver,'actual_Fxyz_Mxyz':actual.tolist(),'full6D_residual_Fxyz_Mxyz':residual.tolist(),
+                   'minimum_pressure_Pa':float(pressure.min()),'maximum_pressure_Pa':float(pressure.max()),
+                   'area_weighted_mean_pressure_Pa':float(Ai@pressure/Ai.sum()),
+                   'area_weighted_rms_pressure_Pa':float(np.sqrt(Ai@(pressure*pressure)/Ai.sum())),
+                   'positive_pressure_nodes':int((pressure>0).sum()),'negative_pressure_nodes':int((pressure<0).sum()),
+                   'max_axial_nodal_force_N':float(abs(forces[:,1]).max()),
+                   'maximum_unwanted_tangential_force_N':float(np.linalg.norm(forces-np.sum(forces*d,axis=1)[:,None]*d,axis=1).max()),
+                   'solver_success':bool(pressure.min()>=0 and np.max(abs(residual[:3]))<1e-6 and np.max(abs(residual[3:]))<1e-7),
+                   'pressure_interpretation':'lumped nodal equivalent smoothness minimizer on a chosen half cylinder; no elastic bearing/pin/roller contact, clearance, pretension or load-sharing solved'})
+    return output,p,report
+
+def main():
+    ap=argparse.ArgumentParser();ap.add_argument('--generic-prefix',default='coarse');a=ap.parse_args()
+    base=json.loads((OUT/(a.generic_prefix+'_case18_report.json')).read_text())
+    data=np.load(OUT/(a.generic_prefix+'_case18_loads.npz'));nodes=data['points_m'];faces=data['boundary_faces'];tags=data['boundary_physical_tags'];tet=data['tetra']
+    contract=json.loads((OUT/'interface_contract.json').read_text());ref=json.loads((OUT/'selected_load_cases.json').read_text())
+    case=next(c for c in ref['cases'] if c['case_index']==18);regions,checks=mapper.regions_from_physical_groups(nodes,faces,tags,contract)
+    functions={p['physical_tag']:p for p in contract['ports']};total=np.zeros_like(nodes);fields=[];pressures=[];reports=[]
+    for c in case['ports']:
+        tag=c['physical_tag'];center=np.asarray(c['load_center_world_m']);target=np.asarray(c['target_wrench_Fxyz_Mxyz'])
+        if tag in [1,2,3,4]:
+            f,p,r=solve_port(nodes,regions[tag],functions[tag]['geometry'],center,target);r['physical_tag']=tag
+        else:
+            f,r=mapper.algebra.distribute_wrench(nodes,regions[tag],center,target[:3],target[3:]);p=np.zeros(len(nodes));r.update({'physical_tag':tag,'solver_success':True,'boundary_scope':'unknown downstream bolts/mount; retained arbitrary 6D traction, not radial-only'})
+        r['name']=functions[tag]['name'];total+=f;fields.append(f);pressures.append(p);reports.append(r)
+    netF=total.sum(0);netM=np.cross(nodes,total).sum(0)
+    C,R,gauge=mapper.algebra.rigid_mode_gauge(nodes,faces,tet)
+    stem=a.generic_prefix+'_case18_radial_pressure'
+    np.savez_compressed(OUT/(stem+'_loads.npz'),points_m=nodes,tetra=tet,boundary_faces=faces,boundary_physical_tags=tags,
+                        F_xyz_N=total,F_dofs_xyz_N=total.ravel(),port_forces_xyz_N=np.asarray(fields),
+                        port_pressure_Pa=np.asarray(pressures),port_physical_tags=np.asarray([x['physical_tag'] for x in case['ports']]),
+                        gauge_rows=C,rigid_mode_matrix=R)
+    report={'schema':'G7_conditional_compression_radial_pressure_probe','source_generic_report_sha256':sha(OUT/(a.generic_prefix+'_case18_report.json')),
+            'new_CAD_source_sha256':base['new_CAD_source_sha256'],'new_mesh_sha256':base['new_mesh_sha256'],
+            'new_CAD_physicalgroup_report_sha256':base['new_CAD_physicalgroup_report_sha256'],
+            'load_reference_G4_handoff_sha256':base['load_reference_G4_handoff_sha256'],'case_index':18,
+            'script_sha256':sha(Path(__file__)),'load_array_sha256':sha(OUT/(stem+'_loads.npz')),
+            'all_literal_port_targets_retained':True,'four_radial_ports_no_target_projection_or_new_tangential_axial_tensile_load':True,
+            'port_reports':reports,'nodal_total_F_N':netF.tolist(),'nodal_total_M_origin_Nm':netM.tolist(),
+            'rigid_virtual_work_six_residual':(R.T@total.ravel()).tolist(),'minimal_rigid_gauge':gauge,
+            'conditional_distribution_equations_satisfied':all(p['solver_success'] for p in reports),
+            'physical_release':False,'strength_qualification':False,'real_contact_qualified':False,
+            'limits':['full actual bare journal Y region is not a qualified catalogue bearing pressure band','both actual fork-bore surfaces participate; pin stiffness/clearance/shear load split unverified','nodal pressure smoothness is a selected quadratic regularization, not elasticity/contact compliance','pressure spikes require mesh/contact refinement; source moments are not dropped','downstream actual bolts/mount remain unknown arbitrary vector traction','no source/module or robot gravity; same G4 reaction-allocation assumption only','root alone chooses FEM boundary after independent mesh admission']}
+    save(OUT/(stem+'_report.json'),report)
+    print(json.dumps({'report_sha256':sha(OUT/(stem+'_report.json')),'literal_targets_met':report['conditional_distribution_equations_satisfied'],
+                      'netF_N':netF.tolist(),'netM_Nm':netM.tolist(),
+                      'ports':[{k:p.get(k) for k in ['name','radial_operator_actual_rank','solver_success','maximum_pressure_Pa','negative_pressure_nodes']} for p in reports]},indent=2))
+
+if __name__=='__main__':main()

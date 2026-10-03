@@ -1,0 +1,51 @@
+"""Package read-only G8 results; no changed CAD or FE solve."""
+from pathlib import Path
+import hashlib,json,numpy as np
+O=Path(__file__).resolve().parent;R=O.parents[1];sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();d=json.loads((O/'material_layout_review.json').read_text());c,f=d['case20_fields'];s=d['finite_section_budgets'];assert len(s)==4
+coarse_energy=c['integrated_element_strain_energy_J'];fine_energy=f['integrated_element_strain_energy_J'];cs=c['case20_FEM_summary'];fs=f['case20_FEM_summary'];ratio=lambda a,b:100*(a/b-1)
+text=f'''# G8 source-bound material layout review
+
+This reads G7 actual case20 fields and exact CAD, plus the unchanged other 29 G4 parts. It creates no CAD, exterior, new loads, FE solve or topology result. G7 sources remain frozen. The new leg/foot illustration has not been adopted by this single-carrier bench.
+
+Coarse max is at `{c['hotspot_world_m']}` m, near negative-Y stop toe corner `[.12,.5975,.36]`, CAD surfaces 20/22. Fine max is at `{f['hotspot_world_m']}` m, near **positive-Y** opposite toe `[.06,.7025,.36]`, CAD surfaces 23/25. These feature positions are from the actual CAD construction and tagged boundary triangles, not an exterior rendering. Stop load plane is z=.388; box top is z=.360, inner top z=.354; the lug overlaps the top skin down to z=.355, with no toe fillet.
+
+## What the fields say
+
+Case20 is the prescribed-reaction neutral static stop allocation, 3t, load factor1, CoP lateral +100mm. Each stop applies −30,411N; bearing reactions and the downstream mount preserve the complete six-dimensional wrench. Gravity and real contact are absent. Factor1.5, the other CoP side, four poses, drive cases and full-system loads remain required next validation scope; they are not removed because this field only samples one case.
+
+| Diagnostic | Coarse | Fine |
+|---|---:|---:|
+| Max element VM | {cs['element_VM_max_diagnostic_Pa']/1e6:.2f} MPa | {fs['element_VM_max_diagnostic_Pa']/1e6:.2f} MPa |
+| Compliance | {cs['compliance_J']:.4f} J | {fs['compliance_J']:.4f} J |
+| Rigid-removed max displacement | {cs['mass_weighted_rigid_removed_max_displacement_m']*1000:.4f} mm | {fs['mass_weighted_rigid_removed_max_displacement_m']*1000:.4f} mm |
+| Selected top-wall region energy fraction | {100*c['actual_top_wall_region']['strain_energy_J']/coarse_energy:.2f}% | {100*f['actual_top_wall_region']['strain_energy_J']/fine_energy:.2f}% |
+| 20mm neighborhood volume-average VM | {c['neighborhoods'][2]['VM_volume_weighted_mean_MPa']:.2f} MPa | {f['neighborhoods'][2]['VM_volume_weighted_mean_MPa']:.2f} MPa |
+
+The peak rises {ratio(fs['element_VM_max_diagnostic_Pa'],cs['element_VM_max_diagnostic_Pa']):.2f}% and moves between corresponding sharp corners. Compliance rises {ratio(fs['compliance_J'],cs['compliance_J']):.2f}%, so two levels do not establish stress/displacement convergence. A reentrant-corner singularity is a risk, not a proven explanation for all deformation. The selected top-wall region holds about 37–38% of total strain energy, while a 20mm sphere around each mesh's max holds only {100*c['neighborhoods'][2]['strain_energy_J']/coarse_energy:.2f}/{100*f['neighborhoods'][2]['strain_energy_J']/fine_energy:.2f}%. The load-introduction area is broader than one maximum element. Element-integrated energy matches the root energy ledger (half compliance), not a new capacity result.
+
+## Two bounded routes
+
+**A — finite local transition.** Retain loaded pad, port and body positions; compare an actual 6–12mm toe transition/fillet and 10–12mm local top patch. This tests whether smoothing and local section address the concentration. It may regularize a corner without fixing the compliant stop→lid→sidewall/floor→mount route. A full-path compliance and contact comparison is required; reducing one reported max is insufficient.
+
+**B — redistribute the wide closed-section material.** The next useful comparator is two continuous 4–6mm longitudinal webs directly beneath child-local y=±75mm stop pads, tied to top, floor and actual downstream end wall. Keep a conditional 4–6mm closed skin; do not freeze all old walls or the whole main cavity. Rib ends are tied to each corresponding inner end wall in the analytical budget, not floating. A manufactured/continuous junction, bores and tool exclusions must be built before FE. This is a material-allocation hypothesis, not a selected final architecture or an optimization outcome.
+
+Exact gross closed-box budget (including both endcaps): 6mm current outer box gives {s[2]['box_material_mass_kg']:.3f}kg before boss/bores/junction deductions. A 4mm closed skin plus two 6mm full-height webs gives {s[1]['gross_box_plus_rib_mass_kg']:.3f}kg; 6mm skin plus 6mm webs gives {s[3]['gross_box_plus_rib_mass_kg']:.3f}kg. These are **box-only gross budgets**, not child/robot mass claims. Existing child mass is separately about31.985kg.
+
+For ideal load directly over a 60mm rib footprint, a 6mm web gives84.475MPa compression at factor1,126.713MPa at1.5; the 4mm value is126.713/190.069MPa. This assumes actual direct load and supporting junction. Plate-buckling sensitivity spans k=.43 to4; for a6mm×138mm web that is154–1435MPa, demonstrating the importance of edge restraint instead of granting strength. The JSON also keeps box bending/torsion and cantilever top-strip challenges; they are conditional formulas, not substitutes for actual 3D/contact calculations.
+
+## Design space must be allocated
+
+The actual box inner dimensions413×228×138mm enclose12.995L. This is **not certified free volume**. Querying all29 retained components in the actual child frame at all four stored poses finds only the two moving pins intruding into this raw inner box,15.917cm³ combined at each pose. No claim is made that the rest is vacant throughout continuous motion or available for arbitrary material.
+
+Keep non-design interface patches and adequate surrounding bearing/pin/stop/mount boss material. Reserve actual journal through bore14.1mm, keeper hole/seat functions and20.2mm fork pin holes; preserve pin material and rod-eye movement. Pin extraction, bolt tools, shoe retention/stow, real wire/hose/fitting bend domains and loaded contact motion remain explicit missing exclusions. The main hollow box was created by the old producer; it is not independently established as an essential permanent void. Walls/ribs may be redistributed within the real 3D component envelope after these exclusions are closed. Outer armor AABB is not used as an available cavity.
+
+Root decides whether to build A or B next. Neither route changes the exterior or grants S355 strength, real bearing fit, whole-leg/robot capacity, fatigue, heat, drive, or operation qualification. Complete robot/system integration must resume after this component study.
+
+`material_layout_review.json` contains exact field/input hashes, tagged hot-neighborhood rows,29-item occupancy, finite section formulas and exclusions. `review_material_layout.py` is the bounded read-only reproducer.
+'''
+(O/'README.md').write_text(text)
+for source in d['sources']:assert sha(R/source['path'])==source['sha256']
+files=[{'path':p.name,'sha256':sha(p),'size_bytes':p.stat().st_size} for p in sorted(O.iterdir()) if p.is_file() and p.name!='snapshot_manifest.json']
+manifest={'scope':'Frozen G8 source-bound read-only macro material distribution review; no geometry change/FE/optimization/physical release','files':files,'input_files':d['sources'],'input_hashes_rechecked':True,'physical_or_strength_accepted':False,'external_G7_G4_sources_rewritten':False}
+(O/'snapshot_manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n')
+print(json.dumps({'README':sha(O/'README.md'),'review':sha(O/'material_layout_review.json'),'snapshot':sha(O/'snapshot_manifest.json'),'files':len(files),'inputs':len(d['sources'])},indent=2))

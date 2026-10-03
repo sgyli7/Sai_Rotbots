@@ -1,0 +1,46 @@
+"""Same-scope G4 inventory with one exact-CAD replacement; no geometry acceptance."""
+from pathlib import Path
+import copy
+import hashlib
+import json
+import numpy as np
+import trimesh
+
+OUT=Path(__file__).resolve().parent;ROOT=OUT.parents[1]
+G4=ROOT/'.scratch/gorilla_internal_g4_pitch_module/module_scene.json'
+CAD=ROOT/'.scratch/gorilla_internal_g7_cad_carrier/cad_source_manifest.json'
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def dump(name,d): (OUT/name).write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n')
+s=json.loads(G4.read_text());c=json.loads(CAD.read_text());assert sha(G4)==c['source_G4_scene_sha256']
+target='g4_child_load_carrier'
+def props(p):
+ m=trimesh.Trimesh(p['vertices_world_m'],p['faces'],process=False);r=m.mass_properties;V=float(r.volume)
+ masses=[V*p['density_kg_m3']]*3 if p.get('density_kg_m3') is not None else p['mass_range_kg']
+ return {'id':p['name'],'owner':p['body'],'role':p['role'],'mass_range_kg':masses,'com_world_m':r.center_mass.tolist(),'inertia_at_COM_world_range_kg_m2':[(r.inertia*x/V).tolist() for x in masses],'volume_m3':V,'scope':'Catalogue bearing mass and uniform envelope inertia' if p['role']=='bearing_reference_envelope' else 'Finite conditional steel density; material/load verification not passed'}
+def total(rows):
+ out=[]
+ for k in range(3):
+  mass=sum(r['mass_range_kg'][k] for r in rows);com=sum(np.asarray(r['com_world_m'])*r['mass_range_kg'][k] for r in rows)/mass;I=np.zeros((3,3))
+  for r in rows:
+   delta=np.asarray(r['com_world_m'])-com;I+=np.asarray(r['inertia_at_COM_world_range_kg_m2'][k])+r['mass_range_kg'][k]*(np.dot(delta,delta)*np.eye(3)-np.outer(delta,delta))
+  out.append({'case':['low','nominal','high'][k],'mass_kg':mass,'com_world_m':com.tolist(),'inertia_at_COM_world_kg_m2':I.tolist(),'inertia_eigenvalues':np.linalg.eigvalsh(I).tolist()})
+ return out
+base=[props(p) for p in s['parts']];old=next(r for r in base if r['id']==target)
+new={'id':target,'owner':'child','role':'finite_steel','mass_range_kg':[c['conditional_mass_kg']]*3,'com_world_m':c['center_world_m'],'inertia_at_COM_world_range_kg_m2':[c['inertia_at_COM_world_kg_m2']]*3,'volume_m3':c['actual_volume_m3'],'scope':'Exact OCC nominal CAD properties, conditional rho7850; not substitute for native-boundary resource check or physical qualification'}
+inventory=[]
+for p in s['parts']:
+ geom=hashlib.sha256(json.dumps({k:p[k] for k in ['name','vertices_world_m','faces']},sort_keys=True,separators=(',',':')).encode()).hexdigest()
+ inventory.append({'id':p['name'],'owner':p['body'],'role':p['role'],'replacement':p['name']==target,'old_geometry_sha256':geom,'retained_exact_old_arrays':p['name']!=target,'count':1,'gravity_owner':p['body']})
+assert len(inventory)==30 and len({r['id'] for r in inventory})==30
+assert sum(r['replacement'] for r in inventory)==1
+poses=[]
+for po in s['pose_scenes']:
+ rows=[props(p) for p in po['parts']];T=np.asarray(po['child_transform_world']);R=T[:3,:3];t=T[:3,3]
+ replacement=copy.deepcopy(new);replacement['com_world_m']=(R@np.asarray(new['com_world_m'])+t).tolist();replacement['inertia_at_COM_world_range_kg_m2']=[(R@np.asarray(c['inertia_at_COM_world_kg_m2'])@R.T).tolist()]*3
+ newrows=[replacement if r['id']==target else r for r in rows]
+ bt=total(rows);nt=total(newrows)
+ poses.append({'id':po['id'],'q_deg':po['q_deg'],'child_actual_transform_world':T.tolist(),'old_same_scope_mass_COM_fullI':bt,'new_exact_CAD_same_scope_mass_COM_fullI':nt,'nominal_mass_delta_kg':nt[1]['mass_kg']-bt[1]['mass_kg'],'nominal_COM_delta_m':(np.asarray(nt[1]['com_world_m'])-bt[1]['com_world_m']).tolist(),'nominal_fullI_delta_kg_m2':(np.asarray(nt[1]['inertia_at_COM_world_kg_m2'])-bt[1]['inertia_at_COM_world_kg_m2']).tolist(),'collision_or_geometry_pass_inherited':False})
+datum={'G4_scene_sha256':sha(G4),'G7_CAD_manifest_sha256':sha(CAD),'CAD_brep_sha256':c['CAD_files']['brep'],'CAD_step_sha256':c['CAD_files']['step'],'parts':inventory,'retained_old_parts':29,'replaced_parts':1,'total_parts':30,'unknowns_unchanged':s['unknowns'],'catalogue_bearing_count':2,'catalogue_bearing_mass_kg':2.3,'CAD_nominal_axis_or_pad_change_m':c['nominal_interface_geometry_changes_m'],'true_circle_radial_deviation_bounds_m':c['max_radial_sag_by_feature_m'],'outer_appearance_or_new_leg_design_adopted':False,'native_boundary_received':False,'physical_release':False}
+dump('inventory_and_sources.json',datum)
+dump('same_scope_mass_difference.json',{'old_child':old,'new_exact_CAD_child':new,'child_mass_delta_kg':new['mass_range_kg'][1]-old['mass_range_kg'][1],'child_COM_delta_m':(np.asarray(new['com_world_m'])-old['com_world_m']).tolist(),'child_fullI_delta_kg_m2':(np.asarray(new['inertia_at_COM_world_range_kg_m2'][1])-old['inertia_at_COM_world_range_kg_m2'][1]).tolist(),'poses':poses,'scope':'Same standalone G4 30-item pitch bench inventory; catalogue bearing mass once; exact CAD child only. No new hydraulic fluids/hoses/upstream or whole robot. Native surface discretization properties will be reported separately.','physical_release':False})
+print(json.dumps({'parts':30,'old_child_mass':old['mass_range_kg'][1],'new_exact_CAD_child_mass':new['mass_range_kg'][1],'delta_kg':new['mass_range_kg'][1]-old['mass_range_kg'][1],'old_total':poses[0]['old_same_scope_mass_COM_fullI'][1]['mass_kg'],'new_total':poses[0]['new_exact_CAD_same_scope_mass_COM_fullI'][1]['mass_kg'],'native_boundary_received':False}))

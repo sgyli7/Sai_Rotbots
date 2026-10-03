@@ -1,0 +1,122 @@
+"""Source-bound full 3D linear-elastic baseline; prescribed reactions, no contact.
+
+The original six gauge DOFs remove rigid body motion only. They are neither
+support design nor qualified bearings. Actual residuals at these DOFs are
+retained to test that no meaningful reaction was added. No force projection.
+"""
+from pathlib import Path
+import argparse, hashlib, importlib.util, json, sys, time
+import numpy as np
+from scipy.sparse import diags
+from scipy.sparse.linalg import cg
+from scipy.linalg import qr
+
+OUT=Path(__file__).resolve().parent;ROOT=OUT.parents[1]
+sys.path.insert(0,str(ROOT/'.scratch/gorilla_topology_runtime'))
+import pyamg
+base_path=ROOT/'.scratch/gorilla_internal_g6_root_fem/verify_tet_elasticity.py'
+spec=importlib.util.spec_from_file_location('verified_p1',base_path)
+p1=importlib.util.module_from_spec(spec);spec.loader.exec_module(p1)
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+
+def event(what,**values):print(json.dumps({'EVENT':what,**values}),flush=True)
+
+def main():
+ ap=argparse.ArgumentParser();ap.add_argument('--level',choices=['coarse','fine'],required=True)
+ ap.add_argument('--cases',nargs='+',default=['case18','case18_radial_pressure','case20'])
+ ap.add_argument('--matrix-comparison',action='store_true');ap.add_argument('--max-solve-seconds',type=float,default=300)
+ a=ap.parse_args();start=time.monotonic();admission_path=OUT/(a.level+'_mesh_admission.json')
+ admission=json.loads(admission_path.read_text());cad_dir=ROOT/'.scratch/gorilla_internal_g7_cad_carrier'
+ mesh_path=cad_dir/a.level/'carrier_tetra.npz';mesh_sha=sha(mesh_path)
+ if admission['structural_FE_admissible'] is not True or admission['mesh_sha256']!=mesh_sha:
+  raise ValueError('Rejected or stale mesh admission')
+ mesh=np.load(mesh_path);nodes,cells=mesh['points_m'],mesh['tetra']
+ load_dir=ROOT/'.scratch/gorilla_internal_g7_load_ports';loaded=[]
+ for case in a.cases:
+  prefix=a.level+'_'+case
+  path=load_dir/(prefix+'_loads.npz');report_path=load_dir/(prefix+'_report.json')
+  data=np.load(path);report=json.loads(report_path.read_text())
+  bound_mesh=report.get('new_mesh_sha256')
+  if bound_mesh!=mesh_sha or not np.array_equal(data['points_m'],nodes):raise ValueError('Load mesh identity mismatch')
+  if 'new_CAD_source_sha256' in report and report['new_CAD_source_sha256']!=sha(cad_dir/'carrier_exact.brep'):
+   raise ValueError('CAD load source mismatch')
+  loaded.append((case,np.asarray(data['F_xyz_N']).ravel(),path,report_path))
+ event('assemble',nodes=len(nodes),tets=len(cells),DOFs=3*len(nodes))
+ K,volumes,B,D,elem_dofs,_=p1.assemble(nodes,cells)
+ event('assembled',seconds=time.monotonic()-start,nonzeros=K.nnz)
+ matrix_comparison=None
+ if a.matrix_comparison:
+  independent=p1.independent_skfem(nodes,cells)
+  delta=K-independent
+  matrix_comparison=float(np.linalg.norm(delta.data)/np.linalg.norm(independent.data))
+  if matrix_comparison>1e-9:raise ValueError('Independent matrix mismatch')
+  del independent,delta
+  event('independent_matrix',relative_difference=matrix_comparison)
+ rigid,centre,length=p1.rigid_matrix(nodes)
+ _,_,pivots=qr(rigid.T,pivoting=True,mode='economic');fixed=pivots[:6]
+ assert np.linalg.matrix_rank(rigid[fixed])==6
+ mask=np.ones(K.shape[0]);mask[fixed]=0
+ P=diags(mask);scale=float(np.median(K.diagonal()))
+ A=(P@K@P+diags((1-mask)*scale)).tobsr(blocksize=(3,3))
+ near_null=rigid.copy();near_null[fixed]=0
+ event('amg_setup',pyamg_version=pyamg.__version__)
+ ml=pyamg.smoothed_aggregation_solver(A,B=near_null,symmetry='symmetric',
+      smooth=('jacobi',{'omega':4/3}),presmoother=('block_gauss_seidel',{'sweep':'symmetric'}),
+      postsmoother=('block_gauss_seidel',{'sweep':'symmetric'}),max_coarse=100,coarse_solver='pinv')
+ M=ml.aspreconditioner(cycle='V')
+ event('amg_ready',levels=len(ml.levels),operator_complexity=ml.operator_complexity(),seconds=time.monotonic()-start)
+ mass_lump=np.bincount(cells.ravel(),weights=np.repeat(volumes/4,4),minlength=len(nodes))
+ weights=np.repeat(mass_lump/mass_lump.sum(),3)
+ gauge_gram=(rigid.T*weights)@rigid
+ case_results=[];field_arrays={}
+ for case,F,load_path,load_report_path in loaded:
+  balance=np.linalg.norm(rigid.T@F)/(np.linalg.norm(F)+1e-30)
+  if balance>1e-8:raise ValueError('Unbalanced literal prescribed load; no projection allowed')
+  begin=time.monotonic();history=[];counter=[0]
+  def callback(u):
+   counter[0]+=1
+   if counter[0]%20==0:
+    rel=float(np.linalg.norm(A@u-F*mask)/np.linalg.norm(F*mask));history.append([counter[0],time.monotonic()-begin,rel])
+    event('solve_progress',case=case,iteration=counter[0],relative_residual=rel,seconds=time.monotonic()-begin)
+   if time.monotonic()-begin>a.max_solve_seconds:raise TimeoutError('Conditional solve time box exceeded')
+  event('solve',case=case,normalized_force_moment_balance=float(balance))
+  u,info=cg(A,F*mask,M=M,rtol=1e-9,atol=0,maxiter=2000,callback=callback)
+  residual=K@u-F
+  relative=float(np.linalg.norm(residual)/(np.linalg.norm(F)+1e-30))
+  canonical=u-rigid@np.linalg.solve(gauge_gram,(rigid.T*weights)@u)
+  strain=np.einsum('eij,ej->ei',B,u[elem_dofs]);stress=strain@D.T
+  xx,yy,zz,xy,yz,zx=stress.T
+  vm=np.sqrt(.5*((xx-yy)**2+(yy-zz)**2+(zz-xx)**2)+3*(xy*xy+yz*yz+zx*zx))
+  compliance=float(F@canonical)
+  energy2=float(np.einsum('ea,ab,eb,e->',strain,D,strain,volumes))
+  result={'case':case,'load_array_sha256':sha(load_path),'load_report_sha256':sha(load_report_path),
+     'normalized_literal_load_balance':float(balance),'CG_info':int(info),'iterations':counter[0],
+     'solve_seconds':time.monotonic()-begin,'full_original_equilibrium_relative_residual':relative,
+     'six_gauge_reaction_N':residual[fixed].tolist(),'maximum_gauge_reaction_N':float(abs(residual[fixed]).max()),
+     'compliance_J':compliance,'strain_energy_twice_J':energy2,
+     'energy_relative_error':abs(energy2-compliance)/(abs(compliance)+1e-30),
+     'mass_weighted_rigid_removed_max_displacement_m':float(np.linalg.norm(canonical.reshape((-1,3)),axis=1).max()),
+     'element_VM_max_diagnostic_Pa':float(vm.max()),'element_VM_p99_diagnostic_Pa':float(np.quantile(vm,.99)),
+     'solver_history':history,'numerical_solve_passed':bool(info==0 and relative<1e-7),
+     'contact_fit_stress_convergence_strength_or_physical_accepted':False}
+  case_results.append(result)
+  field_arrays[case+'_u_m']=canonical.reshape((-1,3))
+  field_arrays[case+'_stress_Pa']=stress
+  field_arrays[case+'_VM_Pa']=vm
+  event('case_complete',**{k:v for k,v in result.items() if k not in ['solver_history','six_gauge_reaction_N']})
+  # Preserve completed cases even if a later solver hits its time box.
+  report={'robot_id':'gorilla_v0_1','scope':'Source-bound prescribed-reaction 3D P1 elastic baseline; no real contact or strength release.',
+      'level':a.level,'mesh_sha256':mesh_sha,'mesh_admission_sha256':sha(admission_path),
+      'cad_brep_sha256':sha(cad_dir/'carrier_exact.brep'),'producer_sha256':sha(__file__),
+      'verified_P1_assembler_sha256':sha(base_path),'pyamg_version':pyamg.__version__,
+      'E_Pa':210e9,'nu':.3,'density_kg_m3':7850,'nodes':len(nodes),'tets':len(cells),'DOFs':len(mask),
+      'independent_skfem_matrix_relative_difference':matrix_comparison,
+      'six_gauge_fixed_dofs':fixed.tolist(),'gauge_is_not_support_design':True,
+      'force_projection_performed':False,'AMG_levels':len(ml.levels),'AMG_operator_complexity':ml.operator_complexity(),
+      'cases':case_results,'elapsed_seconds':time.monotonic()-start,
+      'gravity_dynamics_real_contact_and_fatigue_included':False,'mesh_stress_convergence_proven':False,
+      'topology_optimization_executed':False,'whole_robot_or_physical_accepted':False}
+  (OUT/(a.level+'_elastic_baseline.json')).write_text(json.dumps(report,indent=2)+'\n')
+  np.savez_compressed(OUT/(a.level+'_elastic_fields.npz'),**field_arrays)
+
+if __name__=='__main__':main()

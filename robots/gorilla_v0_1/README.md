@@ -57,3 +57,5 @@ C15 将前掌、足弓与后跟分开，取消跨段连续底板；卸载端姿�
 最新内部检查点：[G4 单关节／拓扑比较](../../experiments/gorilla_v0_1/internal_structure_g4_joint_study/README.md)与[G5 CPU 拓扑工具链](../../experiments/gorilla_v0_1/topology_g5_toolchain/README.md)。前者是未放行的实际内部bench，后者只校验数值工具；完整三维骨架和整机能力仍由[当前决定](design/current_decisions.md)继续推进。
 
 [G6 实际三维输入与网格拒绝证据](../../experiments/gorilla_v0_1/topology_g6_3d_inputs/README.md)：宽厚承力域与同源节点载荷入口；当前网格不适用于结构FEM，没有机器人减重或强度放行。
+
+[G7 实际CAD与三维条件基线](../../experiments/gorilla_v0_1/topology_g7_cad_baseline/README.md)：合法宽厚承力件、两档体网格及独立数值核验；已识别压撑顶墙传力风险，尚无骨架优化、强度或整机资格。

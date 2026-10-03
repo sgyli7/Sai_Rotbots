@@ -1,0 +1,56 @@
+"""Read-only actual G7 fields/features and G4 occupancy; finite analytical budgets only."""
+from pathlib import Path
+import json,hashlib,time,math
+import numpy as np
+from scipy.spatial import cKDTree
+import manifold3d as mf
+ROOT=Path(__file__).resolve().parents[2];OUT=Path(__file__).resolve().parent
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def dump(n,x):(OUT/n).write_text(json.dumps(x,ensure_ascii=False,indent=2,allow_nan=False)+'\n')
+start=time.monotonic();CAD=ROOT/'.scratch/gorilla_internal_g7_cad_carrier';FEM=ROOT/'.scratch/gorilla_internal_g7_root_fem';G4=ROOT/'.scratch/gorilla_internal_g4_pitch_module/module_scene.json'
+E=210e9;nu=.3;rho=7850;C=np.array([-.06,.65,.30]);rows=[];sources=[G4,CAD/'cad_source_manifest.json',CAD/'carrier_exact.brep',ROOT/'.scratch/gorilla_internal_g7_load_ports/selected_load_cases.json']
+for level in ['coarse','fine']:
+ meshpath=CAD/level/'carrier_tetra.npz';fieldpath=FEM/(level+'_elastic_fields.npz');reportpath=FEM/(level+'_elastic_baseline.json');n=np.load(meshpath);fields=np.load(fieldpath);report=json.loads(reportpath.read_text());assert sha(meshpath)==report['mesh_sha256'];sources += [meshpath,fieldpath,reportpath]
+ v=n['points_m'];t=n['tetra'];xyz=v[t];cent=xyz.mean(1);vol=np.abs(np.linalg.det(np.stack([xyz[:,1]-xyz[:,0],xyz[:,2]-xyz[:,0],xyz[:,3]-xyz[:,0]],axis=2)))/6;vm=fields['case20_VM_Pa'];stress=fields['case20_stress_Pa'];k=np.argmax(vm);hot=cent[k];loc=hot-C
+ # Energy density is invariant to the ordering among the last three shear entries.
+ s=stress[:,:3];tau=stress[:,3:];energy=(np.sum(s*s,1)-2*nu*(s[:,0]*s[:,1]+s[:,0]*s[:,2]+s[:,1]*s[:,2])+2*(1+nu)*np.sum(tau*tau,1))/(2*E)
+ boundary=n['boundary_faces'];bc=v[boundary].mean(1);tree=cKDTree(bc);_,idx=tree.query(hot,k=8);nearest=[]
+ for j in idx:nearest.append({'boundary_triangle':int(j),'physical_tag':int(n['boundary_physical_tags'][j]),'CAD_surface_tag':int(n['boundary_cad_surface_tags'][j]),'triangle_centroid_world_m':bc[j].tolist(),'centroid_distance_to_hotspot_m':float(np.linalg.norm(bc[j]-hot))})
+ nb=[]
+ for radius in [.005,.010,.020,.040]:
+  mask=np.linalg.norm(cent-hot,axis=1)<=radius
+  nb.append({'radius_m':radius,'tet_count':int(mask.sum()),'material_volume_m3':float(vol[mask].sum()),'VM_max_MPa':float(vm[mask].max()/1e6),'VM_volume_weighted_mean_MPa':float(np.dot(vm[mask],vol[mask])/vol[mask].sum()/1e6),'strain_energy_J':float(np.dot(energy[mask],vol[mask]))})
+ topmask=(cent[:,2]>=.35)&(cent[:,2]<=.365)&(cent[:,0]>=.03)&(cent[:,0]<=.16)&(cent[:,1]>=.535)&(cent[:,1]<=.765)
+ floor=(cent[:,2]>=.21)&(cent[:,2]<=.23);downstream=cent[:,0]>=.275
+ corners=[{'side':side,'x_edge':x,'y_edge':y,'corner_world_m':[x,y,.36]} for side,ys in [('negative_y',[.5525,.5975]),('positive_y',[.7025,.7475])] for x in [.06,.12] for y in ys];corner=min(corners,key=lambda x:np.linalg.norm(hot-x['corner_world_m']))
+ row={'level':level,'case20_FEM_summary':next(x for x in report['cases'] if x['case']=='case20'),'hotspot_tet':int(k),'hotspot_world_m':hot.tolist(),'hotspot_local_m':loc.tolist(),'nearest_surface_triangles_by_centroid_not_exact_projection':nearest,'neighborhoods':nb,'integrated_element_strain_energy_J':float(np.dot(energy,vol)),'actual_top_wall_region':{'volume_m3':float(vol[topmask].sum()),'strain_energy_J':float(np.dot(energy[topmask],vol[topmask])),'VM_max_MPa':float(vm[topmask].max()/1e6)},'floor_region':{'strain_energy_J':float(np.dot(energy[floor],vol[floor])),'VM_max_MPa':float(vm[floor].max()/1e6)},'downstream_mount_region':{'strain_energy_J':float(np.dot(energy[downstream],vol[downstream])),'VM_max_MPa':float(vm[downstream].max()/1e6)},'feature_assignment':'Stop lug toe at box top junction; nearest nominal corner independently selected per mesh. Pad load is applied on z=.388; stop lug overlaps outer top skin down to z=.355. No fillet exists in current exact CAD.','nearest_nominal_reentrant_corner':corner,'distance_to_nominal_reentrant_corner_m':float(np.linalg.norm(hot-corner['corner_world_m'])),'not_mesh_convergence_or_strength_release':True}
+ rows.append(row)
+ print('FIELD',level,'hot',hot.tolist(),'VM',vm[k]/1e6,'local energy',nb[2]['strain_energy_J'],flush=True)
+
+# Actual inner box bounds are a candidate design domain, not a free-cavity claim.
+src=json.loads(G4.read_text());cavity=mf.Manifold.cube([.413,.228,.138],center=True).translate([.0775,.65,.285]);occupancy=[]
+for po in src['pose_scenes']:
+ inv=np.linalg.inv(np.asarray(po['child_transform_world']));entries=[]
+ for p in po['parts']:
+  if p['name']=='g4_child_load_carrier':continue
+  v=np.asarray(p['vertices_world_m']);v=v@inv[:3,:3].T+inv[:3,3]
+  part=mf.Manifold(mf.Mesh64(np.asarray(v,dtype=np.float64,order='C'),np.asarray(p['faces'],dtype=np.uint64,order='C')));iv=float((part^cavity).volume())
+  if iv>1e-10:entries.append({'id':p['name'],'owner':p['body'],'role':p['role'],'inner_box_intersection_m3':iv,'bearing_envelope_not_real_material':p['role']=='bearing_reference_envelope'})
+ occupancy.append({'pose':po['id'],'existing_29_items_in_child_frame_intersecting_raw_inner_box':entries,'finite_positive_volume_sum_not_union_m3':sum(x['inner_box_intersection_m3'] for x in entries if not x['bearing_envelope_not_real_material']),'scope':'Only four stored poses; no continuous swept/tool/hose exclusion proof'})
+
+section=[]
+for skin in [.004,.006]:
+ B,H,L=.240,.150,.425;bi,hi=B-2*skin,H-2*skin;V=L*B*H-(L-2*skin)*bi*hi;Iy=(B*H**3-bi*hi**3)/12;Am=(B-skin)*(H-skin);J=4*Am**2/(2*(B+H-2*skin)/skin)
+ for rib in [.004,.006]:
+  ribV=2*.320*hi*rib;axial=30411/(.060*rib);buckles={str(k):k*math.pi**2*E/(12*(1-nu**2))*(rib/hi)**2/1e6 for k in [.43,4.]}
+  section.append({'skin_m':skin,'two_rib_thickness_m':rib,'outer_box_dimensions_m':[L,B,H],'box_material_mass_kg':rho*V,'two_longitudinal_full_height_rib_gross_mass_kg':rho*ribV,'gross_box_plus_rib_mass_kg':rho*(V+ribV),'rib_model_length_height_m':[.320,hi],'rib_axes_child_local_y_m':[-.075,.075],'rib_start_end_local_x_m':[.350-skin-.320,.350-skin],'endcap_and_downstream_mount_material_included':True,'I_y_m4_box_only':Iy,'I_y_m4_box_plus_ideal_ribs':Iy+2*rib*hi**3/12,'thin_closed_box_J_m4':J,'conditional_bending_sigma_MPa_for_9711p9Nm':9711.9/(Iy/(H/2))/1e6,'conditional_closed_wall_shear_MPa_for_2943Nm':2943/(2*Am*skin)/1e6,'rib_under_60mm_pad_conditional_compression_MPa':axial/1e6,'same_at_1p5_factor_MPa':1.5*axial/1e6,'ideal_plate_buckling_sigma_MPa_k_range':buckles,'gross_budget_no_hole_or_junction_subtractions':True,'not_qualification':True})
+strip=[]
+for b in [.060,.228,.425]:
+ for a in [.0165,.039]:
+  for t in [.006,.010,.012]:
+   sigma=6*30411*a/(b*t*t);delta=4*30411*a**3/(E*b*t**3)
+   strip.append({'effective_width_m':b,'lever_to_side_support_m':a,'top_skin_m':t,'cantilever_strip_sigma_MPa':sigma/1e6,'cantilever_strip_deflection_mm':delta*1000,'factor1p5_sigma_MPa':1.5*sigma/1e6,'scope':'Unqualified upper/challenge strip assumption, not 3D-load path or fitted FEM prediction'})
+reserved={'actual_interface_non_design':['7 CAD port patches and their supporting bearing/pin/stop/mount material neighborhoods','Journal radius29.95mm/through bore14.1mm, keeper bolt seat/hole functions; exact bearing fit remains conditional','Fork moving pin bore20.2mm and finite pin/rod-eye clearance through actual poses','Neutral shoe top contact planes and full unload +X withdrawal geometry'],'known_voids_not_automatic_full_volume_reservation':['Journal through bore and 6 keeper holes are actual native void functions','Fork pin holes are actual component/assembly void functions','Main 413x228x138mm cavity is not a demonstrated permanent functional void: material may be reassigned after actual inventory/motion/tool constraints'],'unclosed_required_exclusions':['Continuous motion of retained29, including actual pin/rod/cylinder hardware','Pin extraction, cup/keeper bolts and shoe retention/stow tool access','Actual hoses/wires and fittings bend radii/routing, presently absent','Loaded contact/preload movement, manufacturing/fillet minima and joints'],'optimization_domain_candidate':'Within actual carrier outer load box and interface neighborhoods; allocate closed skins and internal webs with 29-item exclusions. No outer armor AABB used as free cavity.','skin_budget_m':[.004,.006],'skin_is_conditional_not_source_approved':True,'existing_all_walls_non_design':False}
+output={'robot_id':'gorilla_v0_1','scope':'G8 read-only material layout analysis of G7 single carrier; no CAD/exterior change or actual topology optimization','sources':[{'path':str(p.relative_to(ROOT)),'sha256':sha(p)} for p in sources],'case20_fields':rows,'existing_other29_occupancy':occupancy,'actual_raw_inner_box_dimensions_m':[.413,.228,.138],'actual_raw_inner_box_volume_m3':.413*.228*.138,'material_domain_and_exclusions':reserved,'two_macro_routes':[{'route':'A_local_transition','hypothesis':'6–12mm toe transition/fillet and 10–12mm finite local top patch under stop; unchanged loaded plane/interfaces. Examine full stop-to-wall/mount energy and compliance; sharp-corner peak alone insufficient.','risk':'May regularize a mathematical reentrant stress concentration without removing compliant plate load introduction. No new CAD/result or promised strength.'},{'route':'B_redistributed_closed_section','hypothesis':'Two 4–6mm longitudinal internal webs beneath y±75mm stop pads, carry to floor and actual downstream end mount; closed skin 4–6mm conditional budget, bores/tools/hardware excluded. Interface bosses preserved, old whole cavity/skin not permanently frozen.','risk':'Requires actual continuous web junctions/holes/clearance and full-case FE; mass budget is gross analytical, not manufactured CAD or optimization result.'}],'finite_section_budgets':section,'thin_top_plate_strip_challenges':strip,'complete_load_scope_required':'Keep 3t, factor1 and1.5, CoP lateral±100mm and original four pose range; case20 observed fields are q0/factor1/CoPy+.1 only, no narrowing of next verification','mesh_convergence_strength_wholebody_or_physical_accepted':False,'elapsed_s':time.monotonic()-start}
+dump('material_layout_review.json',output)
+print('DONE',sha(OUT/'material_layout_review.json'),'occupancy',[(p['pose'],len(p['existing_29_items_in_child_frame_intersecting_raw_inner_box'])) for p in occupancy],flush=True)
