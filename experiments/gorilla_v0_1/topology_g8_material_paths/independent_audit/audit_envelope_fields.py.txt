@@ -1,0 +1,123 @@
+"""Independent actual-field postprocessing; no solver or stiffness assembly.
+
+Uses isolated scikit-fem MeshTet/P1 shape-function gradients on exact source
+nodes/cells. Root scripts and their strain/stress/solver functions are not
+imported. Source literal load/basis identity is checked independently.
+"""
+from pathlib import Path
+import argparse,hashlib,json,sys
+import numpy as np
+
+OUT=Path(__file__).resolve().parent;ROOT=OUT.parents[1]
+RUNTIME=ROOT/'.scratch/gorilla_topology_runtime';sys.path.insert(0,str(RUNTIME))
+from skfem import Basis,ElementTetP1,MeshTet
+import skfem
+RFEM=ROOT/'.scratch/gorilla_internal_g8_root_fem'
+LOADS=ROOT/'.scratch/gorilla_internal_g8_load_envelope'
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def save(p,d):Path(p).write_text(json.dumps(d,indent=2,ensure_ascii=False,allow_nan=False)+'\n')
+def vm(stress):
+    xx,yy,zz,xy,yz,zx=stress.T
+    return np.sqrt(((xx-yy)**2+(yy-zz)**2+(zz-xx)**2)/2+3*(xy**2+yz**2+zx**2))
+
+def audit(name,prefix,selected):
+    reportpath=RFEM/(name+'_envelope_baseline.json');fieldpath=RFEM/(name+'_basis_fields.npz')
+    r=json.loads(reportpath.read_text());lr=json.loads((LOADS/(prefix+'_report.json')).read_text())
+    loadpath=LOADS/(prefix+'_loads.npz');load=np.load(loadpath);fields=np.load(fieldpath)
+    meshpath=Path(lr['mesh_path']);mesh=np.load(meshpath);nodes=mesh['points_m'];cells=mesh['tetra']
+    identity={'mesh':r['mesh_sha256']==lr['mesh_sha256']==sha(meshpath),
+              'CAD':r['CAD_brep_sha256']==lr['CAD_source_sha256']==sha(lr['CAD_source_path']),
+              'load_array':r['load_array_sha256']==sha(loadpath)==lr['load_array_sha256'],
+              'load_report':r['load_report_sha256']==sha(LOADS/(prefix+'_report.json')),
+              'actual_basis_fields':r['basis_fields_sha256']==sha(fieldpath),
+              'root_producer_script':r['producer_sha256']==sha(RFEM/'solve_load_envelope.py'),
+              'verified_P1_script':r['verified_P1_assembler_sha256']==sha(ROOT/'.scratch/gorilla_internal_g6_root_fem/verify_tet_elasticity.py'),
+              'uniform_E_nu':r['E_Pa']==210e9 and r['nu']==.3,
+              'same_basis_indices':bool(np.array_equal(fields['basis_case_indices'],load['basis_case_indices'])),
+              'exact_same_coefficients':bool(np.array_equal(fields['original_case_coefficients'],load['original_case_coefficients']))}
+    if not all(identity.values()):raise ValueError('source/array identity failed: '+str(identity))
+    U=fields['U_m'];SB=fields['element_stress_Pa'];coeff=fields['original_case_coefficients'];ids=fields['basis_case_indices']
+    F=load['F_xyz_N_cases'];BF=load['basis_F_xyz_N_cases'];force_error=np.einsum('ncr,rk->nck',BF,coeff)-F
+    actual_cases_exact=bool(np.array_equal(BF,F[:,:,ids]));force_abs=float(abs(force_error).max());force_rel=float(np.linalg.norm(force_error)/np.linalg.norm(F));del force_error
+    receipt_case_indices=[b['original_case_index'] for b in r['basis_receipts']]
+    identities={'actual_load_case_columns':actual_cases_exact,'basis_receipt_indices_exact':receipt_case_indices==ids.tolist(),
+                'full42_cases_present':len(r['cases'])==42 and [c['case_index'] for c in r['cases']]==list(range(42)),
+                'all42_original_metadata_exact':all(all(rootrow[k]==loadrow[k] for k in ['case_index','q_deg','load_factor','CoP_world_m','mode']) for rootrow,loadrow in zip(r['cases'],lr['case_reports'])),
+                'force_reconstruction_tight':force_abs<1e-7 and force_rel<1e-10,
+                'root_declares_no_force_projection':r['force_projection_performed'] is False,
+                'root_declares_gauge_not_support':r['gauge_is_not_support'] is True,
+                'root_declares_no_gravity_or_real_contact':r['gravity_dynamics_contact_fatigue_included'] is False,
+                'root_declares_no_physical_acceptance':r['physical_or_whole_robot_accepted'] is False}
+    # Verify all42 summary metrics from the stored actual basis fields/own coefficients.
+    summary=[]
+    for i,rootrow in enumerate(r['cases']):
+        u=np.einsum('ncr,r->nc',U,coeff[:,i]);stress=np.einsum('ecr,r->ec',SB,coeff[:,i]);values=vm(stress)
+        peak=int(values.argmax());maxu=float(np.linalg.norm(u,axis=1).max());C=float(np.einsum('nc,nc->',F[:,:,i],u))
+        checks={'VM_max_relative':abs(float(values.max())-rootrow['element_VM_max_diagnostic_Pa'])/(float(values.max())+1e-30),
+                'VM_p99_relative':abs(float(np.quantile(values,.99))-rootrow['VM_p99_diagnostic_Pa'])/(float(np.quantile(values,.99))+1e-30),
+                'displacement_max_relative':abs(maxu-rootrow['rigid_removed_max_displacement_m'])/(maxu+1e-30),
+                'compliance_relative':abs(C-rootrow['compliance_J'])/(abs(C)+1e-30),
+                'maximum_tet_index_exact':peak==rootrow['maximum_VM_tetra_index'],
+                'maximum_centroid_error_m':float(abs(nodes[cells[peak]].mean(0)-rootrow['maximum_VM_centroid_m']).max())}
+        summary.append({'case_index':i,'VM_max_Pa':float(values.max()),'VM_p99_Pa':float(np.quantile(values,.99)),
+                        'displacement_max_m':maxu,'compliance_J':C,'maximum_tet_index':peak,'comparison':checks})
+    same42=all(all(v<1e-9 for k,v in q['comparison'].items() if k.endswith('_relative')) and q['comparison']['maximum_tet_index_exact'] and q['comparison']['maximum_centroid_error_m']<1e-12 for q in summary)
+    # Actual independent scalar MeshTet gradients; no root/P1 strain function.
+    actualmesh=MeshTet(nodes.T,cells.T,sort_t=False)
+    if not np.array_equal(actualmesh.p.T,nodes) or not np.array_equal(actualmesh.t.T,cells):raise ValueError('library changed actual node/cell order')
+    basis=Basis(actualmesh,ElementTetP1(),intorder=1)
+    if not np.array_equal(basis.nodal_dofs.ravel(),np.arange(len(nodes))):raise ValueError('unexpected scalar DOF order')
+    volumes=basis.dx.sum(1);grads=np.stack([basis.basis[k][0].grad[...,0].T for k in range(4)],axis=1)
+    E=r['E_Pa'];nu=r['nu'];mu=E/(2*(1+nu));lam=E*nu/((1+nu)*(1-2*nu));independent=[]
+    directpath=ROOT/'.scratch/gorilla_internal_g7_root_fem/coarse_elastic_fields.npz'
+    direct=np.load(directpath) if name=='g7' else None
+    for i in selected:
+        u=np.einsum('ncr,r->nc',U,coeff[:,i]);gradient=np.stack([basis.interpolate(u[:,k]).grad[...,0] for k in range(3)],axis=0)
+        strain=(gradient+gradient.swapaxes(0,1))/2;stress=2*mu*strain;trace=np.einsum('iie->e',strain)
+        for k in range(3):stress[k,k]+=lam*trace
+        sig=np.array([stress[0,0],stress[1,1],stress[2,2],stress[0,1],stress[1,2],stress[2,0]]).T
+        rootstress=np.einsum('ecr,r->ec',SB,coeff[:,i]);values=vm(sig);rootvm=vm(rootstress)
+        stress_rel=float(np.linalg.norm(sig-rootstress)/np.linalg.norm(rootstress));vm_rel=float(np.linalg.norm(values-rootvm)/np.linalg.norm(rootvm))
+        # Independent internal nodal forces from sigma*grad(N)*volume, no K build.
+        elemental=np.einsum('ije,eaj,e->eai',stress,grads,volumes);internal=np.zeros_like(nodes)
+        np.add.at(internal,cells.ravel(),elemental.reshape(-1,3));residual=internal-F[:,:,i]
+        residual_rel=float(np.linalg.norm(residual)/np.linalg.norm(F[:,:,i]));energy=float(np.einsum('ije,ije,e->',stress,strain,volumes));C=float(np.einsum('nc,nc->',F[:,:,i],u))
+        gauge=np.load(LOADS/(prefix+'_gauge.npz'));G=gauge['gauge_rows'];R=gauge['rigid_mode_matrix'];canonical_gauge=float(abs(G@u.ravel()).max());gauge_rank=int(np.linalg.matrix_rank(G@R))
+        row={'case_index':i,'independent_stress_relative_error':stress_rel,'independent_VM_relative_error':vm_rel,
+             'independent_internal_force_original_load_relative_residual':residual_rel,'independent_internal_force_max_residual_N':float(abs(residual).max()),
+             'independent_energy2_J':energy,'independent_compliance_J':C,'independent_energy_relative_error':abs(energy-C)/(abs(C)+1e-30),
+             'independent_VM_max_Pa':float(values.max()),'independent_VM_p99_Pa':float(np.quantile(values,.99)),
+             'independent_peak_tetra_index':int(values.argmax()),'canonical_integral_gauge_max':canonical_gauge,'canonical_rigid_gauge_rank':gauge_rank,
+             'numeric_field_check_passed':stress_rel<1e-9 and vm_rel<1e-9 and residual_rel<1e-7 and gauge_rank==6 and canonical_gauge<1e-10}
+        if direct is not None:
+            du=direct['case'+str(i)+'_u_m'];ds=direct['case'+str(i)+'_stress_Pa'];dv=direct['case'+str(i)+'_VM_Pa']
+            row['independent_gradient_vs_previous_direct_G7_stress_relative']=float(np.linalg.norm(sig-ds)/np.linalg.norm(ds))
+            row['basis_reconstruction_vs_previous_direct_G7_U_relative']=float(np.linalg.norm(u-du)/np.linalg.norm(du))
+            row['independent_VM_vs_previous_direct_G7_relative']=float(np.linalg.norm(values-dv)/np.linalg.norm(dv))
+            row['previous_direct_G7_fields_sha256']=sha(directpath)
+        independent.append(row)
+    worst_vm=max(summary,key=lambda q:q['VM_max_Pa']);worst_C=max(summary,key=lambda q:q['compliance_J']);worst_basis_vm=max(q['VM_max_Pa'] for q in summary if q['case_index'] in ids)
+    final={'schema':'G8_independent_actual_envelope_field_audit','name':name,'load_prefix':prefix,
+           'source_identity':identity,'exact_load_and_semantic_checks':identities,'all42_summary_reconstruction_passed':same42,
+           'independent_selected_actual_field_checks':independent,'case_summary_checks':summary,
+           'worst_VM_all42_case_index':worst_vm['case_index'],'worst_VM_all42_Pa':worst_vm['VM_max_Pa'],
+           'worst_compliance_all42_case_index':worst_C['case_index'],'worst_compliance_all42_J':worst_C['compliance_J'],
+           'maximum_basis_only_VM_Pa_for_comparison_not_replacement':worst_basis_vm,
+           'force_reconstruction_max_abs_N':force_abs,'force_reconstruction_relative':force_rel,'basis_case_indices':ids.tolist(),
+           'uniform_material_E_Pa':E,'uniform_material_nu':nu,'scikit_fem_version':skfem.__version__,
+           'source_hashes':{'mesh':sha(meshpath),'CAD':sha(lr['CAD_source_path']),'actual_loads':sha(loadpath),'load_report':sha(LOADS/(prefix+'_report.json')),
+                            'root_report':sha(reportpath),'root_basis_fields':sha(fieldpath),'root_producer':sha(RFEM/'solve_load_envelope.py'),
+                            'independent_verifier':sha(Path(__file__))},
+           'gauge_method_scope':'Root algebraically pins exactly six QR-selected DOFs spanning six rigid modes, then volume-weightedly removes rigid displacement. Independent integral canonical gauge and original full-load internal-force residual are checked; this is not a physical bearing clamp. No new stiffness solve is run.',
+           'root_original_K_basis_residuals':[b['original_K_relative_residual'] for b in r['basis_receipts']],
+           'root_basis_gauge_reaction_max_N':max(b['gauge_reaction_max_N'] for b in r['basis_receipts']),
+           'no_new_FE_solve_or_stiffness_matrix':True,'physical_contact_strength_or_robot_accepted':False,
+           'all_numeric_checks_pass':all(identity.values()) and all(identities.values()) and same42 and all(q['numeric_field_check_passed'] for q in independent)}
+    save(OUT/(name+'_field_audit.json'),final)
+    print(json.dumps({'name':name,'all_numeric_checks_pass':final['all_numeric_checks_pass'],'selected':independent,
+                      'worst_all42_VM_case':worst_vm['case_index'],'worst_all42_VM_MPa':worst_vm['VM_max_Pa']/1e6,
+                      'audit_sha256':sha(OUT/(name+'_field_audit.json'))},indent=2),flush=True)
+    if not final['all_numeric_checks_pass']:raise ValueError('independent actual-field audit rejected')
+
+if __name__=='__main__':
+    p=argparse.ArgumentParser();p.add_argument('--name',required=True);p.add_argument('--prefix',required=True);p.add_argument('--cases',nargs='+',type=int,default=[20]);a=p.parse_args();audit(a.name,a.prefix,a.cases)

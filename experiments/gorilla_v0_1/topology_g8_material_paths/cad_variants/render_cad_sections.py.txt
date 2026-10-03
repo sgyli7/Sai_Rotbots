@@ -1,0 +1,65 @@
+"""Same-scale actual CAD material sections, not an exterior or FE field image."""
+from pathlib import Path
+import hashlib,json
+import numpy as np
+from PIL import Image,ImageDraw,ImageFont
+from OCP.STEPControl import STEPControl_Reader
+from OCP.IFSelect import IFSelect_RetDone
+from OCP.BRepAlgoAPI import BRepAlgoAPI_Section
+from OCP.BRepAdaptor import BRepAdaptor_Curve
+from OCP.BRepClass3d import BRepClass3d_SolidClassifier
+from OCP.TopExp import TopExp_Explorer
+from OCP.TopAbs import TopAbs_EDGE,TopAbs_IN
+from OCP.TopoDS import TopoDS
+from OCP.gp import gp_Pnt,gp_Dir,gp_Pln
+
+O=Path(__file__).resolve().parent;C=np.array([-.06,.65,.30])
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+fig=Image.new('RGB',(2000,1260),'white');draw=ImageDraw.Draw(fig)
+font_path='/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'
+font=ImageFont.truetype(font_path,20);small=ImageFont.truetype(font_path,16)
+draw.text((30,15),'Gorilla G8 material-path comparators — unchanged axes and port planes',font=font,fill='#24343c')
+draw.text((30,45),'Lines: actual CAD sections. Grey: 2 mm material samples. No stress or capacity acceptance.',font=small,fill='#4f5960')
+scale=1800
+rows=[]
+for column,variant in enumerate(['a','b']):
+    path=O/variant/'carrier_exact.step';r=STEPControl_Reader();assert r.ReadFile(str(path))==IFSelect_RetDone
+    r.TransferRoots();shape=r.OneShape();classifier=BRepClass3d_SolidClassifier(shape)
+    for row,local_y in enumerate([.075,0.]):
+        ox=column*1000+70;oy=row*585+120
+        def pixel(xx,zz):return (ox+(xx+.100)*scale,oy+(.110-zz)*scale)
+        plane=gp_Pln(gp_Pnt(*(C+[0,local_y,0])),gp_Dir(0,1,0))
+        section=BRepAlgoAPI_Section(shape,plane,False);section.Build();assert section.IsDone()
+        curves=[];ex=TopExp_Explorer(section.Shape(),TopAbs_EDGE)
+        while ex.More():
+            edge=TopoDS.Edge_s(ex.Current());curve=BRepAdaptor_Curve(edge)
+            u=np.linspace(curve.FirstParameter(),curve.LastParameter(),121)
+            a=np.array([[curve.Value(float(t)).X(),curve.Value(float(t)).Y(),curve.Value(float(t)).Z()] for t in u])-C
+            curves.append(a);ex.Next()
+        x=np.arange(-.101,.381,.002);z=np.arange(-.101,.111,.002);mask=np.zeros((len(z),len(x)))
+        for j,zz in enumerate(z):
+            for i,xx in enumerate(x):
+                classifier.Perform(gp_Pnt(*(C+[xx,local_y,zz])),1e-9)
+                mask[j,i]=classifier.State()==TopAbs_IN
+        raster=Image.fromarray((255-mask*48).astype(np.uint8)).transpose(Image.Transpose.FLIP_TOP_BOTTOM).convert('RGB')
+        width=round(len(x)*.002*scale);height=round(len(z)*.002*scale)
+        raster=raster.resize((width,height),resample=Image.Resampling.NEAREST)
+        left,top=pixel(x[0]-.001,z[-1]+.001);fig.paste(raster,(round(left),round(top)))
+        draw.text((column*1000+30,row*585+85),f"Gorilla G8 {variant.upper()} | child-local Y = {local_y*1000:.0f} mm",font=font,fill='#24343c')
+        for xx in [-.100,0,.100,.200,.300]:
+            a=pixel(xx,-.100);b=pixel(xx,.110);draw.line([a,b],fill='#e8ebed',width=1)
+            draw.text((a[0]-18,a[1]+10),str(round(xx*1000)),font=small,fill='#4f5960')
+        for zz in [-.100,0,.100]:
+            a=pixel(-.100,zz);b=pixel(.380,zz);draw.line([a,b],fill='#e8ebed',width=1)
+            draw.text((a[0]-48,a[1]-10),str(round(zz*1000)),font=small,fill='#4f5960')
+        for curve in curves:draw.line([pixel(float(a[0]),float(a[2])) for a in curve],fill='#24343c',width=2)
+        draw.text((ox+300,oy+410),'Child-local X (mm)',font=small,fill='#4f5960')
+        draw.text((column*1000+20,oy-22),'Z (mm)',font=small,fill='#4f5960')
+        if row==0:
+            label='Actual R8 toe; local top wall total 10 mm' if variant=='a' else 'Two continuous 6 mm webs; original 6 mm skin'
+            draw.text((column*1000+65,oy+450),label,font=small,fill='#24343c')
+        rows.append({'variant':variant,'source_STEP_sha256':sha(path),'plane_normal_world':[0,1,0],'plane_world_y_m':float(C[1]+local_y),'section_edge_count':len(curves),'curve_samples_per_edge':121,'sampled_material_raster_spacing_m':.002,'exact_CAD_section_operation_succeeded':True})
+output=O/'actual_cad_sections.png';fig.save(output)
+manifest={'robot_id':'gorilla_v0_1','renderer_sha256':sha(__file__),'output_sha256':sha(output),'sections':rows,'same_local_scale':True,'geometry_modified':False,'physical_release':False,'appearance_proposal':False}
+(O/'section_render_manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+print('CAD sections',sha(output),flush=True)

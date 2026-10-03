@@ -1,0 +1,89 @@
+"""Bind A/B actual sources, checks and material sections; no geometry/FE mutation."""
+from pathlib import Path
+from datetime import datetime,timezone
+import argparse,hashlib,json
+
+O=Path(__file__).resolve().parent
+ROOT=next(p for p in O.parents if (p/'sai_robots_engineering_rules.md').is_file())
+G7=ROOT/'.scratch/gorilla_internal_g7_cad_carrier'
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+read=lambda p:json.loads(Path(p).read_text())
+parser=argparse.ArgumentParser();parser.add_argument('--verify',action='store_true');args=parser.parse_args()
+if args.verify:
+    freeze=read(O/'freeze_manifest.json')
+    for row in freeze['inventory']:
+        path=O/row['relative_path'];assert sha(path)==row['sha256'],path
+    for row in freeze['external_inputs']:
+        assert sha(ROOT/row['repository_relative_path'])==row['sha256'],row
+    print('FROZEN_VERIFIED',len(freeze['inventory']),sha(O/'freeze_manifest.json'));raise SystemExit
+assert not (O/'freeze_manifest.json').exists(),'Existing branch is frozen; no automatic re-signing.'
+base=read(G7/'cad_source_manifest.json');rows=[]
+section=read(O/'section_render_manifest.json')
+assert section['output_sha256']==sha(O/'actual_cad_sections.png')
+assert section['renderer_sha256']==sha(O/'render_cad_sections.py')
+for variant in ['a','b']:
+    d=O/variant;cad=read(d/'cad_source_manifest.json');mesh=read(d/'coarse/mesh_receipt.json')
+    exact=read(d/'independent_cad_checks.json');gate=read(d/'coarse/new_material_gate.json');assembly=read(d/'assembly_review/assembly_receipt.json')
+    assert cad['producer_sha256']==sha(O/'build_variants.py')
+    assert cad['CAD_files']['brep']==sha(d/'carrier_exact.brep') and cad['CAD_files']['step']==sha(d/'carrier_exact.step')
+    assert mesh['producer_sha256']==sha(O/'mesh_variant.py')
+    assert mesh['cad_source_manifest_sha256']==sha(d/'cad_source_manifest.json')
+    assert mesh['mesh_sha256']==sha(d/'coarse/carrier_tetra.npz')
+    assert gate['native_boundary_sha256']==sha(d/'coarse/carrier_native_boundary.npz')
+    assert exact['STEP_sha256']==sha(d/'carrier_exact.step')
+    assert assembly['CAD_manifest_sha256']==sha(d/'cad_source_manifest.json')
+    assert section['sections'][0 if variant=='a' else 2]['source_STEP_sha256']==sha(d/'carrier_exact.step')
+    area_deltas={i:row['actual_surface_area_m2']-base['ports'][i]['actual_surface_area_m2'] for i,row in cad['ports'].items()}
+    properties={k:cad[k] for k in ['actual_volume_m3','conditional_mass_kg','density_kg_m3','center_world_m','inertia_at_COM_world_kg_m2','net_added_material_vs_G7_m3','net_added_mass_vs_G7_kg']}
+    row={'variant':variant,'variant_parameters':cad['variant_parameters'],'source_CAD_brep_sha256':sha(d/'carrier_exact.brep'),'source_CAD_STEP_sha256':sha(d/'carrier_exact.step'),
+         'CAD_manifest_sha256':sha(d/'cad_source_manifest.json'),'coarse_mesh_sha256':sha(d/'coarse/carrier_tetra.npz'),
+         'material_properties':properties,'port_area_delta_vs_G7_m2':area_deltas,'nominal_port_position_delta_m':0.,
+         'OCP_raw_valid_single_solid':exact['raw_BRepCheck_valid'] and exact['actual_solid_count']==1,
+         'original_outer_component_AABB_delta_m':exact['maximum_outer_component_AABB_delta_m'],
+         'actual_constant_radius_8mm_toe_faces':len(exact['actual_radius_8mm_faces']),
+         'functional_holes_and_material_probes_match':exact['all_probes_match'],
+         'nodes':mesh['points'],'tetra':mesh['tetra'],'minimum_mean_ratio':mesh['mean_ratio_quality_quantiles'][0],
+         'minimum_SICN':mesh['minSICN_quantiles'][0],'linear_CAD_volume_error_fraction':mesh['linear_mesh_volume_relative_error_vs_CAD'],
+         'new_native_signed_material_gate_pass':gate['signed_native_material_gate']['resource_contract_pass'],
+         'full_30_part_resource_gate_pass':assembly['native_resource_contract_pass'],
+         'assembly_receipt_sha256':sha(d/'assembly_review/assembly_receipt.json'),
+         'four_discrete_pose_intersections':[{'pose':x['id'],'material_pairs':x['native_material_pairs'],'bearing_reference_pairs':x['bearing_reference_pairs']} for x in assembly['pose_checks']],
+         'neutral_expected_stop_contact_queries':assembly['pose_checks'][0]['stop_contact_queries'],
+         'shoe_withdrawal_clear_samples':sum(not x['intersections'] for x in assembly['manual_shoe_withdrawal_21_samples']),
+         'maximum_pose_material_volume_invariance_error_m3':max(x['maximum_piece_volume_invariance_error_m3'] for x in assembly['pose_checks']),
+         'collision_threshold_m3':assembly['collision_threshold_m3'],'physical_accepted':False}
+    rows.append(row)
+payload={'robot_id':'gorilla_v0_1','scope':'Two bounded same-envelope internal carrier material-path CAD comparisons, not exterior/whole leg/topology optimization.',
+         'G7_original_BREP_sha256':sha(G7/'carrier_exact.brep'),'G7_original_freeze_sha256':sha(G7/'freeze_manifest.json'),
+         'G8_material_review_sha256':sha(ROOT/'.scratch/gorilla_internal_g8_material_layout_review/material_layout_review.json'),
+         'tool_runtime_manifest_sha256':sha(G7/'tool_runtime_manifest.json'),'finalizer_sha256':sha(__file__),'variants':rows,
+         'legacy_CAD_manifest_field_warning':{'fields':['true_circle_delta_volume_m3','true_circle_delta_mass_kg','true_circle_relative_volume_delta'],
+             'actual_meaning':'Copied legacy field names contain total net material differences relative to original G4 faceted source, including the new G8 pad/fillet or ribs. They are NOT the isolated true-circle delta. Raw CAD manifests remain byte-stable for the in-progress load mapping.',
+             'use_for_G8_comparison':['actual_volume_m3','conditional_mass_kg','net_added_material_vs_G7_m3','net_added_mass_vs_G7_kg']},
+         'source_geometry_checks_not_inherited':True,'all_bores_applied_after_actual_fusion':True,
+         'no_fix_normals_healing_hole_filling_or_sliver_deletion':True,'material_density_not_scaled':True,
+         'no_new_exterior_or_legs':True,'no_FE_or_topopt_in_this_branch':True,
+         'selected_same_external_load_assumption_requires_new_ports_mapping_and_solve':True,
+         'remaining_unqualified':['Complete 42-case force/moment scope with current CAD and mass','Real bearing/pin contact, fit and pressure centers','Gravity, pressure, material/process, stiffness and stress convergence','Continuous motion, shoe retention and stow, tool/hose/fastener installation exclusions','Full Gorilla structure/system integration'],
+         'physical_release':False,'whole_robot_or_appearance_release':False}
+(O/'report.json').write_text(json.dumps(payload,indent=2)+'\n')
+lines=['# Gorilla G8 — bounded carrier material-path comparisons','','Both actual variants produced valid single-solid raw STEP/BREP and a positive quality coarse volume mesh. These are same-envelope internal comparators for root physics evaluation; generation, material-resource checks and zero sampled intersections do not release strength or whole Gorilla capability.','','| Variant | Actual material path | Conditional steel mass | Delta vs G7 | Tetra | Min mean ratio / SICN |','|---|---|---:|---:|---:|---:|']
+for r in rows:
+    detail='Eight actual OCC R8 toe cylinders; local top wall total10mm' if r['variant']=='a' else 'Original6mm skin + two continuous6mm webs at Y±75mm'
+    lines.append(f"| {r['variant'].upper()} | {detail} | {r['material_properties']['conditional_mass_kg']:.6f} kg | +{r['material_properties']['net_added_mass_vs_G7_kg']:.6f} kg | {r['tetra']} | {r['minimum_mean_ratio']:.4f} / {r['minimum_SICN']:.4f} |")
+lines.extend(['','A adds the top patch inward from the original6mm skin to a total10mm within its90×75mm footprints. Selected exact rays measure6mm floor and10mm top at the patch. Its toe transition is actually constructed by OCC fillet; independent OCCT7.9 finds eight radius8mm cylinder faces. Neither variant moves the axes, seven port planes/cylinders or original component AABB. All seven actual port areas match G7 exactly.','',
+'B webs run between both existing end walls and join the top/floor. Exact probes and one material solid demonstrate the finite connections. Functional shaft/pin/keeper bores are subtracted after fusion; journal bore and all pin/keeper probes remain empty. The center/adjacent main cavity stays open. B adds material; it is neither optimized nor a mass-reduction result.','',
+'Each newly generated signed material boundary passes the strong gate, and the newchild plus retained29components passes30/30 resource checks. Four actual stored transforms (neutral stop closed/open and±25°) have zero positive-volume material/reference intersections at1e-10m³ threshold. Twenty-one sampled+X shoe withdrawal positions are clear. Closed neutral stop gaps are zero without positive material intersection. Constant material-volume errors are below6e-18m³. These are discrete geometry checks, not continuous motion/contact qualifications.','',
+'The same-scale `actual_cad_sections.png` is drawn from actual STEP/plane sections at child-localY=+75mm and0. Grey fill is a2mm exact solid-classifier sampling raster; section lines sample the actual CAD curves. It is an internal material diagram, not a new leg-foot appearance proposal or a stress image.','',
+'**Legacy metadata caution:** copied `true_circle_delta_*` CAD-manifest fields now contain total material differences relative to oldG4, including the patch/ribs. They must not be called circle-only differences. For this comparison use `net_added_material_vs_G7_m3`, `net_added_mass_vs_G7_kg` and the complete actual mass/volume. The manifest bytes were kept stable for the load mapper; this report binds that interpretation explicitly.','',
+'Build entry: use the frozen G7 isolated runner with `build_variants.py --variant a/b` in a fresh copied branch. Then `mesh_variant.py --variant a/b` gives the same G7 coarse field settings and physical-group IDs1–7. Output directories refuse overwriting. Current sources/meshes are frozen, so do not rerun here. `cad_surface_helpers.py` must accompany the mesher. Checkers and original source references are retained.','',
+'No FE or topology optimization was run by this branch. Root owns the same42-case force/moment comparison. Material/process, bearing/pin contact/fit, real pressure centers, gravity, stiffness/stress convergence, service exclusions, continuous motion and full-system integration remain unqualified. G7 frozen sources and robot exterior are unchanged.'])
+(O/'report.md').write_text('\n'.join(lines)+'\n')
+external=[G7/'carrier_exact.brep',G7/'carrier_exact.step',G7/'cad_source_manifest.json',G7/'freeze_manifest.json',G7/'tool_runtime_manifest.json',G7/'run_isolated.py',G7/'build_cad_carrier.py',G7/'mesh_cad_carrier.py',ROOT/'.scratch/gorilla_internal_g4_pitch_module/module_scene.json',ROOT/'.scratch/gorilla_internal_g8_material_layout_review/material_layout_review.json',ROOT/'.scratch/gorilla_internal_g_material_contract/native_signed_material.py']
+inventory=[{'relative_path':str(p.relative_to(O)),'bytes':p.stat().st_size,'sha256':sha(p)} for p in sorted(O.rglob('*')) if p.is_file() and '__pycache__' not in p.parts and p.name!='freeze_manifest.json']
+freeze={'robot_id':'gorilla_v0_1','frozen_utc':datetime.now(timezone.utc).isoformat(),'scope':payload['scope'],'inventory':inventory,
+        'external_inputs':[{'repository_relative_path':str(p.relative_to(ROOT)),'sha256':sha(p)} for p in external],
+        'same_source_internal_sections_actually_viewed':True,'CAD_geometry_and_mesh_stable_during_load_mapping':True,
+        'manifest_self_excluded':True,'physical_release':False,'whole_robot_or_appearance_release':False}
+(O/'freeze_manifest.json').write_text(json.dumps(freeze,indent=2)+'\n')
+print('FROZEN',sha(O/'freeze_manifest.json'),'REPORT',sha(O/'report.json'),'files',len(inventory),flush=True)

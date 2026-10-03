@@ -59,3 +59,5 @@ C15 将前掌、足弓与后跟分开，取消跨段连续底板；卸载端姿�
 [G6 实际三维输入与网格拒绝证据](../../experiments/gorilla_v0_1/topology_g6_3d_inputs/README.md)：宽厚承力域与同源节点载荷入口；当前网格不适用于结构FEM，没有机器人减重或强度放行。
 
 [G7 实际CAD与三维条件基线](../../experiments/gorilla_v0_1/topology_g7_cad_baseline/README.md)：合法宽厚承力件、两档体网格及独立数值核验；已识别压撑顶墙传力风险，尚无骨架优化、强度或整机资格。
+
+[G8 宽厚内部传力路径对照](../../experiments/gorilla_v0_1/topology_g8_material_paths/README.md)：两真实CAD及完整42条件工况；连续内肋显著改善压撑刚度，驱动/接触/全机资格仍开放。接续G9整体主结构与机电空间共同安排。

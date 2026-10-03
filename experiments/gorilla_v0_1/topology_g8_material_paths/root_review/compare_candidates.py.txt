@@ -1,0 +1,46 @@
+"""Compare full42 actual conditional fields; no new structural acceptance."""
+from pathlib import Path
+import hashlib, json
+
+OUT=Path(__file__).resolve().parent
+ROOT=OUT.parents[1]
+sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+reports={n:json.loads((OUT/(n+'_envelope_baseline.json')).read_text()) for n in ['g7','a','b']}
+cadpaths={'g7':ROOT/'.scratch/gorilla_internal_g7_cad_carrier/cad_source_manifest.json',
+          **{n:ROOT/'.scratch/gorilla_internal_g8_carrier_variants'/n/'cad_source_manifest.json' for n in ['a','b']}}
+masses={n:json.loads(p.read_text())['conditional_mass_kg'] for n,p in cadpaths.items()}
+summaries={}
+for n,d in reports.items():
+    result={'conditional_CAD_mass_kg':masses[n]}
+    for mode in ['all','stop','drive']:
+        cases=[r for r in d['cases'] if mode=='all' or
+               (r['mode']=='neutral_mechanical_shoes_equal_bearings_take_roll_yaw')==(mode=='stop')]
+        assert len(cases)=={'all':42,'stop':6,'drive':36}[mode]
+        result[mode]={'case_count':len(cases)}
+        for k in ['compliance_J','rigid_removed_max_displacement_m','element_VM_max_diagnostic_Pa']:
+            r=max(cases,key=lambda x:x[k]);result[mode][k]={'case_index':r['case_index'],'value':r[k]}
+    summaries[n]=result
+comparisons=[]
+for n in ['a','b']:
+    for old,new in zip(reports['g7']['cases'],reports[n]['cases']):
+        assert all(old[k]==new[k] for k in ['case_index','q_deg','load_factor','CoP_world_m','mode'])
+        comparisons.append({'candidate':n,'case_index':new['case_index'],'mode':new['mode'],
+            'compliance_change_fraction':new['compliance_J']/old['compliance_J']-1,
+            'rigid_removed_Umax_change_fraction':new['rigid_removed_max_displacement_m']/old['rigid_removed_max_displacement_m']-1,
+            'VM_peak_change_fraction_diagnostic_only':new['element_VM_max_diagnostic_Pa']/old['element_VM_max_diagnostic_Pa']-1,
+            'mass_times_compliance_relative':masses[n]*new['compliance_J']/(masses['g7']*old['compliance_J'])})
+data={'robot_id':'gorilla_v0_1',
+      'scope':'Source-bound coarse-mesh conditional3D full42 comparison; no real contact, strength, mass optimization or whole-body release.',
+      'producer_sha256':sha(Path(__file__)),
+      'sources':[{'path':str(p.relative_to(ROOT)),'sha256':sha(p)} for p in [*(OUT/(n+'_envelope_baseline.json') for n in reports),*cadpaths.values()]],
+      'summaries':summaries,'exact42_casewise_comparisons':comparisons,
+      'root_choice':'Prefer B continuous web/closed-skin load path as next coallocation/optimization baseline. Retain A finite toe comparator. Do not adopt bench robot axes or freeze its mass/walls.',
+      'reason':'A reduces concentration but stop compliance only improves about5%; B transfers stop loads to floor/endwalls with about83% conditional stop compliance decrease at16.6% component mass increase.',
+      'remaining_red_lines':['Generic traction and real bearing pressure center/contact unknown',
+          'A/B stress and mesh convergence not proven; diagnostic peak remains high including a different drive hotspot',
+          'Gravity,dynamics,buckling,fatigue,material/process,retention/service and continuous sweeps unknown',
+          'All42 G4 prescribed reaction allocation is conditional, not contact recalculated on new actual assembly',
+          'No whole-robot mass, drive, heat, geometry, or stableSI qualification'],
+      'topology_optimization_executed':False,'physical_or_whole_robot_accepted':False}
+(OUT/'root_envelope_comparison.json').write_text(json.dumps(data,indent=2)+'\n')
+print(json.dumps(summaries,indent=2))

@@ -1,0 +1,157 @@
+"""Literal G4 42-case conditional loads on new actual CAD physical groups.
+
+No FE solve, no target projection, no assumed contact support. The source poses
+are rigidly transformed back to the child material reference configuration;
+this is a coordinate change, never reduction of the original pose/load domain.
+"""
+from pathlib import Path
+import argparse, collections, hashlib, importlib.util, json
+import numpy as np
+from scipy.linalg import qr
+
+OUT=Path(__file__).resolve().parent
+ROOT=OUT.parents[1]
+G4=ROOT/'.scratch/gorilla_internal_g4_pitch_module'
+G7=ROOT/'.scratch/gorilla_internal_g7_load_ports'
+spec=importlib.util.spec_from_file_location('frozen_g7_physical_group_mapper',G7/'assemble_g7_load_ports.py')
+g7=importlib.util.module_from_spec(spec);spec.loader.exec_module(g7)
+
+def sha(p): return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def save(p,d): Path(p).write_text(json.dumps(d,indent=2,ensure_ascii=False,allow_nan=False)+'\n')
+def rotate_y(angle):
+    c=np.cos(angle);s=np.sin(angle)
+    return np.array([[c,0,s],[0,1,0],[-s,0,c]])
+
+def literal_reference():
+    scene=json.loads((G4/'module_scene.json').read_text());handoff=json.loads((G4/'optimization_handoff.json').read_text())
+    if handoff['source_sha256']!=sha(G4/'module_scene.json'): raise ValueError('literal G4 scene hash mismatch')
+    if handoff['load_report_sha256']!=sha(G4/'report.json'): raise ValueError('literal G4 report hash mismatch')
+    support=next(j for j in scene['joint_supports'] if j['id']=='ankle_pitch_bench')
+    if support['axis_world']!=[0.,1.,0.]: raise ValueError('only exact source Y-axis rotation supported')
+    pivot=np.asarray(support['center_world_m']);cases=[]
+    original=handoff['actual_6D_load_interfaces']
+    if len(original)!=42: raise ValueError('do not silently shrink literal load envelope')
+    for i,c in enumerate(original):
+        Q=rotate_y(np.deg2rad(c['q_deg']));stop=c['mode'].startswith('neutral_mechanical')
+        if stop and c['q_deg']!=0: raise ValueError('original stop mode only valid at neutral')
+        src=c['actual_child_point_load_ports']+[c['equivalent_ground_load_at_output_mount']]
+        tags=[5,6,1,2,7] if stop else [3,4,1,2,7]
+        ports=[]
+        for tag,p in zip(tags,src):
+            x=np.asarray(p['point_world_m']);w=np.asarray(p['wrench_Fxyz_Mxyz'])
+            x0=pivot+Q.T@(x-pivot);w0=np.r_[Q.T@w[:3],Q.T@w[3:]]
+            ports.append({'physical_tag':tag,'load_center_world_m':x0.tolist(),'target_wrench_Fxyz_Mxyz':w0.tolist(),
+                          'literal_original_world_point_m':x.tolist(),'literal_original_world_wrench_Fxyz_Mxyz':w.tolist(),
+                          'inverse_transform_position_error_m':float(abs(pivot+Q@(x0-pivot)-x).max()),
+                          'inverse_transform_wrench_error':float(abs(np.r_[Q@w0[:3],Q@w0[3:]]-w).max())})
+        F=sum(np.asarray(p['target_wrench_Fxyz_Mxyz'])[:3] for p in ports)
+        M=sum(np.cross(p['load_center_world_m'],np.asarray(p['target_wrench_Fxyz_Mxyz'])[:3])+np.asarray(p['target_wrench_Fxyz_Mxyz'])[3:] for p in ports)
+        if abs(F).max()>1e-6 or abs(M).max()>1e-7: raise ValueError('literal source is unbalanced; no projection allowed')
+        cases.append({'case_index':i,'q_deg':c['q_deg'],'load_factor':c['load_factor'],'CoP_world_m':c['CoP_world_m'],
+                      'mode':c['mode'],'ports':ports,'gravity_included':False,'source_rotation_Y_matrix_material_to_world':Q.tolist(),
+                      'material_frame_total_F_N':F.tolist(),'material_frame_total_M_origin_Nm':M.tolist(),
+                      'literal_original_case':c})
+    counts={'q_deg':dict(collections.Counter(str(c['q_deg']) for c in cases)),
+            'load_factor':dict(collections.Counter(str(c['load_factor']) for c in cases)),
+            'CoP_world_m':dict(collections.Counter(str(c['CoP_world_m']) for c in cases)),
+            'allocation':dict(collections.Counter(c['mode'] for c in cases))}
+    ref={'schema':'G8_full_literal_G4_load_reference_in_child_material_frame','case_count':42,'cases':cases,'metadata_counts':counts,
+         'G4_scene_sha256':sha(G4/'module_scene.json'),'G4_handoff_sha256':sha(G4/'optimization_handoff.json'),
+         'G4_report_sha256':sha(G4/'report.json'),'pivot_world_m':pivot.tolist(),'source_scope':scene['load_case_scope'],
+         'base_static_ground_force_N':29430.,'ground_force_factor_values':[1.,1.5],'robot_or_module_gravity_included':False,
+         'walking_or_carrying_3t_rating':False,'pose_domain_shrunk':False,'physical_release':False,
+         'material_frame_transform':'x0=pivot+Ry(q)^T(x_world-pivot); F0=Ry(q)^T Fworld; M0=Ry(q)^T Mworld at the same physical point. No shift of local couple or projection of literal wrench.'}
+    save(OUT/'full_load_reference.json',ref);return ref
+
+def operator_for_region(nodes,region,center):
+    ids=region['nodes'];localnodes=nodes[ids]
+    localregion={**region,'nodes':np.arange(len(ids))}
+    cols=[];rank=[]
+    for j in range(6):
+        w=np.eye(6)[j];f,r=g7.algebra.distribute_wrench(localnodes,localregion,center,w[:3],w[3:]);cols.append(f.ravel());rank.append(r['wrench_matrix_rank'])
+    return ids,np.stack(cols,axis=1),rank
+
+def run(mesh,cad,port_report,prefix):
+    ref=literal_reference();contract=json.loads((G7/'interface_contract.json').read_text())
+    ev=json.loads(port_report.read_text());records=g7.physical_group_rows(ev)
+    if ev.get('world_SI') is not True: raise ValueError('world-SI evidence required')
+    if ev.get('mesh_sha256')!=sha(mesh) or ev.get('cad_brep_sha256')!=sha(cad): raise ValueError('actual CAD/mesh/port hash mismatch')
+    for p in contract['ports']:
+        if records[p['physical_tag']]['name']!=p['name']: raise ValueError('actual new physicalgroup identity differs')
+    data=np.load(mesh);nodes=data['points_m'];faces=data['boundary_faces'];tags=data['boundary_physical_tags'];tet=data['tetra']
+    regions,checks=g7.regions_from_physical_groups(nodes,faces,tags,contract)
+    if not all(c['geometry_region_matches_contract'] and c['mesh_material_outward_orientation_verified'] for c in checks): raise ValueError('actual CAD port geometry differs; no nearest-pivot remapping allowed')
+    operators={};centers={};F=np.zeros((len(nodes),3,42));case_reports=[]
+    for c in ref['cases']:
+        reports=[]
+        for p in c['ports']:
+            tag=p['physical_tag'];center=np.asarray(p['load_center_world_m']);w=np.asarray(p['target_wrench_Fxyz_Mxyz'])
+            if tag not in centers: centers[tag]=center;operators[tag]=operator_for_region(nodes,regions[tag],center)
+            if abs(center-centers[tag]).max()>1e-10: raise ValueError('literal pose did not return to the same physical port centre')
+            ids,op,ranks=operators[tag];f=(op@w).reshape(-1,3);F[ids,:,c['case_index']]+=f
+            got=np.r_[f.sum(0),np.cross(nodes[ids]-center,f).sum(0)];res=got-w
+            if abs(res[:3]).max()>1e-6 or abs(res[3:]).max()>1e-7: raise ValueError('mapped port full-wrench reconstruction failed')
+            reports.append({'physical_tag':tag,'actual_nodes':len(ids),'operator_rank':min(ranks),'load_center_material_m':center.tolist(),
+                            'literal_target_Fxyz_Mxyz':w.tolist(),'actual_Fxyz_Mxyz':got.tolist(),'residual_Fxyz_Mxyz':res.tolist(),
+                            'actual_surface_area_m2':regions[tag]['area_m2'],'same_reaction_allocation_assumed':True})
+        total=F[:,:,c['case_index']];nf=total.sum(0);nm=np.cross(nodes,total).sum(0)
+        case_reports.append({'case_index':c['case_index'],'q_deg':c['q_deg'],'load_factor':c['load_factor'],'CoP_world_m':c['CoP_world_m'],
+                             'mode':c['mode'],'ports':reports,'net_force_N':nf.tolist(),'net_moment_origin_Nm':nm.tolist(),
+                             'net_minus_source_F_N':(nf-c['material_frame_total_F_N']).tolist(),
+                             'net_minus_source_M_Nm':(nm-c['material_frame_total_M_origin_Nm']).tolist()})
+    loaded=np.flatnonzero(np.any(F!=0,axis=(1,2)));active=F[loaded].reshape(-1,42)
+    # Direct thin SVD of actual force rows, never a normal-equation/Gram rank estimate.
+    _,sing,Vt=np.linalg.svd(active,full_matrices=False);tol=sing[0]*1e-12;rank=int(np.count_nonzero(sing>tol))
+    _,_,piv=qr(active,mode='economic',pivoting=True);basisids=np.asarray(piv[:rank]);B=active[:,basisids]
+    coeff=np.linalg.lstsq(B,active,rcond=1e-12)[0];recon=B@coeff;error=recon-active
+    basis_ok=bool(abs(error).max()<1e-7 and np.linalg.norm(error)/np.linalg.norm(active)<1e-10)
+    basis=F[:,:,basisids]
+    C,R,gauge=g7.algebra.rigid_mode_gauge(nodes,faces,tet)
+    np.savez_compressed(OUT/(prefix+'_loads.npz'),F_xyz_N_cases=F,case_indices=np.arange(42),
+                        basis_F_xyz_N_cases=basis,basis_case_indices=basisids,original_case_coefficients=coeff,
+                        svd_singular_values_N=sing,loaded_node_ids=loaded)
+    np.savez_compressed(OUT/(prefix+'_gauge.npz'),gauge_rows=C,rigid_mode_matrix=R)
+    for check in checks:
+        record=records[check['physical_tag']];check['actual_CAD_record']=record
+        check['CAD_area_m2']=record['cad_area_m2'];check['mesh_minus_CAD_area_m2']=check['mesh_surface_area_m2']-record['cad_area_m2']
+    binding={'mesh_path':str(mesh.resolve()),'mesh_sha256':sha(mesh),'CAD_source_path':str(cad.resolve()),'CAD_source_sha256':sha(cad),
+             'physicalgroup_report_path':str(port_report.resolve()),'physicalgroup_report_sha256':sha(port_report),
+             'G4_literal_scene_sha256':ref['G4_scene_sha256'],'G4_literal_handoff_sha256':ref['G4_handoff_sha256'],
+             'full_load_reference_sha256':sha(OUT/'full_load_reference.json'),'mapper_sha256':sha(Path(__file__)),
+             'frozen_G7_mapper_sha256':sha(G7/'assemble_g7_load_ports.py'),'frozen_G7_contract_sha256':sha(G7/'interface_contract.json'),
+             'frozen_G6_algebra_sha256':sha(g7.G6),'actual_mesh_shape':[len(nodes),len(tet),len(faces)],
+             'new_geometry_source_not_G4':sha(cad)!=ref['G4_scene_sha256'],'old_facet_ids_reused':False}
+    report={'schema':'G8_actual_physicalgroup_full42_generic_traction_envelope',**binding,'case_count':42,'case_reports':case_reports,
+            'metadata_counts':ref['metadata_counts'],'actual_CAD_port_checks':checks,'minimal_integral_gauge':gauge,
+            'load_array_path':str((OUT/(prefix+'_loads.npz')).resolve()),'load_array_sha256':sha(OUT/(prefix+'_loads.npz')),
+            'gauge_array_sha256':sha(OUT/(prefix+'_gauge.npz')),'F_shape_nodes_xyz_cases':list(F.shape),
+            'no_repeated_mesh_per_case':True,'coordinate_frame':'neutral child material, absolute world-SI axes as in the reference mesh',
+            'SVD_direct_active_force_rows':True,'singular_values_N':sing.tolist(),'SVD_numerical_rank':rank,'SVD_rank_tolerance_N':float(tol),
+            'basis_actual_case_indices':basisids.tolist(),'basis_reconstructs_literal_F':basis_ok,
+            'max_basis_reconstruction_abs_N':float(abs(error).max()),'relative_basis_reconstruction_error':float(np.linalg.norm(error)/np.linalg.norm(active)),
+            'basis_reconstruction_error_by_case_N':abs(error).max(0).tolist(),
+            'basis_is_only_linear_solve_reuse_not_domain_reduction':True,'full_literal_F_retained_unchanged':True,
+            'max_port_force_residual_N':max(abs(x) for cr in case_reports for pr in cr['ports'] for x in pr['residual_Fxyz_Mxyz'][:3]),
+            'max_port_moment_residual_Nm':max(abs(x) for cr in case_reports for pr in cr['ports'] for x in pr['residual_Fxyz_Mxyz'][3:]),
+            'max_net_force_N':max(abs(x) for cr in case_reports for x in cr['net_force_N']),
+            'max_net_moment_Nm':max(abs(x) for cr in case_reports for x in cr['net_moment_origin_Nm']),
+            'solver_executed':False,'physical_release':False,'gravity_included':False,'load_domain_shrunk':False,
+            'radial_pressure_case18_is_separate_conditional_G7_probe_not_contact_solution':True,
+            'limits':['Full bare journal physical groups are not known real bearing loading bands; pressure centres/preload/clearance unknown',
+                      'Generic rank-six vector traction may include tension/tangent/axial forces; it does not solve unilateral contact',
+                      'Static mechanical stops only original six neutral cases; engagement and unload/release remain conditional',
+                      'Downstream six-dimensional traction is equivalent, real mounting bolts absent',
+                      'All source cases are external 3t/static factor1.5 examples; robot/module gravity, walking, friction and dynamics absent',
+                      'Same-interface and original reaction allocation assumed; new CAD geometry does not establish physical validity of this allocation',
+                      'Integral gauge removes only six rigid modes; no bearing surface is fixed and no physical support is asserted']}
+    save(OUT/(prefix+'_report.json'),report)
+    print(json.dumps({'prefix':prefix,'cases':42,'rank':rank,'basis_case_indices':basisids.tolist(),'basis_error_N':report['max_basis_reconstruction_abs_N'],
+                      'max_port_F_N':report['max_port_force_residual_N'],'max_port_M_Nm':report['max_port_moment_residual_Nm'],
+                      'report_sha256':sha(OUT/(prefix+'_report.json'))},indent=2))
+
+if __name__=='__main__':
+    p=argparse.ArgumentParser();p.add_argument('--mesh',type=Path);p.add_argument('--cad-source',type=Path);p.add_argument('--port-report',type=Path);p.add_argument('--prefix',default='g7_coarse_full42');p.add_argument('--reference-only',action='store_true');a=p.parse_args()
+    if a.reference_only: literal_reference()
+    else:
+        if not all([a.mesh,a.cad_source,a.port_report]): p.error('actual mesh/CAD/physical-group evidence required')
+        run(a.mesh,a.cad_source,a.port_report,a.prefix)

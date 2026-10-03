@@ -1,0 +1,7 @@
+import numpy as np
+import gmsh
+C=np.array([-.060,.650,.300])
+def get_surface_samples(tag):
+    lo,hi=gmsh.model.getParametrizationBounds(2,tag)
+    uv=[[(1-a)*lo[0]+a*hi[0],(1-b)*lo[1]+b*hi[1]] for a in [.13,.49,.83] for b in [.17,.53,.89]]
+    return np.array(gmsh.model.getValue(2,tag,np.ravel(uv))).reshape(-1,3)
