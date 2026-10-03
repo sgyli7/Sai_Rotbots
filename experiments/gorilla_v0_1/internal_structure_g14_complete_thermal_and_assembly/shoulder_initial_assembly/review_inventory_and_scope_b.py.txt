@@ -1,0 +1,29 @@
+"""Source-bound own finite material union/inventory, no source mutation or repair."""
+from pathlib import Path
+import json,gzip,hashlib,numpy as np,manifold3d as mf
+O=Path(__file__).resolve().parent;sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def props(m,rho):
+ me=m.to_mesh64();v=np.asarray(me.vert_properties)[:,:3];f=np.asarray(me.tri_verts);anchor=(v.min(0)+v.max(0))/2;a=v[f]-anchor
+ dv=np.einsum('ij,ij->i',a[:,0],np.cross(a[:,1],a[:,2]))/6;V=dv.sum();sm=a.sum(1);c=np.einsum('e,ei->i',dv,sm)/(4*V)
+ sec=(np.einsum('e,ei,ej->ij',dv,sm,sm)+np.einsum('e,eki,ekj->ij',dv,a,a))/20-V*np.outer(c,c)
+ return {'volume_m3':float(V),'mass_kg':float(rho*V),'COM_world_m':(c+anchor).tolist(),'full_I_COM_world_kg_m2':(rho*(np.trace(sec)*np.eye(3)-sec)).tolist(),'bounds_world_m':[v.min(0).tolist(),v.max(0).tolist()]}
+for variant in ['b']:
+ D=O/variant;S=D/'scene.json.gz';s=json.loads(gzip.decompress(S.read_bytes()));cad=json.loads((D/'cad_part_manifest.json').read_text());groups={};finite=[];refs=[];samepairs=[]
+ for p in s['parts']:
+  m=mf.Manifold(mf.Mesh64(np.array(p['vertices_world_m'],float),np.array(p['faces'],np.uint64)))
+  if p.get('finite_material'):
+   finite.append((p,m));key=(p['body'],p['density_kg_m3']);groups[key]=m if key not in groups else groups[key]+m
+  else:refs.append({'name':p['name'],'role':p['role'],'mass_range_kg':p['mass_range_kg'],'COM_and_complete_I_unknown':True,'reference_envelope_not_OEM_mass_distribution':True})
+ for i,(p,m) in enumerate(finite):
+  for q,n in finite[i+1:]:
+   if p['body']!=q['body']:continue
+   v=float((m^n).volume())
+   if v>1e-10:samepairs.append({'a':p['name'],'b':q['name'],'positive_material_volume_cm3':v*1e6,'no_acceptance_from_same_owner':True})
+ nets=[{'body':b,'density_kg_m3':r,**props(m,r),'source_components_may_be_disconnected_or_interfaces_unqualified':True} for (b,r),m in groups.items()]
+ mass=sum(g['mass_kg'] for g in nets);com=sum(np.array(g['COM_world_m'])*g['mass_kg'] for g in nets)/mass;I=np.zeros((3,3))
+ for g in nets:
+  delta=np.array(g['COM_world_m'])-com;I+=np.array(g['full_I_COM_world_kg_m2'])+g['mass_kg']*((delta@delta)*np.eye(3)-np.outer(delta,delta))
+ refm=np.sum([r['mass_range_kg'] for r in refs],axis=0)
+ exactfinite=sum(p['mass_range_kg'][1] for p,m in finite)
+ r={'robot_id':'gorilla_v0_1','variant':variant,'source_sha256':sha(S),'CAD_manifest_sha256':sha(D/'cad_part_manifest.json'),'producer_sha256':sha(__file__),'own_source_native_diagnostic_union_by_owner_and_density':nets,'own_finite_material_native_net_mass_kg':mass,'own_finite_material_native_COM_world_m':com.tolist(),'own_finite_material_native_full_I_COM_world_kg_m2':I.tolist(),'finite_material_CAD_per_piece_mass_sum_kg':exactfinite,'per_piece_CAD_inventory_scope':'G14 A new source, independent audit not inherited from G11 B','reference_complete_component_ranges':refs,'reference_mass_range_total_kg':refm.tolist(),'combined_conditionally_accounted_mass_range_kg':(mass+refm).tolist(),'combined_assembly_COM_full_I_unknown':True,'unaccounted_actual_hose_fluid_connector_mount_fastener_scope_unknown':True,'same_owner_material_pairs':samepairs,'geometric_or_physical_accepted':False,'union_not_source_repair_or_proof_of_bolted_join':True,'G10_A_old_identity_failure_not_inherited':True}
+ (D/'inventory_scope.json').write_text(json.dumps(r,indent=2)+'\n');print(variant,'finiteNativeNet',mass,'referenceRange',refm.tolist(),'conditionalTotal',(mass+refm).tolist(),'sameownerPairs',len(samepairs))

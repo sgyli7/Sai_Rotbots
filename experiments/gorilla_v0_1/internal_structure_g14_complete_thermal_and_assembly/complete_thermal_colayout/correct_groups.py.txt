@@ -1,0 +1,13 @@
+import pathlib,json,gzip,hashlib,shutil,copy,numpy as np
+P=pathlib.Path(__file__).resolve().parent;D=P/'b';H=P/'b_before_group_correction';H.mkdir(exist_ok=True)
+for f in D.iterdir():
+ if f.is_file():shutil.copy2(f,H/f.name)
+def sha(p):return hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
+s=json.load(gzip.open(D/'scene.json.gz','rt'));src=json.load(gzip.open(P.parents[1]/'.scratch/gorilla_internal_g13_load_cage_colayout/b/scene.json.gz','rt'));by={p['name']:p for p in src['parts']};meta={r['id']:r for r in src['moved_complete_function_ids']};oldcts={'HX':[.22,0,1.925],'compute':[.20,0,2.60],'screen':[-.425,0,2.225]};newcts={'HX':[.35,.17,1.90],'compute':[-.20,0,2.59],'screen':[-.435,0,2.24]};fixed=[]
+for i,p in enumerate(s['parts']):
+ group=meta.get(p['name'],{}).get('complete_group')
+ if group in oldcts:
+  q=copy.deepcopy(p);q['vertices_world_m']=(np.array(by[p['name']]['vertices_world_m'])-oldcts[group]+newcts[group]).tolist();q['whole_group_uniform_translation_m']=(np.array(newcts[group])-oldcts[group]).tolist();q['group_center_correction_preserves_original_relative_geometry']=True;s['parts'][i]=q;fixed.append(p['name'])
+s['implementation_correction']={'source_before_SHA':sha(H/'scene.json.gz'),'fixed_ids':fixed,'reason':'producer erroneously moved eachpartAABBcentre tosamegroup target; restored literal common rigidtranslation fromG13groupdatum','preserves_each_originalpart_vertices_up_to_same_group_translation':True,'not_third_macro':True}
+(D/'scene.json.gz').write_bytes(gzip.compress(json.dumps(s,separators=(',',':')).encode(),mtime=0));r=json.load(open(D/'first_report.json'));r['scene_sha256']=sha(D/'scene.json.gz');r['group_correction_after_B_retained_history']=s['implementation_correction'];r['previous_views_and_collision_receipts_are_obsolete_until_readonly_regeneration']=True;(D/'first_report.json').write_text(json.dumps(r,indent=2)+'\n');(D/'group_correction_receipt.json').write_text(json.dumps(s['implementation_correction'],indent=2)+'\n')
+p=P/'build_colayout.py';code=p.read_text();code=code.replace("mmove[name]=moved(p,center(p),np.array(target))","mmove[name]=moved(p,np.array({'HX':[.22,0,1.925],'compute':[.20,0,2.60],'screen':[-.425,0,2.225]}[meta['complete_group']]),np.array(target))");p.write_text(code);print('GROUP_SOURCE_FIXED',sha(D/'scene.json.gz'),'ids',fixed)

@@ -1,0 +1,25 @@
+"""Own metre-native BREP -> internal-mm OCC -> declared-metre STEP + actual SI readback."""
+from pathlib import Path
+import argparse,json,hashlib,numpy as np
+from OCP.BRepTools import BRepTools
+from OCP.TopoDS import TopoDS_Shape
+from OCP.BRep import BRep_Builder
+from OCP.BRepCheck import BRepCheck_Analyzer
+from OCP.BRepBndLib import BRepBndLib
+from OCP.Bnd import Bnd_Box
+from OCP.BRepBuilderAPI import BRepBuilderAPI_Transform
+from OCP.gp import gp_Trsf,gp_Pnt
+from OCP.STEPControl import STEPControl_Writer,STEPControl_Reader,STEPControl_AsIs
+from OCP.Interface import Interface_Static
+from OCP.IFSelect import IFSelect_RetDone
+ap=argparse.ArgumentParser();ap.add_argument('--variant',choices=['a','b'],default='a');args=ap.parse_args();D=Path(__file__).resolve().parent/args.variant;sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+def bounds(s):
+ b=Bnd_Box();BRepBndLib.AddOptimal_s(s,b,False,False);return np.array(b.Get())
+s=TopoDS_Shape();BRepTools.Read_s(s,str(D/'assembly.brep'),BRep_Builder());assert not s.IsNull();valid=BRepCheck_Analyzer(s,True).IsValid();assert valid
+orig=bounds(s);T=gp_Trsf();T.SetScale(gp_Pnt(0,0,0),1000.);s_mm=BRepBuilderAPI_Transform(s,T,True).Shape()
+wr=STEPControl_Writer();Interface_Static.SetCVal_s('xstep.cascade.unit','MM');Interface_Static.SetCVal_s('write.step.unit','M');assert wr.Transfer(s_mm,STEPControl_AsIs)==IFSelect_RetDone
+path=D/'assembly_si.step';assert wr.Write(str(path))==IFSelect_RetDone
+rd=STEPControl_Reader();assert rd.ReadFile(str(path))==IFSelect_RetDone;assert rd.TransferRoots()>0;back=rd.OneShape();back_si=bounds(back)/1000.;err=float(np.max(np.abs(orig-back_si)));assert err<1e-6,(orig,back_si,err)
+text=path.read_text();assert 'SI_UNIT($,.METRE.)' in text and 'SI_UNIT(.MILLI.,.METRE.)' not in text
+report={'robot_id':'gorilla_v0_1','producer_sha256':sha(Path(__file__)),'BREP_sha256':sha(D/'assembly.brep'),'BREP_source_contract':'world SI metres; BREP itself unitless','BREP_OCP_valid':valid,'STEP_path':str(path),'STEP_sha256':sha(path),'STEP_declared_length_unit':'metre','OCC_internal_unit_during_STEP_write':'millimetre','explicit_source_m_to_OCC_internal_mm_scale':1000.,'actual_STEP_readback_default_OCC_mm_to_SI_m_scale':.001,'original_SI_bounds_world_m':orig.tolist(),'actual_STEP_readback_SI_bounds_world_m':back_si.tolist(),'max_absolute_physical_bounds_error_m':err,'unit_identity_pass':True,'source_coordinate_topology_no_modification':True,'assembly_accepted':False}
+(D/'cad_units_receipt.json').write_text(json.dumps(report,indent=2)+'\n');print('SI_STEP',sha(path),'readbackError',err,flush=True)

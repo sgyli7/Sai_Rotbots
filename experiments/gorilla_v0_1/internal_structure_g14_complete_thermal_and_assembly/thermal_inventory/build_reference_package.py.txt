@@ -1,0 +1,19 @@
+from pathlib import Path
+import json,hashlib,numpy as np,trimesh
+O=Path(__file__).resolve().parent
+parts=[]
+def box(id,center,dim,category,reference,known_mass=None):
+ m=trimesh.creation.box(dim);m.apply_translation(center)
+ parts.append({'name':id,'body':'reference_mount_owner_unassigned','role':category,'vertices_world_m':m.vertices.tolist(),'faces':m.faces.tolist(),'source_dimensions_m':dim,'reference':reference,'known_source_bare_mass_kg':known_mass,'physical_material_geometry':False,'outer_stock_not_actual_material':True,'installed_or_routed':False})
+box('boyd4320_complete_core_and_straightports_stock',[0,0,0],[.064,.584,.305],'manufacturer_full_reference_outer_stock','2003 drawing page51/current2019 bare mass different provenance',6.4)
+box('custom_fanplate_adapter_seal_bracket_stock',[-.044,0,0],[.020,.584,.305],'unqualified_custom_complete_installation_stock','Own complete adapter allowance; historic originalfan cuts/mounts not reused as verified interface')
+for y in [-.125,.125]:
+ box('ebm172_fan_fullbody_stock_'+str(y),[-.0795,y,0],[.051,.172,.172],'manufacturer_complete_fanbody_outer_stock','catalog body171.5±.5 axial50.8±.3; guard/tether separate')
+ box('fan_guard_stock_'+str(y),[-.115,y,0],[.020,.180,.180],'unqualified_custom_guard_stock','Own guard+mount allowance no guarded pressurecurve')
+ box('fan_tether_connector_stock_'+str(y),[-.0795,y,-.110],[.060,.040,.055],'unqualified_custom_connector_bend_stock','Nonzero allowance outside catalogue body; cable topology unknown')
+box('dual_intake_transition_plenum_stock',[.072,0,0],[.080,.584,.305],'unqualified_custom_hidden_plenum_stock','Own flow and wall stock, not native AA3 mount or freecavity')
+box('rear_exhaust_tool_service_stock',[-.150,0,0],[.050,.584,.305],'nonmaterial_service_space','Own pullout/air outlet clearance, not hardware mass')
+box('right_tube_fitting_and_tool_strip_stock',[0,.3245,0],[.100,.065,.305],'unqualified_fittings_tool_stock','OD12.7 straightports; precise depth and bends unclosed')
+d={'schema':'G14_local_reference_stock_package','coordinate_frame':'local SI metre; X depth/Ywidth/Zheight; not world robot placement','parts':parts,'producer_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'full_actual_OEM_material_CAD_or_internal_flow_geometry':False,'port_nodes':[{'name':'4320_lower_right_pipe','Y_face_plus_tube_extent_m':.292,'Z_from_fullbox_bottom_m':.129,'X_depth_coordinate_unknown':True,'OD_m':.0127,'precision_OEMdatum_unknown':True},{'name':'4320_upper_right_pipe','Y_face_plus_tube_extent_m':.292,'Z_from_fullbox_bottom_m':.177,'X_depth_coordinate_unknown':True,'OD_m':.0127,'precision_OEMdatum_unknown':True}],'unknown_actual_mount_axes_or_guards_not_faked_by_stock':True,'AA3_changes_mm':0,'no_capacity_source_or_thermal_transfer_on_custom_stock':True,'assembly_and_material_collision_admission':False}
+(O/'reference_stock_package_scene.json').write_text(json.dumps(d,indent=2)+'\n')
+print(hashlib.sha256((O/'reference_stock_package_scene.json').read_bytes()).hexdigest())

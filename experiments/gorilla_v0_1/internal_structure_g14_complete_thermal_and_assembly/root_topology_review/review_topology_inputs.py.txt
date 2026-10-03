@@ -1,0 +1,115 @@
+#!/usr/bin/env python3
+"""Read-only Gorilla G14 B topology input inspection; never solves or repairs."""
+import gzip,hashlib,json,pathlib,time
+import numpy as np,manifold3d as mf,trimesh
+from PIL import Image,ImageDraw,ImageFont
+from shapely.geometry import Polygon
+ROOT=pathlib.Path(__file__).resolve().parents[2];OUT=pathlib.Path(__file__).resolve().parent
+SRC=ROOT/'.scratch/gorilla_internal_g14_complete_thermal_colayout/b/scene.json.gz'
+LOAD=ROOT/'.scratch/gorilla_internal_g13_loads_and_materials/load_and_material_budget.json'
+INTER=ROOT/'.scratch/gorilla_internal_g13_shoulder_cooling_zones/a/interfaces.json'
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+def write(n,x):(OUT/n).write_text(json.dumps(x,ensure_ascii=False,indent=2)+'\n')
+def mesh(p,outer=False):
+ v=np.array(p.get('vertices_world_m',p.get('vertices')),float); fs=p['faces']
+ if outer and p['role']=='armor_cover':fs=[r for r in fs if max(r)<len(v)//2]
+ f=np.array([[r[0],r[i],r[i+1]] for r in fs for i in range(1,len(r)-1)],np.int64)
+ return trimesh.Trimesh(vertices=v,faces=f,process=False)
+def hits(m,axis,p):
+ a=m.triangles[:,0];b=m.triangles[:,1]-a;c=m.triangles[:,2]-a;ij=[i for i in range(3) if i!=axis];d=np.array(p)[ij]-a[:,ij];det=b[:,ij[0]]*c[:,ij[1]]-b[:,ij[1]]*c[:,ij[0]];ok=abs(det)>1e-14
+ u=np.divide(d[:,0]*c[:,ij[1]]-d[:,1]*c[:,ij[0]],det,out=np.zeros(len(det)),where=ok);w=np.divide(b[:,ij[0]]*d[:,1]-b[:,ij[1]]*d[:,0],det,out=np.zeros(len(det)),where=ok)
+ ok&=(u>=-1e-10)&(w>=-1e-10)&(u+w<=1+1e-10)
+ return np.unique(np.round((a[:,axis]+u*b[:,axis]+w*c[:,axis])[ok],10))
+def cutsegments(m,axis,val):
+ n=np.eye(3)[axis];o=n*val
+ return trimesh.intersections.mesh_plane(m,n,o)
+def secarea(m,axis,val):
+ from shapely.geometry import MultiLineString
+ from shapely.ops import polygonize
+ ij=[k for k in range(3) if k!=axis];seg=cutsegments(m,axis,val)
+ if len(seg)==0:return {'area_m2':0,'material_polygons':0}
+ # Rounding joins section endpoints only; original native source unmodified.
+ line=MultiLineString(np.round(seg[:,:,ij],10).tolist());polys=list(polygonize(line));accepted=[]
+ for poly in polys:
+  pp=poly.representative_point();q=np.zeros(3);q[axis]=val;q[ij]=[pp.x,pp.y];hh=hits(m,axis,q)
+  if len(hh)%2:continue
+  if any(a-1e-9<=val<=b+1e-9 for a,b in zip(hh[::2],hh[1::2])):accepted.append(poly)
+ return {'area_m2':sum(v.area for v in accepted),'material_polygons':len(accepted),'closed_planar_regions':len(polys),'section_endpoint_rounding_m':1e-10,'not_source_mesh_repair':True}
+def planarpatch(m,axis,value,lo,hi):
+ t=m.triangles;ok=(abs(t[:,:,axis]-value)<1e-8).all(1);ct=t.mean(1)
+ for k in range(3):ok&=(ct[:,k]>=lo[k]-1e-8)&(ct[:,k]<=hi[k]+1e-8)
+ a=m.area_faces[ok];return {'world_axis':int(axis),'plane_m':value,'native_triangle_ids':np.flatnonzero(ok).tolist(),'actual_exposed_native_area_m2':float(a.sum()),'actual_area_centroid_world_m':np.average(ct[ok],axis=0,weights=a).tolist() if len(a) else None,'mating_contact_or_fastener_qualified':False}
+t=time.time();raw=SRC.read_bytes();(OUT/'bound_b_scene.json.gz').write_bytes(raw);s=json.loads(gzip.decompress(raw));by={p['name']:p for p in s['parts']};f=by['g14_cage_anchor_output_adapter_net_material'];fm=mesh(f);man=mf.Manifold(mf.Mesh64(np.array(fm.vertices),np.array(fm.faces,np.uint64)));roots=man.decompose()
+armor=mesh(by['continuous_ivory_torso_armor_cover'],True)
+# Explicit complete-function stocks. A conservative convex hull of EACH real
+# complete package protects its interior; it is NOT an available-cavity claim.
+groups={}
+for p in s['parts']:
+ n=p['name']
+ if n.startswith('g14_pack_') and 'service' not in n:
+  g='_'.join(n.split('_')[:3]);groups.setdefault(g,[]).append(p)
+ elif n.startswith(('ds_left_hydraulic_input_','ds_right_hydraulic_input_')):
+  groups.setdefault('left_pump' if 'left' in n else 'right_pump',[]).append(p)
+ elif n.startswith('e2_') and ('HX' in n):groups.setdefault('HX',[]).append(p)
+ elif n in ['ds_compute','ds_back_screen','g14_lytron4320_complete_reference','f1_ds_waist_roll_gear'] or n.startswith(('g14_oil_reservoir','g14_water_reservoir','g14_fan')):
+  groups.setdefault(n,[]).append(p)
+ elif n.startswith(('g13_left_','g13_right_')):
+  groups.setdefault('left_shoulder_protected' if 'left' in n else 'right_shoulder_protected',[]).append(p)
+stock=[];grows=[]
+for name,ps in groups.items():
+ vs=np.concatenate([mesh(p).vertices for p in ps]);hm=trimesh.convex.convex_hull(vs);stock.append((name,hm));grows.append({'id':name,'exact_source_ids':[p['name'] for p in ps],'method':'convex hull of actual complete-function source vertices; conservative proposed exclusion, NOT net material','bounds_world_m':hm.bounds.tolist(),'hull_volume_m3':float(hm.volume),'is_installed_material_or_OEM_internal_CAD':False})
+# Broad three-dimensional design input uses actual outer front AND rear hits.
+# Missing front/back columns remain unknown; do not interpolate across openings.
+ys=np.arange(-.42,.421,.02);zs=np.arange(1.94,2.591,.02);rays=[];pts=[]
+for z in zs:
+ for y in ys:
+  hh=hits(armor,0,[0,y,z]);ff=hh[hh>.02];rr=hh[hh<-.06];valid=len(ff)>0 and len(rr)>0
+  row={'y_m':float(y),'z_m':float(z),'hits_x_m':hh.tolist(),'actual_front_and_rear_exist':bool(valid)}
+  if valid:
+   lo=float(min(rr)+.025);hi=float(max(ff)-.025);row.update({'candidate_x_lo_m':lo,'candidate_x_hi_m':hi,'25mm_horizontal_X_margin_NOT_normal_offset_or_wall_qualification':True})
+   pts.extend([[x,y,z] for x in np.arange(np.ceil(lo/.02)*.02,hi,.02)])
+  rays.append(row)
+pts=np.array(pts,float);keep=np.zeros(len(pts),bool);sid=np.full(len(pts),-1,int)
+# Actual convex-hull half spaces, not AABB-only containment. All functional
+# packages are kept; existing overlap does not permit deletion of one function.
+from scipy.spatial import ConvexHull
+for j,(name,m) in enumerate(stock):
+ h=ConvexHull(m.vertices);bb=m.bounds;inds=np.flatnonzero(((pts>=bb[0]-1e-10)&(pts<=bb[1]+1e-10)).all(1))
+ if len(inds):
+  inside=(pts[inds]@h.equations[:,:3].T+h.equations[:,3]<=1e-9).all(1);keep[inds[inside]]=True;sid[inds[inside]]=j
+np.savez_compressed(OUT/'broad_domain_samples.npz',points_m=pts,functional_excluded=keep,first_group_index=sid,pitch_m=np.array([.02]),source_sha256=np.array(sha(SRC)))
+# Literal existing-frame cross-sections: not equivalent prismatic ideal beams.
+sections=[]
+for z in np.arange(1.807,2.508,.025):sections.append({'axis':2,'world_plane_m':float(z),**secarea(fm,2,float(z))})
+wall=[]
+for axis,origins in [(0,[[0,y,z] for y in [-.29,.29] for z in [2.05,2.17,2.29,2.40]]),(1,[[x,0,z] for x in [.006,.05,.11,.17] for z in [2.14,2.29,2.44]]),(2,[[x,y,0] for x in [.006,.05,.11,.17] for y in [-.29,0,.29]])]:
+ for o in origins:
+  hh=hits(fm,axis,o);wall.append({'axis':axis,'origin_other_coords_world_m':o,'native_boundary_hits_m':hh.tolist(),'even_hit_count':len(hh)%2==0,'material_intervals_m':[[float(a),float(b)] for a,b in zip(hh[::2],hh[1::2])],'minimum_sampled_material_chord_m':float(np.diff(hh.reshape(-1,2),axis=1).min()) if len(hh) and len(hh)%2==0 else None,'directional_chord_not_global_minimum_wall_thickness_or_strength':True})
+ports=[]
+for side in [-1,1]:
+ lo=[.115,min(side*.2435,side*.3935),2.125];hi=[.115,max(side*.2435,side*.3935),2.455]
+ ports.append({'id':'left_shoulder_core_interface' if side==1 else 'right_shoulder_core_interface',**planarpatch(fm,0,.115,lo,hi),'candidate_section_root_is_integral_not_certified_bolted_join':True})
+ports.append({'id':'waist_output_adapter_face',**planarpatch(fm,0,.2475,[.2475,-.113,1.797],[.2475,.113,2.023]),'retained_source_adapter_bounds_m':f['adapter_original_finite_bounds_m'],'actual_adapter_outer_inner_radii_m':[.08,.03],'matching_receiver_pressure_contact_bolt_distribution_unknown':True})
+old=json.loads(LOAD.read_text())['main_cage_load_contract_proposal']
+write('historical_g13_load_reference.json',{'source_sha256':sha(LOAD),'historical_contract':old,'direct_application_to_B_forbidden':True,'G14_B_recompute_actual_retirement_mass_locations_required':True})
+W,H=1800,1300;im=Image.new('RGB',(W,H),'white');draw=ImageDraw.Draw(im)
+try:font=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',18)
+except OSError:font=ImageFont.load_default()
+draw.text((15,12),'GORILLA G14 B topology input — literal native sections; no solver / no deleted modules',font=font,fill='black')
+draw.text((15,38),'Navy cage / gray visible armor / red complete-function keepouts / green conditional 3D sample domain',font=font,fill='black')
+plans=[(2,2.29),(2,2.46),(1,.29),(1,0),(0,.115),(0,.2475)]
+for num,(axis,val) in enumerate(plans):
+ ij=[k for k in range(3) if k!=axis];x0=(num%3)*600+15;y0=(num//3)*610+85;scale=490
+ clo=[-.52,-.52,1.77];chi=[.52,.52,2.68]
+ def xy(q):return (int(x0+35+(q[ij[0]]-clo[ij[0]])*scale),int(y0+485-(q[ij[1]]-clo[ij[1]])*scale))
+ draw.text((x0,y0),f'{"XYZ"[axis]}={val:.4f} m / {"XYZ"[ij[0]]},{"XYZ"[ij[1]]}',font=font,fill='black')
+ idx=abs(pts[:,axis]-val)<.0101
+ for q in pts[idx&~keep]:
+  x,y=xy(q);draw.point((x,y),fill='#4ca686')
+ for sm,color,lw in [(armor,'#999999',1),(fm,'#182d3d',2)]+[(m,'#cd624b',1) for _,m in stock]:
+  for line in cutsegments(sm,axis,val):draw.line([xy(q) for q in line],fill=color,width=lw)
+ draw.line([(x0+40,y0+535),(x0+138,y0+535)],fill='black',width=2);draw.text((x0+40,y0+540),'200 mm / same scale',font=font,fill='black')
+im.save(OUT/'actual_sections_and_domain.png')
+source={'body_scene_path':str(SRC),'body_scene_sha256':sha(SRC),'snapshot_sha256':sha(OUT/'bound_b_scene.json.gz'),'producer_sha256':sha(pathlib.Path(__file__)),'old_5139_metadata_views_not_used':True,'G14_shoulder_rearcover_not_in_body_source':True,'G13_A_shoulder_input_sha256':s['sources']['shoulder_A']['sha256'],'G13_load_reference_sha256':sha(LOAD),'frame_native_sha256':hashlib.sha256(json.dumps(f,sort_keys=True,separators=(',',':')).encode()).hexdigest()}
+report={'robot_id':'gorilla_v0_1','input_sources':source,'read_only_no_model_changed':True,'frame':{'name':f['name'],'net_volume_m3':man.volume(),'conditional_steel_mass_kg':man.volume()*7850,'kernel_status':str(man.status()),'kernel_decompositions':[{'signed_volume_m3':a.volume(),'bounds_world_m':list(a.bounding_box())} for a in roots],'geometric_connection_does_not_qualify_weld_bolt_or_load_capacity':True,'bounds_world_m':fm.bounds.tolist()},'actual_interface_surface_probes':ports,'actual_Z_material_section_scan':sections,'actual_directional_wall_samples':wall,'preserve_modules':grows,'visible_domain':{'source':'continuous_ivory_torso_armor_cover first-half outer faces only','actual_ray_rows':rays,'missing_front_or_rear_columns_unknown':sum(not p['actual_front_and_rear_exist'] for p in rays),'no_interpolation_missing_regions':True,'pitch_m':.02,'sample_count':len(pts),'functional_excluded_sample_count':int(keep.sum()),'remaining_conditional_sample_count':int((~keep).sum()),'voxel_quadrature_volume_not_exact_CSG_m3':len(pts)*.02**3,'remaining_sample_quadrature_volume_not_free_cavity_m3':int((~keep).sum())*.02**3,'visible_armor_0mm_reconstruction_context_not_AA3_approval':True,'side_caps_interfaces_airpaths_maintenance_not_validated':True},'routes_max2':[{'id':'broad_3d_volume','definition':'Replace self-owned cage walls/ribs within actual ray-limited torso volume; preserve complete shoulder seats/waist annulus and every actual complete-function protected stock. Use broad interconnected material around cavities; existing 4mm rails are not permanent design minima.'},{'id':'perimeter_parallel_paths','definition':'Use front/rear lateral load shells around actual complete packs and low pump zone, joined by wide top/waist load transfer roots. Compare under identical protected interfaces/function stocks; do not assume this route fits before full CSG+assembly-sweep evaluation.'}],'FEM_boundary_input_plan':{'active_B_numerical_load_cases':None,'historical_G13_loads_are_reference_only_not_B_loads':True,'rebuild_each_B_mass_member_and_COM_once':True,'cage_only_FE':'Apply downstream-arm six-dimensional shoulder resultants instead of those same arm body gravity; distribute own cage/system gravity once on actual mesh/interfaces. Reaction wrench at actual waist port is the negative total force/moment translated to waist datum.','6D_transform':'M_new = M_old + (p_old - p_new) cross F; axes/origins must be explicit. Recompute changed source masses/COM before transport.','free_body_gauge':'Integral rigid-motion constraints only remove six null modes; gauge rows may not absorb a non-balanced load. Check sumF/sumM before solve.','assembly_mount_model':'Waist pressure/compression and finite bolt/seat compliance, shoulder preload and contact remain unknown. Never fully fix waist plus both shoulders to create artificial stiffness.','load_cases_to_rebuild':['low/nom/high gravity at exact B system scope','independent left/right task force at actual palm contact, transformed through current serial support','bilateral and single-hand external load sensitivity','actuator/brake holding reactions through actual fixed supports, only with new force mapping','drive transient inertial loads only after OEM rotor/assembly inertia and body ownership are available'],'historical_G13_case_numbers_not_applied':True,'not_ton_support_proof':True},'non_design保护':{'must_preserve':['actual waist output/journal/contact annulus candidate and movinggear full stock','both complete fixed shoulder case/motor/load-support functional spaces and mounting-pressure interface hypotheses','shaft/bearing/bolt/keeper holes and tool approach pathways','480 complete cells, pack coldplate/insulation/bus/BMS/vent/service grouping','two complete pump/motor/inverter/filter groups, HX, reservoirs, fans/core and inlet/outlet paths, compute/backscreen'],'designable':['own cage sidewalls/top-bottom crossbeams/neck walls and added torso-only ribs after joints are preserved','hidden armor inner returns only via separately bound shell delta; never visible armor by silent edit'],'assembly_service':'Existing service envelopes are temporary swept void proposals, not permanent hardware or automatically validated channels. Actual extraction sweeps must include every other retained part and moved parked groups; G14 shoulder initial assembly is rejected independently.'},'physical_or_topology_optimization_accepted':False,'elapsed_s':time.time()-t}
+write('report.json',report);print('REPORT_READY',sha(OUT/'report.json'),'frame',man.volume()*7850,'samples',len(pts),'remaining',(~keep).sum(),flush=True)

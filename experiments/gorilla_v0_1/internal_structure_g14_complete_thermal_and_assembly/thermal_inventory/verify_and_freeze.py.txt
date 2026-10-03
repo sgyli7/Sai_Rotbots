@@ -1,0 +1,50 @@
+from pathlib import Path
+import json,hashlib,math,numpy as np
+from datetime import datetime,timezone
+O=Path(__file__).resolve().parent;R=O.parents[1]
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+d=json.load(open(O/'thermal_complete_inventory.json'));a=json.load(open(O/'reference_stock_package_scene.json'))
+checks=[]
+def ck(label,b,data=None):checks.append({'check':label,'pass':bool(b),'scope':'numerical/reference inventory only','data':data})
+for p,h in d['input_hashes'].items():ck('input hash '+p,sha(R/p)==h)
+ck('unique native stock IDs',len({p['name'] for p in a['parts']})==len(a['parts']))
+for p in a['parts']:
+ v=np.array(p['vertices_world_m']);f=np.array(p['faces']);q=v[f]
+ V=np.einsum('ij,ij->i',q[:,0],np.cross(q[:,1],q[:,2])).sum()/6
+ ck('reference stock '+p['name'],np.isfinite(v).all() and V>0 and not p['physical_material_geometry'],{'outer_stock_volume_L':float(V*1000),'not_net_OEM_material':True})
+for t in d['complete4320_temperature_screens']:
+ H=t['H_Q_per_initialDeltaT_W_K'];q=t['heat_kW']*1000;C=t['water_L_min']/60*4180
+ ck('temperature conservation '+t['label']+str(t['ambient_C']),abs(q-H*(t['radiator_Tin_C']-t['ambient_C']))<1e-8 and abs(q-C*(t['radiator_Tin_C']-t['radiator_Tout_C']))<1e-8)
+old=json.load(open(R/'.scratch/gorilla_internal_e2_system/system_spec.json'))
+for typ,key,Lkey in [('water','routes','neutral_centerline_length_m'),('oil','oil_routes','neutral_length_m')]:
+ for r in old[key]:
+  pts=np.array([n['center_world_m'] for n in r['nodes']]);L=float(np.linalg.norm(np.diff(pts,axis=0),axis=1).sum())
+  ck('independent polyline length '+typ+' '+r['id'],abs(L-r[Lkey])<1e-10,{'recomputed_m':L,'stored_m':r[Lkey]})
+ck('old27 branch arithmetic',len(old['thermal_targets'])==27 and abs(sum(q['flow'] for q in old['thermal_targets'])-59)<1e-10)
+cy=d['fluid_stock_derivation']['F1_cylinder_swept_inventory']
+for c in cy:
+ swept=math.pi*c['bore_m']**2*c['stroke_m']/4*1000;rod=math.pi*c['rod_m']**2*c['stroke_m']/4*1000
+ ck('cap minus annular equals tank swing '+c['id'],abs(c['swept_full_cap_volume_L']-c['swept_full_annular_volume_L']-rod)<1e-12 and abs(swept-c['swept_full_cap_volume_L'])<1e-12)
+g11=json.load(open(R/'.scratch/gorilla_internal_g11_functional_budget/functional_budget.json'))['two_conditional_macro_choices'][0]
+base=sum(v for k,v in json.load(open(R/'.scratch/gorilla_internal_g12_thermal_route/thermal_route_screen.json'))['heat_function_distribution']['A'].items() if k!='totaleta_battery_loss_kW')
+P=g11['phase_bus_demand_kW'][0];eta=.98;Rohm=.015*80/6
+for k,V in enumerate([288,200]):
+ I=P*1000/(eta*V);Q=base+P*(1/eta-1)+I*I*Rohm/1000
+ ck('independent G11 terminal/storage heat '+str(V),abs(Q-d['heat_accounting']['A480_total_kW_range'][k])<1e-8,{'actual_A_total_kW':Q,'DC_loss_kW':P*(1/eta-1),'cell_R_kW':I*I*Rohm/1000})
+ck('A heat splits',all(abs(q-(d['heat_accounting']['A_oil_kW']+l))<1e-12 for q,l in zip(d['heat_accounting']['A480_total_kW_range'],d['heat_accounting']['A_lowT_kW_range'])))
+cy=d['fluid_stock_derivation']['F1_cylinder_swept_inventory'];ck('14 native plus4 missing separated',sum(c['F1_native_barrel_present'] for c in cy)==14 and len(cy)==18)
+ck('unknown OEM fan mass not zero',next(i for i in d['thermal_inventory'] if i['function']=='fan_bank')['fan_mass_kg'] is None)
+ck('actual maximum curve used once',all(t['complete_core_airflow_m3_min']==16 for t in d['complete4320_temperature_screens']))
+ck('no qualified installed thermal architecture',not d['assembly_thermal_pressure_flow_whole_robot_accepted'])
+receipt={'checks':checks,'failed_count':sum(not c['pass'] for c in checks),'thermal_or_installed_or_wholebody_qualified':False,'actual_surface_reference_images_seen':['lytron_4320_dimension_page.png','ewp_pressure_flow_page.png','ewp80_dimension_page.png','ebm172_full_body_mount_drawing.png'],'max_public_graph_conditional_capacity_uncertainty':[]}
+for Ta in [25,35]:
+ row=[]
+ for H in [161,166,171]:row.append(H*(50-Ta)/(1-H/(15.1/60*4180))/1000)
+ receipt['max_public_graph_conditional_capacity_uncertainty'].append({'ambient_C':Ta,'capacity_kW_at_H161_166_171':row,'H_read_not_capacity_guarantee':True})
+(O/'verification.json').write_text(json.dumps(receipt,indent=2)+'\n')
+urls={'lytron_2003_primary_catalog_mirrored.pdf':'https://theelectrostore.com/content/datasheets/Lytron_2003_catalog_heatexchangers_45-51.pdf','davies_craig_2023_catalog.pdf':'https://daviescraig.com.au/media/2576/1688618225.CatalogueV8Small6-July-2023.pdf','.scratch/gorilla_internal_g12_thermal_route/ebm_dc_axial_catalog.pdf':'https://www.ebmpapst.com/content/dam/ebm-papst/products/compact-fans/axial-compact-fans/DC_axial_compact_fans_catalog.pdf','.scratch/gorilla_internal_g12_thermal_route/boyd_4000_heat_exchangers.pdf':'https://info.boydcorp.com/hubfs/Thermal/Liquid-Cooling/Boyd-Stainless-Steel-Tube-Fin-Heat-Exchangers.pdf','.scratch/gorilla_internal_g12_thermal_route/boyd_4320_thermal_metric.pdf':'https://info.boydcorp.com/hubfs/Thermal/Liquid-Cooling/Boyd-4320-Heat-Exchanger-Graph-Metric.pdf'}
+(O/'source_urls.json').write_text(json.dumps(urls,indent=2)+'\n')
+files={str(x.relative_to(O)):{'sha256':sha(x),'bytes':x.stat().st_size} for x in sorted(O.rglob('*')) if x.is_file() and x.name!='freeze_manifest.json'}
+manifest={'stage':'G14','frozen_UTC':datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC'),'scope':'complete thermal reference dimensions/functions/conditional formulas, no installed layout','input_hashes':d['input_hashes'],'files':files,'reproduction_commands':['.venv/bin/python .scratch/gorilla_internal_g14_thermal_complete_inventory/build_inventory.py','.venv/bin/python .scratch/gorilla_internal_g14_thermal_complete_inventory/build_reference_package.py','.venv/bin/python .scratch/gorilla_internal_g14_thermal_complete_inventory/verify_and_freeze.py'],'thermal_or_geometry_or_wholebody_acceptance':False}
+(O/'freeze_manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+print('checks',len(checks),'failed',receipt['failed_count']);print('manifest',sha(O/'freeze_manifest.json'));print('report',sha(O/'README.md'));print('data',sha(O/'thermal_complete_inventory.json'));print('package',sha(O/'reference_stock_package_scene.json'))

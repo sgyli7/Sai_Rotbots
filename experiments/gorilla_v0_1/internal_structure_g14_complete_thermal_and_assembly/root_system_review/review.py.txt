@@ -1,0 +1,44 @@
+from pathlib import Path
+import json,gzip,hashlib,collections,numpy as np,sys
+O=Path(__file__).resolve().parent;R=O.parents[1];P=R/'.scratch/gorilla_internal_g14_complete_thermal_colayout'
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def load(p):return json.load(gzip.open(p,'rt') if str(p).endswith('.gz') else open(p))
+def center(p):v=np.array(p['vertices_world_m']);return (v.min(0)+v.max(0))/2
+base=load(R/'.scratch/gorilla_internal_g13_load_cage_colayout/b/scene.json.gz');bybase={p['name']:p for p in base['parts']}
+# Classifies diagnostic geometry; no presumed source repair or catalogue voids.
+def kind(p):
+ role=p.get('role','');cat=p.get('category',p.get('E_metadata',{}).get('category',''))
+ if role in ['global_fluid_inventory_reference','bounded_water_lumen_source'] or cat in ['coolant_fluid','hydraulic_oil_fluid']:return 'inventory_allocation_pending'
+ if any(w in role for w in ['envelope','reference','window','service']):return 'reference_envelope_obstacle'
+ if role.startswith('finite_') or role in ['armor_cover','armor_surface','visible_mechanism','control_display_glass','control_display_ui','E2_finite_load_material']:return 'finite_material_geometry'
+ if role=='E_thermal_routing_candidate' and ('material' in cat or cat in ['sealed_duct','auxiliary_coldplate','motor_cooling_case']):return 'finite_material_geometry'
+ return 'reference_envelope_obstacle'
+def run(letter):
+ S=P/letter/'scene.json.gz';F=P/letter/'finite_overlap_rows.json';A=P/letter/'audit_summary.json'
+ if not(S.exists() and F.exists() and A.exists()):return None
+ s=load(S);a=load(A);f=load(F);by={p['name']:p for p in s['parts']};audit_bound=a['scene_sha256']==sha(S) and f['scene_sha256']==sha(S)
+ groups=collections.defaultdict(list);newgroup=[]
+ for x in f['positive_pairs']:
+  p,q=by[x['a']],by[x['b']];kp,kq=kind(p),kind(q)
+  c='inventory_allocation_pending' if 'inventory_allocation_pending' in [kp,kq] else ('reference_envelope_obstacle' if 'reference_envelope_obstacle' in [kp,kq] else 'finite_material_geometry')
+  row={**x,'review_class':c,'owner_a':p.get('body'),'owner_b':q.get('body'),'same_declared_body':p.get('body')==q.get('body'),'source_a':p.get('source_before_move_id',p.get('source_D_module_id')),'source_b':q.get('source_before_move_id',q.get('source_D_module_id')),'physical_load_or_contact_qualified':False,'source_native_admission_all_part_pair_not_proven':True}
+  groups[c].append(row)
+  if c=='finite_material_geometry' and (x['a'].startswith('g14_') or x['b'].startswith('g14_')):newgroup.append(row)
+ hs=['e2_dual_fluid_HX_material','e2_oil_HX_out_actual_hollow_port','e2_oil_HX_in_actual_hollow_port','e2_oil_HX_water_return_actual_hollow_port','e2_oil_HX_water_supply_actual_hollow_port'];hxr=[]
+ for n in hs:
+  if n in by and n in bybase:hxr.append({'id':n,'old_center_world_m':center(bybase[n]).tolist(),'new_center_world_m':center(by[n]).tolist(),'centroid_translation_m':(center(by[n])-center(bybase[n])).tolist()})
+ hx_preserved=bool(len(hxr)==5 and max(np.linalg.norm(np.array(q['centroid_translation_m'])-np.array(hxr[0]['centroid_translation_m'])) for q in hxr)<1e-8)
+ func=[{'name':p['name'],'role':p.get('role'),'category':p.get('category',p.get('E_metadata',{}).get('category')),'mass_range_kg':p.get('mass_range_kg'),'review_class':kind(p)} for p in s['parts'] if any(w in p['name'] for w in ['fan','radiator','reservoir','screen','HX','pump_complete','ewp','hot_secondary'])]
+ names=[p['name'] for p in s['parts']];dup=[n for n,c in collections.Counter(names).items() if c>1];rowids=[m['id'] for m in s['new_module_mass_rows']];ret=s['proposed_retired_ids'];retpresent=sorted(set(ret)&set(names));massghost=[n for n in rowids if n not in by];massdups=[n for n,c in collections.Counter(rowids).items() if c>1]
+ oldpump='e_coolant_pump_complete_reserve';fluid=[p['name'] for p in s['parts'] if p['role']=='global_fluid_inventory_reference'];allocated=[p['name'] for p in s['parts'] if p['role']=='bounded_water_lumen_source']
+ dirgroups=collections.defaultdict(list);holdgroups=collections.defaultdict(list)
+ for p in s['parts']:
+  n=p['name']
+  if '_directional__' in n:dirgroups[n.split('__')[0]].append(n)
+  if '_holding__' in n:holdgroups[n.split('__')[0]].append(n)
+ core=[p['name'] for p in s['parts'] if p['name']=='g14_lytron4320_complete_reference'];fans=[p['name'] for p in s['parts'] if p['name'].startswith('g14_full172_fan_')];packs=[{'id':i['id'],'count':i['count'],'actual_present_cells':sum(n in by for n in i['cell_ids'])} for i in s['new_pack_info']]
+ pairsort=lambda rows:sorted(rows,key=lambda r:r['positive_intersection_m3'],reverse=True)
+ result={'layout':letter,'source_hashes':{str(p.relative_to(R)):sha(p) for p in [S,F,A]},'audit_and_overlap_bound_to_same_source':audit_bound,'overlap_row_source_sha256':f['scene_sha256'],'audit_source_sha256':a['scene_sha256'],'pair_counts_and_top5_admissible_for_actual_scene':audit_bound,'scene_part_count':len(names),'duplicates':dup,'retired_count':len(ret),'retired_present_count':len(retpresent),'retired_present_ids':retpresent,'new_mass_row_missing_members':massghost,'new_mass_duplicate_ids':massdups,'three_categories_count':{k:len(v) for k,v in groups.items()},'finite_same_declared_body_count':sum(x['same_declared_body'] for x in groups['finite_material_geometry']),'finite_different_declared_body_count':sum(not x['same_declared_body'] for x in groups['finite_material_geometry']),'physical_strength_or_complete_contact_qualification_count':0,'top5_finite_newlayout_obstacles':pairsort(newgroup)[:5],'top5_all_finite':pairsort(groups['finite_material_geometry'])[:5],'top5_reference_obstacles':pairsort(groups['reference_envelope_obstacle'])[:5],'top5_inventory_challenges':pairsort(groups['inventory_allocation_pending'])[:5],'all_classified_pairs':dict(groups),'HX_five_native_components':hxr,'HX_single_rigid_group_translation_preserved':hx_preserved,'complete_native_core_count':len(core),'full172_native_fan_count':len(fans),'packs':packs,'18_directional_group_members':dict(dirgroups),'18_holding_group_members':dict(holdgroups),'new_global_stock_names':fluid,'real_jacket_lumen_alias_global_names':allocated,'all_native_fluid_part_mass_must_not_sum_into_global_twice':True,'legacy_complete_coolant_pump_still_present':oldpump in by,'legacy_coolant_pump_retired':oldpump in ret,'legacy_pump_scope_requires_active_or_context_assignment':oldpump in by,'screen_function_alias_source_declared':s.get('same_back_screen_function_reference_alias_ids',[]),'screen_both_geometry_present':all(n in by for n in ['ds_back_screen','rear_control_screen_module_envelope']),'screen_only_ds_known_mass_other_shape_mass_unknown':True,'hot_secondary_budget_id':'g14_hot_secondary_complete_function_budget','hot_secondary_functions_declared':by['g14_hot_secondary_complete_function_budget'].get('functions',[]),'hot_secondary_individual_native_submodules_or_degas_or_HX_connections':False,'G14_all_new_coldplate_and_old_routes_connected':False,'function_context_inventory':func,'fluid_global_mass_new_rows_once_kg':sum(m['mass_range_kg'][1] for m in s['new_module_mass_rows'] if m['id'] in fluid),'stock_is_not_whole_net_or_installed_mass':True,'whole_installation_or_thermal_or_physical_accepted':False}
+ (O/(f'{letter}_review.json' if audit_bound else f'{letter}_unbound_overlap_review.json')).write_text(json.dumps(result,indent=2)+'\n');print(letter,sha(S),len(names),result['three_categories_count'],'HXrigid',hx_preserved,'oldpump',result['legacy_complete_coolant_pump_still_present']);return result
+A=run('a');B=run('b') if '--include-b' in sys.argv else None
+(O/'source_scope.json').write_text(json.dumps({'review_entry_sha256':sha(__file__),'G14_thermal_frozen_manifest_path':'.scratch/gorilla_internal_g14_thermal_complete_inventory/freeze_manifest.json','G14_thermal_frozen_sha256':sha(R/'.scratch/gorilla_internal_g14_thermal_complete_inventory/freeze_manifest.json'),'B_reviewed':B is not None,'no_source_edited_or_repaired':True,'no_source_mechanics_or_capacity_acceptance':True},indent=2)+'\n')

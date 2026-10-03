@@ -1,0 +1,16 @@
+from pathlib import Path
+import json,gzip,hashlib,numpy as np,manifold3d as mf,sys
+O=Path(__file__).resolve().parent;R=O.parents[1]
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+letter='b' if '--layout-b' in sys.argv else 'a'
+P=R/f'.scratch/gorilla_internal_g14_complete_thermal_colayout/{letter}/scene.json.gz';s=json.load(gzip.open(P,'rt'));by={p['name']:p for p in s['parts']};rev=json.load(open(O/f'{letter}_review.json'))
+rows=[]
+# Direct signed mesh; deterministic per-face fan triangulation of raw polygons, no fix_normals/repair/vertex welding/deleting triangles.
+for r in rev['top5_finite_newlayout_obstacles']:
+ m=[];resource=[]
+ for n in [r['a'],r['b']]:
+  p=by[n];V=np.array(p['vertices_world_m'],np.float64);F=np.array([[f[0],f[i],f[i+1]] for f in p['faces'] for i in range(1,len(f)-1)],np.uint64);q=mf.Manifold(mf.Mesh64(vert_properties=V,tri_verts=F));m.append(q)
+  resource.append({'id':n,'native_vertices':len(V),'native_faces':len(F),'direct_kernel_status':str(q.status()),'native_input_sha256':hashlib.sha256(V.tobytes()+F.tobytes()).hexdigest(),'kernel_input_source_modified':False,'native_signed_volume_m3':float(np.einsum('ij,ij->i',V[F][:,0],np.cross(V[F][:,1],V[F][:,2])).sum()/6),'kernel_volume_m3':q.volume(),'this_is_not_strict_all_surface_nesting_source_admission':True})
+ actual=(m[0]^m[1]).volume();rows.append({'a':r['a'],'b':r['b'],'audit_intersection_m3':r['positive_intersection_m3'],'independent_direct_boolean_m3':actual,'volume_residual_m3':actual-r['positive_intersection_m3'],'resource':resource,'finite_geometry_positive_reconfirmed':actual>1e-10,'same_owner_name_does_not_close_installation':True,'physical_load_connection_strength_accepted':False})
+d={'scene_sha256':sha(P),'scope':letter+' actual new-layout finite pairs only; direct signed Mesh64; per-polygon deterministic fan triangulation; no source edits','top5':rows,'all5_positive_geometry_reconfirmed':all(r['finite_geometry_positive_reconfirmed'] for r in rows),'not_whole_material_or_mechanical_pass':True}
+(O/f'{letter}_top5_direct_boolean_receipt.json').write_text(json.dumps(d,indent=2)+'\n');print([(r['a'],r['b'],r['independent_direct_boolean_m3']*1e6) for r in rows])
