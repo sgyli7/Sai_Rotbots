@@ -1,0 +1,55 @@
+"""Final bounded G3 receipt: same-source inventories, motor workpoints, native C15 route conflicts."""
+from pathlib import Path
+import json,math,runpy,itertools,hashlib
+import numpy as np
+import trimesh
+B=Path(__file__).resolve().parent
+n=runpy.run_path(str(B/'screen_wrist_layout.py'),run_name='receipt_sources');SRC=B/'selected_installation_scene.json';n['SRC']=SRC
+sha=n['sha'];native=n['native'];mani=n['mani'];s=json.loads(SRC.read_text());g=json.loads((B/'layout_gravity_selected.json').read_text());G2=n['G2'];old=json.loads((G2/'selected_installation_scene.json').read_text());oldps={p['name']:p for p in old['parts']};parts={p['name']:p for p in s['parts']};mods={r['id']:r for r in s['modules']}
+def ph(p):return hashlib.sha256(json.dumps(p,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+same=[id for id in parts if id in oldps and ph(parts[id])==ph(oldps[id])];changed=[id for id in parts if id in oldps and id not in same]
+channels=[]
+for k in range(1,6):
+ pref=f'g2_hand_{k}';functional=['motor','cooling_case','screw','load_frame','nut_carriage','complete_nut_with_flat_seat','nut_axial_retainer','brake','coupling','encoder','controller','inline_force_feedback','fasteners_connectors']
+ channels.append(dict(id=pref,all_required_functions_present=all(pref+'_'+x in parts for x in functional),functions={x:dict(part_present=pref+'_'+x in parts,native_unchanged_from_selectedG2=(pref+'_'+x in same),mass_range_kg=mods[pref+'_'+x]['mass_range_kg']) for x in functional},scope='180mmfinitecarriageprototype is the exactsame G2functiongeometry; changedwrist routing does NOT qualify completion ofcarriage-to-tendon termination orflexible compensate.' ))
+rows=[]
+for j in s['joints']:
+ gg=n['GEARS'][j['gear_family']];mm=n['MOTORS'][j['motor_family']]
+ for kg in [25,50]:
+  rr=[r for r in g['rows'] if r['joint']==j['id'] and r['payload_kg']==kg and r['mass_bound']=='high'];w=max(rr,key=lambda r:abs(r['torque_Nm']));T=abs(w['torque_Nm'])
+  for eta in [.55,.7,.85]:
+   Ti=T/(gg['ratio']*eta);Irms=Ti/mm['Kt'];cu25=3*Irms**2*mm['R25']
+   for omega in [0,.1,.3,.5]:
+    rpm=omega*gg['ratio']*60/(2*math.pi);rows.append(dict(joint=j['id'],payload_sensitivity_kg=kg,worst_sample=w['pose'],object_offset_localX_m=w['object_offset_localX_m'],gear=gg['sku'],motor=mm['sku'],output_torque_envelope_Nm=T,output_speed_sample_rad_s=omega,input_speed_rpm=rpm,efficiency_assumed=eta,input_torque_Nm=Ti,Tc_source_Nm=mm['Tc'],Ti_over_Tc=Ti/mm['Tc'],RMS_current_proxy_A=Irms,copper25_proxy_W=cu25,output_mechanical_W=T*omega,input_mechanical_W=T*omega/eta,gear_power_loss_proxy_W=T*omega*(1/eta-1),speed_vs_isolated48V_Tc_reference=rpm/mm['rpm48_at_Tc'],source_mount_C=20,source_coils_C=100,source_separate_Ts_available=(j['motor_family']=='78'),holding_brake_rated=False,closed_installed_continuous_capacity=False,scope='Independentworstsampleenvelope is NOT simultaneousthreejointactualtask. ηassumed andcu25 excludeshotR/iron/PWM/inverter/control/gearfriction, stall and braking/regeneration. Globalbusnotselected. Atzero mechanicalpower iszero while activeholdcurrentmayremain; brakeholdnotqualified.'))
+angular=[]
+for q in itertools.product([-math.pi/4,0,math.pi/4],repeat=3):
+ a={j['id']:v for j,v in zip(s['joints'],q)};ts=n['transforms'](s,a);J=np.array([ts[j['parent']][:3,:3]@j['axis_world'] for j in s['joints']]).T;sv=np.linalg.svd(J,compute_uv=False);angular.append(dict(q_rad=list(q),world_angular_J=J.tolist(),singular_values=sv.tolist(),rank=int(np.linalg.matrix_rank(J,tol=1e-9)),cond=float(sv[0]/sv[-1])))
+refids={p['name'] for p in n['context'](s)};c15=[p for p in n['n']['base']['parts'] if p['body'].startswith(('left_finger','left_thumb','left_palm')) and p['role']=='visible_mechanism' and p['name'] not in refids]
+c15receipts=[]
+for pn,angles in n['POSES'].items():
+ ts=n['transforms'](s,angles);cable=[p for p in s['parts'] if ('_route_' in p['name'] or '_pulley' in p['name'] or '_guide_housing' in p['name'])];meshes=[n['moved'](p,ts,s) for p in cable];bounds=np.array([m.bounds for m in meshes]);cache={};hits=[];errors=[]
+ for q in c15:
+  qm=n['moved'](q,ts,s);bb=qm.bounds
+  for i in np.where(np.all(np.minimum(bounds[:,1],bb[1])-np.maximum(bounds[:,0],bb[0])>1e-8,axis=1))[0]:
+   try:
+    if i not in cache:cache[i]=mani(meshes[i])
+    v=float((cache[i]^mani(qm)).volume())
+    if v>1e-9:hits.append(dict(new=cable[i]['name'],C15=q['name'],volume_m3=v))
+   except Exception as e:errors.append(str(e))
+ c15receipts.append(dict(pose=pn,positive_pairs=len(hits),hits=sorted(hits,key=lambda h:h['volume_m3'],reverse=True),unknown=errors))
+ print('G3_C15_MECHANISM_ROUTE',pn,len(hits),flush=True)
+remove=n['n']['removal'](s)
+gearcount=[r for r in s['modules'] if r['id'].startswith('g3_') and r['category']=='gear'];motorcount=[r for r in s['modules'] if r['id'].startswith('g3_') and r['category']=='motor']
+receipt=dict(final_scene_sha256=sha(SRC),G2_selected_sha256=sha(G2/'selected_installation_scene.json'),builder_sha256=sha(__file__),new_part_count=len(parts),mass_row_count=len(mods),ids_missing_mass=sorted(set(parts)-set(mods)),massrows_missing_native=sorted(set(mods)-set(parts)),unchanged_exact_G2_native_ids=same,changed_existing_G2_native_ids=changed,new_native_ids=sorted(set(parts)-set(oldps)),five_hand_channels=channels,new_listed_mass_range_kg=np.array([r['mass_range_kg'] for r in s['modules']]).sum(0).tolist(),OEM_threegear_mass_kg=sum(r['mass_range_kg'][1] for r in gearcount),OEM_threewristmotor_mass_kg=sum(r['mass_range_kg'][1] for r in motorcount),exact_old_replacement_receipt=remove,orientation_27_serialFK=angular,min_orientation_rank_45sample=min(x['rank'] for x in angular),max_orientation_cond_45sample=max(x['cond'] for x in angular),pitch90_singular_domain=True,scope='FinalselectedsameBtopology installationdatum andcradle/connectorcorrection only. OEMinnergear/motor/inputbearing ownership stillproxy; prescribedkinematicsnotforceverified. LegacyC15 mechanicalmassmissing remainsunfilled. No collisionorphysicsacceptance.',accepted=False)
+(B/'final_receipt.json').write_text(json.dumps(receipt,indent=2)+'\n');(B/'workpoint_screen.json').write_text(json.dumps(dict(scene_sha256=sha(SRC),rows=rows,scope='N/η/transmission/current/mechanicalpower atsameindependentenvelope; no combinedtorquerating orinstalledthermalqualification'),indent=2)+'\n');(B/'C15_mechanical_route_screen.json').write_text(json.dumps(dict(scene_sha256=sha(SRC),C15_sha256=sha(n['n']['n']['ns']['C15']),references=[p['name'] for p in c15],poses=c15receipts,scope='AlladdedoriginalC15visiblepalm/fingermechanismsnotalreadyE2acontext, againstfinitecables/guides/pulleys. Geometricobservationsonly; sourcefingeraxes/contactmassesnotqualified.',accepted=False),indent=2)+'\n')
+print('G3_FINAL_RECEIPT_READY',len(parts),receipt['new_listed_mass_range_kg'],len(same),len(changed),len(c15),flush=True)
+route=[]
+for pn,angles in n['POSES'].items():
+ ts=n['transforms'](s,angles)
+ for R in s['routes']:
+  q=np.array([trimesh.transform_points([p],ts[b])[0] for p,b in zip(R['points_world_m'],R['anchor_body_owners'])]);length=float(np.linalg.norm(np.diff(q,axis=0),axis=1).sum());route.append(dict(route=R['id'],pose=pn,nominal_length_m=R['length_m'],moving_anchor_polyline_length_m=length,delta_m=length-R['length_m'],scope='Movinganchorpolyline only; not an inextensible actualtendon/continuousBowden path. Complete compensation/elastic/friction/pulley clearance and180stroke closure not qualified.'))
+(B/'route_motion_selected.json').write_text(json.dumps(dict(scene_sha256=sha(SRC),rows=route,qualified=False),indent=2)+'\n')
+datum=[]
+for r in g['rows']:
+ j=next(x for x in s['joints'] if x['id']==r['joint']);ts=n['transforms'](s,n['POSES'][r['pose']]);a=ts[j['parent']][:3,:3]@j['axis_world'];L=.0005 if j['gear_family'].startswith('25') else .001;d=a*j['input_face_B_sign']*L;M=np.array(r['moment_at_pressure_center_Nm'])-np.cross(d,np.array(r['force_N']));over=float(np.linalg.norm(M-a*np.dot(M,a)));datum.append(dict(pose=r['pose'],joint=r['joint'],payload_kg=r['payload_kg'],mass_bound=r['mass_bound'],object_offset_localX_m=r['object_offset_localX_m'],L_inset_candidate_m=L,original_overturn_Nm=r['bearing_overturn_Nm'],candidate_overturn_Nm=over,delta_overturn_Nm=over-r['bearing_overturn_Nm'],scope='SourceLfrontstep as outputloadfacecandidate, not OEMexplicitconfirmed loadface. Translate samewrench once; axialtorque unchanged. No material/contact/bolts/thermal acceptance.'))
+(B/'output_datum_sensitivity.json').write_text(json.dumps(dict(scene_sha256=sha(SRC),rows=datum,max_absolute_overturn_delta_Nm=max(abs(x['delta_overturn_Nm']) for x in datum),output_load_plane_confirmed=False),indent=2)+'\n')

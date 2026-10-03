@@ -1,0 +1,100 @@
+"""Source-bound G3 local native probes. No upstream writes or whole-machine acceptance."""
+from pathlib import Path
+import json,math,runpy,argparse
+import numpy as np
+import trimesh
+from PIL import Image,ImageDraw
+OUT=Path(__file__).resolve().parent
+c=runpy.run_path(str(OUT/'compare_wrist_family.py'),run_name='g3_screen_sources');n=c['n'];sha=c['sha'];G2=c['G2'];native=n['native'];mani=n['mani'];POSES=n['POSES'];GEARS=c['GEARS'];MOTORS=c['MOTORS']
+SRC=OUT/'wrist_scene_a.json'
+def transforms(s,angles):
+ a=dict(angles)
+ for b,j in s['body_tree'].items():
+  if 'coupled_to' in j:a[j['joint_id']]=angles.get(j['coupled_to'],0)*j['coupling_ratio']
+ return n['transforms'](s,a)
+def moved(p,ts,s):return n['moved'](p,ts,s)
+def below(tree,b,child):
+ while b in tree:
+  if b==child:return True
+  b=tree[b].get('parent')
+ return False
+def gravity(s):
+ ret,err=c['retained'](s);mods={r['id']:r for r in s['modules']};tree=s['body_tree'];pt=np.array([f['contact'] for f in n['features']]).mean(0);rows=[]
+ for pn,angles in POSES.items():
+  ts=transforms(s,angles);coms={p['name']:moved(p,ts,s).center_mass for p in s['parts']};ptw=trimesh.transform_points([pt],ts['left_palm'])[0]
+  for kg in [25,50]:
+   for dx in [-.08,0,.08]:
+    loadp=ptw+ts['left_palm'][:3,:3]@np.array([dx,0,0])
+    for j in s['joints']:
+     g=GEARS[j['gear_family']];m=MOTORS[j['motor_family']];T=ts[j['parent']];axis=T[:3,:3]@j['axis_world'];pivot=trimesh.transform_points([j['pivot_world_m']],T)[0];pc0=np.array(j['output_A_face_world_m'])+np.array(j['axis_world'])*j['input_face_B_sign']*g['R'];pc=trimesh.transform_points([pc0],T)[0]
+     for mi,label in enumerate(['low','nominal','high']):
+      F=np.array([0,0,-kg*9.80665]);M=np.cross(loadp-pc,F);cm=om=0
+      for p in s['parts']:
+       if below(tree,p['body'],j['child']):
+        mass=mods[p['name']]['mass_range_kg'][mi];ff=np.array([0,0,-mass*9.80665]);F+=ff;M+=np.cross(coms[p['name']]-pc,ff);cm+=mass
+      for r in ret:
+       if below(tree,r['body'],j['child']):
+        mass=r['mr'][mi];co=trimesh.transform_points([r['COM']],ts[r['body']])[0];ff=np.array([0,0,-mass*9.80665]);F+=ff;M+=np.cross(co-pc,ff);om+=mass
+      tau=float(np.dot(M+np.cross(pc-pivot,F),axis));over=float(np.linalg.norm(M-axis*np.dot(M,axis)));Fa=float(abs(np.dot(F,axis)));Fr=float(np.linalg.norm(F-axis*np.dot(F,axis)));P0=Fr+2*over/g['dp']+.44*Fa
+      rows.append(dict(pose=pn,joint=j['id'],payload_kg=kg,object_offset_localX_m=dx,mass_bound=label,gear=g['sku'],motor=m['sku'],torque_Nm=tau,Tav_reference_ratio=abs(tau)/g['Tav'],Tr_reference_ratio=abs(tau)/g['Tr'],repeated_reference_ratio=abs(tau)/g['repeated'],bearing_overturn_Nm=over,Mc_reference_ratio=over/g['Mc'],Fr_N=Fr,Fa_N=Fa,P0_N=P0,fs=g['C0']/P0,motor_input_torque_by_eta={str(e):abs(tau)/(g['ratio']*e) for e in [.55,.70,.85]},motor_Tc_ratio_eta55=abs(tau)/(g['ratio']*.55*m['Tc']),source_pressure_center_world_m=pc.tolist(),force_N=F.tolist(),moment_at_pressure_center_Nm=M.tolist(),new_child_mass_kg=cm,retained_exact_child_mass_kg=om,qualified=False))
+ summaries=[]
+ for kg in [25,50]:
+  for label in ['nominal','high']:
+   for j in s['joints']:
+    q=[r for r in rows if r['payload_kg']==kg and r['mass_bound']==label and r['joint']==j['id']]
+    summaries.append(dict(payload_kg=kg,mass_bound=label,joint=j['id'],max_abs_torque_Nm=max(abs(r['torque_Nm']) for r in q),max_Tav_reference_ratio=max(r['Tav_reference_ratio'] for r in q),max_Mc_reference_ratio=max(r['Mc_reference_ratio'] for r in q),min_fs=min(r['fs'] for r in q),max_motor_Tc_ratio_eta55=max(r['motor_Tc_ratio_eta55'] for r in q)))
+ return dict(scene_sha256=sha(SRC),retained_rows=ret,retained_mass_range_kg=np.array([r['mr'] for r in ret]).sum(0).tolist(),retained_native_missing=err,summary=summaries,rows=rows,scope=f'Gravity only, local5poses+25kg firstconditionalrange and50kg sensitivity. Exactnew{len(s["parts"])}inventory andretained{len(ret)}same-nativeCOM; otherfinger/palmmechanisms/contact/dynamics/SIpartition/thermal/dutyunknown. Outputloadplane usesoverallleftAproxy; sourceLrecessedface candidate not formallyconfirmed, Rpressurecenter conditional. Tr/Tav/Mc comparisons are source reference, not assembled rating.',physics_accepted=False)
+def context(s):
+ ids={r['id'] for r in s['replacement_inventory']}
+ return [p for p in n['old']['parts'] if 'left' in p['body'] and any(k in p['body'] for k in ['forearm','palm','finger','thumb','wrist']) and p['name'] not in ids and not p['name'].startswith(('e_coolant_inventory','e_ds_left_'))]
+def collisions(s,pn):
+ ts=transforms(s,POSES[pn]);ps=s['parts'];ms=[moved(p,ts,s) for p in ps];bounds=np.array([m.bounds for m in ms]);cache={};hits=[];unknown=[]
+ def M(i):
+  if i not in cache:cache[i]=mani(ms[i])
+  return cache[i]
+ def test(i,j,q,reference,body):
+  try:
+   a=M(i);b=M(j) if j is not None else mani(q)
+   if str(a.status())!='Error.NoError' or str(b.status())!='Error.NoError':unknown.append([ps[i]['name'],reference,'invalid']);return
+   v=float((a^b).volume())
+   if v>1e-9:hits.append(dict(a=ps[i]['name'],b=reference,body_a=ps[i]['body'],body_b=body,volume_m3=v,kind='new-new' if j is not None else 'retained_context',producer_class='unclassified finite overlap; no automatic intended-contact deletion'))
+  except Exception as e:unknown.append([ps[i]['name'],reference,str(e)])
+ for i in range(len(ps)):
+  for j in np.where(np.all(np.minimum(bounds[i,1],bounds[i+1:,1])-np.maximum(bounds[i,0],bounds[i+1:,0])>1e-8,axis=1))[0]+i+1:test(i,int(j),None,ps[j]['name'],ps[j]['body'])
+ for p in context(s):
+  q=moved(p,ts,s);b=q.bounds
+  for i in np.where(np.all(np.minimum(bounds[:,1],b[1])-np.maximum(bounds[:,0],b[0])>1e-8,axis=1))[0]:test(int(i),None,q,p['name'],p['body'])
+ return dict(scene_sha256=sha(SRC),pose=pn,hits=sorted(hits,key=lambda x:x['volume_m3'],reverse=True),positive_count=len(hits),unknown=unknown,scope='Actual G3native new-new+retained exactleftE2a context only. Includes conservativeOEM coarse outerstock, no automatic exception. OEMinternal coupledWGslot partition unbuilt, so any rotor-phase stock hit remains conditionalproxy rather than provedOEMfailure. Wholemachine/oldlongcoolanthoses/shoulderupstream and missing originalC15 mechanical frames not full screened.',geometry_accepted=False)
+def projection(s,layout):
+ im=Image.new('RGB',(1700,1300),'white');d=ImageDraw.Draw(im);d.text((20,15),'G3 actual left native. 25kg CONDITIONAL domain; original armor0mm. Assembly/thermal/tendon NOT qualified.',fill='black');scale=1000
+ armor=[p for p in n['base']['parts'] if p['body'].startswith(('left_forearm','left_palm','left_finger','left_thumb'))]
+ for title,axis,org in [('XZ',(0,2),(630,1190)),('YZ',(1,2),(800,1190))]:
+  def P(q):return (org[0]+(q[axis[0]]-(0 if title=='XZ' else .55))*scale,org[1]-(q[2]-.75)*scale)
+  for p in armor:
+   vs=np.array(p['vertices_world_m'])
+   for face in p['faces']:qq=[P(vs[i]) for i in face];d.line(qq+[qq[0]],fill=(188,197,208),width=1)
+  for p in sorted(s['parts'],key=lambda p:np.mean(np.array(p['vertices_world_m'])[:,1 if title=='XZ' else 0])):
+   vs=np.array(p['vertices_world_m']);col=(80,111,124) if p['role']=='actual_material' else (178,127,64)
+   if 'route_' in p['name']:col=(60,90,63)
+   for face in p['faces']:d.polygon([P(vs[i]) for i in face],fill=col,outline=(37,45,50))
+  d.text((100 if title=='XZ' else 1000,70),title+' same1000px/m; original armor wire',fill='black')
+ im.save(OUT/('native_wrist_'+layout+'.png'))
+def material(s):
+ groups={};o=np.zeros(3);pmap={p['name']:p for p in s['parts']};errors=[];receipt=[]
+ for r in s['modules']:
+  if r['material_density_kg_m3']:groups.setdefault((r['body'],r['material_density_kg_m3']),[]).append(r)
+  else:o+=r['mass_range_kg']
+ for (body,rho),rs in groups.items():
+  ms=[mani(native(pmap[r['id']])) for r in rs];U=ms[0]
+  for r,m in zip(rs,ms):
+   if str(m.status())!='Error.NoError':errors.append(r['id'])
+  for m in ms[1:]:U=U+m
+  nom=float(U.volume()*rho);o+=np.array([.9,1,1.25])*nom;receipt.append(dict(body=body,rho=rho,member_ids=[r['id'] for r in rs],listed_nominal_kg=sum(r['mass_range_kg'][1] for r in rs),samebody_union_nominal_kg=nom,solid_components=len(U.decompose())))
+ return dict(scene_sha256=sha(SRC),listed_mass_range_kg=np.array([r['mass_range_kg'] for r in s['modules']]).sum(0).tolist(),samebody_union_diagnostic_mass_range_kg=o.tolist(),groups=receipt,invalid_ids=errors,scope='ManifoldMesh64samebody/samematerial union diagnostic; independentrope/housing/module interfaces not automatically welded. No union savings adopted without physicaljoining. OEMmass is givenonce independentofgeometric volume.',SI_qualified=False)
+if __name__=='__main__':
+ parser=argparse.ArgumentParser();parser.add_argument('--layout',choices=['a','b','selected'],default='selected');args=parser.parse_args();l=args.layout;SRC=OUT/('selected_installation_scene.json' if l=='selected' else 'wrist_scene_'+l+'.json')
+ s=json.loads(SRC.read_text());projection(s,l);g=gravity(s);(OUT/('layout_gravity_'+l+'.json')).write_text(json.dumps(g,indent=2)+'\n');m=material(s);(OUT/('layout_material_'+l+'.json')).write_text(json.dumps(m,indent=2)+'\n');print('G3_GRAVITY_MATERIAL_READY',len(s['parts']),sha(SRC),flush=True)
+ for q in g['summary']:
+  if q['mass_bound']=='high':print('G3_FORCE',q,flush=True)
+ for pn in POSES:
+  r=collisions(s,pn);(OUT/f'layout_collision_{l}_{pn}.json').write_text(json.dumps(r,indent=2)+'\n');print('G3_POSE',pn,r['positive_count'],'unknown',len(r['unknown']),flush=True)

@@ -1,0 +1,157 @@
+"""G3 finite conditional roll input installation, independent of frozen G2."""
+from pathlib import Path
+import json, hashlib, math, sys
+import numpy as np
+import trimesh as tm
+import manifold3d as mf
+
+R=Path('/home/ethan/Projects/Sai_Rotbots'); O=Path(__file__).resolve().parent
+assert O.name=='gorilla_internal_g3_waist_input'
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+write=lambda p,d:Path(p).write_text(json.dumps(d,indent=2,allow_nan=False)+'\n')
+G2=json.loads((R/'.scratch/gorilla_internal_g2_rotary_waist/scene.json').read_text())
+B=np.array([-.123,0,2.05]); Q=tm.geometry.align_vectors([0,0,1],[1,0,0]);Q[:3,3]=B
+parts=[]; joints=[]; fits=[]
+depth=float(sys.argv[1]) if len(sys.argv)>1 else .018
+assert depth in [.006,.018]
+shift=.013 # macro B full input group axial relocation; B/output faces unchanged
+def cy(z,r,L,x=0.,y=0.):return mf.Manifold.cylinder(L,r,r,64,True).translate([x,y,z])
+def rg(z,ro,ri,L):return cy(z,ro,L)-cy(z,ri,L+.002)
+def bx(c,d):return mf.Manifold.cube(d,True).translate(c)
+def uni(ms):
+ u=ms[0]
+ for m in ms[1:]:u=u+m
+ return u
+def kernel(m):return mf.Manifold(mf.Mesh64(np.asarray(m.vertices,dtype=np.float64),np.asarray(m.faces,dtype=np.uint64)))
+def torus(z,Rr,rr):return kernel(tm.creation.torus(Rr,rr,major_sections=64,minor_sections=16)).translate([0,0,z])
+COL={'fixed':[.34,.48,.58,1],'input':[.75,.45,.20,1],'bearing_ball':[.73,.74,.75,1],'spring':[.72,.62,.22,1],'release':[.66,.41,.48,1]}
+def add(n,m,owner='fixed',material='steel',rho=7850,**kw):
+ if m.status()!=mf.Error.NoError or m.volume()<=1e-10:raise RuntimeError((n,str(m.status()),m.volume()))
+ q=m.transform(Q[:3,:]).to_mesh64();p={'name':'g3_roll_'+n,'body':owner,'role':'finite_conditional_material','material_id':material,'density_kg_m3':rho,'rgba':COL.get(owner,[.58,.58,.58,1]),'vertices_world_m':np.asarray(q.vert_properties)[:,:3].tolist(),'faces':np.asarray(q.tri_verts).astype(int).tolist(),'local_axis_q_range_m':[m.bounding_box()[2],m.bounding_box()[5]],**kw};parts.append(p);return p['name']
+def keyslot(z,L,r=10e-3):return bx([0,r+.001,z],[.0062,.006,L+.0002])
+# Exact keyed WG face dimensions, conditional insertion/axial stop remain explicit.
+shaft=cy(-.089,.010,.168)+cy(depth/2-.005,.00949,depth)+cy(-.0585,.012,.007)+cy(-.022,.012,.006)
+for z,L,r in [(-.0585,.006,.012),(-.108,.012,.010),(-.163,.007,.010),(depth/2-.005,depth,.0095)]:
+ slot=bx([0,r-.0002,z],[.006,.006,L]);shaft=shaft-slot
+ add('key_'+str(z).replace('-','m').replace('.','p'),slot^cy(z,r+.0028,L),'input',key_width_m=.006,key_top_radius_m=r+.0028,source='custom key; WG width6JS9/V21.8 verified, slot length conditional')
+add('WG_axial_retaining_compound_film',rg(depth/2-.005,.0095,.00949,depth)-keyslot(depth/2-.005,depth,.00949),'input',material='conditional_loctite638_retaining_film',rho=1100,WG_axial_stop_bond_surface_material_and_actual_contact_length_unknown=True,engagement_length_m=depth)
+add('stepped_input_shaft',shaft,'input',working_WG_metal_shaft_diameter_m=.01898,shaft_plus_film_diameter_m=.019,main_input_bearing_diameter_m=.020,WG_insertion_m=depth,WG_insertion_depth_OEM_verified=False)
+# Rotor holder closes the old R52 to R55.5 radial gap with an actual sleeve and finite film.
+mc=-.03725; hr=.0246; rotor_lo=mc-hr/2;rotor_hi=mc+hr/2
+sleeve=rg(-.0407,.0554,.051,.0362)
+flange=rg(-.0575,.0554,.012,.006)-keyslot(-.0575,.006,.012)
+for a in np.arange(6)*math.pi/3:flange=flange-cy(-.0575,.008,.008,.036*math.cos(a),.036*math.sin(a))
+add('rotor_holder_sleeve_and_spider',sleeve+flange,'input',rotor_holder_OD_m=.1108,rotor_holder_wall_m=.0044,custom_rotor_axial_center_m=mc,actual_rotor_center_OEM_unknown=True)
+add('rotor_bond_film',rg(mc,.0555,.0554,hr),'input',material='conditional_loctite638_retaining_film',rho=1100,OEM_permission_and_hot_shear_strength_unknown=True,radial_film_m=.0001)
+# Two actual input bearing geometries; custom geometry, not a rated catalogue SKU.
+for label,z in [('front',-.012),('rear',-.070)]:
+ groove=torus(z,.01675,.00305)
+ inner=rg(z,.0165,.010,.014)-groove;outer=rg(z,.0235,.017,.014)-groove
+ add(label+'_bearing_inner_race',inner,'input',custom_bearing=True,angular_contact_preload_rating_unknown=True)
+ add(label+'_bearing_outer_race',outer,'fixed',custom_bearing=True)
+ balls=[]
+ for i in range(12):
+  a=2*math.pi*i/12;ball=mf.Manifold.sphere(.003,16).translate([.01675*math.cos(a),.01675*math.sin(a),z]);balls.append(ball);add(label+'_bearing_ball_'+str(i),ball,'bearing_ball',rated_capacity_unknown=True)
+ cage=rg(z,.01745,.01605,.004)
+ for b in balls:cage=cage-b.scale([1.075,1.075,1.075]).translate([0,0,0]) if False else cage-b
+ add(label+'_bearing_cage',cage,'bearing_ball',material='bearing_cage_polymer_hypothesis',rho=1400,material_components_are_one_cage_stock_not_rated=True)
+ fits.append({'interface':label+'_input_bearing','bore_m':.020,'OD_m':.047,'width_m':.014,'axial_center_q_m':z,'race_groove_ball_radial_clearance_m':.00005,'support_geometry_present':True,'preload_and_axial_retention_tolerance_unknown':True})
+# Real shaft preload retention parts, finite holes and shoulders, not an encoder-filled shaft end.
+add('rear_bearing_locknut',rg(-.0805,.016,.010,.005),'input',thread_pitch_and_preload_unknown=True)
+add('rear_bearing_preload_washer',rg(-.0775,.016,.010,.001),'input')
+# Spring-applied dual-face friction brake: disk, linings, pressure/reaction plates, spring/coil.
+disc=rg((-.095-shift),.044,.010,.006)+rg((-.095-shift),.014,.010,.012)
+disc=disc-keyslot((-.095-shift),.012)
+add('brake_rotor_disc_hub',disc,'input',design_holding_input_torque_Nm=25.,hub_key_and_friction_material_unknown=True)
+for side,z in [('rear',(-.0985-shift)),('front',(-.0915-shift))]:add('brake_'+side+'_friction_lining',rg(z,.0435,.027,.001),'fixed' if side=='front' else 'release',material='conditional_brake_lining',rho=2200)
+front_reaction=rg((-.0885-shift),.067,.024,.005)
+for i in range(6):
+ a=i*math.pi/3+math.pi/6;front_reaction=front_reaction-cy(-.1015,.0021,.007,.0625*math.cos(a),.0625*math.sin(a))
+add('brake_front_reaction_plate',front_reaction,'fixed')
+pressure=rg((-.1015-shift),.064,.024,.005)
+for i in range(6):
+ a=i*math.pi/3;x=.055*math.cos(a);y=.055*math.sin(a)
+ pressure=pressure+cy((-.106-shift),.0085,.006,x,y)
+for i in range(6):
+ a=i*math.pi/3+math.pi/6;pressure=pressure-cy(-.1145,.0022,.018,.0625*math.cos(a),.0625*math.sin(a))
+add('brake_rear_pressure_plate_spring_seats',pressure,'release')
+guide_heads=[]
+for i in range(6):
+ a=i*math.pi/3+math.pi/6;x=.0625*math.cos(a);y=.0625*math.sin(a);head=cy(-.097,.004,.004,x,y);guide_heads.append(head)
+ add('brake_pressure_plate_rotation_guide_'+str(i),cy(-.1145,.002,.031,x,y)+head,'fixed',guide_radial_clearance_m=.0002,pressure_plate_translation_and_friction_pin_loading_unknown=True)
+add('brake_release_copper_coil',rg((-.1195-shift),.0445,.025,.018),'fixed',material='insulated_copper_coil_envelope_with_fill_factor',rho=5200,copper_fill_factor=.58,release_electromagnetic_force_unverified=True)
+magnet_yoke=rg((-.1195-shift),.024,.015,.027)+rg((-.1195-shift),.046,.045,.027)+rg((-.132-shift),.065,.015,.003)
+for i in range(6):
+ a=i*math.pi/3;magnet_yoke=magnet_yoke-cy((-.132-shift),.0085,.005,.055*math.cos(a),.055*math.sin(a))
+add('brake_magnetic_yoke_with_finite_spring_seat_clearances',magnet_yoke,'fixed')
+# Explicit closed helical wire finite material. Ground ends/contact force model remain unknown.
+def helix(x,y,zlow,height,Rr,wire,turns=5):
+ n=120;k=10;theta=np.linspace(0,2*math.pi*turns,n+1);verts=[]
+ for t in theta:
+  radial=np.array([math.cos(t),math.sin(t),0.]);tangent=np.array([-Rr*math.sin(t),Rr*math.cos(t),height/(2*math.pi*turns)]);tangent/=np.linalg.norm(tangent);v=np.cross(tangent,radial);c=np.array([x+Rr*math.cos(t),y+Rr*math.sin(t),zlow+height*t/(2*math.pi*turns)])
+  for aa in np.arange(k)*2*math.pi/k:verts.append(c+wire*(math.cos(aa)*radial+math.sin(aa)*v))
+ faces=[]
+ for j in range(n):
+  for i in range(k):
+   a=j*k+i;b=j*k+(i+1)%k;c=(j+1)*k+(i+1)%k;d=(j+1)*k+i;faces.extend([[a,b,c],[a,c,d]])
+ for j,reverse in [(0,True),(n,False)]:
+  ci=len(verts);verts.append(np.mean(verts[j*k:(j+1)*k],axis=0))
+  for i in range(k):faces.append([ci,j*k+(i+1)%k,j*k+i] if reverse else [ci,j*k+i,j*k+(i+1)%k])
+ return mf.Manifold(mf.Mesh64(np.asarray(verts,dtype=np.float64),np.asarray(faces,dtype=np.uint64)))
+for i in range(6):
+ a=i*math.pi/3;add('brake_spring_'+str(i),helix(.055*math.cos(a),.055*math.sin(a),(-.129-shift),.019,.007,.0015)^bx([0,0,(-.1195-shift)],[.2,.2,.021]),'spring',free_length_m=.024,working_axial_shortening_m=.003,wire_diameter_m=.003,mean_coil_diameter_m=.014,active_turns=5,ground_end_faces_machined_to_q_m=[(-.130-shift),(-.109-shift)],actual_preload_deflection_unknown=True)
+# Fixed complete motor casing with cooling void, bearing carriers and outer brake reaction.
+cooler=rg(-.0375,.087,.0801,.041)-rg(-.0375,.0855,.0835,.032)
+front=rg(-.003,.100,.0676,.006)+rg(-.009,.100,.024,.003)+rg(-.0095,.100,.096,.019)+rg(-.017,.100,.0801,.004)
+for i in range(14):
+ a=i*2*math.pi/14;front=front-cy(-.003,.0045,.008,.087*math.cos(a),.087*math.sin(a))-cy(-.009,.007,.006,.087*math.cos(a),.087*math.sin(a))
+front=front+rg(-.0125,.027,.0235,.014)
+rear=rg(-.076,.087,.024,.003)+rg(-.070,.027,.0235,.018)
+# Three finite outside-stator tie beams connect front/rear plates, leaving radial service corridors.
+for i in range(3):
+ a=i*2*math.pi/3;rear=rear+cy(-.0565,.004,.041,.0865*math.cos(a),.0865*math.sin(a))
+brakecase=rg(-.123,.069,.065,.059)+rg(-.149,.069,.024,.005)
+for i in range(6):
+ a=i*math.pi/3;brakecase=brakecase+cy(-.0865,.0035,.021,.0625*math.cos(a),.0625*math.sin(a))+cy(-.14475,.0085,.0035,.055*math.cos(a),.055*math.sin(a))
+case=cooler+front+rear+brakecase
+case=case-front_reaction
+for head in guide_heads:case=case-head
+# Two actual cooling chamber ports/fittings, global coolant inventory allocated elsewhere.
+port_fittings=[]
+for side in [-1,1]:
+ T=tm.geometry.align_vectors([0,0,1],[side,0,0]);T[:3,3]=[side*.091,0,-.0375]
+ fitting=(mf.Manifold.cylinder(.014,.0045,.0045,48,True)-mf.Manifold.cylinder(.016,.002,.002,48,True)).transform(T[:3,:])
+ outer=mf.Manifold.cylinder(.018,.0045,.0045,48,True).transform(T[:3,:]);bore=mf.Manifold.cylinder(.024,.002,.002,48,True).transform(T[:3,:]);case=case-outer-bore;port_fittings.append(fitting)
+ add('coolant_'+('in'if side<0 else'out')+'_hollow_fitting',fitting,'fixed',connection_bore_m=.004,thread_and_seal_source_unknown=True)
+add('fixed_motor_case_front_and_rear_bearing_brake_carriers',case,'fixed',material='conditional_unwelded_6082_T6_machined_bolted_case',rho=2710,construction_joint_fasteners_and_interfaces_unknown=True)
+add('stator_thermal_interface_annulus',rg(-.03725,.0801,.080,.0345),'fixed',material='conditional_loctite638_retaining_film',rho=1100,source_stator_OD_m=.160,adhesive_stator_outer_substrate_condition_and_film_thermal_conductivity_unknown=True)
+# Shaft optical encoder rotating target and finite stationary readhead mount.
+target=rg((-.150-shift),.031,.010,.0015)+rg((-.150-shift),.014,.010,.007)
+target=target-keyslot((-.150-shift),.007)
+for i in range(24):
+ a=i*2*math.pi/24;target=target-cy((-.150-shift),.0011,.003,.026*math.cos(a),.026*math.sin(a))
+add('encoder_rotating_code_target_and_hub',target,'input',optical_resolution_aliasing_and_target_material_unknown=True)
+head=bx([.0365,0,(-.150-shift)],[.008,.015,.014])
+add('encoder_stationary_readhead_envelope',head,'fixed',material='conditional_complete_sensor_envelope',rho=1700,not_selected_sensor=True,working_radial_gap_m=.0015)
+arm=bx([.0445,0,-.160],[.008,.020,.017])+bx([.0505,0,-.154],[.020,.024,.005])
+add('encoder_stationary_readhead_support',arm,'fixed',material='conditional_unwelded_6082_T6',rho=2710)
+cover=(rg((-.145-shift),.070,.065,.018)+rg((-.155-shift),.070,.015,.002))-case-arm-bx([.0365,0,(-.150-shift)],[.010,.017,.016])
+add('input_rear_cover',cover,'fixed',material='conditional_unwelded_6082_T6',rho=2710,encoder_cover_tool_removal_service_unknown=True)
+for i in range(14):
+ a=i*2*math.pi/14;x=.087*math.cos(a);y=.087*math.sin(a)
+ add('B_case_mount_bolt_'+str(i),cy(0,.004,.012,x,y)+cy(-.00925,.0065,.0065,x,y),'fixed',OEM_M8_PCD174_verified=True,assumed_OEM_thread_engagement_m=.006,actual_OEM_blind_depth_and_thread_preload_unknown=True)
+# Every OEM complete reference retained separately; gross-stock intersections are not hidden.
+refs=[]
+for name in ['gear','motor']:
+ p=next(p for p in G2['parts'] if p['name']=='g2_waist_roll_'+name)
+ p=dict(p)
+ if name=='motor':p['vertices_world_m']=(np.asarray(p['vertices_world_m'])-np.array([shift,0,0])).tolist()
+ if name=='gear':
+  # Actual drawing total90; fixedcase85/pilot90; J8 points inward, not added length.
+  stock=cy(.0425,.095,.085)+cy(-.0025,.0675,.005);mesh=stock.transform(Q[:3,:]).to_mesh64();p['vertices_world_m']=np.asarray(mesh.vert_properties)[:,:3].tolist();p['faces']=np.asarray(mesh.tri_verts).astype(int).tolist();p['complete_dimensions_m']={'D':.190,'L':.090};p['reference_profile_scope']='conservativeD190body85 + knownD135inputpilot5; OEMmaterial/internalnotreconstructed';p['corrected_OEM_full_length_from_originaldrawing_m']=.090
+ p['name']='g3_roll_'+name+'_complete_reference';p['body']='mixed_OEM_internal_owner_unknown';refs.append(p)
+refs+=[]
+sources=[Path(__file__),R/'.scratch/gorilla_internal_g2_rotary_waist/scene.json',R/'.scratch/gorilla_internal_g1_oem_installation/csg_csf_gear_units.pdf',R/'.scratch/gorilla_internal_d_root_sources/csg50.pdf',R/'.scratch/gorilla_internal_d_system/tecnotion_torque_brochure_2_5.pdf',O/'loctite_638_tds_may2024.pdf']
+scene={'schema':'gorilla_g3_roll_input_finite_conditional_v1','robot_id':'gorilla_v0_1','parts':parts,'complete_OEM_reference_context':refs,'original_armor_comparator':G2['original_armor_comparator'],'local_axis_contract':{'axis_world':[1,0,0],'B_case_input_face_world_m':B.tolist(),'q_positive':'toward OEM output','CSG50_overall_outer_left_face_q_m':.085,'CSG50_A_small_PCD_output_face_conditional_q_m':.084,'CSG50_A_plane_from_drawing_L1mm_is_conditional_not_text_labeled_datum':True,'CSG50_WG_pilot_input_face_q_m':-.005,'CSG50_case_B_face_q_m':0,'CSG50_full_bare_L_m':.090,'CSG50_J8mm_is_inward_step_not_extra_length':True,'CSG50_bearing_pressure_center_conditional_q_m':.066,'CSG50_WG_bore_H7_m':.019,'CSG50_WG_key_width_JS9_m':.006,'CSG50_WG_key_V_m':.0218,'WG_engagement_starts_at_pilot_q_m':-.005,'WG_depth_assumption_m':depth,'WG_depth_unknown':True,'custom_QTR160_rotor_axial_center_q_m':mc,'rotor_ID_m':.111,'rotor_Hr_m':hr,'rotor_OD_and_assembly_axial_datum_unknown':True},'functional_inventory':{'CSG50_complete_gear':refs[0]['name'],'QTR160_complete_bare_kit':refs[1]['name'],'holder':'g3_roll_rotor_holder_sleeve_and_spider','input_shaft':'g3_roll_stepped_input_shaft','input_bearings':['front','rear'],'brake':'spring applied dual face + release coil + fixed reaction','encoder':'code target keyed to input + stationary readhead/support','motor_cooling':'finite chamber and actual4mm-bore in/out fittings; upstream routes unconnected, global water stock allocation only','controller_and_complete_wiring':'retained external G2 context, not moved or modeled here'},'fits':fits,'source_hashes':{str(p.relative_to(R)):sha(p) for p in sources},'original_visible_armor_change_mm':0,'macro_route':'b_full_input_group_relocated13mm_complete_function_geometry_preserved','macro_a_retained_history':True,'full_motor_axial_move_m':-shift,'scope':'One conditional roll input manufacturing path, finite material; no complete waist or real OEM installation approval','ports':[{'id':'coolant_in','world_m':(B+np.array([-.0375,-.091,0])).tolist(),'bore_m':.004,'direction_world':[0,-1,0]},{'id':'coolant_out','world_m':(B+np.array([-.0375,.091,0])).tolist(),'bore_m':.004,'direction_world':[0,1,0]}],'coolant_chamber':{'q_center_m':-.0375,'ri_m':.0835,'ro_m':.0855,'axial_length_m':.032,'stock_counted_elsewhere_global_inventory':True,'upstream_not_connected':True,'machined_two_piece_seal_and_port_threads_unknown':True},'all_installation_physical_SI_and_aesthetic_acceptance':False,'no_G2_files_written':True}
+scene_path=O/('scene.json' if depth==.018 else 'wg6_scene.json');parameter_path=O/('parameters_and_interfaces.json' if depth==.018 else 'wg6_parameters_and_interfaces.json')
+write(scene_path,scene);write(parameter_path,{k:v for k,v in scene.items() if k not in ['parts','complete_OEM_reference_context','original_armor_comparator']});print('source',len(parts),sha(scene_path),flush=True)

@@ -1,0 +1,60 @@
+"""Uncropped same-scale native projection of frozen Gorilla G3 B, no mesh changes."""
+from pathlib import Path
+import json, hashlib
+import numpy as np
+import trimesh as tr
+from PIL import Image, ImageDraw
+
+O = Path(__file__).resolve().parent
+sha = lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()
+S = O / 'chain_scene.json'
+expected = '8fb41bd85c971d1456543c9660dd123780e3e342846c230ad2751fa5177b2fab'
+assert sha(S) == expected
+s = json.loads(S.read_text())
+W, H = 2000, 2000
+scale = 1250.
+views = {'front': ([0,-1,0], [0,0,1], [1,0,0]),
+         'left': ([-1,0,0], [0,0,1], [0,1,0]),
+         'rear': ([0,1,0], [0,0,1], [-1,0,0]),
+         'top': ([0,-1,0], [1,0,0], [0,0,1])}
+images = []
+for po in s['pose_scenes']:
+    options = [(v, a) for v in views for a in [False, True]] if po['id'] == 'neutral' else [('left', False)]
+    for view, armor in options:
+        ux, uy, dep = [np.array(v) for v in views[view]]
+        center = np.array([.05, .60, .52]) if view != 'top' else np.array([.05,.60,0])
+        entries = list(po['parts'])
+        if armor:
+            for p in s['armor_comparator']:
+                q = dict(p)
+                q['vertices_world_m'] = tr.transformations.transform_points(p['vertices_world_m'], po['body_transforms'][p['comparison_body']]).tolist()
+                entries.append(q)
+        items = []; projected = []
+        for p in entries:
+            vv = np.array(p['vertices_world_m']); rgba = p.get('rgba', [.26,.47,.67,1])
+            rgb = np.clip(np.array(rgba[:3]) * 255, 0, 255)
+            proj = np.stack([W/2 + (vv-center)@ux*scale, H/2 - (vv-center)@uy*scale], axis=1)
+            projected.extend(proj.tolist())
+            for f in p['faces']:
+                for k in range(1, len(f)-1):
+                    ii = [f[0], f[k], f[k+1]]; tri=vv[ii]
+                    n=np.cross(tri[1]-tri[0], tri[2]-tri[0]); n/=max(np.linalg.norm(n),1e-20)
+                    light=.6+.4*abs(float(n@np.array([.5,.4,.768])))
+                    items.append((float(tri.mean(0)@dep), proj[ii].tolist(), tuple((rgb*light).astype(int))))
+        bb = np.array([np.min(projected,0), np.max(projected,0)])
+        assert np.all(bb[0] >= [10,60]) and np.all(bb[1] <= [W-10,H-90]), (po['id'],view,bb)
+        image = Image.new('RGB',(W,H),'white'); draw = ImageDraw.Draw(image)
+        for _, pts, color in sorted(items,key=lambda x:x[0]):
+            draw.polygon([tuple(x) for x in pts],fill=color)
+        draw.text((20,20),f'Gorilla G3 B / {po["id"]} / {view} / '+('new rejected packaging proposal' if armor else 'bare finite geometry'),fill='black')
+        draw.text((20,H-70),f'{scale:g}px/m | source8fb41bd85c971d14 | reference bearings are component envelopes',fill='black')
+        draw.text((20,H-45),'Candidate rejected: source/motion/force/aesthetics; no capacity approval. Native triangles, no shape retouch.',fill='black')
+        out = O/f'{po["id"]}_{view}_{"armor" if armor else "bare"}_full.png'
+        image.save(out)
+        images.append({'path':out.name,'sha256':sha(out),'source_sha256':expected,'view':view,'pose':po['id'],
+                       'includes_new_B_armor':armor,'px_per_m':scale,'canvas_px':[W,H],
+                       'center_world_m':center.tolist(),'projected_pixel_bounds':bb.tolist(),'uncropped':True})
+        print('IMAGE',out.name,flush=True)
+(O/'native_full_view_manifest.json').write_text(json.dumps({'robot_id':'gorilla_v0_1','source_sha256':expected,
+    'render_entry_sha256':sha(Path(__file__)),'geometry_changed':False,'physical_accepted':False,
+    'historical_small_views_crop_knee_top_not_used_as_full_envelope':True,'images':images},indent=2)+'\n')

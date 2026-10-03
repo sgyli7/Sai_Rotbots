@@ -1,0 +1,24 @@
+"""Planar and lateral load-allocation sensitivity, not a qualified assembly."""
+from pathlib import Path
+import json,math,hashlib
+import numpy as np
+O=Path(__file__).resolve().parent;rows=[]
+H=np.array([.040,.665,.105]);B0=np.array([.310,.570,.065]);B1=np.array([.310,.760,.065]);pinsize=.040;pinspan=.070
+for anchor_z in [.230,.290,.350]:
+ A0=np.array([-.080,.570,anchor_z]);A1=np.array([-.080,.760,anchor_z]);u0=(B0-A0)/np.linalg.norm(B0-A0);u1=(B1-A1)/np.linalg.norm(B1-A1)
+ # Positive N is compression and pushes B away from A.
+ lever0=np.cross(B0-H,u0);lever1=np.cross(B1-H,u1)
+ for totalforce in [3000*9.81,1.5*3000*9.81]:
+  for dy in [0.,-.100,.100]:
+   C=np.array([.250,H[1]+dy,0.]);P=np.array([0.,0.,totalforce]);external_M=np.cross(C-H,P)
+   # Hypothesis: braces carry pitch and roll moments; hinge bearings carry yaw moment.
+   mat=np.array([[lever0[1],lever1[1]],[lever0[0],lever1[0]]]);N=np.linalg.solve(mat,-external_M[[1,0]])
+   F=N[0]*u0+N[1]*u1;hinge_force=-P-F;hinge_moment=-external_M-N[0]*lever0-N[1]*lever1
+   assert np.linalg.norm(hinge_moment[[0,1]])<1e-8
+   perpin=[{'brace_compression_N':float(n),'double_shear_MPa':abs(n)/(2*math.pi*pinsize**2/4)/1e6,'center_pin_span_bending_MPa':abs(n)*pinspan/4/(math.pi*pinsize**3/32)/1e6} for n in N]
+   area=.056*.044-(.056-.012)*(.044-.012)
+   rows.append({'anchor_z_m':anchor_z,'upward_ground_reaction_N':totalforce,'load_factor':totalforce/(3000*9.81),'CoP_delta_y_m':dy,'braces_N':N.tolist(),'all_braces_in_compression':bool((N>=0).all()),'hinge_reaction_N':hinge_force.tolist(),'hinge_yaw_reaction_Nm':float(hinge_moment[2]),'pins_assumed_OD_span_m':[pinsize,pinspan],'pin_nominal_checks':perpin,'brace_box_outer_wall_m':[.056,.044,.006],'brace_nominal_axial_MPa':[abs(float(n))/area/1e6 for n in N]})
+receipt={'robot_id':'gorilla_v0_1','entry_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'reference':'G3 A declared anchor sensitivity, not new B geometry','geometry_assumptions':{'fore_hinge_world_m':H.tolist(),'brace_foot_points_m':[B0.tolist(),B1.tolist()],'brace_heel_anchor_x_m':-.080,'ground_CoP_x_m':.250,'ground_force_direction_world':[0,0,1]},'load_allocation_hypothesis':'Both compression braces transmit all pitch and roll moment; actual hinge/bearing reaction sharing is indeterminate and must be modeled. Yaw reaction goes through hinge support. No material allowable/contact/fastener/loop stiffness qualification. Anchor_z alternatives are geometric hypotheses and not achieved fits.','cases':rows,'scope':'3t upward ground reaction balanced by downward parent load; separate1.5 sensitivity; neither whole robot rating nor added3t payload','physical_accepted':False}
+(O/'terminal_load_budget.json').write_text(json.dumps(receipt,indent=2)+'\n')
+for r in rows:
+ if r['load_factor']==1 and r['CoP_delta_y_m']>=0:print('anchor_z',r['anchor_z_m'],'dy',r['CoP_delta_y_m'],'N',np.round(r['braces_N'],1).tolist(),'hingeFxFz',np.round(np.array(r['hinge_reaction_N'])[[0,2]],1).tolist(),'pinBendingMax',round(max(x['center_pin_span_bending_MPa'] for x in r['pin_nominal_checks']),2),flush=True)

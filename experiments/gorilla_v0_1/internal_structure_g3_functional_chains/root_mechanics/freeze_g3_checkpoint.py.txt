@@ -1,0 +1,43 @@
+"""Capture selected G3 finite functional sources and root native visual rejection."""
+from pathlib import Path
+import gzip,hashlib,json,ast
+R=Path('/home/ethan/Projects/Sai_Rotbots')
+O=R/'experiments/gorilla_v0_1/internal_structure_g3_functional_chains'
+groups={'waist':'gorilla_internal_g3_waist_input','wrist':'gorilla_internal_g3_wrist_family',
+        'lower':'gorilla_internal_g3_foot_chain','root_mechanics':'gorilla_internal_g3_root_mechanics',
+        'root_render':'gorilla_internal_g3_root_render'}
+sha=lambda b:hashlib.sha256(b).hexdigest();rows=[];excluded=[];stored_by_hash={}
+for label,name in groups.items():
+    base=R/'.scratch'/name
+    for src in sorted(base.rglob('*')):
+        if not src.is_file() or '__pycache__' in src.parts:continue
+        rel=src.relative_to(base)
+        selected=src.suffix in {'.json','.md','.py','.svg','.png'}
+        if src.suffix=='.png' and (src.name.startswith(('csg25_','loctite_','qtr160_'))):selected=False
+        if label=='root_render' and rel.parts[0] not in ['leg_b_complete_01','render_native.py','render_leg_complete.py']:selected=False
+        raw=src.read_bytes()
+        if not selected:
+            excluded.append({'original_path':str(src.relative_to(R)),'sha256':sha(raw),
+                'reason':'Downloaded cache, log, Blender cache or preliminary visualization; excluded selected input'})
+            continue
+        if src.suffix=='.json':json.loads(raw)
+        if src.suffix=='.py':ast.parse(raw)
+        name=src.name+'.txt' if src.suffix=='.py' else src.name
+        encoding='gzip' if src.suffix=='.json' and len(raw)>250000 else 'raw'
+        stored=gzip.compress(raw,compresslevel=9,mtime=0) if encoding=='gzip' else raw
+        stored_hash=sha(stored)
+        dst=stored_by_hash.get(stored_hash,O/label/rel.parent/(name+('.gz' if encoding=='gzip' else '')))
+        if stored_hash not in stored_by_hash:
+            dst.parent.mkdir(parents=True,exist_ok=True)
+            if dst.exists() and dst.read_bytes()!=stored:raise ValueError('Refuse overwrite '+str(dst))
+            dst.write_bytes(stored);stored_by_hash[stored_hash]=dst
+        rows.append({'original_path':str(src.relative_to(R)),'original_sha256':sha(raw),'original_bytes':len(raw),
+            'stored_path':str(dst.relative_to(O)),'stored_sha256':sha(stored),'stored_bytes':len(stored),'encoding':encoding})
+manifest={'robot_id':'gorilla_v0_1','scope':'G3 finite functional inputs/wrist/complete lower candidates, rejected installation and new armor; no integrated robot or new exterior adoption',
+    'files':rows,'excluded_cached_records':excluded,'physical_accepted':False,'aesthetic_accepted':False,'stable_si':False,
+    'restore_dependency_note':'Restore G/G1/G2, C15 and E2a/F selected dependencies as applicable. Downloaded primary caches are excluded, with recorded URLs/hashes. This does not claim complete recursive reproduction.',
+    'new_user_reference_scope':'Six supplied leg images kept separately in robot design/concepts, structural inspiration only.',
+    'identical_raw_records_share_one_stored_file':True}
+(O/'snapshot_manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+print(json.dumps({'files':len(rows),'unique_stored_files':len(stored_by_hash),'stored_bytes':sum(p.stat().st_size for p in stored_by_hash.values()),
+    'manifest_sha256':sha((O/'snapshot_manifest.json').read_bytes())}),flush=True)

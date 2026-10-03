@@ -1,0 +1,52 @@
+"""One bounded B installation derivative: no axes/OEM/hand-function reduction."""
+from pathlib import Path
+import json,runpy
+import numpy as np
+B=Path(__file__).resolve().parent;n=runpy.run_path(str(B/'build_wrist_layout.py'),run_name='selected_mount_helpers')
+sha=n['sha'];native=n['native'];segment=n['segment'];cyl=n['cyl'];mani=n['mani'];from_m=n['from_m'];s=json.loads((B/'wrist_scene_b.json').read_text());pmap={p['name']:p for p in s['parts']};rmap={r['id']:r for r in s['modules']};changes=[]
+install=next(x for x in s['G3_installation'] if x['joint']=='left_wrist_yaw');j=next(x for x in s['joints'] if x['id']=='left_wrist_yaw')
+a=np.array(j['axis_world']);input_axis=a*j['input_face_B_sign'];fix=np.array(install['fixed_install_face']);mc=np.array(install['motor_center']);L=n['MOTORS']['78']['L'];u=np.array([0,0,1.])
+def put(id,m,why):
+ p=pmap[id];r=rmap[id];p['vertices_world_m']=np.asarray(m.vertices).tolist();p['faces']=np.asarray(m.faces).tolist()
+ if r['material_density_kg_m3']:
+  rho=r['material_density_kg_m3'];nom=float(m.volume*rho);r['material_volume_m3']=float(m.volume);r['mass_range_kg']=[.9*nom,nom,1.25*nom]
+ r['assumption']+=' SELECTED boundedinstallation: '+why;changes.append(dict(id=id,scope=why,old_B_function_retained=True))
+for J in s['joints']:
+ key=J['id'].removeprefix('left_');pref='g3_'+key;g=n['GEARS'][J['gear_family']];m=n['MOTORS'][J['motor_family']]
+ axis=np.array(J['axis_world']);inp=axis*J['input_face_B_sign'];uu=np.cross(axis,[0,0,1.]);
+ if np.linalg.norm(uu)<.1:uu=np.cross(axis,[0,1,0.])
+ uu/=np.linalg.norm(uu);vv=np.cross(axis,uu)
+ A=np.array(J['output_A_face_world_m']);Binput=A+inp*g['B'];caseface=A+inp*g['case_mount_from_output_m'];flangestart=A+inp*g['flange_start_from_output_m'];F=g['case_mount_from_output_m']-g['flange_start_from_output_m'];D=g['B']-g['case_mount_from_output_m']
+ gm=mani(cyl((A+flangestart)/2,g['output_register_OD_m']/2,g['flange_start_from_output_m'],axis))+mani(cyl((flangestart+caseface)/2,g['OD']/2,F,axis))+mani(cyl((caseface+Binput)/2,g['input_register_OD_m']/2,D,axis))
+ entry=Binput-inp*.003;gm-=mani(cyl(entry,.007,.0062,axis))
+ def ob(c,d):
+  q=n['box']([0,0,0],d);T=np.eye(4);T[:3,:3]=np.column_stack([uu,vv,axis]);T[:3,3]=c;q.apply_transform(T);return q
+ gm-=mani(ob(entry+uu*.0078,[.0031,.0051,.0062]))
+ size25=J['gear_family'].startswith('25');N=10 if size25 else 12;PCD=.096 if size25 else .125
+ for i in range(8):
+  q=A+inp*(.006 if size25 else .0075)+(uu*np.cos(i*np.pi/4)+vv*np.sin(i*np.pi/4))*(.021 if size25 else .0275);gm-=mani(cyl(q,.004 if size25 else .005,.0121 if size25 else .0151,axis))
+ for i in range(N):
+  q=(flangestart+caseface)/2+(uu*np.cos(i*2*np.pi/N)+vv*np.sin(i*2*np.pi/N))*PCD/2;gm-=mani(cyl(q,.00275 if size25 else .0033,F+.001,axis))
+ put(pref+'_gear',from_m(gm),'CORRECTED OEM52/62overallB; J4.5/5.5 are INWARD internaldatum, not outputprojection. Source Ofrontbody E36/45, Amaxflange E→C46/57, centralinputregisterT67/90 C→B52/62. Conservative internalfill ONLY. KnowninputØ14/key5, 6mm ownengagement stillunknown; masssameOEMonce.')
+ rmap[pref+'_gear']['source_gear']=g
+ rmap[pref+'_gear']['assumption']='Corrected coarse source outer profile: trueoverallB52/62, J4.5/5.5internalinset, maxflangeE36/45toC46/57 and inputpilotT67/90toB52/62. Interiorfill is conservative OEMstock, not actualmaterial or OEMCAD. KnownØ14H7/key5 window usesOWN6mm engagement depth; source axialfit/rotatingWG internalpartition unknown. OEMmass once.'
+ rmap[pref+'_output_flange']['assumption']='Finite external outputadapter with true8-M8/M10 PCD42/55 clearance pattern, outside macrooverallleftA. Source recessedL.5/1mm is an output-loadfacecandidate and is NOT explicitly confirmed; actualmateplane/register/standoff/boltfit unqualified. No Joutwardprojection or shaft-throughfixedcase claimed.'
+ oldcase=np.array(J['fixed_B_face_world_m']);shift=caseface-oldcase;mount=native(pmap[pref+'_fixed_mount']);mount.apply_translation(shift);put(pref+'_fixed_mount',mount,'CORRECTED true largePCD casefixedface atC46/57, 6/5mm inwardfromcentralinputpilotendB52/62; inner36/47mm opening clearsknownT67/90pilot. Outputface/axis unaffected.')
+ J['input_WG_end_face_world_m']=Binput.tolist();J['fixed_B_face_world_m']=caseface.tolist();J['source_case_mount_datum']='drawingC fromoverallA, notcentralinputpilotendB'
+ I=next(x for x in s['G3_installation'] if x['joint']==J['id']);I['source_gear']=g;I['fixed_install_face']=(caseface+inp*.006).tolist();I['input_WG_end_face']=Binput.tolist()
+ I['output_mount_scope']='output_free_face is ownadapterposition; overallleftA proxy is notconfirmedOEMloadface. RecessedL.5/1mm candidate and Rpressurecenter datum remainconditional.'
+ radial=(.061 if size25 else .079)+.012;uc=np.array([0,0,1.]) if key=='wrist_yaw' else uu;motorcenter=np.array(I['motor_center'])
+ for k in [-1,1]:
+  c0=caseface+inp*.006+uc*(k*radial);c1=motorcenter+inp*(m['L']/2+.037)+uc*(k*.026);mid=Binput+inp*(.018+m['L']+.004)+uc*(k*radial)
+  for i,(p,q) in enumerate([(c0,mid),(mid,c1)]):put(pref+f'_input_support_cradle_{k}_{i}',segment(p,q,.005,.0025),'samecompleteinputbearingcradle rebuiltfromtruecaseC mount; yawradialplacement verticalZ. Axis/bearing/motor/shaftdimensions unchanged; actualattachmentstrength unknown.')
+ # Fixed-side reaction bridge endpoints follow the corrected case datum.
+ endpoint_ids=['g3_distal_to_pitch_fixed_2'] if key=='wrist_pitch' else (['g3_pitch_output_to_yaw_case_bridge_3'] if key=='wrist_yaw' else [])
+ for id in endpoint_ids:
+  vertices=np.array(pmap[id]['vertices_world_m']);# translateendpoint-half ofstraightfinite cylinder using re-builtknownpath
+  if key=='wrist_pitch':p=[-.138,.91,1.315];q=(caseface+inp*.006+[0,0,.060]).tolist()
+  else:p=[-.0176,.70,1.34];q=(caseface+inp*.006+[0,0,.061]).tolist()
+  put(id,segment(p,q,.009,.0045),'sameexternalreactionpath endpoint matchestruecaseC corrected fixed mount; no topology/axischange.')
+for key in ['forearm_roll','wrist_pitch','wrist_yaw']:
+ id='g3_'+key+'_connectors_fasteners';m=native(pmap[id]);m.apply_translation([.042,0,0]);put(id,m,'complete connector/fastener function samevolume/mass moved42mmX besidecontroller instead ofsupportcrossing; actualmating plug/cable/servicing stillunknown')
+s['parts']=list(pmap.values());s['modules']=list(rmap.values());s['candidate']='g3_selected_b_installation';s['source_B_sha256']=sha(B/'wrist_scene_b.json');s['installation_builder_sha256']=sha(__file__);s['installation_changes']=changes;s['bounded_installation_only']=True;s['geometry_accepted']=False;s['physics_accepted']=False
+p=B/'selected_installation_scene.json';p.write_text(json.dumps(s,separators=(',',':'))+'\n');print('G3_SELECTED_READY',p,sha(p),len(s['parts']),np.array([r['mass_range_kg'] for r in s['modules']]).sum(0).tolist(),flush=True)

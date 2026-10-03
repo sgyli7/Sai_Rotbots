@@ -1,0 +1,354 @@
+"""Read-only final receipt for locked Gorilla G3 B geometry, not acceptance."""
+from pathlib import Path
+import json, hashlib, math, sys
+from collections import defaultdict
+import numpy as np
+import trimesh as tr
+import manifold3d as mf
+
+O = Path(__file__).resolve().parent
+ROOT = next(p for p in O.parents if (p / 'sai_robots_engineering_rules.md').exists())
+sys.path.insert(0, str(ROOT / '.scratch/gorilla_internal_g_material_contract'))
+import native_signed_material as gate
+sha = lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()
+S = O / 'chain_scene.json'
+source_sha = sha(S)
+assert source_sha == '8fb41bd85c971d1456543c9660dd123780e3e342846c230ad2751fa5177b2fab'
+s = json.loads(S.read_text())
+raw = json.loads((O / 'report.json').read_text())
+assert raw['source_sha256'] == source_sha
+parts = {p['name']: p for p in s['parts']}
+contract_rows = {r['id']: r for r in raw['contract']['parts']}
+invalid = {n for n, r in contract_rows.items() if not r['resource_contract_pass']}
+assert invalid == {'g3_arch_load_net'}
+
+def M(p):
+    return mf.Manifold(mf.Mesh64(np.asarray(p['vertices_world_m'], dtype=np.float64, order='C'),
+                                 np.asarray(p['faces'], dtype=np.uint64, order='C')))
+
+def mesh_of(m):
+    q = m.to_mesh64()
+    return tr.Trimesh(vertices=q.vert_properties[:, :3], faces=q.tri_verts, process=False)
+
+def moments(m):
+    t = mesh_of(m)
+    p = t.mass_properties
+    assert abs(p.volume - m.volume()) < 1e-8
+    return {'volume_m3': float(p.volume), 'com_world_m': p.center_mass.tolist(),
+            'inertia_at_com_per_density_kgm2': p.inertia.tolist()}
+
+def scaled(unit, masses):
+    v = unit['volume_m3']
+    return {**unit, 'mass_range_kg': [float(x) for x in masses],
+            'inertia_at_com_kg_m2_range': [(np.array(unit['inertia_at_com_per_density_kgm2']) * m / v).tolist() for m in masses]}
+
+def aggregate(rows, label):
+    out = []
+    for k in range(3):
+        mass = sum(x['mass_range_kg'][k] for x in rows)
+        com = sum(np.array(x['com_world_m']) * x['mass_range_kg'][k] for x in rows) / mass
+        inertia = np.zeros((3, 3))
+        for x in rows:
+            d = np.array(x['com_world_m']) - com
+            inertia += np.array(x['inertia_at_com_kg_m2_range'][k]) + x['mass_range_kg'][k] * (np.dot(d, d) * np.eye(3) - np.outer(d, d))
+        out.append({'case': ['low', 'nominal', 'high'][k], 'mass_kg': mass,
+                    'com_world_m': com.tolist(), 'inertia_at_com_world_kg_m2': inertia.tolist(),
+                    'inertia_eigenvalues_kg_m2': np.linalg.eigvalsh(inertia).tolist()})
+    return {'label': label, 'conditions': 'Conditional finite geometry and explicit mass assumptions; collisions/source rejection prevent SI release.', 'range': out}
+
+metal = defaultdict(list)
+for p in s['parts']:
+    if p.get('density_kg_m3'):
+        assert p['density_kg_m3'] == 7850
+        metal[p['body']].append(p)
+groups = []
+for owner, rows in metal.items():
+    mm = M(rows[0])
+    for p in rows[1:]:
+        mm = mm + M(p)
+    unit = moments(mm)
+    row = scaled(unit, [unit['volume_m3'] * 7850] * 3)
+    row.update({'id': 'metal_union_' + owner, 'body': owner, 'kind': 'finite_net_steel',
+                'source_part_ids': [p['name'] for p in rows], 'all_input_native_resource_contract_pass': not any(p['name'] in invalid for p in rows),
+                'source_piece_sum_mass_kg': sum(M(p).volume() * 7850 for p in rows),
+                'kernel_decompose_signed_boundary_objects_not_material_components': len(mm.decompose()), 'density_kg_m3': 7850})
+    groups.append(row)
+    print('MASS', owner, row['mass_range_kg'][1], flush=True)
+
+all_rows = list(groups)
+for p in s['parts']:
+    if p.get('density_kg_m3'):
+        continue
+    row = scaled(moments(M(p)), p['mass_range_kg'])
+    row.update({'id': p['name'], 'body': p['body'], 'kind': p['role'], 'all_input_native_resource_contract_pass': p['name'] not in invalid})
+    if p['role'] == 'bearing_reference_envelope':
+        row['mass_basis'] = 'SKF 32212 catalogue 1.15kg; high sensitivity1.55kg from wider33212 family NOT fitted to29.75mm source envelope.'
+        row['inertia_basis'] = 'Uniform annular-envelope mass distribution, not OEM roller/cage inertia; not steel-density mass.'
+    else:
+        row['mass_basis'] = 'Actual remaining segment-only elastomer volume times density900/1100/1400kg/m3.'
+    all_rows.append(row)
+armor_contract = gate.validate_scene({'parts': s['armor_comparator']})
+armor_rows = []
+for p in s['armor_comparator']:
+    row = scaled(moments(M(p)), p['mass_range_kg'])
+    row.update({'id': p['name'], 'body': p['body'], 'kind': 'new_armor_candidate',
+                'mass_basis': 'Actual finite4mm shell volume times assumed950/1400/2200kg/m3; material/manufacturing unknown.'})
+    armor_rows.append(row)
+
+same_owner_material_pairs = []
+for owner, rows in metal.items():
+    for i, a in enumerate(rows):
+        va = np.asarray(a['vertices_world_m']); ba = np.array([va.min(0), va.max(0)])
+        for b in rows[i + 1:]:
+            vb = np.asarray(b['vertices_world_m']); bb = np.array([vb.min(0), vb.max(0)])
+            if not (np.all(ba[1] >= bb[0]) and np.all(bb[1] >= ba[0])):
+                continue
+            overlap = float((M(a) ^ M(b)).volume())
+            if overlap > 1e-10:
+                same_owner_material_pairs.append({'a': a['name'], 'b': b['name'], 'body': owner,
+                                                   'volume_cm3': overlap * 1e6,
+                                                   'classification': 'unqualified_raw_boolean_involving_rejected_source' if a['name'] in invalid or b['name'] in invalid else 'verified_native_material_intersection',
+                                                   'same_body_does_not_qualify_material_overlap_as_assembly': True})
+
+# Actual transformed pieces, including sliding rods, independent braces and withdrawn locks.
+# Per-owner union here is a mathematical mass convention, not proof of rigid attachment.
+pose_mass_inertia = []
+for po in s['pose_scenes']:
+    pm = defaultdict(list)
+    remainder = []
+    for p in po['parts']:
+        if p.get('density_kg_m3'):
+            pm[p['body']].append(p)
+        else:
+            remainder.append(scaled(moments(M(p)), p['mass_range_kg']))
+    for owner, rows in pm.items():
+        mm = M(rows[0])
+        for p in rows[1:]:
+            mm = mm + M(p)
+        unit = moments(mm)
+        remainder.append(scaled(unit, [unit['volume_m3'] * 7850] * 3))
+    for p in s['armor_comparator']:
+        q = dict(p)
+        q['vertices_world_m'] = tr.transformations.transform_points(p['vertices_world_m'], po['body_transforms'][p['comparison_body']]).tolist()
+        remainder.append(scaled(moments(M(q)), p['mass_range_kg']))
+    pose_mass_inertia.append({'id': po['id'], 'root_shift_z_m': 0,
+                              'complete_declared_mass_inertia_before_unknowns': aggregate(remainder, po['id'])})
+
+def classify_pair(pair, armor=False):
+    names = [pair['part']] if armor else [pair['a'], pair['b']]
+    if any(n in invalid for n in names):
+        cls = 'unqualified_raw_boolean_involving_rejected_source'
+    elif any(parts[n]['role'] == 'bearing_reference_envelope' for n in names):
+        cls = 'reference_component_envelope_interference'
+    else:
+        cls = 'verified_native_material_intersection'
+    return {**pair, 'classification': cls, 'intended_contact_qualified': False}
+
+poses = []
+for r in raw['poses']:
+    cross = [classify_pair(p) for p in r['different_owner_material_intersections']]
+    padcross = [classify_pair(p) for p in r['pad_intersections']]
+    # Historical raw checker called these original_armor; they are new B armor!
+    ac = [classify_pair(p, armor=True) for p in r['original_armor_intersections']]
+    counts = lambda pp: {c: sum(x['classification'] == c for x in pp) for c in sorted({x['classification'] for x in pp})}
+    poses.append({'id': r['id'], 'different_owner_pairs': cross, 'pad_pairs': padcross,
+                  'new_B_armor_pairs': ac, 'different_owner_counts': counts(cross),
+                  'pad_counts': counts(padcross), 'new_B_armor_counts': counts(ac),
+                  'max_per_part_volume_change_m3': r['material_mass_constant_max_volume_error_m3'],
+                  'root_shift_z_m': 0, 'qualified_ground_contact_pose': False})
+
+# Preserve exact original pad source and inspect newly embedded steel instead of trusting nominal .017m.
+c15_path = ROOT / 'experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_scene.json'
+c15 = json.loads(c15_path.read_text())
+old = {p['name']: p for p in c15['parts']}
+def original_M(p):
+    vv = p.get('vertices_world_m', p.get('vertices'))
+    ff = p['faces']
+    tri = [[f[0], f[k], f[k + 1]] for f in ff for k in range(1, len(f) - 1)]
+    return mf.Manifold(mf.Mesh64(np.asarray(vv, np.float64), np.asarray(tri, np.uint64)))
+
+pad_details = []
+for p in s['parts']:
+    if p['role'] != 'new_composite_contact_pad':
+        continue
+    om = original_M(old[p['retained_original_pad']])
+    steelparts = metal[p['body']]
+    mm = M(steelparts[0])
+    for q in steelparts[1:]:
+        mm = mm + M(q)
+    cut = om ^ mm
+    cm = cut.to_mesh64()
+    zlo = float(cm.vert_properties[:, 2].min())
+    pad_details.append({'id': p['name'], 'original_pad': p['retained_original_pad'],
+                        'original_pad_source_sha256': sha(c15_path),
+                        'actual_steel_cut_volume_m3': float(cut.volume()),
+                        'minimum_steel_intrusion_z_m': zlo,
+                        'nominal_upper_carrier_bottom_z_m': .017,
+                        'nominal_elastomer_thickness_claim_rejected_if_less': zlo < .017 - 1e-8,
+                        'actual_remaining_pad_material_components': contract_rows[p['name']]['material_component_count_from_nesting'],
+                        'ground_z_m': 0, 'segmented_contact_not_qualified': True})
+
+actuators = []
+for a in s['actuators']:
+    js = np.array([r['J_m_per_rad'] for r in a['samples']])
+    lens = np.array([r['eye_length_m'] for r in a['samples']])
+    acap = math.pi * a['bore_m']**2 / 4
+    aann = math.pi * (a['bore_m']**2 - a['rod_m']**2) / 4
+    actuators.append({k: a[k] for k in ['id', 'axis_group', 'parent_body', 'output_body', 'bore_m', 'rod_m', 'wall_m', 'pin_m', 'q_range_deg', 'stroke_m', 'custom_zero_eye_m', 'minimum_complete_zero_eye_m', 'zero_deficit_m', 'geometry_present']} |
+                     {'sample_count': len(js), 'J_range_m_per_rad': [float(js.min()), float(js.max())],
+                      'eye_length_range_m': [float(lens.min()), float(lens.max())],
+                      'no_J_zero_in_samples': bool(np.all(js > 0) or np.all(js < 0)),
+                      'positive_q_supply': a['samples'][0]['positive_q_supply'],
+                      'force_push_N_21_30MPa': [21e6 * acap, 30e6 * acap],
+                      'force_pull_N_21_30MPa': [21e6 * aann, 30e6 * aann],
+                      'flow_L_min_at_abs_qdot_0p5_cap_range': [float(.5 * abs(js).min() * acap * 60000), float(.5 * abs(js).max() * acap * 60000)],
+                      'flow_L_min_at_abs_qdot_0p5_annulus_range': [float(.5 * abs(js).min() * aann * 60000), float(.5 * abs(js).max() * aann * 60000)],
+                      'pressure_grade_continuous_duty_heat_qualified': False})
+
+# Actual B forefoot static free body: ground upward, hinge and braces equilibrate the same load.
+H = np.array(next(j['c'] for j in s['joints'] if j['id'] == 'forefoot'))
+supports = [H + [0, seat, 0] for seat in [-.120, .120]]
+brace_points = [np.array(b['B_world_m']) for b in s['braces']]
+us = [(np.array(b['B_world_m']) - b['A_world_m']) / np.linalg.norm(np.array(b['B_world_m']) - b['A_world_m']) for b in s['braces']]
+def wrench(force, point):
+    return np.r_[force, np.cross(point - H, force)]
+columns = [wrench(u, p) for u, p in zip(us, brace_points)]
+for p in supports:
+    columns += [wrench(np.array([1., 0, 0]), p), wrench(np.array([0., 0, 1.]), p)]
+C = np.array(columns).T
+brace_load_cases = []
+for factor in [1., 1.5]:
+    for dy in [0., -.1, .1]:
+        F = np.array([0., 0, 3000 * 9.81 * factor])
+        cop = np.array([.250, .650 + dy, 0.])
+        ext = wrench(F, cop)
+        # Two distinct stated allocations; joint bearing load sharing is not determined by rigid geometry.
+        for allocation in ['equal_brace_compression_hinge_takes_roll_yaw', 'braces_take_all_roll_hinge_takes_yaw']:
+            if allocation.startswith('equal'):
+                equality = np.array([1., -1., 0, 0, 0, 0])
+            else:
+                equality = np.array([0., 0, 0, supports[0][1] - H[1], 0, supports[1][1] - H[1]])
+            mat = np.vstack([C[[0, 2, 3, 4, 5]], equality])
+            rhs = np.r_[-ext[[0, 2, 3, 4, 5]], 0.]
+            values = np.linalg.solve(mat, rhs)
+            residual = C @ values + ext
+            checks = []
+            for i, load in enumerate(values[:2]):
+                pin = s['braces'][i]['pin_m']; span = s['braces'][i]['fork_center_span_m']
+                b = s['braces'][i]
+                area = .060 * .050 - (.060 - .012) * (.050 - .012)
+                checks.append({'brace_axial_N': float(load), 'pin_double_shear_MPa': float(abs(load) / (2 * math.pi * pin**2 / 4) / 1e6),
+                               'pin_center_load_span_bending_MPa': float(abs(load) * span / 4 / (math.pi * pin**3 / 32) / 1e6),
+                               'eye_projected_bearing_MPa': float(abs(load) / (pin * b['eye_width_m']) / 1e6),
+                               'fork_projected_bearing_MPa': float(abs(load) / (2 * pin * b['fork_plate_thickness_m']) / 1e6),
+                               'nominal_box_axial_MPa': float(abs(load) / area / 1e6),
+                               'overcenter_stop_force_sensitivity_N': float(abs(load) * .008 / .036),
+                               'stop_surface_contact_stiffness_buckling_qualified': False})
+            brace_load_cases.append({'load_factor': factor, 'ground_reaction_upward_N': float(F[2]), 'CoP_world_m': cop.tolist(),
+                                     'allocation_hypothesis': allocation, 'brace_compression_N': values[:2].tolist(),
+                                     'compression_only_satisfied': bool(np.all(values[:2] >= 0)),
+                                     'hinge_two_seat_reactions_XZ_N': [values[2:4].tolist(), values[4:6].tolist()],
+                                     'hinge_total_force_N': (np.array([values[2] + values[4], 0, values[3] + values[5]])).tolist(),
+                                     'equilibrium_max_abs_residual': float(abs(residual).max()), 'pin_nominal_screens': checks})
+
+ground = np.array([0., 0, 3000 * 9.81])
+cop = np.array([.25, .65, 0.])
+joint_pressure = []
+for j in s['joints']:
+    if j['id'] in ['knee', 'forefoot']:
+        continue
+    contact_torque = float(np.array(j['axis']) @ np.cross(cop - np.array(j['c']), ground))
+    aa = [a for a in s['actuators'] if a['axis_group'] == j['id']]
+    if not aa:
+        continue
+    need = -contact_torque / sum(next(x['J_m_per_rad'] for x in a['samples'] if abs(x['q_deg']) < 1e-8) for a in aa)
+    a = aa[0]; cap = math.pi * a['bore_m']**2 / 4; ann = math.pi * (a['bore_m']**2 - a['rod_m']**2) / 4
+    supply_area = cap if need > 0 else ann
+    joint_pressure.append({'joint': j['id'], 'ground_contact_torque_Nm': contact_torque, 'cylinders_equal_share': len(aa),
+                           'required_axial_force_each_N': need, 'required_force_direction': 'push_extension' if need > 0 else 'pull_retraction',
+                           'ideal_force_each_21MPa_N': supply_area * 21e6, 'ideal_force_each_30MPa_N': supply_area * 30e6,
+                           'ideal_required_chamber_pressure_MPa': abs(need) / supply_area / 1e6,
+                           'ideal_21MPa_force_satisfied': abs(need) <= supply_area * 21e6,
+                           'ideal_30MPa_force_satisfied': abs(need) <= supply_area * 30e6,
+                           'does_not_include_module_gravity_whole_robot_dynamic_loads_friction_or_safety_factor': True})
+
+body_mass_inertia_neutral = []
+for owner in sorted({r['body'] for r in all_rows + armor_rows}):
+    body_mass_inertia_neutral.append({'body': owner,
+        'conditional_neutral_mass_inertia': aggregate([r for r in all_rows + armor_rows if r['body'] == owner], owner)})
+owner_for_gravity = {body: next((p.get('mass_owner_body', p['body']) for p in s['parts'] if p['body'] == body), body)
+                     for body in {r['body'] for r in all_rows + armor_rows}}
+children = defaultdict(list)
+for j in s['joints']:
+    children[j['parent']].append(j['child'])
+def descendants(body):
+    return {body} | set().union(*(descendants(c) for c in children[body]))
+joint_pressure_with_known_module_gravity = []
+for j in s['joints']:
+    if j['id'] in ['knee', 'forefoot']:
+        continue
+    aa = [a for a in s['actuators'] if a['axis_group'] == j['id']]
+    if not aa:
+        continue
+    dd = descendants(j['child'])
+    selected = [r for r in all_rows + armor_rows if owner_for_gravity[r['body']] in dd]
+    contact_torque = float(np.array(j['axis']) @ np.cross(cop - np.array(j['c']), ground))
+    jj = sum(next(x['J_m_per_rad'] for x in a['samples'] if abs(x['q_deg']) < 1e-8) for a in aa)
+    cases = []
+    for k in range(3):
+        gtorque = sum(float(np.array(j['axis']) @ np.cross(np.array(r['com_world_m']) - j['c'], [0, 0, -9.81 * r['mass_range_kg'][k]])) for r in selected)
+        cases.append({'case': ['low', 'nominal', 'high'][k],
+                      'known_downstream_mass_kg': sum(r['mass_range_kg'][k] for r in selected),
+                      'known_module_gravity_torque_Nm': gtorque,
+                      'required_signed_force_each_N': -(contact_torque + gtorque) / jj})
+    joint_pressure_with_known_module_gravity.append({'joint': j['id'], 'cases': cases,
+        'scope': 'Known partial module gravity added to fixed29430Nground pressure; upstream equilibrium/load, missingoil/hardware, loop reaction distribution and whole robot not qualified.'})
+hinge_shaft_sensitivity = []
+OD, ID, span = .060, .028, .240
+section_Z = math.pi * (OD**4 - ID**4) / (32 * OD)
+for c in brace_load_cases:
+    load = float(np.linalg.norm(c['hinge_total_force_N']))
+    seats = [float(np.linalg.norm(x)) for x in c['hinge_two_seat_reactions_XZ_N']]
+    hinge_shaft_sensitivity.append({'load_factor': c['load_factor'], 'CoP_world_m': c['CoP_world_m'],
+        'allocation_hypothesis': c['allocation_hypothesis'], 'OD_ID_m': [OD, ID],
+        'actual_source_bearing_center_span_m': span, 'two_seat_radial_load_N': seats,
+        'central_concentrated_load_sensitivity_bending_MPa': load * span / 4 / section_Z / 1e6,
+        'hypothesis_not_beam_contact_solution': 'Full resultant atspan midpoint, simple radial bearing support; real shaft/collar/bolt distribution, combinedmoment/yaw, interferencefits/preload/keepers and fatigue unknown.',
+        'bearing_reference_C0_must_not_be_summed_as_joint_rating': True})
+
+out = {'robot_id': 'gorilla_v0_1', 'candidate': 'G3 B frozen rejected lower module',
+       'source_sha256': source_sha, 'armor_source_sha256': sha(O / 'armor_scene.json'), 'interface_sha256': sha(O / 'interface.json'),
+       'raw_report_sha256': sha(O / 'report.json'), 'review_entry_sha256': sha(Path(__file__)),
+       'gate_sha256': sha(ROOT / '.scratch/gorilla_internal_g_material_contract/native_signed_material.py'),
+       'raw_contract_reused_exact_source_binding': True, 'resource_rejected_ids': sorted(invalid),
+       'new_armor_resource_contract': armor_contract, 'mass_rows': all_rows, 'armor_mass_rows': armor_rows,
+       'mass_by_category_kg_range': {k: [sum(r['mass_range_kg'][i] for r in all_rows if r['kind'] == k) for i in range(3)] for k in sorted({r['kind'] for r in all_rows})},
+       'original_per_piece_metal_sum_kg': sum(M(p).volume() * 7850 for p in s['parts'] if p.get('density_kg_m3')),
+       'same_rigid_owner_union_metal_kg': sum(r['mass_range_kg'][1] for r in groups),
+       'same_owner_material_pairs': same_owner_material_pairs,
+       'kernel_decompose_count_scope': 'Signed boundary objects include negative closedvoid surfaces; count is NOT a material-island or connectivity predicate. Source G gate nesting counts below are used instead.',
+       'source_material_component_counts': {n: r['material_component_count_from_nesting'] for n, r in contract_rows.items()},
+       'frame_root_boundary_details': {n: [{'index': b['boundary_index'], 'signed_volume_m3': b['signed_volume_m3'],
+           'bounds_world_m': b['bounds_world_m']} for b in r['boundaries'] if b['boundary_index'] in r['geometric_root_boundary_indices']]
+           for n, r in contract_rows.items() if n.endswith('_load_net')},
+       'pose_mass_inertia': pose_mass_inertia,
+       'body_mass_inertia_neutral': body_mass_inertia_neutral,
+       'complete_submodule_without_armor_or_unknowns': aggregate(all_rows, 'finite steel+remaining pads+10catalogue bearing references'),
+       'armor_subtotal': aggregate(armor_rows, '6 finite new rejected armor candidates'),
+       'complete_submodule_with_new_armor_before_unknowns': aggregate(all_rows + armor_rows, 'complete declared neutral submodule, conditional'),
+       'excluded_additional_mass_unknown': ['hydraulic oil', 'holding valves and brackets', 'hose/fittings', 'seals/wipers', 'encoders/controllers', 'keepers/bolts and weld details', 'upstream thigh-knee drive and body', 'whole robot'],
+       'mass_and_inertia_release': False, 'conditional_group_mass_does_not_cure_intersections_or_connectivity': True,
+       'collision_receipt': poses, 'raw_armor_field_correction': 'raw original_armor_intersections actually compares the6newB covers, not111oldC15armor or AA3',
+       'pad_hidden_material_change': pad_details, 'actuator_121point_screens': actuators,
+       '3t_static_scope': 'Independent29430N upward ground reaction balanced by downward upstream support. Not carry payload, walking certification or whole-robot capacity.',
+       '3t_forefoot_brace_hinge_cases': brace_load_cases, '3t_joint_axial_demand_screen': joint_pressure,
+       'brace_FBD_limit': 'Equivalent end-to-end axial force plus knee overcenter stop moment; true two-link contact stiffness, locked stop bearing and bolt/weld paths remain unknown. Two roll/yaw distributions are hypotheses, not uniquely solved reactions or capacities.',
+       '3t_plus_known_partial_module_gravity_neutral': joint_pressure_with_known_module_gravity,
+       '3t_fore_hinge_hollow_shaft_sensitivity': hinge_shaft_sensitivity,
+       'pitch_static_topology_gap': 'Single50/25pull actuator is insufficient even at30MPa. Two identical cylinders at21MPa only ideal~1%margin before losses/SF and require new full geometry/flow/mass. No positive pitch mechanical lock exists in B; holding valve does not enlarge chamber force. Alternative separate static-pressure hold remains unbuilt.',
+       'forefold_scope': '40/20actuator is unloaded fold only; braces/stops plus wide hinge must carry neutral3t compression. No loadedunlock qualification.',
+       'armor_producer_comment_correction': 'shell_panel claims rearopening in comment but generates a closed inner cavity with noopeningcutter. Do not report accessible service openings.',
+       'geometry_accepted': False, 'aesthetic_accepted': False, 'physical_accepted': False, 'source_modified': False}
+(O / 'final_report.json').write_text(json.dumps(out, indent=2, allow_nan=False) + '\n')
+print('FINAL', sha(O / 'final_report.json'), flush=True)
+print('TOTAL BEFORE UNKNOWN', [r['mass_kg'] for r in out['complete_submodule_with_new_armor_before_unknowns']['range']], flush=True)

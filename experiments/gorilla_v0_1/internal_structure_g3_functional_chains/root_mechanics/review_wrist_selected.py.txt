@@ -1,0 +1,72 @@
+"""Independent final selected wrist resources, angular rank and gravity identities."""
+from pathlib import Path
+import json,hashlib,sys,math
+import numpy as np
+R=Path('/home/ethan/Projects/Sai_Rotbots');O=Path(__file__).resolve().parent
+P=R/'.scratch/gorilla_internal_g3_wrist_family';S=P/'selected_installation_scene.json'
+sys.path.insert(0,str(R/'.scratch/gorilla_internal_g_material_contract'))
+from native_signed_material import validate_scene,kernel
+sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+start=sha(S);s=json.loads(S.read_text());resources=validate_scene(s)
+resource_errors=[{'id':p['id'],'errors':p['errors']} for p in resources['parts'] if not p['resource_contract_pass']]
+def rotation(axis,q):
+    x,y,z=np.asarray(axis,dtype=float);K=np.array([[0,-z,y],[z,0,-x],[-y,x,0]])
+    return np.eye(3)+math.sin(q)*K+(1-math.cos(q))*(K@K)
+rank_source=json.loads((P/'final_receipt.json').read_text())
+assert rank_source['final_scene_sha256']==start
+axes=[np.array(j['axis_world']) for j in s['joints']]
+rows=[]
+for reported in rank_source['orientation_27_serialFK']:
+    q=reported['q_rad'];Rparent=np.eye(3);columns=[]
+    for axis,angle in zip(axes,q):
+        columns.append(Rparent@axis);Rparent=Rparent@rotation(axis,angle)
+    J=np.column_stack(columns);v=np.linalg.svd(J,compute_uv=False)
+    rank=int(np.sum(v>1e-8));cond=float(v.max()/v.min())
+    assert np.allclose(J,np.array(reported['world_angular_J']),atol=1e-12)
+    assert rank==reported['rank']
+    assert math.isclose(cond,reported['cond'],rel_tol=1e-12)
+    rows.append({'q_rad':q,'rank':rank,'condition':cond})
+gravity=json.loads((P/'layout_gravity_selected.json').read_text())
+assert gravity['scene_sha256']==start
+rowerrors=[]
+for r in gravity['rows']:
+    # Moment at pressure center changes axial torque only if its offset is not
+    # parallel to the source joint axis. Published source pressure centers are
+    # on that axis. Norms and reference fractions checked without borrowing ratings.
+    F=np.array(r['force_N']);M=np.array(r['moment_at_pressure_center_Nm'])
+    total_mass=r['new_child_mass_kg']+r['retained_exact_child_mass_kg']+r['payload_kg']
+    error=abs(np.linalg.norm(F)-9.80665*total_mass)
+    if error>1e-7:rowerrors.append({'kind':'gravity_mass_mismatch','pose':r['pose'],'error_N':error})
+    mag=np.linalg.norm(M); axial=abs(r['torque_Nm']);overturn=math.sqrt(max(0,mag**2-axial**2))
+    if not math.isclose(overturn,r['bearing_overturn_Nm'],rel_tol=1e-10,abs_tol=1e-8):
+        rowerrors.append({'kind':'torque_moment_decomposition','pose':r['pose'],'joint':r['joint']})
+assert not rowerrors,rowerrors[:5]
+parts={p['name']:p for p in s['parts']}
+collisions=json.loads((P/'layout_collision_selected_neutral.json').read_text())
+assert collisions['scene_sha256']==start
+owned=[r for r in collisions['hits'] if r['a'] in parts and r['b'] in parts and r['kind']!='retained_context']
+# Keep an exact finite material intrusion rather than treating broad OEM outer
+# envelopes as known internal solid material.
+witnesses=[]
+for r in sorted(owned,key=lambda r:r['volume_m3']):
+    a=parts[r['a']];b=parts[r['b']]
+    if 'gear' in a['name'] or 'gear' in b['name'] or 'motor' in a['name'] or 'motor' in b['name']:continue
+    if r['body_a']==r['body_b']:continue
+    if not ('support' in a['name']+b['name'] or 'bridge' in a['name']+b['name']):continue
+    v=float((kernel(a['vertices_world_m'],a['faces'])^kernel(b['vertices_world_m'],b['faces'])).volume())
+    assert math.isclose(v,r['volume_m3'],rel_tol=1e-9,abs_tol=1e-12)
+    witnesses.append({'a':r['a'],'b':r['b'],'body_a':r['body_a'],'body_b':r['body_b'],'positive_volume_cm3':v*1e6})
+    if len(witnesses)>=3:break
+assert sha(S)==start
+receipt={'robot_id':'gorilla_v0_1','source_sha256':start,'source_path':str(S.relative_to(R)),
+    'entry_sha256':sha(Path(__file__)),'resources':{'parts':len(s['parts']),'pass':resources['resource_contract_pass'],
+        'passed_parts':sum(p['resource_contract_pass'] for p in resources['parts']),'errors':resource_errors,
+        'scope':'Native signed finite material predicates only; OEM internal solid geometry and real assembly not certified'},
+    'orientation':{'sample_count':len(rows),'rank_min':min(r['rank'] for r in rows),'condition_max':max(r['condition'] for r in rows),
+        'independent_serial_parent_rotation_match':True,'pitch90_excluded_singularity':True,'sampled_not_entire_workspace':True},
+    'gravity_identity_checks':{'rows':len(gravity['rows']),'gravity_m_s2':9.80665,'mass_force_and_moment_decomposition_errors':rowerrors,
+        'scope':'Reported same-source scalar identities independently verified; full dynamic model/contact/drive duty not verified'},
+    'finite_support_intersection_witnesses':witnesses,
+    'physics_accepted':False,'aesthetic_accepted':False,'stable_si':False}
+(O/'review_wrist_selected.json').write_text(json.dumps(receipt,indent=2)+'\n')
+print('WRIST_FINAL_REVIEW',start,'native',len(s['parts']),'rank',receipt['orientation'],'gravityrows',len(gravity['rows']),flush=True)

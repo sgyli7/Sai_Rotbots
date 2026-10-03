@@ -1,0 +1,28 @@
+"""Native geometry projections of the three actual selected input paths; not post-drawn structure."""
+from pathlib import Path
+import json,runpy
+import numpy as np
+from PIL import Image,ImageDraw
+B=Path(__file__).resolve().parent;n=runpy.run_path(str(B/'screen_wrist_layout.py'),run_name='native_input_view');s=json.loads((B/'selected_installation_scene.json').read_text())
+im=Image.new('RGB',(1800,1100),'white');d=ImageDraw.Draw(im);d.text((20,15),'G3 selected native input paths / OEM stock wire + finite custom parts. Conditional interfaces, no assembly acceptance.',fill='black');scale=2500
+for k,j in enumerate(s['joints']):
+ key=j['id'].removeprefix('left_');a=np.array(j['axis_world'])*j['input_face_B_sign'];u=np.cross(a,[0,0,1.])
+ if np.linalg.norm(u)<.1:u=np.cross(a,[0,1,0.])
+ u/=np.linalg.norm(u);c=np.array(j['pivot_world_m']);org=[200+k*580,620]
+ def P(q):
+  q=np.array(q)-c;return (org[0]+float(np.dot(q,a))*scale,org[1]-float(np.dot(q,u))*scale)
+ ps=[p for p in s['parts'] if p['name'].startswith('g3_'+key+'_') and not any(z in p['name'] for z in ['controller','connectors'])]
+ # OEM envelopes remain explicitly wire so sourceknown inner aperture/ownshaft can be examined;
+ # nothing is claimed hidden or collisionexcluded by this diagnostic rendering choice.
+ for p in ps:
+  if p['role']=='component_module_envelope':continue
+  vs=np.array(p['vertices_world_m']);col=(81,114,126) if '_input_' in p['name'] or '_rotor_' in p['name'] or 'WG_' in p['name'] else (139,154,161)
+  for face in p['faces']:d.polygon([P(vs[i]) for i in face],fill=col,outline=(35,48,53))
+ for p in ps:
+  if p['role']!='component_module_envelope':continue
+  vs=np.array(p['vertices_world_m']);col=(168,105,47)
+  for face in p['faces']:q=[P(vs[i]) for i in face];d.line(q+[q[0]],fill=col,width=1)
+ d.text((30+k*580,100),key+'; same2500px/m',fill='black')
+ d.text((30+k*580,930),'14mm shaft /5mm key /6mm OWN depth',fill='black')
+ d.text((30+k*580,955),'caseC != WG-end B; bare source mass once',fill='black')
+im.save(B/'native_input_path_selected.png')

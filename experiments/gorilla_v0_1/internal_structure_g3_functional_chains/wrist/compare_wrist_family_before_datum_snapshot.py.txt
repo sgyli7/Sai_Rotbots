@@ -1,0 +1,88 @@
+"""G3 source-bound gravity/drive family comparison; no upstream writes."""
+from pathlib import Path
+import json, hashlib, math, runpy, copy
+import numpy as np
+import trimesh
+
+ROOT = Path('/home/ethan/Projects/Sai_Rotbots')
+OUT = Path(__file__).resolve().parent
+G2 = ROOT/'.scratch/gorilla_internal_g2_hand_allocation'
+SRC = G2/'selected_installation_scene.json'
+n = runpy.run_path(str(G2/'screen_forearm_hand.py'), run_name='g3_readonly_helpers')
+sha = lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()
+
+GEARS = {
+ '25_100': dict(sku='CSG-25-100-2UH',ratio=100,Tr=87,Tav=140,repeated=204,momentary=369,mass=1.5,OD=.107,B=.052,J=.0045,full_L=.0565,dp=.062,R=.0115,C=9600,C0=15100,Mc=156,Jinput=.0000413,oil_max_rpm=7500,grease_max_rpm=5600,oil_avg_rpm=5600,grease_avg_rpm=3500),
+ '25_120': dict(sku='CSG-25-120-2UH',ratio=120,Tr=87,Tav=140,repeated=217,momentary=395,mass=1.5,OD=.107,B=.052,J=.0045,full_L=.0565,dp=.062,R=.0115,C=9600,C0=15100,Mc=156,Jinput=.0000413,oil_max_rpm=7500,grease_max_rpm=5600,oil_avg_rpm=5600,grease_avg_rpm=3500),
+ '32_100': dict(sku='CSG-32-100-2UH',ratio=100,Tr=178,Tav=281,repeated=433,momentary=841,mass=3.2,OD=.138,B=.062,J=.0055,full_L=.0675,dp=.080,R=.013,C=15000,C0=25000,Mc=313,Jinput=.000169,oil_max_rpm=7000,grease_max_rpm=4800,oil_avg_rpm=4600,grease_avg_rpm=3500),
+ '32_120': dict(sku='CSG-32-120-2UH',ratio=120,Tr=178,Tav=281,repeated=459,momentary=892,mass=3.2,OD=.138,B=.062,J=.0055,full_L=.0675,dp=.080,R=.013,C=15000,C0=25000,Mc=313,Jinput=.000169,oil_max_rpm=7000,grease_max_rpm=4800,oil_avg_rpm=4600,grease_avg_rpm=3500),
+}
+MOTORS = {
+ '78':dict(sku='QTR-A-78-34-Y',OD=.078,L=.0348,rotor_ID=.029,mass=.627,stator=.501,rotor=.126,Jr=.000038,Tc=2.10,Kt=.199,R25=.438,Ic=10.54,Pc=190,rpm48_at_Tc=1533,max_bus_Vdc=565,page=14),
+ '105':dict(sku='QTR-A-105-34-Z',OD=.105,L=.0345,rotor_ID=.056,mass=.964,stator=.746,rotor=.218,Jr=.00022,Tc=5.10,Kt=.29,R25=.24,Ic=17.7,Pc=295,rpm48_at_Tc=1061,max_bus_Vdc=325,page=16),
+}
+VARIANTS = {
+ 'selected_g2_32x3_105x3': [('32_100','105')]*3,
+ 'roll32_pitch25_120_105_yaw25_120_78': [('32_100','105'),('25_120','105'),('25_120','78')],
+ 'roll32_pitch25_100_105_yaw25_100_78': [('32_100','105'),('25_100','105'),('25_100','78')],
+}
+
+def retained(s):
+ tree=s['body_tree']; ids={p['name']:p for p in n['old']['parts']}; removed={r['id'] for r in s['replacement_inventory']}; rows=[];errors=[]
+ for r in n['old']['mass_rows']:
+  if r['body'] not in tree or r['body']=='left_proximal_forearm' or r['id'] in removed:continue
+  if r['id'] not in ids:errors.append(r['id']);continue
+  p=ids[r['id']];c=np.asarray(n['native'](p).center_mass)
+  rows.append(dict(id=r['id'],body=r['body'],mr=r['mass_range_kg'],COM=c.tolist(),source=r['source'],COM_error_m=float(np.linalg.norm(c-r['COM_world_m']))))
+ return rows,errors
+
+def compare():
+ s=json.loads(SRC.read_text()); ret,errors=retained(s);tree=s['body_tree'];by={r['id']:r for r in s['modules']};ps={p['name']:p for p in s['parts']};rows=[]
+ def below(b,c):
+  while b in tree:
+   if b==c:return True
+   b=tree[b].get('parent')
+  return False
+ load0=np.array([f['contact'] for f in n['features']]).mean(0)
+ for vn,kits in VARIANTS.items():
+  masses={k:list(r['mass_range_kg']) for k,r in by.items()}
+  for j,(gn,mn) in zip(s['joints'],kits):
+   pref='g2_'+j['id'].removeprefix('left_');masses[pref+'_gear']=[GEARS[gn]['mass']]*3;masses[pref+'_motor']=[MOTORS[mn]['mass']]*3
+  # This is a source-calibrated component substitution on existing positions.
+  # All other finite cases/brake/support/controller/lines remain unchanged/nonzero.
+  for pn,angles in n['POSES'].items():
+   ts=n['transforms'](s,angles);loadbase=trimesh.transform_points([load0],ts['left_palm'])[0]
+   coms={p['name']:n['moved'](p,ts,s).center_mass for p in s['parts']}
+   for kg in [25,50]:
+    for dx in [-.1,0,.1]:
+     loadp=loadbase+ts['left_palm'][:3,:3]@np.array([dx,0,0])
+     for j,(gn,mn) in zip(s['joints'],kits):
+      gear=GEARS[gn];motor=MOTORS[mn];T=ts[j['parent']];c=trimesh.transform_points([j['pivot_world_m']],T)[0];axis=T[:3,:3]@j['axis_world']
+      a=np.array(j['axis_world']);A=np.array(j['pivot_world_m'])-j['input_face_B_sign']*a*gear['B']/2
+      pc=trimesh.transform_points([A+j['input_face_B_sign']*a*gear['R']],T)[0]
+      for mi,label in enumerate(['low','nominal','high']):
+       F=np.array([0,0,-kg*9.80665]);M=np.cross(loadp-pc,F);newmass=oldmass=0
+       for p in s['parts']:
+        if below(p['body'],j['child']):
+         m=masses[p['name']][mi];f=np.array([0,0,-m*9.80665]);F+=f;M+=np.cross(coms[p['name']]-pc,f);newmass+=m
+       for r in ret:
+        if below(r['body'],j['child']):
+         m=r['mr'][mi];co=trimesh.transform_points([r['COM']],ts[r['body']])[0];f=np.array([0,0,-m*9.80665]);F+=f;M+=np.cross(co-pc,f);oldmass+=m
+       tau=float(np.dot(M+np.cross(pc-c,F),axis));Mc=float(np.linalg.norm(M-axis*np.dot(M,axis)));Fa=float(abs(np.dot(F,axis)));Fr=float(np.linalg.norm(F-axis*np.dot(F,axis)));P0=Fr+2*Mc/gear['dp']+.44*Fa
+       for eta in [.55,.70,.85]:
+        Tin=abs(tau)/(gear['ratio']*eta);Irms=Tin/motor['Kt'];copper25=3*Irms**2*motor['R25']
+        rows.append(dict(variant=vn,pose=pn,payload_kg=kg,object_offset_localX_m=dx,mass_bound=label,joint=j['id'],gear=gear['sku'],motor=motor['sku'],efficiency_assumed=eta,joint_torque_Nm=tau,source_Tr_ratio=abs(tau)/gear['Tr'],source_Tav_limit_ratio=abs(tau)/gear['Tav'],source_repeated_ratio=abs(tau)/gear['repeated'],bearing_overturn_Nm=Mc,bearing_Mc_ratio=Mc/gear['Mc'],Fr_N=Fr,Fa_N=Fa,P0_N=P0,fs=gear['C0']/P0,input_torque_Nm=Tin,motor_Tc_ratio=Tin/motor['Tc'],motor_90pctTc_guard_ratio=Tin/(.9*motor['Tc']),phase_RMS_current_proxy_A=Irms,copper25_proxy_W=copper25,new_child_mass_kg=newmass,retained_source_mass_kg=oldmass,pressure_center_world_m=pc.tolist(),force_N=F.tolist(),moment_at_pressure_center_Nm=M.tolist(),input_rpm_for_output_0p1_0p3_0p5_rads=[w*gear['ratio']*60/(2*math.pi) for w in [.1,.3,.5]],qualified=False))
+ summaries=[]
+ for vn in VARIANTS:
+  for kg in [25,50]:
+   for label in ['nominal','high']:
+    for joint in [j['id'] for j in s['joints']]:
+     rs=[r for r in rows if r['variant']==vn and r['payload_kg']==kg and r['mass_bound']==label and r['joint']==joint and r['efficiency_assumed']==.55]
+     summaries.append(dict(variant=vn,payload_kg=kg,mass_bound=label,joint=joint,max_abs_torque_Nm=max(abs(r['joint_torque_Nm']) for r in rs),max_Tav_reference_ratio=max(r['source_Tav_limit_ratio'] for r in rs),max_bearing_Mc_ratio=max(r['bearing_Mc_ratio'] for r in rs),max_motor_Tc_ratio_eta55=max(r['motor_Tc_ratio'] for r in rs),min_fs=min(r['fs'] for r in rs),torque_witness=max(rs,key=lambda r:abs(r['joint_torque_Nm'])),bearing_witness=max(rs,key=lambda r:r['bearing_Mc_ratio'])))
+ return dict(source_selected_scene_sha256=sha(SRC),source_E2a_sha256=sha(n['n']['ns']['E2']),builder_sha256=sha(__file__),gears=GEARS,motors=MOTORS,retained_rows=ret,retained_missing_native=errors,retained_mass_range_kg=np.array([r['mr'] for r in ret]).sum(0).tolist(),summary=summaries,rows=rows,scope='Source-bound gravity only on G2 selected585 positions with OEM component mass substitution. No changed case/controller/support geometry or OEM rotor/output split assumed. Exact 24 retained same-native mass rows are included. Unretained C15 finger mechanisms/contactpads/full palm material, inertia/dynamic/task forces/closed contact, installed source mount20C and duty/life remain unknown. Tav ratios are reference comparisons, not inferred rated output or zero-speed life. No physical or geometry acceptance.',qualified=False)
+
+if __name__=='__main__':
+ OUT.mkdir(parents=True,exist_ok=True);r=compare();p=OUT/'family_comparison.json';p.write_text(json.dumps(r,indent=2)+'\n')
+ print('COMPARISON_READY',p,sha(p),len(r['rows']))
+ for x in r['summary']:
+  if x['mass_bound']=='high':print(x['variant'],x['payload_kg'],x['joint'],'T',round(x['max_abs_torque_Nm'],3),'Tavratio',round(x['max_Tav_reference_ratio'],3),'Mc',round(x['max_bearing_Mc_ratio'],3),'motor55',round(x['max_motor_Tc_ratio_eta55'],3),'fs',round(x['min_fs'],3))

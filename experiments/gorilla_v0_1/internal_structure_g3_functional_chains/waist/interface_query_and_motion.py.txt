@@ -1,0 +1,65 @@
+from pathlib import Path
+import sys,json,hashlib,math,numpy as np,trimesh as tm,manifold3d as mf
+R=Path('/home/ethan/Projects/Sai_Rotbots');O=Path(__file__).resolve().parent
+sys.path.insert(0,str(R/'.scratch/gorilla_internal_g_material_contract'));from native_signed_material import kernel
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();write=lambda p,d:Path(p).write_text(json.dumps(d,indent=2,allow_nan=False)+'\n')
+S=O/(sys.argv[1]if len(sys.argv)>1 else'scene.json');tag=''if S.name=='scene.json'else'wg6_';d=json.loads(S.read_text());P={p['name']:p for p in d['parts']};B=np.array(d['local_axis_contract']['B_case_input_face_world_m']);Q=tm.geometry.align_vectors([0,0,1],[1,0,0]);Q[:3,3]=B
+cy=lambda z,r,L:mf.Manifold.cylinder(L,r,r,64,True).translate([0,0,z]).transform(Q[:3,:])
+def box(c,dim):return mf.Manifold.cube(dim,True).translate(c).transform(Q[:3,:])
+K={n:kernel(p['vertices_world_m'],p['faces'])for n,p in P.items()};refs={p['name']:kernel(p['vertices_world_m'],p['faces'])for p in d['complete_OEM_reference_context']};hits=json.loads((O/(tag+'neutral_material_and_reference_checks.json')).read_text())['full_OEM_gross_reference_pairs_ALL_UNRESOLVED_UNLESS_SPECIFIC_INTERFACE_CONFIRMED'];queries=[]
+for h in hits:
+ n=h['a'];reference=h['b'];common=K[n]^refs[reference];row={**h,'gross_reference_kept_unchanged':True}
+ if 'motor' in reference:
+  mc=d['local_axis_contract']['custom_QTR160_rotor_axial_center_q_m'];hole=cy(mc,.0555,.0246);inside=float((common^hole).volume());remaining=max(0,float(common.volume())-inside)
+  row.update(classification='rotor_ID111_Hr24p6_verified_dimensions_conditional_axial_registration',source='Tecnotion torque brochure2.5 pp20-21; rotorID111,Hr24.6; axialcenter is custom explicit assumption',strict_inside_verified_dimension_window_m3=inside,outside_that_window_stator_end_space_unknown_m3=remaining,registered_bore_radius_m=.0555,registered_q_range_m=[mc-.0123,mc+.0123],actual_OEM_axial_datum_verified=False,local_material_not_declared_to_intersect_real_OEM_material=True,remaining_required_clearance_scope='Native holder/shaft in motor axial ends; stator winding/bore geometry not available; no generic OEM material pass')
+ elif 'B_case_mount_bolt' in n:
+  i=int(n.rsplit('_',1)[1]);a=i*2*math.pi/14;T=Q.copy();T[:3,3]=B+Q[:3,:3]@np.array([.087*math.cos(a),.087*math.sin(a),.003]);port=mf.Manifold.cylinder(.006,.004,.004,64,True).transform(T[:3,:]);inside=float((common^port).volume())
+  row.update(classification='intentional_M8_thread_engagement_envelope_not_verified_void',source='CSG50 drawing14M8/PCD174, threaddepth6mm assumed, root/thread exact material unknown',inside_nominal_thread_envelope_m3=inside,actual_thread_profile_and_blind_depth_unknown=True,not_auto_excluded_from_gross_ref=True)
+ else:
+  depths=[]
+  for dep in [.006,.018]:
+   mid=dep/2-.005;hole=cy(mid,.0095,dep)+box([0,.01055,mid],[.006,.0035,dep]);inside=float((common^hole).volume());depths.append({'engagement_m':dep,'strict_inside_dimensioned_bore_and_key_window_m3':inside,'outside_condition_window_m3':max(0,float(common.volume())-inside)})
+  row.update(classification='WG19H7_key6JS9_V21p8_radial_verified_axial_engagement6to18_conditional',source='CSG50 exact rightface drawing and engineeringcatalogp32; actualdepthnotdimensioned',WG_pilot_face_q_m=-.005,depth_queries=depths,actual_OEM_engagement_depth_verified=False,not_auto_excluded_from_gross_ref=True)
+ queries.append(row)
+write(O/(tag+'source_bound_reference_queries.json'),{'source_sha256':sha(S),'queries':queries,'same_native_reference_source_preserved':True,'radial_dimension_evidence_vs_actual_axial_registration_separate':True,'none_is_complete_OEM_material_clearance_or_certification':True})
+# Only changed moving/fixed pairs are repeated; fixed-fixed source-bound neutral check remains0.
+moving=[p for p in d['parts']if p['body']in['input','bearing_ball']];fixed=[p for p in d['parts']if p['body']not in['input','bearing_ball']];rows=[]
+for phi in range(0,361,30):
+ M={};bounds={}
+ for p in d['parts']:
+  angle=phi if p['body']=='input' else phi/2 if p['body']=='bearing_ball' else 0
+  T=tm.transformations.rotation_matrix(math.radians(angle),[1,0,0],B)
+  if p['body']=='release':T[0,3]-=.0003
+  M[p['name']]=K[p['name']].transform(T[:3,:]);bounds[p['name']]=np.asarray(M[p['name']].bounding_box())
+ ph=[];seen=set()
+ for p in moving:
+  for b in d['parts']:
+   if p['name']==b['name']:continue
+   pair=tuple(sorted([p['name'],b['name']]))
+   if pair in seen:continue
+   seen.add(pair);x=bounds[p['name']];y=bounds[b['name']]
+   if np.any(np.minimum(x[3:],y[3:])-np.maximum(x[:3],y[:3])<=1e-8):continue
+   iv=float((M[p['name']]^M[b['name']]).volume())
+   if iv>1e-10:ph.append({'a':p['name'],'b':b['name'],'positive_volume_m3':iv})
+  # release pressureplate changes too; checked against fixed once for each pose.
+ for p in [p for p in d['parts']if p['body']=='release']:
+  for b in fixed:
+   if p['name']==b['name']or b['body']=='release':continue
+   x=bounds[p['name']];y=bounds[b['name']]
+   if np.any(np.minimum(x[3:],y[3:])-np.maximum(x[:3],y[:3])<=1e-8):continue
+   iv=float((M[p['name']]^M[b['name']]).volume())
+   if iv>1e-10:ph.append({'a':p['name'],'b':b['name'],'positive_volume_m3':iv})
+ rows.append({'input_phi_deg':phi,'release_translation_m':-.0003,'positive_material_pairs':ph,'bearing_orbit_phi_half_is_only_geometry_assumption_no_actual_rolling_model':True})
+write(O/(tag+'sampled_input_rotation.json'),{'source_sha256':sha(S),'poses':rows,'sampled_not_continuous':True,'not_a_motor_motion_or_brake_release_force_test':True,'geometry_accepted':False})
+print(tag,'queries',len(queries),'motion',[(r['input_phi_deg'],len(r['positive_material_pairs']))for r in rows],flush=True)
+# Retained G2 material context: exact functional replacement only, old load shell remains challenge.
+g2=json.loads((R/'.scratch/gorilla_internal_g2_rotary_waist/scene.json').read_text());removed=['g2_waist_roll_'+n for n in['gear','motor','input_coupling','motor_cooling_case','brake','encoder']];context=[p for p in g2['parts']if p['name']not in removed];CK={p['name']:kernel(p['vertices_world_m'],p['faces'])for p in context};bb={n:np.asarray(k.bounding_box())for n,k in CK.items()};ch=[]
+for p in d['parts']:
+ x=np.asarray(K[p['name']].bounding_box())
+ for b in context:
+  y=bb[b['name']]
+  if np.any(np.minimum(x[3:],y[3:])-np.maximum(x[:3],y[:3])<=1e-8):continue
+  v=float((K[p['name']]^CK[b['name']]).volume())
+  if v>1e-10:ch.append({'a':p['name'],'b':b['name'],'positive_volume_m3':v,'retained_context_reference':b['role']=='complete_component_reference'})
+write(O/(tag+'retained_g2_context_challenge.json'),{'source_sha256':sha(S),'G2_source_sha256':sha(R/'.scratch/gorilla_internal_g2_rotary_waist/scene.json'),'exact_removed_function_IDs':removed,'retained_IDs':[p['name']for p in context],'retained_old_gear_load_shell_is_incompatible_mount_challenge_not_silently_removed':True,'positive_pairs':ch,'G2_old_output_adapter_plane_requires_new_A_interface_rebuild':True,'A_output_plane_conditional_world_m':(B+np.array([.084,0,0])).tolist(),'G2_original_roll_output_plane_world_m':[-.025,0,2.05],'new_A_minus_old_A_m':[-.014,0,0],'body_axis_X_line_unchanged_but_mounting_faces_changed':True,'not_a_whole_waist_acceptance_or_mass_ledger':True})
+print('retained context',len(ch),'max',sorted(ch,key=lambda x:-x['positive_volume_m3'])[:3],flush=True)

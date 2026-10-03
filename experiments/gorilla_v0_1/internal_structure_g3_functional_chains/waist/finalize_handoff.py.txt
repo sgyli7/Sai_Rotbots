@@ -1,0 +1,72 @@
+import pathlib,json,hashlib,math,collections
+R=pathlib.Path('/home/ethan/Projects/Sai_Rotbots'); O=R/'.scratch/gorilla_internal_g3_waist_input'
+def sha(p):return hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
+def read(n):return json.loads((O/n).read_text())
+def write(n,d):(O/n).write_text(json.dumps(d,indent=2,ensure_ascii=False)+'\n')
+T=read('retaining_compound_condition.json');T['source_scene_sha256']=sha(O/'scene.json');T['source_six_mm_variant_sha256']=sha(O/'wg6_scene.json');T['root_scope']='Conditional finite simulation design; no whole waist, verified OEM axial datum, bearing/brake/release/thermal/continuous-duty/physical-unit qualification.'
+T['WG_axial_retention_variants']=[]
+for prefix,dep in [('',.018),('wg6_',.006)]:
+ m=read(prefix+'mass_and_load_screen.json'); area=next(r['volume_m3']for r in m['finite_material_rows']if r['id']=='g3_roll_WG_axial_retaining_compound_film')/1e-5; m.pop('custom_WG_bond_18mm_area_m2',None); m['native_WG_film_effective_area_m2']=area; m['minimum_mean_WG_bond_shear_Pa']=m['WG_axial_force_N_at866Nm_using_primary_p27_ratio100_formula']/area; m['film_area_screen_corrected_from_full_cylinder_to_actual_key_cut_native_volume']=True; write(prefix+'mass_and_load_screen.json',m); rows=[]
+ for torque in [611,866,1274,2678]:
+  force=2*torque/(50*.00254)*.07*math.tan(math.radians(20)); stress=force/area
+  rows.append({'output_torque_Nm':torque,'WG_thrust_N':force,'native_film_effective_area_m2':area,'mean_shear_Pa':stress,'conditional_SF_at_engineering_1MPa':1e6/stress})
+ sf3=1e6*area/3/(2/(50*.00254)*.07*math.tan(math.radians(20)))
+ T['WG_axial_retention_variants'].append({'source_sha256':sha(O/(prefix+'scene.json')),'axial_engagement_assumed_m':dep,'actual_OEM_depth_unknown':True,'rows':rows,'SF3_output_bound_Nm':sf3,'gross_reference_radial_bore_verified_axial_length_conditional':True})
+T.pop('WG_axial_retention_rows',None);T.pop('WG_axial_permissible_bound_for_conditional_SF3_output_Nm',None)
+T['minimum_6mm_key_macro_screen']={'input_torque_challenge_Nm':40,'shaft_key_radius_m':.0095,'key_width_m':.006,'minimum_length_m':.006,'working_radial_height_assumed_m':.0028,'force_N':40/.0095,'mean_shear_Pa':40/.0095/(.006*.006),'mean_bearing_Pa':40/.0095/(.006*.0028),'purpose':'Finite challenge boundary, not rated key/shaft; 40Nm exceeds source ultimate34Nm; corner concentration, substrate, fatigue and tolerances remain open.','mean_bearing_Pa_at_Tc15p3':15.3/.0095/(.006*.0028)}
+T['dimension_correction']={'CSG50_bare_total_m':.09,'old98mm_wrong':True,'case_q_m':0,'pilot_q_m':-.005,'overall_left_q_m':.085,'output_small_PCD_q_m':.084,'output_L1mm_is_conditional_datum':True}
+write('retaining_compound_condition.json',T)
+Q=read('source_bound_reference_queries.json');MC=read('mass_and_load_screen.json');RC=read('resource_contract.json');CH=read('neutral_material_and_reference_checks.json');G2=read('retained_g2_context_challenge.json');MOV=read('sampled_input_rotation.json');S=read('scene.json')
+counts=dict(collections.Counter(q['classification']for q in Q['queries']))
+receipt={'scope':'G3 route B complete roll50 input conditional module, not whole waist','source_sha256':sha(O/'scene.json'),'six_mm_depth_variant_sha256':sha(O/'wg6_scene.json'),'native_finite_parts':len(S['parts']),'unique_ids':len(set(p['name']for p in S['parts']))==len(S['parts']),'resource_contract_pass':RC['resource_contract_pass'],'neutral_actual_material_pairs':len(CH['intrinsic_material_pairs']),'original111armor_pairs':len(CH.get('armor_material_pairs',[])),'OEM_gross_pairs':len(Q['queries']),'gross_query_classes':counts,'finite_mass_kg':MC['finite_material_mass_kg'],'complete_OEM_mass_once_kg':MC['complete_OEM_mass_once_kg'],'scope_mass_excluding_retained_controller_wiring_kg':MC['scope_mass_before_external_controller_wiring_kg'],'rotating_input_J_kg_m2':MC['own_input_axial_J_kg_m2'],'gear_input_J_kg_m2':MC['known_OEM_gear_input_J_kg_m2'],'OEM_rotor_J_kg_m2':MC['known_OEM_motor_rotor_J_kg_m2'],'fixed_parent_ideal_reflected_input_J_kg_m2':MC['fixed_parent_ideal_reflected_input_J_kg_m2'],'finite_fixed_Al_core_has_one_closed_material_root':len(next(p for p in RC['parts']if p['id']=='g3_roll_fixed_motor_case_front_and_rear_bearing_brake_carriers')['geometric_root_boundary_indices'])==1,'actual14casebolt_windows_present':True,'no_topology_implies_mount_strength_or_connection_validation':True,'released_rotation_sample_count':len(MOV['poses']),'released_rotation_pairs_per_pose':[len(p['positive_material_pairs'])for p in MOV['poses']],'released_motion_rejection_interpretation':'Pressure plate moves -0.3mm but working springs are rigid and remain unchanged in the diagnostic. Six spring-seat overlaps per pose, 3.386831e-9m3 each. This is an incomplete deformation model: neither proves a true hard spring clash nor permits release/motion acceptance. No checker exclusion or repair was used.','retained_G2_conflicts':len(G2['positive_pairs']),'retained_G2_max_conflict':max(G2['positive_pairs'],key=lambda p:p['positive_volume_m3']),'exact_removed_G2_function_IDs':G2['exact_removed_function_IDs'],'remaining_parent_mount':'Old G2 gear_load_shell remains incompatible material context; new B bolt mount and new conditional A output plane need whole mounting reconstruction, not silent deletion.','no_whole_waist_mass_or_SI':True,'OEM_case_face_correct':True,'OEM_output_plane_from_L1mm_conditional':True,'continuous_sweep_pass':False,'installed_in_G2':False,'thermal_and_continuous_duty_accepted':False,'physical_unit_accepted':False,'aesthetic_accepted':False,'AA3_visible_outer_change_mm':0,'images_actually_viewed':['finite_material_native_four_view.png','complete_reference_context_native_four_view.png','axial_native_section.png']}
+write('handoff_receipt.json',receipt)
+readme='''# Gorilla G3 roll 输入候选（冻结）
+
+范围为一套 CSG50/QTR160 的有限输入机构；原 AA3 可见外形调整0mm。两宏观方案只试A原7mm间距、B完整电机/holder/后bearing/制动/编码器沿自身轴向后移13mm，最终B。`scene.json` 是18mm WG条件深度；`wg6_scene.json` 是同拓扑6mm深度敏感项，不是第三布局。G2与历史失败源均未改。
+
+原图重新辨读纠正：CSG50总长90mm，旧98mm错误；J8是向内台阶。局部B固定面q0、WG pilot/input端q−5mm、overall左外端q+85mm。小PCD输出A取q+84mm（图L1mm，明确为条件安装基准，尚非文字核实datum）；支承压力中心条件q+66mm。全模块B世界位置[−.123,0,2.05]、轴+X。对应G2旧输出面偏移−14mm，需要重建载体/法兰，不能只改标签。
+
+81件真实闭面有限材料、81唯一ID。签名资源契约通过；中立自身材料0正体积、111原甲0对。新有限材料5.802753kg，gear8.9+motor1.613仅计一次，本模块16.315753kg；6mm深度变体16.287529kg。外部controller/wiring保留G2 context，未计入这些局部数字。质量/COM/完整材料惯量逐件在mass_and_load_screen；OEM实际输入gear惯量与rotor惯量分别计入理想反射敏感项，不把gross实柱惯量当OEM。
+
+传力路径为转子ID111→0.1mm径向胶层→全长holder套筒/端spider→带键主轴→Ø19H7 WG输入；固定stator→0.1mm胶层→冷却壳/连续bearing制动载体→14有限B安装螺栓。两有限输入bearing20×47×14有圈/沟/滚珠/保持架，额定、预紧、轴向保持公差未闭合。双面制动有盘/衬片/压力板/六真实弹簧/导向销/释放coil与yoke；理论μ.2..4仅15.07..30.13Nm，不能宣称实际holding/release额定。编码器target有键路径与readhead间隙。水腔/两4mm空心接头存在，整机路由未接通，液体是原stock分配，不新增储液。
+
+20个OEM gross交叠逐对在source_bound_reference_queries分开：严格落于已核Ø111/Hr24.6孔尺寸及Ø19H7/6JS9 key窗口者列确切体积；电机轴向datum和端空间仍未知。14螺栓仅匹配PCD174/M8与条件6mm接合，螺纹实材/盲孔深未知；不是删gross后通过。QTR rotor OD未知，不以臆造外径做装配。
+
+唯一新增原厂资料为[Henkel LOCTITE638 May2024 TDS](https://datasheets.tdx.henkel.com/LOCTITE-638-en_GL.pdf)，已读实际page2。工程暂用1MPa不是厂商下限；转子表材、清洁/固化、hot creep/fatigue/离心与维护条件开放。40Nm接口挑战下转子胶平均0.084MPa、条件SF11.90；此40高于source ultimate34，不是运行额定。WG 18mm条件下SF3轴向保持对应输出约796.30Nm，最短6mm只有265.43Nm，因此不能在全6..18范围声称611Nm保持或2678Nm冲击。参见retaining_compound_condition真实两深度源绑定。
+
+13个released旋转采样各有六个spring/pressure-seat约3.387mm³交叠：探针平移压力板−0.3mm而未将工作弹簧同步变形，属于变形运动模型不完整，不作为真实硬碰撞结论，也不放行释放运动。连续扫掠/接触动力/释放力未通过。保留G2其余38件后有16对冲突，最大新case×旧gear_load_shell88.584cm³；旧载荷壳和14螺栓不能作为名字重复删掉，下一阶段必须重建真实父体安装路径。所有对与exact替换名单保留。
+
+三张native诊断图已实际看过；四视同1588.235294px/m，剖面从真实材料三角截取。不是新审美权威或CAD合格宣称。轴向剖面A文字末端略裁切，完整datum见parameters。`handoff_receipt.json` 与 `snapshot_manifest.json` 绑定源/检查/图/全部历史文件。安装、整腰、连续热、稳定SI、实物和审美放行均false。下一步是弹簧联动变形、真实OEM端空间/轴向datum、最短键/轴向固持负载范围和父体安装共同设计；本轮不扩65或第三宏观。
+'''
+(O/'README.md').write_text(readme)
+errors=[];external=[]
+for file in ['scene.json','wg6_scene.json']:
+ d=read(file)
+ for n,h in d['source_hashes'].items():
+  p=R/n; actual=sha(p)if p.exists()else None; external.append({'path':n,'expected_sha256':h,'actual_sha256':actual,'matches':h==actual})
+  if actual!=h:errors.append({'binding_file':file,'path':n,'expected':h,'actual':actual})
+for n in ['resource_contract.json','neutral_material_and_reference_checks.json','mass_and_load_screen.json','source_bound_reference_queries.json','sampled_input_rotation.json','retained_g2_context_challenge.json','projection_manifest.json','handoff_receipt.json']:
+ h=read(n).get('source_sha256',read(n).get('source_scene_sha256'))
+ if h!=sha(O/'scene.json'):errors.append({'binding_file':n,'expected_source':sha(O/'scene.json'),'actual_source':h})
+for n in ['wg6_resource_contract.json','wg6_neutral_material_and_reference_checks.json','wg6_mass_and_load_screen.json','wg6_source_bound_reference_queries.json','wg6_sampled_input_rotation.json','wg6_retained_g2_context_challenge.json']:
+ if read(n)['source_sha256']!=sha(O/'wg6_scene.json'):errors.append({'binding_file':n,'wrong_wg6_source':True})
+for name,h in read('projection_manifest.json')['outputs'].items():
+ if sha(O/name)!=h:errors.append({'image':name,'hash_mismatch':True})
+files=[];json_fail=[]
+for p in sorted(O.iterdir()):
+ if not p.is_file()or p.name=='snapshot_manifest.json':continue
+ if p.suffix=='.json':
+  try:json.loads(p.read_text())
+  except Exception as e:json_fail.append({'path':p.name,'error':str(e)})
+ files.append({'stored_path':str(p.relative_to(R)),'original_path':str(p.relative_to(R)),'bytes':p.stat().st_size,'stored_sha256':sha(p),'uncompressed_sha256':sha(p),'compression':'none'})
+historical_producers=[('initial_route_scene.json','build_initial_route.py.txt'),('pre_axial_hold_scene.json','build_pre_axial_hold.py.txt'),('route_a_scene.json','build_route_a.py.txt'),('route_b_support_resource_rejected_scene.json','build_route_b_support_resource_rejected.py.txt'),('route_b_before_mount_foot_scene.json','build_route_b_before_mount_foot.py.txt'),('route_b_reaction_gap_scene.json','build_route_b_reaction_gap.py.txt'),('route_b_old_drawing_interpretation_scene.json','build_route_b_old_drawing_interpretation.py.txt'),('route_b_pilot_corrected_head_conflict_scene.json','build_route_b_pilot_corrected_head_conflict.py.txt')]
+hist=[]
+for sn,pn in historical_producers:
+ d=read(sn);h=d.get('source_hashes',{}).get(str((O/'build_roll_input.py').relative_to(R)));actual=sha(O/pn)
+ hist.append({'scene':sn,'captured_producer':pn,'expected_producer_sha256':h,'captured_sha256':actual,'matches':h==actual,'historical_rejected_not_current':True})
+ if h!=actual:errors.append({'historical_scene':sn,'producer_mismatch':True})
+write('snapshot_manifest.json',{'schema':'gorilla_g3_scratch_historical_and_current_snapshot_v1','scope':'local roll input macro A/B; latest B corrected OEM90mm; no final whole-waist or AA3 necessity claim','current_scene':'scene.json','current_scene_sha256':sha(O/'scene.json'),'depth6_variant':'wg6_scene.json','depth6_scene_sha256':sha(O/'wg6_scene.json'),'current_producer':'build_roll_input.py','current_producer_sha256':sha(O/'build_roll_input.py'),'reproduce_arguments':{'scene.json':['.018'],'wg6_scene.json':['.006']},'captured_historical_producers':hist,'files':files,'external_source_bindings':external,'json_parse_errors':json_fail,'binding_errors':errors,'manifest_self_excluded':True,'whole_waist_physical_aesthetic_accepted':False})
+print('freeze',len(files),'files',len(errors),'binding errors',len(json_fail),'parse errors',flush=True)
+print('scenes',sha(O/'scene.json'),sha(O/'wg6_scene.json'),flush=True)
+print('receipt',sha(O/'handoff_receipt.json'),'manifest',sha(O/'snapshot_manifest.json'),flush=True)
+print('classes',counts,'depthbounds',[v['SF3_output_bound_Nm']for v in T['WG_axial_retention_variants']],flush=True)
