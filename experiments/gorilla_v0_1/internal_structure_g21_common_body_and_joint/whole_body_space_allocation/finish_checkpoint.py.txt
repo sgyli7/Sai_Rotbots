@@ -1,0 +1,56 @@
+#!/usr/bin/env python3
+import pathlib,json,gzip,hashlib,importlib.util,sys,collections,datetime,re
+import numpy as np,trimesh
+R=pathlib.Path('/home/ethan/Projects/Sai_Rotbots');D=pathlib.Path(__file__).resolve().parent
+sha=lambda p:hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
+def rd(p):return json.load(gzip.open(p,'rt')) if str(p).endswith('.gz') else json.loads(pathlib.Path(p).read_text())
+def wr(p,j):p.write_text(json.dumps(j,indent=2)+'\n')
+HELP=R/'.scratch/gorilla_internal_g14_complete_thermal_colayout/geometry_helpers.py';sp=importlib.util.spec_from_file_location('g21finishhelper',HELP);g=importlib.util.module_from_spec(sp);sp.loader.exec_module(g)
+base=rd(R/'.scratch/gorilla_internal_g19_root_macro/bound_g18_scene.json.gz');old={p['name']:p for p in base['parts']};mass=rd(R/'.scratch/gorilla_internal_g19_root_macro/bound_g18_function_mass.json.gz');oldframe=old['g18_connected_cage_and_redesigned_receiver_net'];oldmp=trimesh.Trimesh(*g.h.triangles(oldframe),process=False).mass_properties
+comparison=[]
+for variant in ['a','b']:
+ P=D/variant;s=rd(P/'scene.json.gz');by={p['name']:p for p in s['parts']};ret=set(s['exact_probe_retired_ids']);new=set(s['new_geometry_ids']);moved={n:q for q in s['complete_rigid_group_changes'] for n in q['member_ids']};ledger=[];statuses=collections.Counter()
+ for row in mass['function_mass_rows']:
+  ids=row.get('member_ids',[]);stat='logical_no_geometry' if not ids else 'all_present' if all(n in by for n in ids) else 'all_conditionally_retired' if all(n in ret for n in ids) else 'mixed_missing_unknown_NOcredit';rr={'original_row':row,'member_status':stat,'present':[n for n in ids if n in by],'absent':[n for n in ids if n not in by],'whole_mass_COM_I_unknown':True};statuses[stat]+=1
+  if ids and all(n in moved for n in ids) and len({moved[n]['id'] for n in ids})==1:
+   q=moved[ids[0]];rot=np.array(q['properR']);C=np.array(q['sourcecenter_m']);T=np.array(q['targetcenter_m']);cc=row.get('COM_world_proxy_m');rr['candidate_transported_COM_proxy_m']=(rot@(np.array(cc)-C)+T).tolist() if cc is not None else None;rr['COM_proxy_NOTtruecomponent']=True;rr['rigidgroup']=q['id']
+  elif any(n in moved for n in ids):rr['mixedgroup_COM_reallocation_unknown_NOTuniform']=True
+  ledger.append(rr)
+ # Exactindexedrigidtransform preservation with no profilescaled.
+ tr=[]
+ for q in s['complete_rigid_group_changes']:
+  errs=[];C=np.array(q['sourcecenter_m']);T=np.array(q['targetcenter_m']);rot=np.array(q['properR'])
+  for n in q['member_ids']:
+   vv=(np.array(old[n]['vertices_world_m'])-C)@rot.T+T;errs.append(float(np.max(np.linalg.norm(vv-np.array(by[n]['vertices_world_m']),axis=1))))
+  tr.append(dict(q,max_indexed_vertex_error_m=max(errs or [0]),detR=float(np.linalg.det(rot))))
+ wr(P/'function_mass_partition_ledger.json',{'scene_SHA':sha(P/'scene.json.gz'),'original_mass_SHA':sha(R/'.scratch/gorilla_internal_g19_root_macro/bound_g18_function_mass.json.gz'),'member_class_count':dict(statuses),'source_rows':ledger,'original_422_unknown_motionowners_preserved_NOTzero':mass['unmapped_owner_rows_not_zero'],'original_nonadditive_alias_rows':mass['excluded_not_additive'],'original_globalfluid_once_unknownCOM':mass['new_fluid_global_once_budget'],'new_rows':s['new_energy_mass_rows'],'newjoint_protection_6NOTadditivemass':'original oldshoulder context plus newB6scope notactualnewjointcombination; no doubledmass or retirementcredit','actual_complete_rigid_groups':tr,'whole_M_COM_I':None,'no_oldframe_function_retirement_admitted':True})
+ slots=[]
+ for q in s['complete_energy_slots']:
+  mm=[by[n] for n in q['members'] if 'service' not in by[n]['role']];vv=np.concatenate([p['vertices_world_m'] for p in mm]);C=np.array(q['center_world_m']);rot=np.array(q['proper_R']);ll=(vv-C)@rot
+  refs=[p for p in mm if p['role']=='OEM_cell_max_envelope_reference'];logic=collections.Counter((p['local_series_group'] for p in refs));slots.append({'id':q['id'],'grid':q['lattice_XZ'],'actual_hardware_localXYZ_m':np.ptp(ll,axis=0).tolist(),'actual_hardware_world_AABB_m':[vv.min(0).tolist(),vv.max(0).tolist()],'center':C.tolist(),'properR':rot.tolist(),'unique_cell_count':len(refs),'unique18groups_count':len(logic),'allgroup10cells':set(logic.values())=={10},'full_own_terminals_taps_andports_in_dimensions':True,'service_separate_notfreecavity':True})
+ cname='g21_wide_closed_load_cage_net';f=by[cname];mp=trimesh.Trimesh(*g.h.triangles(f),process=False).mass_properties;fm=mp['volume']*7850;fc=mp['center_mass'];fi=mp['inertia']*7850;oldm=oldmp['volume']*7850;oldc=oldmp['center_mass'];pivot=np.array([.23,0,1.91]);FW=lambda mm:np.array([0,0,-mm*9.81]);dm=fm-oldm;dF=FW(fm)-FW(oldm);dM=np.cross(fc-pivot,FW(fm))-np.cross(oldc-pivot,FW(oldm))
+ energyrows=[r for r in s['new_energy_mass_rows'] if r['id']!=cname and not r['id'].endswith('_newjoint_protected_scope')];sub=np.zeros(3);cells=0
+ for row in energyrows:
+  if '_cell_' in row['id']:cells+=1;continue
+  assert all(v is not None for v in row['mass_range_kg']);sub+=row['mass_range_kg']
+ # Closedseriesminimumgeometry5links. Exactcurve/numericwire20C resistance diagnostic, notthermalrating or oldbudgetaddition.
+ links=s['parts'];CuHV=[p for p in links if p['name'].startswith('g21_HV_') and p['name'].endswith('_Cu')];length=sum(g.mm(p).volume()/(np.pi*.00335**2) for p in CuHV);Rw=1.72e-8*length/(np.pi*.00335**2);task=rd(R/'.scratch/gorilla_internal_g19_root_macro/energy_and_space_comparison_v3.json');bud=next(x for x in task['cell_count_sensitivities'] if x['topology']=='72s10p');sensitivity=[]
+ for b in bud['budgets']:
+  out=[]
+  for ph in b['phases']:
+   amps=[ph['unchanged_bus_kW']*1000/.98/v for v in [259.2,180.]];heat=[x*x*Rw/1000 for x in amps];out.append({'phase':ph['phase'],'duty':ph['duty'],'own_wire_I_A':amps,'own20C_series_hv_wire_loss_kW':heat})
+  dE=np.array([sum(ph['duty']*ph['own20C_series_hv_wire_loss_kW'][i] for ph in out)*b['actual_duration_h']/.675 for i in range(2)])
+  sensitivity.append({'mission':b['mission'],'aux_upper_V':b['auxiliary_supply_upper_V'],'phases':out,'nameplate_wireloss_increment_if_not_already_in_old_source_budget_kWh':dE.tolist(),'cannot_add_without_old_wireloss_scope_reconciliation':True,'actual_task_power_extra_mass_motion_or_hold':None})
+ col=rd(P/'changed_all_collision_receipt.json');types=collections.Counter();major=[]
+ for h in col['positive_pairs']:
+  names=[h['a'],h['b']];m1=re.match(r'g21_pack_(\d)_',names[0]);m2=re.match(r'g21_pack_(\d)_',names[1]);same=bool(m1 and m2 and m1[1]==m2[1]);mtype='new_joint_scope_vs_historical_OR_present_reference' if any('_newjoint_protected_scope' in n for n in names) else 'samepack_tap_terminal_Cu_orjacket' if same and any(t in ''.join(names) for t in ['sense_net','Cu_potential']) else 'samepack_other' if same else 'frame_related' if cname in names else 'cross_function_remaining';types[(mtype,tuple(sorted(h['classes'])))]+=1
+  if h['V_m3']>1e-5 and mtype not in ['samepack_tap_terminal_Cu_orjacket','new_joint_scope_vs_historical_OR_present_reference']:major.append(dict(h,owners=[by[n].get('body') for n in names],roles=[by[n].get('role') for n in names],V_cm3=h['V_m3']*1e6))
+ wr(P/'complete_partition_and_failure_report.json',{'scene_SHA':sha(P/'scene.json.gz'),'two_macros_complete_geometry_stopped':True,'fullslots':slots,'rigid_group_count':len(tr),'moved_part_count':len(moved),'actual_rigidtransform_maxerror':max(x['max_indexed_vertex_error_m'] for x in tr),'newcage':{'sourcegeometrySHA':hashlib.sha256(json.dumps({'v':f['vertices_world_m'],'f':f['faces']},sort_keys=True).encode()).hexdigest(),'own_density':7850,'signed_net_V_m3':mp['volume'],'mass_kg':fm,'COM_m':fc.tolist(),'fullI_COM_kgm2':fi.tolist(),'resource_one_material_root':'native receipt nesting says1,closedvoid1; onlygeometrynotwrench/interfacequalification','oldframe_conditional_replaced_mass_kg':oldm,'delta_conditional_own_frame_mass_kg':dm,'conditional_frame_delta_selfweight_F_N':dF.tolist(),'conditional_frame_delta_moment_about_proposedwaist_Nm':dM.tolist(),'notwholeload_or_qualifiedretirement':True},'energy':{'720cellmaxmass_range_kg':[None,None,50.4],'noncell_complete_assumption_range_kg':sub.tolist(),'complete_energy_upper_kg':float(sub[2]+50.4),'lower_nominal_unknown':True,'mass_COM_I_NOTwhole':'finitegeometrysubset only; OEM cell/components COM unknown','wire20Cminimumroute_totalseries_Cu_length_m':length,'wire20C_R_ohm':Rw,'task_wire_sensitivity':sensitivity,'new_dynamics_thermal_or_endurance_notrecomputed_dueunknownfullownerandloss':True},'collision_categories':[{'scope':k[0],'classes':list(k[1]),'count':v} for k,v in types.items()],'major_nonpack_actual_interference_examples':major[:35],'joint_selected_B_source_SHA':s['joint_interface_contract']['sha256'],'new_joint_actual_source_not_integrated':True,'originalshoulder_historical_context_DO_NOTcountoldplusnewscope_asfullassembly':True,'oldpipe_stock_retained_untiltrue_routes_replace_function_noautoretire':True,'stock_global_water_oil_not_reconciled_newcoldplate_routes':'bothworkingtanksandfluidsmoveunitedwithinprefix; newslotsports/routesfluidinventorymissing, neitherglobalstock norCOMqualified','assembly_physics_fit_endurance_stableSI_accepted':False,'no_thirdgeometry':True})
+ # Actualphysicalsourceviews omitonlyservice/domain/newjointscopeoverlays; oldimageswithservice retainedhistory.
+ visible=[p for p in s['parts'] if p['role']!='design_domain_bulk' and 'service' not in p['role'] and p['role']!='new_joint_scope_reference'];g.h.OUT=P;g.h.render(visible,'native_physical_four_view.png');g.h.render(visible,'native_physical_cutaway_four_view.png',True)
+ from PIL import Image,ImageDraw
+ for name in ['native_physical_four_view.png','native_physical_cutaway_four_view.png']:
+  im=Image.open(P/name);dr=ImageDraw.Draw(im);dr.rectangle((0,0,1800,50),fill='#f3f2ed');dr.text((20,10),f'G21 {variant.upper()} actual720 fullenergy + commonrigidfunctions + widecage / originalshoulder historical context',fill='black');dr.text((20,30),'Only conditionaldomain/service/newjointscope overlays excluded; no qualifiedwholeassembly/cavity/rating/endurance; originalfailedproducer retained',fill='black');im.save(P/name)
+ comparison.append({'variant':variant,'scene_SHA':sha(P/'scene.json.gz'),'shapegrid':slots[0]['grid'],'actualmounted_localXYZ_m':slots[0]['actual_hardware_localXYZ_m'],'newcage_kg':fm,'energy_upper_kg':float(sub[2]+50.4),'whole_M_COM_I':None,'resource_geometry_only':rd(P/'native_resource_receipt.json')['resource_contract_pass'],'allCADvalid':rd(P/'CAD_si_readback_receipt.json')['all_shapes_valid'],'changed_all_scope_categories':dict(collections.Counter(k[0] for k in types)),'adopted':False})
+wr(D/'comparison.json',{'createdUTC':datetime.datetime.now(datetime.timezone.utc).isoformat(),'variants':comparison,'originaljoint_contractB_only_searchscope_notcombinedactual':True,'oldwholeMCOMI422unknownnotzero':True,'both_rejected_no_thirdgeometry':True})
+print('EVENT G21 finalpartitionfields andphysicalviews complete',flush=True)

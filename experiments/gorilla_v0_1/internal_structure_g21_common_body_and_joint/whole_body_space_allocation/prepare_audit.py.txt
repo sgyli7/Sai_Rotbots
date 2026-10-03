@@ -1,0 +1,9 @@
+from pathlib import Path
+R=Path('/home/ethan/Projects/Sai_Rotbots');D=Path(__file__).resolve().parent
+s=(R/'.scratch/gorilla_internal_g20_energy_functional_pack/audit_energy_pack.py').read_text().replace('G20','G21').replace('g20','g21')
+s=s.replace('rsub=[0.,0.,0.];cellcount=0','rsub=[0.,0.,0.];cellcount=0;unknownrows=[]')
+s=s.replace("rsub=[a+v for a,v in zip(rsub,mr)]", "if any(v is None for v in mr):unknownrows.append(row);continue\n rsub=[a+v for a,v in zip(rsub,mr)]")
+s=s.replace("'source_referenceOEMmass_notfromenvelopevolume':True", "'source_referenceOEMmass_notfromenvelopevolume':True,'unrated_joint_protection_rows_NOTzero':unknownrows,'old_complete_functions_moved_mass_distribution_requires_exactrigidreceipt':True")
+s=s.replace("'new_energy_only_total_upper_kg':rsub[2]+cellcount*.07", "'new_energy_only_total_upper_kg':None,'new_own_knownsubset_upper_kg':rsub[2]+cellcount*.07,'new_joint_reference_scope_unknown_NOTadditivemass':unknownrows")
+s=s.replace("'all_retained_source_identical':not errors", "'all_retained_source_identical_exceptdeclared_movedIDs':not errors")
+(D/'audit_colayout.py').write_text(s)

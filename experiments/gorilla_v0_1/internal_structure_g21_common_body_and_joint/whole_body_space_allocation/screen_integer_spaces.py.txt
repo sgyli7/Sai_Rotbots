@@ -1,0 +1,32 @@
+#!/usr/bin/env python3
+import pathlib,json,gzip,hashlib,itertools,datetime
+import numpy as np
+R=pathlib.Path('/home/ethan/Projects/Sai_Rotbots');D=pathlib.Path(__file__).resolve().parent
+S=R/'.scratch/gorilla_internal_g19_root_macro/bound_g18_scene.json.gz';s=json.load(gzip.open(S,'rt'));parts=s['parts'];sha=lambda p:hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
+# Broad search box is not usable cavity. Existing whole geometry only historical protected conflict sample.
+limit=np.array([[-.42,-.4,1.94],[.43,.4,2.59]])
+armor=[p for p in parts if p.get('role') in ['armor_cover','armor_surface']]
+protect=[p for p in parts if p.get('body') in ['torso','shoulder_pitch_carrier','left_shoulder_pitch_carrier','right_shoulder_pitch_carrier'] and p.get('role') not in ['armor_cover','armor_surface','design_domain_bulk'] and not p['name'].startswith('g16_pack_')]
+existing=[]
+for p in protect:
+ v=np.asarray(p['vertices_world_m']);lo=v.min(0);hi=v.max(0)
+ if np.prod(hi-lo)>.0003:existing.append({'id':p['name'],'body':p.get('body'),'role':p.get('role'),'lo':lo.tolist(),'hi':hi.tolist(),'historical_position_not_permanent_exclusion':True})
+rows=[]
+for nx,nz in [(15,12),(30,6),(10,18)]:
+ gx=(nx-1)*.0225+.02155;gz=(nz-1)*.0225+.02155;case=np.array([gx+.01495,.111,gz+.02295]);mounted=case+np.array([.01425,.006575,.0388]);service=np.array([case[0]+.0485,.20,case[2]+.048]);
+ for axes in itertools.permutations(range(3)):
+  dims=mounted[list(axes)]
+  for rowsx,rowsy,rowsz in [(2,2,1),(1,2,2),(2,1,2),(1,1,4)]:
+   gd=np.array([rowsx,rowsy,rowsz]);required=dims*gd+.025*(gd-1);margin=limit[1]-limit[0]-required
+   rows.append({'grid':[nx,nz],'cells_per_module':nx*nz,'logical_groups':18,'parallel_cells':10,'case_localXYZ_m':case.tolist(),'fullmounted_localXYZ_m':mounted.tolist(),'removedcover_service_localXYZ_m':service.tolist(),'permuted_world_sourceaxes':list(axes),'4module_array':[rowsx,rowsy,rowsz],'array_fullmounted_extent_m':required.tolist(),'searchbox_margin_m':margin.tolist(),'box_admissible_only_NOTcavity':bool(np.all(margin>=0)),'volume_complete_hardware_upperbound_L':float(np.prod(mounted)*4000),'no_service_miscounted_as_material':True})
+selected=[{'candidate':'a','grid':[10,18],'worldaxes':[1,0,2],'mounted_worldXYZ_m':[.117575,.25325,.4658],'centers':[[.30,-.14,2.22],[.30,.14,2.22],[-.33,-.14,2.22],[-.33,.14,2.22]],'rationale':'four one-high narrow tall modules leave central X corridor and lateral wide-beam strips; complete historical heat/shoulder collision remains explicit challenge'}, {'candidate':'b','grid':[30,6],'worldaxes':[1,0,2],'mounted_worldXYZ_m':[.117575,.70325,.1958],'centers':[[.30,0,2.145],[.30,0,2.370],[-.33,0,2.145],[-.33,0,2.370]],'rationale':'two short wide modules per front/rear face with actual29.2mm mounting clearance; wider lateral region competes with shoulders/thermal; not cavity qualified'}]
+for q in selected:
+ hits=[]
+ for k,c in enumerate(q['centers']):
+  lo=np.array(c)-np.array(q['mounted_worldXYZ_m'])/2;hi=np.array(c)+np.array(q['mounted_worldXYZ_m'])/2
+  for e in existing:
+   span=np.minimum(hi,e['hi'])-np.maximum(lo,e['lo'])
+   if np.all(span>0):hits.append({'pack':k,'historical_stock':e['id'],'owner':e['body'],'bbox_overlap_L':float(np.prod(span)*1000),'exact_profilecheck_required':True})
+ q['historical_bbox_conflicts_sorted']=sorted(hits,key=lambda x:-x['bbox_overlap_L']);q['assembly_fit_unknown']=True
+out={'created_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'bound_original_source':str(S),'SHA':sha(S),'actualmounted_derivation':'G20B source_local_ID membership; generalized integergrid width/height replaces cells, not scaledcylinders; fixed offsets inheritedownfeature budgets to be regenerated and remeasured','searchbox_m':limit.tolist(),'searchbox_NOTusable_cavity':True,'source_visible_faces_have_openings':'actual native/armor collision and visible-ray gap diagnostics required; domain AABB never free volume','rows':rows,'two_selected_macro_probes':selected,'unknown_owner422_notzero':True,'whole_M_COM_I':None}
+(D/'space_screen.json').write_text(json.dumps(out,indent=2)+'\n');print('EVENT G21 integer complete-envelope screen',len(rows),'boxadmissible',sum(x['box_admissible_only_NOTcavity'] for x in rows));print([(q['candidate'],len(q['historical_bbox_conflicts_sorted'])) for q in selected])

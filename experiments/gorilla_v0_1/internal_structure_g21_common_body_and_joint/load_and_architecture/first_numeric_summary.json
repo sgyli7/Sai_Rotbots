@@ -1,0 +1,387 @@
+{
+  "created_utc": "2026-10-03T13:30:27.928032+00:00",
+  "case": {
+    "historic_mass_marker_kg": 1702.6602086140797,
+    "marker_index": 1,
+    "hand_kg_each": 25,
+    "conditional_total_mass_kg": 1752.6602086140797,
+    "leg_support_share": 1.0,
+    "vertical_accel_m_s2": 0.5,
+    "horizontal_accel_m_s2": 0.3,
+    "assumed_COM_height_m": 1.5,
+    "assumed_CoP_offset_x_m": 0.15,
+    "support_vertical_N": 18069.926750811162,
+    "support_horizontal_N": 525.7980625842239,
+    "ankle_pitch_challenge_Nm": 3499.1861064980103,
+    "required_friction_ratio_without_safety": 0.029097963142580018,
+    "not_a_new_robot_mass_or_leg_geometry": true
+  },
+  "static": {
+    "total_transmitted_force_N": 29430.0,
+    "factor_1_5_force_N": 44145.0,
+    "pitch_moment_at_0_33m_Nm": 9711.9,
+    "roll_moment_at_0_1m_Nm": 2943.0,
+    "pitch_stop_force_N_at_r_m": {
+      "0.08": 121398.75,
+      "0.12": 80932.5,
+      "0.16": 60699.375
+    },
+    "compression_case_does_not_require_motion_or_3t_hand_payload": true,
+    "mechanical_hold_stops_release_under_unloaded_condition_not_yet_designed": true
+  },
+  "official_linear_refs": [
+    {
+      "model": "GSX50 two-stack lead01",
+      "lead_m": 0.00254,
+      "continuous_motor_limited_force_N": 31802,
+      "velocity_at_rated_motor_rpm_m_s": 0.1016,
+      "min_stroke_m": 0.1524,
+      "max_stroke_m": 0.254,
+      "zero_stroke_mass_kg": 24.04,
+      "mass_adder_kg_per_inch": 1.36,
+      "catalog_printed_page": 7,
+      "catalog_mass_at_min_max_stroke_kg": [
+        32.2,
+        37.64
+      ],
+      "force_times_speed_not_validated_joint_continuous_W": 3231.0832,
+      "scope": "Same table column force/lead/rated motor speed; curve/DCbus/cooling must qualify simultaneous working point; drive/brake/mount/support/cable not all included; dynamic Ca is life constant, not static capacity."
+    },
+    {
+      "model": "GSX60 three-stack lead03",
+      "lead_m": 0.00635,
+      "continuous_motor_limited_force_N": 51278,
+      "velocity_at_rated_motor_rpm_m_s": 0.254,
+      "min_stroke_m": 0.254,
+      "max_stroke_m": 0.254,
+      "zero_stroke_mass_kg": 34.47,
+      "mass_adder_kg_per_inch": 3.63,
+      "catalog_printed_page": 8,
+      "catalog_mass_at_min_max_stroke_kg": [
+        70.77,
+        70.77
+      ],
+      "force_times_speed_not_validated_joint_continuous_W": 13024.612000000001,
+      "scope": "Same table column force/lead/rated motor speed; curve/DCbus/cooling must qualify simultaneous working point; drive/brake/mount/support/cable not all included; dynamic Ca is life constant, not static capacity."
+    }
+  ],
+  "energy": [
+    {
+      "mission": "a_30min_deliberate_mission",
+      "same_task_bus_phases": [
+        {
+          "phase": "motion",
+          "duty": 0.25,
+          "unchanged_bus_kW": 21.708872549019606,
+          "pack_terminal_A_at_nominal_cutoff": [
+            85.46261868945108,
+            123.06617091280954
+          ],
+          "cell_A_at_nominal_cutoff": [
+            8.546261868945107,
+            12.306617091280954
+          ],
+          "cell_heat_kW_at_nominal_cutoff": [
+            0.7888167928719194,
+            1.6356905016992118
+          ],
+          "storage_input_kW_at_nominal_cutoff": [
+            22.940727557177638,
+            23.78760126600493
+          ]
+        },
+        {
+          "phase": "manipulation",
+          "duty": 0.35,
+          "unchanged_bus_kW": 12.555822440087145,
+          "pack_terminal_A_at_nominal_cutoff": [
+            49.42925815730956,
+            71.17813174652576
+          ],
+          "cell_A_at_nominal_cutoff": [
+            4.942925815730956,
+            7.117813174652577
+          ],
+          "cell_heat_kW_at_nominal_cutoff": [
+            0.26387116869405103,
+            0.5471632554039841
+          ],
+          "storage_input_kW_at_nominal_cutoff": [
+            13.075934883068689,
+            13.359226969778621
+          ]
+        },
+        {
+          "phase": "hold",
+          "duty": 0.4,
+          "unchanged_bus_kW": 4.7775,
+          "pack_terminal_A_at_nominal_cutoff": [
+            18.80787037037037,
+            27.083333333333332
+          ],
+          "cell_A_at_nominal_cutoff": [
+            1.880787037037037,
+            2.708333333333333
+          ],
+          "cell_heat_kW_at_nominal_cutoff": [
+            0.03820348668981482,
+            0.07921875
+          ],
+          "storage_input_kW_at_nominal_cutoff": [
+            4.913203486689815,
+            4.95421875
+          ]
+        }
+      ],
+      "average_storage_kW_recomputed": [
+        12.277040493044378,
+        12.60431725592375
+      ],
+      "reference_average_kW": [
+        12.277040493044376,
+        12.60431725592375
+      ],
+      "usable_energy_kWh": 7.533000000000001,
+      "conditional_runtime_min": [
+        36.81506143569956,
+        35.85914181806075
+      ],
+      "with_unallocated_extra_storage_1_to_3_kW_runtime_min": [
+        [
+          34.042225015189565,
+          29.58557321398645
+        ],
+        [
+          33.22327695667298,
+          28.96506092430403
+        ]
+      ],
+      "real_runtime_accepted": false,
+      "new_arm_or_leg_power_not_added_to_old_included_drive_budget": true
+    },
+    {
+      "mission": "b_60min_high_concurrency_mission",
+      "same_task_bus_phases": [
+        {
+          "phase": "motion",
+          "duty": 0.4,
+          "unchanged_bus_kW": 35.973578431372545,
+          "pack_terminal_A_at_nominal_cutoff": [
+            141.61934063748956,
+            203.93185051798497
+          ],
+          "cell_A_at_nominal_cutoff": [
+            14.161934063748955,
+            20.393185051798497
+          ],
+          "cell_heat_kW_at_nominal_cutoff": [
+            2.1660520654005087,
+            4.491525562814495
+          ],
+          "storage_input_kW_at_nominal_cutoff": [
+            38.8737851586378,
+            41.19925865605179
+          ]
+        },
+        {
+          "phase": "manipulation",
+          "duty": 0.4,
+          "unchanged_bus_kW": 22.29710784313725,
+          "pack_terminal_A_at_nominal_cutoff": [
+            87.7783598007104,
+            126.40083811302298
+          ],
+          "cell_A_at_nominal_cutoff": [
+            8.77783598007104,
+            12.640083811302299
+          ],
+          "cell_heat_kW_at_nominal_cutoff": [
+            0.8321443685247212,
+            1.7255345625728618
+          ],
+          "storage_input_kW_at_nominal_cutoff": [
+            23.584295228868857,
+            24.477685422917
+          ]
+        },
+        {
+          "phase": "hold",
+          "duty": 0.2,
+          "unchanged_bus_kW": 5.7775,
+          "pack_terminal_A_at_nominal_cutoff": [
+            22.74463025951121,
+            32.752267573696145
+          ],
+          "cell_A_at_nominal_cutoff": [
+            2.274463025951121,
+            3.2752267573696145
+          ],
+          "cell_heat_kW_at_nominal_cutoff": [
+            0.0558703662093223,
+            0.1158527913716507
+          ],
+          "storage_input_kW_at_nominal_cutoff": [
+            5.951278529474628,
+            6.011260954636956
+          ]
+        }
+      ],
+      "average_storage_kW_recomputed": [
+        26.173487860897588,
+        27.473029822514906
+      ],
+      "reference_average_kW": [
+        26.17348786089759,
+        27.473029822514906
+      ],
+      "usable_energy_kWh": 7.533000000000001,
+      "conditional_runtime_min": [
+        17.268619390816642,
+        16.451771170487717
+      ],
+      "with_unallocated_extra_storage_1_to_3_kW_runtime_min": [
+        [
+          16.633124253820775,
+          15.492833841297642
+        ],
+        [
+          15.873969255024598,
+          14.83213197481453
+        ]
+      ],
+      "real_runtime_accepted": false,
+      "new_arm_or_leg_power_not_added_to_old_included_drive_budget": true
+    }
+  ],
+  "eight_axes_25kg_each_combined_nominal": [
+    {
+      "pose": "combined_reach_conditional",
+      "joint": "left_pitch",
+      "level": "nominal_range_marker",
+      "external_mass_one_hand_kg": 25,
+      "signed_gravity_torque_Nm": -342.16987936197495,
+      "absolute_torque_Nm": 342.16987936197495,
+      "payload_torque_Nm_per_kg": -4.499465810161887,
+      "mechanical_power_W_at_rad_s": {
+        "0.1": 34.2169879361975,
+        "0.3": 102.65096380859248,
+        "0.5": 171.08493968098747
+      },
+      "missing_owner_rows": 422,
+      "qualified": false
+    },
+    {
+      "pose": "combined_reach_conditional",
+      "joint": "left_roll",
+      "level": "nominal_range_marker",
+      "external_mass_one_hand_kg": 25,
+      "signed_gravity_torque_Nm": -378.66705155813804,
+      "absolute_torque_Nm": 378.66705155813804,
+      "payload_torque_Nm_per_kg": -3.8569304400306796,
+      "mechanical_power_W_at_rad_s": {
+        "0.1": 37.866705155813804,
+        "0.3": 113.60011546744141,
+        "0.5": 189.33352577906902
+      },
+      "missing_owner_rows": 422,
+      "qualified": false
+    },
+    {
+      "pose": "combined_reach_conditional",
+      "joint": "left_yaw",
+      "level": "nominal_range_marker",
+      "external_mass_one_hand_kg": 25,
+      "signed_gravity_torque_Nm": -85.21636179229986,
+      "absolute_torque_Nm": 85.21636179229986,
+      "payload_torque_Nm_per_kg": -1.19920681208395,
+      "mechanical_power_W_at_rad_s": {
+        "0.1": 8.521636179229986,
+        "0.3": 25.56490853768996,
+        "0.5": 42.60818089614993
+      },
+      "missing_owner_rows": 422,
+      "qualified": false
+    },
+    {
+      "pose": "combined_reach_conditional",
+      "joint": "left_elbow_pitch",
+      "level": "nominal_range_marker",
+      "external_mass_one_hand_kg": 25,
+      "signed_gravity_torque_Nm": -259.40337395136635,
+      "absolute_torque_Nm": 259.40337395136635,
+      "payload_torque_Nm_per_kg": -3.744690454566048,
+      "mechanical_power_W_at_rad_s": {
+        "0.1": 25.940337395136638,
+        "0.3": 77.8210121854099,
+        "0.5": 129.70168697568317
+      },
+      "missing_owner_rows": 422,
+      "qualified": false
+    },
+    {
+      "pose": "combined_reach_conditional",
+      "joint": "right_pitch",
+      "level": "nominal_range_marker",
+      "external_mass_one_hand_kg": 25,
+      "signed_gravity_torque_Nm": -584.1321364137222,
+      "absolute_torque_Nm": 584.1321364137222,
+      "payload_torque_Nm_per_kg": -7.25222073968026,
+      "mechanical_power_W_at_rad_s": {
+        "0.1": 58.41321364137222,
+        "0.3": 175.23964092411663,
+        "0.5": 292.0660682068611
+      },
+      "missing_owner_rows": 422,
+      "qualified": false
+    },
+    {
+      "pose": "combined_reach_conditional",
+      "joint": "right_roll",
+      "level": "nominal_range_marker",
+      "external_mass_one_hand_kg": 25,
+      "signed_gravity_torque_Nm": 111.56533954185932,
+      "absolute_torque_Nm": 111.56533954185932,
+      "payload_torque_Nm_per_kg": 1.2138722884668058,
+      "mechanical_power_W_at_rad_s": {
+        "0.1": 11.156533954185932,
+        "0.3": 33.469601862557795,
+        "0.5": 55.78266977092966
+      },
+      "missing_owner_rows": 422,
+      "qualified": false
+    },
+    {
+      "pose": "combined_reach_conditional",
+      "joint": "right_yaw",
+      "level": "nominal_range_marker",
+      "external_mass_one_hand_kg": 25,
+      "signed_gravity_torque_Nm": -63.97090597321245,
+      "absolute_torque_Nm": 63.97090597321245,
+      "payload_torque_Nm_per_kg": -0.9525947551848857,
+      "mechanical_power_W_at_rad_s": {
+        "0.1": 6.397090597321245,
+        "0.3": 19.191271791963736,
+        "0.5": 31.985452986606226
+      },
+      "missing_owner_rows": 422,
+      "qualified": false
+    },
+    {
+      "pose": "combined_reach_conditional",
+      "joint": "right_elbow_pitch",
+      "level": "nominal_range_marker",
+      "external_mass_one_hand_kg": 25,
+      "signed_gravity_torque_Nm": -384.0228927711868,
+      "absolute_torque_Nm": 384.0228927711868,
+      "payload_torque_Nm_per_kg": -5.822191659460627,
+      "mechanical_power_W_at_rad_s": {
+        "0.1": 38.40228927711868,
+        "0.3": 115.20686783135602,
+        "0.5": 192.0114463855934
+      },
+      "missing_owner_rows": 422,
+      "qualified": false
+    }
+  ],
+  "not_accepted": true
+}

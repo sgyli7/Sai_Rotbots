@@ -1,0 +1,50 @@
+"""Read-only literal G21 section/moment screen; assumed load sharing, no FEA."""
+from pathlib import Path
+import json,gzip,hashlib
+import numpy as np
+import trimesh
+from shapely.geometry import Polygon
+import manifold3d as mf
+R=Path.cwd(); O=Path(__file__).resolve().parent; inputs={}
+def read(rel):
+ p=R/rel;b=p.read_bytes(); inputs[rel]=hashlib.sha256(b).hexdigest();return json.loads(gzip.decompress(b) if p.suffix=='.gz' else b)
+s=read('.scratch/gorilla_internal_g21_whole_body_space_allocation/b/scene.json.gz'); ps={p['name']:p for p in s['parts']}
+p=ps['g21_wide_closed_load_cage_net']; v=np.asarray(p['vertices_world_m']); faces=np.asarray(p['faces']); origin=(v.min(0)+v.max(0))/2
+tri=(v-origin)[faces]; a,b,c=tri[:,0],tri[:,1],tri[:,2]; dv=np.einsum('ij,ij->i',a,np.cross(b,c))/6; V=dv.sum(); tc=a+b+c
+m1=np.einsum('i,ij->j',dv,tc)/4; m2=(np.einsum('i,ij,ik->jk',dv,tc,tc)+sum(np.einsum('i,ij,ik->jk',dv,t,t) for t in [a,b,c]))/20
+co=m1/V; mass=V*p['density_kg_m3']; I=p['density_kg_m3']*(np.trace(m2)*np.eye(3)-m2)-mass*((co@co)*np.eye(3)-np.outer(co,co))
+mesh=trimesh.Trimesh(vertices=v,faces=faces,process=False);z=2.150173
+section=mesh.section(plane_origin=[0,0,z],plane_normal=[0,0,1]); loops=section.discrete
+polys=[Polygon(l[:,:2]) for l in loops]; assert all(x.is_valid for x in polys)
+terms=[]
+for i,l in enumerate(loops):
+ q=l[:,:2];u=q[:-1];w=q[1:];cross=u[:,0]*w[:,1]-w[:,0]*u[:,1]
+ depth=sum(j!=i and pol.contains(polys[i]) for j,pol in enumerate(polys)); orient=(1 if depth%2==0 else -1)*(1 if cross.sum()>0 else -1)
+ terms.append(dict(depth=depth,xy_m=q.tolist(),area_m2=float(orient*cross.sum()/2),first_x=float(orient*np.sum((u[:,0]+w[:,0])*cross)/6),first_y=float(orient*np.sum((u[:,1]+w[:,1])*cross)/6),second_x=float(orient*np.sum((u[:,0]**2+u[:,0]*w[:,0]+w[:,0]**2)*cross)/12),second_y=float(orient*np.sum((u[:,1]**2+u[:,1]*w[:,1]+w[:,1]**2)*cross)/12)))
+A=sum(x['area_m2'] for x in terms);cx=sum(x['first_x'] for x in terms)/A;cy=sum(x['first_y'] for x in terms)/A
+# Two disjoint actual rails, per-rail local section; analytic rectangle crosscheck.
+area=.2*.08-.19*.07; Iy=(.08*.2**3-.07*.19**3)/12;Ix=(.2*.08**3-.19*.07**3)/12
+actualIy=sum(x['second_x'] for x in terms)-A*cx**2;actualIx=sum(x['second_y'] for x in terms)-A*cy**2
+assert len(loops)==4 and sorted(x['depth'] for x in terms)==[0,0,1,1]
+assert np.isclose(A,2*area,rtol=1e-9);assert np.isclose(actualIy,2*Iy,rtol=1e-9);assert np.isclose(actualIx,2*(Ix+area*.30**2),rtol=1e-9)
+N=3000*9.81;My=N*.33;Mx=N*.10; E=200e9;nu=.3;fy=235e6;L=.65
+cases=[]
+for gamma in [1,1.5]:
+ railN=np.array([N/2+Mx/.6,N/2-Mx/.6])*gamma
+ pitch_per=My/2*gamma
+ sigma=railN/area+pitch_per*(.2/2)/Iy
+ euler={str(K):float(np.pi**2*E*min(Ix,Iy)/(K*L)**2) for K in [1,2]}
+ # Simply supported flat panel, k=4; conceptual local plate screen only.
+ plate=4*np.pi**2*E/(12*(1-nu**2))*(.005/.190)**2
+ cases.append(dict(gamma=gamma,rail_axial_N=railN.tolist(),pitch_moment_per_rail_Nm=pitch_per,max_combined_compressive_stress_Pa=sigma.tolist(),yield_assumption_235MPa_utilization=(sigma/fy).tolist(),Euler_weak_axis_N=euler,flat_panel_elastic_buckling_Pa=plate))
+report=read('.scratch/gorilla_internal_g21_whole_body_space_allocation/b/changed_all_collision_receipt.json')
+queries=[q for q in report['positive_pairs'] if p['name'] in [q['a'],q['b']]][:2]
+queries += [q for q in report['positive_pairs'] if q['classes']==['finite_material','finite_material'] and q['same_pack']][:2]
+checks=[]
+def material(x): return mf.Manifold(mf.Mesh64(np.asarray(x['vertices_world_m'],dtype=np.float64),np.asarray(x['faces'],dtype=np.uint64)))
+for q in queries:
+ a,b=ps[q['a']],ps[q['b']];inter=material(a)^material(b);val=float(inter.volume());checks.append(dict(a=q['a'],b=q['b'],classes=q['classes'],actual_intersection_m3=val,author_intersection_m3=q['V_m3'],delta_m3=val-q['V_m3'],kernel_status=str(inter.status()),resource_validity_not_inferred=True))
+functional=read('.scratch/gorilla_internal_g21_function_review/functional_scope_review.json')
+result=dict(scope='Actual one-piece G21 cage geometry, literal Z section and independent tetra moments. Independent 3t pressure/load case, NOT payload or whole body rating.',inputs=inputs,frame=dict(mass_kg=mass,author_mass_kg=p['mass_range_kg'][0],delta_kg=mass-p['mass_range_kg'][0],COM_world_m=(co+origin).tolist(),full_I_at_COM_world_kg_m2=I.tolist(),volume_m3=V),actual_section=dict(z_m=z,loops=terms,area_m2=A,centroid_xy_m=[cx,cy],global_I_about_y_m4=actualIy,global_I_about_x_m4=actualIx,analytic_rectangle_crosscheck_passed=True,per_rail_area_m2=area,per_rail_Iy_m4=Iy,per_rail_Ix_m4=Ix),loads=dict(N=N,pitch_Nm=My,roll_Nm=Mx,independent_pressure_tonnes=3,not_added_to_robot_selfweight=True),cases=cases,assumptions=dict(material='Hypothetical steel, not certified material',E_Pa=E,nu=nu,yield_Pa=fy,rail_span_m=L,roll_from_axial_couple_rail_spacing_m=.6,pitch_shared_equally=True,actual_node_transfer_unproved=True),selected_native_queries=checks,limitations=['No beam-to-shoulder/waist mate or preload path qualified','Local stress concentrations/holes/torsion/end-node and weld/bolt contact not represented','Euler length/boundary and plate k are assumptions, not measured constraints','Cage intersects other functions; layout and physical acceptance false','Material assumption, static screening only; no fatigue, transient, true contact or FEA','No topology-optimization credit or robot mass/inertia/capacity claim'],physical_accepted=False,whole_robot_mass_COM_I=None)
+(O/'independent_frame_screen.json').write_text(json.dumps(result,indent=2,allow_nan=False)+'\n')
+print(json.dumps({k:result[k] for k in ['frame','cases','selected_native_queries']},indent=2))

@@ -1,0 +1,116 @@
+import pathlib
+R=pathlib.Path('/home/ethan/Projects/Sai_Rotbots');D=pathlib.Path(__file__).resolve().parent
+src=(R/'.scratch/gorilla_internal_g20_energy_functional_pack/build_energy_pack_b.py').read_text()
+for variant,nx,nz in [('a',10,18),('b',30,6)]:
+ t=src.replace("variant='b'",f"variant='{variant}'").replace('G20','G21').replace('g20','g21')
+ t=t.replace("retire={n for n in old", "retire={'g18_connected_cage_and_redesigned_receiver_net'}|{n for n in old")
+ t=t.replace("mapping=read(GRID)['electrical_group_mapping_15x12'];logic", "NX="+str(nx)+";NZ="+str(nz)+";gx=(NX-1)*pitch+.02155;gz=(NZ-1)*pitch+.02155; mapping=[]\nfor rz in range(NZ//2):\n for cx in range(NX//5):\n  seq=cx if rz%2==0 else NX//5-1-cx;group=rz*(NX//5)+seq\n  for iz in range(2):\n   for ix in range(5):mapping.append({'grid_X':cx*5+ix,'grid_Z':rz*2+iz,'series_group':group,'parallel_cell':iz*5+ix})\nlogic")
+ t=t.replace('range(15)','range(NX)').replace('range(12)','range(NZ)').replace('(ix-7)*pitch','(ix-(NX-1)/2)*pitch').replace('(iz-5.5)*pitch','(iz-(NZ-1)/2)*pitch')
+ t=t.replace("dm=np.array([.3515,.111,.292]);", "dm=np.array([gx+.01495,.111,gz+.02295]);mx=dm[0]/2-.03575;mz=dm[2]/2+.005;px=-gx/2+.0235;pz=gz/2-.035;")
+ t=t.replace('for x in [-.14,.14]:','for x in [-mx,mx]:').replace('for z in [-.151,.151]:','for z in [-mz,mz]:')
+ t=t.replace('(-.145,.10),(-.145,-.10)','(px,pz),(px,-pz)').replace('[-.173,0,z]','[-dm[0]/2+.00275,0,z]')
+ st=t.index('lattice=bx(');en=t.index("Ladd(lattice",st)
+ t=t[:st]+'''lattice=bx([-(NX-2)/2*pitch,0,0],[.0004,.069,gz+.00095])
+for ix in range(1,NX-1):lattice=lattice+bx([(ix-(NX-2)/2)*pitch,0,0],[.0004,.069,gz+.00095])
+for iz in range(NZ-1):lattice=lattice+bx([0,0,(iz-(NZ-2)/2)*pitch],[gx+.00045,.069,.0004])
+'''+t[en:]
+ t=t.replace("(x['grid_X']-7)*pitch", "(x['grid_X']-(NX-1)/2)*pitch").replace("(x['grid_Z']-5.5)*pitch", "(x['grid_Z']-(NZ-1)/2)*pitch")
+ t=t.replace('[.337,.0012,.270]','[gx+.00045,.0012,gz+.00095]').replace('[.337,.002,.270]','[gx+.00045,.002,gz+.00095]').replace('[.337,.008,.270]','[gx+.00045,.008,gz+.00095]')
+ t=t.replace('ch=bx([0,-.043075,.10],[.326,.0025,.007])+bx([0,-.043075,-.10],[.326,.0025,.007])+bx([.1595,-.043075,0],[.007,.0025,.207]);', 'ch=bx([0,-.043075,pz],[gx-.01055,.0025,.007])+bx([0,-.043075,-pz],[gx-.01055,.0025,.007])+bx([gx/2-.009,-.043075,0],[.007,.0025,2*pz+.007]);')
+ t=t.replace('[.05,.044,.035]','[0,.044,.035]').replace('[.05,.044,-.04]','[0,.044,-.04]').replace('[-.173,0,0]','[-dm[0]/2+.00275,0,0]').replace('[.10,0,.153]','[.04,0,dm[2]/2+.007]').replace('[.04,.047,-.025],[.18,.005,.11]','[0,.047,-.025],[.18,.005,min(.11,gz)]')
+ t=t.replace("service=bx([0,.16,0],[.40,.20,.34]);", "service=bx([0,.16,0],[dm[0]+.0485,.20,dm[2]+.048]);")
+ st=t.index('# Two boundedmacroplacements.');en=t.index('slots=[]',st)
+ centers="[[.30,-.14,2.22],[.30,.14,2.22],[-.33,-.14,2.22],[-.33,.14,2.22]]" if variant=='a' else "[[.30,0,2.145],[.30,0,2.370],[-.33,0,2.145],[-.33,0,2.370]]"
+ t=t[:st]+"# Selected joint complete topology and space allocation; no third layout.\ncenters="+centers+";M=np.array([[0,-1,0],[1,0,0],[0,0,1.]]);rots=[M]*4\n"+t[en:]
+ t=t.replace("'lattice_XZ':[15,12]", "'lattice_XZ':[NX,NZ]")
+ # New local two terminals and all19 sense wires have actual finite reserve geometry; catalogelectricalqualification remainsfalse.
+ st=t.index('# Two boundedmacroplacements.') if '# Two boundedmacroplacements.' in t else t.index('# Selected joint complete')
+ extra='''# Finite negative/positive module terminalbranch joinedinto correspondingCu nets, two distinct poles.
+terminal_records=[]
+for net,group,positive,zz in [(0,0,False,-.019),(18,17,True,.019)]:
+ _,a=collector(group,positive);b=np.array([-dm[0]/2-.010,0,zz]);outside=a.copy();outside[1]=np.sign(a[1])*.0445;route=[a,outside,np.array([b[0],outside[1],a[2]]),np.array([b[0],outside[1],zz]),b];branch=None
+ for j in range(4):
+  if np.linalg.norm(route[j+1]-route[j])<1e-8:continue
+  pp=line(route[j],route[j+1],.0025);branch=pp if branch is None else branch+pp
+ for ii,rec in enumerate(local):
+  if rec[1]==f'Cu_potential_net_{net:02}':
+   pp,n,role,rho,mr,md,color=rec;pp=pp+branch;md=dict(md,real_terminal_branch_path=[a.tolist() for a in route],two_poles_distinct=True,capweld_andconnector_rating_unknown=True);local[ii]=(pp,n,role,rho,[pp.n.volume()*rho]*3,md,color)
+ terminal_records.append({'net':net,'terminal_local_m':b.tolist(),'route_local_m':[a.tolist() for a in route]})
+# All19 minimumsense-wirepaths to isolated18sBMS interface. Wiring/creepage/strain and contacts are unknown.
+for net in range(19):
+ group=max(0,net-1);positive=net>0;_,a=collector(group,positive);out=a.copy();out[1]=np.sign(a[1])*.0465;bay=np.array([dm[0]/2+.006, out[1],a[2]]);end=np.array([(net-9)*.002,.052,.035]);path=[a,out,bay,np.array([bay[0],.060+net*.0001,end[2]]),end]
+ core=None;jacket=None
+ for j in range(4):
+  if np.linalg.norm(path[j+1]-path[j])<1e-8:continue
+  cc=line(path[j],path[j+1],.00018);jj=line(path[j],path[j+1],.00055,.00018);core=cc if core is None else core+cc;jacket=jj if jacket is None else jacket+jj
+ Ladd(core,f'sense_net_{net:02}_Cu','finite_new_material',8960,md={'actual_net_tap_to18sBMS_minimum_path':[a.tolist() for a in path],'floating18s_isolation_current_andEMCunknown':True});Ladd(jacket,f'sense_net_{net:02}_jacket','finite_new_material',1200,md={'strainrelief_termination_insulation_unknown':True})
+'''
+ t=t[:st]+extra+t[st:]
+ # MainPDU andrails actualnewpositions.
+ t=t.replace('pdu_c=np.array([.06,0,2.58])','pdu_c=np.array([.27,0,2.56])').replace("[.03,.24,2.55]","[-.22,.19,2.57]").replace("[-.16,0,2.50]","[-.22,-.19,2.57]")
+ # Replace original singlefeedloop with explicit4packseries topology plusnegative return and modules toPDU positive/negative.
+ st=t.index('# Fullmodule seriesHV');en=t.index('function_map=',st)
+ t=t[:st]+'''# Complete two-pole external series minimum route: pack0negative→PDUnegative; threeintermodule links; pack3positive→PDUpositive.
+term=[]
+for k,(c,M) in enumerate(zip(centers,rots)):
+ term.append({r['net']:np.array(c)+M@np.array(r['terminal_local_m']) for r in terminal_records})
+links=[('negative_return',term[0][0],pdu_c+[-.105,-.05,0])]+[(f'interpack_{i}_{i+1}',term[i][18],term[i+1][0]) for i in range(3)]+[('positive_feed',term[3][18],pdu_c+[-.105,.05,0])]
+for i,(name,a,b) in enumerate(links):
+ # Two distinct routinglanes around sourcefront/rear shapes; nocapacity or nointerference asserted.
+ lane=-.405+i*.018;path=[a,np.array([a[0],lane,a[2]]),np.array([a[0],lane,2.63+i*.004]),np.array([b[0],lane,2.63+i*.004]),np.array([b[0],lane,b[2]]),b];length=0
+ for j in range(5):
+  if np.linalg.norm(path[j+1]-path[j])<1e-8:continue
+  length+=np.linalg.norm(path[j+1]-path[j]);cc=line(path[j],path[j+1],.00335);jj=line(path[j],path[j+1],.005,.00335);native(cc,f'g21_HV_{name}_{j}_Cu','finite_new_material',[cc.n.volume()*8960]*3,8960,md={'actualseries_route_minimum_notampacity_orclearance':True});native(jj,f'g21_HV_{name}_{j}_jacket','finite_new_material',[jj.n.volume()*1200]*3,1200)
+ ports.append({'name':name,'path_centerline_m':[z.tolist() for z in path],'length_m':length,'bothpolarity_series_closed_geometry_minimumNOTelectricalqualification':True})
+''' +t[en:]
+ # Wholefunction transforms andnewwide cage integratedbeforelocal energy creation.
+ st=t.index('# Local editable finite prototype.')
+ common='''# Complete existingfunctions retained and moved as explicitrigidgroups. Oldsourcepositions are not permanent exclusions.
+rigidgroups=[];movedids=[]
+def mv(ids,target,rotation=np.eye(3),tag=''):
+ ids=[n for n in ids if n in {p['name'] for p in parts}]
+ if not ids:return
+ pp=[p for p in parts if p['name'] in ids];vv=np.concatenate([np.array(p['vertices_world_m']) for p in pp if 'service' not in p['role']]);C=(vv.min(0)+vv.max(0))/2;target=np.array(target)
+ for p in pp:
+  p['vertices_world_m']=((np.array(p['vertices_world_m'])-C)@rotation.T+target).tolist();p['g21_rigid_original_world_owner']=p.get('body');p['body']='torso';p['g21_distributed_installation_owner_NOTqualification']=True;movedids.append(p['name'])
+ rigidgroups.append({'id':tag,'member_ids':ids,'sourcecenter_m':C.tolist(),'targetcenter_m':target.tolist(),'properR':rotation.tolist(),'relative_internal_geometry_preserved':True,'routes_installations_after_move_require_rebuild':True})
+for side,sg in [('left',1),('right',-1)]:
+ ids=[p['name'] for p in parts if p['name'].startswith('ds_'+side+'_hydraulic_input_') and any(k in p['name'] for k in ['coupling','emrax188','motor_mount','pump_mount','z16_pump'])];mv(ids,[.025,sg*.17,2.17],tag=side+'_full_EMRAXcouplingZ16mechanical')
+ mv(['ds_'+side+'_hydraulic_input_inverter'],[-.03,sg*.23,2.54],tag=side+'_inverter')
+for prefix,target in [('g18_WP32_full_pump_0',[.07,-.20,2.59]),('g18_WP32_full_pump_1',[.07,.20,2.59]),('g16_low_water_working',[-.04,.20,2.45]),('g16_hot_water_working',[-.04,-.20,2.45]),('g18_188_degas',[.035,0,2.565]),('g16_oil_working',[-.02,0,2.42])]:mv([p['name'] for p in parts if p['name'].startswith(prefix)],target,tag=prefix+'_fullrigid')
+mv([p['name'] for p in parts if p['name'].startswith('e2_dual_fluid_HX')],[.015,0,1.995],tag='fullHXincludingallports')
+mv(['ds_compute','e_compute_coldplate'],[-.26,0,2.565],tag='compute_coldplate_fullpair')
+# Sevencomplete thermal cores/fans/plenums/guards/tools keep actualrelativegeometry. Six0707 sidezones; hot0714 roofzone.
+Mside=np.array([[0,1,0],[-1,0,0],[0,0,1.]])
+for j in range(6):
+ prefix=('g16_low_es0707_segment_' if j<4 else 'g18_low_es0707_segment_')+str(j);ids=[p['name'] for p in parts if p['name'].startswith(prefix+'_')];sg=1 if j%2 else -1;z=2.055+(j//2)*.255;mv(ids,[-.02,sg*.46,z],Mside if j<4 else np.eye(3),tag=prefix+'_complete_sidezone')
+Mtop=np.array([[0,0,1],[0,1,0],[-1,0,0.]])
+mv([p['name'] for p in parts if p['name'].startswith('g16_hot_es0714_complete_reference_')],[-.015,0,2.605],Mtop,tag='full_hot0714_roofzone')
+# Wide closed200x80/5 rails, shoulderX.115 faces andwaistinterface shareonefiniteCADnet, notstrengthproof.
+frame=None
+for yy in [-.30,.30]:
+ rail=bx([.025,yy,2.25],[.20,.080,.65])-bx([.025,yy,2.25],[.19,.070,.652]);frame=rail if frame is None else frame+rail
+for z in [1.94,2.54]:frame=frame+(bx([.025,0,z],[.20,.68,.080])-bx([.025,0,z],[.19,.682,.070]))
+for yy in [-.30,.30]:frame=frame+bx([.118,yy,2.405],[.012,.16,.32])
+frame=frame+bx([.11,0,1.93],[.32,.16,.12]);frame=frame+(cy([.238,0,1.91],.145,.020,'X',64)-cy([.238,0,1.91],.072,.026,'X',64))
+for yy in [-.30,.30]:
+ for z in [2.28,2.40,2.52]:frame=frame-cy([.118,yy,z],.008,.035,'X',32)
+native(frame,'g21_wide_closed_load_cage_net','finite_new_material',[frame.n.volume()*7850]*3,7850,md={'source_axis_contract':'G21 jointB coreX=.115, actualfastener/loads/receiver closure pending','closed200x80_5mmrails':'ownfiniteCAD notpermanentnon-design orcertifiedmaterial','oldg18receiver_frame_removed_onlyinconditionalprobe':'OEM/support function challenge remains inwhole source; newshoulder physicalsource rootintegration required'},color=[.38,.46,.53,1])
+JC=R/'.scratch/gorilla_internal_g21_joint_core_interface/interface_contract.json';joint=read(JC)['b'];jointboxes=[]
+for jj in joint['joints']:
+ for side,sg in [('left',1),('right',-1)]:
+  lo,hi=np.array(jj['protected_complete_installation_bounds_world_m']);lo[1]*=sg;hi[1]*=sg;lo,hi=np.minimum(lo,hi),np.maximum(lo,hi);nn=f'g21_{side}_{jj["id"].split("_")[-1]}_newjoint_protected_scope';native(bx((lo+hi)/2,hi-lo),nn,'new_joint_scope_reference',[None,None,None],md={'actual_joint_branch_source':str(JC),'source_SHA':sha(JC),'replaces_old_shoulder_ONLYafter_rootcompletefunctionintegration':False,'not_addedmass_unresolvedcomponentdistribution':True},color=[.64,.43,.23,.22]);jointboxes.append(nn)
+''' 
+ t=t[:st]+common+t[st:]
+ # Allmoved scopes innewgeometry butoldfunctionmassrows keptseparatelynot newOEMinventedmass; resources checkactualnewandmoved.
+ t=t.replace("'new_geometry_ids':newids", "'new_geometry_ids':newids+movedids")
+ t=t.replace("'all_existing_other_functions_unchanged':True", "'all_existing_other_functions_unchanged':False,'complete_rigid_group_changes':rigidgroups,'joint_interface_contract':{'path':str(JC),'sha256':sha(JC),'selected':'b','new_joint_actualsource_not_integrated':True},'whole_function_mass_changed_geometry_not_masscredit':True")
+ t=t.replace("'waterports_local':[[-.145,-.062075,.1],[-.145,-.062075,-.1]]", "'waterports_local':[[px,-.062075,pz],[px,-.062075,-pz]]")
+ # Prevent hash/report invariant aboutpartsunmodified; this isG21movingsystems.
+ t=t.replace("for i in range(4)]", "for i in range(4)]")
+ t=t.replace("'upstreamseries_order':i,'businterface':ports[i]", "'upstreamseries_order':i,'terminal_interface':[{'net':rr['net'],'world_m':(np.array(centers[i])+rots[i]@np.array(rr['terminal_local_m'])).tolist()} for rr in terminal_records]")
+ # scene renderedonly physicalsystem, preserveoriginaldomain separately.
+ t=t.replace("g.h.render(parts,'native_four_view.png')","g.h.render([p for p in parts if p['role']!='design_domain_bulk' and 'new_joint_scope' not in p['role']],'native_four_view.png')").replace("g.h.render(parts,'native_cutaway_four_view.png',True)","g.h.render([p for p in parts if p['role']!='design_domain_bulk' and 'new_joint_scope' not in p['role']],'native_cutaway_four_view.png',True)")
+ # Ownrecipeexactfrozenbeforeexecution. P isownroot, variantfiles namedbuild_a/build_b.
+ (D/f'build_{variant}.py').write_text(t)
+print('prepared two exactmacro producers')

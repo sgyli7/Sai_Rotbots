@@ -1,0 +1,75 @@
+#!/usr/bin/env python3
+import pathlib,json,gzip,hashlib,collections,datetime
+O=pathlib.Path(__file__).resolve().parent
+B=pathlib.Path('.scratch/gorilla_internal_g21_whole_body_space_allocation')
+J=pathlib.Path('.scratch/gorilla_internal_g21_joint_core_interface')
+inputs=[]
+def load(p):
+ p=pathlib.Path(p);inputs.append({'path':str(p),'sha256':hashlib.sha256(p.read_bytes()).hexdigest()})
+ return json.load(gzip.open(p,'rt') if p.suffix=='.gz' else open(p))
+def emit(n,d):(O/n).write_text(json.dumps(d,indent=2,ensure_ascii=False)+'\n')
+f1=load('.scratch/gorilla_internal_f1_structure/interface.json')
+act={a['id']:a for a in f1['actuators']};braces=f1['brace_interfaces']
+contract=load(J/'interface_contract.json');deltas=load(J/'actual_installation_delta.json')
+summary={};all422={}
+for v in ['a','b']:
+ s=load(B/v/'scene.json.gz');ledger=load(B/v/'function_mass_partition_ledger.json');rep=load(B/v/'function_replacement_map.json');report=load(B/v/'complete_partition_and_failure_report.json');nets=load(B/v/'ports_and_electrical_nets.json')
+ pn={p['name']:p for p in s['parts']};tree=s['body_tree_candidate'];rows={r['original_row']['id']:r for r in ledger['source_rows']};ret=set(s['exact_probe_retired_ids'])
+ out=[]
+ for u in ledger['original_422_unknown_motionowners_preserved_NOTzero']:
+  r=rows[u['id']];parts=[pn[i] for i in r['present']];evidence=[];scope=None
+  # No remapping occurs. Assembly IDs and motion tags associate FUNCTION HISTORY only.
+  for p in parts:
+   mid=p.get('motion_interface_id')
+   if mid in act:
+    a=act[mid];scope='legacy_waist_hydraulic_function' if a['base_body']=='waist_yaw_carrier' else 'historical_leg_waiting_new_engineering'
+    evidence.append({'member':p['name'],'motion_interface_id':mid,'F1_base_body':a['base_body'],'F1_output_body':a['output_body'],'native_body':p.get('body'),'native_mass_owner_body':p.get('mass_owner_body'),'association_not_physical_connection':True})
+   asm=p.get('physical_assembly_id')
+   for aid,a in act.items():
+    if asm=='f1_'+aid+'_holding':
+     scope='legacy_waist_hydraulic_function' if a['base_body']=='waist_yaw_carrier' else 'historical_leg_waiting_new_engineering'
+     evidence.append({'member':p['name'],'physical_assembly_id':asm,'F1_base_body':a['base_body'],'F1_output_body':a['output_body'],'finite_cylinder_mount_owner_present':p.get('finite_cylinder_mount_owner_present'),'association_not_physical_connection':True})
+   if mid in braces:
+    a=braces[mid];scope='historical_leg_waiting_new_engineering';evidence.append({'member':p['name'],'motion_interface_id':mid,'F1_brace_base_body':a['base_body'],'F1_brace_output_body':a['output_body']})
+  # Some fixed brace components carry no per-part motion tag: exact F1 brace ID/native assembly evidence.
+  if scope is None:
+   for p in parts:
+    asm=p.get('physical_assembly_id','')
+    for bid,b in braces.items():
+     if asm in [bid+'_barrel',bid+'_rod']:
+      scope='historical_leg_waiting_new_engineering';evidence.append({'member':p['name'],'physical_assembly_id':asm,'F1_brace_base_body':b['base_body'],'F1_brace_output_body':b['output_body']})
+  rid=u['id']
+  if scope is None and rid.startswith(('retained:g13_shoulder_material:','retained:g13_shoulder_reference:')):
+   scope='old_shoulder_function_currently_retained_new_native_not_integrated';evidence.append({'exact_ledger_source_family':rid.split(':')[1],'new_body_joint_source_integrated':False})
+  if scope is None and rid.startswith('current_budget:g18_'):
+   # Exact current source IDs registered in ledger; no claimed mount/owner replacement.
+   if any(p['name'] in [f'g18_{side}_{axis}_external_bearing_{n}' for side in ['left','right'] for axis in ['roll','yaw'] for n in [0,1]] for p in parts):scope='old_roll_yaw_bearing_function_pending_three_axis_replacement'
+   elif any(p['name'] in [f'g18_{side}_elbow_external_bearing_{n}' for side in ['left','right'] for n in [0,1]] for p in parts):scope='current_elbow_bearing_split_still_required'
+  if scope is None and any(p['name'] in ['left_composite_ankle_front_guard','right_composite_ankle_front_guard'] for p in parts):
+   scope='historical_leg_waiting_new_engineering';evidence.append({'source_global_flag':'old_lower_body_only_historical_placeholder','native_guard_body':[p.get('body') for p in parts],'not_owner_remapped':True})
+  if scope is None and any(p.get('attached_surface_part') for p in parts):
+   scope='current_arm_visual_attachment_owner_mapping';evidence += [{'member':p['name'],'attached_surface_part':p.get('attached_surface_part'),'target_present':p.get('attached_surface_part') in pn,'target_body':pn.get(p.get('attached_surface_part'),{}).get('body'),'no_alias_owner_assignment':True} for p in parts]
+  if scope is None and any(p['name'] in ['left_blue_forearm_wrap','right_blue_forearm_wrap'] and p.get('role')=='armor_cover' for p in parts):
+   scope='current_arm_visual_attachment_owner_mapping';evidence.append({'exact_native_cover_IDs':[p['name'] for p in parts],'native_role':'armor_cover','native_body_not_in_tree':True,'no_alias_owner_assignment':True})
+  if scope is None:scope='unclassified_requires_source_review'
+  rng=u.get('mass_range_kg');known=isinstance(rng,list) and all(isinstance(x,(int,float)) for x in rng)
+  out.append({'old_row_id':rid,'scope':scope,'member_ids':u['member_ids'],'present_exact_ids':r['present'],'absent_exact_ids':r['absent'],'member_status':r['member_status'],'mass_range_kg':rng,'mass_quantity_or_range_unknown':not known,'mass_range_known_COM_and_fullI_unqualified':known,'geometric_COM_proxy_not_OEM_COM':u.get('geometric_COM_proxy_m'),'old_owner_candidate':u['owner_candidate'],'old_owner_in_current_tree':u['owner_candidate'] in tree,'current_native_bodies':sorted(set(p.get('body') for p in parts)),'dynamic_split_or_link_unknown':True,'source_association_evidence':evidence,'physical_connection_or_retirement_admitted':False})
+ counts=collections.Counter(x['scope'] for x in out)
+ dims=collections.defaultdict(lambda:{'rows':0,'quantity_unknown':0,'range_known_COM_unqualified':0,'old_owner_absent_tree':0})
+ for x in out:
+  f=dims[x['scope']];f['rows']+=1;f['quantity_unknown']+=x['mass_quantity_or_range_unknown'];f['range_known_COM_unqualified']+=x['mass_range_known_COM_and_fullI_unqualified'];f['old_owner_absent_tree']+=not x['old_owner_in_current_tree']
+ # Native principal branch scope and conditional ranges are separate from six body protection boxes.
+ joint=load(J/v/'scene.json.gz');inv=load(J/v/'inventory_report.json');inter=load(J/v/'interfaces.json');section=load(J/v/'core_actual_section.json')
+ jp={p['name']:p for p in joint['parts']};role=collections.Counter(p['role'] for p in joint['parts']);native_present=set(jp)&set(pn)
+ kin=[]
+ for q in inter['joints']:
+  old=next((b for b in tree.values() if b.get('joint_id')==q['id']),{})
+  kin.append({'joint':q['id'],'new_parent':q['parent_body'],'new_output':q['output_body'],'body_old_tree_node':old,'new_pivot_world_m':q['pivot_world_m'],'new_axis_world':q['axis_world'],'new_ratio':q['official_component_set']['ratio'],'new_family':q['official_component_set']['family'],'same_old_new_pivot':old.get('pivot_world_m')==q['pivot_world_m'],'same_old_new_axis':old.get('axis_world')==q['axis_world'],'new_rest_FK_and_full_wrench_needed':True})
+ protected=[p for p in s['parts'] if p.get('role')=='new_joint_scope_reference']
+ core=[p['name'] for p in joint['parts'] if p['role']=='finite_joint_core_shared_loadcase']
+ new_qty=collections.Counter(r['role'] for r in ledger['new_rows'])
+ summary[v]={'body_scene_SHA':hashlib.sha256((B/v/'scene.json.gz').read_bytes()).hexdigest(),'body_parts':len(pn),'exact_part_ID_unique':len(pn)==len(s['parts']),'old422_scope_counts':dict(counts),'old422_orthogonal_unknown_counts':dict(dims),'retired_energy_unknown422_members':sum(bool(set(x['member_ids'])&ret) for x in out),'old422_all_present':all(x['member_status']=='all_present' for x in out),'energy_old480_retired_new720':rep['retired_pack_function_counts'],'retired_exact_ids_count':len(ret),'new_energy_upper_kg':report['energy']['complete_energy_upper_kg'],'newcage_individual_net_kg':report['newcage']['mass_kg'],'actual_three_axis_native_scene_SHA':inv['source_sha256'],'joint_native_parts':len(jp),'joint_native_parts_present_in_body':len(native_present),'joint_role_counts':dict(role),'joint_finite_flag_count':sum(bool(p.get('finite_material')) for p in joint['parts']),'joint_protected_reference_count':sum(not bool(p.get('finite_material')) for p in joint['parts']),'body_protected6_ids':[p['name'] for p in protected],'body_protection_is_not_additive_new_mass':True,'joint_component_inventory_range_not_assembled_net_kg':inv['conditional_component_inventory_sum_range_kg'],'joint_unrealized_mass_terms':inv['unrealized_outputbolts_keys_keeper_brackets_thread_fastener_water_fill_mass'],'joint_OEM_split_COM_fullI_unknown':inv['OEM_mass_split_COM_fullI_unknown'],'new_joint_source_is_left_three_axis_not_bilateral_actual':all(q['id'].startswith('left_') for q in inter['joints']),'core_interface':{'body_cage_id':'g21_wide_closed_load_cage_net','joint_core_ids':core,'joint_candidate_mate_X_m':inter['core_fixed_mate_candidate_world_x_m'],'actual_section_X_m':section['world_plane_X_m'],'actual_section_area_m2':section['actual_material_section_area_m2'],'actual_bolts_mate_preload_unknown':section['actual_bolts_mate_preload_unknown'],'same_X_plane_not_connected_qualification':True},'kinematic_contract_delta':kin,'new_row_role_counts':dict(new_qty),'electrical_functions_uncovered_or_unrated':rep['uncovered_or_unrated'],'whole_M_COM_I':s['wholebody_M_COM_I'],'old_lower_scope':s['old_lower_body_only_historical_placeholder'],'physical_accepted':False}
+ all422[v]=out
+emit('422_source_member_partition.json',all422)
+emit('functional_scope_review.json',{'created_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'inputs':inputs,'variants':summary,'method':'Exact source rows/member IDs/native assembly metadata/F1 actuator+brace endpoint contracts and current body tree. No physical alias assignment, no inertia synthesized from envelopes, no collision reclassification.','not_fullM_or_physics_admission':True})
+print(json.dumps({v:{'counts':s['old422_scope_counts'],'unknowns':s['old422_orthogonal_unknown_counts'],'newnativeinbody':s['joint_native_parts_present_in_body'],'bodyprotected':len(s['body_protected6_ids'])} for v,s in summary.items()},indent=2))
