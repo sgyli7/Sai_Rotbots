@@ -1,0 +1,31 @@
+"""Two bounded PLC TetGen probes of unchanged finite child material; no FEM solve."""
+from pathlib import Path
+import hashlib
+import json
+import sys
+import time
+import numpy as np
+OUT=Path(__file__).resolve().parent
+sys.path.insert(0,str(OUT/'runtime'))
+from meshpy import tet
+surface=np.load(OUT/'native_child_surface.npz')
+v=surface['vertices_world_m'];f=surface['faces']
+case=sys.argv[1]
+volume={'coarse':1e-7,'geometry':1e-7}[case]
+switches={'coarse':'pq1.5f','geometry':'pf'}[case]
+info=tet.MeshInfo();info.set_points(v.tolist());info.set_facets(f.tolist(),markers=list(range(1,len(f)+1)))
+t0=time.monotonic()
+try:
+ mesh=tet.build(info,options=tet.Options(switches),max_volume=volume,verbose=False)
+ x=np.asarray(mesh.points,float);e=np.asarray(mesh.elements,int);bf=np.asarray(mesh.faces,int);bm=np.asarray(mesh.face_markers,int)
+ p=x[e];d=p[:,1:]-p[:,:1];signed=np.linalg.det(d)/6;vol=np.abs(signed)
+ edges=np.concatenate([np.linalg.norm(p[:,i]-p[:,j],axis=1)[:,None] for i in range(4) for j in range(i+1,4)],axis=1)
+ quality=12*(3*vol)**(2/3)/(edges**2).sum(1)
+ native=json.loads((OUT/'domain_interfaces.json').read_text())['signed_native_volume_m3']
+ boundary=bf[bm>0];markers=bm[bm>0]
+ np.savez_compressed(OUT/(case+'_tetra.npz'),points_m=x,tetra=e,boundary_faces=boundary,native_face_markers_1based=markers)
+ receipt={'case':case,'elapsed_seconds':time.monotonic()-t0,'mesh_generator':'MeshPy2026.1.1/TetGen1.6.1','options':switches,'quality_optimization_requested':case=='coarse','max_volume_request_m3':volume,'node_count':len(x),'tetra_count':len(e),'tet_volume_m3':float(vol.sum()),'native_volume_m3':native,'relative_volume_error':float(abs(vol.sum()-native)/native),'nonpositive_or_degenerate_count':int((signed<=0).sum()),'min_volume_m3':float(vol.min()),'mean_ratio_quality_quantiles':dict(zip(['min','p01','p05','median'],np.quantile(quality,[0,.01,.05,.5]).tolist())),'tet_edge_m_quantiles':dict(zip(['median','p95','max'],np.quantile(edges,[.5,.95,1]).tolist())),'boundary_face_count':len(boundary),'source_face_marker_count':len(np.unique(markers)),'source_face_markers_missing_count':len(set(range(1,len(f)+1))-set(markers)),'full_surface_hash_preserved':True,'thin_wall_two_layers_verified':False,'hole_material_exclusion_verified':False,'FE_loads_applied':False,'FEM_or_optimization_run':False,'physical_release':False,'mesh_sha256':hashlib.sha256((OUT/(case+'_tetra.npz')).read_bytes()).hexdigest()}
+except Exception as err:
+ receipt={'case':case,'elapsed_seconds':time.monotonic()-t0,'error':str(err),'mesh_generated':False,'physical_release':False}
+(OUT/(case+'_mesh_receipt.json')).write_text(json.dumps(receipt,indent=2)+'\n')
+print(json.dumps(receipt))

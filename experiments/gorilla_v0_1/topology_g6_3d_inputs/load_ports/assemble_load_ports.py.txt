@@ -1,0 +1,177 @@
+"""G6 source-bound conditional wrench distributions; no contact qualification.
+
+Input API: points_m[n,3], boundary_faces[k,3], original face markers[k]
+(one based). Markers preserve exact native-face provenance; never nearest pivot.
+"""
+from pathlib import Path
+import argparse
+import hashlib
+import json
+import numpy as np
+from scipy import sparse
+
+ROOT=Path(__file__).resolve().parents[2]
+OUT=Path(__file__).resolve().parent
+G4=ROOT/'.scratch/gorilla_internal_g4_pitch_module'
+DOMAIN=ROOT/'.scratch/gorilla_internal_g6_3d_domain_review'
+SOURCE_SHA='9a88efe894625e7ed3d3f15e544ead7b574382035594ab8d4b81f530fbb7b21a'
+
+def sha(path):return hashlib.sha256(path.read_bytes()).hexdigest()
+def save(path,obj):path.write_text(json.dumps(obj,indent=2,ensure_ascii=False,allow_nan=False)+'\n')
+def skew(r):
+    x,y,z=r;return np.array([[0.,-z,y],[z,0.,-x],[-y,x,0.]])
+
+def select_native_regions(nodes,faces,markers,patches):
+    """Use exact source surface markers, with finite area, not a pivot radius."""
+    if len(markers)!=len(faces):raise ValueError('one source face marker per boundary triangle required')
+    tri=nodes[faces];areas=np.linalg.norm(np.cross(tri[:,1]-tri[:,0],tri[:,2]-tri[:,0]),axis=1)/2
+    if np.any(areas<=0):raise ValueError('degenerate surface triangles')
+    result={}
+    for row in patches:
+        ids=np.flatnonzero(np.isin(markers,np.asarray(row['native_face_ids'])+1))
+        if len(ids)==0:raise ValueError('missing exact port surface '+row['id'])
+        w=np.zeros(len(nodes))
+        np.add.at(w,faces[ids].ravel(),np.repeat(areas[ids]/3,3))
+        used=np.flatnonzero(w>0)
+        result[row['id']]={'nodes':used,'lumped_area_m2':w[used],'surface_face_indices':ids,
+                           'area_m2':float(areas[ids].sum()),'surface_centroid_m':np.average(nodes[used],axis=0,weights=w[used])}
+    return result,areas
+
+def distribute_wrench(nodes,region,center,F,M):
+    """Area-lumped traction plus minimum weighted correction preserving 6D.
+
+    This prescribes arbitrary vector traction, including tangential/tensile
+    components. It is a conditional FE input, not pin/bearing contact pressure.
+    """
+    ids=region['nodes'];xyz=nodes[ids];w=region['lumped_area_m2'];w=w/w.sum()
+    r=xyz-center;ell=max(.01,float(np.max(np.linalg.norm(r,axis=1))))
+    A=np.concatenate([np.vstack((np.eye(3),skew(ri)/ell)) for ri in r],axis=1)
+    W=np.repeat(w,3);target=np.r_[F,M/ell]
+    initial=(w[:,None]*F).ravel();B=(A*W[None])@A.T
+    sing=np.linalg.svd(B,compute_uv=False);rank=int(np.linalg.matrix_rank(B,tol=sing[0]*1e-12))
+    if rank!=6:raise ValueError('port rank below six; cannot apply exact wrench')
+    correction=W*(A.T@np.linalg.solve(B,target-A@initial));forces=(initial+correction).reshape(-1,3)
+    actual=np.r_[forces.sum(0),np.cross(r,forces).sum(0)]
+    desired=np.r_[F,M];res=actual-desired
+    out=np.zeros_like(nodes);out[ids]=forces
+    return out,{'nodes':len(ids),'center_m':center.tolist(),'target_Fxyz_Mxyz':desired.tolist(),
+                'actual_Fxyz_Mxyz':actual.tolist(),'residual_Fxyz_Mxyz':res.tolist(),
+                'wrench_matrix_rank':rank,'wrench_matrix_scaled_condition':float(sing[0]/sing[-1]),
+                'characteristic_length_m':ell,'surface_area_m2':region['area_m2'],
+                'surface_centroid_m':region['surface_centroid_m'].tolist(),
+                'initial_area_lump_moment_Nm':np.cross(r,initial.reshape(-1,3)).sum(0).tolist(),
+                'max_correction_nodal_force_N':float(np.linalg.norm(correction.reshape(-1,3),axis=1).max()),
+                'max_nodal_force_N':float(np.linalg.norm(forces,axis=1).max()),
+                'contact_distribution_qualified':False,'clamp':False}
+
+def rigid_mode_gauge(nodes,faces,tetra=None):
+    """Six integral gauges remove only rigid translations and rotations.
+
+    Root can use [K C^T; C 0], not fixing any bearing or surface nodes.
+    For a self-balanced valid free elastic body gauge reactions should approach0.
+    """
+    w=np.zeros(len(nodes))
+    if tetra is not None:
+        q=nodes[tetra];vol=np.abs(np.einsum('ij,ij->i',np.cross(q[:,1]-q[:,0],q[:,2]-q[:,0]),q[:,3]-q[:,0]))/6
+        np.add.at(w,tetra.ravel(),np.repeat(vol/4,4));scope='actual tetra volume lumped node weights'
+    else:
+        q=nodes[faces];area=np.linalg.norm(np.cross(q[:,1]-q[:,0],q[:,2]-q[:,0]),axis=1)/2
+        np.add.at(w,faces.ravel(),np.repeat(area/3,3));scope='native surface area weights; gauge only, not mass or volume'
+    w=w/w.sum();center=np.average(nodes,axis=0,weights=w);r=nodes-center
+    R=np.concatenate([np.c_[np.eye(3),-skew(ri)] for ri in r],axis=0)
+    C=(R.T*np.repeat(w,3)[None]);G=C@R
+    singular=np.linalg.svd(G,compute_uv=False);rank=int(np.linalg.matrix_rank(G,tol=singular[0]*1e-12))
+    if rank!=6:raise ValueError('cannot remove exactly six rigid modes')
+    return C,R,{'row_count':6,'rigid_mode_rank':rank,'constraint_on_rigid_modes_rank':rank,
+                'center_m':center.tolist(),'weights_scope':scope,'gauge_times_rigid_modes_singular_values':singular.tolist(),
+                'matrix_scaled_condition':float(singular[0]/singular[-1]),'method':'KKT integral mean translation/rotation projection, not an all-DOF support clamp',
+                'no_real_bearing_constraint_asserted':True}
+
+def verify_native_patch_geometry(nodes,faces,patches):
+    tri=nodes[faces];cross=np.cross(tri[:,1]-tri[:,0],tri[:,2]-tri[:,0]);area=np.linalg.norm(cross,axis=1)/2
+    normal=cross/(2*area[:,None]);rows=[]
+    for p in patches:
+        ids=np.asarray(p['native_face_ids']);q=tri[ids]
+        row={'id':p['id'],'face_count':len(ids),'area_independent_m2':float(area[ids].sum()),
+             'catalogued_patch_area_difference_m2':float(area[ids].sum()-p['area_m2']),
+             'triangle_min_xyz_m':q.min((0,1)).tolist(),'triangle_max_xyz_m':q.max((0,1)).tolist()}
+        if p['id'].startswith('journal') or p['id'].startswith('moving'):
+            journal=p['id'].startswith('journal');axis_xz=np.array([-.06,.3]) if journal else np.array([.26,.34])
+            radius=.02995 if journal else .0202;radial=np.linalg.norm(q[:,:,[0,2]]-axis_xz,axis=2)
+            radial_direction=q.mean(1)-np.r_[axis_xz[0],0.,axis_xz[1]]
+            radial_direction[:,1]=0;radial_direction/=np.linalg.norm(radial_direction,axis=1)[:,None]
+            normal_dot=np.einsum('ij,ij->i',normal[ids],radial_direction)
+            orientation_valid=bool(normal_dot.min()>.995) if journal else bool(normal_dot.max()<-.995)
+            row.update({'native_owner':'child','actual_axis_xz_m':axis_xz.tolist(),'nominal_surface_radius_m':radius,
+                        'source_vertex_radial_min_max_m':[float(radial.min()),float(radial.max())],
+                        'normal_max_abs_axial_y':float(abs(normal[ids,1]).max()),
+                        'normal_dot_radial_min_max':[float(normal_dot.min()),float(normal_dot.max())],
+                        'normal_orientation':'outward journal' if journal else 'inward pin bore',
+                        'polygon_or_boolean_radius_tolerance_m':3e-5,
+                        'geometry_region_verified':bool(np.max(abs(radial-radius))<3e-5 and abs(normal[ids,1]).max()<1e-8 and orientation_valid)})
+        elif p['id'].startswith('stop'):
+            row['geometry_region_verified']=bool(np.max(abs(q[:,:,2]-.388))<1e-10 and np.max(abs(normal[ids]-[0,0,1]))<1e-8)
+        else:
+            row['geometry_region_verified']=bool(np.max(abs(q[:,:,0]-.29))<1e-10 and np.max(abs(normal[ids]-[1,0,0]))<1e-8)
+        rows.append(row)
+    return rows
+
+def main():
+    ap=argparse.ArgumentParser();ap.add_argument('--mesh',type=Path,default=DOMAIN/'native_child_surface.npz')
+    ap.add_argument('--case-index',type=int,default=18);ap.add_argument('--prefix',default='native_case18');a=ap.parse_args()
+    scene=json.loads((G4/'module_scene.json').read_text());handoff=json.loads((G4/'optimization_handoff.json').read_text())
+    if sha(G4/'module_scene.json')!=SOURCE_SHA:raise ValueError('G4 frozen source mismatch')
+    cases=json.loads((DOMAIN/'same_source_6d_load_cases.json').read_text());ints=json.loads((DOMAIN/'domain_interfaces.json').read_text())
+    if cases['scene_sha256']!=SOURCE_SHA or ints['source_sha256']!=SOURCE_SHA:raise ValueError('load/domain source mismatch')
+    native=next(r for r in scene['parts'] if r['name']=='g4_child_load_carrier')
+    nv=np.asarray(native['vertices_world_m']);nf=np.asarray(native['faces']);patches=ints['precise_surface_patch_candidates']
+    data=np.load(a.mesh);tetra=None
+    if 'points_m' in data:
+        nodes=data['points_m'];faces=data['boundary_faces'];markers=data['native_face_markers_1based'];tetra=data['tetra']
+    else:
+        nodes=data['vertices_world_m'];faces=data['faces']
+        if not np.array_equal(nodes,nv) or not np.array_equal(faces,nf):raise ValueError('unmarked surface differs from actual native vertices/faces')
+        markers=np.arange(len(faces))+1
+    if np.any(markers<1) or np.any(markers>len(nf)):raise ValueError('source face marker outside exact child native range')
+    regions,_=select_native_regions(nodes,faces,markers,patches)
+    c=cases['cases'][a.case_index];is_stop=c['mode'].startswith('neutral_mechanical')
+    ordered=['stop_contact_-1','stop_contact_1'] if is_stop else ['moving_pin_bore_-1','moving_pin_bore_1']
+    ordered+=['journal_radial_-1','journal_radial_1','downstream_mount']
+    if len(c['ports'])!=len(ordered):raise ValueError('source case port count differs from explicit five-interface mapping')
+    Ftotal=np.zeros_like(nodes);portforces=[];portreports=[]
+    for port_id,port in zip(ordered,c['ports']):
+        center=np.asarray(port['point_neutral_material_m']);w=np.asarray(port['wrench_neutral_Fxyz_Mxyz'])
+        f,r=distribute_wrench(nodes,regions[port_id],center,w[:3],w[3:]);r['id']=port_id;Ftotal+=f;portforces.append(f);portreports.append(r)
+    inactive=[k for k in regions if k not in ordered]
+    source_F=sum(np.asarray(p['wrench_neutral_Fxyz_Mxyz'])[:3] for p in c['ports'])
+    source_M=sum(np.cross(p['point_neutral_material_m'],np.asarray(p['wrench_neutral_Fxyz_Mxyz'])[:3])+np.asarray(p['wrench_neutral_Fxyz_Mxyz'])[3:] for p in c['ports'])
+    actual_F=Ftotal.sum(0);actual_M=np.cross(nodes,Ftotal).sum(0)
+    C,R,gauge=rigid_mode_gauge(nodes,faces,tetra)
+    # A second independent equilibrium check: force work against all six rigid modes.
+    generalized_rigid_force=R.T@Ftotal.ravel()
+    np.savez_compressed(OUT/(a.prefix+'_loads.npz'),points_m=nodes,boundary_faces=faces,native_face_markers_1based=markers,
+                        F_xyz_N=Ftotal,F_dofs_xyz_N=Ftotal.ravel(),port_forces_xyz_N=np.asarray(portforces),
+                        port_ids=np.asarray(ordered),gauge_rows=C,rigid_mode_matrix=R,
+                        **({'tetra':tetra} if tetra is not None else {}))
+    report={'schema':'G6_actual_child_conditional_load_ports','source_scene_sha256':SOURCE_SHA,
+            'handoff_sha256':sha(G4/'optimization_handoff.json'),'load_cases_sha256':sha(DOMAIN/'same_source_6d_load_cases.json'),
+            'domain_interfaces_sha256':sha(DOMAIN/'domain_interfaces.json'),'mesh_path':str(a.mesh),'mesh_sha256':sha(a.mesh),
+            'source_case_index':c['source_case_index'],'case_array_index':a.case_index,'q_deg':c['q_deg'],
+            'CoP_world_m':c['CoP_world_m'],'load_factor':c['load_factor'],'allocation':c['mode'],
+            'mesh_nodes':len(nodes),'boundary_faces':len(faces),'port_reports':portreports,
+            'inactive_actual_geometry_ports':inactive,'independent_native_geometry_checks':verify_native_patch_geometry(nv,nf,patches),
+            'source_point_port_total_F_N':source_F.tolist(),'source_point_port_total_M_origin_Nm':source_M.tolist(),
+            'nodal_total_F_N':actual_F.tolist(),'nodal_total_M_origin_Nm':actual_M.tolist(),
+            'nodal_minus_source_F_N':(actual_F-source_F).tolist(),'nodal_minus_source_M_Nm':(actual_M-source_M).tolist(),
+            'rigid_virtual_work_six_residual_F_M':generalized_rigid_force.tolist(),'minimal_gauge':gauge,
+            'actual_FE_solve_executed':False,'source_report_gravity_included':False,
+            'distribution_scope':'Area-lumped arbitrary vector traction with minimum weighted 6D correction, exact original surface markers; conditional load input only. No compression-only/frictionless contact or real axial bearing fit asserted.',
+            'limits':['bearing pressure centre, preload, radial/axial stiffness and contact unknown','pin clearance/pressure/friction unknown','downstream mounting bolts/interface omitted','stop contact engaged only separate static hold, unload/release required','six integral gauges suppress rigid modes only; no true supports chosen','material/bolts/welds/fatigue/dynamics and full robot load absent'],
+            'physical_release':False,'strength_qualification':False}
+    save(OUT/(a.prefix+'_report.json'),report)
+    print(json.dumps({'prefix':a.prefix,'mesh_nodes':len(nodes),'nodal_F_N':actual_F.tolist(),'nodal_M_Nm':actual_M.tolist(),
+                      'max_port_residual':max(abs(x) for p in portreports for x in p['residual_Fxyz_Mxyz']),
+                      'all_geometry_regions_verified':all(p['geometry_region_verified'] for p in report['independent_native_geometry_checks']),
+                      'gauge_rank':gauge['constraint_on_rigid_modes_rank'],'report_sha256':sha(OUT/(a.prefix+'_report.json'))},indent=2))
+
+if __name__=='__main__':main()

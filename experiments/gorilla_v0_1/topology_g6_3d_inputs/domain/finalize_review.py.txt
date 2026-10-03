@@ -1,0 +1,41 @@
+"""Freeze bounded G6 geometry/domain evidence; exclude installed runtimes/cache."""
+from pathlib import Path
+import hashlib
+import json
+import math
+import numpy as np
+
+OUT=Path(__file__).resolve().parent;ROOT=OUT.parents[1]
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+def dump(name,d): (OUT/name).write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n')
+inputs=json.loads((OUT/'input_manifest.json').read_text())
+assert all(sha(Path(r['path']))==r['sha256'] for r in inputs['sources'])
+root_path=ROOT/'.scratch/gorilla_internal_g6_root_fem/review_geometry_mesh.json'
+root_quality=json.loads(root_path.read_text());assert root_quality['mesh_sha256']==sha(OUT/'geometry_tetra.npz')
+dump('root_quality_review_snapshot.json',root_quality)
+inputs['additional_review']={'path':str(root_path),'sha256':sha(root_path),'stored_snapshot':'root_quality_review_snapshot.json','stored_snapshot_sha256':sha(OUT/'root_quality_review_snapshot.json'),'scope':'Root independent floating/exact-predicate quality review at capture, not producer FEM'}
+dump('input_manifest.json',inputs)
+surface=np.load(OUT/'native_child_surface.npz');mesh=np.load(OUT/'geometry_tetra.npz');p=mesh['points_m'][mesh['tetra']]
+v=np.abs(np.linalg.det(p[:,1:]-p[:,:1]))/6
+V=json.loads((OUT/'domain_interfaces.json').read_text())['signed_native_volume_m3']
+coarse=json.loads((OUT/'coarse_mesh_receipt.json').read_text());geom=json.loads((OUT/'geometry_mesh_receipt.json').read_text());checks=json.loads((OUT/'geometry_mesh_checks.json').read_text())
+load=json.loads((OUT/'same_source_6d_load_cases.json').read_text())
+tet_estim=[]
+for maxv in [1e-7,1e-8,3e-3**3/(6*math.sqrt(2))]:
+ t=math.ceil(V/maxv);nodes=math.ceil(t/5);dof=3*nodes
+ tet_estim.append({'max_tetra_volume_m3':maxv,'tetra_volume_lower_bound':t,'planning_nodes_tet_over_five':nodes,'planning_displacement_dofs':dof,'coo144_entries_per_tet_24bytes_lower_GB':144*t*24/1e9,'node_ratio_is_guaranteed':False,'solver_factorization_memory_included':False})
+area=2*(.419*.234+.419*.144+.234*.144)
+shell=[]
+for step in [.010,.005]:
+ q=math.ceil(area/step**2);shell.append({'in_plane_step_m':step,'ideal_midarea_m2':area,'ideal_quad_count':q,'planning_shell_nodes_approx_quad_count':q,'traditional_six_dof_shell_dofs':6*q,'solid_boss_transition_unknown_dofs':True,'exact_mesh_exists':False,'solver_internal_expansion_not_included':True})
+routes={'scope':'Planning costs and explicit next route requirements, not generated FE/CAD/optimization','source_sha256':load['scene_sha256'],'current_actual_geometry_mesh':{'nodes':len(mesh['points_m']),'tetra':len(mesh['tetra']),'displacement_dofs':len(mesh['points_m'])*3,'structural_FE_admissible':False},'uniform_tetra_estimates':tet_estim,'shell_solid_planning_estimates':shell,'routes':[{'id':'wide_wall_shell_local_solid','steps':['Extract trimmed real midsurfaces and thickness from actual outer/inner box geometry, preserve hardware/interface voids','Keep actual journal/fork/stop/boss locally3D','Transfer translations/rotations and full6D wrench across shell/solid coupling without duplicating volume','Implement/obtain verified3D shell element and patch bending/torsion/buckling tests; existing scikit-fem plate example is not complete mixed3D shell proof','Reanalyse full42same-source load cases before optimizing walls/ribs'],'advantages':['Preserves broad membrane/bending/closed-torsion shell with lower through-thickness DOF cost','Main walls and ribs remain legitimate design variables'],'open':['3D shell formulation/solver not installed and validated','Trim/coupling geometry and solid-node mesh still needed','True contact/support/upstream/gravity conditions remain unresolved']},{'id':'legal_cad_partition_hex_local_tet','steps':['Reconstruct analytic planes/cylinders/bores and exact gross primitive union with newsource identity','Partition6mm walls for controlled swept hex/prism through thickness and graded solid boss/tet transition','Retain exact source interfaces and full motion/hardware/tool void exclusions','Verify all cells/Jacobians/boundary markers/volume/root plus bending and mesh convergence; no fake fixed cut faces'],'advantages':['Provides actual solids for arbitrary3D stress/buckling and future robust density mask','Avoids per-facet display-CSG skinny triangulations driving PLC refinement'],'open':['No native BREP already supplied for this source','Current gmsh PyPI wheel lacks LinuxARM; a separate bounded tool/build choice is required','Interface/contact and appropriate full3D element formulation/mesh costs remain unresolved']}],'appearance_or_axes_changed':False,'alloy_material_selected':False,'final_route_owner':'root'}
+dump('next_route_budget.json',routes)
+diagnostic={'mesh_sha256':sha(OUT/'geometry_tetra.npz'),'native_volume_m3':V,'actual_max_tet_volume_m3':float(v.max()),'requested_max_tet_volume_m3':geom['max_volume_request_m3'],'max_tet_volume_over_request':float(v.max()/geom['max_volume_request_m3']),'pf_volume_constraint_satisfied':False,'det_path_nonpositive_count':int((np.linalg.det(p[:,1:]-p[:,:1])<=0).sum()),'root_cross_dot_nonpositive_count':root_quality['negative_or_zero_signed_tet_count'],'root_near_tiny_exact_sign_nonpositive_count':root_quality['near_degenerate_exact_negative_or_zero_count'],'near_degenerate_float_path_sensitive':True,'root_guard_tiny_count':root_quality['tetra_volume_below_root_assembler_guard_1e_20'],'root_quality_below_0_01':root_quality['tetra_quality_below_0_01'],'native_boundary_area_identity':checks['boundary_native_marker_area_error_max_m2']<1e-12,'same_material_root':checks['material_node_graph_roots']==1,'five_void_probe_material_hits':[r['strict_tetra_material_hits'] for r in checks['void_probes']],'six_mm_ray_interval_counts':[r['distinct_nonzero_intervals'] for r in checks['thin_wall_ray_probes']],'six_mm_ray_max_interval_lengths_m':[max(z[1]-z[0] for z in r['tetra_line_intervals']) for r in checks['thin_wall_ray_probes']],'global_uniform_two_layer_proof':False,'same_source_6d_case_count':load['case_count'],'same_source_6d_force_max_N':load['max_force_balance_N'],'same_source_6d_moment_max_Nm':load['max_moment_balance_Nm'],'structural_FE_admissible':False,'loads_applied_to_FE':False,'optimization_run':False,'physical_release':False,'whole_robot_release':False,'appearance_release':False}
+dump('quality_admissibility.json',diagnostic)
+# Same JSON lines printed by mesh_probe, preserved in a dedicated text record.
+(OUT/'mesh_attempts_stdout.txt').write_text(json.dumps(coarse)+'\n'+json.dumps(geom)+'\n')
+dist=OUT/'runtime/meshpy-2026.1.1.dist-info'
+dump('installed_runtime_receipt.json',{'package':'meshpy','version':'2026.1.1','isolated_target':str(OUT/'runtime'),'numpy_from_project_venv':True,'install_scope':'Scratch runtime only; not for controlled source/wheel distribution','license_sources':'mesh_tool_sources.json','runtime_core_license':'TetGen AGPL-3.0-or-later/commercial dual licence; wrapper MIT; Triangle not called','dist_info_hashes':[{ 'path':str(p.relative_to(OUT)), 'sha256':sha(p)} for p in [dist/'METADATA',dist/'WHEEL',dist/'licenses/LICENSE']],'repository_venv_or_lock_modified':False,'gpu_used':False})
+files=sorted(p for p in OUT.iterdir() if p.is_file() and p.name!='snapshot_manifest.json')
+dump('snapshot_manifest.json',{'robot_id':'gorilla_v0_1','scope':'G6 actual child geometry/domain/6D interfaces and two bounded tetra probes, geometry-only, FE inadmissible','files':[{'path':p.name,'bytes':p.stat().st_size,'sha256':sha(p)} for p in files],'excluded_runtime_and_uv_cache':True,'external_frozen_inputs_unchanged':True,'physical_release':False,'whole_robot_release':False,'appearance_release':False})
+print(json.dumps({'files':len(files),'report_sha256':sha(OUT/'domain_review.md'),'mesh_sha256':sha(OUT/'geometry_tetra.npz'),'snapshot_sha256':sha(OUT/'snapshot_manifest.json'),'FE_admissible':False,'load_balance_force_max_N':load['max_force_balance_N'],'load_balance_moment_max_Nm':load['max_moment_balance_Nm']}))

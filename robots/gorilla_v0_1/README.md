@@ -55,3 +55,5 @@ C15 将前掌、足弓与后跟分开，取消跨段连续底板；卸载端姿�
 历史 C14 已建立实际有限壁厚框架和条件质量/受力账本，包含当时脚底单向反力、关节六维载荷和限定截面应力。42 梁中 30 梁有有限筛查、12 梁未分析；条件毛料及组件预留总质量约 1.15–1.79 吨。完整惯量、轴向/驱动、连接/轴承/脚底、运动接触和热仍未闭合，外观也未放行。B 的失败记录保留，两版证据不混用；首个完整工程检查点仍未达标。
 
 最新内部检查点：[G4 单关节／拓扑比较](../../experiments/gorilla_v0_1/internal_structure_g4_joint_study/README.md)与[G5 CPU 拓扑工具链](../../experiments/gorilla_v0_1/topology_g5_toolchain/README.md)。前者是未放行的实际内部bench，后者只校验数值工具；完整三维骨架和整机能力仍由[当前决定](design/current_decisions.md)继续推进。
+
+[G6 实际三维输入与网格拒绝证据](../../experiments/gorilla_v0_1/topology_g6_3d_inputs/README.md)：宽厚承力域与同源节点载荷入口；当前网格不适用于结构FEM，没有机器人减重或强度放行。
