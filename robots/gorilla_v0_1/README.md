@@ -1,11 +1,14 @@
-# Gorilla V0.1
+# Gorilla — V0.2 整机设计（保留 V0.1 工程历史）
 
-当前工作：**最新保存阶段为[G23完整模块合回身体](../../experiments/gorilla_v0_1/internal_structure_g23_complete_module_integration/README.md)：两套共同候选含完整双肩、主架和720芯，安装／整机物理／审美仍拒绝。G24已继续连续承力链、完整散热能源布局及外部HV共同重排。** AA3上躯审美保留，新下半身持续修订，不冻结旧腿轴位；完整双足双手与自主复杂Bevy目标活动。
+当前工作：**V0.2十小时整机共同设计，2026-10-04 01:03–11:03（China）**。用户已授权新版下半身大形，上半身身份沿用，长宽高以V0.2为准，颜色细节稍后同步。b7原生参考已绑定，骨架、关节、传动、能源和主动液冷／风道一起回整机。最新已保存[G24连续承力与完整系统共源](../../experiments/gorilla_v0_1/internal_structure_g24_connected_system_assembly/README.md)，3072件／720芯，安装、整机物理与审美仍拒绝；旧腿物理资格不移植。
 
 唯一当前状态入口：[当前决定与门禁](design/current_decisions.md)。
 
 | 资料 | 入口 |
 |---|---|
+| V0.2大形／原生下身参考 | [新版基准与b7来源](design/concepts/lower_body_redesign/source_manifest.json)；normalized源需要新整机SI与结构重建，颜色后补 |
+| G24连续承力与完整系统 | [实际共源／身份／安装／有限FK／宏观预算](../../experiments/gorilla_v0_1/internal_structure_g24_connected_system_assembly/README.md)；已保存失败候选，整机门禁未过 |
+| 先进液冷与主动散热 | [一手研究与前进／pad两侧出架构](hardware/cooling_technology_and_vent_architecture.md)；共形水套、冷板及高级路线适用边界分报 |
 | G23完整肩／core／720能源共布 | [实际两源、同源检查图、粗算及独立覆盖补检](../../experiments/gorilla_v0_1/internal_structure_g23_complete_module_integration/README.md)；腰承力、肩安装与完整热／供电仍拒绝 |
 | G22实际共同接口／线路／安装 | [原生共同源、同源四视与独立空间／FK检查](../../experiments/gorilla_v0_1/internal_structure_g22_actual_common_interfaces/README.md)；历史共同安装失败，G23已另保存 |
 | G21主架/三轴/能源/宏观粗算 | [真实源、有限截面与功能范围裁决](../../experiments/gorilla_v0_1/internal_structure_g21_common_body_and_joint/README.md)；新肩尚未装入body，未放行 |
@@ -17,7 +20,7 @@
 | G15完整功能与物理设计输入 | [同版实际布局、质量/载荷、热/库存与独立复核](../../experiments/gorilla_v0_1/internal_structure_g15_function_mass_and_domain/README.md)；两候选仍拒绝 |
 | G14完整系统与拓扑入口 | [冻结候选、实际图、边界与复核](../../experiments/gorilla_v0_1/internal_structure_g14_complete_thermal_and_assembly/README.md)；尚未装配/物理放行 |
 | 上半身与既定配色基准 | [用户再次确认的 AA3 四视图](design/concepts/aa3/user_confirmed_four_view.jpg) |
-| 新下半身接续参考 | [用户最新四视图与来源范围](design/concepts/lower_body_redesign/source_manifest.json)；「Gorilla 设计」仍在修订，无共同新CAD交接，旧腿足仅历史占位 |
+| 新下半身接续参考 | [用户最新四视图与来源范围](design/concepts/lower_body_redesign/source_manifest.json)；V0.2大形已获工程接续授权，b7 Blender/JSON已提供；旧腿足仅历史占位 |
 | 来源身份 | [唯一外观权威记录](source/appearance_authority.json)；[原包导入与哈希](source/appearance_import.json) |
 | C 工作输入（迭代中） | [appearance_c_spec.json](configs/appearance_c_spec.json)；[原稿轮廓与分区点](source/appearance_c_reference_landmarks.json)；[可见护甲区域约束](source/appearance_c_front_shape_constraints.json) |
 | C15 阶段基底 | [提交说明与缺口](design/appearance_c15_stage.md)；[冻结映射](../../experiments/gorilla_v0_1/appearance_c_round_fifteen/snapshot_manifest.json)；[Blender](../../experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c.blend)、[GLB](../../experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c.glb) |

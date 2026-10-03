@@ -1,0 +1,6 @@
+from pathlib import Path
+O=Path(__file__).resolve().parent;old=Path('.scratch/gorilla_internal_g23_forward_serial_shoulder/render_forward_serial.py').read_text()
+s=old.replace('G23','G24').replace('PPM=600.','PPM=210.').replace('[0.,.64,2.19]','[0.,0.,1.35]').replace("s['parts']+armor,600.","s['parts'],210.")
+s=s.replace("for mode,parts,scale in [('bare',s['parts'],PPM),('original_armor_context',s['parts'],210.)]", "\nfor p in s['parts']:\n p['faces']=[[f[0],f[i],f[i+1]]for f in p['faces']for i in range(1,len(f)-1)]\n if p['name']in {a['name']for a in armor}:p['finite_material']=True;p['is_context_armor']=True\nfor mode,parts,scale in [('bare',[p for p in s['parts']if p['name']in set(s['new_actual_parts_IDs'])],PPM),('original_armor_context',s['parts'],210.)]")
+s=s[:s.index('for axis,plane,ij,label')]+"\n(D/'native_render_manifest.json').write_text(json.dumps({'source_sha256':sha(S),'renderer_sha256':sha(Path(__file__)),'original_armor_source':str(context),'original_armor_source_sha256':sha(context),'original_armor_count':len(armor),'outputs':outputs,'camera_center_world_m':[0.,0.,1.35],'native_no_geometry_repair':True,'physical_accepted':False},indent=2)+'\\n');print('G24RENDER',arg.variant,len(outputs),flush=True)\n"
+(O/'render_connected_core.py').write_text(s)

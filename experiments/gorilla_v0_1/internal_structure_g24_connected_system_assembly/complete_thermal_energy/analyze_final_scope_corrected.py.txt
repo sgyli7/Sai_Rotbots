@@ -1,0 +1,54 @@
+from pathlib import Path
+import json,gzip,hashlib,numpy as np,manifold3d as mf
+from PIL import Image,ImageDraw
+O=Path(__file__).resolve().parent;D=O/'b_final';sh=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();src=D/'scene.json.gz';s=json.loads(gzip.decompress(src.read_bytes()));ps={p['name']:p for p in s['parts']};oldsrc=Path('.scratch/gorilla_internal_g18_cooling_architecture/architecture_comparison_v3.json');old=json.loads(oldsrc.read_text());roots=old['B_split_architecture']['same_task_heat_energy'] if 'B_split_architecture'in old else None
+# locate exact adopted task objects without importing upstream solver.
+def walk(q):
+ if isinstance(q,dict):
+  if q.get('auxiliary_upper_kW')==3.1575 and 'phases'in q:yield q
+  for x in q.values():yield from walk(x)
+ elif isinstance(q,list):
+  for x in q:yield from walk(x)
+rows=[]
+for task in list(walk(old))[:2]:
+ phases=[]
+ for p in task['phases']:
+  P=p['bus_kW'];r=[]
+  for V in [180,259.2,302.4]:
+   I=P*1000/(V*.98*10);hc=720*.015*I*I/1000;oldcell=p['cell_heat_kW_at288_200'][0];lo=p['total_low_kW_at288_200_before_LC_airpartition'][0]-oldcell+hc;part=p['EMRAX_own_motor_eta_partitions'][0];r.append({'terminal_V':V,'cell_A':I,'cell_heat_kW_typical_R':hc,'battery_store_draw_kW':P/.98+hc,'low_before_EMRAX_rotor_air_partition_kW':lo,'EMRAX_sensitive_liquid_kW_conditional_eta92':part['EMRAX_liquid_kW'],'rotor_air_kW_conditional':part['EMRAX_rotor_air_kW'],'rest_liquid_kW_conditional':lo-part['EMRAX_liquid_kW']-part['EMRAX_rotor_air_kW'],'hot_liquid_kW':p['hot_liquid_kW']})
+  phases.append({'phase':p['phase'],'duty':p['duty'],'actual_prior_same_task_bus_kW':P,'new720':r})
+ avg=[sum(p['duty']*p['new720'][j]['battery_store_draw_kW']for p in phases)for j in range(3)];rows.append({'mission':task['mission'],'phases':phases,'avg_store_kW_byV180_259p2_302p4':avg,'E30min_kWh':[x*.5 for x in avg],'runtime_min_to7p533kWh_designbudget':[7.533/x*60 for x in avg],'peak_aux_upper_kW_once':3.1575,'not_actual_steady_temperatures_or_drive_rating':True})
+wp={'geometry_source_sha256':sh(src),'thermal_task_reference_path':str(oldsrc),'thermal_task_reference_sha256':sh(oldsrc),'count720_actual_18s10p_four_modules':True,'candidate_series72s10p_external_HV_not_qualified':True,'Ename_min_kWh':11.16,'SOCwindow_design':.75,'reserve_factor_design':.9,'candidate_store_budget_kWh':7.533,'DCeff_design':.98,'cellR_typical_ohm':.015,'Rtemperature_sag_uncertain':True,'tasks':rows,'loops':[{'id':'sensitive188','flow_Lmin':12,'two_parallel0707_each6Lmin':True,'two_EMRAX188_each6Lmin_OEM_flow6to11':True,'one_full_WP32_package':True,'air_m3min':13,'Hwhole_WK_range':[128,150],'coldEGW_H_pressure_unqualified':True},{'id':'rest','flow_Lmin':47,'four_parallel0707_each11p75':True,'18plate4packcompute_demand_is_old_task_proxy_not_new_drive_count':True,'one_full_WP32_package':True,'air_m3min':26,'Hwhole_WK_range':[304,340],'QTL20C_mount_vs_ambient25to35_unqualified':True},{'id':'hot','flow_Lmin':10,'full0714_twofans':True,'air_m3min':13,'Hwhole_WK_range':[145.07,160.896],'EWP80_HX_total_workpoint_unqualified':True}],'formulae':['Icell=Pbus/(Vterminal*etaDC*Nparallel)','qcell=Ncells*Rtyp*Icell^2','Estoredraw=Pbus/etaDC+qcell','qwater=m_dot*cp*(Tout-Tin)','air_net_needed=Qv/sqrt(2*dp_available/(rho*K))','H is observed at source EGW hot point, not arbitrary cold scaled UA'],'fluid_scope':{'three_workingwaterfills_L':[1.2,.8,.8],'oilworkingfill_L':7,'new_actual_route_lumen_sum_L':sum(x['lumen_L']for x in s['actual_new_liquid_routes']),'total_water_unknown':True,'total_oil_unknown':True,'global12p482_and30L_not_adopted':True,'chamber_return_expansion_NPSH_not_closed':True},'red':['all exact OEM mates unknown except preserved energy HV ports','sensitive front two finite prototype ducts net pair0.019264m2 below source illustrative need0.027118m2','rotor shared flow not actual installed','other four low fresh intakes absent','newcandidate own/foreign material checking bounded only','dual side degas free spaces not AA3verified','heat source duty/drive changes require whole-body physical return','cold pump curves,NPSHr,TIM and20C motor boundary unknown']}
+(D/'workpoint.json').write_text(json.dumps(wp,indent=2))
+# twenty largest AABB-overlap pairs against the actual new core, querying unchanged native source directly.
+cs=Path('.scratch/gorilla_internal_g24_connected_drive_core/a/scene.json.gz');core=json.loads(gzip.decompress(cs.read_bytes()));foreign=[p for p in core['parts']if p.get('finite_material')is True and p['name'].startswith('g24_')];changed=[p for p in s['parts']if p['name'].startswith('g24_')or p['name']=='e2_dual_fluid_HX_material' or p['name'].startswith('g18_WP32_full_pump_')and'afterremoval'not in p['name']];pairs=[]
+def bounds(p):v=np.array(p['vertices_world_m']);return v.min(0),v.max(0)
+for p in changed:
+ a,b=bounds(p)
+ for q in foreign:
+  c,d=bounds(q);v=np.prod(np.maximum(0,np.minimum(b,d)-np.maximum(a,c)))
+  if v>1e-10:pairs.append((v,p,q))
+pairs.sort(key=lambda x:-x[0]);cache={};results=[]
+def m(p):
+ k=p['name'];
+ if k not in cache:cache[k]=mf.Manifold(mf.Mesh64(np.array(p['vertices_world_m'],dtype=np.float64),np.array(p['faces'],dtype=np.uint64)))
+ return cache[k]
+for a,p,q in pairs[:20]:
+ try:
+  pm,qm=m(p),m(q);vol=(pm^qm).volume();results.append({'a':p['name'],'b':q['name'],'a_status':str(pm.status()),'b_status':str(qm.status()),'intersection_m3':vol,'gross_or_material':{'a':p.get('role'),'b':q.get('role')},'not_exempt_same_owner':True})
+ except Exception as e:results.append({'a':p['name'],'b':q['name'],'error':repr(e)})
+(D/'bounded_native_queries.json').write_text(json.dumps({'source_sha256':sh(src),'actual_core_source_sha256':sh(cs),'all_overlap_candidates':len(pairs),'maximum20_AABB_volume_selected_exact_native':results,'scope':'changed thermal routes/pumps/HX versus core finite flagged pieces, does not qualify full assembly/OEM sealed interfaces','no_geometry_repair':True},indent=2))
+# diagnostic native projections: exact native selected case/core/thermal/route surfaces; internal cells electrically complete in source but occluded interiors not projected.
+chosen=[p for p in s['parts']if not p['g24_complete_group'].startswith('energy_')] if False else [p for p in s['parts']if not p.get('g24_complete_group','').startswith('energy_') or 'case'in p['name'].lower() or 'enclosure'in p['name'].lower()]
+chosen+=[p for p in core['parts']if p['name'].startswith('g24_') and ('cage'in p['name']or'bulkhead'in p['name']or'waist_output'in p['name'])];view=[]
+for label,Q in [('FRONT',np.array([[0,1,0],[0,0,1],[1,0,0]])),('LEFT',np.array([[1,0,0],[0,0,1],[0,1,0]])),('REAR',np.array([[0,-1,0],[0,0,1],[-1,0,0]])),('TOP',np.array([[0,1,0],[1,0,0],[0,0,1]]))]:
+ im=Image.new('RGB',(640,640),'white');dr=ImageDraw.Draw(im);tr=[]
+ for p in chosen:
+  if 'service'in p.get('role','')or'fluid'in p.get('role',''):continue
+  v=np.array(p['vertices_world_m'])@Q.T;rgba=p.get('rgba',[.1,.5,.8,1]);rgb=tuple(int(255*x)for x in rgba[:3]);xy=np.column_stack([320+v[:,0]*190,610-v[:,1]*190]) if label!='TOP'else np.column_stack([320+v[:,0]*190,320-v[:,1]*190])
+  for f in np.array(p['faces'],dtype=int):tr.append((v[f,2].mean(),xy[f],rgb))
+ for _,xy,col in sorted(tr,key=lambda x:x[0]):dr.polygon([tuple(q)for q in xy],fill=col)
+ dr.text((15,15),'G24 B ACTUAL NATIVE '+label,fill='black');dr.text((15,36),'Conditional engineering diagnostic; no aesthetic/physical acceptance',fill='black');view.append(im)
+ allim=Image.new('RGB',(1280,1280),'white')
+for i,im in enumerate(view):allim.paste(im,((i%2)*640,(i//2)*640))
+allim.save(D/'native_four_view.png');(D/'projection_scope.json').write_text(json.dumps({'source_sha256':sh(src),'same_scale_pxperm':190,'shown_exact_ids':[p['name']for p in chosen],'internal_cells_occluded_not_rendered_not_deleted':True,'service_not_material_not_drawn':True,'actual_core_sha256':sh(cs),'not_authoritative_design_image':True},indent=2));print(json.dumps({'source':sh(src),'tasks':rows,'pairs':results[:3]},indent=2))

@@ -1,0 +1,243 @@
+"""Independent, read-only G24 macro arithmetic. No upstream producer import."""
+from pathlib import Path
+import hashlib, json, gzip, math
+from datetime import datetime, timezone
+
+ROOT = Path('/home/ethan/Projects/Sai_Rotbots')
+OUT = Path(__file__).resolve().parent
+
+def digest(path):
+    h = hashlib.sha256()
+    with path.open('rb') as f:
+        for block in iter(lambda: f.read(2**20), b''):
+            h.update(block)
+    return h.hexdigest()
+
+inputs = {
+    'root_scene': '.scratch/gorilla_internal_g24_root_assembly/scene.json.gz',
+    'thermal_workpoint': '.scratch/gorilla_internal_g24_complete_thermal_energy/b_final/workpoint.json',
+    'core_report': '.scratch/gorilla_internal_g24_connected_drive_core/final_report.json',
+    'hv_final_scope': '.scratch/gorilla_internal_g24_complete_hv_routes/final_scope_receipt.json',
+    'hv_electrical_scope': '.scratch/gorilla_internal_g24_complete_hv_routes/electrical_current_heat_and_regen_scope.json',
+    'g18_literal_task': '.scratch/gorilla_internal_g18_cooling_architecture/architecture_comparison_v3.json',
+    'prior_identity_review': '.scratch/gorilla_internal_g24_root_composition_review/report.json',
+}
+expected = {
+    'root_scene': 'bed3e59338ee304cbf38dbb349be28d922b86d83ce6ef486b339bb2ea48dd8e5',
+    'thermal_workpoint': 'd22b334a11cf81b932c5f2a53aed4ed7fd4956918892b2bb92aa94e0ffd25678',
+    'core_report': 'ae355af65ac99def901c64d3fa536bbbfe08a420528da7444df47f2b0a3925aa',
+}
+bindings = {}
+data = {}
+for name, rel in inputs.items():
+    p = ROOT / rel
+    sha = digest(p)
+    if name in expected:
+        assert sha == expected[name], (name, sha)
+    bindings[name] = {'path': str(p), 'sha256': sha}
+    if name == 'root_scene':
+        data[name] = json.loads(gzip.decompress(p.read_bytes()))
+    else:
+        data[name] = json.loads(p.read_text())
+
+scene = data['root_scene']; wp = data['thermal_workpoint']; core = data['core_report']
+hv = data['hv_final_scope']; old = data['g18_literal_task']
+parts = scene['parts']; ids = [p.get('name', p.get('id')) for p in parts]
+cell_parts = [p for p in parts if 'cell' in p.get('role', '').lower() and 'reference' in p.get('role', '').lower()]
+if len(cell_parts) != 720:
+    cell_parts = [p for p in parts if 'P45B' in p.get('name','') or p.get('category') == 'cell_reference']
+assert len(ids) == len(set(ids)) == 3072
+# Count from retained full G23 module member names, not a fabricated installed-cell mass.
+cell_ids = [n for n in ids if '_cell_' in n and ('g23_' in n)]
+assert len(cell_ids) == 720, len(cell_ids)
+
+N, Ns, Np, cell_wh = 720, 72, 10, 15.5
+eta_dc, Rtyp, soc, reserve_factor = .98, .015, .75, .9
+Ename = N * cell_wh / 1000
+Ebudget = Ename * soc * reserve_factor
+voltages = [180., 259.2, 302.4]
+air_rho, air_cp = 1.2, 1005.  # Explicit own bulk-air diagnostic only.
+fluid_rho, fluid_cp = 1050., 3700.  # Own EGW sensitivity; not the catalogue test fluid.
+fan_kw = 1.72  # Eight source upper fan powers, counted once.
+airflow = {'sensitive188': 13., 'rest': 26., 'hot': 13.}
+H = {'sensitive188': [128.,150.], 'rest': [304.,340.], 'hot': [145.07,160.896]}
+flow = {'sensitive188': 12., 'rest': 47., 'hot': 10.}
+fan_loop_kw = {'sensitive188': .43, 'rest': .86, 'hot': .43}
+errors = []
+comparisons = []
+max_error = 0.
+
+def compare(actual, claimed, label):
+    global max_error
+    e = abs(actual - claimed)
+    max_error = max(max_error, e)
+    comparisons.append({'field': label, 'actual': actual, 'claimed': claimed, 'abs_error': e})
+    if e > 1e-10 * max(1., abs(actual)):
+        errors.append(comparisons[-1])
+
+tasks = []
+for task in old['B_proposal']['same_task_heat_energy']:
+    phases = []
+    for phase in task['phases']:
+        P = phase['bus_kW']
+        # Remove only the literal old 480-cell I2R component from the old task proxy.
+        noncell_low = phase['total_low_kW_at288_200_before_LC_airpartition'][0] - phase['cell_heat_kW_at288_200'][0]
+        new_points = []
+        for V in voltages:
+            Ipack = P * 1000 / eta_dc / V
+            Icell = Ipack / Np
+            cell_heat = N * Rtyp * Icell**2 / 1000
+            dc_loss = P * (1/eta_dc - 1)
+            Pstore = P / eta_dc + cell_heat
+            low_before = noncell_low + cell_heat
+            hot = phase['hot_liquid_kW']
+            partitions = []
+            for original_partition in phase['EMRAX_own_motor_eta_partitions']:
+                # Literal upstream partition assumptions are input, not measured new loss maps.
+                motor_loss = original_partition['motor_loss_kW']
+                # Sensitive WP32 consumes one half of the two-pump source upper.
+                pump_kw = task['low_pumps_upper_kW'] / 2
+                q_sensitive = 2/3 * motor_loss + pump_kw
+                q_rotor = motor_loss / 3
+                q_rest = low_before - q_sensitive - q_rotor
+                q_all_air = q_sensitive + q_rest + hot + q_rotor + fan_kw
+                # Rotor airflow is shared inside the existing sensitive air stream, not added again.
+                bulk_air_delta = q_all_air * 1000 / (air_rho * air_cp * 52/60)
+                loop_temperatures = []
+                for ambient in [25.,35.]:
+                    for loop, qliq, qdirect in [('sensitive188',q_sensitive,q_rotor),('rest',q_rest,0.),('hot',hot,0.)]:
+                        Cair = air_rho * air_cp * airflow[loop]/60
+                        liquid_C = fluid_rho * fluid_cp * flow[loop]/60000
+                        upstream_rise = (fan_loop_kw[loop] + qdirect)*1000/Cair
+                        t_return = [ambient + upstream_rise + qliq*1000/h for h in H[loop]]
+                        t_supply = [t - qliq*1000/liquid_C for t in t_return]
+                        loop_temperatures.append({'ambient_C':ambient,'loop':loop,'Q_liquid_kW':qliq,
+                          'upstream_fan_and_shared_rotor_air_rise_C':upstream_rise,
+                          'conditional_Treturn_C_H_low_high':t_return,'conditional_Tsupply_C_H_low_high':t_supply,
+                          'not_measured_or_qualified_temperature':True})
+                partitions.append({'motor_eta_assumption': original_partition['eta_motor_own'],
+                    'EMRAX_motor_loss_kW':motor_loss,'EMRAX_inverter_loss_kW_input':original_partition['inverter_loss_kW'],
+                    'sensitive_liquid_kW':q_sensitive,'rotor_air_kW':q_rotor,'rest_liquid_kW':q_rest,
+                    'hot_liquid_kW':hot,'fans_direct_air_kW':fan_kw,'all_heat_to_air_kW':q_all_air,
+                    'partition_conservation_error_kW':q_sensitive+q_rest+q_rotor-low_before,
+                    'bulk_air_DeltaT_C_at52m3min':bulk_air_delta,
+                    'conditional_loop_temperature_diagnostic':loop_temperatures})
+            # Only the five series/pole main wires carry identical pack current by this hypothesis.
+            # The branched positive/negative distributors require circuit-current allocation.
+            main_R = hv['ideal_mainWire_R20_80C_ohm']
+            wire_heat = [Ipack**2 * r/1000 for r in main_R]
+            new_points.append({'terminal_V':V,'bus_kW':P,'terminal_input_before_cell_heat_kW':P/eta_dc,
+                'pack_A':Ipack,'cell_A':Icell,'cell_heat_kW_Rtyp':cell_heat,'DCeff_loss_kW':dc_loss,
+                'store_draw_kW':Pstore,'low_before_partition_kW':low_before,'partitions':partitions,
+                'five_main_HV_wires_ideal_heat_kW_20_80C':wire_heat,
+                'wire_heat_not_automatically_added_due_to_DCeff_scope_unknown':True})
+        phases.append({'phase':phase['phase'],'duty':phase['duty'],'points':new_points})
+    assert abs(sum(p['duty'] for p in phases)-1) < 1e-12
+    avg = [sum(p['duty']*p['points'][j]['store_draw_kW'] for p in phases) for j in range(3)]
+    avg_bus = sum(p['duty']*p['points'][0]['bus_kW'] for p in phases)
+    avg_cell = [sum(p['duty']*p['points'][j]['cell_heat_kW_Rtyp'] for p in phases) for j in range(3)]
+    heat_avg = [sum(p['duty']*p['points'][j]['partitions'][0]['all_heat_to_air_kW'] for p in phases) for j in range(3)]
+    heat_peak = [max(p['points'][j]['partitions'][0]['all_heat_to_air_kW'] for p in phases) for j in range(3)]
+    tasks.append({'mission_literal_label':task['mission'],'aux_WP32_budget_V':task['WP32_supply_V_budget'],
+        'aux_upper_kW':task['auxiliary_upper_kW'],'comparison_duration_min':30,
+        'original_B_label_60min_duty_shortened_to_30min_only_for_same_duration_comparison':task['mission'].startswith('b_'),
+        'phases':phases,'average_bus_kW':avg_bus,'average_store_kW':avg,'average_cell_heat_kW':avg_cell,
+        'E30min_kWh': [x*.5 for x in avg], 'headroom_to7p533kWh': [Ebudget-x*.5 for x in avg],
+        'time_to_design_budget_min': [Ebudget/x*60 for x in avg],
+        'average_all_heat_to_air_kW':heat_avg,'peak_all_heat_to_air_kW':heat_peak,
+        'E60min_same_duty_kWh_if_original_B':avg if task['mission'].startswith('b_') else None,
+        'all_arithmetic_only_not_new_mission_acceptance':True})
+    if task['WP32_supply_V_budget'] == 28:
+        claimed = next(t for t in wp['tasks'] if t['mission'] == task['mission'])
+        for i,p in enumerate(phases):
+            for j,v in enumerate(voltages):
+                c = claimed['phases'][i]['new720'][j]; a=p['points'][j]
+                for ak, ck in [('cell_A','cell_A'),('cell_heat_kW_Rtyp','cell_heat_kW_typical_R'),
+                  ('store_draw_kW','battery_store_draw_kW'),('low_before_partition_kW','low_before_EMRAX_rotor_air_partition_kW')]:
+                    compare(a[ak],c[ck],f'{task["mission"]}/{p["phase"]}/{v}/{ak}')
+                par=a['partitions'][0]
+                for ak,ck in [('sensitive_liquid_kW','EMRAX_sensitive_liquid_kW_conditional_eta92'),
+                              ('rotor_air_kW','rotor_air_kW_conditional'),('rest_liquid_kW','rest_liquid_kW_conditional')]:
+                    compare(par[ak],c[ck],f'{task["mission"]}/{p["phase"]}/{v}/{ak}')
+        for j in range(3):
+            compare(avg[j]*.5,claimed['E30min_kWh'][j],f'{task["mission"]}/E30/{voltages[j]}')
+            compare(Ebudget/avg[j]*60,claimed['runtime_min_to7p533kWh_designbudget'][j],f'{task["mission"]}/budgettime/{voltages[j]}')
+
+compare(Ename,wp['Ename_min_kWh'],'minimum_nameplate')
+compare(Ebudget,wp['candidate_store_budget_kWh'],'SOC_reserve_budget')
+air_need = .027117774847312873
+actual_front = .019264
+q_sensitive_air = 13/60
+front_pressure_K2 = .5*air_rho*2*(q_sensitive_air/actual_front)**2
+same_pressure_needed = .5*air_rho*2*(q_sensitive_air/air_need)**2
+
+report = {
+ 'schema':'g24_readonly_macro_budget_review_v1','created_utc':datetime.now(timezone.utc).isoformat(),
+ 'inputs':bindings,'independent_formula_no_upstream_import':True,
+ 'actual_composition_scope':{'parts':len(ids),'unique_parts':len(set(ids)),'cells':len(cell_ids),
+   'root_geometry_qualified':False,'whole_M_COM_I':None,'qualified_retirement_or_net_mass_credit':0},
+ 'energy_source_scope':{'cells':N,'series':Ns,'parallel':Np,'modules':'4 x 18s10p',
+   'minimum_cell_nameplate_Wh':cell_wh,'minimum_reference_nameplate_kWh':Ename,
+   'SOC_window_own':soc,'reserve_multiplier_own':reserve_factor,'design_budget_kWh':Ebudget,
+   'terminal_voltage_diagnostics_V':voltages,'etaDC_own':eta_dc,'cell_R_ohm_typical_at50percentSOC':Rtyp,
+   'temperature_SOH_sag_imbalance_power_limit_unknown':True,'cell_mass_lower_nominal_unknown_upper_kg':.07,
+   'not_installed_energy_or_endurance_rating':True},
+ 'same_duty_tasks':tasks,'arithmetic_comparison':{'field_count':len(comparisons),'max_absolute_error':max_error,
+   'errors':errors,'comparison_threshold_relative':1e-10},
+ 'air_scope':{'three_loop_total_m3min':52,'fans_upper_direct_heat_kW_once':fan_kw,
+   'rho_kg_m3_own':air_rho,'cp_J_kgK_own':air_cp,
+   'loop_H_source_hot_EGW_only_W_K':H,'same_H_at_cold_or_new_glycol_unqualified':True,
+   'four_other_low_fresh_air_intakes_missing':True,'EMRAX_shared_air_route_installed':False,
+   'front_pair_actual_net_m2':actual_front,'front_pair_illustrative_needed_net_m2':air_need,
+   'front_pair_K2_rho1p2_own_pressure_Pa':front_pressure_K2,
+   'illustrative_area_K2_same_pressure_Pa':same_pressure_needed,
+   'front_area_shortfall_m2':air_need-actual_front,'front_area_shortfall_fraction':1-actual_front/air_need,
+   'no_zero_pressure_fan_radiator_or_20C_mount_rating':True},
+ 'fluid_scope_literal':wp['fluid_scope'],
+ 'mass_scope':{'core_A_own_individual_inventory_kg':core['cases'][0]['individual_own_material_inventory_kg'],
+   'core_B_own_individual_inventory_kg':core['cases'][1]['individual_own_material_inventory_kg'],
+   'core_inventory_net_assembly_qualified':False,'CSG_bilateral_component_set_reference_kg':26.2,
+   'CSG_left_only_ledger_kg':13.1,'CSG_right_scope_gap_kg':13.1,
+   'waist_bearing_four_reference_rows_kg':4.6,'possible_duplicate_scope_kg':2.3,
+   'waist_duplicate_not_deleted':True,'HV_preassembly_material_inventory_kg':hv['own_material_preassembly_inventory_kg'],
+   'HV_complete_function_preassembly_range_kg':hv['bounded_function_preassembly_inventory_range_kg'],
+   'HV_interpotential_and_different_material_overlap_rejects_net_assembly':True,
+   'source_counts_not_component_mass':True,'owner_tree_missing_labels_from_prior_identity_review':55,
+   'fluid_owner_COM_distribution_unknown':True,'whole_M_COM_I':None,'no_sum_of_overlapping_scopes':True},
+ 'interpretation_limits':[
+   'A/B are historic G18 task/duty proxies, not G24 new joint sustained torque-speed or new lower-body tasks.',
+   '30min A conditional arithmetic is under the design energy budget, B is over; neither is measured endurance.',
+   'B literal mission name says60min; E30 is a deliberately shortened same-duration comparison, not60min acceptance.',
+   'Rtyp15mohm is50percentSOC reference; endpoint voltages are prescribed constant terminal sensitivities, not a discharge integration.',
+   '72s DC voltage compatibility with all current windings/controllers remains unqualified.',
+   'Main HV I2R diagnostic does not close internal6.4mm2 collectors, contact losses, distribution currents, ampacity or regen.',
+   'DCeff.98 may overlap wire/converter loss allowance; do not silently add the diagnostic or double-count it.',
+   'Liquid heat partitions, fan upper powers and hot catalogue H are conditional, not measured simultaneous hardware capability.',
+   'Missing installed intakes/rotor air/NPSH/flow balance/TIM/cold curves prevent thermal admission.',
+   'Old lower legs/feet and incomplete owners are historical placeholders; stable SI, wholeweight, COM/I and task dynamics remain null.',
+ ],'all_physical_acceptance':False,
+}
+(OUT/'arithmetic_detail.json').write_text(json.dumps(report,indent=2)+'\n')
+# Compact source-bound receipt; retain full computed diagnostics separately.
+brief = {k:v for k,v in report.items() if k != 'same_duty_tasks'}
+brief['same_duty_tasks'] = []
+for task in tasks:
+    t = {k:v for k,v in task.items() if k != 'phases'}
+    t['phases'] = []
+    for p in task['phases']:
+        q = {'phase':p['phase'],'duty':p['duty'],'points':[]}
+        for pt in p['points']:
+            r = {k:v for k,v in pt.items() if k != 'partitions'}
+            r['conditional_heat_partitions'] = [{k:v for k,v in par.items()
+                if k != 'conditional_loop_temperature_diagnostic'} for par in pt['partitions']]
+            q['points'].append(r)
+        t['phases'].append(q)
+    brief['same_duty_tasks'].append(t)
+brief['full_computed_temperature_diagnostics_path'] = str(OUT/'arithmetic_detail.json')
+brief['full_computed_temperature_diagnostics_sha256'] = digest(OUT/'arithmetic_detail.json')
+(OUT/'report.json').write_text(json.dumps(brief,indent=2)+'\n')
+(OUT/'arithmetic_comparisons.json').write_text(json.dumps(comparisons,indent=2)+'\n')
+print(json.dumps({'parts':len(ids),'cells':len(cell_ids),'arithmetic_errors':len(errors),'max_error':max_error,
+ 'tasks':[{'label':t['mission_literal_label'],'auxV':t['aux_WP32_budget_V'],'E30':t['E30min_kWh'],
+ 'heatavg':t['average_all_heat_to_air_kW'],'heatpeak':t['peak_all_heat_to_air_kW']}for t in tasks],
+ 'front_pressure_Pa':front_pressure_K2},indent=2))

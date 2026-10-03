@@ -1,0 +1,67 @@
+#!/usr/bin/env python3
+"""Independent readonly exact composition and port audit. No collisions/FEM/native repair."""
+import pathlib,json,gzip,hashlib,collections,copy
+import numpy as np
+D=pathlib.Path(__file__).resolve().parent;R=D.parents[1];ROOT=R/'.scratch/gorilla_internal_g24_root_assembly';sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+def read(p):return json.loads(gzip.decompress(p.read_bytes()))if str(p).endswith('.gz')else json.loads(p.read_text())
+def wr(n,x):(D/n).write_text(json.dumps(x,indent=2,allow_nan=False)+'\n')
+def geom(p):return hashlib.sha256(np.asarray(p['vertices_world_m'],dtype='<f8').tobytes()+json.dumps(p['faces'],separators=(',',':')).encode()).hexdigest()
+core=read(D/'connected_core_b_bound_scene.json.gz');th=read(D/'complete_thermal_energy_b_bound_scene.json.gz');hv=read(D/'complete_hv_bound_scene.json.gz');old=read(D/'g23_baseline_bound_scene.json.gz');cb={p['name']:p for p in core['parts']};tb={p['name']:p for p in th['parts']};hb={p['name']:p for p in hv['parts']}
+thermal_old=set(n for q in th['complete_groups']for n in q['exact_member_IDs']);thermal_old|=set(th['retired_custom_ports_exact']);stale=set(hv['old_stale_route_IDs_conditionally_replaced']);retire=thermal_old|stale;expected={n:p for n,p in cb.items()if n not in retire};duplicate_append=[]
+for group in [tb,hb]:
+ for n,p in group.items():
+  if n in expected:duplicate_append.append(n)
+  expected[n]=p
+source={'bound_core_count':len(core['parts']),'thermal_old_count':len(thermal_old),'stale_HV_count':len(stale),'retire_union_count':len(retire),'retire_ID_overlap_count':len(thermal_old&stale),'retire_missing_from_core':sorted(retire-set(cb)),'thermal_final_count':len(th['parts']),'HV_count':len(hv['parts']),'independent_expected_unique_count':len(expected),'unexpected_append_ID_collisions':duplicate_append,'source_hashes':{str(p):sha(p)for p in D.glob('*_bound_scene.json.gz')}}
+# Catalog paired reference mirror at same central axis: compare literal point clouds, not collisions or contact loads.
+central=[]
+for p in core['parts']:
+ if p['name'].startswith('g24_right_')and'waist_SKF'in p['name']:
+  left=cb.get(p['name'][len('g24_right_'):]);a=np.array(p['vertices_world_m']);b=np.array(left['vertices_world_m']);aa=a[np.lexsort((a[:,2],a[:,1],a[:,0]))];bb=b[np.lexsort((b[:,2],b[:,1],b[:,0]))];central.append({'right_id':p['name'],'original_id':left['name'],'body':p['body'],'same_world_bounds':np.array_equal([a.min(0),a.max(0)],[b.min(0),b.max(0)]),'pointcloud_max_error_m':float(np.max(np.abs(aa-bb))),'right_catalog_mass_range_kg':p.get('mass_range_kg'),'left_catalog_mass_range_kg':left.get('mass_range_kg'),'role':'coincident mirrored catalogue reference candidates, not proved additional installed bearings','no_silent_removal_or_mass_credit':True})
+rows=core['whole_component_mass_rows'];group_members={n for q in rows for n in q['members']};rightgear=[n for n in core['new_actual_parts_IDs']if n.startswith('g24_right_')and any(x in n for x in ['_CS_official_gross','_FS_official_gross','_WG_official_gross'])];massgap={'catalog_rows':rows,'three_left_serialized_sets_mass_kg':sum(q['mass_range_kg'][1]for q in rows),'covered_member_count':len(group_members),'right_actual_serialized_component_member_IDs':rightgear,'right_members_without_group_row':sorted(set(rightgear)-group_members),'six_mirrored_joint_sets_conditional_reference_mass_kg':2*sum(q['mass_range_kg'][1]for q in rows),'missing_mirror_three_set_reference_kg':sum(q['mass_range_kg'][1]for q in rows),'not_whole_M_or_gear_component_mass_split':'Official set total source reference can be duplicated only with same SKU source identity; CS/FS/WG rotor/output dynamic split and fullI unknown. Absence from rows is not zero mass.'}
+wr('source_input_audit.json',{'composition':source,'central_bearing_duplicate_references':central,'catalog_group_scope_gap':massgap,'physical_accepted':False})
+actual=ROOT/'scene.json.gz'
+if not actual.exists():
+ wr('report.json',{'status':'root_scene_pending_once_read','input_audit':source,'physical_accepted':False});print('EVENT G24 composition inputs audited, actual root pending',flush=True);raise SystemExit(0)
+b=actual.read_bytes();(D/'actual_root_bound_scene.json.gz').write_bytes(b);s=read(D/'actual_root_bound_scene.json.gz');ab={p['name']:p for p in s['parts']};ids=[p['name']for p in s['parts']];errors=[];groupstats={};quarantine=[]
+for n,p in expected.items():
+ if n not in ab:errors.append({'id':n,'error':'expected source member absent'});continue
+ q=ab[n];category='HV'if n in hb else 'thermal_energy'if n in tb else 'core_or_retained';groupstats.setdefault(category,{'count':0,'geometry_mismatch':0,'owner_mismatch':0});groupstats[category]['count']+=1
+ if geom(p)!=geom(q):errors.append({'id':n,'error':'literal coordinates/faces changed'});groupstats[category]['geometry_mismatch']+=1
+ owner=p['body']
+ if owner.startswith('g24_')and owner.endswith('_input'):owner='left_'+owner.split('g24_',1)[1]
+ if owner=='torso_candidate':owner='torso'
+ if q['body']!=owner:errors.append({'id':n,'error':'unexpected owner mapping','expected':owner,'actual':q['body']});groupstats[category]['owner_mismatch']+=1
+ if n in set(core['new_actual_parts_IDs'])|set(tb)|set(hb):
+  keys=[k for k in p if any(t in k for t in ['COM','full_I','exact_CAD'])]
+  if keys:
+   exp={k:p[k]for k in keys};got=q.get('upstream_unqualified_moment_metadata');ok=got==exp and not any(k in q for k in keys);quarantine.append({'id':n,'expected_keys':keys,'exact_quarantine_and_no_active_alias':ok})
+   if not ok:errors.append({'id':n,'error':'moment metadata quarantine differs'})
+extra=sorted(set(ab)-set(expected));missing=sorted(set(expected)-set(ab));tree=s['body_tree_candidate'];treeerrors=[]
+for side,sg in [('left',1),('right',-1)]:
+ M=np.diag([1.,sg,1.])
+ for j in core['joint_interfaces']:
+  name=j['output_body'].replace('left_',side+'_');q=tree[name];axis=np.linalg.det(M)*M@np.array(j['axis_world']);pivot=M@np.array(j['pivot_world_m']);parent=j['parent_body'].replace('left_',side+'_')
+  if q['parent']!=parent or not np.array_equal(np.array(q['pivot_world_m']),pivot)or not np.array_equal(np.array(q['axis_world']),axis):treeerrors.append(name)
+ ua=tree[side+'_upper_arm']
+ if ua.get('parent')!=side+'_shoulder_yaw_carrier' or ua.get('rest_world_transform_4x4')is not None:treeerrors.append(side+'_upper_arm_legacy_rest_active')
+unknownowners=sorted({p['body']for p in s['parts']if p['body']not in tree});recorded=s['source_dynamic_owner_missing_tree'];ownerok=unknownowners==recorded
+# Pack coordinate identity against G23 module and frozen actual properR/T used by HV. No physical terminal connection inferred.
+MOD=R/'.scratch/gorilla_internal_g23_compact_energy_routes/module_scene.json.gz';mod=read(MOD);mb={p['name']:p for p in mod['parts']};packchecks=[];portchecks=[]
+for k,place in enumerate(hv['module_placements']):
+ M=np.array(place['proper_R']);T=np.array(place['origin_world_m']);maxerr=0;bad=[];count=0
+ for local,p in mb.items():
+  n=f'g23_pack_{k}_{local}';q=ab.get(n)
+  if q is None:bad.append(n);continue
+  ex=np.array(p['vertices_world_m'])@M.T+T;ac=np.array(q['vertices_world_m']);err=float(np.max(np.abs(ex-ac)));maxerr=max(maxerr,err);count+=1
+  if err>1e-12 or q['faces']!=p['faces']:bad.append(n)
+ packchecks.append({'pack':k,'actual_members':count,'expected_members':262,'proper_R_det':float(np.linalg.det(M)),'maximum_vertex_transform_error_m':maxerr,'IDs_geometry_fail':bad,'cells':len([q for q in s['parts']if q['name'].startswith(f'g23_pack_{k}_g23_cell_')]),'actual_terminal_only_maxcell_mass_upper':'cell mass lower/nominal remains source unknown; max70g not nominal'})
+ for p in mod['HV_ports']:
+  expectedport=T+M@np.array(p['HV_lug_center_m']);given=next(q for q in hv['actual_module_external_ports']if q['pack']==k and q['net']==p['net']);error=float(np.linalg.norm(expectedport-np.array(given['source_lug_center_world_m'])));portchecks.append({'pack':k,'net':p['net'],'expected_hole_axis_center_world_m':expectedport.tolist(),'source_HV_lug_datum_error_m':error,'new_ring_actual_candidate_center_world_m':given['connection_ring_center_world_m'],'physical_contact_or_pinout_admitted':False})
+for c in packchecks:
+ if c['IDs_geometry_fail']:errors.append({'pack':c['pack'],'error':'module proper transform mismatch','ids':c['IDs_geometry_fail']})
+cellrows=[p for p in s['parts']if p.get('g23_local_module_name','').startswith('g23_cell_')];masscells=collections.Counter(json.dumps(p.get('mass_range_kg'))for p in cellrows);oldrest=[]
+for body in ['left_upper_arm','right_upper_arm']:
+ oldrest.append({'body':body,'old_rest_world_transform_source':old['body_tree_candidate'][body].get('rest_world_transform_4x4'),'root_has_old_rest_active':tree[body].get('rest_world_transform_4x4')is not None,'native_geometry_already_world_neutral_not_transformed_again':all(geom(expected[n])==geom(ab[n])for n in expected if expected[n]['body']==body)})
+report={'root_source_SHA':sha(D/'actual_root_bound_scene.json.gz'),'input_audit':source,'actual_parts':len(ids),'unique_parts':len(set(ids)),'expected_count_3072':len(ids)==3072,'cellcount':len(cellrows),'cell_mass_range_source_rows':dict(masscells),'unexpected_extra_ids':extra,'missing_ids':missing,'actual_group_geometry_owner_checks':groupstats,'moment_quarantine_exact_rows':quarantine,'declared_quarantine_count':len(s['upstream_moment_metadata_quarantined_ids']),'neutral_body_tree_source_candidate_checks':{'six_joint_nodes_errors':treeerrors,'legacy_upper_arm_rest_checks':oldrest,'unknown_owner_labels':unknownowners,'declared_unknown_labels_match':ownerok,'dynamic_encoder_ratio_inputcoupling_notqualified':True},'actual_module_proper_transform_checks':packchecks,'actual_source_terminal_geometry_datum_checks':portchecks,'central_bearing_duplicate_references':central,'catalog_group_scope_gap':massgap,'no_collision_FE_or_native_admission_rerun':True,'root_source_identity_errors':errors,'whole_M_COM_I':s['whole_robot_M_COM_I'],'qualified_function_retirement_credit':s['qualified_function_retirement_credit'],'stale_old_liquid_route_ids':s['old_liquid_geometry_retained_unconnected_ids'],'scope':'Composition/coordinates/ID/port/candidate-owner evidence only, not physical contact, fatigue, action ABI, total mass/inertia or aesthetic acceptance. Core mass group right-side absence and central bearing duplicate reference candidates remain explicit architectural unknowns.'}
+wr('report.json',report);print('EVENT G24 exact composition audited',report['root_source_SHA'],'parts',len(ids),'errors',len(errors),'packmax',max(q['maximum_vertex_transform_error_m']for q in packchecks),flush=True)

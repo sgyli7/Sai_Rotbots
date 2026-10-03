@@ -1,0 +1,6 @@
+from pathlib import Path
+import hashlib,json
+O=Path(__file__).resolve().parent;sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest();paths=[p for p in O.rglob('*')if p.is_file()and p.name!='freeze_manifest.json'];rows=[{'path':str(p.relative_to(O)),'sha256':sha(p),'bytes':p.stat().st_size}for p in sorted(paths)];ins=[]
+for t in ['.scratch/gorilla_internal_g23_root_assembly/b/scene.json.gz','.scratch/gorilla_internal_g24_connected_drive_core/a/scene.json.gz','.scratch/gorilla_internal_g18_cooling_architecture/architecture_comparison_v3.json','.scratch/gorilla_internal_g23_compact_energy_routes/module_scene.json.gz']:
+ p=Path(t);ins.append({'path':t,'sha256':sha(p),'role':'read-only source, not modified'})
+f={'phase':'g24_complete_thermal_energy','final_geometry':'b_final/scene.json.gz','final_geometry_sha256':sha(O/'b_final/scene.json.gz'),'geometry_locked':True,'native_resource_admitted':False,'physical_accepted':False,'appearance_accepted':False,'all_outputs':rows,'source_inputs':ins,'whole_body_I_not_provided':True};(O/'freeze_manifest.json').write_text(json.dumps(f,indent=2));print(json.dumps({'manifest_sha256':sha(O/'freeze_manifest.json'),'outputs':len(rows),'source':f['final_geometry_sha256']},indent=2))

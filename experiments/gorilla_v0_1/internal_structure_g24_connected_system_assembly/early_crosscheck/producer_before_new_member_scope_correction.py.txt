@@ -1,0 +1,33 @@
+from pathlib import Path
+import json,gzip,hashlib,datetime
+import numpy as np,manifold3d as mf
+R=Path.cwd();O=R/'.scratch/gorilla_internal_g24_root_early_crosscheck';O.mkdir(exist_ok=True)
+sha=lambda b:hashlib.sha256(b).hexdigest()
+paths={'core':R/'.scratch/gorilla_internal_g24_connected_drive_core/a/scene.json.gz','thermal_energy':R/'.scratch/gorilla_internal_g24_complete_thermal_energy/b/scene.json.gz','hv':R/'.scratch/gorilla_internal_g24_complete_hv_routes/scene.json.gz'}
+parts={};inputs=[]
+for label,p in paths.items():
+ q=O/(label+'_bound_first_scene.json.gz');b=q.read_bytes() if q.exists() else p.read_bytes();s=json.loads(gzip.decompress(b));q.write_bytes(b) if not q.exists() else None;inputs.append({'path':str(p.relative_to(R)),'bound_path':str(q.relative_to(R)),'sha256':sha(b)});parts[label]=s['parts']
+meshes={};bounds={};errors=[]
+for group,ps in parts.items():
+ for p in ps:
+  key=(group,p['name']);v=np.array(p['vertices_world_m']);fs=p['faces'];bounds[key]=np.array([v.min(0),v.max(0)])
+  if any(len(face)!=3 for face in fs):errors.append({'group':group,'id':p['name'],'error':'nontriangle source; no fan repair'});continue
+  m=mf.Manifold(mf.Mesh64(v,np.asarray(fs,dtype=np.uint64)));meshes[key]=m
+  if m.status()!=mf.Error.NoError:errors.append({'group':group,'id':p['name'],'error':str(m.status())})
+rows=[];queries=0;failed=[]
+for aa,bb in [('core','thermal_energy'),('core','hv'),('thermal_energy','hv')]:
+ for a in parts[aa]:
+  ka=(aa,a['name']);ba=bounds[ka]
+  for b in parts[bb]:
+   kb=(bb,b['name']);bo=bounds[kb]
+   if not np.all(ba[1]-bo[0]>1e-12) or not np.all(bo[1]-ba[0]>1e-12):continue
+   if ka not in meshes or kb not in meshes:failed.append({'a':ka,'b':kb,'error':'source notqueryable'});continue
+   queries+=1;inter=meshes[ka]^meshes[kb]
+   if inter.status()!=mf.Error.NoError:failed.append({'a':ka,'b':kb,'error':str(inter.status())});continue
+   V=inter.volume()
+   if V>1e-12:
+    roles=[a.get('role'),b.get('role')];kind='service'if any('service'in(str(r))for r in roles)else'fluid'if any('fluid'in(str(r))for r in roles)else'finite_labelled_resource_not_requalified'if a.get('finite_material')and b.get('finite_material')else'complete_reference_or_mixed_installation_diagnostic'
+    rows.append({'a':ka,'b':kb,'roles':roles,'classification':kind,'native_intersection_m3':V,'volume_cm3':V*1e6,'resource_contract_not_rerun':True})
+rows.sort(key=lambda z:-z['volume_cm3'])
+(O/'report.json').write_text(json.dumps({'robot_id':'gorilla_v0_1','performed_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'inputs':inputs,'producer_sha256':sha(Path(__file__).read_bytes()),'scope':'Bound first G24 source cross groups only, not final assembly/resource/self/armor/retained body/full sweep or physical admission. Exact native triangles unmodified. Fluid/reference/service distinct.','actual_parts':{k:len(v)for k,v in parts.items()},'queries':queries,'positive_hits':len(rows),'source_or_kernel_errors':errors,'query_errors':failed,'positive_rows':rows,'geometry_resources_not_requalified':True,'physical_accepted':False},indent=2)+'\n')
+print(json.dumps({'sources':inputs,'queries':queries,'positive_hits':len(rows),'classes':{c:sum(z['classification']==c for z in rows)for c in {z['classification']for z in rows}},'errors':len(errors)+len(failed),'top10':rows[:10]}),flush=True)

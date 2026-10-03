@@ -1,0 +1,72 @@
+#!/usr/bin/env python3
+import pathlib,json,gzip,hashlib,math,collections,importlib.util,sys,itertools,ast
+import numpy as np,manifold3d as mf,trimesh
+from PIL import Image,ImageDraw
+from importlib.machinery import SourceFileLoader
+D=pathlib.Path(__file__).resolve().parent;R=D.parents[1];sha=lambda p:hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
+def read(p):return json.loads(gzip.decompress(p.read_bytes()))if str(p).endswith('.gz')else json.loads(p.read_text())
+def wr(n,x):(D/n).write_text(json.dumps(x,indent=2,allow_nan=False)+'\n')
+S=D/'scene.json.gz';s=read(S);cfg=read(D/'route_spec.json');ctx=read(pathlib.Path(s['context_path']));parts=s['parts'];finite=[p for p in parts if p.get('finite_material')];resource=read(D/'native_signed_resource.json');by={p['name']:p for p in parts};fail={r['id']:[e['code']for e in r['errors']]for r in resource['parts']if not r['resource_contract_pass']}
+mm={p['name']:mf.Manifold(mf.Mesh64(np.array(p['vertices_world_m'],np.float64),np.array(p['faces'],np.uint64)))for p in parts};bb={p['name']:np.array([np.min(p['vertices_world_m'],0),np.max(p['vertices_world_m'],0)])for p in parts};ownhits=[];ownref=[];queries=0
+for a,b in itertools.combinations(parts,2):
+ if not a.get('finite_material')and not b.get('finite_material'):continue
+ aa,ab=bb[a['name']],bb[b['name']]
+ if not np.all(np.minimum(aa[1],ab[1])>np.maximum(aa[0],ab[0])+1e-12):continue
+ queries+=1;V=float((mm[a['name']]^mm[b['name']]).volume())
+ if V>1e-12:
+  row={'a':a['name'],'b':b['name'],'classes':[a.get('component_class'),b.get('component_class')],'V_m3':V,'ownresource':{n:fail.get(n,[])for n in [a['name'],b['name']]}}
+  (ownhits if a.get('finite_material')and b.get('finite_material')else ownref).append(row)
+# Original nonplanar polygon sources stay unknown. Read-only source-specific planar copies can be used only if exact literal vertices/cyclic polygons match bound source.
+COPY=R/'.scratch/gorilla_internal_g23_compact_energy_routes/polygon_adapter_planar_copies.json.gz';copies={p['name']:p for p in read(COPY)['parts']};target_cache={};foreign=[];aabbpairs=0;stale=set(s['old_stale_route_IDs_conditionally_replaced']);finite_rows=[];nom=0
+for p in finite:
+ v=np.array(p['vertices_world_m']);f=np.array(p['faces']);V=float(np.einsum('ij,ij->i',v[f[:,0]],np.cross(v[f[:,1]],v[f[:,2]])).sum()/6);m=V*p['density_kg_m3'];finite_rows.append({'id':p['name'],'signedV_m3':V,'rho_assumption_kg_m3':p['density_kg_m3'],'mass_once_kg':m,'native_resource_accepted':p['name']not in fail});nom+=m
+
+def cls(p):
+ role=p.get('role','');n=p['name'];finite=p.get('finite_material');rho=p.get('density_kg_m3',p.get('density'))
+ if 'service' in role or 'afterremoval' in n or 'after_removal' in n:return 'service_domain_not_material'
+ if 'fluid' in role or 'water_region' in n or 'working' in n and any(x in n for x in ['oil','water']):return 'fluid_exclusion'
+ if finite is True or rho is not None or role in ['finite_installation_material','finite_new_material','finite_typed_module_material','module_positive','module_negative']:return 'finite_material'
+ if role in ['armor_cover','armor_surface']:return 'visible_armor_source'
+ return 'reference_or_unknown_internal_material'
+for target in ctx['parts']:
+ n=target['name'];v=np.array(target['vertices_world_m']);b=np.array([v.min(0),v.max(0)]);cand=[p for p in parts if p.get('finite_material')and np.all(np.minimum(bb[p['name']][1],b[1])>np.maximum(bb[p['name']][0],b[0])+1e-12)]
+ if not cand:continue
+ aabbpairs+=len(cand);errors=[];q=target
+ try:f=np.array(target['faces'],np.uint64);assert f.ndim==2 and f.shape[1]==3
+ except Exception:
+  cp=copies.get(n)
+  if cp and np.array_equal(v,np.array(cp['vertices_world_m'])):q=cp;f=np.array(q['faces'],np.uint64);errors=['source-specific planar representation only; original vertices retained']
+  else:f=None;errors=['literal polygon source not admitted; no implicit fan or repair']
+ if f is not None:
+  tm=mf.Manifold(mf.Mesh64(v,f));status=str(tm.status())
+  if tm.status()!=mf.Error.NoError:errors.append('query kernel rejected');tm=None
+ else:tm=None;status='unknown_native_polygon'
+ for p in cand:
+  V=float((mm[p['name']]^tm).volume())if tm is not None else None
+  if V is None or V>1e-12:foreign.append({'own_ID':p['name'],'target_ID':n,'target_category':'proposed_obsolete_context_not_retired'if n in stale else cls(target),'positive_query_V_m3':V,'target_owner':target.get('body'),'target_query_status':status,'representation_caveat':errors,'own_resource_errors':fail.get(p['name'],[]),'not_material_or_contact_qualification':True})
+# Electrical calculations are source-independent own copper formula and frozen cell facts. No cell regen or efficiency credit.
+rho20=1.72e-8;alpha=.00393;A=math.pi*.00335**2;single=[]
+for q in s['route_inventory']:
+ paths=q.get('branches',[q]);L=sum(p['centerline_length_m']for p in paths);single.append({'route':q['id'],'centerline_inventory_m':L,'branch_common_overlap_inventory_not_exact_resistance_network':bool(q.get('branches')),'R20_ohm_series_length_formula':rho20*L/A,'R80_ohm_not_guaranteed':rho20*L/A*(1+alpha*60),'heat_I50_100_150A_20C_W':[I*I*rho20*L/A for I in [50,100,150]],'source_continuous_ampacity_accepted':False})
+cellfacts=read(R/'.scratch/gorilla_internal_g19_root_macro/energy_and_space_comparison_v3.json')['official_reference'];source_limits={'raw72s10p_voltage_V':[180,259.2,302.4],'P_terminal_kW_conditional':[5,10,15,25,30],'current_at_cutoff_A':[P*1000/180 for P in [5,10,15,25,30]],'copper_area_mm2':A*1e6,'J_50_100_150_A_mm2':[I/(A*1e6)for I in [50,100,150]],'Cu_R_per_m_20_80C_ohm':[rho20/A,rho20/A*(1+alpha*60)],'heat_per_m_I150_20_80C_W':[150**2*rho20/A,150**2*rho20/A*(1+alpha*60)],'cell_charge_environment_source_C':cellfacts.get('charge_environment_C'),'cell_maxV4p2_not_fullSOC_regen_permission':True,'fullSOC_charge_cutoff/hotcold_BMS_dynamics':'unknown, no regen acceptance credit','precharge':{'formula':'E=.5*C*V²; R=V/I0; t95≈3RC','C_dc_link_mF_sensitivity':[1,5,20],'E_at302p4V_J':[.5*C*.001*302.4**2 for C in [1,5,20]],'R_for_I0_2_5_10A_ohm':[302.4/I for I in [2,5,10]],'load_DC_links_and_fault_power_unknown':True},'regen_dump':{'formula':'Ekin=.5*M*v²+.5*omega.T*I*omega + M*g*Δh, P=E/dt','robot_M_I_notqualified':None,'own_probe_energy_kJ':[1,5,10],'dump_at_V330_P5_10_20kW_R_ohm':[330**2/(P*1000)for P in [5,10,20]],'DC_overvoltage_trip_and_contactors_interrupt_notqualified':True},'continuous_cooling_bendinsulation_creepage_shortcircuit_rating':False}
+wr('electrical_current_heat_and_regen_scope.json',{'scene_SHA':sha(S),'source_reference':cellfacts,'source_reference_not_current_hardware_rating':True,'limits':source_limits,'routes':single})
+known=sum(q['mass_once_kg']for q in finite_rows);custom=[p for p in parts if p.get('mass_range_kg')];massrange=[known+sum(p['mass_range_kg'][j]for p in custom)for j in range(3)];Vall=np.concatenate([p['vertices_world_m']for p in parts if p['role']!='service_after_shell_removal']);summary={'scene_SHA':sha(S),'context_SHA':s['context_SHA'],'source_parts':len(parts),'finite_count':len(finite),'custom_complete_function_count':len(custom),'original_module_parts_changed':0,'resource_pass':resource['resource_contract_pass'],'rejected_owned_finite_IDs':fail,'ownfinite_pairs_checked_AABB':queries,'own_finite_positive_pairs':ownhits,'ownfinite_custom_reference_positive_pairs':ownref,'interpotential_Cu_positive_pairs':[q for q in ownhits if q['classes']==['conductor','conductor']],'Cu_vs_dielectric_positive_pairs':[q for q in ownhits if 'conductor'in q['classes']and any('dielectric'in x for x in q['classes'])],'foreign_AABB_candidate_pairs':aabbpairs,'foreign_positive_or_unknown':foreign,'known_uniform_material_inventory_kg':known,'own_complete_conditional_mass_range_kg':massrange,'finite_mass_once_rows':finite_rows,'physical_net_mass_of_interpenetrating_inventory_not_closed':bool(ownhits),'full_geometry_bounds_world_m':[Vall.min(0).tolist(),Vall.max(0).tolist()],'full_geometry_dimensions_m':(Vall.max(0)-Vall.min(0)).tolist(),'old_stale_HV_retirement_credit':False,'unknown_final_downstream_controller/OEM_ports_and_dynamic_routes':s['unknown_downstream_pinouts_and_dynamic_routes'],'full720/HV/thermal/safety/installed/whole_M_COMI_accepted':False}
+wr('actual_route_audit.json',summary)
+# Actual triangles only same scale, no postdrawn structure. Context excluded from one cutaway by explicit inventory label.
+views=[('FRONT',np.array([0,1,0]),np.array([0,0,1]),np.array([1,0,0])),('SIDE',np.array([1,0,0]),np.array([0,0,1]),np.array([0,1,0])),('REAR',np.array([0,-1,0]),np.array([0,0,1]),np.array([-1,0,0])),('PLAN',np.array([1,0,0]),np.array([0,1,0]),np.array([0,0,1]))]
+for withctx,name in [(False,'actual_HV_native_four_view.png'),(True,'actual_HV_bound_context_four_view.png')]:
+ im=Image.new('RGB',(1800,1200),'#f4f3ee');dr=ImageDraw.Draw(im);dr.text((20,12),'G24 actual native '+sha(S)[:12]+' / WORLD SI / conditional failed source, not full HV qualification',fill='black');dr.text((20,32),'Same500px/m / old stale routes excluded from context view explicitly; remaining functions shown'if withctx else 'HV cutaway only: body/core/thermal/all4modules explicitly withdrawn; no source geometry repaint',fill='black')
+ drawparts=parts+[p for p in ctx['parts']if p['name']not in stale and not('service'in p.get('role',''))]if withctx else parts
+ for k,(label,x,y,z)in enumerate(views):
+  ox=450+900*(k%2);oy=330+560*(k//2);tri=[];C=np.array([0,0,2.10])
+  for p in drawparts:
+   if p['role']=='service_after_shell_removal':continue
+   vv=np.array(p['vertices_world_m'])-C
+   try:ff=np.array(p['faces'],int);assert ff.ndim==2 and ff.shape[1]==3
+   except:continue
+   v2=np.column_stack([vv@x*500+ox,-vv@y*500+oy]);dep=vv[ff].mean(1)@z;rgb=tuple(int(c*255)for c in p.get('rgba',[.48,.52,.58,1])[:3])
+   for ids,zz in zip(ff,dep):tri.append((zz,[tuple(v2[i])for i in ids],rgb))
+  for _,xy,col in sorted(tri,key=lambda a:a[0]):dr.polygon(xy,fill=col)
+  dr.text((20+900*(k%2),70+560*(k//2)),label+' same500px/m; polygon sources not triangulated by rendering',fill='black')
+ im.save(D/name)
+print('EVENT G24 audit finite/ref hits',len(ownhits),len(ownref),'foreign',len(foreign),'resourcereject',len(fail),'materialmass',known,'range',massrange,flush=True)
