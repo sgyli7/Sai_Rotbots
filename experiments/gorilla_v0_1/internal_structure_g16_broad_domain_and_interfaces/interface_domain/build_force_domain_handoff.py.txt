@@ -1,0 +1,76 @@
+"""Native G16 force-interface/non-design domain bookkeeping; no FE/geometry adoption."""
+from pathlib import Path
+import json,gzip,hashlib,copy,itertools
+import numpy as np,trimesh,manifold3d as mf
+from shapely.geometry import Polygon
+from shapely.ops import unary_union
+import build_interface_layer as H
+O=Path(__file__).resolve().parent
+
+def put(n,d):H.put(n,d)
+def load(n):return json.loads((O/n).read_text())
+def skew(r):x,y,z=r;return np.array([[0,-z,y],[z,0,-x],[-y,x,0.]])
+def move_w(w,a,b):w=np.asarray(w,float).copy();w[3:]+=np.cross(np.asarray(a)-np.asarray(b),w[:3]);return w
+
+def patch_properties(p,patch):
+ tri=H.v(p)[H.f(p)[patch['triangle_indices']]];a=np.linalg.norm(np.cross(tri[:,1]-tri[:,0],tri[:,2]-tri[:,0]),axis=1)/2;C=np.sum(tri.mean(1)*a[:,None],0)/a.sum();Q=np.zeros((3,3))
+ for t,ar in zip(tri,a):
+  r=t-C;ss=r.sum(0);Q+=ar/12*(sum((np.outer(x,x)for x in r),np.zeros((3,3)))+np.outer(ss,ss))
+ J=np.trace(Q)*np.eye(3)-Q;return tri,a,C,J
+
+def equivalent_traction(p,patch,w,origin):
+ tri,a,C,J=patch_properties(p,patch);wc=move_w(w,origin,C);k=np.linalg.solve(J,wc[3:]);tr=wc[:3]/a.sum()+np.cross(k,tri-C);nf={}
+ faces=H.f(p)[patch['triangle_indices']]
+ for face,t,ar in zip(faces,tr,a):
+  for j,node in enumerate(face):nf[int(node)]=nf.get(int(node),np.zeros(3))+ar/12*(t.sum(0)+t[j])
+ resultant=np.zeros(6)
+ for node,ff in nf.items():resultant[:3]+=ff;resultant[3:]+=np.cross(H.v(p)[node]-origin,ff)
+ return {'source_native_vertex_ids':list(nf),'source_native_node_forces_N':[x.tolist()for x in nf.values()],'native_patch_centroid_world_m':C.tolist(),'area_m2':float(a.sum()),'surface_rotational_moment_matrix_m4':J.tolist(),'requested_Fxyz_Mxyz_about_origin':np.asarray(w).tolist(),'integrated_Fxyz_Mxyz_about_origin':resultant.tolist(),'residual6':(resultant-w).tolist(),'method':'mathematical full-vector linear traction t=F/A+(J_surface^-1*M_C)cross(x-C), exact P1 triangle consistent nodal loads; NOT contact/preload approval','bearing_or_bolt_force_distribution_proved':False}
+
+def main():
+ src=H.read(H.FILES['current']);pm={p['name']:p for p in src['parts']};sh=H.read(H.FILES['g13']);sp={p['name']:p for p in sh['parts']};gd=H.read(H.FILES['g9']);gp={p['name']:p for p in gd['parts']};I=load('interface_contract.json');L=H.read(H.FILES['load']);frame=pm['g15_chest_shoulder_waist_net_cage'];patches={q['id']:q.get('patch',q.get('native_surface_patch'))for q in I['interfaces']if q['id'].endswith('core_anchor_reference')or q['id']=='waist_core_output'}
+ known=[];shifted=[]
+ for case in L['macro1_source_neutral_gravity_known_subset']:
+  level=case['level'];row={'level':level,'known_source_subset_only_kg':case['numeric_known_mass_kg'],'native_patch_loads':{}}
+  for side in ['left','right']:
+   pa=patches[side+'_core_anchor_reference'];origin=np.array(pa['centroid_world_m']);old_origin=L['ports'][side]['origin_world_m'];w=move_w(case['shoulder_body_on_core_Fxyz_Mxyz'][side],old_origin,origin);row['native_patch_loads'][side]=equivalent_traction(frame,pa,w,origin)
+  pa=patches['waist_core_output'];origin=np.array(pa['centroid_world_m']);w=move_w(case['waist_on_upper_balancing_reaction'],L['ports']['waist']['origin_world_m'],origin);row['native_patch_loads']['waist']=equivalent_traction(frame,pa,w,origin);known.append(row)
+ task=[]
+ for case in L['macro2_same_source_hand_force_sensitivity']['parameterized_examples']:
+  r={'mode':case['mode'],'force_equivalent_kg_parameter_only':case['downward_task_force_equivalent_kg_parameter_only'],'increments6_about_actual_native_patch_centroids':{}}
+  for side in ['left','right']:r['increments6_about_actual_native_patch_centroids'][side]=move_w(case['shoulder_increment6'][side],L['ports'][side]['origin_world_m'],patches[side+'_core_anchor_reference']['centroid_world_m']).tolist()
+  r['increments6_about_actual_native_patch_centroids']['waist_on_upper']=-move_w(case['waist_increment6'],L['ports']['waist']['origin_world_m'],patches['waist_core_output']['centroid_world_m']);r['increments6_about_actual_native_patch_centroids']['waist_on_upper']=r['increments6_about_actual_native_patch_centroids']['waist_on_upper'].tolist();task.append(r)
+ for term in L['unresolved_mass_or_owner_terms']:
+  r=copy.deepcopy(term);scope=term.get('scope');key=scope+'_core_anchor_reference'if scope in ['left','right']else'waist_core_output'
+  if key in patches:
+   old_origin=L['ports'][scope]['origin_world_m']if scope in ['left','right']else L['ports']['waist']['origin_world_m'];new_origin=patches[key]['centroid_world_m'];r['new_native_patch_centroid_world_m']=new_origin
+   for field in ['unit_kg_gravity_wrench_at_scope_port','unit_kg_at_waist','unit_single_cell_kg_wrench_at_waist']:
+    if term.get(field)is not None:r[field+'_transported_to_actual_native_patch']=move_w(term[field],L['ports']['waist']['origin_world_m']if 'waist'in field else old_origin,new_origin).tolist()
+  shifted.append(r)
+ source_files={k:{'path':str(p),'sha256':H.sha(p)}for k,p in H.FILES.items()};forces={'robot_id':'gorilla_v0_1','source_current_B_sha256':H.EXPECTED,'source_mass_contract_sha256':H.sha(H.FILES['mass']),'source_load_contract_sha256':H.sha(H.FILES['load']),'interface_layer_sha256':H.sha(O/'interface_contract.json'),'producer_sha256':H.sha(__file__),'macro1_known_subset_gravity_equivalent_tractions':known,'macro2_source_same_hand_task_increment_wrenches':task,'unknown_parameters_transported_not_zero':shifted,'not_applied_to_new_body_A':True,'no_FEM_or_optimization':True,'loads_must_be_completed_before_capacity_judgment':True,'surface_tractions_are_equivalent_loads_NOT_actual_contact_or_fastener_reactions':True,'all_current_old_SI_owner_interface_unknowns_preserved':True};put('force_interface_basis.json',forces)
+ # Reaction partition is underdetermined. No arbitrary load share is certified.
+ partition=[]
+ for side,sg in [('left',1),('right',-1)]:
+  core=np.array(patches[side+'_core_anchor_reference']['centroid_world_m']);pts=[[-.13,sg*.3735,2.29],[-.13,sg*.5255,2.29],[-.13,sg*.5855,2.29]];blocks=[np.block([[np.eye(3),np.zeros((3,3))],[skew(np.asarray(p)-core),np.eye(3)]])for p in pts];A=np.hstack(blocks)
+  partition.append({'side':side,'ports':['OEM_fixed_B_reaction','external_bearing_0','external_bearing_1'],'port_points_world_m':pts,'sum6D_transport_matrix':A.tolist(),'rank':int(np.linalg.matrix_rank(A)),'unknown_internal_wrench_parameter_count':18,'balance_equation_count':6,'integral_vs_external_radial_axial_torque_pressurecenter_distribution_unclosed':True,'do_not_add_completeOEM_integratedbearing_capacity_to_externalC0':True})
+ put('support_reaction_partition.json',{'source_sha256':H.EXPECTED,'partitions':partition,'boundary_proposal':'Only a balanced sum6D is known; pressuresplit/friction/preload/threads supply additional physical equations. Never freeze all ports or assume equalbearingloads.','root_FE_coarse_option':'Apply completed arm/resultant once to actualcore interface as explicit rigidconnection idealization, plus corebodygravity and centralmodule loads; do not additionally apply samearmbodygravity or internalbearingforces.','stator_rotor_output_gravity_split_unknown':True,'calculation_is_not_FE_or_rated_bearing_model':True})
+ # Two material-domain scopes, not third geometry. A is a new one-time source.
+ anchors=[sp['g13_left_fixed_reaction_closed_anchor'],sp['g13_right_fixed_reaction_closed_anchor']];adapter=gp['f1_ds_waist_roll_hollow_output_adapter'];FM=H.kernel(frame);protect=mf.Manifold.batch_boolean([H.kernel(p)for p in anchors+[adapter]],mf.OpType.Add)^FM;design=FM-protect
+ domainparts=[]
+ for name,m,role in [('g16_B_existing_material_interface_protection',protect,'conservative_existing_anchor_adapter_nondesign_material'),('g16_B_existing_material_designable_remainder',design,'existing_material_only_designdomain_not_newbody')]:
+  me=m.to_mesh64();domainparts.append({'name':name,'body':'reference_domain_only','role':role,'vertices_world_m':np.asarray(me.vert_properties)[:,:3].tolist(),'faces':np.asarray(me.tri_verts).tolist(),'rgba':[.74,.45,.22,1]if'protection'in name else[.30,.55,.72,1],'source_current_B_sha256':H.EXPECTED,'source_actual_frame_id':frame['name'],'mass_already_counted_in_source_frame_not_additive':True,'source_subset_volume_m3':float(m.volume()),'material_geometry_not_selected_as_final_fixed_design':True})
+ A=H.read(O/'bound_new_body_a_scene.json.gz');ap={p['name']:p for p in A['parts']};bulk=copy.deepcopy(ap['g16_calculation_domain_with_explicit_caps']);bulk['g16_scope']='independent_author_A_broad3D_volume_with_explicitcaps_not_freecavity_not_materialmass';domainparts.append(bulk);H.gz('material_domain_layers.json.gz',{'robot_id':'gorilla_v0_1','producer_sha256':H.sha(__file__),'source_current_B_sha256':H.EXPECTED,'new_body_A_sha256':load('new_body_a_input.json')['sha256'],'parts':domainparts,'not_additive_hardware_or_adopted_body':True,'old92L_or3p245mm_not_inherited':True})
+ domain={'source_current_B_sha256':H.EXPECTED,'producer_sha256':H.sha(__file__),'route1_existingmaterial_conservative_scope':{'current_frame_volume_m3':float(FM.volume()),'protected_existing_fullanchors_adapter_volume_m3':float(protect.volume()),'existing_designable_remainder_volume_m3':float(design.volume()),'volume_partition_residual_m3':float(FM.volume()-protect.volume()-design.volume()),'source_ownrho_hypothesis_kg_m3':7850,'component_mass_remains_original_source_once':True,'whole_anchor_not_claimed_permanently_unoptimizable':True,'preserve_seats_vs_reoptimize_walls_needs_new_parameterCAD_source':True},'route2_broad3D_new_author_A_scope':{'source':load('new_body_a_input.json'),'source_part_id':bulk['name'],'native_world_bounds_m':H.geo(bulk)['native_world_bounds_m'],'actual_query_volume_m3':float(H.kernel(bulk).volume()),'domain_caps_not_confirmed_visiblearmor_innerwall':True,'fullOEM_functions_motion_fluid_routes_andassembly_keepouts_must_be_subtracted_or_rearranged_beforeoptimization':True,'no_current_minwall_freecavity_or_capacity_accepted':True},'mandatory_nondesign_interfaces':[q['id']for q in I['interfaces']],'protected_actual_entity_IDs':[p['name']for p in pm.values()if p['name'].startswith('g13_')and(not p.get('finite_material')or any(k in p['name']for k in ['_output_flange','_journal_axial','_A_output_mount_bolt','_B_case_mount_bolt','_load_support_mount','_water_','_stator_TIM']))],'unknowns':['actualOEM threadedports andAoutputrecess','current support axial pressurecentres/preload','new A core-Xjoint fasteners/weld absent','newbody statics andcompleteown/inventorymassnotcomputedhere','temperaturederating/TIM/compression/coolingcapacity unknown'],'finite_element_or_topopt_run':False,'designbody_accepted':False};put('material_domain_contract.json',domain)
+ # A material interface delta: common planar region is geometry, not a shear joint.
+ af=ap['g16_native_cage_CAD_parameter_mapping'];deltas=[]
+ for side,sg in [('left',1),('right',-1)]:
+  aa=ap['g13_'+side+'_fixed_reaction_closed_anchor'];p0=H.planar(aa,0,.115);p1=H.planar(af,0,.115)
+  def poly(p,pa):return unary_union([Polygon(H.v(p)[H.f(p)[i]][:,1:3])for i in pa['triangle_indices']])
+  common=poly(aa,p0)&poly(af,p1);co=list(common.centroid.coords)[0]if common.area else[0,0];origin=np.array([.115,co[0],co[1]]);pts=[]
+  for i in p1['triangle_indices']:pts.extend(H.v(af)[H.f(af)[i]].tolist())
+  P=np.asarray(pts);normal=np.array([-1.,0,0]);N=np.array([np.r_[normal,np.cross(p-origin,normal)]for p in P]).T;rank=int(np.linalg.matrix_rank(N))if len(P) else 0
+  unitFz=np.array([0,0,-1.,0,0,0]);residual=unitFz-N@np.linalg.lstsq(N,unitFz,rcond=None)[0]if len(P)else unitFz
+  deltas.append({'side':side,'anchor_source_id':aa['name'],'new_frame_source_id':af['name'],'actual_material_pair':H.checkpair(aa,af,'new A contact-only materialinterface'),'actual_anchor_patch':p0,'actual_frame_patch':p1,'common_native_face_region_area_m2':float(common.area),'native_common_polygon_WKT_YZ':common.wkt,'whole_frame_plane_used_then_exact_native_polygon_intersection_no_centroid_region_filter':True,'common_patch_centroid_world_m':origin.tolist(),'contact_only_frictionless_resultant_rank':rank,'unit_vertical_force_incompatibility_residual6':residual.tolist(),'no_bolt_thread_seat_weld_Xmount_source_present':True,'current_B_tractions_NOT_adopted_for_newA':True,'functionality_not_passed_by_contactplane_area':True})
+ put('new_A_exact_interface_delta.json',{'source_new_A_sha256':load('new_body_a_input.json')['sha256'],'source_current_B_sha256':H.EXPECTED,'deltas':deltas,'newA_complete_loads_not_calculated_or_inherited':True,'fullframe_legal_one_material_is_not_anchorconnection':True})
+ print('FORCE_DOMAIN_READY',len(known),'TRACTIONMAX',max(np.max(np.abs(np.array(q['residual6'])))for r in known for q in r['native_patch_loads'].values()),flush=True)
+if __name__=='__main__':main()

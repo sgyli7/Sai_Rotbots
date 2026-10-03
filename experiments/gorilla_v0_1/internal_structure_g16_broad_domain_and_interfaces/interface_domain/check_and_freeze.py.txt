@@ -1,0 +1,71 @@
+"""Read-only G16 source identity/traction regression and auditable handoff freeze."""
+from pathlib import Path
+import json,gzip,hashlib,math
+import numpy as np,trimesh
+from PIL import Image,ImageDraw
+import build_interface_layer as H
+O=Path(__file__).resolve().parent
+D=lambda n:H.read(O/n)
+def put(n,d):H.put(n,d)
+def main():
+ S=H.read(H.FILES['current']);P={p['name']:p for p in S['parts']};layer=D('native_interface_scene.json.gz');fail=[];checks=[]
+ for p in layer['parts']:
+  ok=all(p[k]==v for k,v in P[p['name']].items());checks.append({'id':p['name'],'all_original_fields_exact':ok})
+  if not ok:fail.append(p['name'])
+ assert len(set(p['name']for p in layer['parts']))==len(layer['parts'])
+ contract=D('interface_contract.json');clipped=[]
+ def walk(x):
+  if isinstance(x,dict):
+   if 'source_triangle_barycentric_weights'in x:
+    p=P[x['source_part_id']];tri=H.v(p)[H.f(p)[x['clipped_triangle_source_indices']]];w=np.asarray(x['source_triangle_barycentric_weights']);t=np.asarray(x['clipped_patch_triangles_world_m']);err=float(np.max(np.abs(np.einsum('nij,njk->nik',w,tri)-t)));ar=np.linalg.norm(np.cross(t[:,1]-t[:,0],t[:,2]-t[:,0]),axis=1)/2;clipped.append({'part_id':p['name'],'source_barycentric_error_m':err,'weights_sum_error':float(np.max(np.abs(w.sum(2)-1))),'area_recomputed_m2':float(ar.sum()),'all_positive_triangle_area':bool(np.all(ar>0))});assert err<1e-12 and np.all(ar>0)
+   for z in x.values():walk(z)
+  elif isinstance(x,list):
+   for z in x:walk(z)
+ walk(contract)
+ forces=D('force_interface_basis.json');res=[]
+ for r in forces['macro1_known_subset_gravity_equivalent_tractions']:
+  for side,q in r['native_patch_loads'].items():
+   vv=H.v(P['g15_chest_shoulder_waist_net_cage'])[q['source_native_vertex_ids']];ff=np.array(q['source_native_node_forces_N']);pa=next(x.get('patch',x.get('native_surface_patch'))for x in contract['interfaces']if x['id']==(side+'_core_anchor_reference'if side!='waist'else'waist_core_output'));c=np.array(pa['centroid_world_m']);rr=np.r_[ff.sum(0),np.cross(vv-c,ff).sum(0)]-np.array(q['requested_Fxyz_Mxyz_about_origin']);res.append({'level':r['level'],'port':side,'independent_integrated_residual6':rr.tolist()});assert abs(rr).max()<1e-8
+ oldcar=[]
+ for side in ['left','right']:
+  for joint in ['pitch','roll']:
+   n=f'e2_upper_net_{side}_shoulder_{joint}_carrier';m=H.kernel(P[n]).volume()*7850;oldcar.append({'id':n,'body':P[n]['body'],'candidate_net_steel_mass_kg_rho7850':m,'retained_exact':True,'verified_replacement_credit_kg':0,'downstream_fixed_function':f'complete shoulder {"roll"if joint=="pitch"else"yaw"} drive and its support, not replaced by new pitch module'})
+ keep=sorted(n for n in P if n.startswith(tuple(f'ds_{s}_shoulder_{j}_'for s in ['left','right']for j in ['roll','yaw'])))
+ put('serial_replacement_contract.json',{'robot_id':'gorilla_v0_1','source_sha256':H.EXPECTED,'old_carriers':oldcar,'suspected_group_mass_kg':sum(x['candidate_net_steel_mass_kg_rho7850']for x in oldcar),'verified_mass_credit_kg':0,'complete_downstream_function_ids_must_remain':keep,'mandatory_next_source':['distinct pitch moving shell to roll fixed case and independent support, actual fastener/weld interfaces','distinct roll output to yaw fixed case; complete motor, gear, brake, feedback, controller and cooling kept','resolve original pitch-to-new pitch Z+70 mm axis difference through serial source and actual poses','every new joint support/output and mating path finite; sameowner overlap is not a rigid joint'],'replacement_allowed_only_after_complete_serial_interfaces_and_mass_source_exist':True,'no_removed_ids_or_default_SI_changes':True})
+ motion=D('motion_tool_void_contract.json');ms=[]
+ for r in motion['staged_disassembly_sample_queries']:
+  actual=[p for s in r['samples']for p in s['pairs']if p['query_class']=='actual_ownmaterial'];ms.append({'side':r['side'],'operation':r['operation'],'samples':len(r['samples']),'samples_with_material_conflict':sum(s['actual_material_pairs']>0 for s in r['samples']),'maximum_actual_material_intersection_cm3':max((p['positive_volume_cm3']for p in actual),default=0),'qualified':False})
+ put('review_checks.json',{'source_sha256':H.EXPECTED,'native_original_part_checks':checks,'source_identity_failures':fail,'unique_ids':True,'clipped_source_patch_checks':clipped,'independent_traction_integrals':res,'staged_maintenance_summary':ms,'actual_material_gate_not_reissued_by_copy_checks':True,'no_physical_acceptance':True})
+ # Literal source-plane sections; no exterior repaint, smoothing or invisible geometry deletion.
+ im=Image.new('RGB',(1200,760),'white');draw=ImageDraw.Draw(im);sections=[]
+ for col,Y in enumerate([.32,.57]):
+  draw.text((20+600*col,18),f'Gorilla G16 actual native XZ section, Y={Y:.2f} m',fill='black');segs=[]
+  for p in layer['parts']:
+   t=trimesh.Trimesh(H.v(p),H.f(p),process=False);lines=trimesh.intersections.mesh_plane(t,[0,1,0],[0,Y,0]);color=(52,105,165)if p['name'].startswith('g15_')else((220,120,30)if p['name'].startswith('e2_')else(60,130,75)if'output_flange'in p['name']else(70,70,70));
+   for line in lines:
+    pts=[(col*600+300+x[0]*550,700-(x[2]-1.8)*800)for x in line];draw.line(pts,fill=color,width=1)
+   if len(lines):segs.append({'id':p['name'],'segments_world_m':lines.tolist()})
+  sections.append({'plane_normal':[0,1,0],'point_world_m':[0,Y,0],'source_part_segments':segs})
+ draw.text((20,735),'Blue: current core; green: new pitch output; orange: retained serial carriers. Diagnostic only.',fill='black');im.save(O/'native_load_path_sections.png');put('native_load_path_section_binding.json',{'source_native_layer_sha256':H.sha(O/'native_interface_scene.json.gz'),'producer_sha256':H.sha(__file__),'sections':sections,'no_material_or_geometry_changes':True})
+ msg='''# Gorilla G16 load-interface/domain handoff
+
+Frozen read-only contract, not physical or exterior acceptance. Current G15B source27141a30 remains unchanged; new body A a8a09ca0 was copied once as an independent interface challenge. No FE, optimization, SI edits, geometry repair, material deduction or new hardware.
+
+The 237-part native layer retains every original source field exactly. Seventeen interface records give actual exposed faces, source triangle/barycentric cylindrical patches, PCD270/236/110 mm candidate mounting holes, external bearing journal/seat and waist datum. OEM mating internals, 2 mm output recess, pressure-centres, preload, weld/thread, cooling/temperature and complete inertia remain unknown.
+
+The current 26.596829 kg legacy pitch/roll carriers remain. Pitch mounts the next complete roll function; roll mounts yaw. New pitch source does not replace those downstream functions. Actual 83.852 cm3 same-owner and 10.876 cm3 serial-owner overlaps are failures/interface questions, not mass credits. Original Z2.36 versus new Z2.29 must be resolved by a complete serial source. Verified replacement credit is zero.
+
+New body A and each restored anchor have zero positive material intersection at X=.115. Exact full native plane polygon intersection gives 0.0495 m2 each, but frictionless normal-only resultant rank is three and cannot produce vertical shear. There are no actual X-direction fasteners/weld/seat proving that joint. Area does not qualify a connection; current B loads are not inherited by A.
+
+Three known-source budget levels and two hand-force sensitivity modes are transported to actual current B patch centroids. Exact triangle linear-traction equivalents balance six-dimensional resultants to numerical precision, but are not actual pressure/bolt loads. Eighteen internal reaction components per shoulder remain underdetermined by six equations. Unknown mass/COM/fluid/cell parameters remain symbolic; gravity is applied once. Do not fix all bearing interfaces or apply arm gravity plus its resultant twice.
+
+Conservative existing B material partition protects source anchors/adapter and marks other current finite wall/rib material as designable. It adds no mass or hardware. Broad body-A capped volume is a conditional geometric domain, not certified free cavity or an adopted material body. Complete OEM functions, moving assemblies, lines, air/water paths and installation tooling must be included before optimization. No old 92 L or 3.245 mm clearance result is inherited.
+
+Staged five-operation maintenance sampled 21 positions per operation and kept previously removed parts parked. Actual local collisions remain; this is not a maintenance or initial-assembly pass. Sixteen tool cylinders are explicit hypothetical envelopes, not real tool qualification. Scope excludes exhaustive whole-robot service checking. Native four views and two literal source sections are diagnostic renderings, not new styling.
+
+Files: interface_contract.json, serial_replacement_contract.json, force_interface_basis.json, support_reaction_partition.json, new_A_exact_interface_delta.json, material_domain_contract.json, motion_tool_void_contract.json, review_checks.json. Source copies, producers, derived native domains and all final outputs are bound by freeze_manifest.json.
+'''
+ (O/'README.md').write_text(msg)
+ outputs={str(p.relative_to(O)):H.sha(p)for p in sorted(O.iterdir())if p.is_file()and p.name!='freeze_manifest.json'};put('freeze_manifest.json',{'robot_id':'gorilla_v0_1','status':'frozen_rejected_or_unqualified_interfaces','current_B_sha256':H.EXPECTED,'new_body_A_sha256':D('new_body_a_input.json')['sha256'],'outputs_sha256':outputs,'geometry_or_mass_acceptance':False,'producer_sha256':H.sha(__file__)})
+ print('FROZEN',len(outputs),'MANIFEST',H.sha(O/'freeze_manifest.json'),'LEGACY_KG',sum(x['candidate_net_steel_mass_kg_rho7850']for x in oldcar),'MAX_TRACTION_RESIDUAL',max(max(abs(np.array(x['independent_integrated_residual6'])))for x in res),flush=True)
+if __name__=='__main__':main()

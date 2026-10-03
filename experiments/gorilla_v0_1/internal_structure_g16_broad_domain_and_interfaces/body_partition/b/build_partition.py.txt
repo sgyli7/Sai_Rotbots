@@ -1,0 +1,168 @@
+#!/usr/bin/env python3
+"""G16B whole functional partition; explicit computational closure; editable OCCvalidcandidate; no FEM."""
+import pathlib,json,gzip,hashlib,importlib.util,copy,time,sys
+import numpy as np
+import manifold3d as mf
+from OCP.BRepPrimAPI import BRepPrimAPI_MakeBox,BRepPrimAPI_MakeCylinder
+from OCP.BRepAlgoAPI import BRepAlgoAPI_Fuse,BRepAlgoAPI_Cut
+from OCP.gp import gp_Pnt,gp_Dir,gp_Ax2
+from OCP.BRepCheck import BRepCheck_Analyzer
+from OCP.BRepGProp import BRepGProp
+from OCP.GProp import GProp_GProps
+from OCP.BRepTools import BRepTools
+from OCP.TopAbs import TopAbs_SOLID
+from OCP.TopExp import TopExp_Explorer
+from OCP.STEPControl import STEPControl_Writer,STEPControl_AsIs,STEPControl_Reader
+from OCP.BRepOffsetAPI import BRepOffsetAPI_ThruSections
+from OCP.BRepBuilderAPI import BRepBuilderAPI_MakePolygon
+D=pathlib.Path(__file__).resolve().parent;P=D.parent;R=P.parents[1]
+sp=importlib.util.spec_from_file_location('g16helpers',R/'.scratch/gorilla_internal_g14_complete_thermal_colayout/geometry_helpers.py');g=importlib.util.module_from_spec(sp);sp.loader.exec_module(g)
+BASE=R/'.scratch/gorilla_internal_g15_thorax_functional_colayout/b/scene.json.gz';SH=R/'.scratch/gorilla_internal_g13_shoulder_cooling_zones/a/scene.json.gz'
+def sha(p):return hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
+def read(p):return json.load(gzip.open(p,'rt')) if str(p).endswith('.gz') else json.load(open(p))
+def wr(n,v):(D/n).write_text(json.dumps(v,indent=2,ensure_ascii=False)+'\n')
+def center(p):v=np.array(p['vertices_world_m']);return (v.min(0)+v.max(0))/2
+s=read(BASE);by={p['name']:p for p in s['parts']};shoulder=read(SH)
+retire={p['name'] for p in s['parts'] if p['name'].startswith(('g15_','g14_pack_'))}|{'g14_HV_contactors_precharge_disconnect_current_sensor','g14_LV_converter'}
+# Do not resurrect predecessorwalls; active functional source remains independentlypresent.
+parts=[copy.deepcopy(p) for p in s['parts'] if p['name'] not in retire];newids=[];mass=[];groups=[];slots=[];unknown=[]
+def add(m,n,body,role,mr,color=[.35,.64,.70,1],meta=None):
+ md={'mass_range_kg':mr,'finite_material':role=='finite_new_material','source_or_assumption':'own G16 dimensional functional partition; not source wholejoint rating','physics_unknown':['actualsupport/thermal/pressure/rotorbodyCOM-I unknown']};md.update(meta or {});p=g.nat(m,n,body,role,color,md);parts.append(p);newids.append(n)
+ if mr is not None:mass.append({'id':n,'body':body,'mass_range_kg':mr,'geometry_role':role,'source_scope':md['source_or_assumption']})
+ return p
+def move(ids,a,b,M=np.eye(3),tag=''):
+ a=np.array(a);b=np.array(b);ids=set(ids);members=[]
+ for p in parts:
+  if p['name'] in ids:p['vertices_world_m']=((np.array(p['vertices_world_m'])-a)@M.T+b).tolist();p['actualmoved_group_support_notqualified']=True;members.append(p['name'])
+ groups.append({'id':tag,'member_ids':sorted(members),'source_datum_m':a.tolist(),'target_datum_m':b.tolist(),'R':M.tolist(),'commonrigidtransform':True,'actualinstallationowner_unknown':True})
+# Sourcevisiblecurve constrainedclosedcomputationaldomain. Missingopenfaces interpolateexplicitly, capsnotrealarmor.
+white=by['continuous_ivory_torso_armor_cover'];v,f=g.h.triangles(white,True);tris=v[f];rings=[];samples=[]
+for z in np.linspace(1.94,2.59,14):
+ ring,rows=g.h.profile(float(z),tris);rings.append(ring);samples.extend(rows)
+bulk=g.h.loft_native(rings);loft=BRepOffsetAPI_ThruSections(True,True,1e-8)
+for r in rings:
+ pg=BRepBuilderAPI_MakePolygon()
+ for xyz in r:pg.Add(gp_Pnt(*xyz))
+ pg.Close();loft.AddWire(pg.Wire())
+loft.Build();domainshape=loft.Shape();BRepTools.Write_s(domainshape,str(D/'computational_domain.brep'));domainprops=GProp_GProps();BRepGProp.VolumeProperties_s(domainshape,domainprops)
+add(bulk,'g16_calculation_domain_with_explicit_caps','torso','design_domain_bulk',None,[.2,.45,.8,.15],{'is_installed_material':False,'surfaceclosure':'explicit ruledside and topbottomcomputationalcaps; notsource armor','missingface_rays':sum(q['interpolated_open_source_unknown'] for q in samples),'actual_knownfrontrear_25mmgap_condition':True,'source_domain_not_certified_usable_cavity':True})
+wr('domain_receipt.json',{'source_sha256':sha(BASE),'actual_original_visible_surface':white['name'],'actualprofiles':samples,'sectionvertices_worldSI':rings,'closedcomputationvalid':bool(BRepCheck_Analyzer(domainshape).IsValid()),'CADvolume_m3':domainprops.Mass(),'nativevolume_m3':bulk.volume(),'relativevolume':(domainprops.Mass()-bulk.volume())/bulk.volume(),'explicit_source_missing_frontrear_ray_count':sum(q['interpolated_open_source_unknown'] for q in samples),'total_rays':len(samples),'calculation_caps_ANDinterpolatedmissingfaces_NOTphysicalarmor_ORcertifiedcavity':True,'25mmgap_fromreal_visibleouter_notremainingOEMstock':True})
+# Newcomplete480-cellpack shapes: integer120=12x10, allrequiredfunctionalinventorypresent, no sourcecell縮.
+for k,c in enumerate([[.25,-.070,2.115],[.25,.070,2.115],[.25,-.070,2.375],[.25,.070,2.375]]):
+ c=np.array(c);tag=f'g16_pack_{k}';cells=[]
+ for yy in range(12):
+  for zz in range(10):
+   q=c+[0,(yy-5.5)*.0225,(zz-4.5)*.0225];n=f'{tag}_cell_{yy:02}_{zz:02}';add(g.cyl(q,.010775,.07015,'X',32),n,'torso','OEM_cell_max_envelope_reference',[.07]*3,[.28,.63,.34,1],{'source_or_assumption':'P45Bv1.4 maxØ21.55x70.15 max70g/min15.5Wh; geometryenvelope notnetmaterialinertia','20s6p_wiring_NOTimplemented':True});cells.append(n)
+ # Truefinite casing/spacers/electricalskins/busbars/coldplate, independent nonzero aux, actualmounts.
+ dm=np.array([.111,.284,.247]);outer=g.bx(c+[.0085,0,0],dm);inner=g.bx(c+[.0085,0,0],dm-[.004,.004,.004]);shell=outer-inner
+ add(shell,tag+'_Al_enclosure','torso','finite_new_material',[shell.volume()*2700]*3,[.63,.70,.73,1],{'density_kg_m3':2700,'wall/ventfirepressure_unknown':True})
+ for yy in range(13):
+  q=c+[0,(yy-6)*.0225,0];m=g.bx(q,[.069,.0007,.225]);add(m,tag+f'_separator_{yy}','torso','finite_new_material',[m.volume()*1200]*3,[.63,.51,.30,1],{'density_kg_m3':1200,'dielectric/creep_unknown':True})
+ for end in [-1,1]:
+  m=g.bx(c+[end*.0370,0,0],[.001,.27,.224]);add(m,tag+f'_insulating_end_{end}','torso','finite_new_material',[m.volume()*1200]*3,[.77,.65,.28,1],{'density_kg_m3':1200})
+  for zz in range(10):
+   m=g.bx(c+[end*.0360,0,(zz-4.5)*.0225],[.0008,.267,.008]);add(m,tag+f'_busbar_{end}_{zz}','torso','finite_new_material',[m.volume()*8960]*3,[.70,.40,.15,1],{'density_kg_m3':8960,'celltopology20s6p_notconnected':True})
+ plate=g.bx(c+[-.0415,0,0],[.004,.275,.239]);ch=g.bx(c+[-.0415,0,.070],[.0012,.279,.003])+g.bx(c+[-.0415,0,-.070],[.0012,.279,.003])+g.bx(c+[-.0415,.136,0],[.0012,.003,.143]);plate=plate-ch
+ add(plate,tag+'_coldplate','torso','finite_new_material',[plate.volume()*2700]*3,[.26,.63,.72,1],{'density_kg_m3':2700,'fluidvoid_L':ch.volume()*1000,'pressure/thermal/flowunknown':True})
+ for zz in [-.070,.070]:
+  m=g.cyl(c+[-.0415,-.146,zz],.005,.020,'Y')-g.cyl(c+[-.0415,-.146,zz],.0025,.026,'Y');add(m,tag+f'_coldplate_port_{zz}','torso','finite_new_material',[m.volume()*2700]*3,meta={'density_kg_m3':2700})
+ for fn,off,dim,mr in [('20s_BMS_fuse',[.050,0,.035],[.018,.11,.08],[.45,.8,1.4]),('sensors',[.050,0,-.025],[.015,.11,.025],[.1,.2,.35]),('connector',[.050,0,-.070],[.015,.1,.025],[.2,.4,.8]),('vent_guard',[0,.15,0],[.05,.025,.05],[.1,.2,.4])]:add(g.bx(c+off,dim),tag+'_'+fn,'torso','complete_custom_function_envelope',mr,meta={'samefunction_customaux_physicsunknown':True})
+ for sy in [-1,1]:
+  m=g.bx(c+[0,sy*.148,0],[.09,.012,.055]);m=m-g.cyl(c+[0,sy*.148,0],.0033,.020,'Y');add(m,tag+f'_mount_tab_{sy}','torso','finite_new_material',[m.volume()*2700]*3,meta={'density_kg_m3':2700,'matinghardwareunknown':True});add(g.cyl(c+[0,sy*.15,0],.003,.018,'Y'),tag+f'_mount_bolt_{sy}','torso','finite_new_material',[.01,.015,.025],meta={'threads/preload_unknown':True})
+ add(g.bx(c+[-.14,0,0],[.13,.31,.28]),tag+'_removed_shell_service','torso','service_after_shell_removal',None,[1,.6,.2,.2],{'mass_counted':False,'only_after_shellremoval_NOTpermanent_exclusion':True})
+ slots.append({'id':tag,'member_ids':[p['name'] for p in parts if p['name'].startswith(tag+'_') and p['role']!='service_after_shell_removal'],'cell_ids':cells,'count':120,'grid':[12,10],'pitch_m':.0225,'maxradialgap_m':.00095,'center_world_m':c.tolist(),'complete_function_scope':'cells+case+spacers+skins+busbars+coldplate+ports+BMS/fuse/sensors/connector/vent/mounts','sourcecapacity_andCOMunknown':True})
+# B completepacks rotatewholeownnativeprofile Xaxis→Yaxis, allmembers/commonpropertransform.
+Rpack=np.array([[0,-1,0],[1,0,0],[0,0,1.]])
+for q in slots:
+ if q['id'].startswith('g16_pack_'):
+  c=np.array(q['center_world_m']);ids=[p['name'] for p in parts if p['name'].startswith(q['id']+'_')]
+  for pp in parts:
+   if pp['name'] in ids:pp['vertices_world_m']=((np.array(pp['vertices_world_m'])-c)@Rpack.T+c).tolist();pp['pack_custom_neworientation_NOTmechanicalownerproof']=True
+  q['fullprofile_commonR']=Rpack.tolist();q['samewholeinteger120cells']=True
+# CompleteinstalledshoulderG13A at exactoriginalaxes, anchorsasindependentremovableinterfaces, no unionadmission.
+anchorids={p['name'] for p in shoulder['parts'] if p['name'].endswith('fixed_reaction_closed_anchor')};parts.extend(copy.deepcopy(p) for p in shoulder['parts'] if p['name'] in anchorids)
+# Modulegroups retainliteralrelativegeometry, newwholezones; conservativegross stock vs realprofile separate.
+for side,word in [(1,'left'),(-1,'right')]:
+ pref=f'ds_{word}_hydraulic_input';ids=[p['name'] for p in parts if p['name'].startswith(pref) and not p['name'].endswith(('_return_filter','_inverter'))];move(ids,[-.04,side*.40,1.63],[-.13,side*.225,1.94],tag=word+'_fullhydraulicstack')
+ for suf,newc in [('_inverter',[.02,side*.17,2.49]),('_return_filter',[-.06,side*.14,1.75])]:
+  n=pref+suf
+  if n in by:move([n],center(by[n]),newc,tag=word+suf)
+for n,newc in [('ds_compute',[.02,0,2.43]),('ds_back_screen',[-.4475,0,2.24]),('e2_shared_unload_relief_accumulator_reserve',[-.23,0,2.02])]:move([n],center(by[n]),newc,tag=n)
+HX=[n for n in by if n.startswith('e2_oil_HX_') or n=='e2_dual_fluid_HX_material'];move(HX,[-.22,0,1.635],[-.24,0,2.12],tag='HX_fullcore_fourports')
+# Full18 valves onebody21members, commonorientation fromB andbounded distributedareas. Holdernativeinstances remainactualsource.
+valves={}
+for p in parts:
+ if '_directional__' in p['name']:valves.setdefault(p['name'].split('__')[0],[]).append(p)
+leg_index={'left':0,'right':0}
+for j,(key,pp) in enumerate(sorted(valves.items())):
+ core=next(p for p in pp if p['name'].endswith('core_reference'));oldc=center(core)
+ if 'waist' in key:c=[.37,-.14 if 'pair_0' in key else .14,1.695];owner='pelvis_candidate'
+ else:
+  word='left' if 'left' in key else 'right';side=1 if word=='left' else -1;ii=leg_index[word];leg_index[word]+=1
+  # Fourtwo-zone fullstockpackets inlegproximal/midregions, notfootredesign. Fullrawhardware stillinterferencereported.
+  c=[-.25 if ii%2==0 else .19,side*(.37 if (ii//2)%2==0 else .63),1.55-(ii//4)*.28];owner=word+'_proximal_leg_candidate'
+ move([p['name'] for p in pp],oldc,c,tag=key)
+ for p in pp:
+  for real in parts:
+   if real['name']==p['name']:real['candidate_installed_motion_owner']=owner;real['sourcebody_kept_pendingmechanical_support']=True
+ slots.append({'id':key,'member_ids':[p['name'] for p in pp],'conservative_fullstockdims_m':[.122,.240,.204],'completefunctions_preserved':True,'candidate_driven_region_owner':owner,'interface/owner/routeunknown':True,'outside_original_legarmor_notadopted':'existinglegskinunchanged; sourcepackagingcandidatefailsifoutside'})
+# B S1 manufacturerES familycomparison, exactfullprofile+sixfans+fullnonzeroaux; no4320Htransfer.
+THERM=R/'.scratch/gorilla_internal_g16_compact_thermal_scope/module_scope_initial.json';thermal=read(THERM);thermal_segments=thermal['source_bound_split_route_S1']['segments']
+Rrear=np.array([[1,0,0],[0,0,-1],[0,1,0.]])
+for j,seg in enumerate(thermal_segments):
+ label=seg['id'];low=seg['loop']=='lowT';c=np.array([-.342,(-.112 if j%2==0 else .112),2.115+(j//2)*.260]) if low else np.array([-.315,0,1.825]);M=Rrear if low else np.eye(3);members=[]
+ def stock(off,dm,n,role,mr,meta=None):
+  mat=g.bx(off,dm).transform(np.column_stack([M,c]));pp=add(mat,'g16_'+label+'_'+n,'torso',role,mr,meta=meta);members.append(pp['name'])
+ core=seg['stock_full_reference_xyz_m'];stock([.048,0,0],core,'fullcore_reference','complete_component_reference',[seg['core_mass_kg']]*3,{'source_or_assumption':'S1 '+seg['reference_model']+' historicalfullportsincluded drawing andcurrentmassrevisionnotmatchedqualification','manufacturerfullcore_noscale':True,'waterfluid_L_aliasglobal':seg['core_cavity_L'],'Hsource71C_EGW_NOTcold/installedrating':True})
+ for fi in range(seg['fan_count']):
+  yy=0 if seg['fan_count']==1 else (-.12 if fi==0 else .12)
+  stock([-.0175,yy,0],seg['fan_fullbody_xyz_m'],'full172_fan_'+str(fi),'complete_component_reference',seg.get('fan_mass_range_kg',seg.get('fan_mass_range_kg_each')),{'source_or_assumption':'full172x172x51vendorreference, sourcefanP-Qinstalledunknown'})
+  stock([-.053,yy,0],[.020,.18,.18],'adapter_guard_seal_bracket_'+str(fi),'complete_custom_function_envelope',np.array(seg['adapter_seal_guard_bracket_mass_range_kg']).tolist(),{'solidguardnotactualopenmesh':'conservativecompleteinstallstock','lossandmountUNKNOWN':True})
+  stock([-.0175,yy+.099,0],[.055,.025,.060],'connector_bend_'+str(fi),'complete_custom_function_envelope',[.08,.15,.3])
+ stock([-.0755,0,0],[.025,core[1],core[2]],'full_plenum','complete_custom_function_envelope',[.3,.7,1.5],{'sealedrealcavitynotyetdesigned':'completehardwarestock notthermalpass'})
+ service=g.bx([0,0,0],np.array(seg['hardware_full_xyz_m'])+np.array(seg['connector_port_tool_keepout_add_m'])).transform(np.column_stack([M,c]));add(service,'g16_'+label+'_afterremoval_tool','torso','service_after_shell_removal',None,[1,.6,.2,.2],{'sharedtoolspace_notpermanentexclusion':True})
+ slots.append({'id':'g16_'+label+'_fullthermal','member_ids':members,'source_maker_S1_reference':seg['reference_model'],'hardware_full_xyz_source_m':seg['hardware_full_xyz_m'],'Rworld':M.tolist(),'center_world_m':c.tolist(),'OEMtemperaturefluid_revision_flow_unknown_NOTyellowqualified':True})
+for label,pc in [('low',[.03,.25,1.67]),('hot',[.03,-.25,1.67])]:
+ add(g.bx(pc,[.14,.17,.12]),f'g16_{label}_EWP80_reference','torso','complete_component_reference',[1.025]*3,meta={'ownfull140x170x120stock_fromofficialdimensions_NOTexactdatum':True})
+ add(g.bx([.02,.17 if label=='low' else -.17,2.49],[.120,.100,.040]),f'g16_{label}_pump_controller','torso','complete_custom_function_envelope',[.2,.5,1.0],meta={'sourcefunctionalbudget_notrated':'fullcontroller+connectors/12Vunknown'})
+ add(g.bx([-.06,.14 if label=='low' else -.14,1.75],[.100,.120,.080]),f'g16_{label}_filter_regulator_isolation','torso','complete_custom_function_envelope',[.5,1.0,2.0],meta={'filter/regulator/isolation/relief/routing_notqualified':True})
+ add(g.bx([.03,.25 if label=='low' else -.25,1.60],[.10,.12,.04]),f'g16_{label}_pump_mount_reducers_fittings','torso','complete_custom_function_envelope',[.4,.8,1.5],meta={'35mmbarbfullreducer/routeunknown':True})
+# Realworkingreservoircells withheadspace, clear globalinventoryhypothesis separate ownerunknown.
+for label,working,c,dm in [('oil',7,[-.18,0,2.255],[.22,.24,.22]),('low_water',1.2,[.29,.16,1.69],[.12,.16,.14]),('hot_water',.8,[.29,-.16,1.69],[.12,.14,.12])]:
+ c=np.array(c);di=np.array(dm)-.006;cavity=g.bx(c,di);shell=g.bx(c,dm)-cavity;capacity=cavity.volume()*1000;add(shell,'g16_'+label+'_working_tank_shell','torso','finite_new_material',[shell.volume()*2700]*3,meta={'density_kg_m3':2700,'capacity_L':capacity,'workingfill_L':working,'hotexpansion/headspace/return/seals_UNKNOWN':True});h=di[2]*working/capacity;fc=c+[0,0,(h-di[2])/2];add(g.bx(fc,[di[0],di[1],h]),'g16_'+label+'_workingfluid_alias','distributedfluidowner_UNKNOWN','fluid_lumen_global_alias',None,[.7,.5,.15,.25],{'workingfill_L':working,'mass_countedonly_globalinventory_once':True,'fluidexclusionNOTwaived':True})
+for fl,L,rho in [('oil',30,850),('water',12.481996328832434,1000)]:mass.append({'id':'g16_global_'+fl+'_once','body':'distributed_owner_andCOM_UNKNOWN','mass_range_kg':[L*rho/1000]*3,'geometry_role':'globalfluid_logicalinventory_no_geometry','source_scope':'retainedglobalstockhypothesis once; exactnewdevice/linesnotbuilt unknown'})
+# Nonzero powercontrol/HV/LV/routes/service functionalzones, not100overlappingfakepipes.
+for n,c,dm,mr in [('HV_contactors_fuse_precharge_disconnect_current',[.04,0,2.27],[.085,.15,.11],[2,4,6]),('LV_converter',[.04,0,2.36],[.075,.10,.055],[.8,1.2,2.2]),('powerdata_and_thermal_line_layer',[.068,0,2.16],[.02,.14,.45],[3,5,8]),('P_T_hydraulicroute_layer',[-.243,0,2.16],[.012,.14,.50],[3,5,8]),('degas_return_guard_service',[.03,0,1.73],[.08,.10,.08],[.3,.6,1.2])]:add(g.bx(c,dm),'g16_'+n,'torso','complete_custom_function_envelope',mr,meta={'source_or_assumption':'nonzeroownboundedcompletefunction allocation; noindividualroute closed','downstreamlimbroutefunctionsstillretained_andneeded':True})
+# Broadclosedbeamframe primaryOCC primitives, independentlysameparameter native, not triangulatedsewingrepair.
+def obox(c,d):return BRepPrimAPI_MakeBox(gp_Pnt(*(np.array(c)-np.array(d)/2)),*map(float,d)).Shape()
+def fuse(a,b):z=BRepAlgoAPI_Fuse(a,b);z.Build();return z.Shape()
+def cut(a,b):z=BRepAlgoAPI_Cut(a,b);z.Build();return z.Shape()
+def beam(c,d,t,axis):
+ inn=np.array(d)-2*t;inn[axis]=d[axis]+.01;return cut(obox(c,d),obox(c,inn)),g.bx(c,d)-g.bx(c,inn)
+O=[];N=[];params=[]
+for side in [-1,1]:
+ c=[.155,side*.275,2.265];dm=[.08,.20,.66];o,n=beam(c,dm,.005,2);O.append(o);N.append(n);params.append({'function':'wideclosedverticalbeam','center':c,'dims':dm,'wall':.005,'longaxis':2})
+for c,dm,t,axis,fn in [([.155,0,2.565],[.08,.75,.08],.005,1,'topclosedcrossbeam'),([.315,0,1.91],[.08,.73,.09],.006,1,'waistclosedcrossbeam')]:
+ o,n=beam(c,dm,t,axis);O.append(o);N.append(n);params.append({'function':fn,'center':c,'dims':dm,'wall':t,'longaxis':axis})
+for side in [-1,1]:
+ c=[.235,side*.275,1.94];dm=[.18,.11,.08];o,n=beam(c,dm,.005,0);O.append(o);N.append(n);params.append({'function':'continuousbottom_bridge','center':c,'dims':dm,'wall':.005,'longaxis':0})
+ # True actual shoulderX=.115 fixed anchor matingpads no fake weldedOEM.
+ c=[.119,side*.3185,2.29];dm=[.008,.15,.33];O.append(obox(c,dm));N.append(g.bx(c,dm));params.append({'function':'shouldermatingface','center':c,'dims':dm,'nominalplane_X':.115,'source_fixedanchorID':f'g13_{"left" if side>0 else "right"}_fixed_reaction_closed_anchor','fullplanearea_m2':.0495,'boltcontact_ANDactualretainedsourceholesnotqualified':True})
+# Newconditionalsteel outputannulus exactoldOD160/ID60/L35 extendedneck, genuinecasebody separatelyprotected.
+for x,L,rad,bore,fn in [(.23,.035,.08,.03,'sourceoutputadapter_dimreference'),(.277,.06,.07,.03,'outputneck')]:
+ ax=gp_Ax2(gp_Pnt(x-L/2,0,1.91),gp_Dir(1,0,0));o=cut(BRepPrimAPI_MakeCylinder(ax,rad,L).Shape(),BRepPrimAPI_MakeCylinder(ax,bore,L).Shape());n=g.cyl([x,0,1.91],rad,L,'X',64)-g.cyl([x,0,1.91],bore,L+.002,'X',64);O.append(o);N.append(n);params.append({'function':fn,'axis':'X','center':[x,0,1.91],'length':L,'OD':2*rad,'ID':2*bore,'newownfinitegeometry_NOTgearorcertifiedbearing':True})
+shape=O[0]
+for o in O[1:]:shape=fuse(shape,o)
+frame=mf.Manifold.batch_boolean(N,mf.OpType.Add);prop=GProp_GProps();BRepGProp.VolumeProperties_s(shape,prop);cadvalid=bool(BRepCheck_Analyzer(shape).IsValid());ex=TopExp_Explorer(shape,TopAbs_SOLID);solids=0
+while ex.More():solids+=1;ex.Next()
+BRepTools.Write_s(shape,str(D/'load_cage_primary.brep'));w=STEPControl_Writer();w.Transfer(shape,STEPControl_AsIs);w.Write(str(D/'load_cage_si.step'));step=D/'load_cage_si.step';raw=step.read_text();step.write_text(raw.replace('SI_UNIT(.MILLI.,.METRE.)','SI_UNIT($,.METRE.)'));reader=STEPControl_Reader();reader.ReadFile(str(step));reader.TransferRoots();rp=GProp_GProps();BRepGProp.VolumeProperties_s(reader.OneShape(),rp)
+add(frame,'g16_native_cage_CAD_parameter_mapping','torso','finite_new_material',[frame.volume()*7850]*3,[.24,.50,.72,1],{'density_kg_m3':7850,'native_CADmapping':'sameexactboxparams/64facetannuli vsanalyticOEMreferencecurves','frameprimaryCAD_valid':cadvalid,'sourceanchors_not_unioned_areboltinterfacecandidate':True,'curveapproximation_no_signedmaterialrepair':True})
+wr('frame_CAD_native_mapping.json',{'primaryCAD_valid':cadvalid,'primaryCAD_solidcount':solids,'cadvolume_m3':prop.Mass(),'nativevolume_m3':frame.volume(),'relative_curve_approx_volume_difference':(frame.volume()-prop.Mass())/prop.Mass(),'native_mass_density7850':frame.volume()*7850,'CADmass_density7850':prop.Mass()*7850,'native_vsCAD_curves_64facetadapter_chordmax_m':.08*(1-np.cos(np.pi/64)),'allparams':params,'SI_declaration_adaptation_ONLY':True,'rawwrongmm_declared_exportSHA':hashlib.sha256(raw.encode()).hexdigest(),'STEPsha':sha(step),'STEP_readback_m3':rp.Mass()/1e9,'STEP_relative_Verror':(rp.Mass()/1e9-prop.Mass())/prop.Mass(),'native_materialsignedgate_pending':True,'mounting/strength/closedsections_underrealinterfaceNOTqualified':True})
+scene={'schema':'gorilla_g16_body_domain_partition_v1','coordinate_frame':'worldSI XfrontYleftZup','producer_sha256':sha(__file__),'sources':{k:{'path':str(p),'sha256':sha(p)} for k,p in {'G15_finalB':BASE,'G13_installedshoulderA':SH,'rules':R/'sai_robots_engineering_rules.md','geometryhelper':R/'.scratch/gorilla_internal_g14_complete_thermal_colayout/geometry_helpers.py','thermalS1':THERM,'profile_helper':R/'.scratch/gorilla_internal_g11_body_design_domain/build_domain.py'}.items()},'parts':parts,'new_module_mass_rows':mass,'proposed_retired_ids':sorted(retire),'rigidgroup_transforms':groups,'complete_partition_slots':slots,'original_visible_armor_ids':s['original_visible_armor_ids'],'originalvisible_source_identity_notfit':True,'fixed_interface_candidate_planes':{'shoulderX':.115,'sourceCSG65full115_QTL210full66_kept':True,'waistadapter_refX':[.2125,.2475],'source_geargeometry_notunited_or_drilled':True},'globalfluidinventory':{'oil_L':30,'water_L':12.481996328832434,'workingfilloil_L':7,'workingfillwater_L':2.0,'inventory_oncebodyCOM_unknown':True,'actualnewroutes_unknown_nonzero_stock':True},'macro':'b','noFE_SIMP_GPU_Git_source_oldedit':True,'assembly_admission':False}
+(D/'scene.json.gz').write_bytes(gzip.compress(json.dumps(scene,separators=(',',':')).encode(),mtime=0));wr('spec.json',{'scene_SHA':sha(D/'scene.json.gz'),'fullfunctional_slot_count':len(slots),'cell_count':480,'fullthermal4ES0707plus1ES0714fullreferences':True,'frame_primaryCAD_valid':cadvalid,'frameCAD_solidcount':solids,'framegeometry_mass_kg':frame.volume()*7850,'OEM_bodyCOM/inertia/route_andthermal_unknown':True,'visiblechanges_adopted':False})
+print('EVENT G16B source '+sha(D/'scene.json.gz')+' parts '+str(len(parts))+' frameCAD '+str(cadvalid)+' solids '+str(solids),flush=True)
+g.h.OUT=D;g.h.render(parts,'native_four_view.png');g.h.render(parts,'native_cutaway_four_view.png',True);g.h.sections([p for p in parts if p['name'] in scene['original_visible_armor_ids'] or p['name'] in newids])
+from PIL import Image,ImageDraw
+for n in ['native_four_view.png','native_cutaway_four_view.png']:
+ im=Image.open(D/n);dr=ImageDraw.Draw(im);dr.rectangle((0,0,1800,50),fill='#f3f2ed');dr.text((25,10),'G16 B — CALCULATION-CAPPED DOMAIN / PRIMARY OCC CLOSED CAGE / COMPLETE FUNCTION PARTITION',fill='black');dr.text((25,30),'Visible curves constrain proposals; computational closure is not usable cavity / whole fit, strength, heat and COM-I remain unknown',fill='black');im.save(D/n)
+print('EVENT G16B views',flush=True)

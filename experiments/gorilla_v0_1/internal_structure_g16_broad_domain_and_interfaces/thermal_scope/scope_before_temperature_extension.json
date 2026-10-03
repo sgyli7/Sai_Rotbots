@@ -1,0 +1,1943 @@
+{
+  "robot": "Gorilla V0.1",
+  "stage": "G16 compact complete thermal scope",
+  "created_utc": "2026-10-03T09:15:48Z",
+  "producer_sha256": "e6e9255e14b1bc22094c03aafbc2c8d520b78d8e5f32044a3b18f943f3e44811",
+  "source_hashes": {
+    ".scratch/gorilla_internal_g15_thermal_operating_domain/operating_domain.json": "e1fe592096d29a6ab20f52cc002136ab245d757c221d20f4360b76ee49e637d1",
+    ".scratch/gorilla_internal_g15_thermal_operating_domain/summary.json": "82c326fccab26c157f75e3ad2dccd315049d6b94adbe015a703fb6994a73e550",
+    ".scratch/gorilla_internal_g15_thermal_operating_domain/body_fluid_capture.json": "1a2bf5baffcc99bd071f9b9c09bd22d819bf16085611529378895badf1f5d8df",
+    ".scratch/gorilla_internal_g15_thorax_functional_colayout/b/scene.json.gz": "27141a30dd2533516558d177ed784067b42cbe5d5626b2c897ae13f467739221",
+    ".scratch/gorilla_internal_g16_compact_thermal_scope/module_scope_initial.json": "6b34c1fc0d28450b2fe080bd935815645a9b1cf8639cb02cea9c6d9e6127e8d5",
+    ".scratch/gorilla_internal_g16_compact_thermal_scope/lytron2003_es_publication_mirrored.pdf": "b4e1262789aedf9c55e3f4a5360440ca34260f06ea7a762e8b718a77a5384676",
+    ".scratch/gorilla_internal_g16_compact_thermal_scope/dowtherm_sr1_properties_mirrored.pdf": "852567f0a144045e6192d8a2d3a543a44be34cfa0f427733e244040c2e586589",
+    ".scratch/gorilla_internal_g16_compact_thermal_scope/boyd_kodiak_complete_datasheet.pdf": "38ba235ca4030391ddc2adad523a5d6a68afa058c7afa4f0f4b2ca5a01575b60",
+    ".scratch/gorilla_internal_g14_thermal_complete_inventory/davies_craig_2023_catalog.pdf": "42cc2c508363bc9e6e8e5159ad6af6f361468f1638a7df503208cf5122061ce8",
+    ".scratch/gorilla_internal_d_system/tecnotion_torque_brochure_2_5.pdf": "649c4d4d8a779346f7590b7b91eaf6e3856004a90397804e2d4cce3a03a13dd4",
+    ".scratch/gorilla_internal_c_drive/qtl210_specsheet_2_4.pdf": "076168597ba2aac09287e4b0f5e2d749c2e52303b6b8b342d7fddc6a7f10c289"
+  },
+  "source_urls": {
+    "ES2003": "https://theelectrostore.com/content/datasheets/Lytron_2003_catalog_heatexchangers_52-55.pdf",
+    "ES_current_mass_lumen": "https://www.eaton.com/us/en-us/products/thermal-management-solutions/liquid-cooling-systems/heat-exchangers.html",
+    "pump2023": "https://daviescraig.com.au/media/2576/1688618225.CatalogueV8Small6-July-2023.pdf",
+    "QTL": "https://www.tecnotion.com/wp-content/uploads/2025/11/QTL210_Specsheet_EN_2.4.pdf",
+    "DOW2002": "https://users.obs.carnegiescience.edu/crane/pfs/man/Misc/Dowtherm-SR-1.pdf",
+    "Kodiak2019": "https://info.boydcorp.com/hubfs/Thermal/Liquid-Cooling/Boyd-Kodiak-Recirculating-Chiller-Datasheet-K2.pdf"
+  },
+  "S1_source_bound_segments": [
+    {
+      "id": "low_es0707_segment_0",
+      "loop": "lowT",
+      "reference_model": "ES0707G23",
+      "stock_full_reference_xyz_m": [
+        0.08,
+        0.254,
+        0.212
+      ],
+      "historical_dim_includes_full_ports_not_fan": true,
+      "core_mass_kg": 1.3,
+      "core_cavity_L": 0.393,
+      "fan_count": 1,
+      "fan_fullbody_xyz_m": [
+        0.051,
+        0.172,
+        0.172
+      ],
+      "fan_reference": "G14 ebm 6314/2TDH4P24V; no optional115/230V fan inheriting curve",
+      "fan_mass_range_kg": [
+        0.6,
+        1.0,
+        1.5
+      ],
+      "adapter_seal_guard_bracket_mass_range_kg": [
+        0.35,
+        0.7,
+        1.4
+      ],
+      "plenum_own_depth_m": 0.025,
+      "guard_adapter_own_depth_m": 0.02,
+      "hardware_full_xyz_m": [
+        0.176,
+        0.254,
+        0.212
+      ],
+      "connector_port_tool_keepout_add_m": [
+        0.03,
+        0.045,
+        0.03
+      ],
+      "reference_thermal_H_W_K_read_range": [
+        75,
+        95
+      ],
+      "thermal_point": {
+        "fluid": "50/50EGW71.1C",
+        "liquid_L_min_range": [
+          11.356,
+          18.927
+        ],
+        "whole_airflow_m3_min_range": [
+          6,
+          7
+        ],
+        "H_range_manual_read_uncertainty_W_K": 6,
+        "airdp_Pa_read_range": [
+          65,
+          85
+        ],
+        "liquiddp_Pa_read_range": [
+          23000,
+          42000
+        ]
+      },
+      "low_cold_30_55C_material_and_viscosity_curve_not_given": true,
+      "installed_thermal_or_pressure_or_outerarmor_admission": false,
+      "loop_topology": "four low core branches in parallel",
+      "flow_direction": "source NPT ports only; exact mounting datum/OEM tolerances and new line endpoint map remain open",
+      "interfaces": {
+        "liquid_ports_count": 2,
+        "thread": "3/8-18 NPT",
+        "historical_port_separation_m": 0.127,
+        "historical_lower_reference_offset_m": 0.043,
+        "pressure_test_bar_10p3_is_not_continuous_rating": true,
+        "current_revision_exact_port_datums_unknown": true
+      },
+      "adapter_mass_contains_plenum_guard_mount_seal_bolts": true,
+      "plenum_finite_wall_mass_screen_kg": 0.09471450000000001,
+      "actual_geometry_body_author_only_not_generated_here": true
+    },
+    {
+      "id": "low_es0707_segment_1",
+      "loop": "lowT",
+      "reference_model": "ES0707G23",
+      "stock_full_reference_xyz_m": [
+        0.08,
+        0.254,
+        0.212
+      ],
+      "historical_dim_includes_full_ports_not_fan": true,
+      "core_mass_kg": 1.3,
+      "core_cavity_L": 0.393,
+      "fan_count": 1,
+      "fan_fullbody_xyz_m": [
+        0.051,
+        0.172,
+        0.172
+      ],
+      "fan_reference": "G14 ebm 6314/2TDH4P24V; no optional115/230V fan inheriting curve",
+      "fan_mass_range_kg": [
+        0.6,
+        1.0,
+        1.5
+      ],
+      "adapter_seal_guard_bracket_mass_range_kg": [
+        0.35,
+        0.7,
+        1.4
+      ],
+      "plenum_own_depth_m": 0.025,
+      "guard_adapter_own_depth_m": 0.02,
+      "hardware_full_xyz_m": [
+        0.176,
+        0.254,
+        0.212
+      ],
+      "connector_port_tool_keepout_add_m": [
+        0.03,
+        0.045,
+        0.03
+      ],
+      "reference_thermal_H_W_K_read_range": [
+        75,
+        95
+      ],
+      "thermal_point": {
+        "fluid": "50/50EGW71.1C",
+        "liquid_L_min_range": [
+          11.356,
+          18.927
+        ],
+        "whole_airflow_m3_min_range": [
+          6,
+          7
+        ],
+        "H_range_manual_read_uncertainty_W_K": 6,
+        "airdp_Pa_read_range": [
+          65,
+          85
+        ],
+        "liquiddp_Pa_read_range": [
+          23000,
+          42000
+        ]
+      },
+      "low_cold_30_55C_material_and_viscosity_curve_not_given": true,
+      "installed_thermal_or_pressure_or_outerarmor_admission": false,
+      "loop_topology": "four low core branches in parallel",
+      "flow_direction": "source NPT ports only; exact mounting datum/OEM tolerances and new line endpoint map remain open",
+      "interfaces": {
+        "liquid_ports_count": 2,
+        "thread": "3/8-18 NPT",
+        "historical_port_separation_m": 0.127,
+        "historical_lower_reference_offset_m": 0.043,
+        "pressure_test_bar_10p3_is_not_continuous_rating": true,
+        "current_revision_exact_port_datums_unknown": true
+      },
+      "adapter_mass_contains_plenum_guard_mount_seal_bolts": true,
+      "plenum_finite_wall_mass_screen_kg": 0.09471450000000001,
+      "actual_geometry_body_author_only_not_generated_here": true
+    },
+    {
+      "id": "low_es0707_segment_2",
+      "loop": "lowT",
+      "reference_model": "ES0707G23",
+      "stock_full_reference_xyz_m": [
+        0.08,
+        0.254,
+        0.212
+      ],
+      "historical_dim_includes_full_ports_not_fan": true,
+      "core_mass_kg": 1.3,
+      "core_cavity_L": 0.393,
+      "fan_count": 1,
+      "fan_fullbody_xyz_m": [
+        0.051,
+        0.172,
+        0.172
+      ],
+      "fan_reference": "G14 ebm 6314/2TDH4P24V; no optional115/230V fan inheriting curve",
+      "fan_mass_range_kg": [
+        0.6,
+        1.0,
+        1.5
+      ],
+      "adapter_seal_guard_bracket_mass_range_kg": [
+        0.35,
+        0.7,
+        1.4
+      ],
+      "plenum_own_depth_m": 0.025,
+      "guard_adapter_own_depth_m": 0.02,
+      "hardware_full_xyz_m": [
+        0.176,
+        0.254,
+        0.212
+      ],
+      "connector_port_tool_keepout_add_m": [
+        0.03,
+        0.045,
+        0.03
+      ],
+      "reference_thermal_H_W_K_read_range": [
+        75,
+        95
+      ],
+      "thermal_point": {
+        "fluid": "50/50EGW71.1C",
+        "liquid_L_min_range": [
+          11.356,
+          18.927
+        ],
+        "whole_airflow_m3_min_range": [
+          6,
+          7
+        ],
+        "H_range_manual_read_uncertainty_W_K": 6,
+        "airdp_Pa_read_range": [
+          65,
+          85
+        ],
+        "liquiddp_Pa_read_range": [
+          23000,
+          42000
+        ]
+      },
+      "low_cold_30_55C_material_and_viscosity_curve_not_given": true,
+      "installed_thermal_or_pressure_or_outerarmor_admission": false,
+      "loop_topology": "four low core branches in parallel",
+      "flow_direction": "source NPT ports only; exact mounting datum/OEM tolerances and new line endpoint map remain open",
+      "interfaces": {
+        "liquid_ports_count": 2,
+        "thread": "3/8-18 NPT",
+        "historical_port_separation_m": 0.127,
+        "historical_lower_reference_offset_m": 0.043,
+        "pressure_test_bar_10p3_is_not_continuous_rating": true,
+        "current_revision_exact_port_datums_unknown": true
+      },
+      "adapter_mass_contains_plenum_guard_mount_seal_bolts": true,
+      "plenum_finite_wall_mass_screen_kg": 0.09471450000000001,
+      "actual_geometry_body_author_only_not_generated_here": true
+    },
+    {
+      "id": "low_es0707_segment_3",
+      "loop": "lowT",
+      "reference_model": "ES0707G23",
+      "stock_full_reference_xyz_m": [
+        0.08,
+        0.254,
+        0.212
+      ],
+      "historical_dim_includes_full_ports_not_fan": true,
+      "core_mass_kg": 1.3,
+      "core_cavity_L": 0.393,
+      "fan_count": 1,
+      "fan_fullbody_xyz_m": [
+        0.051,
+        0.172,
+        0.172
+      ],
+      "fan_reference": "G14 ebm 6314/2TDH4P24V; no optional115/230V fan inheriting curve",
+      "fan_mass_range_kg": [
+        0.6,
+        1.0,
+        1.5
+      ],
+      "adapter_seal_guard_bracket_mass_range_kg": [
+        0.35,
+        0.7,
+        1.4
+      ],
+      "plenum_own_depth_m": 0.025,
+      "guard_adapter_own_depth_m": 0.02,
+      "hardware_full_xyz_m": [
+        0.176,
+        0.254,
+        0.212
+      ],
+      "connector_port_tool_keepout_add_m": [
+        0.03,
+        0.045,
+        0.03
+      ],
+      "reference_thermal_H_W_K_read_range": [
+        75,
+        95
+      ],
+      "thermal_point": {
+        "fluid": "50/50EGW71.1C",
+        "liquid_L_min_range": [
+          11.356,
+          18.927
+        ],
+        "whole_airflow_m3_min_range": [
+          6,
+          7
+        ],
+        "H_range_manual_read_uncertainty_W_K": 6,
+        "airdp_Pa_read_range": [
+          65,
+          85
+        ],
+        "liquiddp_Pa_read_range": [
+          23000,
+          42000
+        ]
+      },
+      "low_cold_30_55C_material_and_viscosity_curve_not_given": true,
+      "installed_thermal_or_pressure_or_outerarmor_admission": false,
+      "loop_topology": "four low core branches in parallel",
+      "flow_direction": "source NPT ports only; exact mounting datum/OEM tolerances and new line endpoint map remain open",
+      "interfaces": {
+        "liquid_ports_count": 2,
+        "thread": "3/8-18 NPT",
+        "historical_port_separation_m": 0.127,
+        "historical_lower_reference_offset_m": 0.043,
+        "pressure_test_bar_10p3_is_not_continuous_rating": true,
+        "current_revision_exact_port_datums_unknown": true
+      },
+      "adapter_mass_contains_plenum_guard_mount_seal_bolts": true,
+      "plenum_finite_wall_mass_screen_kg": 0.09471450000000001,
+      "actual_geometry_body_author_only_not_generated_here": true
+    },
+    {
+      "id": "hot_es0714_complete_reference",
+      "loop": "hot_water",
+      "reference_model": "ES0714G23",
+      "stock_full_reference_xyz_m": [
+        0.08,
+        0.457,
+        0.212
+      ],
+      "core_mass_kg": 2.51,
+      "core_cavity_L": 0.508,
+      "fan_count": 2,
+      "fan_fullbody_xyz_m": [
+        0.051,
+        0.172,
+        0.172
+      ],
+      "fan_mass_range_kg_each": [
+        0.6,
+        1.0,
+        1.5
+      ],
+      "adapter_seal_guard_bracket_mass_range_kg": [
+        0.5,
+        1,
+        2
+      ],
+      "plenum_own_depth_m": 0.025,
+      "guard_adapter_own_depth_m": 0.02,
+      "hardware_full_xyz_m": [
+        0.176,
+        0.457,
+        0.212
+      ],
+      "connector_port_tool_keepout_add_m": [
+        0.03,
+        0.045,
+        0.03
+      ],
+      "reference_thermal_H_W_K_read_range": [
+        105,
+        165
+      ],
+      "thermal_point": {
+        "fluid": "50/50EGW71.1C",
+        "liquid_L_min_range": [
+          7.571,
+          11.356
+        ],
+        "whole_airflow_m3_min_range": [
+          10,
+          14
+        ],
+        "H_range_manual_read_uncertainty_W_K": 8,
+        "airdp_Pa_read_range": [
+          35,
+          80
+        ],
+        "liquiddp_Pa_read_range": [
+          12000,
+          30000
+        ]
+      },
+      "ES0714_right_axis_IS_BTU_per_hF_not_W_K": true,
+      "not_scaling4320_and_not_using350as350W_K": true,
+      "installed_thermal_or_pressure_or_outerarmor_admission": false,
+      "loop_topology": "one core after oil-water HX in independent hot-water circuit",
+      "flow_direction": "source NPT ports only; exact mounting datum/OEM tolerances and new line endpoint map remain open",
+      "interfaces": {
+        "liquid_ports_count": 2,
+        "thread": "3/8-18 NPT",
+        "historical_port_separation_m": 0.127,
+        "historical_lower_reference_offset_m": 0.043,
+        "pressure_test_bar_10p3_is_not_continuous_rating": true,
+        "current_revision_exact_port_datums_unknown": true
+      },
+      "adapter_mass_contains_plenum_guard_mount_seal_bolts": true,
+      "plenum_finite_wall_mass_screen_kg": 0.13597425,
+      "actual_geometry_body_author_only_not_generated_here": true
+    }
+  ],
+  "S1_aux_complete_functions": [
+    {
+      "id": "low_pump_two_complete_ewp150_series",
+      "count": 2,
+      "bare_mass_kg_each": 1.17,
+      "reference": "2023 printed7 #8160 12V",
+      "bare_full_conservative_xyz_m": [
+        0.14,
+        0.19,
+        0.12
+      ],
+      "full_two_stage_stock_xyz_m": [
+        0.14,
+        0.19,
+        0.27
+      ],
+      "mount_manifold_reducer_seals_mass_range_kg": [
+        0.6,
+        0.9,
+        1.5
+      ],
+      "max_source_electrical_W_each_at13V": 130,
+      "source_current_max_A": 10,
+      "ports": "38mm barb /16AN ORB; internal1 5/16-12UN",
+      "curve_not_NPSHr_or_glycol_temperature_qualification": true,
+      "stage2_suction_pressure_and_series_rated_case_pressure_unknown": true
+    },
+    {
+      "id": "hot_pump_complete_ewp80",
+      "count": 1,
+      "bare_mass_kg_each": 1.025,
+      "bare_full_conservative_xyz_m": [
+        0.14,
+        0.17,
+        0.12
+      ],
+      "mount_reducer_seals_mass_range_kg": [
+        0.3,
+        0.5,
+        0.9
+      ],
+      "max_source_electrical_W_each_at13V": 97.5,
+      "ports": "35mm barbs; full reducers required",
+      "reference": "G14 same official2023 #8109; NPSHr/cold fluid curve unknown"
+    },
+    {
+      "id": "low_degas",
+      "count": 1,
+      "outer_xyz_m": [
+        0.12,
+        0.16,
+        0.14
+      ],
+      "cold_working_L": 1.2,
+      "geometric_capacity_target_L": 2.2,
+      "mass_range_kg": [
+        0.7,
+        1.2,
+        2.0
+      ],
+      "function": "cap/pressure relief/air separator/suction anti-vortex baffle/level sensor/drain; all own manufacturing assumptions"
+    },
+    {
+      "id": "hot_degas",
+      "count": 1,
+      "outer_xyz_m": [
+        0.12,
+        0.14,
+        0.12
+      ],
+      "cold_working_L": 0.8,
+      "geometric_capacity_target_L": 1.5,
+      "mass_range_kg": [
+        0.6,
+        1.0,
+        1.8
+      ],
+      "function": "separate hot coolant vessel; no low/hot liquid mixing"
+    },
+    {
+      "id": "filters_regulator_bypass_protection",
+      "count": 2,
+      "outer_xyz_m_each": [
+        0.1,
+        0.12,
+        0.08
+      ],
+      "mass_range_kg_each": [
+        0.25,
+        0.5,
+        1.0
+      ],
+      "function": "filter, relief/bypass, flow/pressure sensing, coolant isolation and full fittings; actual dp/micron/setting unknown"
+    },
+    {
+      "id": "LV_controller_fuse_sensor",
+      "count": 2,
+      "outer_xyz_m_each": [
+        0.12,
+        0.1,
+        0.04
+      ],
+      "mass_range_kg_each": [
+        0.2,
+        0.35,
+        0.7
+      ],
+      "function": "complete HV200-336 to12/24 converter/fan-pump driver/fuse/temperature monitoring; electrical compatibility and conversion heat unresolved"
+    },
+    {
+      "id": "hose_manifold_TIM_isolation_service_hardware",
+      "mass_range_kg": [
+        1.0,
+        2.0,
+        4.0
+      ],
+      "function": "new circuit fittings, sealed hose supports, TIM at each motor/compute/pack, nonmetallic isolation and service access; actual lengths not yet known",
+      "actual_full_space_and_TIM_Rth_unknown": true
+    },
+    {
+      "id": "oil_water_HX_retained_once",
+      "source_part_ids": [
+        "e2_dual_fluid_HX_material",
+        "e2_oil_HX_in_actual_hollow_port",
+        "e2_oil_HX_out_actual_hollow_port",
+        "e2_oil_HX_water_supply_actual_hollow_port",
+        "e2_oil_HX_water_return_actual_hollow_port"
+      ],
+      "full_xyz_m": [
+        0.204,
+        0.244,
+        0.15
+      ],
+      "native_material_mass_range_kg": [
+        10.84588762029066,
+        12.0509862447674,
+        14.461183493720878
+      ],
+      "port_mass_extra_source_scope_not_zero": true,
+      "oil_L": 0.8882669829787544,
+      "water_L": 0.9239038964162026,
+      "function": "own finite 16 alternating plate channels with nominal separating metal2.5mm; UA/pressure fatigue/isolation fault unknown",
+      "new_UA_or_installation_rating": false
+    }
+  ],
+  "S1_dry_package_excluding_existing_HX_fluids_and_old_plates_kg_low_mid_high": [
+    20.674999999999997,
+    28.175000000000004,
+    41.275000000000006
+  ],
+  "S1_same_scope_plus_existing_HX_native_material_kg": [
+    31.520887620290658,
+    40.225986244767405,
+    55.73618349372089
+  ],
+  "S1_source_reference_core_cavity_L": 2.08,
+  "S1_nominal_segment_hardware_sum_bbox_L": 54.960576,
+  "reference_curves_joint_points": {
+    "ES0707": {
+      "fluid": "EGW50/50 at71.1C, exact brand/concentration definition not supplied",
+      "whole_air_m3_min": [
+        6,
+        7
+      ],
+      "liquid_L_min": [
+        11.356,
+        18.927
+      ],
+      "H_W_K": [
+        75,
+        95
+      ],
+      "air_dp_Pa": [
+        65,
+        95
+      ],
+      "liquid_dp_Pa": [
+        23000,
+        42000
+      ],
+      "H_read_uncertainty_W_K": 6,
+      "dp_read_uncertainty_relative": 0.2
+    },
+    "ES0714": {
+      "fluid": "same EGW71.1C",
+      "whole_air_m3_min": [
+        10,
+        14
+      ],
+      "liquid_L_min": [
+        7.571,
+        11.356
+      ],
+      "H_right_axis_BTU_h_F": [
+        200,
+        313
+      ],
+      "H_W_K": [
+        105.5055852,
+        165.11624084
+      ],
+      "air_dp_Pa": [
+        35,
+        80
+      ],
+      "liquid_dp_Pa": [
+        12000,
+        30000
+      ],
+      "H_read_uncertainty_W_K": 8,
+      "right_axis_conversion_W_K": 0.527527926
+    }
+  },
+  "manual_graph_uncertainty_is_not_guaranteed_bound": true,
+  "ES0714_axis_conversion_check_350BTU_h_F_W_K": 184.6347741,
+  "pump150_manual_Q_L_min": [
+    0,
+    20,
+    40,
+    60,
+    80,
+    100,
+    120,
+    140,
+    160
+  ],
+  "pump150_manual_dp_Pa": [
+    51000,
+    47800,
+    43400,
+    38600,
+    32400,
+    25400,
+    17700,
+    9400,
+    0
+  ],
+  "pump_curve_read_uncertainty_Pa": 2000,
+  "pump_series_parallel_installation": [
+    {
+      "type": "two inseries low;sameQ sumhead",
+      "at59_reference_head_Pa": 77680.0,
+      "source_other_fluid_correction_unknown": true
+    },
+    {
+      "type": "two parallel low; eachQhalf, samehead",
+      "at59_reference_head_Pa": 45710.0,
+      "cannot_claim_double_head": true
+    }
+  ],
+  "pump_and_main_pipe_screens": [
+    {
+      "whole_Q_L_min": 45.424,
+      "each_parallel_core_Q_L_min": 11.356,
+      "main_ID_m": 0.018,
+      "main_length_m_own": 4,
+      "f_Darcy_own": 0.025,
+      "sumK_own": 4,
+      "main_dp_Pa": 44826.0300422709,
+      "single150_reference_dp_Pa": 42098.24,
+      "two_series150_reference_dp_Pa": 84196.48,
+      "core_reference_plus_branch_dp_unknown": true,
+      "source_fluid_temp_voltage_curve_condition_not_proven": true
+    },
+    {
+      "whole_Q_L_min": 45.424,
+      "each_parallel_core_Q_L_min": 11.356,
+      "main_ID_m": 0.025,
+      "main_length_m_own": 4,
+      "f_Darcy_own": 0.025,
+      "sumK_own": 4,
+      "main_dp_Pa": 10085.427430389724,
+      "single150_reference_dp_Pa": 42098.24,
+      "two_series150_reference_dp_Pa": 84196.48,
+      "core_reference_plus_branch_dp_unknown": true,
+      "source_fluid_temp_voltage_curve_condition_not_proven": true
+    },
+    {
+      "whole_Q_L_min": 45.424,
+      "each_parallel_core_Q_L_min": 11.356,
+      "main_ID_m": 0.032,
+      "main_length_m_own": 4,
+      "f_Darcy_own": 0.025,
+      "sumK_own": 4,
+      "main_dp_Pa": 3346.1800982023965,
+      "single150_reference_dp_Pa": 42098.24,
+      "two_series150_reference_dp_Pa": 84196.48,
+      "core_reference_plus_branch_dp_unknown": true,
+      "source_fluid_temp_voltage_curve_condition_not_proven": true
+    },
+    {
+      "whole_Q_L_min": 59,
+      "each_parallel_core_Q_L_min": 14.75,
+      "main_ID_m": 0.018,
+      "main_length_m_own": 4,
+      "f_Darcy_own": 0.025,
+      "sumK_own": 4,
+      "main_dp_Pa": 75624.68013854884,
+      "single150_reference_dp_Pa": 38840.0,
+      "two_series150_reference_dp_Pa": 77680.0,
+      "core_reference_plus_branch_dp_unknown": true,
+      "source_fluid_temp_voltage_curve_condition_not_proven": true
+    },
+    {
+      "whole_Q_L_min": 59,
+      "each_parallel_core_Q_L_min": 14.75,
+      "main_ID_m": 0.025,
+      "main_length_m_own": 4,
+      "f_Darcy_own": 0.025,
+      "sumK_own": 4,
+      "main_dp_Pa": 17014.828722609098,
+      "single150_reference_dp_Pa": 38840.0,
+      "two_series150_reference_dp_Pa": 77680.0,
+      "core_reference_plus_branch_dp_unknown": true,
+      "source_fluid_temp_voltage_curve_condition_not_proven": true
+    },
+    {
+      "whole_Q_L_min": 59,
+      "each_parallel_core_Q_L_min": 14.75,
+      "main_ID_m": 0.032,
+      "main_length_m_own": 4,
+      "f_Darcy_own": 0.025,
+      "sumK_own": 4,
+      "main_dp_Pa": 5645.242270482232,
+      "single150_reference_dp_Pa": 38840.0,
+      "two_series150_reference_dp_Pa": 77680.0,
+      "core_reference_plus_branch_dp_unknown": true,
+      "source_fluid_temp_voltage_curve_condition_not_proven": true
+    },
+    {
+      "whole_Q_L_min": 75.708,
+      "each_parallel_core_Q_L_min": 18.927,
+      "main_ID_m": 0.018,
+      "main_length_m_own": 4,
+      "f_Darcy_own": 0.025,
+      "sumK_own": 4,
+      "main_dp_Pa": 124521.13609299516,
+      "single150_reference_dp_Pa": 33730.520000000004,
+      "two_series150_reference_dp_Pa": 67461.04000000001,
+      "core_reference_plus_branch_dp_unknown": true,
+      "source_fluid_temp_voltage_curve_condition_not_proven": true
+    },
+    {
+      "whole_Q_L_min": 75.708,
+      "each_parallel_core_Q_L_min": 18.927,
+      "main_ID_m": 0.025,
+      "main_length_m_own": 4,
+      "f_Darcy_own": 0.025,
+      "sumK_own": 4,
+      "main_dp_Pa": 28016.062998024157,
+      "single150_reference_dp_Pa": 33730.520000000004,
+      "two_series150_reference_dp_Pa": 67461.04000000001,
+      "core_reference_plus_branch_dp_unknown": true,
+      "source_fluid_temp_voltage_curve_condition_not_proven": true
+    },
+    {
+      "whole_Q_L_min": 75.708,
+      "each_parallel_core_Q_L_min": 18.927,
+      "main_ID_m": 0.032,
+      "main_length_m_own": 4,
+      "f_Darcy_own": 0.025,
+      "sumK_own": 4,
+      "main_dp_Pa": 9295.272122180191,
+      "single150_reference_dp_Pa": 33730.520000000004,
+      "two_series150_reference_dp_Pa": 67461.04000000001,
+      "core_reference_plus_branch_dp_unknown": true,
+      "source_fluid_temp_voltage_curve_condition_not_proven": true
+    }
+  ],
+  "DOW_SR1_2002_50volEG_typical_properties": {
+    "35": {
+      "cp_J_kgK": 3341.6666666666665,
+      "rho_kg_m3": 1067.2116666666668,
+      "k_W_mK": 0.39015,
+      "mu_mPa_s": 2.7984333333333336
+    },
+    "40": {
+      "cp_J_kgK": 3361.0,
+      "rho_kg_m3": 1064.91,
+      "k_W_mK": 0.3937,
+      "mu_mPa_s": 2.2567
+    },
+    "50": {
+      "cp_J_kgK": 3399.4,
+      "rho_kg_m3": 1058.9660000000001,
+      "k_W_mK": 0.3987,
+      "mu_mPa_s": 1.87146
+    },
+    "65": {
+      "cp_J_kgK": 3457.0,
+      "rho_kg_m3": 1050.05,
+      "k_W_mK": 0.4062,
+      "mu_mPa_s": 1.2936
+    },
+    "71.1": {
+      "cp_J_kgK": 3480.668,
+      "rho_kg_m3": 1045.6824,
+      "k_W_mK": 0.4080788,
+      "mu_mPa_s": 1.1787004
+    }
+  },
+  "DOW_is_not_ES_test_fluid_or_body_selected_compound": true,
+  "cold_fluid_sensitivity": [
+    {
+      "T_C": 35,
+      "rho_cp_ratio": 0.9798312624064407,
+      "viscosity_ratio": 2.374168476852416,
+      "sameQ_laminar_dp_ratio": 2.374168476852416,
+      "sameQ_smooth_turbulent_dp_ratio_conditional": 1.26042195071246,
+      "Dittus_Boelter_fluid_h_ratio_conditional": 0.6314752126184281,
+      "actual_ES_Dh_Re_fin_resistance_regime_not_known": true,
+      "no_H_rating_correction_accepted": true
+    },
+    {
+      "T_C": 40,
+      "rho_cp_ratio": 0.9833746731120574,
+      "viscosity_ratio": 1.9145662460112847,
+      "sameQ_laminar_dp_ratio": 1.9145662460112847,
+      "sameQ_smooth_turbulent_dp_ratio_conditional": 1.192483640253151,
+      "Dittus_Boelter_fluid_h_ratio_conditional": 0.70767202367783,
+      "actual_ES_Dh_Re_fin_resistance_regime_not_known": true,
+      "no_H_rating_correction_accepted": true
+    },
+    {
+      "T_C": 50,
+      "rho_cp_ratio": 0.9890582905352935,
+      "viscosity_ratio": 1.5877317085834532,
+      "sameQ_laminar_dp_ratio": 1.5877317085834532,
+      "sameQ_smooth_turbulent_dp_ratio_conditional": 1.1331983751288257,
+      "Dittus_Boelter_fluid_h_ratio_conditional": 0.7831602887397682,
+      "actual_ES_Dh_Re_fin_resistance_regime_not_known": true,
+      "no_H_rating_correction_accepted": true
+    }
+  ],
+  "same_condition_new_aux_heat_energy": [
+    {
+      "id": "a_30min_deliberate_mission",
+      "aux_bus_kW_design_upper": 2.1475,
+      "phases": [
+        {
+          "phase": "motion",
+          "duty": 0.25,
+          "bus_kW": 20.578872549019607,
+          "DC_loss_kW": 0.419976990796318,
+          "cell_R_loss_kW_288_200": [
+            1.0632515480223468,
+            2.2047584099791377
+          ],
+          "liquid_low_kW_288_200": [
+            4.1746010878382735,
+            5.3161079497950645
+          ],
+          "liquid_hot_kW": 4.2225,
+          "fan_air_heat_low_hot_kW": [
+            0.86,
+            0.43
+          ],
+          "motor_RMS_temperature_or_brake_hold_duty_not_qualified": true
+        },
+        {
+          "phase": "manipulation",
+          "duty": 0.35,
+          "bus_kW": 11.425822440087146,
+          "DC_loss_kW": 0.23318004979769746,
+          "cell_R_loss_kW_288_200": [
+            0.3277689502776354,
+            0.6796616952957049
+          ],
+          "liquid_low_kW_288_200": [
+            2.3076047734958123,
+            2.6594975185138816
+          ],
+          "liquid_hot_kW": 2.180833333333333,
+          "fan_air_heat_low_hot_kW": [
+            0.86,
+            0.43
+          ],
+          "motor_RMS_temperature_or_brake_hold_duty_not_qualified": true
+        },
+        {
+          "phase": "hold",
+          "duty": 0.4,
+          "bus_kW": 3.6475,
+          "DC_loss_kW": 0.07443877551020428,
+          "cell_R_loss_kW_288_200": [
+            0.03340284589276235,
+            0.06926414124323199
+          ],
+          "liquid_low_kW_288_200": [
+            2.3678416214029663,
+            2.403702916753436
+          ],
+          "liquid_hot_kW": 0.0975,
+          "fan_air_heat_low_hot_kW": [
+            0.86,
+            0.43
+          ],
+          "motor_RMS_temperature_or_brake_hold_duty_not_qualified": true
+        }
+      ],
+      "average_low_kW_288_200": [
+        2.798448591244289,
+        3.221332285629999
+      ],
+      "peak_low_kW_288_200": [
+        4.1746010878382735,
+        5.3161079497950645
+      ],
+      "average_hot_kW": 1.8579166666666667,
+      "peak_hot_kW": 4.2225,
+      "nameplate_kWh_SOC75_288_200": [
+        7.475354616385082,
+        7.7572770793088885
+      ],
+      "sixfan_and_threepump_allowance_not_real_selected_working_point": true
+    },
+    {
+      "id": "b_60min_high_concurrency_mission",
+      "aux_bus_kW_design_upper": 2.1475,
+      "phases": [
+        {
+          "phase": "motion",
+          "duty": 0.4,
+          "bus_kW": 34.99357843137255,
+          "DC_loss_kW": 0.7141546618647467,
+          "cell_R_loss_kW_288_200": [
+            3.074465187736,
+            6.37521101328937
+          ],
+          "liquid_low_kW_288_200": [
+            7.994698280973297,
+            11.295444106526666
+          ],
+          "liquid_hot_kW": 6.8475,
+          "fan_air_heat_low_hot_kW": [
+            0.86,
+            0.43
+          ],
+          "motor_RMS_temperature_or_brake_hold_duty_not_qualified": true
+        },
+        {
+          "phase": "manipulation",
+          "duty": 0.4,
+          "bus_kW": 21.317107843137254,
+          "DC_loss_kW": 0.4350430172068833,
+          "cell_R_loss_kW_288_200": [
+            1.1409048684682928,
+            2.365780335255851
+          ],
+          "liquid_low_kW_288_200": [
+            4.355555728812432,
+            5.58043119559999
+          ],
+          "liquid_hot_kW": 4.0975,
+          "fan_air_heat_low_hot_kW": [
+            0.86,
+            0.43
+          ],
+          "motor_RMS_temperature_or_brake_hold_duty_not_qualified": true
+        },
+        {
+          "phase": "hold",
+          "duty": 0.2,
+          "bus_kW": 4.797499999999999,
+          "DC_loss_kW": 0.09790816326530649,
+          "cell_R_loss_kW_288_200": [
+            0.05778602692169317,
+            0.11982510542482294
+          ],
+          "liquid_low_kW_288_200": [
+            3.4156941901869993,
+            3.4777332686901294
+          ],
+          "liquid_hot_kW": 0.0975,
+          "fan_air_heat_low_hot_kW": [
+            0.86,
+            0.43
+          ],
+          "motor_RMS_temperature_or_brake_hold_duty_not_qualified": true
+        }
+      ],
+      "average_low_kW_288_200": [
+        5.623240441951691,
+        7.445896774588689
+      ],
+      "peak_low_kW_288_200": [
+        7.994698280973297,
+        11.295444106526666
+      ],
+      "average_hot_kW": 4.397500000000001,
+      "peak_hot_kW": 6.8475,
+      "nameplate_kWh_SOC75_288_200": [
+        34.21432058926892,
+        36.644529032784924
+      ],
+      "sixfan_and_threepump_allowance_not_real_selected_working_point": true
+    }
+  ],
+  "reference_H_coldfactor_temperature_screens": [
+    {
+      "domain": "a_30min_deliberate_mission",
+      "ambient_C": 25,
+      "low_air_total_m3_min": 24,
+      "whole_liquid_L_min": 59,
+      "low_reference_H_W_K": 300,
+      "own_Hfactor_sensitivity_not_certified": 1,
+      "glycol_props_source_T50_not_ES_selectedfluid": true,
+      "low_supply_C_conditional": 43.0013243420898,
+      "low_return_to_core_C": 44.5031127348061,
+      "EMRAX_source_inlet50C_screen": true,
+      "QTL20C_mount_screen": false
+    },
+    {
+      "domain": "a_30min_deliberate_mission",
+      "ambient_C": 25,
+      "low_air_total_m3_min": 24,
+      "whole_liquid_L_min": 59,
+      "low_reference_H_W_K": 380,
+      "own_Hfactor_sensitivity_not_certified": 1,
+      "glycol_props_source_T50_not_ES_selectedfluid": true,
+      "low_supply_C_conditional": 39.27072227205818,
+      "low_return_to_core_C": 40.77251066477448,
+      "EMRAX_source_inlet50C_screen": true,
+      "QTL20C_mount_screen": false
+    },
+    {
+      "domain": "a_30min_deliberate_mission",
+      "ambient_C": 25,
+      "low_air_total_m3_min": 24,
+      "whole_liquid_L_min": 59,
+      "low_reference_H_W_K": 300,
+      "own_Hfactor_sensitivity_not_certified": 0.8,
+      "glycol_props_source_T50_not_ES_selectedfluid": true,
+      "low_supply_C_conditional": 47.43141430025236,
+      "low_return_to_core_C": 48.933202692968656,
+      "EMRAX_source_inlet50C_screen": true,
+      "QTL20C_mount_screen": false
+    },
+    {
+      "domain": "a_30min_deliberate_mission",
+      "ambient_C": 25,
+      "low_air_total_m3_min": 24,
+      "whole_liquid_L_min": 59,
+      "low_reference_H_W_K": 380,
+      "own_Hfactor_sensitivity_not_certified": 0.8,
+      "glycol_props_source_T50_not_ES_selectedfluid": true,
+      "low_supply_C_conditional": 42.768161712712825,
+      "low_return_to_core_C": 44.269950105429125,
+      "EMRAX_source_inlet50C_screen": true,
+      "QTL20C_mount_screen": false
+    },
+    {
+      "domain": "a_30min_deliberate_mission",
+      "ambient_C": 25,
+      "low_air_total_m3_min": 24,
+      "whole_liquid_L_min": 59,
+      "low_reference_H_W_K": 300,
+      "own_Hfactor_sensitivity_not_certified": 0.65,
+      "glycol_props_source_T50_not_ES_selectedfluid": true,
+      "low_supply_C_conditional": 52.54305655967068,
+      "low_return_to_core_C": 54.04484495238698,
+      "EMRAX_source_inlet50C_screen": false,
+      "QTL20C_mount_screen": false
+    },
+    {
+      "domain": "a_30min_deliberate_mission",
+      "ambient_C": 25,
+      "low_air_total_m3_min": 24,
+      "whole_liquid_L_min": 59,
+      "low_reference_H_W_K": 380,
+      "own_Hfactor_sensitivity_not_certified": 0.65,
+      "glycol_props_source_T50_not_ES_selectedfluid": true,
+      "low_supply_C_conditional": 46.803668759622035,
+      "low_return_to_core_C": 48.305457152338334,
+      "EMRAX_source_inlet50C_screen": true,
+      "QTL20C_mount_screen": false
+    },
+    {
+      "domain": "a_30min_deliberate_mission",
+      "ambient_C": 35,
+      "low_air_total_m3_min": 24,
+      "whole_liquid_L_min": 59,
+      "low_reference_H_W_K": 300,
+      "own_Hfactor_sensitivity_not_certified": 1,
+      "glycol_props_source_T50_not_ES_selectedfluid": true,
+      "low_supply_C_conditional": 53.001324342089795,
+      "low_return_to_core_C": 54.503112734806095,
+      "EMRAX_source_inlet50C_screen": false,
+      "QTL20C_mount_screen": false
+    },
+    {
+      "domain": "a_30min_deliberate_mission",
+      "ambient_C": 35,
+      "low_air_total_m3_min": 24,
+      "whole_liquid_L_min": 59,
+      "low_reference_H_W_K": 380,
+      "own_Hfactor_sensitivity_not_certified": 1,
+      "glycol_props_source_T50_not_ES_selectedfluid": true,
+      "low_supply_C_conditional": 49.27072227205817,
+      "low_return_to_core_C": 50.77251066477447,
+      "EMRAX_source_inlet50C_screen": true,
+      "QTL20C_mount_screen": false
+    },
+    {
+      "domain": "a_30min_deliberate_mission",
+      "ambient_C": 35,
+      "low_air_total_m3_min": 24,
+      "whole_liquid_L_min": 59,
+      "low_reference_H_W_K": 300,
+      "own_Hfactor_sensitivity_not_certified": 0.8,
+      "glycol_props_source_T50_not_ES_selectedfluid": true,
+      "low_supply_C_conditional": 57.43141430025235,
+      "low_return_to_core_C": 58.93320269296865,
+      "EMRAX_source_inlet50C_screen": false,
+      "QTL20C_mount_screen": false
+    },
+    {
+      "domain": "a_30min_deliberate_mission",
+      "ambient_C": 35,
+      "low_air_total_m3_min": 24,
+      "whole_liquid_L_min": 59,
+      "low_reference_H_W_K": 380,
+      "own_Hfactor_sensitivity_not_certified": 0.8,
+      "glycol_props_source_T50_not_ES_selectedfluid": true,
+      "low_supply_C_conditional": 52.76816171271282,
+      "low_return_to_core_C": 54.26995010542912,
+      "EMRAX_source_inlet50C_screen": false,
+      "QTL20C_mount_screen": false
+    },
+    {
+      "domain": "a_30min_deliberate_mission",
+      "ambient_C": 35,
+      "low_air_total_m3_min": 24,
+      "whole_liquid_L_min": 59,
+      "low_reference_H_W_K": 300,
+      "own_Hfactor_sensitivity_not_certified": 0.65,
+      "glycol_props_source_T50_not_ES_selectedfluid": true,
+      "low_supply_C_conditional": 62.54305655967068,
+      "low_return_to_core_C": 64.04484495238698,
+      "EMRAX_source_inlet50C_screen": false,
+      "QTL20C_mount_screen": false
+    },
+    {
+      "domain": "a_30min_deliberate_mission",
+      "ambient_C": 35,
+      "low_air_total_m3_min": 24,
+      "whole_liquid_L_min": 59,
+      "low_reference_H_W_K": 380,
+      "own_Hfactor_sensitivity_not_certified": 0.65,
+      "glycol_props_source_T50_not_ES_selectedfluid": true,
+      "low_supply_C_conditional": 56.803668759622035,
+      "low_return_to_core_C": 58.305457152338334,
+      "EMRAX_source_inlet50C_screen": false,
+      "QTL20C_mount_screen": false
+    },
+    {
+      "domain": "b_60min_high_concurrency_mission",
+      "ambient_C": 25,
+      "low_air_total_m3_min": 24,
+      "whole_liquid_L_min": 59,
+      "low_reference_H_W_K": 300,
+      "own_Hfactor_sensitivity_not_certified": 1,
+      "glycol_props_source_T50_not_ES_selectedfluid": true,
+      "low_supply_C_conditional": 61.24329601331401,
+      "low_return_to_core_C": 64.43423325724477,
+      "EMRAX_source_inlet50C_screen": false,
+      "QTL20C_mount_screen": false
+    },
+    {
+      "domain": "b_60min_high_concurrency_mission",
+      "ambient_C": 25,
+      "low_air_total_m3_min": 24,
+      "whole_liquid_L_min": 59,
+      "low_reference_H_W_K": 380,
+      "own_Hfactor_sensitivity_not_certified": 1,
+      "glycol_props_source_T50_not_ES_selectedfluid": true,
+      "low_supply_C_conditional": 53.31666857013741,
+      "low_return_to_core_C": 56.50760581406817,
+      "EMRAX_source_inlet50C_screen": false,
+      "QTL20C_mount_screen": false
+    },
+    {
+      "domain": "b_60min_high_concurrency_mission",
+      "ambient_C": 25,
+      "low_air_total_m3_min": 24,
+      "whole_liquid_L_min": 59,
+      "low_reference_H_W_K": 300,
+      "own_Hfactor_sensitivity_not_certified": 0.8,
+      "glycol_props_source_T50_not_ES_selectedfluid": true,
+      "low_supply_C_conditional": 70.65616610208623,
+      "low_return_to_core_C": 73.847103346017,
+      "EMRAX_source_inlet50C_screen": false,
+      "QTL20C_mount_screen": false
+    },
+    {
+      "domain": "b_60min_high_concurrency_mission",
+      "ambient_C": 25,
+      "low_air_total_m3_min": 24,
+      "whole_liquid_L_min": 59,
+      "low_reference_H_W_K": 380,
+      "own_Hfactor_sensitivity_not_certified": 0.8,
+      "glycol_props_source_T50_not_ES_selectedfluid": true,
+      "low_supply_C_conditional": 60.74788179811547,
+      "low_return_to_core_C": 63.938819042046234,
+      "EMRAX_source_inlet50C_screen": false,
+      "QTL20C_mount_screen": false
+    },
+    {
+      "domain": "b_60min_high_concurrency_mission",
+      "ambient_C": 25,
+      "low_air_total_m3_min": 24,
+      "whole_liquid_L_min": 59,
+      "low_reference_H_W_K": 300,
+      "own_Hfactor_sensitivity_not_certified": 0.65,
+      "glycol_props_source_T50_not_ES_selectedfluid": true,
+      "low_supply_C_conditional": 81.51717005066956,
+      "low_return_to_core_C": 84.70810729460032,
+      "EMRAX_source_inlet50C_screen": false,
+      "QTL20C_mount_screen": false
+    },
+    {
+      "domain": "b_60min_high_concurrency_mission",
+      "ambient_C": 25,
+      "low_air_total_m3_min": 24,
+      "whole_liquid_L_min": 59,
+      "low_reference_H_W_K": 380,
+      "own_Hfactor_sensitivity_not_certified": 0.65,
+      "glycol_props_source_T50_not_ES_selectedfluid": true,
+      "low_supply_C_conditional": 69.32235859962863,
+      "low_return_to_core_C": 72.51329584355939,
+      "EMRAX_source_inlet50C_screen": false,
+      "QTL20C_mount_screen": false
+    },
+    {
+      "domain": "b_60min_high_concurrency_mission",
+      "ambient_C": 35,
+      "low_air_total_m3_min": 24,
+      "whole_liquid_L_min": 59,
+      "low_reference_H_W_K": 300,
+      "own_Hfactor_sensitivity_not_certified": 1,
+      "glycol_props_source_T50_not_ES_selectedfluid": true,
+      "low_supply_C_conditional": 71.24329601331401,
+      "low_return_to_core_C": 74.43423325724477,
+      "EMRAX_source_inlet50C_screen": false,
+      "QTL20C_mount_screen": false
+    },
+    {
+      "domain": "b_60min_high_concurrency_mission",
+      "ambient_C": 35,
+      "low_air_total_m3_min": 24,
+      "whole_liquid_L_min": 59,
+      "low_reference_H_W_K": 380,
+      "own_Hfactor_sensitivity_not_certified": 1,
+      "glycol_props_source_T50_not_ES_selectedfluid": true,
+      "low_supply_C_conditional": 63.31666857013741,
+      "low_return_to_core_C": 66.50760581406817,
+      "EMRAX_source_inlet50C_screen": false,
+      "QTL20C_mount_screen": false
+    },
+    {
+      "domain": "b_60min_high_concurrency_mission",
+      "ambient_C": 35,
+      "low_air_total_m3_min": 24,
+      "whole_liquid_L_min": 59,
+      "low_reference_H_W_K": 300,
+      "own_Hfactor_sensitivity_not_certified": 0.8,
+      "glycol_props_source_T50_not_ES_selectedfluid": true,
+      "low_supply_C_conditional": 80.65616610208623,
+      "low_return_to_core_C": 83.847103346017,
+      "EMRAX_source_inlet50C_screen": false,
+      "QTL20C_mount_screen": false
+    },
+    {
+      "domain": "b_60min_high_concurrency_mission",
+      "ambient_C": 35,
+      "low_air_total_m3_min": 24,
+      "whole_liquid_L_min": 59,
+      "low_reference_H_W_K": 380,
+      "own_Hfactor_sensitivity_not_certified": 0.8,
+      "glycol_props_source_T50_not_ES_selectedfluid": true,
+      "low_supply_C_conditional": 70.74788179811547,
+      "low_return_to_core_C": 73.93881904204623,
+      "EMRAX_source_inlet50C_screen": false,
+      "QTL20C_mount_screen": false
+    },
+    {
+      "domain": "b_60min_high_concurrency_mission",
+      "ambient_C": 35,
+      "low_air_total_m3_min": 24,
+      "whole_liquid_L_min": 59,
+      "low_reference_H_W_K": 300,
+      "own_Hfactor_sensitivity_not_certified": 0.65,
+      "glycol_props_source_T50_not_ES_selectedfluid": true,
+      "low_supply_C_conditional": 91.51717005066956,
+      "low_return_to_core_C": 94.70810729460032,
+      "EMRAX_source_inlet50C_screen": false,
+      "QTL20C_mount_screen": false
+    },
+    {
+      "domain": "b_60min_high_concurrency_mission",
+      "ambient_C": 35,
+      "low_air_total_m3_min": 24,
+      "whole_liquid_L_min": 59,
+      "low_reference_H_W_K": 380,
+      "own_Hfactor_sensitivity_not_certified": 0.65,
+      "glycol_props_source_T50_not_ES_selectedfluid": true,
+      "low_supply_C_conditional": 79.32235859962863,
+      "low_return_to_core_C": 82.51329584355939,
+      "EMRAX_source_inlet50C_screen": false,
+      "QTL20C_mount_screen": false
+    }
+  ],
+  "motor_thermal_derate_conditional": [
+    {
+      "motor": "QTL210-65",
+      "Tmount_C": 20,
+      "Pcoil_thermal_W": 689.655172413793,
+      "conditional_torque_Nm": 64.98375609121204,
+      "source_Tc_Nm_at20mount": 65,
+      "source_Pc_W": 690,
+      "source_Rth_K_W": 0.116,
+      "non_OEM_newrating": true,
+      "source_same_Rth_motorconstant_temperature_saturation_heatpartition_assumptions": true
+    },
+    {
+      "motor": "QTL210-65",
+      "Tmount_C": 35,
+      "Pcoil_thermal_W": 560.3448275862069,
+      "conditional_torque_Nm": 58.57556616477759,
+      "source_Tc_Nm_at20mount": 65,
+      "source_Pc_W": 690,
+      "source_Rth_K_W": 0.116,
+      "non_OEM_newrating": true,
+      "source_same_Rth_motorconstant_temperature_saturation_heatpartition_assumptions": true
+    },
+    {
+      "motor": "QTL210-65",
+      "Tmount_C": 40,
+      "Pcoil_thermal_W": 517.2413793103448,
+      "conditional_torque_Nm": 56.277583608321386,
+      "source_Tc_Nm_at20mount": 65,
+      "source_Pc_W": 690,
+      "source_Rth_K_W": 0.116,
+      "non_OEM_newrating": true,
+      "source_same_Rth_motorconstant_temperature_saturation_heatpartition_assumptions": true
+    },
+    {
+      "motor": "QTL210-65",
+      "Tmount_C": 50,
+      "Pcoil_thermal_W": 431.03448275862064,
+      "conditional_torque_Nm": 51.37417004026767,
+      "source_Tc_Nm_at20mount": 65,
+      "source_Pc_W": 690,
+      "source_Rth_K_W": 0.116,
+      "non_OEM_newrating": true,
+      "source_same_Rth_motorconstant_temperature_saturation_heatpartition_assumptions": true
+    },
+    {
+      "motor": "QTL210-65",
+      "Tmount_C": 60,
+      "Pcoil_thermal_W": 344.8275862068965,
+      "conditional_torque_Nm": 45.95045459906865,
+      "source_Tc_Nm_at20mount": 65,
+      "source_Pc_W": 690,
+      "source_Rth_K_W": 0.116,
+      "non_OEM_newrating": true,
+      "source_same_Rth_motorconstant_temperature_saturation_heatpartition_assumptions": true
+    },
+    {
+      "motor": "QTR-A160-34-Z",
+      "Tmount_C": 20,
+      "Pcoil_thermal_W": 470.5882352941176,
+      "conditional_torque_Nm": 15.646085772486357,
+      "source_Tc_Nm_at20mount": 15.3,
+      "source_Pc_W": 450,
+      "source_Rth_K_W": 0.17,
+      "non_OEM_newrating": true,
+      "source_same_Rth_motorconstant_temperature_saturation_heatpartition_assumptions": true
+    },
+    {
+      "motor": "QTR-A160-34-Z",
+      "Tmount_C": 35,
+      "Pcoil_thermal_W": 382.35294117647055,
+      "conditional_torque_Nm": 14.103191128251789,
+      "source_Tc_Nm_at20mount": 15.3,
+      "source_Pc_W": 450,
+      "source_Rth_K_W": 0.17,
+      "non_OEM_newrating": true,
+      "source_same_Rth_motorconstant_temperature_saturation_heatpartition_assumptions": true
+    },
+    {
+      "motor": "QTR-A160-34-Z",
+      "Tmount_C": 40,
+      "Pcoil_thermal_W": 352.94117647058823,
+      "conditional_torque_Nm": 13.549907748763458,
+      "source_Tc_Nm_at20mount": 15.3,
+      "source_Pc_W": 450,
+      "source_Rth_K_W": 0.17,
+      "non_OEM_newrating": true,
+      "source_same_Rth_motorconstant_temperature_saturation_heatpartition_assumptions": true
+    },
+    {
+      "motor": "QTR-A160-34-Z",
+      "Tmount_C": 50,
+      "Pcoil_thermal_W": 294.11764705882354,
+      "conditional_torque_Nm": 12.369316876852983,
+      "source_Tc_Nm_at20mount": 15.3,
+      "source_Pc_W": 450,
+      "source_Rth_K_W": 0.17,
+      "non_OEM_newrating": true,
+      "source_same_Rth_motorconstant_temperature_saturation_heatpartition_assumptions": true
+    },
+    {
+      "motor": "QTR-A160-34-Z",
+      "Tmount_C": 60,
+      "Pcoil_thermal_W": 235.2941176470588,
+      "conditional_torque_Nm": 11.063453348751464,
+      "source_Tc_Nm_at20mount": 15.3,
+      "source_Pc_W": 450,
+      "source_Rth_K_W": 0.17,
+      "non_OEM_newrating": true,
+      "source_same_Rth_motorconstant_temperature_saturation_heatpartition_assumptions": true
+    }
+  ],
+  "motor_TIM_conditional": [
+    {
+      "coolant_C": 50,
+      "own_mount_to_fluid_Rth_K_W": 0.005,
+      "coil_to_fluid_Rth_K_W": 0.12100000000000001,
+      "QTL_conditional_torque_Nm": 50.30152227210787,
+      "not_installed_TIM_or_coldplate_measurement": true
+    },
+    {
+      "coolant_C": 50,
+      "own_mount_to_fluid_Rth_K_W": 0.02,
+      "coil_to_fluid_Rth_K_W": 0.136,
+      "QTL_conditional_torque_Nm": 47.44651945099493,
+      "not_installed_TIM_or_coldplate_measurement": true
+    },
+    {
+      "coolant_C": 50,
+      "own_mount_to_fluid_Rth_K_W": 0.05,
+      "coil_to_fluid_Rth_K_W": 0.166,
+      "QTL_conditional_torque_Nm": 42.94570825085786,
+      "not_installed_TIM_or_coldplate_measurement": true
+    }
+  ],
+  "active_chiller_complete_entry": {
+    "study_entry_only_not_third_body_route": true,
+    "source": "Boyd2019 officialdatasheet page2/3 cached",
+    "RC009": {
+      "cooling_W_at_process20_ambient20": 1050,
+      "dry_kg": 45,
+      "full_WDH_m": [
+        0.318,
+        0.483,
+        0.559
+      ],
+      "reservoir_L": 4,
+      "process_C_range": [
+        5,
+        35
+      ],
+      "ambient_C_range": [
+        10,
+        35
+      ],
+      "source_230V50Hz_FLA_A": 5.3,
+      "apparent_power_VA": 1219,
+      "real_W_COP_at35ambient_unknown": true,
+      "complete_functions": [
+        "compressor",
+        "condenser",
+        "evaporator",
+        "expansion control",
+        "internal liquidpump",
+        "reservoir",
+        "filter",
+        "flow/pressure/temperature protection",
+        "controller"
+      ],
+      "QTL_source_Pc690_covered_motor_count_at20_only": 1,
+      "source_actual_robot_RMS_motor_count_unknown": true
+    },
+    "external_added_requirements": [
+      "HV to230Vac inverter/EMI/fuse",
+      "condenser inlet/exhaust duct",
+      "motion/splash mounting",
+      "motor coldplate/TIM \u0394T below20mount",
+      "source vented4L reservoir cannot be zero-duplicated with bodystock"
+    ],
+    "Qrejected_equation": "Qcondenser=Qload+Pcompressor+Paux; active heat cannot disappear",
+    "new_custom_compressor_shrink_or_COP_claim": false
+  },
+  "new_fluid_global_candidates": [
+    {
+      "id": "low",
+      "water_newline_proxy_L": 4.531414344223438,
+      "water_devices_source_candidate_L": 4.952407583058989,
+      "water_unknown_L": 0.6,
+      "water_total_cold_working_in_degas_L": 2.0,
+      "water_total_global_stock_L": 12.083821927282427,
+      "water_total_expansion_L_own": 0.12083821927282427,
+      "two_water_vessel_capacity_target_L": 3.7,
+      "aggregate_remaining_hot_air_L": 1.5791617807271758,
+      "separate_low_hot_expansion_split_unknown": true,
+      "oil_newline_proxy_L": 4.1895444828885635,
+      "oil_external_stock_L": 10.150758226850304,
+      "oil_tank_coldworking_L": 2.608353442300711,
+      "oil_global_stock_L": 12.759111669151014,
+      "oil_return_L_min": 45,
+      "oil_airrelease_s_own": 1,
+      "oil_rodswing_all18_conditional_L": 1.1083534423007109,
+      "oil_expansion_L_own": 0.2551822333830203,
+      "oil_tank_required_cap_L_own": 3.579419594604664,
+      "oil_hot_headspace_fraction_own": 0.2,
+      "allstock_counted_once_not_added_to_degas_again": true,
+      "newactual_lines_and_void_union_required": true,
+      "14_installed_plus4_missing_cylinders_unknown": true
+    },
+    {
+      "id": "middle",
+      "water_newline_proxy_L": 5.664267930279297,
+      "water_devices_source_candidate_L": 4.952407583058989,
+      "water_unknown_L": 1.7,
+      "water_total_cold_working_in_degas_L": 2.0,
+      "water_total_global_stock_L": 14.316675513338286,
+      "water_total_expansion_L_own": 0.35791688783345715,
+      "two_water_vessel_capacity_target_L": 3.7,
+      "aggregate_remaining_hot_air_L": 1.342083112166543,
+      "separate_low_hot_expansion_split_unknown": true,
+      "oil_newline_proxy_L": 5.236930603610705,
+      "oil_external_stock_L": 12.248144347572444,
+      "oil_tank_coldworking_L": 4.108353442300711,
+      "oil_global_stock_L": 16.356497789873153,
+      "oil_return_L_min": 52.5,
+      "oil_airrelease_s_own": 2,
+      "oil_rodswing_all18_conditional_L": 1.1083534423007109,
+      "oil_expansion_L_own": 0.6542599115949261,
+      "oil_tank_required_cap_L_own": 6.5691218674422585,
+      "oil_hot_headspace_fraction_own": 0.275,
+      "allstock_counted_once_not_added_to_degas_again": true,
+      "newactual_lines_and_void_union_required": true,
+      "14_installed_plus4_missing_cylinders_unknown": true
+    },
+    {
+      "id": "high",
+      "water_newline_proxy_L": 6.797121516335156,
+      "water_devices_source_candidate_L": 4.952407583058989,
+      "water_unknown_L": 3.8,
+      "water_total_cold_working_in_degas_L": 2.0,
+      "water_total_global_stock_L": 17.549529099394146,
+      "water_total_expansion_L_own": 0.7019811639757658,
+      "two_water_vessel_capacity_target_L": 3.7,
+      "aggregate_remaining_hot_air_L": 0.9980188360242344,
+      "separate_low_hot_expansion_split_unknown": true,
+      "oil_newline_proxy_L": 6.284316724332846,
+      "oil_external_stock_L": 15.045530468294585,
+      "oil_tank_coldworking_L": 6.608353442300711,
+      "oil_global_stock_L": 21.653883910595297,
+      "oil_return_L_min": 60,
+      "oil_airrelease_s_own": 3,
+      "oil_rodswing_all18_conditional_L": 1.1083534423007109,
+      "oil_expansion_L_own": 1.2992330346357177,
+      "oil_tank_required_cap_L_own": 12.165517656825275,
+      "oil_hot_headspace_fraction_own": 0.35,
+      "allstock_counted_once_not_added_to_degas_again": true,
+      "newactual_lines_and_void_union_required": true,
+      "14_installed_plus4_missing_cylinders_unknown": true
+    }
+  ],
+  "S2_custom_unqualified_targets": {
+    "segments": [
+      {
+        "id": "custom_low_segment_0",
+        "loop": "lowT",
+        "custom_actual_OEM_not_selected": true,
+        "core_xyz_m": [
+          0.05,
+          0.19,
+          0.25
+        ],
+        "core_mass_range_kg": [
+          1.8,
+          3.0,
+          5.0
+        ],
+        "core_mass_basis": "finite skin/header/fins design-range, not scaled ES/4320 rating",
+        "fan_count": 1,
+        "fan_body_xyz_m": [
+          0.051,
+          0.172,
+          0.172
+        ],
+        "fan_mass_range_kg": [
+          0.6,
+          1.0,
+          1.5
+        ],
+        "plenum_adapter_guards_bracket_full_depth_m": 0.069,
+        "hardware_outer_xyz_m": [
+          0.17,
+          0.22,
+          0.28
+        ],
+        "wholeair_m3_min_each_target": [
+          7,
+          10
+        ],
+        "liquid_L_min_each_target": [
+          12,
+          27
+        ],
+        "H_W_K_each_target": [
+          100,
+          150
+        ],
+        "UA_W_K_each_target": [
+          220,
+          450
+        ],
+        "fan_pressure_Pa_target": [
+          150,
+          500
+        ],
+        "core_liquid_dp_Pa_target": [
+          10000,
+          30000
+        ],
+        "all_target_not_verified_capacity": true,
+        "complete_service_xyz_m": [
+          0.05,
+          0.045,
+          0.05
+        ],
+        "core_port_bore_ID_m_design": [
+          0.014,
+          0.018
+        ],
+        "fin_area_density_and_UA_source_evidence_open": true
+      },
+      {
+        "id": "custom_low_segment_1",
+        "loop": "lowT",
+        "custom_actual_OEM_not_selected": true,
+        "core_xyz_m": [
+          0.05,
+          0.19,
+          0.25
+        ],
+        "core_mass_range_kg": [
+          1.8,
+          3.0,
+          5.0
+        ],
+        "core_mass_basis": "finite skin/header/fins design-range, not scaled ES/4320 rating",
+        "fan_count": 1,
+        "fan_body_xyz_m": [
+          0.051,
+          0.172,
+          0.172
+        ],
+        "fan_mass_range_kg": [
+          0.6,
+          1.0,
+          1.5
+        ],
+        "plenum_adapter_guards_bracket_full_depth_m": 0.069,
+        "hardware_outer_xyz_m": [
+          0.17,
+          0.22,
+          0.28
+        ],
+        "wholeair_m3_min_each_target": [
+          7,
+          10
+        ],
+        "liquid_L_min_each_target": [
+          12,
+          27
+        ],
+        "H_W_K_each_target": [
+          100,
+          150
+        ],
+        "UA_W_K_each_target": [
+          220,
+          450
+        ],
+        "fan_pressure_Pa_target": [
+          150,
+          500
+        ],
+        "core_liquid_dp_Pa_target": [
+          10000,
+          30000
+        ],
+        "all_target_not_verified_capacity": true,
+        "complete_service_xyz_m": [
+          0.05,
+          0.045,
+          0.05
+        ],
+        "core_port_bore_ID_m_design": [
+          0.014,
+          0.018
+        ],
+        "fin_area_density_and_UA_source_evidence_open": true
+      }
+    ],
+    "hot_segment": {
+      "id": "hot_es0714_complete_reference",
+      "loop": "hot_water",
+      "reference_model": "ES0714G23",
+      "stock_full_reference_xyz_m": [
+        0.08,
+        0.457,
+        0.212
+      ],
+      "core_mass_kg": 2.51,
+      "core_cavity_L": 0.508,
+      "fan_count": 2,
+      "fan_fullbody_xyz_m": [
+        0.051,
+        0.172,
+        0.172
+      ],
+      "fan_mass_range_kg_each": [
+        0.6,
+        1.0,
+        1.5
+      ],
+      "adapter_seal_guard_bracket_mass_range_kg": [
+        0.5,
+        1,
+        2
+      ],
+      "plenum_own_depth_m": 0.025,
+      "guard_adapter_own_depth_m": 0.02,
+      "hardware_full_xyz_m": [
+        0.176,
+        0.457,
+        0.212
+      ],
+      "connector_port_tool_keepout_add_m": [
+        0.03,
+        0.045,
+        0.03
+      ],
+      "reference_thermal_H_W_K_read_range": [
+        105,
+        165
+      ],
+      "thermal_point": {
+        "fluid": "50/50EGW71.1C",
+        "liquid_L_min_range": [
+          7.571,
+          11.356
+        ],
+        "whole_airflow_m3_min_range": [
+          10,
+          14
+        ],
+        "H_range_manual_read_uncertainty_W_K": 8,
+        "airdp_Pa_read_range": [
+          35,
+          80
+        ],
+        "liquiddp_Pa_read_range": [
+          12000,
+          30000
+        ]
+      },
+      "ES0714_right_axis_IS_BTU_per_hF_not_W_K": true,
+      "not_scaling4320_and_not_using350as350W_K": true,
+      "installed_thermal_or_pressure_or_outerarmor_admission": false
+    },
+    "auxiliaries": [
+      {
+        "id": "water_pump_low",
+        "full_stock_xyz_m": [
+          0.14,
+          0.17,
+          0.12
+        ],
+        "mass_range_kg": [
+          1.025,
+          1.4,
+          2.2
+        ],
+        "function": "one EWP80 reference full pump plus excluded mount/controller/reducers; curve/NPSHr open",
+        "source": "G14 EWP80 primary source; own complete mass additions counted separately"
+      },
+      {
+        "id": "water_pump_hot",
+        "full_stock_xyz_m": [
+          0.14,
+          0.17,
+          0.12
+        ],
+        "mass_range_kg": [
+          1.025,
+          1.4,
+          2.2
+        ],
+        "function": "independent hot-water loop pump; power cannot be held at .06kW without PQ point"
+      },
+      {
+        "id": "low_degas_reservoir",
+        "outer_xyz_m": [
+          0.12,
+          0.16,
+          0.14
+        ],
+        "liquid_working_L": 1.2,
+        "geometric_capacity_L_target": 2.2,
+        "mass_range_kg": [
+          0.7,
+          1.2,
+          2.0
+        ],
+        "function": "sealed degas vessel/headspace/cap/suction guard; pressure/NPSH/slosh unknown"
+      },
+      {
+        "id": "hot_degas_reservoir",
+        "outer_xyz_m": [
+          0.12,
+          0.14,
+          0.12
+        ],
+        "liquid_working_L": 0.8,
+        "geometric_capacity_L_target": 1.5,
+        "mass_range_kg": [
+          0.6,
+          1.0,
+          1.8
+        ],
+        "function": "separate independent water vessel; no water mixing with low loop"
+      },
+      {
+        "id": "two_filters_regulators",
+        "outer_xyz_m": [
+          0.1,
+          0.12,
+          0.08
+        ],
+        "count": 2,
+        "mass_range_kg_each": [
+          0.25,
+          0.5,
+          1.0
+        ],
+        "function": "filter/regulator/relief/bypass/flow pressure sensing, actualdp/micron and setpoint unknown"
+      },
+      {
+        "id": "two_pumpfan_controllers",
+        "outer_xyz_m": [
+          0.12,
+          0.1,
+          0.04
+        ],
+        "count": 2,
+        "mass_range_kg_each": [
+          0.2,
+          0.35,
+          0.7
+        ],
+        "function": "full LV converter/fuse/controller/thermalflow monitoring, inputbus200\u2013336 to12/24V unknown"
+      },
+      {
+        "id": "oil_water_HX_retained_once",
+        "outer_xyz_m": [
+          0.204,
+          0.244,
+          0.15
+        ],
+        "mass_range_kg": "existing source inventory to be queried not zero",
+        "oil_lumen_L": 0.8882669829787544,
+        "water_lumen_L": 0.9239038964162026,
+        "function": "existing real finite dual-fluid HX; UA/pressure/endpoints unknown, not new duplicate"
+      }
+    ],
+    "does_not_inherit_any_Boyd_reference_capacity_by_geometry": true,
+    "mass_OR_geometry_range_is_not_UA_proof": true
+  },
+  "S2_capacity_or_pressure_physical_admission": false,
+  "root_body_new_geometry_not_audited_here": true,
+  "red_unknowns": [
+    "Cold30\u201355C ES H/dp not supplied; historical EGW71.1C point and different DOW fluid are not same qualified coolant",
+    "Full fan six-reference curves at actual plenum/guard/core operating point, not zero-P airflow",
+    "Lowloop complete3-stage pump option not body-certified; 59flow/split/curvefluid/voltage/NPSHr and4mm shoulder ports remain red",
+    "QTL/QTR torque derate is conditional thermal model, not source manufacturer new continuous torque; TIM and winding duty still needed",
+    "Oil-waterHX UA/pressure and true oil/coolant inlet/outlet LMTD/isolation fault unknown",
+    "Global new water/oil route stock and reservoirs/baffles/return air release depend on real geometry",
+    "HistoricalES dimensions differ latertable: new exact mount/tolerance/sourceCAD unknown",
+    "Cell and compute max inlet/mount temperature and actual coldplate conductance unknown",
+    "RotatingI, bus200-336 LV compatibility, regen, full robot motion/strength/Bevy task not qualified"
+  ],
+  "accepted_thermal_pressure_NPSH_installed_outerappearance_or_whole_robot": false,
+  "formulas": [
+    "Href=Qheat/(Tliquid_in\u2212Tair_in); not UA",
+    "Cdot=Q_Lmin/60000*rho*cp; Tout=Tin\u2212Qheat/Cdot",
+    "airpreheat=Pfan_upstream/(rho_air*cp_air*Qair); downstream fraction is own0..1 condition",
+    "parallel liquid Q=sumbranch; eachbranch Dp same balanced; series pumps sameQ and add heads",
+    "Pfluid=Dp*Q; Pelec>=Pfluid/efficiency, manufacturermax current not actual curvepoint power",
+    "Pallowed=(Tcoil_limit\u2212Tmount)/Rth; Ttorque\u2248Tref sqrt(Pallowed/Pc) at same motor constant thermal conditions",
+    "Vline=pi*ID\u00b2/4*L; Vglobal=sumline+device+working; workingfill not added twice",
+    "Vtank_cap=(Vcoldworking+wholeloop_expansion)/(1\u2212hot_air_fraction); rodswing/return/suction/slosh already allocated in working",
+    "Ename=duration/SOCwindow*\u03a3duty*(Pbus/etaDC+I\u00b2Rpack); fans/pumps replace priorallowance once"
+  ]
+}

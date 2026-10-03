@@ -1,0 +1,63 @@
+from pathlib import Path
+import json,hashlib,math
+import numpy as np
+R=Path.cwd(); O=Path(__file__).resolve().parent; T=R/'.scratch/gorilla_internal_g16_compact_thermal_scope'; P=T/'compact_module_scope.json'
+def sha(p): return hashlib.sha256(p.read_bytes()).hexdigest()
+j=json.loads(P.read_bytes()); checks=[]
+def near(n,a,b): checks.append(dict(check=n,actual=a,independent=b,pass_=abs(a-b)<=1e-9*max(1,abs(b))))
+for k,v in j['source_hashes'].items():
+    p=R/k; checks.append(dict(check='bound_input:'+k,pass_=sha(p)==v))
+checks.append(dict(check='exact_current_producer',pass_=sha(T/'compute_complete_scope.py')==j['producer_sha256']))
+segments=j['S1_source_bound_segments']; near('source_full_core_lumen_L',sum(p['core_cavity_L'] for p in segments),j['S1_source_reference_core_cavity_L'])
+near('sum_separate_hardware_gross_L',sum(math.prod(p['hardware_full_xyz_m'])*1000 for p in segments),j['S1_nominal_segment_hardware_sum_bbox_L'])
+near('six_full_fans',sum(p['fan_count'] for p in segments),6)
+near('imperial_ES0714_axis_conversion',j['ES0714_axis_conversion_check_350BTU_h_F_W_K'],350*0.527527926)
+domains={q['id']:q for q in j['same_condition_new_aux_heat_energy']}
+for name,q in domains.items():
+    phases=q['phases']; near(name+':sum_duty',sum(p['duty'] for p in phases),1)
+    for x in range(2):
+        avg=sum(p['duty']*p['liquid_low_kW_288_200'][x] for p in phases)
+        near(name+':average_low_'+str(x),q['average_low_kW_288_200'][x],avg)
+        near(name+':peak_low_'+str(x),q['peak_low_kW_288_200'][x],max(p['liquid_low_kW_288_200'][x] for p in phases))
+        duration=.5 if name.startswith('a_') else 1
+        energy=duration/.75*sum(p['duty']*(p['bus_kW']/.98+p['cell_R_loss_kW_288_200'][x]) for p in phases)
+        near(name+':conditional_energy_'+str(x),q['nameplate_kWh_SOC75_288_200'][x],energy)
+    near(name+':average_hot',q['average_hot_kW'],sum(p['duty']*p['liquid_hot_kW'] for p in phases))
+    near(name+':peak_hot',q['peak_hot_kW'],max(p['liquid_hot_kW'] for p in phases))
+    near(name+':six_fan_three_pump_aux',q['aux_bus_kW_design_upper'],6*.215+2*.130+.0975+.100+.250+.100+.050)
+for p in j['pump_series_parallel_installation']:
+    q=59 if 'inseries' in p['type'] else 59/2
+    head=float(np.interp(q,j['pump150_manual_Q_L_min'],j['pump150_manual_dp_Pa']))*(2 if 'inseries' in p['type'] else 1)
+    near('series_parallel:'+p['type'],p['at59_reference_head_Pa'],head)
+fluid=j['DOW_SR1_2002_50volEG_typical_properties']['50']
+for i,p in enumerate(j['reference_H_coldfactor_temperature_screens']):
+    q=max(domains[p['domain']]['peak_low_kW_288_200'])*1000
+    air_capacity=p['low_air_total_m3_min']/60*1.2*1005
+    preheat=4*.215*1000/air_capacity
+    heatcapacity=p['whole_liquid_L_min']/60000*fluid['rho_kg_m3']*fluid['cp_J_kgK']
+    ret=p['ambient_C']+preheat+q/(p['low_reference_H_W_K']*p['own_Hfactor_sensitivity_not_certified'])
+    near('low_return_'+str(i),p['low_return_to_core_C'],ret)
+    near('low_supply_'+str(i),p['low_supply_C_conditional'],ret-q/heatcapacity)
+for i,p in enumerate(j['motor_thermal_derate_conditional']):
+    power=min(p['source_Pc_W'],(100-p['Tmount_C'])/p['source_Rth_K_W'])
+    near('coil_heat_'+str(i),p['Pcoil_thermal_W'],power)
+    near('conditional_torque_'+str(i),p['conditional_torque_Nm'],p['source_Tc_Nm_at20mount']*math.sqrt(power/p['source_Pc_W']))
+for i,p in enumerate(j['motor_TIM_conditional']):
+    allowed=min(690,(100-p['coolant_C'])/(.116+p['own_mount_to_fluid_Rth_K_W']))
+    near('TIM_coil_to_fluid_'+str(i),p['coil_to_fluid_Rth_K_W'],.116+p['own_mount_to_fluid_Rth_K_W'])
+    near('TIM_torque_'+str(i),p['QTL_conditional_torque_Nm'],65*math.sqrt(allowed/690))
+for i,p in enumerate(j['new_fluid_global_candidates']):
+    near('water_once_'+str(i),p['water_total_global_stock_L'],p['water_newline_proxy_L']+p['water_devices_source_candidate_L']+p['water_unknown_L']+p['water_total_cold_working_in_degas_L'])
+    near('oil_once_'+str(i),p['oil_global_stock_L'],p['oil_external_stock_L']+p['oil_tank_coldworking_L'])
+    near('water_air_'+str(i),p['aggregate_remaining_hot_air_L'],p['two_water_vessel_capacity_target_L']-p['water_total_cold_working_in_degas_L']-p['water_total_expansion_L_own'])
+    near('oil_cap_'+str(i),p['oil_tank_required_cap_L_own'],(p['oil_tank_coldworking_L']+p['oil_expansion_L_own'])/(1-p['oil_hot_headspace_fraction_own']))
+out=dict(source_sha256=sha(P),producer_sha256=j['producer_sha256'],checks=checks,check_count=len(checks),all_scalar_identity_checks_pass=all(p['pass_'] for p in checks),
+         actual_G16_body_does_not_include_series_EWP150_pair=True,
+         historical_high_temperature_ES_curve_not_installed_cold_glycol_rating=True,
+         derating_is_a_conditional_design_relation_not_OEM_new_rating=True,
+         nominal_480_cell_energy_floor_kWh=480*15.5/1000,
+         A_30min_conditional_nameplate_requirement_kWh=domains['a_30min_deliberate_mission']['nameplate_kWh_SOC75_288_200'],
+         fluid_candidates_are_old_line_length_sensitivities_not_new_route_measurements=True,
+         thermal_pressure_NPSH_energy_lifetime_or_whole_robot_accepted=False)
+(O/'independent_thermal_scope.json').write_text(json.dumps(out,indent=2,allow_nan=False)+'\n')
+print(json.dumps(dict(check_count=len(checks),failed=[p for p in checks if not p['pass_']],source_sha256=sha(P))))

@@ -1,0 +1,88 @@
+from pathlib import Path
+import json, gzip, hashlib
+import numpy as np, trimesh, manifold3d as mf
+from OCP.BRep import BRep_Builder
+from OCP.TopoDS import TopoDS_Shape
+from OCP.BRepTools import BRepTools
+from OCP.BRepGProp import BRepGProp
+from OCP.GProp import GProp_GProps
+from OCP.BRepCheck import BRepCheck_Analyzer
+from OCP.TopExp import TopExp_Explorer
+from OCP.TopAbs import TopAbs_SOLID
+from OCP.STEPControl import STEPControl_Reader
+
+R=Path.cwd(); O=Path(__file__).resolve().parent
+D=R/'.scratch/gorilla_internal_g16_body_domain_partition'
+def sha(p): return hashlib.sha256(p.read_bytes()).hexdigest()
+def read(p): return json.loads(gzip.decompress(p.read_bytes()) if p.suffix=='.gz' else p.read_bytes())
+def props(shape, scale=1):
+    p=GProp_GProps(); BRepGProp.VolumeProperties_s(shape,p)
+    c=p.CentreOfMass(); I=p.MatrixOfInertia()
+    return dict(valid=bool(BRepCheck_Analyzer(shape).IsValid()),volume_m3=p.Mass()*scale**3,
+                COM_world_m=np.array([c.X(),c.Y(),c.Z()])*scale,
+                I_density_one_at_COM=np.array([[I.Value(i,j) for j in range(1,4)] for i in range(1,4)])*scale**5)
+checks=[]; receipts=[]
+def ck(name, condition, details=None): checks.append(dict(check=name,pass_=bool(condition),details=details))
+for macro in ['a','b']:
+    d=D/macro
+    if not (d/'scene.json.gz').exists(): continue
+    s=read(d/'scene.json.gz'); by={p['name']:p for p in s['parts']}; src=read(Path(s['sources']['G15_finalB']['path'])); old={p['name']:p for p in src['parts']}
+    ck(macro+':unique_native_ids',len(by)==len(s['parts']))
+    ck(macro+':saved_exact_producer',sha(d/'build_partition.py')==s['producer_sha256'])
+    for n,v in s['sources'].items(): ck(macro+':source_'+n,sha(Path(v['path']))==v['sha256'])
+    ck(macro+':111_original_armor_fields',len(s['original_visible_armor_ids'])==111 and all(by[n]==old[n] for n in s['original_visible_armor_ids']))
+    for q in s['complete_partition_slots']:
+        ck(macro+':full_member_'+q['id'],all(n in by for n in q['member_ids']))
+        if 'cell_ids' in q: ck(macro+':120_cells_'+q['id'],len(q['cell_ids'])==120)
+        if '_directional' in q['id']: ck(macro+':21piece_valve_'+q['id'],len(q['member_ids'])==21)
+    f=by['g16_native_cage_CAD_parameter_mapping']; v=np.array(f['vertices_world_m']); t=np.array([[q[0],q[k],q[k+1]] for q in f['faces'] for k in range(1,len(q)-1)],dtype=np.uint64)
+    m=trimesh.Trimesh(v,t,process=False); p=m.mass_properties; rho=f['density_kg_m3']; kernel=mf.Manifold(mf.Mesh64(v,t))
+    ck(macro+':signed_native_resource_valid',kernel.status()==mf.Error.NoError and m.is_watertight and p.volume>0)
+    nativeI=p.inertia*rho
+    shape=TopoDS_Shape(); BRepTools.Read_s(shape,str(d/'load_cage_primary.brep'),BRep_Builder()); cad=props(shape)
+    ex=TopExp_Explorer(shape,TopAbs_SOLID); count=0
+    while ex.More(): count+=1; ex.Next()
+    ck(macro+':CAD_primary_valid_one_solid',cad['valid'] and count==1)
+    reader=STEPControl_Reader(); reader.ReadFile(str(d/'load_cage_si.step')); reader.TransferRoots(); step=props(reader.OneShape(),.001)
+    ck(macro+':STEP_SI_readback_volume',abs(step['volume_m3']-cad['volume_m3'])<1e-12)
+    ck(macro+':STEP_SI_readback_COM',np.max(np.abs(step['COM_world_m']-cad['COM_world_m']))<1e-10)
+    ck(macro+':STEP_SI_readback_full_tensor',np.max(np.abs(step['I_density_one_at_COM']-cad['I_density_one_at_COM']))<1e-10)
+    ck(macro+':declared_density_conditional_mass',abs(p.volume*rho-read(d/'frame_CAD_native_mapping.json')['native_mass_density7850'])<1e-8)
+    ck(macro+':tensor_positive_definite',np.min(np.linalg.eigvalsh(nativeI))>0)
+    author=read(d/'frame_geometry_mass_COM_I.json') if (d/'frame_geometry_mass_COM_I.json').exists() else None
+    if author:
+        ck(macro+':independent_native_COM',np.max(np.abs(p.center_mass-np.array(author['COM_world_m'])))<1e-10)
+        ck(macro+':independent_native_fullI',np.max(np.abs(nativeI-np.array(author['fullI_COM_kgm2'])))<1e-8)
+    annular_maxradius=max(q.get('OD',0)/2 for q in read(d/'frame_CAD_native_mapping.json')['allparams'])
+    local_members=[]
+    for n in [f['name'],'g13_left_fixed_reaction_closed_anchor','g13_right_fixed_reaction_closed_anchor']:
+        z=by[n]; vz=np.asarray(z['vertices_world_m']); tz=np.asarray([[q[0],q[k],q[k+1]] for q in z['faces'] for k in range(1,len(q)-1)],np.uint64)
+        zp=trimesh.Trimesh(vz,tz,process=False).mass_properties; zr=z['density_kg_m3']; zm=zp.volume*zr
+        local_members.append(dict(id=n,native_volume_m3=zp.volume,uniform_density_kg_m3=zr,native_mass_kg=zm,
+            declared_source_mass_range_kg=z.get('mass_range_kg'),native_COM_world_m=zp.center_mass.tolist(),native_I_at_COM_kgm2=(zp.inertia*zr).tolist()))
+    total=sum(z['native_mass_kg'] for z in local_members)
+    cc=sum(z['native_mass_kg']*np.asarray(z['native_COM_world_m']) for z in local_members)/total
+    II=np.zeros((3,3))
+    for z in local_members:
+        delta=np.asarray(z['native_COM_world_m'])-cc
+        II+=np.asarray(z['native_I_at_COM_kgm2'])+z['native_mass_kg']*(np.eye(3)*(delta@delta)-np.outer(delta,delta))
+    receipts.append(dict(macro=macro,scene_sha256=sha(d/'scene.json.gz'),producer_sha256=sha(d/'build_partition.py'),
+      source_actual_mesh_unrepaired=True,primary_CAD_sha256=sha(d/'load_cage_primary.brep'),STEP_sha256=sha(d/'load_cage_si.step'),
+      CAD_valid=cad['valid'],CAD_solid_count=count,CAD_volume_m3=cad['volume_m3'],native_volume_m3=p.volume,
+      analytic_vs_native_volume_relative=(p.volume-cad['volume_m3'])/cad['volume_m3'],
+      analytic_cylinder_to_64facet_max_chord_error_m=annular_maxradius*(1-np.cos(np.pi/64)),
+      uniform_density_hypothesis_kg_m3=rho,native_mass_kg=p.volume*rho,CAD_mass_kg=cad['volume_m3']*rho,
+      native_COM_world_m=p.center_mass.tolist(),CAD_COM_world_m=cad['COM_world_m'].tolist(),
+      native_fullI_at_COM_kgm2=nativeI.tolist(),CAD_fullI_at_COM_kgm2=(cad['I_density_one_at_COM']*rho).tolist(),
+      principal_native_I_kgm2=np.linalg.eigvalsh(nativeI).tolist(),STEP_millimetre_runtime_to_metre_conversion=.001,
+      current_separate_frame_and_anchors_conditional_native_members=local_members,
+      separate_members_additive_native_mass_kg=total,separate_members_COM_world_m=cc.tolist(),
+      separate_members_full_I_at_COM_kgm2=II.tolist(),
+      combined_tensor_only_nominal_geometry_bookkeeping_not_a_rigidly_connected_assembly=True,
+      anchor_declared_CAD_metadata_mass_not_equal_to_native_polygon_mass=True,
+      P45B_new_reference_rows_only_max70g_does_not_establish_low_nominal_mass=True,
+      no_assembly_connection_strength_thermal_or_whole_robot_acceptance=True))
+out=dict(checks=checks,all_review_checks_pass=all(q['pass_'] for q in checks),check_count=len(checks),receipts=receipts,
+         preserved_armor_is_source_identity_not_assembled_appearance=True,physical_acceptance=False)
+(O/'independent_native_cad.json').write_text(json.dumps(out,indent=2,allow_nan=False)+'\n')
+print(json.dumps(dict(check_count=len(checks),failed=[q for q in checks if not q['pass_']],macros=[q['macro'] for q in receipts])))

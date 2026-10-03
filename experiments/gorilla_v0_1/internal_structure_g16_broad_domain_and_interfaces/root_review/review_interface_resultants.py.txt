@@ -1,0 +1,22 @@
+from pathlib import Path
+import json,gzip,hashlib
+import numpy as np
+R=Path.cwd(); O=Path(__file__).resolve().parent; D=R/'.scratch/gorilla_internal_g16_load_interface_domain'
+read=lambda p:json.loads(gzip.decompress(p.read_bytes()) if p.suffix=='.gz' else p.read_bytes())
+sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+old=R/'.scratch/gorilla_internal_g15_thorax_functional_colayout/b/scene.json.gz'; scene=read(old); pm={p['name']:p for p in scene['parts']}
+j=read(D/'force_interface_basis.json'); frame=pm['g15_chest_shoulder_waist_net_cage']; coords=np.asarray(frame['vertices_world_m']); checks=[]
+for level in j['macro1_known_subset_gravity_equivalent_tractions']:
+    for name,q in level['native_patch_loads'].items():
+        xyz=coords[np.asarray(q['source_native_vertex_ids'])]; f=np.asarray(q['source_native_node_forces_N']); origin=np.asarray(q['native_patch_centroid_world_m']); w=np.r_[f.sum(0),np.cross(xyz-origin,f).sum(0)]
+        expected=np.asarray(q['requested_Fxyz_Mxyz_about_origin']); err=float(np.max(np.abs(w-expected)))
+        checks.append(dict(check=level['level']+':'+name,moment_origin_world_m=origin.tolist(),integrated_from_actual_native_nodes_N_Nm=w.tolist(),requested_source_wrench_N_Nm=expected.tolist(),max_error_N_Nm=err,pass_=err<1e-7))
+support=read(D/'support_reaction_partition.json')
+for p in support['partitions']:
+    A=np.asarray(p['sum6D_transport_matrix']); rank=int(np.linalg.matrix_rank(A)); checks.append(dict(check=p['side']+':reaction_sum_rank',rank=rank,unknown_dimension=A.shape[1]-rank,pass_=rank==p['rank']==6,not_a_unique_pressure_or_preload_distribution=True))
+new=read(R/'.scratch/gorilla_internal_g16_body_domain_partition/a/scene.json.gz'); nf=next(p for p in new['parts'] if p['name']=='g16_native_cage_CAD_parameter_mapping'); v=np.asarray(nf['vertices_world_m']); points=v[np.abs(v[:,0]-.115)<1e-12]
+n=np.asarray([1,0,0]); B=np.vstack([np.tile(n,(len(points),1)).T,np.cross(points,n).T]); rank=int(np.linalg.matrix_rank(B))
+checks.append(dict(check='new_A_actual_X_mating_plane_normal_only_rank',rank=rank,point_count=len(points),Fz_row_abs_max=float(np.max(np.abs(B[2]))),pass_=bool(rank==3 and np.all(B[2]==0)),actual_bolt_or_friction_preload_not_established=True))
+out=dict(old_actual_source_sha256=sha(old),force_basis_sha256=sha(D/'force_interface_basis.json'),interface_contract_sha256=sha(D/'interface_contract.json'),checks=checks,all_bounded_checks_pass=all(q['pass_'] for q in checks),check_count=len(checks),old_source_loads_not_inherited_by_new_G16_or_G17_body=True,first_root_world_zero_vs_patch_origin_miscomparison_preserved_and_corrected=True,traction_and_normal_rank_are_math_not_actual_contact_capacity=True,physical_accepted=False)
+(O/'independent_interface_resultants.json').write_text(json.dumps(out,indent=2,allow_nan=False)+'\n')
+print(json.dumps(dict(check_count=len(checks),failed=[q for q in checks if not q['pass_']])) )
