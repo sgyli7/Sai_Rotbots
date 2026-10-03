@@ -1,0 +1,154 @@
+from pathlib import Path
+import json,math,hashlib
+import numpy as np
+import trimesh
+import manifold3d as mf
+
+ROOT=Path('/home/ethan/Projects/Sai_Rotbots');OUT=Path(__file__).resolve().parent
+G1=ROOT/'.scratch/gorilla_internal_g1_hand_allocation/build_hand_allocation.py'
+ns={'__file__':str(G1)};exec(G1.read_text().split('\ndef main():')[0],ns)
+base=ns['base'];old=ns['old'];features=[f for f in ns['features'] if f['id'].startswith('left_')]
+sha=ns['sha'];box=ns['box'];cyl=ns['cyl'];tube=ns['tube'];segment=ns['segment'];mani=ns['mani'];from_m=ns['from_m'];native=ns['native']
+def mani(mesh):
+ return mf.Manifold(mf.Mesh64(np.array(mesh.vertices,dtype=np.float64,copy=True,order='C'),np.array(mesh.faces,dtype=np.uint64,copy=True,order='C')))
+ns['mani']=mani
+SRC=ns['source_motor'];CSG_DOC=ROOT/'.scratch/gorilla_internal_g1_oem_installation/csg_csf_gear_units.pdf'
+PDF32=ROOT/'.scratch/gorilla_internal_d_root_sources/csg32.pdf'
+
+def build(layout):
+ parts=[];rows=[];routes=[];keepouts=[];joints=[];frames=[]
+ def add(name,body,cat,m,mr=None,rho=None,source='own geometry/functional installation scope',assumption='',**extra):
+  if rho is not None:nom=float(m.volume*rho);mr=[.9*nom,nom,1.25*nom]
+  if mr is None:raise ValueError(name+' missing mass')
+  p=dict(name=name,body=body,role='actual_material' if rho else 'component_module_envelope',vertices_world_m=np.asarray(m.vertices).tolist(),faces=np.asarray(m.faces).tolist(),rgba=[.29,.37,.40,1] if rho else [.57,.41,.27,1],module_id=name)
+  r=dict(id=name,part_name=name,body=body,category=cat,mass_range_kg=mr,material_density_kg_m3=rho,material_volume_m3=float(m.volume) if rho else None,source=source,assumption=assumption,geometry_scope='finite material' if rho else 'functional outer envelope; OEM mass counted once',physics_unknown=['mount/thermal/strength and complete SI mass split'],**extra)
+  parts.append(p);rows.append(r);return p
+ def hollow(c,d,w):return from_m(mani(box(c,d))-mani(box(c,np.asarray(d)-2*w)))
+ def bored_ring(c,ro,ri,L,a,boltN=0,pcd=0,holeR=0):
+  m=mani(tube(c,ro,ri,L,a));a=np.asarray(a);a/=np.linalg.norm(a);u=np.cross(a,[0,0,1])
+  if np.linalg.norm(u)<.1:u=np.cross(a,[0,1,0])
+  u/=np.linalg.norm(u);v=np.cross(a,u)
+  for i in range(boltN):q=np.asarray(c)+(math.cos(2*math.pi*i/boltN)*u+math.sin(2*math.pi*i/boltN)*v)*pcd/2;m=m-mani(cyl(q,holeR,L+.01,a))
+  return from_m(m)
+ def joint(key,c,a,parent,child,inputsign):
+  c=np.asarray(c);a=np.asarray(a,dtype=float);a/=np.linalg.norm(a);B=c+inputsign*a*.031;A=c-inputsign*a*.031
+  mc=B+inputsign*a*(.008+.0345/2)
+  jointid='g2_'+key
+  add(jointid+'_gear',parent,'gear',cyl(c,.069,.062,a),[3.2]*3,source='Harmonic Drive CSG-32-100-2UH drawing and catalogue p11/33',assumption='Complete outer installation envelope; integrated output bearing included. L10 178Nm is gear condition, not joint qualification.',ratio=100,gear_L10_Nm=178,source_bearing_C_N=15000,source_bearing_C0_N=25000,source_bearing_Mc_Nm=313,source_bearing_dp_m=.080,source_bearing_R_m=.013)
+  # Source rotor bore is a geometric inner envelope, not inferred stator material.
+  mm=SRC['thumb'];add(jointid+'_motor',parent,'motor',tube(mc,.0525,.028,.0345,a),[.964]*3,source='Tecnotion QTR-A-105-34-Z brochure pp16–17',assumption='Bare frameless source envelope; hollow rotor ID56mm. Rotor/input allocation remains unqualified.',motor_source=mm,known_rotor_mass_kg=.218,known_stator_mass_kg=.746,known_rotor_Jr_kg_m2=.00022)
+  add(jointid+'_cooling_case',parent,'cooling',tube(mc,.0595,.0535,.0445,a),rho=2700,assumption='Finite aluminium water-jacket reserve, channels/seals and mount20C unverified')
+  add(jointid+'_input_hub',parent,'transmission',tube(B+inputsign*a*.006,.027,.010,.020,a),rho=7850,assumption='Finite custom rotor-to20H7 input hub; actual shaft fit/Oldham alignment and input torque connection unknown')
+  fixed=B+inputsign*a*.006;output=A-inputsign*a*.006
+  add(jointid+'_fixed_mount',parent,'support',bored_ring(fixed,.079,.046,.012,a,12,.125,.0033),rho=2700,assumption='12 finite M6-clearance holes at OEM casePCD125; fixed faceB, not added output bearing')
+  add(jointid+'_output_flange',child,'support',bored_ring(output,.059,.013,.012,a,8,.055,.0055),rho=7850,assumption='8 finite M10-clearance holes at OEM outputPCD55; output faceA; flange yield/bolt load and register fit unknown')
+  bc=mc+inputsign*a*(.0345/2+.021)
+  add(jointid+'_brake',parent,'brake',tube(bc,.029,.012,.028,a),[.3,.5,.9],assumption='Complete normally closed brake+hub envelope, required motor-side holding not rated')
+  add(jointid+'_input_support_encoder',parent,'support_sensor',tube(bc+inputsign*a*.022,.025,.012,.016,a),[.1,.18,.32],assumption='Input radial/axial bearing and encoder complete reserve; source integral OUTPUT support is not duplicated')
+  add(jointid+'_controller',parent,'controller',box(mc+[-.060,0,.048],[.045,.025,.065]),[.25,.42,.7],assumption='48V source point calibrates no universal bus; inverter/current/regeneration/cooling unknown')
+  add(jointid+'_connectors_fasteners',parent,'service',box(mc+[.065,0,0],[.025,.032,.05]),[.10,.18,.30],assumption='Nonzero motor/encoder/power/coolant fittings and mount bolts')
+  joints.append(dict(id='left_'+key,parent=parent,child=child,pivot_world_m=c.tolist(),axis_world=a.tolist(),fixed_B_face_world_m=B.tolist(),output_A_face_world_m=A.tolist(),input_face_B_sign=inputsign,source_interface_identity='standard2UH inner race/FS outputA; case/CS fixedB; centralWGinput; catalogp5/6/33/36/37',gear_L10_Nm=178,transmission='rotor -> finite custom hub -> WG -> FS/integral outputbearing -> finite outputflange -> child carrier',force_path='child finite frame -> outputflange/bolts -> integral bearing -> CS case -> fixed mount/parent frame',qualified=False))
+  return A-inputsign*a*.012,B+inputsign*a*.012
+ # Two macro layouts only; no per-hit shrinking. Neutral armor is unmodified.
+ if layout=='a':
+  roll=[-.235,.812,1.706];pitch=[-.153,.801,1.232];yaw=[-.020,.815,1.100]
+  motorloc=[[-.305,.763,1.603],[-.200,.763,1.603],[-.095,.763,1.603],[-.150,.885,1.600],[-.275,.872,1.603]]
+ else:
+  roll=[-.245,.817,1.697];pitch=[-.160,.842,1.252];yaw=[-.040,.795,1.087]
+  motorloc=[[-.285,.737,1.615],[-.185,.737,1.615],[-.085,.737,1.615],[-.190,.864,1.615],[-.300,.858,1.615]]
+ outroll,fixroll=joint('forearm_roll',roll,[0,0,1],'left_proximal_forearm','left_distal_forearm',1)
+ outpitch,fixpitch=joint('wrist_pitch',pitch,[0,1,0],'left_distal_forearm','left_wrist_pitch_carrier',1 if layout=='a' else -1)
+ outyaw,fixyaw=joint('wrist_yaw',yaw,[0,0,1],'left_wrist_pitch_carrier','left_palm',-1)
+ # Real downstream physical load frame: two finite open rails and motor mount yokes.
+ # Its neutral connection graph is checked later; no string-only body adoption.
+ railtop=float(outroll[2]);railbot=1.253;railL=railtop-railbot
+ for i,(x,y) in enumerate([[-.320,.812],[-.063,.812]]):
+  add(f'g2_distal_load_rail_{i}','left_distal_forearm','frame',hollow([x,y,(railtop+railbot)/2],[.020,.100,railL],.003),rho=2700,assumption='Finite3mm hollow structural rail, downstream of roll; all actual attachments/yield/fatigue unknown')
+  add(f'g2_roll_output_radial_bridge_{i}','left_distal_forearm','frame',segment(outroll,[x,y,railtop],.013,.007),rho=7850,assumption='Finite hollow bridge to output flange; interface union/fastening unverified')
+ add('g2_distal_pitch_load_bridge','left_distal_forearm','frame',segment([-.19,.812,railbot],fixpitch,.016,.008),rho=7850,assumption='Real finite connection to pitch fixed case mount, not axle through moving output')
+ add('g2_pitch_to_yaw_hollow_bridge','left_wrist_pitch_carrier','frame',segment(outpitch,fixyaw,.018,.009),rho=7850,assumption='Finite separated serial output bridge; motion and strength checked as proxy only')
+ palmcenter=np.array(ns['features'][-1]['left'])
+ add('g2_yaw_palm_load_bridge','left_palm','frame',segment(outyaw,palmcenter,.016,.007),rho=7850,assumption='Finite output-to-palm carrier material; original palm visual retained so conflicts are explicit')
+ driveframepoints=[]
+ for k,loc in enumerate(motorloc):
+  c=np.array(loc);body='left_distal_forearm';prefix=f'g2_hand_{k+1}';mm=SRC['thumb' if k==3 else 'small'];lead=.0015 if k<3 else .002
+  add(prefix+'_motor',body,'motor',tube(c,mm['D']/2,.028 if k==3 else .0145,mm['L']),[mm['mass']]*3,source=f'Tecnotion {mm["sku"]} brochure p{mm["page"]}',assumption='Full outer/central bore source installation envelope; source20C condition unknown',motor_source=mm,known_rotor_mass_kg=mm['rotor'],known_stator_mass_kg=mm['stator'],known_rotor_Jr_kg_m2=mm['Jr'])
+  add(prefix+'_cooling_case',body,'cooling',tube(c,mm['D']/2+.005,mm['D']/2+.001,mm['L']+.006),rho=2700,assumption='4mm finite radial case, fluid supply/mount temperature unclosed')
+  # 180mm stroke with real255mm screw/guide and267mm finite housing.
+  sc=c+[0,0,-.158];SL=.255;frameD=[.052,.050,.267]
+  add(prefix+'_screw',body,'screw',cyl(sc,.007,SL),rho=7850,assumption=f'14mm major/root10mm own screw lead{lead*1000:g}mm; no sourced nut/life/backdrive rating',lead_m=lead,stroke_m=.180,root_diameter_m=.010)
+  add(prefix+'_load_frame',body,'frame',hollow(sc,frameD,.003),rho=2700,assumption='Finite3mm closed hollow load frame, actual inner cavity; attachment and stiffness unknown')
+  for sg in [-1,1]:
+   add(prefix+f'_guide_{sg}',body,'guide',cyl(sc+[sg*.018,0,0],.004,.245),rho=7850,assumption='8mm finite guide rod, full carriage support unsolved')
+   add(prefix+f'_thrust_bearing_{sg}',body,'support',tube(sc+[0,0,sg*.120],.015,.007,.009),[.06,.1,.17],assumption='Actual generic thrust support functional ring envelope, force/life unknown')
+  carriage=sc+[0,0,.090]
+  add(prefix+'_nut_carriage',body,'nut',from_m(mani(box(carriage,[.037,.028,.028]))-mani(cyl(carriage,.0075,.04))),[.14,.25,.45],assumption='Nut/carriage with real bore, entire ±90mm sweep checked and not material filled')
+  keepouts.append(dict(id=prefix+'_carriage_sweep',body=body,center_world_m=sc.tolist(),dimensions_xyz_m=[.037,.028,.208],kind='motion_keepout',stroke_m=.180,not_mass=True))
+  add(prefix+'_brake',body,'brake',tube(c+[0,0,.032],.024,.008,.021),[.16,.28,.45],assumption='Nonzero holding-brake envelope, thrust hold/thermal unqualified')
+  add(prefix+'_coupling',body,'coupling',tube(c+[0,0,-.028],.015,.007,.020),rho=7850,assumption='Actual material shaft coupling, torque fit unknown')
+  add(prefix+'_encoder',body,'sensor',tube(c+[0,0,.038],.018,.008,.008),[.025,.045,.075],assumption='Screw feedback reserve, finger force feedback also retained')
+  add(prefix+'_controller',body,'controller',box(c+[0,0,.078],[.042,.027,.052]),[.1,.2,.35],assumption='Complete local drive/connectors; current RMS/regeneration unknown')
+  add(prefix+'_inline_force_feedback',body,'sensor',box(sc+[0,0,-.068],[.034,.018,.024]),[.05,.09,.15],assumption='Real load-cell and bracket envelope, calibrated force/stiffness unknown')
+  add(prefix+'_fasteners_connectors',body,'service',box(c+[.026,.024,.035],[.02,.021,.034]),[.06,.10,.18],assumption='Explicit nonzero mounting/signal/cooling fittings')
+  # Motor/frame mounts physically occupy carrier space rather than only owner labels.
+  mount=c+[0,0,-.035]
+  add(prefix+'_mount_crossmember',body,'frame',segment([-.320,.812,mount[2]],mount,.012,.006),rho=2700,assumption='Finite hollow crossmember to roll downstream rail; attachment is hypothesized, union checked')
+  driveframepoints.append(mount.tolist())
+  f=features[min(k,3)];p0=np.array(f['root']);p1=np.array(f['distal']);end=np.array(f['contact']);a0=np.array(f['axis0']);a1=np.array(f['axis1'])
+  if k==4:end=p0+[.04,-.035,.035];a0=np.array([0,0,1]);p1=p0
+  add(prefix+'_root_pulley','left_palm','guide',tube(p0,float(f['r0']) if k<4 else .020,.009,.014,a0),rho=2700,assumption='Actual finite root pulley at C15 extracted axis, no completed contact differential')
+  if k<4:add(prefix+'_distal_pulley','left_thumb_proximal_link' if k==3 else f'left_finger_{k+1}_proximal_link','guide',tube(p1,f['r1'],.007,.012,a1),rho=2700,assumption='Passive distal differential candidate, contact/Jacobian unqualified')
+  add(prefix+'_pad_feedback','left_thumb_distal_link' if k>=3 else f'left_finger_{k+1}_distal_link','sensor',box(end,[.018,.012,.005]),[.008,.016,.027],assumption='Nonzero pad force sensing, installed contact/loss unknown')
+  # Route through finite joint-axis-near guides and actual bending loops.
+  # This is a physical space candidate, not a straight chord claimed inextensible.
+  for ant in [-1,1]:
+   d=(k-2)*.012+ant*.004
+   P=np.array(pitch);Y=np.array(yaw)
+   pts=[(sc+[0,d,-.110]).tolist(),[-.205,.812+d,1.286]]
+   owners=[body,body]
+   # 60mm nominal radius loop around pitch Y axis; 8 arc segments carry real tube material.
+   for theta in np.linspace(-math.pi*.55,math.pi*.10,9):
+    pts.append((P+np.array([.060*math.cos(theta),d,.060*math.sin(theta)])).tolist());owners.append(body if theta<-.65 else 'left_wrist_pitch_carrier')
+   # 45mm radius yaw bending path lies near shaft but is not assumed through OEM input bore.
+   for theta in np.linspace(-math.pi*.80,-math.pi*.25,7):
+    pts.append((Y+np.array([.045*math.cos(theta),.045*math.sin(theta),.025+d])).tolist());owners.append('left_wrist_pitch_carrier' if theta< -1.65 else 'left_palm')
+   pts.extend([(p0+[0,ant*.005,.027]).tolist(),(p1+[0,ant*.005,.025]).tolist(),end.tolist()]);owners.extend(['left_palm','left_thumb_proximal_link' if k==3 else (f'left_finger_{k+1}_proximal_link' if k<3 else 'left_palm'),'left_thumb_distal_link' if k>=3 else f'left_finger_{k+1}_distal_link'])
+   if k==4:pts=pts[:-2];owners=owners[:-2];pts.append(end.tolist());owners.append('left_palm')
+   lengths=[]
+   for i,(p,q) in enumerate(zip(pts,pts[1:])):
+    L=float(np.linalg.norm(np.array(q)-p));lengths.append(L)
+    if L<1e-7:continue
+    nm=prefix+f'_route_{ant}_{i}'
+    add(nm+'_sheath',owners[i],'route',segment(p,q,.0055,.0025),rho=3500,assumption='Finite OD11/ID5mm flexible sheath envelope, effective density assumed; bend interfaces NOT rigid connected tubes',route_segment_owner_scope='neutral anchor-segment proxy, must become flexible multibody')
+    add(nm+'_tendon',owners[i],'route',segment(p,q,.002),rho=7850,assumption='4mm equivalent metallic tendon geometry, effective strand area/stiffness/fatigue unknown')
+   routes.append(dict(id=prefix+f'_route_{ant}',points_world_m=pts,anchor_body_owners=owners,driver_body=body,length_m=sum(lengths),nominal_pitch_loop_radius_m=.060,nominal_yaw_loop_radius_m=.045,scope='finite loop geometry near actual candidate axes; segmentation/owners not a manufactured sheath or invariant tendon',qualified=False))
+  # Actual guide rings at interfaces reserve multiple tendon paths, not a hidden abstract hole.
+  for label,cg,ax,bod in [('pitch',np.array(pitch)+[.060,d if 'd' in locals() else 0,0],[0,1,0],body),('yaw',np.array(yaw)+[0,-.045,.025],[0,0,1],'left_wrist_pitch_carrier')]:
+   add(prefix+'_'+label+'_guide_housing',bod,'guide',tube(cg,.013,.006,.020,ax),rho=2700,assumption='Finite guide eye/lumen reserve; attachment/fatigue and 4mm cable bend ratio unqualified')
+ add('g2_hand_cooling_manifold','left_distal_forearm','cooling',box([-.34,.83,1.598],[.035,.025,.070]),[.16,.27,.45],assumption='Actual nonzero five-drive liquid supply/return reserve; loop/bus conditions not inherited')
+ add('g2_hand_power_data_service','left_distal_forearm','service',segment([-.33,.80,1.685],[-.33,.80,1.265],.009,.0025),[.22,.35,.55],assumption='Real power/data branch inventory with connectors, roll service loop unknown')
+ # Open skeletal guard avoids using a full solid cabinet as false available cavity.
+ for x in [-.337,-.046]:add('g2_service_guard_'+str(x),'left_distal_forearm','guard',box([x,.812,1.460],[.002,.260,.350]),rho=1100,assumption='Finite side guard; removal/service keepout unqualified; original armor unchanged')
+ bodytree={'left_proximal_forearm':{'parent':None}}
+ for j in joints:bodytree[j['child']]={'parent':j['parent'],'pivot_world_m':j['pivot_world_m'],'axis_world':j['axis_world'],'joint_id':j['id']}
+ for f in features:
+  i=f['id'];thumb='thumb' in i;b0='left_thumb_proximal_link' if thumb else i+'_proximal_link';b1='left_thumb_distal_link' if thumb else i+'_distal_link'
+  bodytree[b0]={'parent':'left_palm','pivot_world_m':f['root'],'axis_world':f['axis0'],'joint_id':i+'_root_flexion'};bodytree[b1]={'parent':b0,'pivot_world_m':f['distal'],'axis_world':f['axis1'],'joint_id':i+'_distal_flexion'}
+ replacement=[]
+ prefixes=['ds_left_forearm_roll_','ds_left_wrist_pitch_','ds_left_wrist_yaw_']
+ exact=['e2_upper_net_left_distal_forearm','e2_upper_net_left_wrist_pitch_carrier','e2_upper_net_left_palm']
+ for p in old['parts']:
+  n=p['name']
+  if n.startswith(tuple(prefixes)) or n.startswith(('e_ds_left_forearm_roll_motor_cooling_case','e_ds_left_wrist_pitch_motor_cooling_case','e_ds_left_wrist_yaw_motor_cooling_case')) or n in exact or (n.startswith('ds_left_') and n.endswith('_compact_drive') and ('finger' in n or 'thumb' in n)):
+   matching=[r for r in old['mass_rows'] if r.get('part_name',r.get('id'))==n or n in r.get('member_ids',[])]
+   replacement.append(dict(id=n,body=p['body'],function=p.get('category',p['role']),source_mass_rows=matching,replacement_scope='Full functional replacement candidate only; no removal credit until integrated exact source/mass receipt',old_native_sha256=hashlib.sha256(json.dumps(p,sort_keys=True).encode()).hexdigest()))
+ return dict(schema='gorilla_g2_forearm_hand_native_v1',candidate='g2_hand_'+layout,robot_id='gorilla_v0_1',coordinate_frame=base['coordinate_frame'],parts=parts,modules=rows,body_tree=bodytree,joints=joints,routes=routes,motion_keepouts=keepouts,replacement_inventory=replacement,original_armor_change_mm=0,source_inputs={str(G1):sha(G1),str(ns['C15']):sha(ns['C15']),str(ns['E2']):sha(ns['E2']),str(ns['PDF']):sha(ns['PDF']),str(CSG_DOC):sha(CSG_DOC),str(PDF32):sha(PDF32)},builder_sha256=sha(__file__),geometry_accepted=False,physics_accepted=False,SI_owner_scope='Finite carrier/joint paths present; motorrotor/gearinternal mass ownership unclosed and fingers proxy axes',original_pose_body_aliases={'left_forearm':'left_distal_forearm','left_palm':'left_palm'},scope='Left arm only; 3 actual serial rotation freedoms +5 independent remote handchannels, originalC15 armor/reference parts retained separately')
+
+def main():
+ OUT.mkdir(parents=True,exist_ok=True)
+ for layout in ['a','b']:
+  s=build(layout);p=OUT/f'scene_{layout}.json';p.write_text(json.dumps(s,separators=(',',':'))+'\n');mass=np.array([r['mass_range_kg'] for r in s['modules']]).sum(0)
+  print('SOURCE_READY',str(p),'SHA',sha(p),'parts',len(s['parts']),'mass',mass.tolist(),flush=True)
+  (OUT/f'mass_{layout}.json').write_text(json.dumps({'scene_sha256':sha(p),'new_left_arm_module_mass_range_kg':mass.tolist(),'rows':s['modules'],'replacement_inventory':s['replacement_inventory'],'scope':'not total arm mass; exact old removal mapping necessary; no accepted SI'},indent=2)+'\n')
+
+if __name__=='__main__':main()

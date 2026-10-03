@@ -1,0 +1,78 @@
+from pathlib import Path
+import json, hashlib, math, sys, collections
+import numpy as np, trimesh as tm
+O=Path(__file__).resolve().parent;R=O.parents[1];sys.path.insert(0,str(R/'.scratch/gorilla_internal_g_material_contract'))
+from native_signed_material import kernel
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();write=lambda n,d:(O/n).write_text(json.dumps(d,indent=2,allow_nan=False)+'\n')
+d=json.loads((O/'scene.json').read_text());groups=collections.defaultdict(list);references=[]
+for p in d['parts']:
+ if p['role']=='complete_component_reference':references.append(p)
+ else:groups[(p['body'],p['material_id'],p['density_kg_m3'])].append(p)
+mats={};massrows=[]
+for key,ps in groups.items():
+ ms=[kernel(p['vertices_world_m'],p['faces'])for p in ps];m=ms[0]
+ for n in ms[1:]:m=m+n
+ mats[key]=m;q=m.to_mesh64();t=tm.Trimesh(np.asarray(q.vert_properties)[:,:3],np.asarray(q.tri_verts),process=False)
+ massrows.append({'owner':key[0],'material_id':key[1],'mass_kg':float(m.volume())*key[2],'COM_world_m':t.center_mass.tolist(),'native_signed_volume_m3':float(m.volume()),'components_including_separate_clearance_fasteners':len([v for v in m.decompose()if v.volume()>1e-10]),'member_ids':[p['name']for p in ps]})
+for p in references:
+ massrows.append({'owner':p['body'],'material_id':'complete_reference','id':p['name'],'mass_kg':p['mass_range_kg'][1],'mass_range_kg':p['mass_range_kg'],'COM_world_m':np.mean(np.asarray(p['vertices_world_m']),axis=0).tolist(),'OEM_fixed_input_output_mass_owner_split_unknown':p.get('OEM_fixed_input_output_split_unknown',False)})
+# Exact polygon section integrals from the native signed material after all source cutouts.
+rot={'Y':np.array([[1,0,0,0],[0,0,-1,0],[0,1,0,0]],float),'Z':np.array([[1,0,0,0],[0,1,0,0],[0,0,1,0]],float),'X':np.array([[0,1,0,0],[0,0,1,0],[1,0,0,0]],float)}
+def sec(m,axis,height):
+ cs=m.transform(rot[axis]).slice(height);polys=cs.to_polygons();A=Su=Sv=Iu0=Iv0=Iuv0=0.
+ for pts in polys:
+  p=np.array(pts);q=np.roll(p,-1,axis=0);u,v=p[:,0],p[:,1];U,V=q[:,0],q[:,1];cr=u*V-U*v
+  A+=float(cr.sum()/2);Su+=float(((u+U)*cr).sum()/6);Sv+=float(((v+V)*cr).sum()/6)
+  Iu0+=float(((v*v+v*V+V*V)*cr).sum()/12);Iv0+=float(((u*u+u*U+U*U)*cr).sum()/12);Iuv0+=float(((2*u*v+u*V+U*v+2*U*V)*cr).sum()/24)
+ if abs(A)<1e-12:return {'area_m2':0.,'I_u_m4':0.,'I_v_m4':0.,'I_uv_m4':0.,'native_kernel_area_m2':float(cs.area()),'loops':len(polys)}
+ if A<0:A,Su,Sv,Iu0,Iv0,Iuv0=-A,-Su,-Sv,-Iu0,-Iv0,-Iuv0
+ cu,cv=Su/A,Sv/A
+ return {'area_m2':A,'centroid_uv_m':[cu,cv],'I_u_m4':Iu0-A*cv*cv,'I_v_m4':Iv0-A*cu*cu,'I_uv_m4':Iuv0-A*cu*cv,'native_kernel_area_m2':float(cs.area()),'loops':len(polys),'area_difference_m2':abs(A-float(cs.area()))}
+sections=[]
+for body,axis,height,label in [('torso','Y',.25,'actual_shoulder_bridge_clear_section'),('torso','Z',2.205,'actual_spine_clear_section')]:
+ for key,m in mats.items():
+  if key[0]==body:sections.append({'label':label,'owner':body,'material_id':key[1],'plane_normal':axis,'plane_height_m':height,'E_Pa':70e9 if key[2]==2710 else 210e9,**sec(m,axis,height)})
+for y in np.linspace(0,.130,14):
+ for key,m in mats.items():
+  if key[0]=='waist_pitch_carrier':sections.append({'label':'roll_fixed_carrier_post_clearance_section_scan','owner':key[0],'material_id':key[1],'plane_normal':'Y','plane_height_m':float(y),'E_Pa':70e9 if key[2]==2710 else 210e9,**sec(m,'Y',float(y))})
+shoulder=next(s for s in sections if s['label']=='actual_shoulder_bridge_clear_section'and s['material_id'].startswith('6082'))
+spine=next(s for s in sections if s['label']=='actual_spine_clear_section'and s['material_id'].startswith('6082'))
+beams=[]
+for hand in [25.,50.]:
+ for factor in [1.,1.5]:
+  F=(207.2700137956521+hand)*9.80665*factor;L=.46;I=shoulder['I_u_m4'];M=F*L
+  beams.append({'historical_unqualified_arm_proxy_kg':207.2700137956521,'declared_hand_load_sensitivity_kg':hand,'factor':factor,'source_native_section_label':shoulder['label'],'F_N':F,'span_m':L,'M_Nm':M,'gross_bending_stress_MPa':M*.070/I/1e6,'ideal_tip_deflection_mm':F*L**3/(3*70e9*I)*1000,'conditional_250MPa_ratio_not_assembly':250e6/(M*.070/I)})
+support=json.loads((R/'.scratch/gorilla_internal_g_root_macro/torso_support_sensitivity.json').read_text())['upper_profiles']
+compression=[{'historical_profile':p['profile'],'retained_external_upper_mass_kg':p['mass_kg'],'extra_separate_compression_sensitivity_kg':extra,'F_N':(p['mass_kg']+extra)*9.80665,'actual_spine_gross_compression_MPa':(p['mass_kg']+extra)*9.80665/spine['area_m2']/1e6,'ideal_K2_L032_Euler_N':math.pi**2*70e9*min(spine['I_u_m4'],spine['I_v_m4'])/(2*.32)**2,'not_payload_or_joint_qualification':True}for p in support for extra in [0.,3000.]]
+# Fixed-parent one-axis input inertia only; no rigid stock-cylinder inertia assigned to OEM.
+dynamic=[]
+for group in d['rotary_functional_inventory']:
+ family=group['family'];bare=(.00468+.009)if family=='csg65'else(.00125+.0014);p=next(p for p in d['parts']if p['name']==group['functional_part_ids']['input_coupling']);m=kernel(p['vertices_world_m'],p['faces']);q=m.to_mesh64();t=tm.Trimesh(np.asarray(q.vert_properties)[:,:3],np.asarray(q.tri_verts),process=False);axis=np.array(group['axis_world']);center=np.array(group['core_center_world_m']);delta=t.center_mass-center;J=float(axis@t.moment_inertia@axis)*7850+float(m.volume())*7850*(float(delta@delta)-float(delta@axis)**2)
+ dynamic.append({'group':group['group'],'catalogue_plus_motor_input_J_kg_m2':bare,'native_own_input_coupling_axial_J_kg_m2':J,'ideal_fixed_parent_reflected_total_kg_m2':(bare+J)*10000,'extra_torque_at_alpha025_Nm':(bare+J)*10000*.25,'wholebody_spatial_inertia_unknown':True,'coupling_material_and_kinematic_parent_are_hypotheses':True})
+def Ts(q):
+ ts={'pelvis':np.eye(4)}
+ for b in ['waist_yaw_carrier','waist_pitch_carrier','torso']:
+  z=d['body_tree'][b];ts[b]=ts[z['parent']]@tm.transformations.rotation_matrix(math.radians(q.get(z['joint_id'],0)),z['axis_world'],z['pivot_world_m'])
+ for group in d['rotary_functional_inventory']:ts[group['group']+'_input_link']=ts[group['parent']]
+ return ts
+def descendant(body,ancestor):
+ parent={b:x.get('parent')for b,x in d['body_tree'].items()}
+ for g in d['rotary_functional_inventory']:parent[g['group']+'_input_link']=g['parent']
+ while body is not None:
+  if body==ancestor:return True
+  body=parent.get(body)
+ return False
+grav=[]
+for profile in support:
+ for pitch in [-25,-15,-5,0,5,15,25]:
+  ts=Ts({'waist_pitch':pitch});external=(ts['torso']@np.r_[profile['COM_world_m'],1])[:3]
+  for group in d['rotary_functional_inventory']:
+   joint=d['body_tree'][group['child']];parentT=ts[group['parent']];P=(parentT@np.r_[joint['pivot_world_m'],1])[:3];axis=parentT[:3,:3]@joint['axis_world'];point=parentT@np.r_[group['bearing_pressure_center_world_m'],1];F=np.array([0,0,-9.80665*profile['mass_kg']]);torque=np.cross(external-P,F);moment=np.cross(external-point[:3],F);moduleM=np.zeros(3);moduleF=np.zeros(3)
+   for row in massrows:
+    if descendant(row['owner'],group['child']):
+     pt=(ts[row['owner']]@np.r_[row['COM_world_m'],1])[:3];f=np.array([0,0,-9.80665*row['mass_kg']]);moduleM+=np.cross(pt-P,f);moduleF+=f
+   Tr=1236 if group['family']=='csg65' else 611;Tav=1976 if group['family']=='csg65' else 866
+   grav.append({'historical_upper_profile':profile['profile'],'pitch_deg':pitch,'joint':group['group'],'external_upper_axis_gravity_Nm':float(torque@axis),'own_candidate_descendant_axis_gravity_Nm':float(moduleM@axis),'combined_challenge_axis_gravity_Nm':float((torque+moduleM)@axis),'gear_Tr_reference_Nm':Tr,'gear_Tav_reference_Nm':Tav,'abs_combined_over_Tr':abs(float((torque+moduleM)@axis))/Tr,'external_only_bearing_overturning_Nm':float(np.linalg.norm(moment-(moment@axis)*axis)),'bearing_reference_world_m':point[:3].tolist(),'external_radial_N':float(np.linalg.norm(F-(F@axis)*axis)),'external_axial_N':float(F@axis),'no_full_inertia_friction_heat_or_mount_strength_qualification':True})
+out={'schema':'gorilla_g2_actual_net_section_load_inertia_screen_v1','source_scene_sha256':sha(O/'scene.json'),'source_native_material_rows':massrows,'actual_native_sections':sections,'ideal_section_beam_sensitivities':beams,'ideal_spine_compression_sensitivities':compression,'known_input_reflected_inertia_only':dynamic,'gravity_challenge_rows':grav,'source_pressure_centers_are_actual_A_face_minus_R':True,'gear_rating_primary':{'pdf_sha256':'517160deff3bc6272980fef807212d29ee2301ce819b4388df540fcd3ce7d97b','printed_pages':[12,13],'CSG50_100_Tr_Tav_repeated_momentary_Nm':[611,866,1274,2678],'CSG65_100_Tr_Tav_repeated_momentary_Nm':[1236,1976,2990,6175],'Tr_condition':'allowable continuous gear load at input2000rpm per p13; not installed motor thermal or complete joint rating'},'torque_reference_scope':'CSG gear catalogue Tr/Tav condition, not full joint continuous/peak/payload rating','motor_reference_conditions':{'QTL210':{'Tc_Nm':65,'Ts_Nm':46,'rpm_Tc_point':716,'max_bus_Vdc':680,'coil_C':100,'mount_C':20,'Pc_W':690},'QTR160':{'Tc_Nm':15.3,'rpm_Tc_point_48V':260,'coil_C':100,'mount_C':20,'full_speed_torque_curve_and_installed_heat_unknown':True}},'warnings':['Historical upper load still contains incompatible old structure; adding new candidate descendant material is a retained-context challenge, not actual new robot net mass.','Own OEM packaging mass owner split is not true fixed/input/output mass allocation.','Native finite section is measured; beam/compression formulas omit fastener preload, contact, bolt holes near interfaces, buckling imperfections, fatigue and local prying.','Roll carrier post-clearance slices retain exact steel/Al geometry; separate material sections and connections must be judged together, not assume cleared Al section alone takes all load.','6082 properties apply only explicit unwelded eligible stock hypothesis, not cast/welded/overheated material.','No thermal/voltage/regeneration architecture or complete axis solver proven.','Gear Tav/Tr are distinct; exceeding Tr alone is not an absolute drive failure, and staying below it does not prove continuous operation.'],'physical_accepted':False,'stable_SI':False}
+write('section_load_inertia_screen.json',out)
+print('actual shoulder section',shoulder,'spine',spine,'gravity maxTr',max(r['abs_combined_over_Tr']for r in grav),'source',out['source_scene_sha256'],flush=True)

@@ -1,6 +1,6 @@
 # Gorilla V0.1
 
-当前工作：**G/G1 已形成原厂安装与材料门禁、完整腰/下腿/手部候选和宏观粗算，安装仍拒绝；G2 正在共同重排。** C15 已先提交并合主干，AA3 仍是审美权威。最近保存的完整整机研究 E2a 仍未合格。外壳可按明确物理约束调整，审美品位须保持，由用户认可新四视后采用。最终双足、双手与自主复杂 Bevy 目标继续推进。
+当前工作：**G2 完成模块安装检查并封存，仍未整体放行；G3 正在闭合真实输入与脚部压力路径。** 五个滑块通道有局部采样无干涉结果，腰/脚/腕仍有具体机械缺口。C15 已先提交并合主干，AA3 仍是审美权威。隐藏内皮与安装点可重建；可见包装变化须保住审美，由用户认可同源四视后采用。最近完整 E2a 研究仍未合格，最终双足、双手与自主复杂 Bevy 目标继续推进。
 
 唯一当前状态入口：[当前决定与门禁](design/current_decisions.md)。
 
@@ -15,7 +15,8 @@
 | 内部 D 历史拒绝候选 | [同版评审/复现](design/internal_structure_d_review.md)；[整机native源](cad/source/internal_structure_d_scene.json)、[Blender](cad/source/internal_structure_d.blend)、[GLB](cad/exports/internal_structure_d/internal_structure_d.glb)；[冻结清单](../../experiments/gorilla_v0_1/internal_structure_d/snapshot_manifest.json) |
 | 内部 D 同源图 | [四视](images/internal_structure_d_four_view.png)、[拆壳斜视](images/internal_structure_d_cutaway_threequarter.png)、[侧拆壳](images/internal_structure_d_cutaway_left.png)；原111甲壳不改，冲突没有隐藏 |
 | 内部 D 参数/证据 | [统一参数](configs/internal_structure_d_spec.json)、[全机模块](configs/internal_structure_d_system_spec.json)；[质量/接触/空间](evidence/internal_structure_d_screen.json)、[功率/流量](evidence/internal_structure_d_power.json)、[红黄线](evidence/internal_structure_d_gates.json) |
-| 当前 G/G1 研究 | [实际结果/复现](../../experiments/gorilla_v0_1/internal_structure_g_studies/README.md)；原生材料、原厂安装、腰/下腿/手部源及整体资源粗算；未组成新整机 |
+| G2 安装检查点 | [实际源/范围/下一动作](../../experiments/gorilla_v0_1/internal_structure_g2_modules/README.md)；全部安装未放行，隐藏几何可新源重建 |
+| G/G1 历史研究 | [实际结果/复现](../../experiments/gorilla_v0_1/internal_structure_g_studies/README.md)；原生材料、原厂安装、腰/下腿/手部源及整体资源粗算；未组成新整机 |
 | 最近完整 E2a 研究 | [整机源/同源图/拒绝](../../experiments/gorilla_v0_1/internal_structure_e2/README.md)；未合格历史账本，不作定型质量 |
 | 内部 E 开局诊断 | [完整轴参考](../../experiments/gorilla_v0_1/internal_structure_e_constraints/README.md)；[串联腿、全关节热路与独立复核](../../experiments/gorilla_v0_1/internal_structure_e_probes/README.md)；实际失败分支，未组成整机或换审美基准 |
 | 分置线性/泵阀一手依据 | [型号事实/有限几何/电热条件](hardware/distributed_internal_component_references.md)；参照、假设与联合资格分别报告 |

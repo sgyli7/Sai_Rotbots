@@ -1,0 +1,62 @@
+from pathlib import Path
+import json,math,runpy,hashlib
+import numpy as np
+B=Path(__file__).resolve().parent;n=runpy.run_path(str(B/'build_forearm_hand.py'),run_name='installation_helpers');box=n['box'];cyl=n['cyl'];tube=n['tube'];segment=n['segment'];mani=n['mani'];from_m=n['from_m'];native=n['native'];sha=n['sha']
+s=json.loads((B/'scene_a.json').read_text());pmap={p['name']:p for p in s['parts']};rmap={r['id']:r for r in s['modules']};changes=[]
+def put(id,body,cat,mesh,mr=None,rho=None,assumption=''):
+ if rho is not None:mass=mesh.volume*rho;mr=[.9*mass,mass,1.25*mass]
+ if mr is None:raise ValueError(id)
+ p=dict(name=id,body=body,role='actual_material' if rho else 'component_module_envelope',vertices_world_m=np.asarray(mesh.vertices).tolist(),faces=np.asarray(mesh.faces).tolist(),rgba=[.29,.37,.40,1] if rho else [.57,.41,.27,1],module_id=id)
+ r=dict(id=id,part_name=id,body=body,category=cat,mass_range_kg=mr,material_density_kg_m3=rho,material_volume_m3=float(mesh.volume) if rho else None,source='sameA bounded installation detail, no newvendor/rating',assumption=assumption,geometry_scope='finite material' if rho else 'completefunctional envelope with own nonzero mass range',physics_unknown=['strength/threads/wear/mount/thermal/contact and SI ownership unqualified'])
+ action='replace' if id in pmap else 'add';pmap[id]=p;rmap[id]=r;changes.append({'id':id,'action':action,'source':'boundedA installation only'})
+
+for k in range(1,6):
+ prefix=f'g2_hand_{k}';body='left_distal_forearm';old=native(pmap[prefix+'_nut_carriage']);center=old.center_mass;sc=np.array(next(x['center_world_m'] for x in s['motion_keepouts'] if x['id']==prefix+'_carriage_sweep'))
+ offsets=[np.array([- .015,-.013,0]),np.array([.015,.013,0])]
+ # Polygon-flat nut pocket gives a finite antirotation fit candidate; threads are a function envelope.
+ carrier=mani(box(center,[.044,.040,.028]));pocket=mani(cyl(center,.0121,.040))^mani(box(center,[.0226,.030,.045]));carrier=carrier-pocket
+ for sg in [-1,1]:carrier=carrier-mani(cyl(center+[0,0,sg*.0125],.0131,.0032))
+ for sg,off in zip([-1,1],offsets):
+  carrier=carrier-mani(cyl(center+off,.0051,.040))
+  put(prefix+f'_guide_{sg}',body,'guide',cyl(sc+off,.004,.245),rho=7850,assumption='Original8mm guide within sameframe nowdiagonal15/13mm; explicit clearance and complete180stroke sampled, no rated guide force')
+  put(prefix+f'_carriage_guide_bush_{sg}',body,'support',tube(center+off,.005,.0041,.020),[.01,.02,.04],assumption='CompleteOD10/ID8.2/L20 plain-bush installation envelope,0.1mm radial guideclearance; real bearing/wear/friction and material unqualified')
+ put(prefix+'_nut_carriage',body,'carriage',from_m(carrier),rho=7850,assumption='44x40x28mm ownsteel carriage, finite guide10.2mm throughholes and24.2mm flatnutpocket,26.2mm axial shoulders; fits original46x44 framecavity with1/2mm sideclearance. Strength/thermalexpansion/nut axialretention unqualified')
+ nutbody=mani(tube(center,.012,.0071,.022))^mani(box(center,[.0224,.030,.024]));flange=mani(tube(center+[0,0,-.0125],.013,.0071,.003))
+ put(prefix+'_complete_nut_with_flat_seat',body,'nut',from_m(nutbody+flange),[.10,.17,.30],assumption='FiniteD-flat24mm nut+26mm shoulder, ID14.2 threadfunctional bore only, no helix/rating. D-flatmatching seat opposes nut rotation; axial retention/certified threads unknown')
+ put(prefix+'_nut_axial_retainer',body,'retainer',tube(center+[0,0,.0125],.013,.0071,.003),rho=7850,assumption='Finite axialretainer seated in actualupper shoulderpocket; fastening/snapgroove unknown and no holdingqualification')
+ # Actual coupling-through-cap opening and finite bearing seats; no closed housing wall is waved away.
+ fm=mani(native(pmap[prefix+'_load_frame']))-mani(cyl(sc+[0,0,.131],.0151,.018))-mani(cyl(sc+[0,0,-.131],.0072,.018))
+ put(prefix+'_load_frame',body,'frame',from_m(fm),rho=2700,assumption='Original267mm finite3mm frame with real30.2mm topcoupling hole/14.4mm loweraxial hole; guide/bearingseat mounts unqualified')
+ motorcenter=native(pmap[prefix+'_motor']).center_mass
+ put(prefix+'_coupling',body,'coupling',tube(motorcenter+[0,0,-.022],.014,.007,.020),rho=7850,assumption='FiniteOD28/ID14x20mm coupling in knownQTR78 rotorID29 (thumbID56);1.5mm screw insertion andaxialbearing separation are dimensional candidates, torque/shaftfit unqualified')
+ for sg in [-1,1]:
+  pc=sc+[0,0,sg*.120];seat=mani(box(pc,[.046,.044,.010]))-mani(cyl(pc,.0151,.018))
+  for off in offsets:seat=seat-mani(cyl(pc+off,.0041,.018))
+  put(prefix+f'_finite_thrust_bearing_seat_{sg}',body,'support',from_m(seat),rho=7850,assumption='Finite46x44x10 steel bearingseat with30.2mm realbearingbore/two8.2mm guideholes; originalOD30 bearing has0.1mm radialseatclearance. Boltedframe/axialpreload andthrustcapacity unknown')
+ feedbackid=prefix+'_inline_force_feedback';oldfeedback=rmap[feedbackid];fc=sc+[0,-.043,0]
+ put(feedbackid,body,'sensor',box(fc,[.034,.018,.024]),oldfeedback['mass_range_kg'],assumption='Completeforcefeedback function moved outsidecarriagesweep; physicaltendon termination still unbuilt andforcecalibration/rating unknown')
+ put(prefix+'_force_feedback_mount',body,'frame',segment(sc+[0,-.025,0],fc,.004,.002),rho=2700,assumption='Finiteexternalforcefeedback support, no completed inline load connection')
+ ko=next(x for x in s['motion_keepouts'] if x['id']==prefix+'_carriage_sweep');ko['dimensions_xyz_m']=[.044,.040,.208];ko['guide_installation_actual_xy_offsets_m']=[x.tolist() for x in offsets]
+
+# Preserve all3 controller functions: physically rehouse outside each individualOEM module stock.
+# Localbays are not assertedinsidearmor orwholehandfree; originalstock remainsscreened.
+bays={'forearm_roll':[-.355,.692,1.636],'wrist_pitch':[-.280,.930,1.250],'wrist_yaw':[-.075,.950,1.145]}
+for key,c in bays.items():
+ id='g2_'+key+'_controller';row=rmap[id];body=row['body'];dims=[.045,.025,.065]
+ put(id,body,'controller',box(c,dims),row['mass_range_kg'],assumption='Originalcompletecontroller unchangedsize/mass, relocatedintofinitefixedsidebay; bus/coil/thermal/current unqualified, allarmor/stock conflicts retained')
+ enclosure=mani(box(c,np.array(dims)+.008))-mani(box(c,np.array(dims)+.001))
+ put('g2_'+key+'_controller_bay',body,'case',from_m(enclosure),rho=2700,assumption='Finite3.5mm aluminium controllerbay; fullconnector/servicing reservations persist')
+ j=next(x for x in s['joints'] if x['id']=='left_'+key);fixed=np.array(j['fixed_B_face_world_m']);a=np.array(j['axis_world']);q=fixed+j['input_face_B_sign']*a*.013+np.array([-.060,0,0])
+ endpoint=np.array(c)+[0,.020 if q[1]>=c[1] else -.020,0]
+ put('g2_'+key+'_controller_mount_link',body,'frame',segment(q,endpoint,.006,.003),rho=2700,assumption='Finitehousing-supportlink onfixedcase side ends at facingbaywall rather thaninsidecontroller; conditionalcustombaywall interface remainsstrength/boltunknown')
+
+# Samepitch/yaw axes andA/Bfaces, one fixedside externalroute instead ofthe erroneous straightthroughgear bridge.
+oldbridge='g2_pitch_to_yaw_hollow_bridge';pmap.pop(oldbridge);rmap.pop(oldbridge);changes.append({'id':oldbridge,'action':'replace_with_finite_external_fixedside_segments'})
+jp=next(j for j in s['joints'] if j['id']=='left_wrist_pitch');jy=next(j for j in s['joints'] if j['id']=='left_wrist_yaw')
+A=np.array(jp['output_A_face_world_m']);YB=np.array(jy['fixed_B_face_world_m'])
+pts=[(A+[-.028,-.038,0]).tolist(),[-.205,.732,1.232],[-.205,.732,1.041],[-.080,.732,1.041],(YB+[-.060,0,-.028]).tolist()]
+for i,(p,q) in enumerate(zip(pts,pts[1:])):put(f'g2_pitch_yaw_external_bridge_{i}','left_wrist_pitch_carrier','frame',segment(p,q,.014,.007),rho=7850,assumption='Finiteexternalhollow bridge aroundBfixedcase; sameaxes/topology, noOEMstock suppressed. Bolts/materialjoining/attachment unknown')
+s['parts']=list(pmap.values());s['modules']=list(rmap.values());s['candidate']='g2_selected_a_installation';s['source_A_sha256']=sha(B/'scene_a.json');s['installation_builder_sha256']=sha(__file__);s['installation_changes']=changes;s['bounded_installation_only']=True;s['geometry_accepted']=False;s['physics_accepted']=False;s['still_unbuilt_linear_tendon_termination']=True
+path=B/'selected_installation_scene.json';path.write_text(json.dumps(s,separators=(',',':'))+'\n')
+receipt={'input_A_sha256':sha(B/'scene_a.json'),'new_source_sha256':sha(path),'new_parts':len(s['parts']),'new_mass_range_kg':np.array([r['mass_range_kg'] for r in s['modules']]).sum(0).tolist(),'changes':changes,'scope':'one boundedA installation derivative, originalA/B unchanged, allfunctions retained; neithernewmacro noracceptedhand','still_red':['nut/thread/retaineractualrating','carriageguidebushmaterial/strength/friction','linearcarriage-to-tendonforceconnection','controllerbayvsarmorandremaining modules','carrier-toOEMandupstreamloadconnections','actualflexiblerouting/thermal/SI']}
+(B/'selected_installation_receipt.json').write_text(json.dumps(receipt,indent=2)+'\n');print('SELECTED_INSTALLATION_READY',path,sha(path),len(s['parts']),receipt['new_mass_range_kg'],flush=True)

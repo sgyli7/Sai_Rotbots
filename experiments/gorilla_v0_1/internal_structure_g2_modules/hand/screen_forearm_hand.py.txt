@@ -1,0 +1,130 @@
+from pathlib import Path
+import json,math,hashlib,runpy
+import numpy as np
+import trimesh
+from PIL import Image,ImageDraw
+
+B=Path(__file__).resolve().parent
+n=runpy.run_path(str(B/'build_forearm_hand.py'),run_name='screen_helpers');base=n['base'];old=n['old'];native=n['native'];mani=n['mani'];sha=n['sha'];box=n['box'];features=n['features']
+POSES={'neutral':{},'roll45':{'left_forearm_roll':math.pi/4},'pitch45':{'left_wrist_pitch':math.pi/4},'yaw45':{'left_wrist_yaw':math.pi/4},'combined':{'left_forearm_roll':math.pi/4,'left_wrist_pitch':-math.pi/4,'left_wrist_yaw':math.pi/4}}
+def transforms(scene,angles):
+ tree=scene['body_tree'];cache={}
+ def T(b):
+  if b in cache:return cache[b]
+  j=tree.get(b,{'parent':None});p=j.get('parent');t=np.eye(4) if p is None else T(p).copy()
+  if 'joint_id' in j:t=t@trimesh.transformations.rotation_matrix(angles.get(j['joint_id'],0),j['axis_world'],j['pivot_world_m'])
+  cache[b]=t;return t
+ for b in tree:T(b)
+ return cache
+def moved(p,ts,scene):
+ b=p['body']
+ if b=='left_forearm':b='left_proximal_forearm' if 'elbow' in p['name'] else 'left_distal_forearm'
+ m=native(p);m.apply_transform(ts.get(b,np.eye(4)));return m
+def collision(scene,pose,context,checknew=True):
+ ts=transforms(scene,POSES[pose]);ps=scene['parts'];meshes=[moved(p,ts,scene) for p in ps];bs=np.array([m.bounds for m in meshes]);cache={};hits=[];unknown=[]
+ def M(i):
+  if i not in cache:cache[i]=mani(meshes[i])
+  return cache[i]
+ def pair(i,j,qmesh,ref):
+  try:
+   A=M(i);C=M(j) if j is not None else mani(qmesh)
+   if str(A.status())!='Error.NoError' or str(C.status())!='Error.NoError':unknown.append([ps[i]['name'],ref,'invalidnative']);return
+   v=(A^C).volume()
+   if v>1e-9:hits.append({'new':ps[i]['name'],'reference':ref,'volume_m3':v,'kind':'new-new' if j is not None else 'retained-context','body_new':ps[i]['body'],'body_reference':ps[j]['body'] if j is not None else qmesh.metadata.get('body')})
+  except Exception as e:unknown.append([ps[i]['name'],ref,str(e)])
+ if checknew:
+  for i in range(len(ps)):
+   cand=np.where(np.all(np.minimum(bs[i,1],bs[i+1:,1])-np.maximum(bs[i,0],bs[i+1:,0])>1e-8,axis=1))[0]+i+1
+   for j in cand:pair(i,int(j),None,ps[j]['name'])
+ for q in context:
+  qm=moved(q,ts,scene);qm.metadata['body']=q['body'];qb=qm.bounds
+  for i in np.where(np.all(np.minimum(bs[:,1],qb[1])-np.maximum(bs[:,0],qb[0])>1e-8,axis=1))[0]:pair(int(i),None,qm,q['name'])
+ return {'pose':pose,'scope':'new-new plus retained exact leftE2a armor/forearm/palm/finger/context, transformed with explicit candidate serial tree. Whole machine, shoulder/upstream and flexible tube physics excluded. No overlaps automatically suppressed as intentional.','positive_hits':len(hits),'hits':sorted(hits,key=lambda h:h['volume_m3'],reverse=True),'unknown':unknown,'source_scene_sha256':sha(B/f'scene_{scene["candidate"][-1]}.json'),'geometry_accepted':False}
+def pose_routes(scene):
+ out=[]
+ for pn,angles in POSES.items():
+  ts=transforms(scene,angles)
+  for r in scene['routes']:
+   p=np.array([trimesh.transform_points([q],ts.get(b,np.eye(4)))[0] for q,b in zip(r['points_world_m'],r['anchor_body_owners'])]);L=np.linalg.norm(np.diff(p,axis=0),axis=1).sum()
+   out.append({'route':r['id'],'pose':pn,'neutral_arc_polyline_length_m':r['length_m'],'anchor_motion_polyline_length_m':float(L),'delta_m':float(L-r['length_m']),'scope':'moving anchor polyline diagnostic; cannot equate to inextensible flexible routed tendon. Continuous bend/sheath seating, compensation and full coupled workspace unqualified'})
+ return out
+def mass_material(scene):
+ groups={};other=np.zeros(3);invalid=[];stock=np.array([r['mass_range_kg'] for r in scene['modules']]).sum(0);byid={p['name']:p for p in scene['parts']}
+ for r in scene['modules']:
+  if r['material_density_kg_m3']:
+   key=(r['body'],r['material_density_kg_m3']);groups.setdefault(key,[]).append(r)
+  else:other+=r['mass_range_kg']
+ net=other.copy();reports=[]
+ for (body,rho),rs in groups.items():
+  ms=[mani(native(byid[r['id']])) for r in rs]
+  for r,m in zip(rs,ms):
+   if str(m.status())!='Error.NoError':invalid.append(r['id'])
+  U=ms[0]
+  for m in ms[1:]:U=U+m
+  vol=U.volume();nom=vol*rho;net+=np.array([.9,1,1.25])*nom
+  reports.append({'body':body,'rho_kg_m3':rho,'members':[r['id'] for r in rs],'listed_material_volume_m3':sum(r['material_volume_m3'] for r in rs),'union_material_volume_m3':vol,'solid_components':len(U.decompose()),'union_scope':'samebody/samematerial overlap diagnostic only; independent cable/bracket/jointmount connections are not weldqualified, so this is NOT adopted savings','union_nominal_mass_kg':nom})
+ return {'listed_new_mass_range_kg':stock.tolist(),'hypothetical_samebody_same_material_union_mass_range_kg':net.tolist(),'groups':reports,'invalid_native_ids':invalid,'source_scene_sha256':sha(B/f'scene_{scene["candidate"][-1]}.json'),'SI_qualified':False}
+def removal(scene):
+ ids={x['id'] for x in scene['replacement_inventory']};present={p['name'] for p in old['parts']};rm=[];mixed=[]
+ for r in old['mass_rows']:
+  members=r.get('member_ids',[r.get('part_name',r['id'])]);selected=[m in ids for m in members]
+  if all(selected):rm.append(r)
+  elif any(selected):mixed.append({'mass_row':r,'members_removed':[m for m,s in zip(members,selected) if s],'members_retained':[m for m,s in zip(members,selected) if not s],'no_fractional_credit':True})
+ mass=np.array([r['mass_range_kg'] for r in rm]).sum(0) if rm else np.zeros(3)
+ return {'exact_replaced_native_ids':sorted(ids),'native_count':len(ids),'absent_requested_ids':sorted(ids-present),'fully_selected_mass_rows':rm,'fully_selected_mass_range_kg':mass.tolist(),'mixed_union_rows_no_credit':mixed,'scope':'only exact source rows; coolant hoses/inventory and old elbow/proximal structure retained pending remap. Native functional replacement is conditional, never automatic savings','new_minus_fullyselected_old_mass_range_kg':(np.array([r['mass_range_kg'] for r in scene['modules']]).sum(0)-mass).tolist()}
+def wrist_wrenches(scene):
+ pts=np.array([f['contact'] for f in features]);contact=pts.mean(0);mods={r['id']:r for r in scene['modules']};tree=scene['body_tree'];out=[]
+ def below(b,child):
+  while b in tree:
+   if b==child:return True
+   b=tree[b].get('parent')
+  return False
+ for pn,angles in POSES.items():
+  ts=transforms(scene,angles);pcontact=trimesh.transform_points([contact],ts['left_palm'])[0]
+  for kg in [25,50]:
+   for dx in [-.10,0,.10]:
+    loadp=pcontact+ts['left_palm'][:3,:3]@np.array([dx,0,0]);F=np.array([0.,0.,-kg*9.80665])
+    for j in scene['joints']:
+     Tp=ts.get(j['parent'],np.eye(4));axis=Tp[:3,:3]@j['axis_world'];c=trimesh.transform_points([j['pivot_world_m']],Tp)[0]
+     # Pressure center13mm from output mounting face toward fixed case, not at arbitrary centroid.
+     pc=np.array(j['output_A_face_world_m'])+np.array(j['axis_world'])*j['input_face_B_sign']*.013;pc=trimesh.transform_points([pc],Tp)[0]
+     moment=np.cross(loadp-c,F);bearingM=np.cross(loadp-pc,F);ownF=np.zeros(3);ownMoment=np.zeros(3)
+     for p in scene['parts']:
+      if below(p['body'],j['child']):
+       r=mods[p['name']];m=moved(p,ts,scene);com=m.center_mass;ff=np.array([0,0,-r['mass_range_kg'][1]*9.80665]);ownF+=ff;ownMoment+=np.cross(com-pc,ff)
+     Ft=F+ownF;Mt=bearingM+ownMoment;Fa=abs(np.dot(Ft,axis));Fr=float(np.linalg.norm(Ft-np.dot(Ft,axis)*axis));overturn=float(np.linalg.norm(Mt-np.dot(Mt,axis)*axis));P0=Fr+2*overturn/.08+.44*Fa
+     jointtau=float(np.dot(moment,axis));grossOwnTau=float(np.dot(ownMoment+np.cross(pc-c,ownF),axis));totalTau=jointtau+grossOwnTau
+     out.append({'pose':pn,'joint':j['id'],'payload_kg_sensitivity':kg,'object_offset_localX_m':dx,'candidate_contact_mean_world_m':pcontact.tolist(),'object_force_point_world_m':loadp.tolist(),'joint_center_world_m':c.tolist(),'source_pressure_center_world_m':pc.tolist(),'axis_world':axis.tolist(),'payload_only_torque_Nm':jointtau,'newchild_inventory_proxy_torque_Nm':grossOwnTau,'summed_proxy_joint_torque_Nm':totalTau,'normalization_vs_gear_L10_178Nm':abs(totalTau)/178,'bearing_Fr_N':Fr,'bearing_Fa_N':Fa,'bearing_overturn_Nm':overturn,'bearing_Mc_reference_Nm':313,'bearing_P0_N':P0,'bearing_fs_reference_C0_25kN':25000/P0 if P0 else None,'motor_input_torque_by_eta_Nm':{str(e):abs(totalTau)/(100*e) for e in [.55,.7,.85]},'scope':'gravity only. Original retained hand/armor/link masses, drive rotor/gearinput-output split, finger dynamics/contact forces and actual mounting excluded. Sourcepressurecenter formula conditional to installed output face and parent axis. SourceMc/fs not full loadacceptance.'})
+ return out
+def drive_budget():
+ rows=[]
+ for r in ns_budget():
+  lead=.0015 if 'finger' in r['channel'] else .002;v=r['tendon_speed_m_s'];F=r['screw_force_N'];eta=r['screw_eta_assumed'];mm=n['SRC']['thumb' if 'thumb' in r['channel'] else 'small'];T=F*lead/(2*math.pi*eta)
+  x=dict(r);x.update(screw_lead_m=lead,motor_torque_Nm=T,motor_rpm=v/lead*60,copper_loss_25C_proxy_W=3*(T/mm['Kt'])**2*mm['Rph25'],rectangular_source_guard_only=(T<=.9*mm['Tc'] and v/lead*60<=mm['rpm48']),source_thermal_installed_accepted=False);rows.append(x)
+ return rows
+def ns_budget():return [r for r in n['ns']['budget'] if r['channel'].startswith('left_')]
+def projection(scene,layout):
+ W,H=1600,1200;im=Image.new('RGB',(W,H),'white');d=ImageDraw.Draw(im);d.text((20,15),'G2 LEFT native complete modules + original armor; 0mm appearance change. Rejected diagnostics, not installed.',fill='black');scale=980
+ ps=[p for p in base['parts'] if p['body'].startswith(('left_forearm','left_palm','left_finger','left_thumb'))]
+ for name,dim,org in [('XZ',(0,2),(640,1110)),('YZ',(1,2),(850,1110))]:
+  def P(v):return (org[0]+(v[dim[0]]-(0 if name=='XZ' else .55))*scale,org[1]-(v[2]-.78)*scale)
+  for p in ps:
+   v=np.array(p['vertices_world_m'])
+   for f in p['faces']:a=[P(v[i]) for i in f];d.line(a+[a[0]],fill=(195,201,210),width=1)
+  for p in sorted(scene['parts'],key=lambda p:np.mean(np.array(p['vertices_world_m'])[:,1 if name=='XZ' else 0])):
+   v=np.array(p['vertices_world_m']);col=(94,117,125) if p['role']=='actual_material' else (170,126,66)
+   for f in p['faces']:d.polygon([P(v[i]) for i in f],fill=col,outline=(49,57,63))
+  d.text((100 if name=='XZ' else 950,100),name+' same980px/m',fill='black')
+ im.save(B/f'native_neutral_{layout}.png')
+def main():
+ (B/'force_travel_budget.json').write_text(json.dumps({'rows':drive_budget(),'scope':'sameG1 source contact/lever hypotheses, lead1.5mm fingers/2mmthumb; 180stroke. Not fullscrew/thermal/taskqualification'},indent=2)+'\n')
+ for l in ['a','b']:
+  s=json.loads((B/f'scene_{l}.json').read_text());rem=removal(s);(B/f'replacement_receipt_{l}.json').write_text(json.dumps(rem,indent=2)+'\n');removed=set(rem['exact_replaced_native_ids'])
+  context=[p for p in old['parts'] if 'left' in p['body'] and (any(k in p['body'] for k in ['forearm','palm','finger','thumb','wrist'])) and p['name'] not in removed and not p['name'].startswith(('e_coolant_inventory','e_ds_left_'))]
+  projection(s,l);(B/f'route_motion_{l}.json').write_text(json.dumps(pose_routes(s),indent=2)+'\n');(B/f'material_union_{l}.json').write_text(json.dumps(mass_material(s),indent=2)+'\n');(B/f'wrist_gravity_screen_{l}.json').write_text(json.dumps(wrist_wrenches(s),indent=2)+'\n')
+  print('ANALYSIS_READY',l,'retainedcontext',len(context),'exactreplacement',len(removed),flush=True)
+  for pn in POSES:
+   r=collision(s,pn,context);(B/f'collision_{l}_{pn}.json').write_text(json.dumps(r,indent=2)+'\n');print('POSE_SCREEN',l,pn,r['positive_hits'],'unknown',len(r['unknown']),flush=True)
+ if __name__=='__main__':pass
+
+if __name__=='__main__':main()
