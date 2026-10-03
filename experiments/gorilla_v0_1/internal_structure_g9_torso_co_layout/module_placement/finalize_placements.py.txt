@@ -1,0 +1,94 @@
+"""Bound exact scopes, failures, unchanged functions and freeze two actual arrangements."""
+from pathlib import Path
+import gzip,json,hashlib,datetime
+import numpy as np
+R=Path('/home/ethan/Projects/Sai_Rotbots');O=Path(__file__).resolve().parent
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def write(n,v):(O/n).write_text(json.dumps(v,indent=2,allow_nan=False)+'\n')
+def main():
+ inputs={str(p.relative_to(R)):sha(p) for p in [R/'.scratch/gorilla_internal_g9_whole_source/scene.json.gz',R/'.scratch/gorilla_internal_g9_whole_source/interfaces.json',
+   R/'.scratch/gorilla_internal_f1_system/layout_2_scene.json',R/'.scratch/gorilla_internal_g9_torso_core/b/core_scene.json.gz',R/'.scratch/gorilla_internal_g9_torso_core/b/cad_manifest.json',
+   R/'robots/gorilla_v0_1/design/concepts/aa3/user_confirmed_four_view.jpg']}
+ base=json.loads(gzip.decompress((R/'.scratch/gorilla_internal_g9_whole_source/scene.json.gz').read_bytes()));bm={p['name']:p for p in base['parts']}
+ core_manifest=json.loads((R/'.scratch/gorilla_internal_g9_torso_core/b/cad_manifest.json').read_text())
+ summaries=[]
+ for i in [1,2]:
+  D=O/f'layout_{i}';sp=D/'scene.json.gz';s=json.loads(gzip.decompress(sp.read_bytes()));pm={p['name']:p for p in s['parts']}
+  checks=json.loads((D/'space_checks.json').read_text());rend=json.loads((D/'render_manifest.json').read_text());inv=json.loads((D/'inventory_and_transform_receipt.json').read_text())
+  assert checks['scene_stored_sha256']==sha(sp) and rend['scene_stored_sha256']==sha(sp)
+  assert all(sha(D/n)==h for n,h in rend['outputs'].items())
+  assert inv['full_raw_unchanged_other_part_count']==1759 and not inv['unchanged_other_dictionary_errors']
+  assert inv['visible_original_armor_full_dictionary_exact_count']==111
+  ports=json.loads((D/'route_states.json').read_text())
+  core_new=[r for r in checks['positive_pairs'] if r['new_core_involved'] and (r.get('group_a') or r.get('group_b'))]
+  old_shoulder=[r for r in checks['positive_pairs'] if r['new_core_involved'] and any('shoulder' in r[k] for k in ['a','b'])]
+  summary={'layout':i,'scene_stored_sha256':sha(sp),'native_rows':1793,'new_core_id':'g9_torso_core_b',
+      'complete_group_member_count':33,'other_full_raw_dictionary_exact_count':1759,'armor_exact_count':111,
+      'baseline9_mutual_pair_count':len(inv['baseline9group_mutual_positive_pairs']),'new9_mutual_pair_count':checks['complete_group_vs_complete_group_pairs'],
+      'all_queried_positive_pair_count':len(checks['positive_pairs']),'actual_tests':checks['tests'],
+      'core_vs9_group_pairs':core_new,'original_armor_pairs':checks['armor_pairs'],'core_vs_all_active_context_pairs':checks['new_core_pairs'],
+      'legacy_shoulder_gear_fixed_to_new_core_axis_status':'Known context-invalid: old shoulder pitch source Z2.360 vs candidate port Z2.290 differs70mm; old123.5mm gear axial reference is wrong. These cannot be called proved material conflict of a correctly installed new shoulder module.',
+      'legacy_shoulder_core_pairs_separately_located':old_shoulder,
+      'actual_native_images_inspected':True,'image_sha256':rend['outputs'],'known_moved_source_port_count':len(ports['known_source_ports_moved']),
+      'existing_route_rebuild_count':len(ports['existing_routes_explicitly_invalidated']),
+      'major_rejects':['Upper rear complete packs break original crown/rear skin; compute breaks top-front curve; not an accepted external-component solution.',
+                       'Lower complete packs conflict with retained whole valve/holding bank; full18 control distribution has not been redesigned.',
+                       'Oil-water HX crosses actual waist neck/core material; driven joint stack below is also invalid old geometry.',
+                       'Old thermal/hose/duct and other source systems remain at old coordinates; new endpoints do not make them connected.',
+                       'New core reaction/fastening and all mounts/6D ownership remain conditional; no whole-robot pose or contact qualification.'],
+      'whole_robot_mass_COM_I_qualified':False,'installed_or_aesthetic_accepted':False}
+  summaries.append(summary)
+ write('comparison.json',{'scope':'Two actual whole9-group arrangements on real B perimeter core, with all remaining old native geometry retained.',
+   'inputs':inputs,'layouts':summaries,'macro_attempts':2,'third_or_local_tweak_attempts':0,
+   'conditional_preference':'Layout1 is the next macro input because core×newgroups3 vs7 and armor22 vs53; neither arrangement is accepted. Total pair count alone is not a selection objective.',
+   'original_AA3_must_change_proved':False,'new_axis_or_leg_or_foot_or_outer_armor_applied':False,
+   'next_root_step':'Co-design fixed/rotary shoulder-waist stacks, redistributed18 valve bank and heat/wire/tool volume, then determine actual enclosing skin. Root decides architecture.'})
+ write('functional_replacement_scope.json',{'new_core_source':inputs['.scratch/gorilla_internal_g9_torso_core/b/core_scene.json.gz'],
+   'old_F1_material_parts_replaced':['f1_torso_load_shell_piece_0','f1_torso_load_shell_piece_1'],
+   'reference_only_pending_replacement_part':'e2_upper_net_torso','legacy_mass_kg':77.9372235775857,
+   'legacy_source_unchanged_and_retained_in_parts':True,'reference_only_not_active_mass_or_collision_or_fourview_material':True,
+   'intended_new_finite_functional_path':'waist output ring/closed neck -> perimeter closed shells+cross ties -> left/right shoulder reaction shells/bosses',
+   'actual_three_port_geometry':core_manifest['actual_interface_faces'],
+   'interface_hypotheses':core_manifest['interface_hypotheses'],
+   'functions_not_closed':['Actual shoulder fixed vs moving bearing datum and output ownership','Fasteners/clamping/keys/stop/rotation clearance','Load at actual gravity and dynamic wrench','Correct complete shoulder/waist drive stack at new3 ports'],
+   'old_e2_shoulder_bridge_fully_functionally_replaced':False,'mass_difference_not_claimed_as_whole_robot_weight_saving':True})
+ write('visual_inspection.json',{'inspected_actual_png_files':{str(D.relative_to(O)/n):h for i in [1,2] for D in [O/f'layout_{i}'] for n,h in json.loads((D/'render_manifest.json').read_text())['outputs'].items()},
+   'native_fourviews_and_actual_source_plane_sections_seen':True,
+   'observations':['4 complete rear packs have separate green contour layers; vertical pumps leave old battery-pump overlap but conflict with other retained inventory.',
+                   'Whole native views show top-front compute and rear upper packs protruding the unchanged original shell. This is a failed placement, not exterior authority.',
+                   'Layout2 high横向 pumps expand shoulder/front intrusion compared with layout1. No third placement was made.',
+                   'Section contours are actual triangle-plane cuts, including core inner/outer surfaces, old candidate hardware and stock envelopes; blank area is not certified free volume.'],
+   'no_reference_hardware_hidden_to_manufacture_pass':True,'root_authorized_old_shoulder_reference_only_exclusion':True,
+   'aesthetic_or_physical_accepted':False})
+ text=f'''# G9 实际九组共同布局探针
+
+两套真实候选已生成。`layout_1/scene.json.gz` SHA `{summaries[0]['scene_stored_sha256']}`；`layout_2/scene.json.gz` SHA `{summaries[1]['scene_stored_sha256']}`。同一实际B周边承力core，原两F1躯干壳换一件core，故1793个原生条目；四电池、两整泵、HX、compute、backscreen共33个成员整组刚性变换。其余1759完整part字典原值、111可见甲原值，未缩OEM、删功能、改容量/采购、换腿脚或造新轴。原9组之间14个positive交减少为两套各0，仅本次中立包络/材料查询，非安装或物理通过。
+
+布局1：完整packs转90°成为后部双列双层（中心X−.23，Y±.14，Z2.12/2.47）；两完整泵竖轴（X.04，Y±.16，Z2.32）。布局2只把完整泵转横向放高肩前侧（X.165，Y±.28，Z2.435）。HX中心[.22,0,1.90]，提出pelvis承载owner；compute[.20,0,2.61]；backscreen保持原[−.386,0,2.225]，屏玻璃/UI原值。所有owner是挂接候选，不代表有安装反力路径。每组exact IDs、矩阵、实际AABB、质量范围和后移COM见placement_parameters/moved_group_mass_positions；不得把AABB当freecavity。
+
+真实空间筛查：L1 1282 Boolean queries、423positive（core109、甲22、9组互交0）；L2 1242queries、392positive（core113、甲53、互交0）。L1新core×9组为HX有限材料324.705cm³＋两泵return-filter参考各20.561cm³；L2新core×9组7对，包括HX、整泵参考与有限mount。有限材料、参考包络、原甲、旧上下游context在space_checks逐对分列。旧肩gear Z2.36与新port Z2.29错70mm且旧123.5mm轴长错；562cm³的旧gear×core不是正确新安装的真实材料失败，不能推导AA3必须改形。没有修旧gear让它刷过。
+
+两套都拒绝。实看whole四视和原生triangle-plane切面显示：upper rear packs及顶部前compute破出原曲面，lower packs撞现有阀bank，HX与腰颈材料相交；不是允许外置这些器件的方案。原AA3可见外表面没动，也没有利用隐藏内皮开洞取得通过。L1相较L2给出较少新core/原甲挑战，可作为root下一宏观输入，不是采用。已达两次宏观上限，不继续第三挪位。
+
+旧`e2_upper_net_torso`按root授权保留完整source/ID/77.937kg挑战、改为reference-only pending full functional replacement，不作为新core主动实材重叠强制障碍。两实际四视不显示它，原1794全source诊断另冻结。新core通过waist环/闭口颈—周边壳/横接—双肩boss提出三个真实port；具体面与条件轴见functional_replacement_scope。旧肩固定/输出身份、紧固、载荷、完整驱动接回尚未闭，不能声称旧桥功能完全替代或把质量差当整机减重。
+
+油/水、真实散热芯、fan、duct、全部旧native油水管与HV/24V占位都保留。已明确变换24个已知候选source接口点并列24条旧路由失效；这些不是原厂认证datum，所有新油水/电线均未重建。其余电气接头实际datum、线管弯曲/运动、pump空气辅助冷却、工具路径unknown保留，不补虚构线或油容量。30L全局油和原water库存只计一次，新的空间分配未知。90旧阀holding服务空间保留，不把非实体当质量/可安装硬件。
+
+scene保留旧账本列为baseline reference；实际移动后COM在`moved_group_mass_positions.json`，不要把旧COM当当前位置。所有组质量范围原值，33成员体积变化最大<5e−18m³；目录包络不造OEM惯量，新core条件钢性质来自其独立CAD。缺4缸仍unknown，不零计；整机mass/COM/fullI为null，稳定SI/持续驱动/热/真实接触/审美全部false。
+
+可复现入口：build_placements.py 1/2；check_placements.py 1/2；render_placements.py 1/2；update_route_interfaces.py。全部只能在新clone目录再运行，不能覆盖此快照。两套实际cut PNG与native四视都已打开查看、绑定本scene hash，无贴原图、AI画CAD或修源法线。最终架构、下一完整肩腰/阀/热路共同分配由root决定，双足双手自主复杂Bevy终点保留。本轮无FEM/GPU/Git/受控文件写入。
+'''
+ (O/'README.md').write_text(text)
+ files=[]
+ for p in sorted(O.rglob('*')):
+  if not p.is_file() or p.name=='snapshot_manifest.json':continue
+  row={'path':str(p.relative_to(O)),'stored_sha256':sha(p),'bytes':p.stat().st_size}
+  if p.suffix=='.gz':row['uncompressed_sha256']=hashlib.sha256(gzip.decompress(p.read_bytes())).hexdigest();row['compression']='gzip mtime0'
+  files.append(row)
+ write('snapshot_manifest.json',{'frozen_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'scope':'Two actual9-group placements+source Bcore; both rejected; no nextwhole architecture adoption.',
+   'owned_files':files,'input_sources':inputs,'source_scene_hashes':[q['scene_stored_sha256'] for q in summaries],
+   'macro_attempts':2,'no_third_placement':True,'physical_or_aesthetic_or_stable_SI_accepted':False})
+ for f in files:assert sha(O/f['path'])==f['stored_sha256']
+ for p,h in inputs.items():assert sha(R/p)==h
+ print(json.dumps({'files':len(files),'inputs':len(inputs),'README':sha(O/'README.md'),'manifest':sha(O/'snapshot_manifest.json')}),flush=True)
+if __name__=='__main__':main()

@@ -1,0 +1,99 @@
+"""One bounded source-enrichment and A/B conditional-subset receipt; no FEM."""
+from pathlib import Path
+import collections,gzip,hashlib,json
+import numpy as np
+OUT=Path(__file__).resolve().parent;ROOT=OUT.parents[1];SRC=ROOT/'.scratch/gorilla_internal_g9_whole_source';CORE=ROOT/'.scratch/gorilla_internal_g9_torso_core';ALLOC=ROOT/'.scratch/gorilla_internal_g8_system_allocation'
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def load(p):return json.loads(gzip.open(p,'rt').read()) if str(p).endswith('.gz') else json.loads(Path(p).read_text())
+def save(p,d):Path(p).write_text(json.dumps(d,indent=2,ensure_ascii=False,allow_nan=False)+'\n')
+def family(row):
+    n=row['id'].lower();cat=str(row.get('category','')).lower()
+    if any(t in n for t in ['finger','thumb','hand','palm']):return 'hand_function_structure_drives_and_sensing'
+    if any(t in n for t in ['custom_hv_pack','pack_bms','battery']):return 'energy_pack_BMS_fuse_coldplate'
+    if any(t in n for t in ['directional','hydraulic','pump','valve','holding','tank','oil_hx','fluid_hx','radiator','fan','exhaust','duct','coolant','hose','reservoir','filter','header','coldplate','oil_water_hx','thermal']):return 'hydraulic_thermal_air_and_lines_dry_hardware'
+    if any(t in n for t in ['shoulder','elbow','forearm_roll','wrist']) and ('ds_' in n or 'cooling_case' in n):return 'joint_drive_complete_function_inventory'
+    if any(t in n for t in ['gear','motor','encoder','brake','controller','drive_']):return 'joint_drive_complete_function_inventory'
+    if any(t in n for t in ['net_','torso_core','structure_group','armor','shell','frame','carrier','adapter','hub','bridge','brace','rib']):return 'load_frames_shells_and_retained_armor'
+    if any(t in n for t in ['compute','network','camera','imu','lidar','screen','sensor','touch','back_display']):return 'compute_perception_control_and_display'
+    return 'other_installation_and_reference_inventory'
+def source_type(row,original=None):
+    if row['id'].startswith('g9_torso_core_'):return 'actual_OCC_net_material_conditional_density_7850'
+    if row['id'].startswith('structure_group:'):return 'source_net_material_union_conditional_density'
+    if original and original.get('category','').endswith('_oem_valve'):return 'explicit_OEM_complete_mass_plus_unqualified_installation'
+    if original and str(original.get('mass_scope','')).startswith('OEM complete'):return 'explicit_OEM_complete_mass_plus_unqualified_installation'
+    if original and original.get('density_kg_m3') is not None and original.get('material_volume_m3') is not None:return 'source_finite_own_material_density_range'
+    if row['id'].startswith('e2_upper_net_'):return 'inherited_native_net_stock_density_and_COM_proxy_unqualified'
+    return 'inherited_source_calibrated_or_custom_mass_allowance_not_recatalogued'
+def diagnose(selected,pivot):
+    total=np.sum([q['mass_range_kg'] for q in selected],axis=0);mom=np.zeros(3);W=np.zeros(6);bounds=np.zeros((6,2))
+    for r in selected:
+        masses=np.array(r['mass_range_kg']);c=np.array(r['source_COM_world_proxy_m']);mom+=masses[1]*c;coef=np.r_[0,0,-9.81,-9.81*(c[1]-pivot[1]),9.81*(c[0]-pivot[0]),0.]
+        W+=coef*masses[1];bounds[:,0]+=np.minimum(coef*masses[0],coef*masses[2]);bounds[:,1]+=np.maximum(coef*masses[0],coef*masses[2])
+    return {'row_count':len(selected),'mass_range_sum_kg':total.tolist(),'source_proxy_nominal_COM_world_m':(mom/total[1]).tolist(),'gravity_Fxyz_Mxyz_at_historical_roll':W.tolist(),'componentwise_gravity_bounds':bounds.tolist(),'full_installed_upper_mass_COM_I_known':False,'nominal_COM_is_only_source_inventory_proxy':True}
+def main():
+    r=load(OUT/'upper_load_scope.json');inv=load(SRC/'mass_inventory.json');scene=load(SRC/'scene.json.gz');pm={p['name']:p for p in scene['parts']};reg=load(SRC/'part_registry.json');oldmap={q['id']:q for q in inv['present_rows']}
+    for q in r['inventory_rows']:
+        old=oldmap[q['id']];q['source_mass_scope']=old.get('mass_scope',old.get('basis'));q['source_range_scope']=old.get('range_scope');q['source_physics_unknown']=old.get('physics_unknown',[]);q['functional_family_candidate']=family(q);q['mass_source_type']=source_type(q,old)
+    for q in r['structure_rows']+r['complete_reference_rows']:
+        q['functional_family_candidate']=family(q);q['mass_source_type']=source_type(q)
+    q=r['new_A_material_row'];q['functional_family_candidate']=family(q);q['mass_source_type']=source_type(q)
+    indexed={q['id']:q for q in r['inventory_rows']+r['structure_rows']+r['complete_reference_rows']+[q]};selected=[indexed[n] for n in r['conditional_diagnostic_subset_ids']];pivot=np.array([.23,0,1.91])
+    # Same explicit subset, replacing only A's new material line by B's real new line.
+    B=load(CORE/'b/cad_manifest.json');A=load(CORE/'a/cad_manifest.json')
+    if B['source_context_stored_sha256']!=r['whole_scene_sha256'] or B['replaced_part_names']!=A['replaced_part_names']:raise ValueError('B is not the same source/replacement scope')
+    b={'id':'g9_torso_core_b','source':'new B cad_manifest.json','status':'conditional_new_material_source_only','mass_range_kg':[B['conditional_mass_kg']]*3,'source_COM_world_proxy_m':B['COM_world_m'],'density_kg_m3_assumption':B['density_kg_m3_hypothesis'],'known_cad_solid_count':B['actual_material_solid_count'],'mass_source_type':'actual_OCC_net_material_conditional_density_7850','functional_family_candidate':'load_frames_shells_and_retained_armor','installed_body_or_strength_accepted':False}
+    selectedB=[b if q['id']=='g9_torso_core_a' else q for q in selected]
+    cases={}
+    for label,ss in [('a',selected),('b',selectedB)]:
+        d=diagnose(ss,pivot);buckets=collections.defaultdict(lambda:{'ids':[],'range_kg':np.zeros(3),'source_types':collections.Counter()});types=collections.defaultdict(lambda:np.zeros(3))
+        for q in ss:
+            f=q['functional_family_candidate'];t=q['mass_source_type'];buckets[f]['ids'].append(q['id']);buckets[f]['range_kg']+=q['mass_range_kg'];buckets[f]['source_types'][t]+=1;types[t]+=q['mass_range_kg']
+        d['functional_contribution_buckets']=sorted([{'function_bucket':f,'mass_range_kg':v['range_kg'].tolist(),'exact_row_ids':v['ids'],'mass_source_type_row_counts':dict(v['source_types'])} for f,v in buckets.items()],key=lambda x:x['mass_range_kg'][1],reverse=True)
+        d['mass_source_type_ranges']={k:v.tolist() for k,v in types.items()};cases[label]=d
+    r['parallel_A_B_conditional_dry_subsets']=cases;r['new_B_material_row']=b
+    # Symmetric dry arms are separate candidate loads at actual CAD mate planes, not solved bearing traction.
+    arm=[]
+    for side,sign in [('left',1),('right',-1)]:
+        ss=[q for q in selected if q.get('gravity_owner_candidate','').startswith(side+'_')];mate=np.array([A['interface_hypotheses']['shoulder_axis_lines_XZ_m'][0],A['interface_hypotheses']['shoulder_candidate_mate_plane_Y_m'][0 if sign<0 else 1],A['interface_hypotheses']['shoulder_axis_lines_XZ_m'][1]])
+        dd=diagnose(ss,mate);dd['gravity_Fxyz_Mxyz_at_candidate_shoulder_mate']=dd.pop('gravity_Fxyz_Mxyz_at_historical_roll');dd['mate_mapping_scope']='Same spatial Y side from actual source arm COM; CAD left/right face naming and mechanical owner remain unqualified.';dd.update({'side':side,'mate_plane_reference_world_m':mate.tolist(),'scope':'Candidate arm selfweight only, original provisional arm owners; includes source hand function inventory, no external tool/payload force or dynamic term. Real fixed/moving shoulder interface and mount distribution unknown.'});arm.append(dd)
+    r['conditional_arm_selfweight_mate_wrenches']=arm
+    # Missing visible/reference rows are grouped at macro level; no arbitrary material fill or zero-mass credit.
+    missing=collections.defaultdict(list)
+    for q in r['upper_native_members_without_mass_row']:
+        q['mass_kg']=None;q['COM_world_m']=None;q['I_kg_m2']=None
+        q['macro_function_class']='display_visual_proxy_requires_module_inclusion_map' if q['role'] in ['display_module_envelope','control_display_glass','control_display_ui'] else 'visible_detail_or_vent_hardware_material_scope_unknown'
+        missing[q['macro_function_class']].append(q['id'])
+    r['missing_mass_macro_classes']=dict(missing)
+    r['upper_native_known_mass_coverage_is_not_complete']=True
+    r['output_support_challenge']={'roll_X_axis_nominal_Mx_near_symmetry_not_bearing_pass':True,'dry_subset_A_nominal_My_Nm':cases['a']['gravity_Fxyz_Mxyz_at_historical_roll'][4],'dry_subset_B_nominal_My_Nm':cases['b']['gravity_Fxyz_Mxyz_at_historical_roll'][4],'pressure_center_and_radial_axial_overturn_bearing_capacity_unknown':True,'fixed_shell_dual_support_fastener_weld_stiffness_mount_envelope_required':True,'complete_drive_G9_stack_still_historical_invalid_dimensions':True,'no_component_capacity_comparison_or_physical_verdict':True}
+    r['topology_load_port_handoff']={'actual_CAD_ports_A':A['actual_interface_faces'],'actual_CAD_ports_B':B['actual_interface_faces'],'own_core_body_gravity':'Use actual homogeneous body force rho*g only under declared density. Module mounting forces must map to real seats/fasteners, not nearest interface point.','shoulder_loads':'Use candidate arm selfweight plus explicit full6D hand/task wrenches and actual serial poses; true fixed/moving/rotor share and reactions unknown.','waist_output':'Balance full accepted upper F/M including all real mount/body forces. The presented subset wrench is diagnostic, not a final applied/qualified interface traction.','missing_inputs':['installed and split output masses/COM/inertia','actual module load mounts and joint pressure centres','fluid inventory spatial partition/current routed mass','two actual arm pose/task full6D output wrenches and control/dynamic limits','shoulder fixed/moving connection/bearing/bolt reaction path','retained output adapter+new core net material union and allowed connector/weld/fastener path'],'do_not_add_lower_3t_pressure_to_torso':True,'biped_bimanual_autonomous_complex_task_core_not_shrunk':True}
+    # Source leaf hashes and exact replacement/ghost scope are captured without changing any input.
+    paths=[SRC/'scene.json.gz',SRC/'part_registry.json',SRC/'interfaces.json',SRC/'mass_inventory.json',SRC/'snapshot_manifest.json',ALLOC/'whole_system_allocation.json',CORE/'a/cad_manifest.json',CORE/'a/torso_core.brep',CORE/'a/context_intersections.json',CORE/'b/cad_manifest.json',CORE/'b/torso_core.brep']
+    r['input_hashes']={str(p.resolve()):sha(p) for p in paths};r['producer_sha256']=sha(OUT/'build_upper_scope.py');r['finalizer_sha256']=sha(Path(__file__));save(OUT/'upper_load_scope.json',r)
+    tab=[]
+    for label,d in cases.items():
+        for q in d['functional_contribution_buckets'][:5]:tab.append(f"| {label.upper()} | {q['function_bucket']} | {q['mass_range_kg'][0]:.3f} | {q['mass_range_kg'][1]:.3f} | {q['mass_range_kg'][2]:.3f} | {len(q['exact_row_ids'])} |")
+    text='''# G9 upper load scope
+
+This is a traceable dry inventory subset, not a known upper body or whole robot. The frozen whole scene is 07b79df0e08ffebc17ab124c4b3ac6f8bdc0a8e39f603447f2c98fc30ffad5c2. Historical body owners and axes are provisional. Per-ID ranges and current native presence are retained; no physical unknown is converted into zero or a procurement yellow-line closure.
+
+| Candidate | Complete functional bucket (candidate allocation) | Low kg | Nominal kg | High kg | Exact rows |
+|---|---|---:|---:|---:|---:|
+'''+ '\n'.join(tab)+f'''
+
+A dry diagnostic subtotal is {cases['a']['mass_range_sum_kg']} kg; B is {cases['b']['mass_range_sum_kg']} kg. They differ only by the actual new torso material line: A {A['conditional_mass_kg']:.6f} kg vs B {B['conditional_mass_kg']:.6f} kg at the same conditional density7850kg/m³. Every other selected source row is identical. Catalogue-calibrated or custom inherited allowances, conditional net-material stock, explicit complete OEM valve mass and new OCC material are distinguished per ID and summed by source type in JSON. These are not installed mass measurements or certified OEM internal COM/inertia. No full upper inertia is constructed.
+
+At historical roll [0.23,0,1.91] m, nominal dry-subset gravity wrench [Fx,Fy,Fz,Mx,My,Mz] is A {cases['a']['gravity_Fxyz_Mxyz_at_historical_roll']} and B {cases['b']['gravity_Fxyz_Mxyz_at_historical_roll']}. Per-component range extrema are independent mass sensitivities, not simultaneously feasible manufactured assemblies. Nominal source COMs are unqualified inventory proxies. Symmetric arms make X-axis roll torque close to zero while the perpendicular My overturn remains about2.5–2.6kNm. A full fixed shell/output bearing pair/fastener/weld path, true pressure centres, radial/axial/moment capacity and stiffness are therefore required; motor roll torque alone cannot assess this interface. No capacity or physical pass/fail is claimed.
+
+Only f1_torso_load_shell_piece_0/1 are replaced by each new core. The old three-member torso union is not added to the new core: its retained f1_ds_waist_roll_hollow_output_adapter remains a necessary function pending exact same-material union/installation scope. The native e2_upper_net_torso77.9372236kg shoulder challenge is still present and functionally unresolved; it is neither an additive accepted new torso mass nor an authorized deletion credit. All142 historical E2 stock rows are individually rebound to actual members and kept outside the candidate sum. Zero multiple mass coverage is found in the registered scopes.
+
+Oil30L24.6/25.5/26.4kg remains one global stock with unknown upper/lower tank/chamber/hose partition and COM; source coolant body stocks likewise have invalid current spatial/routing ownership. They are separately listed and excluded from this dry diagnostic instead of silently zeroed or duplicated per hose. The waist-roll whole gear/motor reference resides on its upstream owner, but the moving output share is unknown and cannot disappear from the upper load simply because the whole module was assigned to the parent.
+
+There are77 upper native members without an explicit mass row, grouped into display/render inclusion and visible detail/vent hardware scopes in JSON. UI render items cannot be filled as dense hardware, and potential inclusion in a complete display module is not proven. Main control screen/perception and original111 armor are retained. Both full arm and hand function inventories remain; actual tool/payload/task6D wrenches, poses and acceleration are mandatory future load inputs. The lower-limb3t static-pressure example is not transferred to the torso.
+
+The next load-port handoff requires actual core body gravity plus each real module mount load, the two shoulders' source-bound arm/task wrenches, and their balancing six-dimensional waist output reaction. Current CAD mate faces are conditional geometry, not real bearing contact or nearest-pivot load targets. Missing output splits, fluid placement, shoulder fixed/moving mechanics, fasteners and retained adapter union block a final upper load/COM/I contract. No FEM, purchase search, new exterior, Git or upstream mutation was performed.
+'''
+    (OUT/'upper_load_scope.md').write_text(text)
+    outputs=[p for p in sorted(OUT.iterdir()) if p.is_file() and p.name!='manifest.json'];manifest={'frozen':True,'inputs':[{'path':str(p.resolve()),'sha256':sha(p)} for p in paths],'outputs':[{'path':str(p.resolve()),'sha256':sha(p)} for p in outputs],'reproduce':['.venv/bin/python .scratch/gorilla_internal_g9_upper_load_scope/build_upper_scope.py','.venv/bin/python .scratch/gorilla_internal_g9_upper_load_scope/finalize_upper_scope.py'],'upper_mass_COM_I_closed':False,'physical_accepted':False};save(OUT/'manifest.json',manifest)
+    print(json.dumps({'A':cases['a']['mass_range_sum_kg'],'B':cases['b']['mass_range_sum_kg'],'A_wrench':cases['a']['gravity_Fxyz_Mxyz_at_historical_roll'],'B_wrench':cases['b']['gravity_Fxyz_Mxyz_at_historical_roll'],'manifest_sha256':sha(OUT/'manifest.json'),'json_sha256':sha(OUT/'upper_load_scope.json'),'md_sha256':sha(OUT/'upper_load_scope.md'),'arm_wrenches':arm},indent=2))
+if __name__=='__main__':main()

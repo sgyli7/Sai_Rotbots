@@ -1,0 +1,58 @@
+"""Explicit source-interface aliases; moves do not imply a connected new hose."""
+from pathlib import Path
+import json,gzip,hashlib,copy
+import numpy as np
+R=Path('/home/ethan/Projects/Sai_Rotbots');O=Path(__file__).resolve().parent
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def main():
+ base=json.loads((R/'.scratch/gorilla_internal_g9_whole_source/interfaces.json').read_text())
+ aliases={
+  'left_pump':['e_left_emrax_supply','e_left_emrax_return','e2_left_pump_suction','e2_left_pump_pressure','e2_left_pump_case_drain'],
+  'right_pump':['e_right_emrax_supply','e_right_emrax_return','e2_right_pump_suction','e2_right_pump_pressure','e2_right_pump_case_drain'],
+  'HX':['e2_oil_HX_in','e2_oil_HX_out','e2_oil_HX_water_supply','e2_oil_HX_water_return'],
+  'compute':['e_compute_supply','e_compute_return'],
+  'screen':[],
+ }
+ for side in ['left','right']:
+  for level in ['upper','lower']:
+   aliases[f'{side}_{level}_energy']=[f'e_ds_{side}_{level}_custom_hv_pack_supply',f'e_ds_{side}_{level}_custom_hv_pack_return']
+ for i in [1,2]:
+  D=O/f'layout_{i}';s=json.loads(gzip.decompress((D/'scene.json.gz').read_bytes()));Ts={r['id']:np.asarray(r['incremental_rigid_transform_world']) for r in s['new_complete_group_placements']}
+  interface=copy.deepcopy(base);changed=[];states=[]
+  for gid,ids in aliases.items():
+   T=Ts[gid]
+   for n in ids:
+    p=interface['retained_legacy_interface_points'][n];old=copy.deepcopy(p)
+    for key in ['center_world_m','position_world_m']:
+     if isinstance(p.get(key),list) and len(p[key])==3:p[key]=(T[:3,:3]@np.asarray(p[key])+T[:3,3]).tolist()
+    if isinstance(p.get('outward_axis_world'),list):p['outward_axis_world']=(T[:3,:3]@np.asarray(p['outward_axis_world'])).tolist()
+    p.update({'moved_complete_group':gid,'after_group_move_connection_valid':False,
+              'source_point_is_candidate_not_official_OEM_port_datum':True,'gravity_or_structural_attachment_accepted':False})
+    changed.append(n);states.append({'group':gid,'source_port_id':n,'source_point_before_move':old,'actual_rigidly_transformed_source_point':copy.deepcopy(p),
+                                   'after_move_fluid_connection':'NOT CONNECTED; finite hose/fittings/slack/pressure/heat/owner/tool route to be rebuilt.'})
+  endpoint_lookup={**interface['ports'],**interface['retained_legacy_interface_points']};routes=[]
+  for collection in ['routes','legacy_coolant_routes_all_requires_endpoint_audit']:
+   for r in interface[collection]:
+    if r.get('start') in changed or r.get('end') in changed:
+     r['route_state_after_G9_move']='INVALID OLD ROUTE; existing native hose is retained unconnected context.'
+     r['finite_route_rebuilt']=False;routes.append({'collection':collection,'id':r.get('id'),'start':r.get('start'),'end':r.get('end')})
+     coords=[]
+     for key in ['start','end']:
+      q=endpoint_lookup.get(r.get(key),{});coords.append(q.get('center_world_m'))
+     if all(isinstance(x,list) and len(x)==3 for x in coords):r['post_move_endpoint_straight_distance_m']=float(np.linalg.norm(np.array(coords[1])-coords[0]))
+  interface.update({'scene_stored_sha256':sha(D/'scene.json.gz'),'all_known_moved_source_port_states':states,
+      'known_moved_port_count':len(changed),'moved_route_ids_requiring_rebuild':routes,
+      'screen_HV_24V_signal_connector_actual_datum_unknown':True,'pump_electrical_power_control_connector_actual_datum_unknown':True,
+      'compute_power_data_and_all4pack_HV_24V_connectors_actual_datum_unknown':True,
+      'no_new_hose_or_electrical_route_geometry_built':True,'oil_water_inventory_spatial_after_moves_valid':False,
+      '90_valve_holding_service_geometries_retained_no_new9group_tool_clearance_qualification':True,
+      'all_routes_connected_or_installation_or_thermal_accepted':False})
+  (D/'interfaces.json').write_text(json.dumps(interface,indent=2)+'\n')
+  (D/'route_states.json').write_text(json.dumps({'scene_stored_sha256':sha(D/'scene.json.gz'),'known_source_ports_moved':states,
+      'existing_routes_explicitly_invalidated':routes,'all9_groups_electrical_or_cooling_or_HV_interface_rebuild_scope':aliases,
+      'missing_actual_electrical_datums':'BMS HV+/HV-/24V/data, pump inverter power/control, compute power/network, backscreen power/data; finite source envelopes retained but exact fitting/connector topology unknown.',
+      'oil_water_global_mass_stock_retained_once_spatial_allocation_unclosed':True,
+      'radiator_cores_fans_ducts_and_all_native_hoses_retained_at_old_position':True,
+      'source_interface_aliases_are_candidate_geometry_not_verified_OEM_datums':True},indent=2)+'\n')
+  print('ROUTE_STATES',i,'known ports',len(changed),'invalidated routes',len(routes),flush=True)
+if __name__=='__main__':main()

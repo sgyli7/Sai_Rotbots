@@ -1,0 +1,101 @@
+"""Fresh native resource queries and narrow, conditional same-member mass tensors."""
+from pathlib import Path
+import gzip, hashlib, json, sys, time, copy
+from collections import Counter
+import numpy as np
+import trimesh as tr
+import manifold3d as mf
+ROOT=Path('/home/ethan/Projects/Sai_Rotbots');OUT=Path(__file__).resolve().parent
+sys.path.insert(0,str(ROOT/'.scratch/gorilla_internal_g_material_contract'))
+import native_signed_material as gate
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def write(n,x):(OUT/n).write_text(json.dumps(x,indent=2,allow_nan=False)+'\n')
+def triangles(p):return np.array([[f[0],f[j],f[j+1]] for f in p['faces'] for j in range(1,len(f)-1)],dtype=np.uint64,order='C')
+def M(p):return mf.Manifold(mf.Mesh64(np.array(p['vertices_world_m'],dtype=np.float64,order='C'),triangles(p)))
+def main():
+    start=time.monotonic();scene=json.loads(gzip.decompress((OUT/'scene.json.gz').read_bytes()));pm={p['name']:p for p in scene['parts']}
+    contract=gate.validate_scene(scene,require_single_material_component=False)
+    write('native_resource_contract.json',{'scene_stored_sha256':sha(OUT/'scene.json.gz'),'gate_sha256':sha(ROOT/'.scratch/gorilla_internal_g_material_contract/native_signed_material.py'),'checker_sha256':sha(__file__),'contract':contract})
+    bad={p['id'] for p in contract['parts'] if not p['resource_contract_pass']}
+    print('RESOURCE',len(contract['parts']), 'rejected',len(bad),flush=True)
+    schema_codes={'invalid_native_array_schema','native_indexed_triangles_required_no_implicit_polygon_triangulation'}
+    parser_only=[r['id'] for r in contract['parts'] if r['errors'] and all(e['code'] in schema_codes for e in r['errors'])]
+    adapted=[]
+    for n in parser_only:
+        q=copy.copy(pm[n]);q['faces']=triangles(q).astype(int).tolist()
+        r=gate.validate_part(q,require_single_material_component=False)
+        r.update({'raw_source_id':n,'raw_part_dictionary_sha256':hashlib.sha256(json.dumps(pm[n],sort_keys=True,separators=(',',':')).encode()).hexdigest(),
+                  'query_only_explicit_polygon_fan_adapter':True,'stored_source_faces_or_vertices_modified':False})
+        adapted.append(r)
+    write('polygon_query_adapter_receipt.json',{'scene_stored_sha256':sha(OUT/'scene.json.gz'),
+          'scope':'Raw legacy indexed polygons are not malformed physical solids merely because a strict triangle-only checker cannot consume them. This separate explicit fan adapter checks a new query representation; it does not repair, replace, relabel or qualify original manufacturing source.',
+          'raw_triangle_parser_only_count':len(parser_only),'fan_query_resource_pass_count':sum(r['resource_contract_pass'] for r in adapted),
+          'fan_query_resource_rejected_count':sum(not r['resource_contract_pass'] for r in adapted),'rows':adapted,
+          'physical_or_aesthetic_accepted':False})
+    kernels={}
+    def kernel(n):
+        if n not in kernels:kernels[n]=M(pm[n])
+        return kernels[n]
+    material_rows=[];rejected=[]
+    audit=json.loads((ROOT/'.scratch/gorilla_internal_f1_audit/solid_components_receipt.json').read_text())
+    ag={r['group']:r for r in audit['groups']}
+    for g in scene['structure_material_group_ledger']['material_groups']:
+        ids=g['member_ids'];reasons=[]
+        if any(n not in pm for n in ids):reasons.append('member_absent')
+        if set(ids)&bad:reasons.append('native_resource_rejected')
+        if ag[g['group']]['corrected_material_solid_component_count']!=1:reasons.append('multiple_disconnected_material_roots')
+        if reasons:
+            rejected.append({'group':g['group'],'member_ids':ids,'reasons':reasons,'source_reference_mass_kg_not_accepted':g['mass_kg']});continue
+        u=kernel(ids[0])
+        for n in ids[1:]:u=u+kernel(n)
+        mm=u.to_mesh64();part={'name':g['group'],'vertices_world_m':np.asarray(mm.vert_properties)[:,:3].tolist(),'faces':np.asarray(mm.tri_verts,dtype=np.int64).tolist()}
+        resource=gate.validate_part(part,require_single_material_component=True)
+        if not resource['resource_contract_pass']:
+            rejected.append({'group':g['group'],'member_ids':ids,'reasons':['union_resource_rejected'],'resource_errors':resource['errors']});continue
+        props=tr.Trimesh(part['vertices_world_m'],part['faces'],process=False).mass_properties;rho=g['density_kg_m3']
+        material_rows.append({'group':g['group'],'member_ids':ids,'conditional_density_kg_m3':rho,'volume_m3':float(props.volume),
+                              'mass_kg':float(props.volume*rho),'COM_world_m':props.center_mass.tolist(),
+                              'full_I_at_COM_world_kg_m2':(props.inertia*rho).tolist(),'tensor_eigenvalues_kg_m2':np.linalg.eigvalsh(props.inertia*rho).tolist(),
+                              'scope':'One native-resource-valid, connected finite material union; uninstalled geometry-only conditional density statistic.',
+                              'physical_owner_candidate':g['mass_owner_body'],'rigid_attachment_or_contact_or_strength_accepted':False})
+    write('conditional_material_properties.json',{'scene_stored_sha256':sha(OUT/'scene.json.gz'),'method':'Fresh single Mesh64 per original native; signed Add union within exact F1 material member groups; full signed-triangle inertia of resulting material only. No source normals repaired and no catalogue envelope density/tensor substituted.',
+          'qualified_scope':'Narrow geometry-resource-and-one-material-root predicate; not physical, rigid-body or complete inventory qualification.',
+          'included_group_count':len(material_rows),'per_group_properties':material_rows,'excluded_groups':rejected,
+          'whole_robot_mass_COM_fullI':None,'aggregate_mass_not_reported_due_to_incompatible_and_intersecting_assembly_context':True,
+          'catalogue_reference_inertia_unknown':True,'four_missing_cylinder_mass_COM_fullI_unknown_not_zero':True,
+          'frame_density_7850_is_conditional_not_verified_material':True})
+    # Re-evaluate the largest inherited adversarial pairs on the actual new candidate;
+    # list every old hit separately as a geometry-identical failure locator, not a fresh full screen.
+    old=json.loads((ROOT/'.scratch/gorilla_internal_f1_system/layout_2_screen.json').read_text());ordered=sorted(old['positive_pairs'],key=lambda r:-r['positive_volume_m3'])
+    selected=ordered[:40]+[r for r in ordered if r['finite_installation_material_vs_other_material']][:20]+[r for r in ordered if pm[r['b']].get('role') in ('armor_cover','armor_surface')][:20]
+    top=list({tuple(sorted((r['a'],r['b']))):r for r in selected}.values())
+    checks=[]
+    for r in top:
+        n,b=r['a'],r['b'];v=float((kernel(n)^kernel(b)).volume())
+        checks.append({'a':n,'b':b,'volume_m3':v,'volume_cm3':v*1e6,'a_role':pm[n]['role'],'b_role':pm[b]['role'],
+                       'reference_envelope_involved':r['reference_envelope_involved'],'real_installation_material_pair':r['finite_installation_material_vs_other_material'],
+                       'native_triangle_contract_rejected_member_involved':bool({n,b}&bad),
+                       'query_representation':'Original indexed triangles or explicit polygon fan, unchanged source coordinates.',
+                       'actual_hardware_material_intersection_qualified':False if r['reference_envelope_involved'] or bool({n,b}&bad) else True,
+                       'boolean_query_not_installation_or_strength_qualification':True,
+                       'same_as_source_pair_delta_m3':v-r['positive_volume_m3']})
+    write('space_failure_receipt.json',{'scene_stored_sha256':sha(OUT/'scene.json.gz'),
+          'geometry_identical_old_layout_source_sha256':old['scene_sha256'],'old_source_screen_sha256':sha(ROOT/'.scratch/gorilla_internal_f1_system/layout_2_screen.json'),
+          'old_screen_scope':'Moved 45 complete groups against other source hardware; unchanged rest-rest not retested; references are envelopes; not every pose.',
+          'old_positive_pair_count':old['positive_pair_count'],'old_finite_installation_pairs':old['finite_installation_material_vs_other_material_pairs'],
+          'old_original_armor_pairs':old['original_armor_pairs'],'inherited_positive_pair_failure_locators':old['positive_pairs'],
+          'fresh_selected_adversarial_queries':checks,'selection':'Largest40 overall plus largest20 finite-installation and largest20 original-armor inherited failures, deduplicated.',
+          'new_whole_robot_full_collision_screen_performed':False,
+          'no_pass_inherited':True,'strict_triangle_contract_rejected_ids_preserved_not_fixed':sorted(bad),
+          'fluid_not_solid_exclusion':True,'flow_or_service_space_or_owner_installation_accepted':False,
+          'all_scene_and_aesthetic_and_physics_accepted':False,'elapsed_s':time.monotonic()-start})
+    write('resource_summary.json',{'scene_stored_sha256':sha(OUT/'scene.json.gz'),'native_count':len(pm),'resource_rejected_count':len(bad),
+          'resource_rejected_ids':sorted(bad),'resource_error_counts':dict(Counter(e['code'] for r in contract['parts'] for e in r['errors'])),
+          'raw_polygon_parser_only_count_not_a_physics_failure':len(parser_only),
+          'raw_triangle_or_material_gate_rejected_count':len(bad)-len(parser_only),
+          'explicit_fan_query_pass_count':sum(r['resource_contract_pass'] for r in adapted),
+          'explicit_fan_query_rejected_count':sum(not r['resource_contract_pass'] for r in adapted),
+          'valid_single_material_union_group_count':len(material_rows),'invalid_or_disconnected_group_count':len(rejected),
+          'fresh_failure_queries_count':len(checks),'physical_or_aesthetic_or_assembly_accepted':False})
+    print('DONE finite groups',len(material_rows),'excluded',len(rejected),'seconds',time.monotonic()-start,flush=True)
+if __name__=='__main__':main()

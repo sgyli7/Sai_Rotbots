@@ -1,0 +1,57 @@
+"""Pure new-directory native triangle projections; no imported rendering side effects."""
+from pathlib import Path
+import gzip,json,hashlib
+import numpy as np
+from PIL import Image,ImageDraw,ImageFont
+O=Path(__file__).resolve().parent
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def main():
+ s=json.loads(gzip.decompress((O/'scene.json.gz').read_bytes()));parts=s['parts']
+ registry=json.loads((O/'part_registry.json').read_text())['members']
+ fluid={'oil_inventory_once','coolant_inventory','coolant_inventory_unknown_internal'}
+ shown=[p for p in parts if p.get('category') not in fluid and p.get('role')!='holding_mount_window']
+ vv=np.vstack([np.asarray(p['vertices_world_m']) for p in shown]);span=max(3.05,2*max(abs(vv[:,0]).max(),abs(vv[:,1]).max())+.1,vv[:,2].max()-min(0,vv[:,2].min())+.16);zmax=vv[:,2].max()+.08
+ W,H,side=1600,1710,690;ppm=side/span;origins=[(70,160),(840,160),(70,935),(840,935)]
+ font=lambda n:ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',n)
+ views=[('FRONT +X',np.array([[0,1,0],[0,0,1.]]),np.array([1.,0,0])),('LEFT +Y',np.array([[-1.,0,0],[0,0,1.]]),np.array([0,1.,0])),('REAR -X',np.array([[0,-1.,0],[0,0,1.]]),np.array([-1.,0,0])),('TOP +Z',np.array([[0,1.,0],[1.,0,0]]),np.array([0,0,1.]))]
+ native=[]
+ for p in shown:
+  v=np.asarray(p['vertices_world_m']);fs=np.array([[f[0],f[j],f[j+1]] for f in p['faces'] for j in range(1,len(f)-1)])
+  tri=v[fs];normal=np.cross(tri[:,1]-tri[:,0],tri[:,2]-tri[:,0]);norm=np.linalg.norm(normal,axis=1)
+  native.append((p,tri,normal,norm,np.asarray(p.get('rgba',[.55,.38,.18,1])[:3])*255))
+ outputs={}
+ for mode in ['native_color','function_regions']:
+  im=Image.new('RGB',(W,H),(250,251,252));dr=ImageDraw.Draw(im)
+  dr.text((60,20),f'GORILLA G9 | {mode.upper()} | SAME WORLD-SI SOURCE',font=font(25),fill=(24,41,56))
+  dr.text((60,61),'1794 exact native members = F1 frame 375 + other complete system/context 1419; 111 armor unchanged.',font=font(17),fill=(66,78,91))
+  dr.text((60,96),'REJECTED SPATIAL INPUT. Four cylinders absent. Routes unconnected. Diagnostic, not aesthetic proposal.',font=font(17),fill=(139,48,40))
+  for k,(title,cam,depth) in enumerate(views):
+   ox,oy=origins[k];dr.text((ox,oy-33),title,font=font(21),fill=(24,41,56));xy=[];dep=[];colors=[]
+   for p,t,n,norm,rgb in native:
+    if mode=='function_regions':
+     reg=registry[p['name']];cat=p.get('category','') or ''
+     if p['name'] in s['authoritative_visible_armor_ids']:rgb=np.array([218,220,221])
+     elif reg['source_key']=='structure':rgb=np.array([104,117,145])
+     elif cat in ['energy']:rgb=np.array([57,145,85])
+     elif cat.startswith(('coolant','radiator','fan','sealed_duct','motor_cooling','oil_water','HX_','battery_cold')):rgb=np.array([35,150,179])
+     elif cat.startswith(('holding','directional','finite_','hollow_g','mount_')) or 'hydraulic' in cat:rgb=np.array([181,108,42])
+     elif 'control' in cat or 'display' in p.get('role','') or 'compute' in p['name']:rgb=np.array([135,93,167])
+     else:rgb=np.array([138,133,126])
+    uv=t@cam.T;a=uv[:,1]-uv[:,0];b=uv[:,2]-uv[:,0];good=(np.abs(a[:,0]*b[:,1]-a[:,1]*b[:,0])>1e-12)&(norm>1e-12)
+    u=uv[good].copy();u[:,:,0]=ox+(u[:,:,0]+span/2)*ppm;u[:,:,1]=oy+((span/2 if k==3 else zmax)-u[:,:,1])*ppm
+    shade=.68+.32*np.abs(n[good]@depth/norm[good]);xy.append(u);dep.append(np.mean(t[good]@depth,axis=1));colors.append(np.clip(shade[:,None]*rgb,0,255).astype('uint8'))
+   points=np.concatenate(xy);z=np.concatenate(dep);cols=np.concatenate(colors)
+   for idx in np.argsort(z):dr.polygon([tuple(q) for q in points[idx]],fill=tuple(cols[idx]))
+   dr.rectangle((ox,oy,ox+side,oy+side),outline=(154,171,185),width=2)
+  dr.text((60,H-55),'Region map: grey armor; slate frame; green energy; cyan thermal; brown fluid-drive; purple compute/screen.',font=font(16),fill=(72,89,105))
+  dr.text((60,H-30),f'{len(shown)} solid/reference rows shown. Fluids and 14 nonphysical windows not drawn as solid hardware. {ppm:.6f} px/m.',font=font(16),fill=(72,89,105))
+  f=O/f'{mode}_native_four_view.png';im.save(f);outputs[f.name]=sha(f);print('RENDERED',f.name,flush=True)
+ manifest={'schema':'gorilla_g9_native_diagnostic_projection_v1','scene_stored_sha256':sha(O/'scene.json.gz'),'outputs':outputs,
+           'native_geometry_world_unchanged':True,'pixels_per_metre':ppm,'span_m':span,'z_top_reference_m':zmax,
+           'cameras':{n:{'projection_matrix':m.tolist(),'depth_axis':dep.tolist()} for n,m,dep in views},
+           'shown_native_ids':[p['name'] for p in shown],'not_drawn_ids':[p['name'] for p in parts if p not in shown],
+           'not_drawn_scope':'Fluid inventory and source-declared nonphysical holding service windows only; no hardware hidden to resolve collisions.',
+           'producer_sha256':sha(__file__),'render_method':'Actual native triangle world projections with painter depth ordering; no original image pasted, generated CAD or geometry repair.',
+           'aesthetic_authority':False,'installation_or_physics_accepted':False,'requires_pixel_inspection':True}
+ (O/'projection_manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+if __name__=='__main__':main()

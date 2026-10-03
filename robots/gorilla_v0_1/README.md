@@ -1,6 +1,6 @@
 # Gorilla V0.1
 
-当前工作：**G3 实际输入、腕链与新末端已封存，安装/承力/审美仍未放行；G4 先验证完整关节总成再串 Z 链。** 用户已允许重设计下腿—踝—脚末端，参考新的宽结构图；新轴位、承力和外壳共同安排。C15 已先提交并合主干，AA3 仍是审美权威，可见变化须保住审美并由用户认可后采用。G3的宽直板护罩已被主线程否决。最近完整 E2a 研究仍未合格，最终双足、双手与自主复杂 Bevy 目标继续推进。
+当前工作：**G9实际主躯与完整系统两布局已封存，整装仍拒绝；G10接回肩驱动并运行真实子件三维拓扑优化。** 壮硕体积用于宽厚承力与系统共同设计。用户指定「Gorilla 设计」重画腿脚，完成后通知；这里继续可适配的内部工程。C15 已先提交并合主干，AA3仍为审美权威。完整质量/驱动热/稳定SI尚未放行，双足、双手与自主复杂Bevy目标继续推进。
 
 唯一当前状态入口：[当前决定与门禁](design/current_decisions.md)。
 
@@ -54,10 +54,12 @@ C15 将前掌、足弓与后跟分开，取消跨段连续底板；卸载端姿�
 
 历史 C14 已建立实际有限壁厚框架和条件质量/受力账本，包含当时脚底单向反力、关节六维载荷和限定截面应力。42 梁中 30 梁有有限筛查、12 梁未分析；条件毛料及组件预留总质量约 1.15–1.79 吨。完整惯量、轴向/驱动、连接/轴承/脚底、运动接触和热仍未闭合，外观也未放行。B 的失败记录保留，两版证据不混用；首个完整工程检查点仍未达标。
 
-最新内部检查点：[G4 单关节／拓扑比较](../../experiments/gorilla_v0_1/internal_structure_g4_joint_study/README.md)与[G5 CPU 拓扑工具链](../../experiments/gorilla_v0_1/topology_g5_toolchain/README.md)。前者是未放行的实际内部bench，后者只校验数值工具；完整三维骨架和整机能力仍由[当前决定](design/current_decisions.md)继续推进。
+早期内部基底：[G4 单关节／拓扑比较](../../experiments/gorilla_v0_1/internal_structure_g4_joint_study/README.md)与[G5 CPU 拓扑工具链](../../experiments/gorilla_v0_1/topology_g5_toolchain/README.md)。前者是未放行的实际内部bench，后者只校验数值工具；完整三维骨架和整机能力仍由[当前决定](design/current_decisions.md)继续推进。
 
 [G6 实际三维输入与网格拒绝证据](../../experiments/gorilla_v0_1/topology_g6_3d_inputs/README.md)：宽厚承力域与同源节点载荷入口；当前网格不适用于结构FEM，没有机器人减重或强度放行。
 
 [G7 实际CAD与三维条件基线](../../experiments/gorilla_v0_1/topology_g7_cad_baseline/README.md)：合法宽厚承力件、两档体网格及独立数值核验；已识别压撑顶墙传力风险，尚无骨架优化、强度或整机资格。
 
 [G8 宽厚内部传力路径对照](../../experiments/gorilla_v0_1/topology_g8_material_paths/README.md)：两真实CAD及完整42条件工况；连续内肋显著改善压撑刚度，驱动/接触/全机资格仍开放。接续G9整体主结构与机电空间共同安排。
+
+[G9 宽厚主躯与完整系统实际共布](../../experiments/gorilla_v0_1/internal_structure_g9_torso_co_layout/README.md)：两真实主core、九组两实际摆位、切面和宏观质量/翻转力矩；整装失败保存，接续完整肩接口与有界真实三维优化。

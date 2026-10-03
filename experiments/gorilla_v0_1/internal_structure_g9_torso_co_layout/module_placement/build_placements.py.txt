@@ -1,0 +1,102 @@
+"""At most two whole-group rigid placements, preserving every component and capacity."""
+from pathlib import Path
+import copy,gzip,json,hashlib,sys,datetime
+import numpy as np
+R=Path('/home/ethan/Projects/Sai_Rotbots');O=Path(__file__).resolve().parent
+BASE=R/'.scratch/gorilla_internal_g9_whole_source/scene.json.gz'
+F1=R/'.scratch/gorilla_internal_f1_system/layout_2_scene.json'
+CORE=R/'.scratch/gorilla_internal_g9_torso_core/b/core_scene.json.gz'
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def write(p,x):
+ b=(json.dumps(x,indent=2,allow_nan=False)+'\n').encode()
+ if p.suffix=='.gz':
+  with p.open('wb') as f:
+   with gzip.GzipFile(filename='',fileobj=f,mode='wb',mtime=0) as g:g.write(b)
+ else:p.write_bytes(b)
+def rot(axis,deg):
+ a=np.eye(3)[axis];r=np.deg2rad(deg);K=np.array([[0,-a[2],a[1]],[a[2],0,-a[0]],[-a[1],a[0],0]])
+ return np.eye(3)+np.sin(r)*K+(1-np.cos(r))*(K@K)
+def main():
+ layout=int(sys.argv[1]);assert layout in (1,2)
+ D=O/f'layout_{layout}';D.mkdir(parents=True,exist_ok=True)
+ base=json.loads(gzip.decompress(BASE.read_bytes()));src=json.loads(F1.read_text());core=json.loads(gzip.decompress(CORE.read_bytes()))
+ assert sha(BASE)=='07b79df0e08ffebc17ab124c4b3ac6f8bdc0a8e39f603447f2c98fc30ffad5c2'
+ groups=[g for g in src['new_complete_group_records'] if 'holding' not in g['id'] and 'directional' not in g['id']]
+ assert len(groups)==9 and sum(len(g['part_ids']) for g in groups)==33
+ params={}
+ for side,sign in [('left',1),('right',-1)]:
+  for level,z in [('upper',2.47),('lower',2.12)]:
+   params[f'{side}_{level}_energy']={'center_world_m':[-.23,sign*.14,z],'rotation':rot(0,90).tolist(),'owner':'torso'}
+  params[f'{side}_pump']=({'center_world_m':[.04,sign*.16,2.32],'rotation':rot(1,90).tolist(),'owner':'torso'} if layout==1 else
+                        {'center_world_m':[.165,sign*.28,2.435],'rotation':rot(2,90).tolist(),'owner':'torso'})
+ params['HX']={'center_world_m':[.22,0,1.90],'rotation':np.eye(3).tolist(),'owner':'pelvis','owner_change_is_installation_hypothesis':True}
+ params['compute']={'center_world_m':[.20,0,2.61],'rotation':np.eye(3).tolist(),'owner':'torso'}
+ params['screen']={'center_world_m':[-.386,0,2.225],'rotation':np.eye(3).tolist(),'owner':'torso','keep_AA3_back_panel_position':True}
+ bm={p['name']:p for p in base['parts']}; moved={};records=[];transforms={}
+ for g in groups:
+  gid=g['id'];ids=g['part_ids'];v=np.vstack([np.asarray(bm[n]['vertices_world_m']) for n in ids]);old_center=(v.min(0)+v.max(0))/2
+  p=params[gid];RR=np.asarray(p['rotation']);center=np.asarray(p['center_world_m']);t=center-RR@old_center;T=np.eye(4);T[:3,:3]=RR;T[:3,3]=t;transforms[gid]=T
+  for n in ids:
+   q=copy.deepcopy(bm[n]);q['vertices_world_m']=(np.asarray(q['vertices_world_m'])@RR.T+t).tolist();moved[n]=q
+  nv=np.vstack([np.asarray(moved[n]['vertices_world_m']) for n in ids]);records.append({'id':gid,'complete_member_ids':ids,
+       'incremental_rigid_transform_world':T.tolist(),'old_group_center_world_m':old_center.tolist(),'new_group_center_world_m':center.tolist(),
+       'new_AABB_world_m':[nv.min(0).tolist(),nv.max(0).tolist()],'new_AABB_dimensions_m':(nv.max(0)-nv.min(0)).tolist(),
+       'unchanged_mass_range_kg':g['mass_preserved_kg_range'],'geometry_scaled':False,'functions_removed':[],
+       'source_gravity_owners':sorted({bm[n].get('body','unknown') for n in ids}),'candidate_gravity_owner':p['owner'],
+       'gravity_or_reaction_attachment_accepted':False,'ports_or_routes_connected_after_move':False})
+ corepart=core['parts'][0];replaced=set(core['replaced_part_names'])
+ assert replaced=={'f1_torso_load_shell_piece_0','f1_torso_load_shell_piece_1'}
+ parts=[copy.deepcopy(moved.get(p['name'],p)) for p in base['parts'] if p['name'] not in replaced]+[copy.deepcopy(corepart)]
+ assert len(parts)==1793 and len({p['name'] for p in parts})==1793
+ candidate=copy.deepcopy({k:v for k,v in base.items() if k!='parts'})
+ candidate.update({'schema':'gorilla_g9_module_placement_candidate_v1','candidate':f'B_perimeter_core_9_complete_groups_layout_{layout}',
+       'parts':parts,'source_whole_stored_sha256':sha(BASE),'source_core_scene_stored_sha256':sha(CORE),
+       'layout_source_sha256':sha(F1),'new_complete_group_placements':records,
+       'new_core_part_id':corepart['name'],'new_core_replaces_exact_part_ids':sorted(replaced),
+       'reference_only_pending_complete_functional_replacement_ids':['e2_upper_net_torso'],
+       'reference_only_scope':'Historical shoulder/torso source and 77.937kg challenge retained intact; excluded from active candidate material to compare new core. Real shoulder fixed/reaction/fastening interfaces remain unknown.',
+       'new_gravity_owner_candidates':{n:r['candidate_gravity_owner'] for r in records for n in r['complete_member_ids']},
+       'whole_robot_mass_kg':None,'whole_robot_COM_world_m':None,'whole_robot_full_I_kg_m2':None,
+       'old_routes_drawn_as_invalid_context_not_connected':True,'fluid_spatial_allocation_after_moves_valid':False,
+       'radiators_fans_ducts_HV_24V_and_remaining_1760_native_rows_not_silently_removed':True,
+       'capacity_or_procurement_change':None,'native_outer_armor_delta_mm':0,'physics_accepted':False,'stable_physical_contract':False})
+ write(D/'scene.json.gz',candidate);h=sha(D/'scene.json.gz')
+ mi=copy.deepcopy(base['present_inventory_mass_rows'])
+ member_to_group={n:r['id'] for r in records for n in r['complete_member_ids']}
+ for row in mi:
+  ids=row.get('present_native_member_ids',[]);gids={member_to_group[n] for n in ids if n in member_to_group}
+  if not gids:continue
+  assert len(gids)==1;gid=next(iter(gids));T=transforms[gid]
+  row['placement_group_id']=gid;row['post_move_gravity_owner_candidate']=params[gid]['owner']
+  for key in ['COM_world_m','centroid_world_m']:
+   if isinstance(row.get(key),list) and len(row[key])==3:row[key]=(T[:3,:3]@np.array(row[key])+T[:3,3]).tolist()
+  row['post_move_installed_owner_or_inertia_accepted']=False
+ # Each existing native part stays, including actual thermal/hose/fluid/exclusion geometry.
+ # Only complete-group interface points transform; corresponding old routes are explicitly invalid.
+ interface=json.loads((R/'.scratch/gorilla_internal_g9_whole_source/interfaces.json').read_text());changed=[]
+ for collection in ['ports','retained_legacy_interface_points']:
+  for name,p in interface[collection].items():
+   possible=[]
+   for gid,g in zip([g['id'] for g in groups],groups):
+    for n in g['part_ids']:
+     if name.startswith(n+'_') or name.startswith('e_'+n+'_') or name.startswith('e2_'+n+'_'):possible.append(gid)
+   if not possible or not isinstance(p,dict):continue
+   gid=possible[0];T=transforms[gid]
+   for key in ['center_world_m','position_world_m']:
+    if isinstance(p.get(key),list) and len(p[key])==3:p[key]=(T[:3,:3]@np.array(p[key])+T[:3,3]).tolist()
+   if isinstance(p.get('outward_axis_world'),list):p['outward_axis_world']=(T[:3,:3]@np.array(p['outward_axis_world'])).tolist()
+   p['after_group_move_connection_valid']=False;changed.append({'id':name,'group':gid,'collection':collection})
+ interface.update({'scene_stored_sha256':h,'moved_component_interface_points':changed,
+       'all9_complete_groups_ports_require_actual_route_rebuild':True,'legacy_fluid_routes_not_connected':True,
+       'electrical_HV_24V_route_rebuild_required':True,'service_spaces_for_moved_groups_must_follow_actual_component_and_tool_direction':True})
+ write(D/'interfaces.json',interface)
+ write(D/'placement_parameters.json',{'layout':layout,'params':params,'complete_group_records':records,'source_scene':h,
+        'source_whole':sha(BASE),'source_core':sha(CORE),'group_member_total':33,'native_parts_total':1793,
+        'active_native_rows_omit_reference_only_old_shoulder':True,'legacy_old_shoulder_kept_as_source':True,
+        'boundary_or_density_or_capacity_scale_changed':False,'all_new_mounts_and_reaction_paths_unknown':True})
+ write(D/'moved_group_mass_positions.json',{'scene_stored_sha256':h,'complete_moved_groups':records,
+        'mass_rows_existing_present_inventory_with_actual_moved_COM':mi,
+        'no_new_whole_robot_total_or_catalogue_inertia_from_envelope':True,
+        'four_missing_cylinders_unknown_not_zero':base['missing_physical_cylinders']})
+ print(json.dumps({'layout':layout,'scene':h,'part_count':len(parts),'new_group_members':33,'core':corepart['name']}),flush=True)
+if __name__=='__main__':main()

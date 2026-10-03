@@ -1,0 +1,88 @@
+"""Bounded source-ID upper-load inventory; no new geometry/FEM or physical release."""
+from pathlib import Path
+import gzip,hashlib,json,collections
+import numpy as np
+OUT=Path(__file__).resolve().parent;ROOT=OUT.parents[1]
+SRC=ROOT/'.scratch/gorilla_internal_g9_whole_source';CORE=ROOT/'.scratch/gorilla_internal_g9_torso_core/a';ALLOC=ROOT/'.scratch/gorilla_internal_g8_system_allocation'
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def load(p):return json.loads(gzip.open(p,'rt').read()) if str(p).endswith('.gz') else json.loads(Path(p).read_text())
+def save(p,d):Path(p).write_text(json.dumps(d,indent=2,ensure_ascii=False,allow_nan=False)+'\n')
+
+def main():
+    scene=load(SRC/'scene.json.gz');registry=load(SRC/'part_registry.json');inventory=load(SRC/'mass_inventory.json');interfaces=load(SRC/'interfaces.json');core=load(CORE/'cad_manifest.json');alloc=load(ALLOC/'whole_system_allocation.json')
+    sourcehash=sha(SRC/'scene.json.gz')
+    if sourcehash!=registry['scene_stored_sha256'] or sourcehash!=inventory['scene_stored_sha256'] or sourcehash!=core['source_context_stored_sha256']:raise ValueError('source identity mismatch')
+    pm={p['name']:p for p in scene['parts']};members=registry['members'];tree=scene['body_tree'];upper={'torso'}
+    for _ in range(len(tree)+1):upper.update(b for b,v in tree.items() if v.get('parent') in upper)
+    rows=[];coverage=collections.defaultdict(list)
+    for ri,r in enumerate(inventory['present_rows']):
+        ids=r.get('native_member_ids',r.get('member_ids',[r.get('part_name',r['id'])]));present=[n for n in ids if n in pm];absent=[n for n in ids if n not in pm]
+        owner=r.get('gravity_mass_owner',r.get('body'));challenge=r['id']=='e2_upper_net_torso';fluid=r['id'].startswith('e_coolant_inventory_') or r['id']=='f1_global_oil_stock_once'
+        status=('incompatible_shoulder_context_not_additive' if challenge else 'global_oil_unknown_spatial_share' if r['id']=='f1_global_oil_stock_once' else 'fluid_route_owner_and_COM_unqualified' if fluid else 'conditional_upper_inventory' if owner in upper else 'owner_unknown' if owner in ['UNINSTALLED_CANDIDATE_OWNER_UNKNOWN','spatial_distribution_unknown'] else 'outside_roll_output_candidate')
+        if absent and not fluid:status='missing_or_mixed_native_scope_unknown'
+        rr={'id':r['id'],'source_row_index':ri,'source_ledger_path':str(SRC/'mass_inventory.json'),'source':r.get('source'),
+            'category':r.get('category'),'body':r.get('body'),'gravity_owner_candidate':owner,'status':status,
+            'mass_range_kg':r.get('mass_range_kg'),'source_COM_world_proxy_m':r.get('COM_world_m'),
+            'COM_accepted':False,'full_I_accepted':False,'native_member_ids':ids,'actual_present_ids':present,'actual_absent_ids':absent,
+            'source_counted_elsewhere':r.get('counted_elsewhere',False),'functional_inventory_not_deleted':True}
+        rows.append(rr)
+        for n in present:coverage[n].append('inventory:'+r['id'])
+    groups=[]
+    for gi,g in enumerate(registry['structure_groups']):
+        ids=g['member_ids'];present=[n for n in ids if n in pm];absent=[n for n in ids if n not in pm];owner=g['mass_owner_body']
+        status='old_torso_group_partially_replaced_do_not_add_to_new_A' if any(n in core['replaced_part_names'] for n in ids) else 'conditional_upper_structure' if owner in upper else 'outside_roll_output_candidate'
+        q={'id':'structure_group:'+g['group'],'source_group_index':gi,'source_ledger_path':str(SRC/'part_registry.json'),
+           'gravity_owner_candidate':owner,'status':status,'mass_range_kg':[g['mass_kg']]*3,'source_COM_world_proxy_m':g['centroid_world_m'],
+           'density_kg_m3_assumption':g['density_kg_m3'],'positive_solid_components':g['positive_connected_components'],
+           'native_member_ids':ids,'actual_present_ids':present,'actual_absent_ids':absent,'COM_accepted':False,'full_I_accepted':False}
+        groups.append(q)
+        for n in present:coverage[n].append(q['id'])
+    refs=[]
+    for ri,r in enumerate(scene['structure_material_group_ledger']['complete_reference_mass_rows']):
+        n=r['id'];owner=r['body'];q={'id':n,'source_row_index':ri,'source':'scene.structure_material_group_ledger.complete_reference_mass_rows',
+                                    'status':'split_across_waist_roll_unknown' if n.startswith('f1_ds_waist_roll_') else 'conditional_upper_inventory' if owner in upper else 'outside_roll_output_candidate',
+                                    'gravity_owner_candidate':owner,'mass_range_kg':r['mass_range_kg'],'native_member_ids':[n],
+                                    'actual_present_ids':[n] if n in pm else [],'source_COM_world_proxy_m':None,'COM_accepted':False,'full_I_accepted':False}
+        refs.append(q)
+        if n in pm:coverage[n].append('complete_reference:'+n)
+    selected=[r for r in rows+groups+refs if r['status'] in ['conditional_upper_inventory','conditional_upper_structure'] and r['actual_present_ids'] and r['source_COM_world_proxy_m'] is not None and not r.get('source_counted_elsewhere')]
+    new={'id':'g9_torso_core_a','source':'new A cad_manifest.json','status':'conditional_new_material_source_only','mass_range_kg':[core['conditional_mass_kg']]*3,'source_COM_world_proxy_m':core['COM_world_m'],'density_kg_m3_assumption':core['density_kg_m3_hypothesis'],'known_cad_solid_count':core['actual_material_solid_count'],'native_member_ids':['g9_torso_core_a'],'strength_or_installed_body_accepted':False}
+    selected.append(new);pivot=np.array([.23,0,1.91]);g=9.81
+    total=np.sum([r['mass_range_kg'] for r in selected],axis=0);wrench=[];firstmoment=np.zeros(3)
+    for r in selected:
+        masses=np.array(r['mass_range_kg']);x=np.array(r['source_COM_world_proxy_m']);nomF=np.array([0.,0.,-g*masses[1]]);nomM=np.cross(x-pivot,nomF)
+        firstmoment+=masses[1]*x;coeff=np.r_[0.,0.,-g,-g*(x[1]-pivot[1]),g*(x[0]-pivot[0]),0.]
+        bounds=np.stack([np.minimum(coeff*masses[0],coeff*masses[2]),np.maximum(coeff*masses[0],coeff*masses[2])],axis=1)
+        wrench.append({'id':r['id'],'nominal_Fxyz_Mxyz':np.r_[nomF,nomM].tolist(),'componentwise_mass_range_wrench_bounds':bounds.tolist()})
+    diagnostic={'subset_row_count':len(selected),'mass_range_sum_kg':total.tolist(),'nominal_source_proxy_COM_world_m':(firstmoment/total[1]).tolist(),
+                'nominal_gravity_Fxyz_Mxyz_at_roll_reference':np.sum([r['nominal_Fxyz_Mxyz'] for r in wrench],axis=0).tolist(),
+                'componentwise_gravity_wrench_bounds':np.sum([r['componentwise_mass_range_wrench_bounds'] for r in wrench],axis=0).tolist(),
+                'pivot_historical_world_m':pivot.tolist(),'g_m_s2':g,'is_complete_upper_body':False,'is_known_installed_mass_COM_or_I':False,
+                'scope':'Traceable diagnostic subset only. Excludes retained shoulder context, all fluids, retained output adapter pending union/split, waist gear moving share, owner/missing/COM unknown. Nominal source COMs are inventory proxies, not qualified true OEM COM. Range extrema are componentwise, not a simultaneous feasible assembly.'}
+    excluded=[]
+    for r in inventory['excluded_historical_rows']:
+        ids=r.get('native_member_ids',r.get('member_ids',[r['id']]));excluded.append({'id':r['id'],'actual_present_ids':[n for n in ids if n in pm],'actual_absent_ids':[n for n in ids if n not in pm],'range_kg':r['mass_range_kg'],'status':'historical_ghost_not_counted_no_new_mass_credit'})
+    uncovered=[{'id':n,'owner':m['gravity_owner_candidate'],'role':pm[n].get('role'),'function_state':m['function_state']} for n,m in members.items() if m['gravity_owner_candidate'] in upper and not m['nonphysical_service_window'] and n not in coverage]
+    duplicates={n:v for n,v in coverage.items() if len(v)>1}
+    report={'schema':'G9_source_bound_upper_load_scope','whole_scene_sha256':sourcehash,'historical_roll_body_tree_pivot_m':tree['torso']['pivot_world_m'],
+            'candidate_upper_body_names':sorted(upper),'owner_contract_accepted':False,'inventory_rows':rows,'structure_rows':groups,'complete_reference_rows':refs,
+            'new_A_material_row':new,'conditional_diagnostic_subset_ids':[r['id'] for r in selected],'conditional_subset_gravity':diagnostic,'conditional_subset_row_wrenches':wrench,
+            'excluded_historical_rows':excluded,'upper_native_members_without_mass_row':uncovered,'native_mass_scope_multiple_coverage':duplicates,
+            'replacement_scope':{'exact_removed_old_native_ids':core['replaced_part_names'],'old_torso_group_not_added':True,
+                                'retained_output_adapter_id':core['retained_waist_output_adapter_id'],'adapter_mass_and_new_same_material_union_pending':True,
+                                'e2_upper_net_torso_present_mass_kg':77.9372235775857,'shoulder_function_not_authorized_deleted':True},
+            'unknowns':['Upper true installed mass/COM/I is not known; no complete wholebody or upper finite bound asserted',
+                        'Waist roll complete gear/motor moving-output mass split and rotor inertia unknown; parent labels do not remove child moving inventory',
+                        'New A plus retained output adapter exact same-material union needed; two old F1 torso shells replaced, old shoulder77.937 remains incompatible not additive',
+                        'Oil30L24.6/25.5/26.4kg counted once globally; real tank/chamber/hose share and upper COM unknown',
+                        'Coolant body inventories are old net stocks with route/endpoint and current spatial invalidity; not counted again per hose',
+                        'Arms/hands remain complete functional candidates; shoulder fixed/moving path and all tool forces/poses/impact/acceleration required',
+                        'No lower-limb 3t load is transferred to this torso gravity subset; external hand/environment wrenches remain separate unknown task inputs'],
+            'whole_upper_mass_kg':None,'whole_upper_COM_world_m':None,'whole_upper_full_I_kg_m2':None,'physical_accepted':False,'new_FE_run':False}
+    save(OUT/'upper_load_scope.json',report)
+    table=collections.defaultdict(lambda:np.zeros(3))
+    for r in selected:table[r.get('gravity_owner_candidate','new_A_torso_material')]+=r['mass_range_kg']
+    md='# G9 upper-load scope input\n\nThis is an ID-bound conditional inventory and gravity diagnostic, not a complete upper-body mass/COM/inertia or installed reaction path. Source scene is '+sourcehash+'.\n\n'+str(diagnostic)+'\n\nRows, exact native member presence, historical ghosts, output split and replacement scope are in upper_load_scope.json. All owner labels remain candidate labels.\n'
+    (OUT/'upper_load_scope.md').write_text(md)
+    print(json.dumps({'subset':diagnostic,'uncovered_upper_members':len(uncovered),'multiple_mass_coverage':len(duplicates),'upper_load_scope_sha256':sha(OUT/'upper_load_scope.json')},indent=2))
+if __name__=='__main__':main()

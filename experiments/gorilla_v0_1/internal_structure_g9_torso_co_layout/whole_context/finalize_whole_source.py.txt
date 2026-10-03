@@ -1,0 +1,93 @@
+"""Freeze owned G9 registration and its actual source/pixel evidence."""
+from pathlib import Path
+import gzip,json,hashlib,datetime
+from collections import Counter
+import numpy as np
+R=Path('/home/ethan/Projects/Sai_Rotbots');O=Path(__file__).resolve().parent
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def write(n,v):(O/n).write_text(json.dumps(v,indent=2,allow_nan=False)+'\n')
+def main():
+ s=json.loads(gzip.decompress((O/'scene.json.gz').read_bytes()));pm={p['name']:p for p in s['parts']}
+ reg=json.loads((O/'part_registry.json').read_text());sourcehash=sha(O/'scene.json.gz')
+ missing=[r['function'] for r in s['missing_physical_cylinders']]
+ for n,r in reg['members'].items():
+  if r['complete_group'] in [f'f1_{a}_holding' for a in missing]:
+   r.update({'function_state':'context_invalid_local_holding_has_no_finite_barrel_owner',
+             'actual_barrel_mount_present':False,'finite_holding_components_preserved':True})
+  if n in ['f1_ds_waist_yaw_gear','f1_ds_left_hip_yaw_gear','f1_ds_right_hip_yaw_gear']:
+   r.update({'known_legacy_CSG65_reference_axial_dimension_error':True,
+             'stored_native_envelope_length_m':pm[n]['source_dimensions']['length_m'],
+             'corrected_drawing_total_length_m':.115,'source_geometry_not_corrected_in_registration':True,
+             'mechanical_installation_status':'context-invalid old stack geometry; current_decisions source correction acknowledged, future complete stack to be rebuilt.'})
+ write('part_registry.json',reg)
+ plan={'schema':'gorilla_g9_one_whole_registration_plan_v1','robot_id':'gorilla_v0_1',
+       'frozen_scene_stored_sha256':sourcehash,'source_groups':{
+         'structure':{'path':s['input_sources']['structure']['path'],'sha256':s['input_sources']['structure']['sha256'],'take_exact_parts_count':375},
+         'nonstructure_system':{'path':s['input_sources']['system']['path'],'sha256':s['input_sources']['system']['sha256'],
+                               'exclude_all_375_structure_member_ids_before_append':True,'take_exact_parts_count':1419}},
+       'world_transform_for_both_source_groups':np.eye(4).tolist(),
+       'editable_native_geometry_file':'scene.json.gz','editable_function_registry_file':'part_registry.json',
+       'complete_group_member_ids':[{k:g[k] for k in ('id','part_ids')} for g in json.loads((R/s['input_sources']['system']['path']).read_text())['new_complete_group_records']],
+       'source_axis_changes':None,'stock_scale_changes':None,'material_repairs':None,
+       'future_edit_policy':'Clone to a new candidate; edit complete functions and actual members jointly; recalculate affected source/resource/mass/space/routes. This registration has one arrangement and no geometry increment.',
+       'builder':'build_whole_source.py','checker':'check_whole_source.py','renderer':'render_whole_source.py',
+       'no_full_1794_system_plus_375_duplicate_import':True,'G7_G8_bench_instantiation':False}
+ write('registration_plan.json',plan)
+ proj=json.loads((O/'projection_manifest.json').read_text())
+ assert proj['scene_stored_sha256']==sourcehash and all(sha(O/n)==h for n,h in proj['outputs'].items())
+ write('visual_inspection.json',{'scene_stored_sha256':sourcehash,'image_sha256':proj['outputs'],
+       'inspected_native_pixels':True,'same_fourviews_and_scale':True,
+       'observations':['AA3/C15 color silhouette and wedge chest/shoulder/forearm/compound foot geometry are inherited; no new exterior candidate.',
+                       'Front and rear expose crowded waist/hips; side reveals the unclosed lower-leg/ankle implementation and protruding group envelopes.',
+                       'Original-color and functional-region pictures show the actual retained failed context; grey armor in region map is recoloring only, not new design.',
+                       'Some thin triangular seams in painter projection do not diagnose physical gaps; native indexed source and resource queries govern geometry.'],
+       'view_method':'functions.view_image on both actual native PNGs; metadata-only source revision did not change any geometry or image bytes.',
+       'not_new_aesthetic_authority':True,'aesthetic_or_physical_accepted':False})
+ dynamic=[];inputs=[]
+ for k,r in s['input_sources'].items():
+  current=sha(R/r['path']);record={'key':k,**r,'current_sha256':current,'current_matches_build_observation':current==r['sha256']}
+  if k=='decisions':
+   record['scope']='Dynamic parent-maintained index, observed during build; not geometric source. Root updated it concurrently. Original observation retained rather than rewriting scene provenance.'
+   dynamic.append(record)
+  else:
+   assert current==r['sha256'],record;inputs.append(record)
+ write('dynamic_context_observations.json',{'observations':dynamic,'geometry_sources_all_unchanged':True,'no_canonical_file_modified_by_this_agent':True})
+ resource=json.loads((O/'resource_summary.json').read_text())
+ space=json.loads((O/'space_failure_receipt.json').read_text())
+ finite=[q for q in space['fresh_selected_adversarial_queries'] if q['actual_hardware_material_intersection_qualified']]
+ report=f'''# Gorilla G9 同一整机空间源
+
+本轮实际交付一个可加载、可编辑的世界SI候选：F1当前375件结构，加布局2其余1419件，一共1794个唯一原生成员。每个完整part字典与原布局2逐值一致。111件C15可见甲保持原值，AA3仍为唯一审美权威；新腿脚稿未收到/未采用。没有加入G7/G8的133kg bench，没有新轴、缩SKU、修法线、删交叠或改变外形。
+
+入口：`scene.json.gz`（gzip JSON，SHA `{sourcehash}`）；`registration_plan.json`和`build_whole_source.py`为有界重建入口。`part_registry.json`按exact ID登记来源、功能状态、运动/重力owner候选与替换名单；`interfaces.json`保存原21个F1支承、51个原bodytree关节候选、180端口/375旧接口点、119未接通路由与90个非实体服务空间。owner名称不是承力连接证明。源schema可通过`json.loads(gzip.decompress(path.read_bytes()))`加载；不要把1794系统整份再与375相加。
+
+1794是原生条目数，不是1794件合格硬件：14条holding窗口为非实体，17条流体库存是质量/空间参考。四个缺缸（left/right fold与ankle）保留unknown，数学眼位不算缸，4组对应holding虽画有完整零件却没有真实barrel安装载体。旧缸接头/孤立接口、旧肩桥`e2_upper_net_torso`约77.937kg和新torso功能相冲突，均原值保留且按功能标context-invalid；未自动删旧桥。三个CSG65旧123.5mm裸轴长与已纠正115mm主图不符，登记为旧包络错误，不在本步骤缩源刷过。
+
+质量：逐member_id检查1485旧行，只留1343个实际成员/全局油元数据行，142条原E2已不存在结构行的650.3294998kg全部排除。结构375件在独立组账只计一次，目录件不按实心包络密度造惯量，全局30L油只记一次且COM/fullI未知。79个同scope有限材料union在本轮资源/单根门槛内有条件逐组质量、COM与完整惯量，55组因坏资源或多根排除；这些是7850kg/m³假设下未安装几何统计，未加成整机净重或刚体合同。整机mass/COM/fullI为null，缺缸不零计，旧新torso功能重复不作为合格整机库存。
+
+资源：对1794原成员fresh strict triangle gate，249不满足该契约。192是原多边形格式与triangle-only入口的兼容差异，不能据此称原甲物理失败；另存显式fan查询表示，187资源有限通过、5查询拒绝，原faces/vertices一字未变。57原三角条目有tiny face/正向嵌套/边界接触问题；四个脚托盘正向内腔错误保留。门禁容差见`native_resource_contract.json`，不是制造/接触/强度认证。
+
+空间：原布局2的1778个失败定位（822有限安装对/183原甲对）以原同几何范围明确引用；本轮另重查77个最大/有限材料/原甲反例，没有声称重跑全部整机姿态。左右上电池×液压输入gross包络各1279.715cm³，需要整组重新分配；最大本次双方triangle资源有效的有限安装guard×thigh为约43.874cm³。参考包络交与真实有限材料交分列，流体不当实材。任何这类失败都不能证明AA3必须改形。原腰/髋材料连通、肩桥接回和真实全姿态还未成立。
+
+两张实看同尺度native四视：`native_color_native_four_view.png`与`function_regions_native_four_view.png`，来自同一1794源；后者只重新着色分区。全部1763实体/参考条目可见，流体和14非实体窗口不画成硬件，无硬件隐藏。front/rear拥挤腰髋、side末端和包络突出仍明显。此为旧失败布局的真实诊断，不是新审美提案或批准。
+
+下一步只有一个完整主结构共同设计包：由root选择主躯/肩/腰有限CAD与真实反力节点，和现有四电池、两泵/HX、散热、计算/背屏、线管/工具排他空间联合安排；新torso必须明确完整替换旧肩功能才能删77.937kg挑战。按同scope原材/目录/液体/未知分别关账，核实际轴/端口与全组运动、真实连接和同源四视。G7/G8仅是可复用宽厚材料路径库，不能按bench坐标直接套整机。双足、双手、自主复杂Bevy任务终点和已核50Hz/20ms时基保留，稳定SI/驱动热/真实接触仍未放行。
+
+本目录不修改原源、决策索引、合同或Git。父线程在构建后更新了current_decisions，原观察hash与当前动态hash分开留存；全部12份静态输入实字节仍一致。
+'''
+ (O/'README.md').write_text(report)
+ files=[]
+ for p in sorted(O.iterdir()):
+  if not p.is_file() or p.name=='snapshot_manifest.json':continue
+  row={'path':p.name,'stored_sha256':sha(p),'bytes':p.stat().st_size}
+  if p.suffix=='.gz':row.update({'uncompressed_sha256':hashlib.sha256(gzip.decompress(p.read_bytes())).hexdigest(),'compression':'gzip mtime=0'})
+  files.append(row)
+ manifest={'schema':'gorilla_g9_one_whole_space_registration_snapshot_v1','frozen_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+           'scope':'One source arrangement; exact F1+layout2 member registration, not new architecture or geometric improvement.',
+           'scene_stored_sha256':sourcehash,'owned_files':files,'static_input_sources':inputs,'dynamic_index_observations':dynamic,
+           'native_geometry_mutations':0,'source_part_dictionary_mutations':0,'parts_unique':1794,'G7_G8_bench_instances':0,
+           'physical_or_aesthetic_or_stable_contract_accepted':False,'frozen_outputs_not_to_be_overwritten':True}
+ write('snapshot_manifest.json',manifest)
+ for f in files:assert sha(O/f['path'])==f['stored_sha256']
+ print(json.dumps({'frozen_files':len(files),'static_inputs':len(inputs),'scene':sourcehash,'manifest':sha(O/'snapshot_manifest.json'),'README':sha(O/'README.md')}),flush=True)
+if __name__=='__main__':main()

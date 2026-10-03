@@ -1,0 +1,90 @@
+"""Two bounded, whole-torso finite material paths with explicit historical interfaces."""
+from pathlib import Path
+import argparse,gzip,hashlib,json,time
+import numpy as np
+import gmsh
+
+O=Path(__file__).resolve().parent;ROOT=next(p for p in O.parents if (p/'sai_robots_engineering_rules.md').is_file())
+ap=argparse.ArgumentParser();ap.add_argument('--variant',choices=['a','b'],required=True);args=ap.parse_args();D=O/args.variant;D.mkdir(exist_ok=False)
+CONTEXT=ROOT/'.scratch/gorilla_internal_g9_whole_source/scene.json.gz';ALLOCATION=ROOT/'.scratch/gorilla_internal_g8_system_allocation/whole_system_allocation.json'
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+source=json.loads(gzip.decompress(CONTEXT.read_bytes()));pm={p['name']:p for p in source['parts']}
+REPLACED=['f1_torso_load_shell_piece_0','f1_torso_load_shell_piece_1']
+assert all(n in pm for n in REPLACED)
+adapter=pm['f1_ds_waist_roll_hollow_output_adapter'];v=np.asarray(adapter['vertices_world_m']);adapter_hi=v.max(0);adapter_lo=v.min(0)
+WAIST=np.array([(adapter_hi[0]+adapter_lo[0])/2,0,(adapter_hi[2]+adapter_lo[2])/2]);WAIST_FACE=float(adapter_hi[0])
+SHOULDER_XZ=np.array([-.130,2.290]);SHOULDER_FACE=.51826221
+oc=gmsh.model.occ;gmsh.initialize([],False,False);gmsh.option.setNumber('General.Terminal',0);gmsh.option.setNumber('General.NumThreads',4)
+gmsh.model.add('gorilla_g9_torso_core_'+args.variant);start=time.monotonic();components=[];params=[]
+def box(center,dims):
+    d=np.asarray(dims,dtype=float);return oc.addBox(*(np.asarray(center)-d/2),*d)
+def subtract(a,b):
+    out,_=oc.cut([(3,a)],[(3,b)],removeObject=True,removeTool=True);assert len(out)==1,out;return out[0][1]
+def closed_box(label,lo,hi,wall=.006):
+    lo=np.asarray(lo,dtype=float);hi=np.asarray(hi,dtype=float);dims=hi-lo
+    assert np.all(dims>2*wall)
+    tag=subtract(box((lo+hi)/2,dims),box((lo+hi)/2,dims-2*wall));components.append(tag)
+    params.append({'id':label,'outer_bounds_world_m':[lo.tolist(),hi.tolist()],'wall_m':wall,'closed_skin_with_cavity':True})
+def rib(label,lo,hi):
+    lo=np.asarray(lo,float);hi=np.asarray(hi,float);components.append(box((lo+hi)/2,hi-lo))
+    params.append({'id':label,'finite_material_bounds_world_m':[lo.tolist(),hi.tolist()]})
+def axis_cylinder(center,axis,length,radius):
+    axis=np.asarray(axis,float);base=np.asarray(center)-axis*length/2
+    return oc.addCylinder(*base,*(axis*length),radius)
+if args.variant=='a':
+    closed_box('wide_closed_main_shell',[-.170,-.330,1.930],[.170,.330,2.510])
+    for side in [-1,1]:
+        rib('perimeter_vertical_rib_'+str(side),[-.170,side*.225-.003,1.930],[.170,side*.225+.003,2.510])
+    window={'center_world_m':[.010,0,2.230],'dimensions_m':[.400,.350,.250],'role':'historical through-service bay, not certified free space'}
+else:
+    # Lateral closed paths skirt complete central pump widths; no blanket central skin or module deletion.
+    for side in [-1,1]:
+        y=np.sort([side*.286,side*.334])
+        closed_box('lateral_load_shell_'+str(side),[-.090,y[0],1.980],[.120,y[1],2.480])
+        rib('lateral_longitudinal_web_'+str(side),[-.090,side*.310-.003,1.980],[.120,side*.310+.003,2.480])
+    closed_box('lower_continuous_cross_shell',[.040,-.334,2.033],[.120,.334,2.107])
+    closed_box('upper_continuous_cross_shell',[.040,-.334,2.218],[.120,.334,2.252])
+    window={'role':'central installation opening between continuous lateral shells','bounds_world_m':[[-.090,-.280,2.107],[.120,.280,2.218]],'not_entire_central_free_volume':True}
+for side in [-1,1]:
+    if args.variant=='a':xlo,xhi,zlo,zhi=-.170,.050,2.200,2.400
+    else:xlo,xhi,zlo,zhi=-.100,.080,2.205,2.385
+    yy=np.sort([side*.325,side*.510])
+    closed_box('shoulder_reaction_shell_'+str(side),[xlo,yy[0],zlo],[xhi,yy[1],zhi])
+    ring=axis_cylinder([SHOULDER_XZ[0],side*(SHOULDER_FACE-.010),SHOULDER_XZ[1]],[0,1,0],.020,.100)
+    components.append(ring)
+    params.append({'id':'shoulder_fixed_interface_boss_'+str(side),'axis_world':[0,1,0],'center_world_m':[SHOULDER_XZ[0],side*(SHOULDER_FACE-.010),SHOULDER_XZ[1]],'OD_m':.200,'ID_m':.080,'axial_m':.020,'mate_plane_world_y_m':side*SHOULDER_FACE,'interface_scope':'Historical C15 line and E2 shoulder context minY, not accepted fixed/moving bearing contract'})
+# Upper route does not occupy the existing adapter material: bottom at1.996>its1.990 top.
+closed_box('waist_output_to_main_closed_neck',[.105,-.065,1.996],[WAIST_FACE+.024,.065,2.044])
+components.append(axis_cylinder([WAIST_FACE+.010,0,WAIST[2]],[1,0,0],.020,.100))
+joined,_=oc.fuse([(3,components[0])],[(3,t) for t in components[1:]],removeObject=True,removeTool=True)
+assert len(joined)==1,('Material root not joined; reject rather than label connected',joined)
+tag=joined[0][1]
+if args.variant=='a':tag=subtract(tag,box(window['center_world_m'],window['dimensions_m']))
+# Actual candidate through bores, not erased source functions or painted hole marks.
+tag=subtract(tag,axis_cylinder([WAIST_FACE+.010,0,WAIST[2]],[1,0,0],.040,.040))
+for side in [-1,1]:tag=subtract(tag,axis_cylinder([SHOULDER_XZ[0],side*(SHOULDER_FACE-.010),SHOULDER_XZ[1]],[0,1,0],.060,.040))
+oc.synchronize();solids=gmsh.model.getEntities(3);assert len(solids)==1,solids
+boundary=gmsh.model.getBoundary(solids,combined=True,oriented=False);ports={1:[],2:[],3:[]};surface_rows=[]
+for dim,f in boundary:
+    typ=gmsh.model.getType(2,f);lo,hi=gmsh.model.getParametrizationBounds(2,f)
+    uv=[[(1-a)*lo[0]+a*hi[0],(1-b)*lo[1]+b*hi[1]] for a in [.2,.5,.8] for b in [.2,.5,.8]]
+    pts=np.asarray(gmsh.model.getValue(2,f,np.ravel(uv))).reshape(-1,3)
+    group=None
+    if typ=='Plane':
+        if np.max(abs(pts[:,0]-WAIST_FACE))<1e-7:group=1
+        elif np.max(abs(pts[:,1]-SHOULDER_FACE))<1e-7:group=2
+        elif np.max(abs(pts[:,1]+SHOULDER_FACE))<1e-7:group=3
+    if group:ports[group].append(f)
+    surface_rows.append({'tag':f,'type':typ,'area_m2':oc.getMass(2,f),'center_world_m':oc.getCenterOfMass(2,f),'interface_group':group})
+names={1:'historical_waist_roll_output_mate',2:'historical_left_shoulder_fixed_mate',3:'historical_right_shoulder_fixed_mate'}
+assert all(ports.values()),ports
+for i,fs in ports.items():gmsh.model.addPhysicalGroup(2,fs,i);gmsh.model.setPhysicalName(2,i,names[i])
+gmsh.model.addPhysicalGroup(3,[tag],101)
+for ext in ['brep','step']:gmsh.write(str(D/('torso_core.'+ext)))
+volume=oc.getMass(3,tag);com=oc.getCenterOfMass(3,tag);I=np.asarray(oc.getMatrixOfInertia(3,tag)).reshape(3,3)*7850
+record={'robot_id':'gorilla_v0_1','variant':args.variant,'scope':'Actual new torso main load material; no outer armor or historical robot axes accepted','source_context_stored_sha256':sha(CONTEXT),'source_G8_allocation_sha256':sha(ALLOCATION),'producer_sha256':sha(__file__),
+ 'CAD_files':{ext:sha(D/('torso_core.'+ext)) for ext in ['brep','step']},'actual_material_solid_count':len(solids),'actual_volume_m3':volume,'density_kg_m3_hypothesis':7850,'conditional_mass_kg':volume*7850,'COM_world_m':com,'full_I_at_COM_world_kg_m2':I.tolist(),'finite_components_before_union':params,'through_or_central_installation_window':window,
+ 'replaced_part_names':REPLACED,'retained_context_challenge_ids':['e2_upper_net_torso'],'retained_waist_output_adapter_id':adapter['name'],'all_1792_other_parts_unchanged':True,'original_visible_armor_delta_mm':0,'missing_four_cylinder_functions_not_removed':source['missing_physical_cylinders'],
+ 'interface_hypotheses':{'waist_roll_axis_world':[1,0,0],'waist_roll_pivot_world_m':WAIST.tolist(),'waist_roll_output_face_world_x_m':WAIST_FACE,'shoulder_axis_lines_XZ_m':SHOULDER_XZ.tolist(),'shoulder_prior_pivot_Y_m':[-.560,.560],'shoulder_candidate_mate_plane_Y_m':[-SHOULDER_FACE,SHOULDER_FACE],'load_or_bearing_or_fastener_fit_qualified':False},
+ 'actual_interface_faces':{str(i):{'name':names[i],'CAD_surface_tags':fs,'area_m2':sum(oc.getMass(2,f) for f in fs)} for i,fs in ports.items()},'surface_inventory':surface_rows,'elapsed_s':time.monotonic()-start,'physical_accepted':False,'stable_SI_contract':False,'new_outer_design_proposal':False}
+(D/'cad_manifest.json').write_text(json.dumps(record,indent=2)+'\n');gmsh.finalize();print('CAD_SOURCE',args.variant,volume,volume*7850,record['CAD_files'],flush=True)
