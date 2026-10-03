@@ -1,0 +1,65 @@
+"""Deterministic new/moved versus all source-bound diagnostic; no owner waiver."""
+from pathlib import Path
+import gzip, hashlib, json, argparse
+from collections import Counter
+import numpy as np
+import manifold3d as mf
+
+O=Path(__file__).resolve().parent
+ap=argparse.ArgumentParser();ap.add_argument('--arm', choices=['a','b'],required=True);a=ap.parse_args()
+D=O/('body_b_arm_'+a.arm)
+def read(p):return json.loads(gzip.decompress(p.read_bytes()) if p.suffix=='.gz' else p.read_bytes())
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+s=read(D/'scene.json.gz');common=read(D/'bound_common_body_g17.json.gz')
+parts={p['name']:p for p in s['parts']};old={p['name']:p for p in common['parts']}
+body=read(D/'bound_body_b.json.gz');armor=set(body['original_visible_armor_ids'])
+bad=set(read(D/'bound_arm_static.json')['new_resource_rejectIDs'])
+def scope(p):
+    role=p.get('role','');n=p['name']
+    if role in ['design_domain_bulk','service_after_shell_removal']:return 'not_permanent_material'
+    if role=='fluid_lumen_global_alias' or n.endswith('bounded_water_region'):return 'fluid_lumen'
+    if n in armor:return 'original_visible_armor'
+    if any(x in role for x in ['reference','envelope','stock','budget']) or p.get('reference_not_net_material'):return 'reference_or_scope_unknown'
+    if p.get('finite_material') or role=='E2_finite_load_material' or role.startswith('finite_'):
+        return 'rejected_material_resource' if n in bad else 'finite_material'
+    return 'reference_or_scope_unknown'
+changed=sorted(n for n in parts if n not in old or any(parts[n].get(k)!=old[n].get(k) for k in ['vertices_world_m','faces','body']))
+names=sorted(n for n in parts if scope(parts[n])!='not_permanent_material')
+kernels={};bboxes=[]
+for n in names:
+    p=parts[n];v=np.asarray(p['vertices_world_m'],float)
+    f=np.asarray([[face[0],face[k],face[k+1]] for face in p['faces'] for k in range(1,len(face)-1)],np.uint64)
+    kernels[n]=mf.Manifold(mf.Mesh64(v,f));bboxes.append(np.r_[v.min(0),v.max(0)])
+bb=np.asarray(bboxes);index={n:i for i,n in enumerate(names)}
+queried=set();pairs=[];aabb_pairs=0;unknown_queries=[]
+for n in changed:
+    if n not in index:continue
+    q=bb[index[n]];cand=np.flatnonzero(np.all(q[3:]>bb[:,:3],axis=1)&np.all(bb[:,3:]>q[:3],axis=1))
+    for i in cand:
+        m=names[i];key=tuple(sorted([n,m]))
+        if n==m or key in queried:continue
+        queried.add(key);aabb_pairs+=1
+        x,y=kernels[n],kernels[m]
+        if x.status()!=mf.Error.NoError or y.status()!=mf.Error.NoError:
+            unknown_queries.append(list(key));continue
+        z=x^y
+        if z.status()!=mf.Error.NoError:
+            unknown_queries.append(list(key));continue
+        volume=z.volume()
+        if volume>1e-10:
+            p,q=parts[key[0]],parts[key[1]];sa,sb=scope(p),scope(q)
+            pairs.append({'a':key[0],'b':key[1],'intersection_cm3':volume*1e6,
+                          'scope':'finite_material' if sa==sb=='finite_material' else '|'.join(sorted([sa,sb])),
+                          'resource_rejected_material_is_not_real_material_evidence':'rejected_material_resource' in [sa,sb],
+                          'same_owner':p['body']==q['body'],'same_owner_not_exempted':True})
+pairs.sort(key=lambda x:(x['a'],x['b']))
+out={'schema':'gorilla_g18_composed_static_diagnostic_v1','producer_sha256':sha(Path(__file__)),
+     'source_sha256':sha(D/'scene.json.gz'),'parts':len(parts),'changed_ids':changed,
+     'query_threshold_m3':1e-10,'positive_query_counts':dict(Counter(p['scope'] for p in pairs)),
+     'positive_pairs':pairs,'aabb_pairs_queried':aabb_pairs,'kernel_unknown_ids':[n for n in names if kernels[n].status()!=mf.Error.NoError],
+     'unknown_queries':unknown_queries,'new_material_resource_rejected_ids':sorted(bad),
+     'unchanged_vs_unchanged_pairs_not_retested':True,'neutral_only_no_sweep_or_service_acceptance':True,
+     'old_lower_body_only_historical_placeholder':True,'new_lower_art_CAD_not_adopted':True,
+     'assembled_geometric_physical_aesthetic_or_SI_acceptance':False}
+(D/'composed_static_diagnostic.json').write_text(json.dumps(out,indent=2,allow_nan=False)+'\n')
+print(json.dumps({'parts':len(parts),'changed':len(changed),'aabb_queries':aabb_pairs,'class_counts':out['positive_query_counts'],'unknown_kernel':out['kernel_unknown_ids']},indent=2))

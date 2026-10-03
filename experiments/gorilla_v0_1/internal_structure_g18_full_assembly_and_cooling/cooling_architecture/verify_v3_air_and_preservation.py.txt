@@ -1,0 +1,17 @@
+from pathlib import Path
+import json,hashlib,math
+O=Path(__file__).resolve().parent
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+v2=json.loads((O/'architecture_comparison_v2.json').read_text());v3=json.loads((O/'architecture_comparison_v3.json').read_text());checks=[]
+for k in ['same_task_heat_energy','conditional_property_mean_temperature_fixedpoint','pressure_screens','fluid_once_proxy_candidates']:
+ checks.append({'test':'v3_preserves_v2_'+k,'pass':v2['B_proposal'][k]==v3['B_proposal'][k]})
+a=v3['B_proposal']['full_air_pressure_joint_ledger'];h=475*(6.5*60/622)**2
+checks.append({'test':'independent_affinity_head_only_theory','pass':abs(h-a['theoretical_each_PWM_head_Pa'])<1e-10})
+checks.append({'test':'wholeair_with_fan_count_once','pass':sum(r['whole_segment_air_m3min'] for r in a['rows'])==52 and sum(r['core_count']*r['fan_count_each_core'] for r in a['rows'])==8})
+for r in a['rows']:
+ for i in range(2):
+  total=r['fullcore_air_dp_Pa_manual_range'][i]+r['own_plenum_drop_Pa_range'][i]+r['inlet_exhaust_own_dp_Pa_range'][i]+r['rotor_parallelbranch_own_dp_Pa_range'][i]
+  checks.append({'test':r['loop_segment']+'_air'+str(i),'pass':abs(total-r['system_dp_Pa_own_range'][i])<1e-10})
+checks.append({'test':'native_stock_not_qualified_and_all_admission_false','pass':v3['all_physical_hardware_or_wholebody_admission'] is False and v3['B_proposal']['physical_acceptance'] is False})
+out={'producer_sha':sha(__file__),'source_v3_sha':sha(O/'architecture_comparison_v3.json'),'source_v2_sha':sha(O/'architecture_comparison_v2.json'),'original_independent_numeric_receipt_sha':sha(O/'independent_verification.json'),'checks':checks,'all_identity_air_arithmetic_checks_pass':all(x['pass'] for x in checks),'actual_cold_pressure_fan_PWM_H_NPSH_installed_OR_task_admission':False}
+(O/'independent_v3_air_verification.json').write_text(json.dumps(out,indent=2)+'\n');print({'checks':len(checks),'failures':[c for c in checks if not c['pass']]})

@@ -1,0 +1,52 @@
+from pathlib import Path
+import json,gzip,hashlib,math
+import numpy as np
+R=Path('/home/ethan/Projects/Sai_Rotbots');O=Path(__file__).resolve().parent
+D=json.loads((O/'architecture_comparison_v2.json').read_text());G=json.loads((R/'.scratch/gorilla_internal_g15_thermal_operating_domain/operating_domain.json').read_text());B=json.loads((O/'body_b_locked_inventory_v1.json').read_text())
+def h(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+checks=[]
+def record(n,e,tol):checks.append({'test':n,'max_absolute_error':float(e),'tolerance':tol,'pass':e<=tol})
+energyerr=0.;heatererr=0.;cellerr=0
+for b in D['B_proposal']['same_task_heat_energy']:
+ m=next(x for x in G['two_physical_budget_domains'] if x['id']==b['mission']);PW=15*b['WP32_supply_V_budget'];aux=(8*215+2*PW+97.5+500)/1000
+ record('complete_source_upper_aux'+b['mission']+str(b['WP32_supply_V_budget']),abs(aux-b['auxiliary_upper_kW']),1e-12)
+ av=[0,0]
+ for p in b['phases']:
+  s=next(x for x in m['phases'] if x['phase']==p['phase']);bus=s['Pbus_kW']-s['legacy_aux_low_or_air_unallocated_kW']+aux
+  for i,V in enumerate([288,200]):
+   cell=(bus*1000/.98/V)**2*.2/1000;av[i]+=p['duty']*(bus/.98+cell)
+   cellerr=max(cellerr,abs(cell-p['cell_heat_kW_at288_200'][i]))
+  for x in p['EMRAX_own_motor_eta_partitions']:
+   motor=s['pump_shaft_kW']*(1/x['eta_motor_own']-1);inv=s['motor_inverter_low_kW']-motor
+   heatererr=max(heatererr,abs(inv-x['inverter_loss_kW']))
+   for i in range(2):heatererr=max(heatererr,abs(x['rest_liquid_kW_at288_200'][i]+x['EMRAX_liquid_kW']+x['EMRAX_rotor_air_kW']-p['total_low_kW_at288_200_before_LC_airpartition'][i]))
+ for i in range(2):
+  req=av[i]*m['duration_h']/.75;tc=60*7.44*.75*.9/av[i];energyerr=max(energyerr,abs(req-b['nameplate_required_kWh_SOC75_at288_200'][i]),abs(tc-b['480_timecap_min_SOC75_reserve10_at288_200'][i]))
+record('independent_samephase_480_energy_time',energyerr,1e-10);record('independent_cell_terminal_I2R',cellerr,1e-10);record('combinedmotorloss_LCair_inverter_no_deleted_heat',heatererr,1e-10)
+record('OEMminimum_nominal_flows',abs(18*2+4*2+3-47)+abs(2*6-12),0);record('wholeaircount_once',abs(6*6.5+13-52),0)
+record('source_wp32_complete_volume_increment_L',abs((2*.176*.254*.212+2*.230*.180*.175+.12*.14*.12+.1*.12*.08+.12*.1*.04-.14*.19*.27)*1000-D['B_proposal']['added_gross_hardware_volume_net_of_retired_pumpstock_L']),1e-10)
+# Check actual source once, no normals/repair/native substitution.
+P=R/B['source_path'];sd=json.loads(gzip.decompress(P.read_bytes()));names=[p.get('name',p.get('id')) for p in sd['parts']]
+record('same_locked_body_identity',0 if h(P)==B['source_sha'] else 1,0);record('allbody_name_unique',len(names)-len(set(names)),0)
+for desc,expr,expected in [('0707fullcore',lambda n:'0707' in n and 'fullcore_reference' in n,6),('0714fullcore',lambda n:'0714' in n and 'fullcore_reference' in n,1),('eight_fullfans',lambda n:'full172_fan' in n,8)]:record(desc,sum(expr(n) for n in names)-expected if sum(expr(n) for n in names)>=expected else expected-sum(expr(n) for n in names),0)
+record('old_series_ids_absent',sum(n in names for n in sd['G18_thermal_proposal_geometry_only']['retired_complete150IDs']),0)
+record('all_property_fixedpoints_solver_residual',max(x[y]['iteration_residual_K'] for x in D['B_proposal']['conditional_property_mean_temperature_fixedpoint'] for y in ['EMRAX_loop','hot_loop']),1e-8)
+# Fluid proxy increments explicitly separate cavities, working fill and extra unknowns once.
+fluiderr=0
+for f in D['B_proposal']['fluid_once_proxy_candidates']:
+ v=f['A_water_proxy_L']+.786+.8+f['new_branch_line_L_own_range_member']+f['WP32_vs_EWP150_cavity_delta_unknown_L_budget'];fluiderr=max(fluiderr,abs(v-f['B_water_proxy_L']))
+record('fluid_increment_once_no_degas_readdition',fluiderr,1e-10)
+# 30min ceiling is a DESIGN sensitivity, same underlying missions/eta/R; not performance promise.
+mission=G['two_physical_budget_domains'][0];target=7.44*.75*.9/.5
+ceilings=[]
+for V in [288,200]:
+ lo,hi=0,4
+ for _ in range(100):
+  aux=(lo+hi)/2;avg=0
+  for p in mission['phases']:
+   bus=p['Pbus_kW']-p['legacy_aux_low_or_air_unallocated_kW']+aux;avg+=p['duty']*(bus/.98+(bus*1000/.98/V)**2*.2/1000)
+  if avg>target:hi=aux
+  else:lo=aux
+ ceilings.append((lo+hi)/2)
+result={'stage':'G18 independent bounded arithmetic and source-scope verification','producer_sha256':h(__file__),'source_sha256':h(O/'architecture_comparison_v2.json'),'body_sha':B['source_sha'],'checks':checks,'all_arithmetic_and_identity_checks_pass':all(c['pass'] for c in checks),'A30min_480_SOC75_reserve10_allowed_total_aux_kW_at288_200':ceilings,'this_is_not_physics_or_thermal_or_geometry_or_nameplate_pass':True,'no_producer_import_or_new_global_solve':True,'bound_errors_retained_not_repaired':True}
+(O/'independent_verification.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps({'checks':len(checks),'failures':[c for c in checks if not c['pass']],'A30_auxceiling_kW':ceilings},indent=2))

@@ -1,0 +1,136 @@
+from pathlib import Path
+import json, hashlib, gzip, datetime, os, shutil
+
+R = Path.cwd()
+O = R / 'experiments/gorilla_v0_1/internal_structure_g18_full_assembly_and_cooling'
+assert not (O / 'snapshot_manifest.json').exists()
+O.mkdir(parents=True, exist_ok=True)
+roots = {k: R / ('.scratch/' + v) for k, v in {
+    'body_codesign': 'gorilla_internal_g18_body_codesign',
+    'shoulder_arm_codesign': 'gorilla_internal_g18_shoulder_arm_codesign',
+    'cooling_architecture': 'gorilla_internal_g18_cooling_architecture',
+    'root_review': 'gorilla_internal_g18_root_review',
+    'accounting_review': 'gorilla_internal_g18_accounting_review',
+}.items()}
+sha = lambda b: hashlib.sha256(b).hexdigest()
+files, excluded, checks, inputs = [], [], [], {}
+dedup, reuse = {}, {}
+for p in sorted((R / 'experiments/gorilla_v0_1').glob('*/snapshot_manifest.json')):
+    if p.parent == O:
+        continue
+    prior_rows = json.loads(p.read_text()).get('files', [])
+    if not isinstance(prior_rows, list):
+        continue
+    for x in prior_rows:
+        if isinstance(x, dict) and all(k in x for k in ['original_sha256', 'stored_path', 'stored_sha256', 'encoding', 'stored_bytes']) and x.get('encoding') != 'gzip_chunks':
+            reuse[x['original_sha256']] = (p.parent, x)
+
+def save(p, rel):
+    p = Path(p)
+    if any(x['original_path'] == str(p.relative_to(R)) for x in files):
+        return
+    d = p.read_bytes(); h = sha(d); rel = Path(rel)
+    if h in reuse:
+        prior, z = reuse[h]
+        source = (prior / z['stored_path']).resolve()
+        assert sha(source.read_bytes()) == z['stored_sha256']
+        files.append(dict(original_path=str(p.relative_to(R)), original_sha256=h,
+                          original_bytes=len(d), stored_path=os.path.relpath(source, O),
+                          stored_sha256=z['stored_sha256'], stored_bytes=z['stored_bytes'],
+                          encoding=z['encoding'], reused_controlled_dependency=True))
+        return
+    if rel.suffix == '.py':
+        rel = rel.with_suffix('.py.txt')
+    enc, b = 'identity', d
+    if rel.suffix in ['.step', '.brep'] or rel.suffix == '.json' and len(d) > 500000:
+        rel = Path(str(rel) + '.gz'); b = gzip.compress(d, mtime=0); enc = 'gzip'
+    assert len(b) < 100000000
+    if sha(b) in dedup:
+        rel = dedup[sha(b)]
+    else:
+        target = O / rel; target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(b); dedup[sha(b)] = rel
+    files.append(dict(original_path=str(p.relative_to(R)), original_sha256=h,
+                      original_bytes=len(d), stored_path=str(rel), stored_sha256=sha(b),
+                      stored_bytes=len(b), encoding=enc))
+
+def ck(p, h, scope):
+    p = Path(p); p = p if p.is_absolute() else R / p
+    actual = sha(p.read_bytes())
+    checks.append(dict(path=str(p.relative_to(R)), expected_sha256=h,
+                       actual_sha256=actual, scope=scope, pass_=actual == h))
+    assert actual == h, str(p)
+
+def downloaded(p):
+    return p.suffix in ['.pdf', '.html'] or p.name in {
+        'emp_wp32_performance_metric.jpg', 'emp_dimensions_p6.png',
+        'emp_wp29_wp32_quick_start_revc_1.txt', 'emp_wp32_spec_2021.txt',
+        'rectangular_friction_primary.txt', 'emrax_users_manual_v1_6.txt',
+    }
+
+def exclude(p, reason):
+    if not any(x['original_path'] == str(p.relative_to(R)) for x in excluded):
+        excluded.append(dict(original_path=str(p.relative_to(R)),
+                             original_sha256=sha(p.read_bytes()), reason=reason))
+
+for label, d in roots.items():
+    name = 'manifest.json' if label in ['shoulder_arm_codesign', 'accounting_review'] else 'freeze_manifest.json'
+    m = json.loads((d / name).read_text())
+    outs = m.get('outputs', m.get('files', []))
+    rows = [dict(path=p, sha256=h if isinstance(h, str) else h['sha256']) for p, h in outs.items()] if isinstance(outs, dict) else outs
+    for x in rows:
+        q = Path(x['path'])
+        q = q if q.is_absolute() else (d / q if (d / q).is_file() else R / q)
+        ck(q, x['sha256'], 'author_or_root_frozen_output')
+    ins = m.get('inputs', {})
+    if isinstance(ins, dict):
+        for p, h in ins.items():
+            inputs[Path(p)] = h if isinstance(h, str) else h['sha256']
+    else:
+        for z in ins:
+            inputs[Path(z['path'])] = z.get('sha256_expected', z.get('sha256'))
+    for p in sorted(d.rglob('*')):
+        if not p.is_file():
+            continue
+        if '__pycache__' in p.parts or p.suffix in ['.pyc', '.log'] or downloaded(p):
+            exclude(p, 'Downloaded publication/image/extracted text, cache or runtime excluded; engineering extraction and source receipts retained.')
+            continue
+        save(p, Path(label) / p.relative_to(d))
+
+# Dependencies actually imported by frozen producers; runtime packages/fonts are not bundled.
+for rel in [
+    '.scratch/gorilla_internal_g_material_contract/native_signed_material.py',
+    '.scratch/gorilla_internal_g9_whole_source/scene.json.gz',
+    'experiments/gorilla_v0_1/internal_structure_g_studies/material_contract/native_signed_material.py.txt',
+]:
+    p = R / rel; inputs[p] = sha(p.read_bytes())
+for p, h in inputs.items():
+    p = p if p.is_absolute() else R / p
+    ck(p, h, 'upstream_selected_dependency')
+    if downloaded(p):
+        exclude(p, 'Publication cached locally, not bundled or claimed restored.')
+        continue
+    rel = p.relative_to(R)
+    if rel.parts[0] == '.scratch':
+        rel = Path(*rel.parts[1:])
+    save(p, Path('input_dependencies') / rel)
+
+manifest = dict(robot_id='gorilla_v0_1', freeze_UTC=datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                scope='G18 actual full-source body/shoulder candidates, independent composition/mass/neutral geometry, complete cooling/energy and rejection evidence. Not installed, optimized, stable SI or accepted.',
+                files=files, upstream_frozen_identity_checks=checks,
+                excluded_original_artifact_identities=excluded,
+                storage_deduplicated_by_exact_stored_hash=True,
+                unchanged_controlled_inputs_reused=True,
+                original_geometry_producers_and_failure_history_preserved=True,
+                historical_bound_arm_static_inputs_preserved_as_captures_not_current_live_outputs=True,
+                new_lower_art_pending_user_acceptance_and_engineering_rebuild=True,
+                whole_generation_replayed=False,
+                runtime_required='Existing geometry runtime. Restore is exact selected-byte recovery, not full generation, omitted publication retrieval or independent physical qualification.',
+                physical_aesthetic_or_stable_si_accepted=False)
+(O / 'snapshot_manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+shutil.copyfile(R / 'experiments/gorilla_v0_1/internal_structure_g17_connected_frame_and_workpoint/restore_snapshot.py.txt', O / 'restore_snapshot.py.txt')
+shutil.copyfile(Path(__file__), O / 'preserve_snapshot.py.txt')
+print(json.dumps(dict(selected_original_files=len(files), new_unique_stored_files=len(dedup),
+                      new_unique_stored_bytes=sum((O / p).stat().st_size for p in dedup.values()),
+                      reused_mappings=sum(bool(x.get('reused_controlled_dependency')) for x in files),
+                      identity_checks=len(checks), manifest_sha256=sha((O / 'snapshot_manifest.json').read_bytes()))))

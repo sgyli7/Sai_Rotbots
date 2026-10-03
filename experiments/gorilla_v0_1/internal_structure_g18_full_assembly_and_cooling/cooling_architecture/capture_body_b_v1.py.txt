@@ -1,0 +1,18 @@
+from pathlib import Path
+import json,gzip,hashlib,time
+import numpy as np
+R=Path('/home/ethan/Projects/Sai_Rotbots');O=Path(__file__).resolve().parent
+P=R/'.scratch/gorilla_internal_g18_body_codesign/b/scene.json.gz'
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+d=json.loads(gzip.decompress(P.read_bytes()));parts={p.get('name',p.get('id')):p for p in d['parts']}
+rows=[]
+for n,p in parts.items():
+ if any(t in n for t in ['low_es0707_segment','hot_es0714','WP32','degas','filter_sensor_isolation']):
+  v=np.asarray(p.get('vertices_world_m',p.get('vertices')),float)
+  rows.append({'id':n,'body':p.get('body'),'role':p.get('role'),'finite_material':p.get('finite_material'),'physical_mass_assigned':p.get('physical_mass_assigned'),'mass_range_kg':p.get('mass_range_kg'),'bbox_min_m':v.min(0).tolist(),'bbox_max_m':v.max(0).tolist(),'bbox_size_m':np.ptp(v,axis=0).tolist(),'bbox_center_m':((v.min(0)+v.max(0))/2).tolist(),'capacity_L':p.get('capacity_L'),'workingfill_L':p.get('workingfill_L'),'source_or_assumption':p.get('source_or_assumption'),'source_exact_arrays_preserved_not_repaired':True})
+cores=[r for r in rows if 'fullcore_reference' in r['id']];fans=[r for r in rows if 'full172_fan' in r['id']];pumps=[r for r in rows if r['id'] in ['g18_WP32_full_pump_0','g18_WP32_full_pump_1']]
+checks={'source_part_count':len(d['parts']),'all_names_unique':len(parts)==len(d['parts']),'0707_fullcore_count':sum('0707' in r['id'] for r in cores),'0714_fullcore_count':sum('0714' in r['id'] for r in cores),'full172fans_count':len(fans),'WP32_complete_stock_count':len(pumps),'retired_150_actual_absent':[n for n in d['G18_thermal_proposal_geometry_only']['retired_complete150IDs'] if n not in parts],'retired_150_unexpected_present':[n for n in d['G18_thermal_proposal_geometry_only']['retired_complete150IDs'] if n in parts]}
+liq=parts['g18_188_degas_workingfluid_alias'];vv=np.asarray(liq['vertices_world_m']);freez=float(vv[:,2].max());stockcenters=[r['bbox_center_m'][2] for r in pumps]
+result={'stage':'G18 locked body B cooling inventory-only capture','created_utc':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'producer_sha':sha(__file__),'source_path':str(P.relative_to(R)),'source_sha':sha(P),'source_author_geometry_locked':True,'source_producer_sha':d['producer_sha256'],'source_body_admission':d['assembly_admission'],'counts':checks,'parts_selected_exact_inventory':rows,'source_proposed_retired_ids':d['proposed_retired_ids'],'globalfluidinventory':d['globalfluidinventory'],'source_geometry_claim':d['G18_thermal_proposal_geometry_only'],'actual_loop_or_rotor_air_routes_implemented':False,'newcooling_eye_or_port_position_finite_defined':False,'pump_source_shape_in_customstock_not_trueOEMCAD':True,'third_vessel_actual_capacity_L':parts['g18_188_degas_tank_shell']['capacity_L'],'third_vessel_working_L':parts['g18_188_degas_tank_shell']['workingfill_L'],'third_vessel_free_level_Z_m':freez,'WP32_stock_centers_Z_m':stockcenters,'stock_center_minus_third_working_level_mm':[(z-freez)*1000 for z in stockcenters],'this_is_NOT_eye_height_or_NPSHa':True,'requested_flooded_pump_installation_not_demonstrated_by_high_stockplacement':True,'budget_v1_mass_vs_body_aux_scope':'body WP32 each3.03+.8/1.6/2.5 vsbudget3.03+.6/1.1/2.2; body filter.5/1.1/1.8 and LV.3/.6/1.1 are different own complete reserves; compare scopes without overwriting either','physical_pressure_thermal_inventoryCOM_or_appearance_admission':False}
+(O/'body_b_locked_inventory_v1.json').write_text(json.dumps(result,indent=2)+'\n')
+print(json.dumps({'capture_sha':sha(O/'body_b_locked_inventory_v1.json'),'source_sha':sha(P),'counts':checks,'stock_center_delta_mm':result['stock_center_minus_third_working_level_mm']},indent=2))

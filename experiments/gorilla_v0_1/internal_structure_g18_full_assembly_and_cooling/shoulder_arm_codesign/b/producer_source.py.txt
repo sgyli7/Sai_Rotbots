@@ -1,0 +1,173 @@
+"""Gorilla G18 complete shoulder/upperarm/elbow native+OCC bounded co-design."""
+from pathlib import Path
+import argparse,json,gzip,hashlib,copy,math
+import numpy as np,manifold3d as mf,gmsh
+ROOT=next(p for p in Path(__file__).resolve().parents if(p/'sai_robots_engineering_rules.md').is_file());O=Path(__file__).resolve().parent;sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();read=lambda p:json.loads(gzip.decompress(Path(p).read_bytes()))if str(p).endswith('.gz')else json.loads(Path(p).read_bytes());put=lambda p,x:Path(p).write_text(json.dumps(x,indent=2,allow_nan=False)+'\n')
+ap=argparse.ArgumentParser();ap.add_argument('--variant',choices=['a','b'],required=True);args=ap.parse_args();D=O/args.variant;D.mkdir(exist_ok=False);(D/'producer_source.py').write_bytes(Path(__file__).read_bytes())
+inputs={'body':ROOT/'.scratch/gorilla_internal_g17_connected_cage_layout/b/scene.json.gz','serial':ROOT/'.scratch/gorilla_internal_g17_serial_shoulder_assembly/b/scene.json.gz','root_review':ROOT/'.scratch/gorilla_internal_g17_root_review/independent_serial_and_joint.json','tree':ROOT/'.scratch/gorilla_internal_g9_whole_source/scene.json.gz'}
+expected={'body':'52eb6bb53bb84cfacf24fbe4f2f4f4e35b4a97d4cef90729fc3ff9f0382c2756','serial':'e15b691b435c26b45b60648ec35f727c2f37857f23a848034d7df9172b3902bc'}
+for k,p in inputs.items():
+ if k in expected:assert sha(p)==expected[k],k
+ q=O/('bound_'+k+(''.join(p.suffixes)));q.write_bytes(p.read_bytes())if not q.exists()else None
+S=read(inputs['body']);pm={p['name']:p for p in S['parts']};tree=read(inputs['tree'])['body_tree'];N=96;gmsh.initialize([],False,False);gmsh.option.setNumber('General.Terminal',0);gmsh.model.add('gorilla_g18_'+args.variant);oc=gmsh.model.occ
+class Shape:
+ def __init__(self,m,t):self.m=m;self.t=t
+ def copy(self):return Shape(self.m,[t for d,t in oc.copy([(3,t)for t in self.t])])
+ def op(self,b,k):
+  fn={'add':oc.fuse,'sub':oc.cut}[k];ts,_=fn([(3,t)for t in self.t],[(3,t)for t in b.t],removeObject=True,removeTool=True);return Shape(self.m+b.m if k=='add'else self.m-b.m,[t for d,t in ts if d==3])
+ def __add__(self,b):return self.op(b,'add')
+ def __sub__(self,b):return self.op(b,'sub')
+def box(c,d):return Shape(mf.Manifold.cube(d,True).translate(c),[oc.addBox(*(np.array(c)-np.array(d)/2),*d)])
+def cylinder(c,r,L,axis):
+ ax=np.array(axis,float);ax/=np.linalg.norm(ax);u=np.cross([0,1,0],ax)
+ if np.linalg.norm(u)<1e-8:u=np.cross([1,0,0],ax)
+ u/=np.linalg.norm(u);v=np.cross(ax,u);Q=np.column_stack([u,v,ax]);p=np.array(c)-ax*L/2;return Shape(mf.Manifold.cylinder(L,r,r,N,True).transform(np.column_stack([Q,c])),[oc.addCylinder(*p,*(ax*L),r)])
+def ring(c,ro,ri,L,axis):return cylinder(c,ro,L,axis)-cylinder(c,ri,L+.003,axis)
+def beam(A,B,w,d,t=.006):
+ A=np.array(A,float);B=np.array(B,float);z=(B-A);L=np.linalg.norm(z);z/=L;u=np.cross([0,1,0],z)
+ if np.linalg.norm(u)<1e-8:u=np.cross([1,0,0],z)
+ u/=np.linalg.norm(u);v=np.cross(z,u);Q=np.column_stack([u,v,z]);c=(A+B)/2;q=box([0,0,0],[w,d,L])-box([0,0,0],[w-2*t,d-2*t,L-2*t]);q.m=q.m.transform(np.column_stack([Q,c]));M=np.eye(4);M[:3,:3]=Q;M[:3,3]=c;oc.affineTransform([(3,x)for x in q.t],M.reshape(-1).tolist());return q
+parts=[];rows=[];retired=[];moved=[];joints=[];frames=[];catalogue=[]
+def add(name,s,body,role,rho=7850,mass=None,**kw):
+ assert s.m.status()==mf.Error.NoError,(name,s.m.status());assert s.m.volume()>1e-10,name
+ me=s.m.to_mesh64();p={'name':'g18_'+name,'body':body,'role':role,'vertices_world_m':np.array(me.vert_properties)[:,:3].tolist(),'faces':np.array(me.tri_verts).tolist(),'rgba':[.20,.45,.55,1.]if rho else[.63,.53,.35,1.],'finite_material':rho is not None,'density_kg_m3':rho,'material_hypothesis':'conditional S355 rho7850'if rho else None,'physical_connection_admitted':False,**kw};parts.append(p);tags=[t for d,t in oc.copy([(3,t)for t in s.t])if d==3];rows.append({'id':p['name'],'OCC_solid_tags':tags,'density_kg_m3':rho,'native_volume_m3':s.m.volume(),'role':role})
+ if mass is not None:p['mass_range_kg']=mass;p['OEM_internal_I_unknown']=True;p['reference_net_material_unknown']=True
+ return p
+def align(a,b):
+ a=np.array(a,float);a/=np.linalg.norm(a);b=np.array(b,float);b/=np.linalg.norm(b);v=np.cross(a,b);c=a@b
+ if c<-.999999:
+  u=np.cross(a,[0,1,0]);u=u/np.linalg.norm(u);return 2*np.outer(u,u)-np.eye(3)
+ if np.linalg.norm(v)<1e-10:return np.eye(3)
+ k=np.array([[0,-v[2],v[1]],[v[2],0,-v[0]],[-v[1],v[0],0]]);return np.eye(3)+k+k@k/(1+c)
+def transform_part(p,R,old,new,group):
+ q=copy.deepcopy(p);vv=np.array(q.get('vertices_world_m',q.get('vertices')));q['vertices_world_m']=((vv-np.array(old))@R.T+new).tolist();q.pop('vertices',None);q['g18_original_id']=p['name'];q['g18_existing_moments_not_revalidated']=True
+ if 'exact_CAD_COM_world_m'in q:q['exact_CAD_COM_world_m']=(R@(np.array(q['exact_CAD_COM_world_m'])-np.array(old))+new).tolist()
+ if 'exact_CAD_full_I_at_COM_world_kg_m2'in q:q['exact_CAD_full_I_at_COM_world_kg_m2']=(R@np.array(q['exact_CAD_full_I_at_COM_world_kg_m2'])@R.T).tolist()
+ T=np.eye(4);T[:3,:3]=R;T[:3,3]=np.array(new)-R@np.array(old);q['g18_rest_rigid_transform_world']=T.tolist();q['g18_complete_function_group']=group;q['g18_protected_reference_mass_notuniform_I']=p['role'].startswith(('component','E_thermal'));moved.append(p['name']);return q
+# Exact own finite replacement responsibilities; no OEM piece is shrunk or erased.
+for side in ['left','right']:
+ retired += ['g13_'+side+'_output_flange_journals_closed_arm_carrier']+[f'e2_upper_net_{side}_{j}'for j in ['shoulder_pitch_carrier','shoulder_roll_carrier','upper_arm','proximal_forearm']]
+ for n in pm:
+  if n.startswith(tuple('ds_'+side+'_'+j+'_'for j in ['shoulder_roll','shoulder_yaw','elbow_pitch']))and any(x in n for x in ['gear_load_shell','hollow_output_adapter','carrier_lower','carrier_upper']):retired.append(n)
+retired=set(retired);stockmoves={};forearmmoves={};groupmap={};ownpaths=[]
+for side,sg in [('left',1),('right',-1)]:
+ # Full packages place and move rigidly, independent controls can have documented mounting relocation.
+ cr=np.array([-.075,sg*.675,2.270])if args.variant=='a'else np.array([-.105,sg*.695,2.305]);ar=np.array([-1.,0,0]);Or=-ar;cy=np.array([-.135,sg*.725,2.025])if args.variant=='a'else np.array([-.105,sg*.755,2.025]);ay=np.array([-.08,sg*.35,-.933]);ay/=np.linalg.norm(ay);ce=np.array([-.165,sg*.80,1.797])if args.variant=='a'else np.array([-.125,sg*.835,1.807]);ae=np.array([0.,sg,0.]);oe=ae;oldcr=np.array([-.12,sg*.675,2.19]);oldcy=np.array([-.1,sg*.64,1.955]);olday=np.array([-.1344496302205832,sg*.44816543406861076,-.8837822359833004]);olde=np.array([-.205,sg*.80,1.79]);RR=np.diag([-1.,-1.,1.]);RY=align(olday,ay);RE=np.eye(3);delta=ce-olde
+ if args.variant=='b':
+  q=math.radians(-10*sg);RE=np.array([[math.cos(q),0,math.sin(q)],[0,1,0],[-math.sin(q),0,math.cos(q)]])
+ parent=side+'_shoulder_pitch_carrier';roll=side+'_shoulder_roll_carrier';arm=side+'_upper_arm';fore=side+'_proximal_forearm';local={}
+ for j,R,old,new in [('shoulder_roll',RR,oldcr,cr),('shoulder_yaw',RY,oldcy,cy),('elbow_pitch',np.eye(3),olde,ce)]:
+  for p in S['parts']:
+   n=p['name']
+   if n in retired:continue
+   if ('ds_'+side+'_'+j+'_')in n and(n.startswith('ds_')or n.startswith('e_ds_')):
+    q=transform_part(p,R,old,new,side+'_'+j)
+    if j=='shoulder_yaw'and n.endswith('_controller'):
+     lo=np.array(q['vertices_world_m']).min(0);hi=np.array(q['vertices_world_m']).max(0);cc=(lo+hi)/2;dest=np.array([.045,sg*.710,2.075])if args.variant=='a'else np.array([.015,sg*.780,1.90]);q['vertices_world_m']=(np.array(q['vertices_world_m'])+dest-cc).tolist();q['g18_controller_relocation_world_m']=(dest-cc).tolist();q['g18_electrical_connection_routing_length_andmount_unknown']=True
+    stockmoves[n]=q;local[n]=q
+ # Complete lower arm/wrist/palm internal functions follow one actual rest transformation; visiblearmor0mm remains comparator.
+ descendants={side+'_proximal_forearm',side+'_distal_forearm',side+'_wrist_pitch_carrier',side+'_palm'}
+ for name,t in tree.items():
+  n=name
+  for _ in range(16):
+   if n in descendants:descendants.add(name);break
+   n=tree.get(n,{}).get('parent')
+   if n is None:break
+ for p in S['parts']:
+  if p['name']in retired or p['name']in stockmoves or p['name']in S['original_visible_armor_ids']:continue
+  if p['body']in descendants:forearmmoves[p['name']]=transform_part(p,RE,olde,ce,side+'_complete_elbow_downstream')
+ for name in descendants:
+  t=tree.get(name)
+  if t and'axis_world'in t:
+   oldp=np.array(t['pivot_world_m']);t['pivot_world_m']=(RE@(oldp-olde)+ce).tolist();t['axis_world']=(RE@np.array(t['axis_world'])).tolist()
+ # Three complete independent-load-bearing housings. Moving journals separate from fixed bearingcups.
+ def housing(c,axis):
+  h=ring(c,.101,.096,.101,axis)+ring(c-axis*.0495,.108,.065,.012,axis)
+  h=h+ring(c+axis*.095,.101,.096,.100,axis)
+  for u in [.083,.124]:h=h+ring(c+axis*u,.072,.05515,.03575,axis)+ring(c+axis*(u+.015),.101,.060,.006,axis)
+  return h
+ def output(c,axis):return ring(c+axis*.0512,.080,.0141,.012,axis)+ring(c+axis*.099,.02995,.0141,.110,axis)+ring(c+axis*.165,.065,.0141,.018,axis)
+ fixedr=housing(cr,Or);fixedy=housing(cy,ay);fixede=housing(ce,oe);outp=ring([-.13,sg*.487,2.29],.100,.0141,.014,ae)+ring([-.13,sg*.499,2.29],.035,.0141,.018,ae)+ring([-.13,sg*.55725,2.29],.02995,.0141,.1395,ae)
+ for i in range(8):
+  t=i*math.pi/4;outp=outp-cylinder([-.13+.055*math.cos(t),sg*.487,2.29+.055*math.sin(t)],.00875,.018,ae)
+ # Broad closed skins curve around functions via two finite paired members, not all-height outerboxes.
+ if args.variant=='a':
+  pr=outp+beam([-.13,sg*.636,2.29],[.035,sg*.676,2.30],.105,.115)+fixedr
+  ry=output(cr,Or)+beam(cr+Or*.172,[.050,sg*.730,2.125],.130,.130)+beam([.050,sg*.730,2.125],cy+np.array([.095,0,.015]),.130,.130)+fixedy
+  ue=output(cy,ay)+beam(cy+ay*.177,[-.020,sg*.80,1.87],.140,.140)+beam([-.020,sg*.80,1.87],ce+np.array([.080,-sg*.025,0]),.140,.140)+fixede
+ else:
+  # One macro replacement: distinct axial bearingbox/outputplanes; continuous curved broadfront paths.
+  # Mother material wraps outside full parent case/seat installation domains, never modifies OEM source.
+  pr=outp+beam([-.13,sg*.636,2.29],cr-Or*.140+np.array([0,0,.070]),.125,.145)+fixedr
+  b1=beam(cr+Or*.177,[.090,sg*.755,2.105],.135,.145)+beam([.090,sg*.755,2.105],cy+np.array([.106,0,.015]),.135,.145)
+  b1=b1-cylinder(cr+Or*.05,.111,.223,Or)
+  ry=output(cr,Or)+b1+fixedy
+  b2=beam(cy+ay*.180,[.060,sg*.835,1.860],.150,.145)+beam([.060,sg*.835,1.860],ce+np.array([.100,-sg*.03,0]),.150,.145)
+  b2=b2-cylinder(cy+ay*.05,.111,.223,ay)
+  ue=output(cy,ay)+b2+fixede
+ # Elbow output continuous collar-to-forearm-roll fixed mount, keeping the whole rest chain explicit.
+ cf=RE@(np.array([-.2,sg*.815,1.52])-olde)+ce
+ if args.variant=='a':ef=output(ce,oe)+beam(ce+oe*.169,cf+np.array([.090,sg*.03,.095]),.120,.135)
+ else:
+  fb=beam(ce+oe*.179,cf+np.array([.090,sg*.13,.095]),.135,.145);fb=fb-cylinder(ce+oe*.05,.111,.223,oe);ef=output(ce,oe)+fb
+ # Actual protected stock/service clearances in own source, not cutting anyOEM geometry.
+ structures=[('pitch_to_roll_compact_housing',pr,parent),('roll_to_yaw_compact_housing',ry,roll),('yaw_to_elbow_upperarm_housing',ue,arm),('elbow_to_forearm_roll_housing',ef,fore)]
+ for name,q,owner in structures:
+  if args.variant=='b':
+   downstream_fixed={'pitch_to_roll_compact_housing':(cr,Or),'roll_to_yaw_compact_housing':(cy,ay),'yaw_to_elbow_upperarm_housing':(ce,oe)}.get(name)
+   if downstream_fixed is not None:
+    cc,aa=downstream_fixed
+    q=q-cylinder(cc+aa*.052,.081,.027,aa)-cylinder(cc+aa*.11,.042,.097,aa)-cylinder(cc+aa*.165,.066,.029,aa)
+  moving_output={'roll_to_yaw_compact_housing':(cr,Or),'yaw_to_elbow_upperarm_housing':(cy,ay),'elbow_to_forearm_roll_housing':(ce,oe)}.get(name)
+  if moving_output is not None:
+   cc,aa=moving_output;uu=np.cross([0,1,0],aa)
+   if np.linalg.norm(uu)<1e-8:uu=np.cross([1,0,0],aa)
+   uu/=np.linalg.norm(uu);vv=np.cross(aa,uu)
+   for k in range(8):
+    theta=k*math.pi/4;q=q-cylinder(cc+aa*.0512+uu*.045*math.cos(theta)+vv*.045*math.sin(theta),.0053,.018,aa)
+  for p in list(local.values())+list(forearmmoves.values()):
+   if p['body']!=owner:continue
+   if p['name'].startswith(('ds_','e_ds_'))and any(k in p['name']for k in ['gear','motor','brake','input_hub','encoder','controller','wire_coolant']):
+    vv=np.array(p['vertices_world_m']);lo=vv.min(0)-.0012;hi=vv.max(0)+.0012
+    # Gears use cylindrical outercase protectedvoid, preserving fixed mountingrims.
+    if p['name'] in [f'ds_{side}_shoulder_roll_gear',f'ds_{side}_shoulder_yaw_gear',f'ds_{side}_elbow_pitch_gear']:
+     cc,ax=({'shoulder_roll':(cr,Or),'shoulder_yaw':(cy,ay),'elbow_pitch':(ce,oe)})[next(j for j in ['shoulder_roll','shoulder_yaw','elbow_pitch']if j in p['name'])];q=q-cylinder(cc,.096,.092,ax)
+    else:q=q-box((lo+hi)/2,hi-lo)
+  # Explicit parentfixedsupport keepout for compactpitchpath; old protectedsource nottrimmed.
+  if name=='pitch_to_roll_compact_housing':
+   for p in S['parts']:
+    if p['name'].startswith('g13_'+side+'_load_support_'):
+     vv=np.array(p.get('vertices_world_m',p.get('vertices')));lo=vv.min(0)-.0012;hi=vv.max(0)+.0012;q=q-box((lo+hi)/2,hi-lo)
+  add(side+'_'+name,q,owner,'finite_codesigned_closed_load_path',candidate_main_wall_m=.006,functionalstock_keepout_source='actual complete source transformed plus1p2mm allowance',joint_reaction_path_unqualified=True)
+ for j,c,axis,owner in [('roll',cr,Or,roll),('yaw',cy,ay,arm),('elbow',ce,oe,fore)]:
+  fixedowner={'roll':parent,'yaw':roll,'elbow':arm}[j]
+  for i,u in enumerate([.083,.124]):
+   add(side+'_'+j+'_external_bearing_'+str(i),ring(c+axis*u,.055,.030,.02975,axis),'mixed_'+side+'_'+j+'_bearing_races','SKF32212_complete_reference',rho=None,mass=[1.15]*3,actual_race_pressurecentre_inner_outer_owners_unknown=True)
+   add(side+'_'+j+'_keeper_'+str(i),ring(c+axis*(u+.019),.041,.02995,.004,axis),owner,'finite_journal_keeper_candidate',release_thread_unknown=True)
+  # finite mounting bolts are retained functions; actualCAD holes/seat hypothesis yetOEMdrawingunknown.
+  u=np.cross([0,1,0],axis)
+  if np.linalg.norm(u)<1e-8:u=np.cross([1,0,0],axis)
+  u/=np.linalg.norm(u);v=np.cross(axis,u)
+  for k in range(8):
+   t=k*math.pi/4;p=c+axis*.0512+u*.045*math.cos(t)+v*.045*math.sin(t);add(side+'_'+j+'_output_bolt_'+str(k),cylinder(p,.0049,.024,axis)+cylinder(p+axis*.009,.008,.006,axis),owner,'finite_M10_output_attachment_candidate',PCD_m=.09,threads_preload_actualmating_unknown=True)
+ jointlist=[(side+'_pitch','torso',parent,[-.13,sg*.56,2.29],[0,sg,0]),(side+'_roll',parent,roll,cr.tolist(),Or.tolist()),(side+'_yaw',roll,arm,cy.tolist(),ay.tolist()),(side+'_elbow_pitch',arm,fore,ce.tolist(),[0,sg,0])]
+ for jid,pa,ch,c,ax in jointlist:joints.append({'id':jid,'parent_body':pa,'output_body':ch,'pivot_world_m':c,'axis_world':ax,'SI_contract_admission':False});tree[ch]={'parent':pa,'pivot_world_m':c,'axis_world':ax,'joint_id':jid,'status':'G18 explicit candidate rest/FK'}
+ frames.append({'side':side,'roll_old_center_m':oldcr.tolist(),'roll_new_center_m':cr.tolist(),'roll_fullgroup_R':RR.tolist(),'yaw_old_center_m':oldcy.tolist(),'yaw_new_center_m':cy.tolist(),'yaw_fullgroup_R':RY.tolist(),'elbow_old_center_m':olde.tolist(),'elbow_new_center_m':ce.tolist(),'all_complete_descendant_rest_R':RE.tolist(),'visible_outer_surfaces_compared_at0mm':True})
+ print('SIDE',side,'NEW',len(parts),'STOCK',len(stockmoves),'ARM',len(forearmmoves),flush=True)
+# All current fullcontext retained except own explicit retired functions. Not mergingpartowners.
+newparts=parts;parts=[]
+for p in S['parts']:
+ if p['name']in retired:continue
+ q=stockmoves.get(p['name'],forearmmoves.get(p['name'],copy.deepcopy(p)));parts.append(q)
+parts+=newparts;oc.synchronize();keep={t for r in rows for t in r['OCC_solid_tags']};assert len(keep)==sum(len(r['OCC_solid_tags'])for r in rows);oc.remove([(3,t)for _,t in oc.getEntities(3)if t not in keep],recursive=True);oc.synchronize();gmsh.write(str(D/'assembly.brep'))
+for r in rows:
+ ts=r['OCC_solid_tags'];vs=np.array([oc.getMass(3,t)for t in ts]);V=vs.sum();C=np.average([oc.getCenterOfMass(3,t)for t in ts],axis=0,weights=vs);I=np.zeros((3,3))
+ for t,v in zip(ts,vs):
+  dr=np.array(oc.getCenterOfMass(3,t))-C;I+=np.array(oc.getMatrixOfInertia(3,t)).reshape(3,3)+v*((dr@dr)*np.eye(3)-np.outer(dr,dr))
+ r.update(exact_CAD_volume_m3=float(V),exact_CAD_COM_world_m=C.tolist(),exact_CAD_I_per_density_m5=I.tolist(),actual_CAD_solid_count=len(ts),native_vs_CAD_relative_volume_error=float(r['native_volume_m3']/V-1));p=next(p for p in newparts if p['name']==r['id'])
+ if r['density_kg_m3']is not None:p['mass_range_kg']=[float(V*r['density_kg_m3'])]*3;p['exact_CAD_COM_world_m']=C.tolist();p['exact_CAD_full_I_at_COM_world_kg_m2']=(I*r['density_kg_m3']).tolist()
+put(D/'cad_part_manifest.json',rows);put(D/'new_joint_interfaces.json',joints);put(D/'rest_transform_interfaces.json',frames)
+out={'robot_id':'gorilla_v0_1','candidate':'g18_full_shoulder_arm_'+args.variant,'producer_sha256':sha(D/'producer_source.py'),'source_hashes':{k:sha(p)for k,p in inputs.items()},'parts':parts,'new_ids':[p['name']for p in newparts],'retired_original_own_ids':sorted(retired),'actual_retired_present_ids':[n for n in sorted(retired)if n in pm],'retired_absent_ids':[n for n in sorted(retired)if n not in pm],'moved_complete_existing_ids':sorted(set(stockmoves)|set(forearmmoves)),'new_joint_interfaces':joints,'body_tree_candidate':tree,'macro_rest_transform_interfaces':frames,'original_visible_armor_ids':S['original_visible_armor_ids'],'original_armor_vertices_faces_0mm_unchanged':True,'wholemass_SI_thermal_load_accepted':False,'verified_mass_credit_kg':0,'complete_function_retirement_not_OEM_deletion':True,'originalroot297mixed22finite_is_input_notnewproof':True}
+with(D/'scene.json.gz').open('wb')as f:
+ with gzip.GzipFile(filename='',mode='wb',fileobj=f,mtime=0)as z:z.write(json.dumps(out,separators=(',',':'),allow_nan=False).encode())
+gmsh.finalize();print('SOURCE',args.variant,len(parts),'NEW',len(newparts),'SHA',sha(D/'scene.json.gz'),flush=True)

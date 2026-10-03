@@ -1,0 +1,20 @@
+from pathlib import Path
+import json,gzip,hashlib,collections,numpy as np
+from manifold3d import Manifold,Mesh64
+P=Path(__file__).resolve().parent;R=P.parent/'gorilla_internal_g18_root_review';d=R/'body_b_arm_b'
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+s=json.load(gzip.open(d/'scene.json.gz','rt'));b=json.load(gzip.open(d/'bound_body_b.json.gz','rt'));g=json.load(gzip.open(d/'bound_common_body_g17.json.gz','rt'));j=json.load(gzip.open(d/'function_mass_and_actual_joint_gravity.json.gz','rt'));by={p['name']:p for p in s['parts']};bm={p['name']:p for p in b['parts']};gm={p['name']:p for p in g['parts']};rows=j['function_mass_rows']
+ids=['f1_waist_pitch_pair_0_holding__lhdv33_21_guard','f1_waist_pitch_pair_1_holding__lhdv33_21_guard','f1_right_hip_holding__lhdv33_21_guard'];pairs=[(ids[0],'g18_connected_cage_and_redesigned_receiver_net'),(ids[1],'g18_connected_cage_and_redesigned_receiver_net'),(ids[2],'g16_oil_working_tank_shell'),(ids[2],'g16_oil_workingfluid_alias')];cache={}
+def mesh(p):
+ v=np.array(p['vertices_world_m'],float);f=np.array([[face[0],face[k],face[k+1]] for face in p['faces'] for k in range(1,len(face)-1)],np.uint32);m=Manifold(Mesh64(v,f));edges=collections.Counter(tuple(sorted((int(a),int(b)))) for face in f for a,b in zip(face,np.roll(face,-1)));direction=collections.Counter((int(a),int(b)) for face in f for a,b in zip(face,np.roll(face,-1)));V=float(np.einsum('ij,ij->i',v[f[:,0]],np.cross(v[f[:,1]],v[f[:,2]])).sum()/6);return m,{'signed_volume_m3':V,'non_degree2_edge_count':sum(x!=2 for x in edges.values()),'unbalanced_directed_edge_count':sum(direction[e]!=direction[(e[1],e[0])] for e in direction),'kernel_status':str(m.status()),'kernel_volume_m3':float(m.volume()),'kernel_conversion_not_source_or_installation_admission':True}
+def get(n):
+ if n not in cache:cache[n]=mesh(by[n])
+ return cache[n]
+out=[]
+for n in ids:
+ p=by[n];m,r=get(n);out.append({'id':n,'role':p.get('role'),'body':p['body'],'finite_material_field':p.get('finite_material'),'density_field':p.get('density_kg_m3'),'role_is_explicit_finite_installation_material':p.get('role')=='finite_installation_material','classification_correction':'explicit finite_installation_material role must be included; no-density/finite_material missing does not erase real original finite stock','body_source_geometry_owner_identity':p==bm[n],'body_and_G17_indexed_geometry_identity':all(p[k]==gm[n][k] for k in ['vertices_world_m','faces','body']),'accounting_membership_rows':[z['id'] for z in rows if n in z['member_ids']],**r})
+inter=[]
+for a,b in pairs:
+ A,_=get(a);B,_=get(b);C=A^B;inter.append({'a':a,'b':b,'intersection_cm3':C.volume()*1e6,'query_status':str(C.status()),'owner_a':by[a]['body'],'owner_b':by[b]['body'],'same_owner_does_not_exempt':True,'fluid_alias_excluded_mass_still_exclusive_void':b.endswith('workingfluid_alias')})
+report={'producer_SHA':sha(Path(__file__)),'input_scene_SHA':sha(d/'scene.json.gz'),'bound_bodyB_SHA':sha(d/'bound_body_b.json.gz'),'common_G17_SHA':sha(d/'bound_common_body_g17.json.gz'),'guards':out,'actual_intersection_queries':inter,'correction_to_frozen_bodyB_scope':'0 new finite-finite in body-only classification was incomplete because role-only original finite_installation_material guards were put in retained_unqualified. Original mixed positive hits preserved them; this receipt reclassifies, does not edit source/history or convert to clearance pass. Whole composition also has separate yaw keeper/housing conflict reported by root.','no_source_edits_or_physics_admission':True}
+(P/'guard_classification_review.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n');print(json.dumps({'guards':len(out),'pair_cm3':[x['intersection_cm3'] for x in inter],'SHA':sha(P/'guard_classification_review.json')},indent=2))

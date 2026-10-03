@@ -1,0 +1,99 @@
+from pathlib import Path
+import json,hashlib,math,time,itertools
+import numpy as np
+O=Path(__file__).resolve().parent
+R=Path('/home/ethan/Projects/Sai_Rotbots')
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def load(s):return json.loads((R/s).read_text())
+g17=load('.scratch/gorilla_internal_g17_thermal_joint_workpoint/joint_workpoint_v3.json')
+g16=load('.scratch/gorilla_internal_g16_compact_thermal_scope/compact_module_scope.json')
+g15=load('.scratch/gorilla_internal_g15_thermal_operating_domain/operating_domain.json')
+refs={'.scratch/gorilla_internal_g17_thermal_joint_workpoint/joint_workpoint_v3.json':sha(R/'.scratch/gorilla_internal_g17_thermal_joint_workpoint/joint_workpoint_v3.json'),'.scratch/gorilla_internal_g16_compact_thermal_scope/compact_module_scope.json':sha(R/'.scratch/gorilla_internal_g16_compact_thermal_scope/compact_module_scope.json'),'.scratch/gorilla_internal_g15_thermal_operating_domain/operating_domain.json':sha(R/'.scratch/gorilla_internal_g15_thermal_operating_domain/operating_domain.json')}
+for name in ['emp_wp29_wp32_quick_start_revc_1.pdf','emp_wp32_spec_2021.pdf','emp_wp32_performance_metric.jpg','emp_wp32_official_page.html']:
+ refs[str((O/name).relative_to(R))]=sha(O/name)
+urls={'WP32_spec':'https://www.emp-corp.com/wp-content/uploads/2021/03/WP32-Water-Pump-Spec-Sheet-2021.pdf','WP32_curve':'https://www.emp-corp.com/wp-content/uploads/2021/03/WP32-Performance-Metric.jpg','WP32_quick':'https://support.emp-corp.com/media/ProductDocuments/QuickStartGuide/9970002320/9970002320_RevC.1.pdf','WP32_current':'https://www.emp-corp.com/product/wp32-electric-water-pump/'}
+# Manual graph readings. Image axis is normalized static rise, not a cold-fluid guaranteed pressure.
+wpQ=[0,12,20,40,60,70,80,100,120,122]
+wpH=[163000,168000,171000,172000,167000,161000,148000,112000,74000,69000]
+wp={'reference':'WP32 24V curve labelled4600RPM28V15A','Q_Lmin_manual':wpQ,'dp_Pa_manual':wpH,'graph_read_uncertainty_Pa':4000,'source_fluid_temperature_and_test_arrangement_unspecified':True,'bare_xyz_m':[.19025,.150,.137],'bare_kg_quickstart':3.03,'current_page_3kg_is_revision_difference_not_new_mass_credit':True,'input_V_nominal':28,'input_V_range':[18,32],'max_A':15,'electrical_upper_W_nominal_28':420,'electrical_upper_W_at32':480,'rpm_min_max_24V':[1000,4600],'fluid_ambient_C_range':[-40,95],'inlet_outlet_source_ID_m':.0254,'minimum_inlet_entire_feed_ID_m':.0254,'permitted_local_restriction_source_min_ID_m':.017,'permitted_local_restriction_max_length_m':.0254,'mount_M8x1p25_depth_m':.015,'mount_count':4,'shaft_horizontal_own_nominal_deg':0,'source_preferred_shaft_range_deg':[-10,10],'integrated_controller':'CANJ1939/on-off, thermalshutdown; matingharness/fuse/CANaddress/wake sequencing separately required','NPSHr_and_case_continuous_static_pressure_unknown':True,'no_series_interstage_assumption':True,'part_number_voltage_orientation_and_exact_weeps_and_connector_datum_open':True,'fluid_approval':'ASTMD6210-10 or D3306, OAT recommended; compatibility still application-specific','nominal_geometry_source_printed6':'190.25 long /150 top /137 high; connector/weep access extra'}
+# Re-read the historical ES chart at this NEW joint fluid/air point, no size scaling.
+cores={'emrax_bank':{'count':2,'Q_each_Lmin':6,'air_each_m3min':6.5,'H_W_K_manual_range':[64,75],'nominal_H_W_K':70,'liquid_dp_Pa_manual_range':[3000,6000],'air_dp_Pa_manual_range':[72,86]},'rest_bank':{'count':4,'Q_each_Lmin':11.75,'air_each_m3min':6.5,'H_W_K_manual_range':[76,85],'nominal_H_W_K':81,'liquid_dp_Pa_manual_range':[16000,21000],'air_dp_Pa_manual_range':[72,86]},'hot_bank':g17['joint_core_graph_capture']['hot_whole']}
+# DOW historical typical properties are a sensitivity fluid, not ES selected test compound.
+Ttable=[10,40,65,90]; rho=[1078.72,1064.91,1050.05,1032.15]; cp=[3245,3361,3457,3554]; mu=[.0055071,.0022567,.0012936,.0008227]; k=[.3724,.3937,.4062,.4139]
+def prop(T):return {n:float(np.interp(T,Ttable,vals)) for n,vals in [('rho',rho),('cp',cp),('mu',mu),('k',k)]}
+ref=prop(71.1)
+def pipe(Q,D,L,K,T):
+ p=prop(T);v=Q/60000/(math.pi*D*D/4);Re=p['rho']*v*D/p['mu'];f=64/Re if Re<2300 else .3164/Re**.25
+ return {'ID_m':D,'L_m':L,'K_own':K,'v_m_s':v,'Re':Re,'f':f,'dp_Pa':(f*L/D+K)*p['rho']*v*v/2,'transitional_if_Re2300_4000':2300<=Re<=4000}
+pressure=[]
+for loop,Q,bank in [('emrax',12,cores['emrax_bank']),('rest',47,cores['rest_bank'])]:
+ for T in [35,50,71.1]:
+  p=prop(T);mr=p['mu']/ref['mu'];turb=(p['rho']/ref['rho'])**.75*mr**.25
+  main=pipe(Q,.0254 if loop=='emrax' else .032,2,3,T)
+  suction=pipe(Q,.0254,.5,1,T)
+  if loop=='emrax':branch=pipe(6,.010,1,3,T); branch_range=[20000*turb+branch['dp_Pa'],20000*mr+branch['dp_Pa']]
+  else:branch=pipe(2,.008,1,3,T);branch_range=[5000+branch['dp_Pa'],20000+branch['dp_Pa']]
+  for regime,scale in [('smooth_turbulent_ROM',turb),('laminar_ROM',mr)]:
+   system=[bank['liquid_dp_Pa_manual_range'][0]*scale+main['dp_Pa']+suction['dp_Pa']+branch_range[0]+5000,bank['liquid_dp_Pa_manual_range'][1]*scale+main['dp_Pa']+suction['dp_Pa']+branch_range[1]+12000]
+   H=float(np.interp(Q,wpQ,wpH));margin=[.8*(H-4000)-system[1],(H+4000)-system[0]]
+   # Affinity is an EXPLORATORY controller setpoint, not a published partialspeed cold curve.
+   n=[]
+   for target in system:
+    lo,hi=1000/4600,1.0
+    for _ in range(60):
+     s=(lo+hi)/2;h=float(np.interp(Q/s,wpQ,wpH,left=wpH[0],right=0))*s*s
+     if h<target:lo=s
+     else:hi=s
+    n.append(4600*(lo+hi)/2)
+   pressure.append({'loop':loop,'Q_Lmin':Q,'T_C':T,'regime_assumption':regime,'core_multiplier':scale,'main_pipe':main,'pump_suction_feed':suction,'critical_branch':branch,'branch_dp_Pa_own_range':branch_range,'filter_balance_Pa_own_range':[5000,12000],'system_dp_Pa_own_range':system,'source_fullspeed_wp32_dp_Pa':H,'own_cold_pump_head_factor_range':[.8,1],'conditional_nominal_fullspeed_margin_Pa_range':margin,'required_affinity_rpm_warm_range':n,'hypothesis_margin_not_physical_qualification':True,'custom_pack_compute_branch_max20kPa_unproved':loop=='rest','EMRAX20kPa_fluid_unspecified_same_ROM_not_proven':loop=='emrax'})
+# A exact historical reference, B same mission with NEW full auxiliaries replacing old allowance.
+A=[x for x in g17['same_task_heat_energy_budgets'] if x['aux_scope']=='source_upper']
+B=[];temps=[]
+fanW=8*215;hotpumpW=97.5;otherW=500
+for supplyV,eachpumpW in [(28,420),(32,480)]:
+ for mission in g15['two_physical_budget_domains']:
+  aux=(fanW+2*eachpumpW+hotpumpW+otherW)/1000;phases=[]
+  for p in mission['phases']:
+   bus=p['Pbus_kW']-p['legacy_aux_low_or_air_unallocated_kW']+aux
+   dc=bus/.98-bus; cell=[(bus*1000/.98/V)**2*.2/1000 for V in [288,200]]
+   base=p['motor_inverter_low_kW']+p['rotary_loss_low_kW']+p['hold_copper_or_electrical_low_kW']
+   totalLow=[base+.5+2*eachpumpW/1000+dc+x for x in cell]
+   phase={'phase':p['phase'],'duty':p['duty'],'bus_kW':bus,'Icell_A_at288_200':[bus*1000/.98/V/6 for V in [288,200]],'cell_heat_kW_at288_200':cell,'total_low_kW_at288_200_before_LC_airpartition':totalLow,'hot_liquid_kW':p['oil_total_kW']+.0975,'fans_to_air_kW':1.72,'EMRAX_own_motor_eta_partitions':[]}
+   for etaM in [.92,.96]:
+    motor=p['pump_shaft_kW']*(1/etaM-1);inv=p['motor_inverter_low_kW']-motor
+    rotor=motor/3;emraxliq=2*motor/3+eachpumpW/1000
+    rest=[base-motor+.5+eachpumpW/1000+dc+x for x in cell]
+    phase['EMRAX_own_motor_eta_partitions'].append({'eta_motor_own':etaM,'eta_inverter_derived_same_combined0p9':.9/etaM,'motor_loss_kW':motor,'inverter_loss_kW':inv,'EMRAX_liquid_kW':emraxliq,'EMRAX_rotor_air_kW':rotor,'rest_liquid_kW_at288_200':rest,'conservation_error_kW_at288_200':[rest[i]+emraxliq+rotor-totalLow[i] for i in range(2)],'LC_variant_route_unknown_no_thermal_credit_adopted':True})
+    for Ta,Ts,rfrac,manualH in itertools.product([25,35],[35,50],[.2,.6],['low','high']):
+     pp=prop(Ts); rr=1/ref['rho'] # hratio conditional film, not sourceUA
+     hr=(pp['k']/ref['k'])**.6*(pp['rho']/ref['rho'])**.8*(pp['mu']/ref['mu'])**(-.4)*(pp['cp']/ref['cp'])**.4
+     factor=1/(1+rfrac*(1/hr-1));idx=0 if manualH=='low' else 1
+     He=2*cores['emrax_bank']['H_W_K_manual_range'][idx]*factor
+     Hr=4*cores['rest_bank']['H_W_K_manual_range'][idx]*factor
+     Ce=12/60000*pp['rho']*pp['cp'];Cr=47/60000*pp['rho']*pp['cp'];Cair=26/60*1.2*1005
+     # fan heat worst all upstream. TWO rotor paths share REST fan air, not fresh sensitive air.
+     Tae=Ta+430/(13/60*1.2*1005)
+     Tar=Ta+(860+rotor*1000)/Cair
+     Te_supply=Tae+emraxliq*1000/He-emraxliq*1000/Ce
+     Tr_supply=[Tar+q*1000/Hr-q*1000/Cr for q in rest]
+     temps.append({'mission':mission['id'],'phase':p['phase'],'WP32_supply_V_budget':supplyV,'ambient_C':Ta,'cold_property_ROM_T_C':Ts,'own_Rliquid_fraction':rfrac,'manual_H_endpoint':manualH,'eta_motor_own':etaM,'He_EMRAX_W_K':He,'Hr_rest_W_K':Hr,'fresh_EMRAX_air_in_C_worstfanupstream':Tae,'rest_air_in_C_sharedrotor_fans':Tar,'EMRAX_supply_C':Te_supply,'EMRAX_return_C':Te_supply+emraxliq*1000/Ce,'rest_supply_C_at288_200':Tr_supply,'rest_return_C_at288_200':[Tr_supply[i]+rest[i]*1000/Cr for i in range(2)],'EMRAX_source50C_condition_ROM_screen':Te_supply<=50,'not_same_property_selfconsistent_solved_or_guaranteed_H':True})
+   phases.append(phase)
+  Pavg=[sum(p['duty']*(p['bus_kW']/.98+p['cell_heat_kW_at288_200'][i]) for p in phases) for i in range(2)]
+  B.append({'mission':mission['id'],'WP32_supply_V_budget':supplyV,'auxiliary_upper_kW':aux,'fan_upper_kW':1.72,'low_pumps_upper_kW':2*eachpumpW/1000,'hot_pump_upper_kW':.0975,'other_aux_nonqualified_kW':.5,'phases':phases,'avg_input_including_cells_kW_at288_200':Pavg,'nameplate_required_kWh_SOC75_at288_200':[x*mission['duration_h']/.75 for x in Pavg],'nameplate_required_kWh_SOC75_reserve10_at288_200':[x*mission['duration_h']/.75/.9 for x in Pavg],'480_timecap_min_SOC75_reserve10_at288_200':[60*7.44*.75*.9/x for x in Pavg],'hot_avg_kW':sum(p['duty']*p['hot_liquid_kW'] for p in phases),'hot_peak_kW':max(p['hot_liquid_kW'] for p in phases),'not_continuous_nameplate_rating':True})
+# Complete new functions, no native CAD generated and no body adoption claimed.
+added=[{'id':'two_additional_whole_ES0707_packages','count':2,'hardware_xyz_m_each':[.176,.254,.212],'tool_connector_keepout_add_xyz_m':[.030,.045,.030],'dry_kg_each_low_mid_high':[2.25,3,4.2],'cavity_L_each':.393,'includes':'whole core, full172fan, finite25mmplenum/20mmguard-adapter/mount/seal; currentrevisiondatum/open'} ,{'id':'two_WP32_complete_replace_two150','count':2,'bare_xyz_m_each':[.19025,.150,.137],'own_package_xyz_m_each':[.230,.180,.175],'tool_disconnect_extra_m':.050,'dry_kg_each_low_mid_high':[3.63,4.13,5.23],'includes':'3.03kgpump integratedcontroller; 25.4mm fullsuction/outlet reducers/connector/supportedbracket/guard/isolator/weep drain; aux .6/1.1/2.2kg own assumptions','series_interstage_stock_retired':True},{'id':'EMRAX_new_separate_degas','count':1,'outer_xyz_m':[.12,.14,.12],'work_L':.8,'targetcapacity_L':1.5,'dry_kg_low_mid_high':[.6,1,1.8],'includes':'level/degas/antivortex/filterablefill/relief/drain notactualnative'},{'id':'third_filter_regulator_isolation_sensors','count':1,'outer_xyz_m':[.10,.12,.08],'dry_kg_low_mid_high':[.25,.5,1],'includes':'actual50um-or-finerparticleguard needed/relief/bypass/branchpressureflow; sourcepressurecharacteristic unknown'},{'id':'third_LV_CAN_fuse_sensor_module','count':1,'outer_xyz_m':[.12,.10,.04],'dry_kg_low_mid_high':[.2,.35,.7],'includes':'200-336HV to regulatedWP3228V/24fan and hot12V; CANenable/separatefuse; sourceinputinclηDC not add loss twice'},{'id':'new_line_TIM_isolation_support_hardware','dry_kg_low_mid_high':[.5,1,2],'space_unknown':True,'no_existing_old_TIM_or_hose_mass_credit':True}]
+retired_pump_dry=[2*1.17+x for x in [.6,.9,1.5]]
+incmass=[2*added[0]['dry_kg_each_low_mid_high'][i]+2*added[1]['dry_kg_each_low_mid_high'][i]+sum(added[j]['dry_kg_low_mid_high'][i] for j in [2,3,4,5])-retired_pump_dry[i] for i in range(3)]
+volume_added=2*.176*.254*.212+2*.230*.180*.175+.12*.14*.12+.10*.12*.08+.12*.10*.04-.14*.19*.27
+fluid=[]
+for i,x in enumerate(g17['fluid_new7L_working_sensitivity']):
+ addedline=[.6,1,1.5][i];addedpump_unknown=[.15,.3,.6][i]
+ water=x['water_global_L_pre_newroute_proxy']+2*.393+.8+addedline+addedpump_unknown
+ beta=[.01,.025,.04][i];cap=3.7+1.5
+ fluid.append({'id':x['id'],'A_water_proxy_L':x['water_global_L_pre_newroute_proxy'],'B_water_proxy_L':water,'added_core_L':.786,'added_working_degas_L':.8,'new_branch_line_L_own_range_member':addedline,'WP32_vs_EWP150_cavity_delta_unknown_L_budget':addedpump_unknown,'B_working_degas_total_L':2.8,'B_target_vessel_total_capacity_L':cap,'water_expansion_L_own':water*beta,'B_hot_air_total_L_after_expansion':cap-2.8-water*beta,'independent_loop_expansion_placement_still_unknown':True,'oil_global_L_unchanged_proxy':x['oil_global_L_pre_newroute_proxy'],'oil_working_L':7,'oil_tankcap_required_L_unchanged':x['oil_required_tankcap_L_own'],'new_actual_routes_not_installed':True,'cannot_use_existing12p482L_as_capacity':True})
+source_refs=g17['source_hashes']
+result={'robot':'Gorilla V0.1','stage':'G18 whole cooling architecture comparison v1','created_utc':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'producer_sha256':sha(__file__),'source_hashes':refs,'inherited_primary_source_hashes':source_refs,'new_primary_urls':urls,'architecture_count':2,'A_reference':{'topology':'4parallel0707 low59/2seriesEWP150;1hot0714Q10/EWP80;6full172fans','source_sha':refs['.scratch/gorilla_internal_g17_thermal_joint_workpoint/joint_workpoint_v3.json'],'same_task_heat_energy':A,'physical_acceptance':False,'existing_red':['coldhead/NPSH/secondstagecase','same200VA35inlet>50','actualrotorair/noactualnewroutes','48030minenergyshort']},'B_proposal':{'topology':'two independentlow loops:2parallel0707/2parallel188Q6 each whole12singleWP32;4parallel0707 whole47 singleWP32 for18plates*2+4pack*2+compute3; hot retainedonce0714Q10/EWP80/HX','core_count_0707_0714':[6,1],'fan_count':8,'total_airflow_m3min':52,'fresh_sensitive_loop_air_m3min':13,'rest_loop_air_m3min':26,'hot_loop_air_m3min':13,'no_new_body_CAD_or_adopted_layout':True,'no_thermal_heat_removed':True,'complete_branch_account':[{'id':'EMRAX188','count':2,'flow_each_Lmin':6,'source_minmax_each':[6,11],'OEM_hoseID_m':.010,'source_inletmax_Pa_g':200000},{'id':'customrotaryplates','count':18,'flow_each_Lmin':2,'custom_notOEMmin':True},{'id':'fourpacks','count':4,'flow_each_Lmin':2,'custom_notOEMmin':True},{'id':'compute','count':1,'flow_Lmin':3,'custom_notOEMmin':True}],'WP32_reference':wp,'joint_ES_graph_capture':cores,'pressure_screens':pressure,'same_task_heat_energy':B,'temperature_screens':temps,'full_new_groups_for_body':added,'dry_mass_increment_same_scope_kg_low_mid_high':incmass,'added_gross_hardware_volume_net_of_retired_pumpstock_L':volume_added*1000,'dry_total_S1new_scope_excludingHX_fluid_plates_kg_low_mid_high':[g16['S1_dry_package_excluding_existing_HX_fluids_and_old_plates_kg_low_mid_high'][i]+incmass[i] for i in range(3)],'fluid_once_proxy_candidates':fluid,'rotor_air_routes_required':'two independent restingloopcore airpaths each6.5: actual188 eachrequired.4m3min/kWoutput, Apeak3 andBpeak5.25, bypassrejoinsbefore2restcores; countedwithinrest26. Freshsensitive13notpreheated. Remaining2rest+hot fresh separate. Inlet/exhaust/guard/collar/particle/plenum/recirculation unknown, notinstalled','pump_suction_architecture_requirement':'each WP32 horizontal shaft near0°,25.4mmunrestrictedfeed, below its own workingliquidlevel by design>=100mm without highspots; source specifiesfeed/priming notthis100mm; thisproposalnotcurrentbodyproof','pressure_protection':'28V fullspeedreference~172kPa+gaspressure mayapproach188200kPag; actualbranchregulator/relief/sensor and speedcontrol required; 180kPag conditionaltargetnotOEMsetting','physical_acceptance':False},'QTL_QTR_distinct_conditional_thermal_scope':{'QTL239plate_prototype':g17['custom_coldplate_parameter_source'],'QTR160required_Rth':g17['QTR_task_required_mount_to_coolant_Rth'],'no_QTR_inheritance_from239mm_plate':True,'source20C_mount_fullrating_not_assumed_atambient25_35':True,'task_RMS_torque_speed_ironloss_TIM_contact_and_actualplate_newsource_open':True},'red_unknowns':['WP32selectedvariantcoldfluidcurve/NPSHr/continuouscasepressure/primingcontrollerandtemperature','ESexactcoldEGW/selectedfluidcurve/UA/channelregime; sourceboundsmanualnotguaranteed','fanfullsealedP-Q/guard/plenum/realfrontnetthroats/rotorairpressure andnoinstalledrotorair','188LCorCCactualvariant andlossmap; source50CconditiondoesnotqualifybatterycomputeQTR','actual18platebranch/4packcells/computeT/dp/flows; conditionalQTLmodelcannotqualifyQTR','480min7.44kWh30minsourceupperreservefails; sourceI²Rtypicalhot/sag/DCeffopen','threeactualindependentloops/newlinecavity/nonzeroinventory/expansionsplit/NPSHflownotgeometryinstalled','hotEWP80/HXsameflowcoldpressuretemperatureUA/batterymaxinletregenerationuncertainty','wholeframe/4missingcylinders/physicalandappearanceacceptancefalse'],'all_physical_hardware_or_wholebody_admission':False,'formulas':['Qbranchmin>=OEM; custom2Lminisdesignnotrating','dpbank(Q/n)+max(dpbranches)+dpmain+suction+filter; SAMEfluid/sourceconditionrequired','QwaterEMRAX=(2/3)*motorloss+ownpump; rotor=(1/3)*motorloss; inverter=combinedloss-motorloss; rest+EMRAX+rotor conserved','HROM=Hsource/(1+rfluid*(1/hcoldratio-1)), NOT measuredUA orguaranteedlowerbound','Treturn=Tair+Q/H;Tsupply=Treturn-Q/(mcp);fan/rotorpreheatcountonce; LMTD/Tinnotinitialtemperature','Ename=duration/SOC*sumduty(Pbus/etaDC+I²R);480reserve*timecap=Emin*SOC*(1-reserve)/Paverage','fluidglobal=allactivecavities+newlines+workingfluidonce;headspacecapacityseparate'], 'producer_does_not_import_other_producer':True}
+(O/'architecture_comparison_v1.json').write_text(json.dumps(result,indent=2)+'\n')
+summary={'source_sha':sha(O/'architecture_comparison_v1.json'),'Bmass_increment':incmass,'Bvolumeincrement_L':volume_added*1000,'BA30_28Venergy_time':[x for x in B if x['mission'].startswith('a') and x['WP32_supply_V_budget']==28][0],'B_A35_EMRAX_supply_range_C':[min(x['EMRAX_supply_C'] for x in temps if x['mission'].startswith('a') and x['phase']=='motion' and x['ambient_C']==35),max(x['EMRAX_supply_C'] for x in temps if x['mission'].startswith('a') and x['phase']=='motion' and x['ambient_C']==35)],'B_high35_EMRAX_supply_range_C':[min(x['EMRAX_supply_C'] for x in temps if x['mission'].startswith('b') and x['phase']=='motion' and x['ambient_C']==35),max(x['EMRAX_supply_C'] for x in temps if x['mission'].startswith('b') and x['phase']=='motion' and x['ambient_C']==35)],'fluid':fluid}
+(O/'first_comparison_summary.json').write_text(json.dumps(summary,indent=2)+'\n')
+print(json.dumps({k:v for k,v in summary.items() if k not in ['BA30_28Venergy_time','fluid']},indent=2))

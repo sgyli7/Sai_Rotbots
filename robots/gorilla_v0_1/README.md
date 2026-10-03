@@ -1,16 +1,18 @@
 # Gorilla V0.1
 
-当前工作：**G17连续宽厚主架、完整肩三轴与联合冷却工作点已封存；G18推进肩座—上臂共同安装与完整系统布局。** 壮硕体积用于真实三维承力和拓扑优化；本轮已有连续材料，但整机安装、驱动/热、稳定SI与审美尚未放行。用户指定「Gorilla 设计」重画腿脚，这里继续内部工程。C15已合主干，AA3为审美权威，双足双手与自主复杂Bevy目标持续。
+当前工作：**G18完整躯干—肩臂候选、实际组合与独立冷却核算已封存，安装与整机物理仍拒绝。** 主躯连续材料和电池接口有实际改进；下一轮回完整关节架构与功能分配，不继续局部补壳。AA3保留上半身与配色审美；用户新下半身仍在修订，确认后在本项目重建工程几何。旧腿足仅历史占位。C15已合主干，双足双手与自主复杂Bevy目标持续。
 
 唯一当前状态入口：[当前决定与门禁](design/current_decisions.md)。
 
 | 资料 | 入口 |
 |---|---|
+| G18完整内部集成与冷却 | [实际源、原生四视、独立质量/干涉与能量范围](../../experiments/gorilla_v0_1/internal_structure_g18_full_assembly_and_cooling/README.md)；仍拒绝装配/物理/审美 |
 | G17连续主架与联合工作点 | [实际CAD/native、完整肩三轴、整组拒绝与热预算](../../experiments/gorilla_v0_1/internal_structure_g17_connected_frame_and_workpoint/README.md)；两候选仍拒绝 |
 | G16宽厚设计域与真实接口 | [实际CAD/native、完整两布局、热工作范围与独立复核](../../experiments/gorilla_v0_1/internal_structure_g16_broad_domain_and_interfaces/README.md)；两候选仍拒绝 |
 | G15完整功能与物理设计输入 | [同版实际布局、质量/载荷、热/库存与独立复核](../../experiments/gorilla_v0_1/internal_structure_g15_function_mass_and_domain/README.md)；两候选仍拒绝 |
 | G14完整系统与拓扑入口 | [冻结候选、实际图、边界与复核](../../experiments/gorilla_v0_1/internal_structure_g14_complete_thermal_and_assembly/README.md)；尚未装配/物理放行 |
-| 唯一外观基准 | [用户再次确认的四视图](design/concepts/aa3/user_confirmed_four_view.jpg)；其他图片与粗模仅为历史资料 |
+| 上半身与既定配色基准 | [用户再次确认的 AA3 四视图](design/concepts/aa3/user_confirmed_four_view.jpg) |
+| 新下半身接续参考 | [用户最新四视图与来源范围](design/concepts/lower_body_redesign/source_manifest.json)；「Gorilla 设计」仍在修订，无共同新CAD交接，旧腿足仅历史占位 |
 | 来源身份 | [唯一外观权威记录](source/appearance_authority.json)；[原包导入与哈希](source/appearance_import.json) |
 | C 工作输入（迭代中） | [appearance_c_spec.json](configs/appearance_c_spec.json)；[原稿轮廓与分区点](source/appearance_c_reference_landmarks.json)；[可见护甲区域约束](source/appearance_c_front_shape_constraints.json) |
 | C15 阶段基底 | [提交说明与缺口](design/appearance_c15_stage.md)；[冻结映射](../../experiments/gorilla_v0_1/appearance_c_round_fifteen/snapshot_manifest.json)；[Blender](../../experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c.blend)、[GLB](../../experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c.glb) |

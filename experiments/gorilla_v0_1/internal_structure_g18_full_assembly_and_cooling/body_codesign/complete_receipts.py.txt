@@ -1,0 +1,61 @@
+"""Read-only receipts for frozen G18 geometry; no repair or assembly qualification."""
+from pathlib import Path
+import json,gzip,hashlib,importlib.util,numpy as np,collections,manifold3d as mf
+P=Path(__file__).resolve().parent;R=P.parents[1]
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def read(p):return json.load(gzip.open(p,'rt')) if str(p).endswith('.gz') else json.load(open(p))
+def wr(p,j):Path(p).write_text(json.dumps(j,ensure_ascii=False,indent=2)+'\n')
+sp=importlib.util.spec_from_file_location('g18receiptgeom',R/'.scratch/gorilla_internal_g14_complete_thermal_colayout/geometry_helpers.py');g=importlib.util.module_from_spec(sp);sp.loader.exec_module(g)
+BASE=R/'.scratch/gorilla_internal_g17_connected_cage_layout/b/scene.json.gz';old=read(BASE);oldby={p['name']:p for p in old['parts']}
+THERM=R/'.scratch/gorilla_internal_g18_cooling_architecture/architecture_comparison_v1.json';thermal=read(THERM)
+for variant in ['a','b']:
+ D=P/variant;file=D/'scene.json.gz';s=read(file);by={p['name']:p for p in s['parts']};frame=by['g18_connected_cage_and_redesigned_receiver_net'];fv,ff=g.h.triangles(frame);ft=fv[ff];area=np.linalg.norm(np.cross(ft[:,1]-ft[:,0],ft[:,2]-ft[:,0]),axis=1)/2;cent=ft.mean(1)
+ seats=[]
+ for word,sg in [('left',1),('right',-1)]:
+  pivot=np.array([-.13,sg*.3735,2.29]);axis=np.array([0,sg,0]);q=(ft-pivot)@axis;rr=np.linalg.norm(ft-pivot-q[:,:,None]*axis,axis=2);endq=.030 if variant=='a' else .025
+  ids=np.flatnonzero((np.max(np.abs(q-endq),axis=1)<1e-8)&(rr.max(1)<(.146001 if variant=='b' else .140001)))
+  A=float(area[ids].sum());C=(cent[ids]*area[ids,None]).sum(0)/A if A else None
+  fm=g.mm(frame).rotate([90,0,0]);Y=sg*(.3735+endq);own=fm.slice(Y-sg*1e-8);contacts=[]
+  for half in ['upper','lower']:
+   n=f'g13_{word}_load_support_{half}';sup=g.mm(by[n]).rotate([90,0,0]);cross=sup.slice(Y+sg*1e-8);AA=float((own^cross).area());contacts.append({'support_ID':n,'ownreceiver_to_source_support_approx_sameplane_crosssection_area_m2':AA,'slice_offset_m_each_side':1e-8,'zero_thickness_contact_approx_not_fastened_or_preloaded':True})
+  seats.append({'side':word,'native_target_ID':frame['name'],'actual_new_source_face_indices':ids.tolist(),'outward_axis_world':axis.tolist(),'plane_q_m':endq,'plane_Y_world_m':Y,'actual_visible_planar_area_m2':A,'actual_area_centroid_world_m':None if C is None else C.tolist(),'receiver_ring_design_Ri_m':.132 if variant=='b' else .118,'receiver_ring_design_Ro_m':.146 if variant=='b' else .140,'actual_PCD270_hole_axis_radius_m':.135,'actual_hole_radius_m':.0043,'PC270_inner_nominal_ligament_m':.135-.0043-(.132 if variant=='b' else .118),'B_inner_ligament_negative_means_bore_open_hole':variant=='b','joint_contact_candidates':contacts,'actual_washer_contact_elsewhere_not_on_this_plane':True,'loadpath_fastener_thread_nutseat_preload_stiffness_strength_UNKNOWN':True})
+ # Independent exact protected groups do not get same-owner exemption.
+ protections=[];fm=g.mm(frame)
+ for p in s['parts']:
+  if not p['name'].startswith('g13_'):continue
+  vv=np.array(p['vertices_world_m']);inside=np.all(fv.max(0)>vv.min(0)) and np.all(vv.max(0)>fv.min(0));V=0.
+  if inside:
+   m=g.mm(p)
+   if m.status()!=mf.Error.NoError:V=None
+   else:V=float((fm^m).volume())
+  protections.append({'ID':p['name'],'original_G17_geometry_unchanged':p['vertices_world_m']==oldby[p['name']]['vertices_world_m'] and p['faces']==oldby[p['name']]['faces'],'positive_frame_overlap_m3':V,'role':p['role']})
+ wr(D/'receiver_interface_receipt.json',{'scene_SHA':sha(file),'new_actual_native_seats':seats,'all_independent_G13_protected_and_interface_queries':protections,'every_original_G13_component_geometry_unchanged':all(q['original_G17_geometry_unchanged'] for q in protections),'no_OEM_union_drill_scale':True,'actual_face_area_not_installedjoint_capacity':True,'A_positive_load_support_interference_is_failure':variant=='a','old_anchor_identity_not_inherited':True})
+ # Upper-only cells; raw source is preserved rather than corrected to synthetic nominal.
+ cells=[r for r in s['new_module_mass_rows'] if '_cell_' in r['id'] and r['id'].startswith('g16_pack_')];assert len(cells)==480
+ correction={'scene_SHA':sha(file),'source_rows_unchanged':True,'raw_cell_mass_range_kg':[.07,.07,.07],'correct_interpretation_each_kg':{'low':None,'nominal':None,'upper':.07},'correct_total480_cell_kg':{'low':None,'nominal':None,'upper':33.6},'reason':'MolicelP45B source max70g is upper only; no nominal or lower catalogue mass provided. Native cell envelopes are reference not net material/inertia.','explicit_upper_only_IDs':[r['id'] for r in cells],'wholeCOM_I_notclosed':'material frame exact geometry/assumedrho only; cell actualmass/rotor allocation/allglobalfluid distribution/assembledbody graph unknown','global_logicalfluid_ROWS_NOTgeometry_or_knownCOM':[r for r in s['new_module_mass_rows'] if r['id'].startswith('g17_global_')],'raw_globalwater_range_NOTvalid_new_B_inventory':variant=='b','B_thermal_newwater_proxy_L_range':thermal['B_proposal']['fluid_once_proxy_candidates'] if variant=='b' else None,'B_new_water_unknowns':'+2x.393Lcore,+.8Lworkingthirddegas,WP32/ports/newroutes/three-loop allocation; cannot inherit G17 global water range as closed mass','own_density_steel7850_Al2700_are_design_assumptions':True}
+ wr(D/'mass_inventory_corrections_receipt.json',correction)
+ # Original complete references and finite limbs not assembled with new shoulder branch.
+ paired=[]
+ for n in s['original_visible_armor_ids']:paired.append({'ID':n,'byte_equal_original_part':json.dumps(by[n],sort_keys=True)==json.dumps(oldby[n],sort_keys=True)})
+ rows=[r['id'] for r in s['new_module_mass_rows']];logical={r['id'] for r in s['new_module_mass_rows'] if 'globalfluid_logical' in r['geometry_role']};missing=[n for n in rows if n not in by and n not in logical]
+ wr(D/'complete_function_identity_receipt.json',{'scene_SHA':sha(file),'original111armor_identities':paired,'armor_source_identity_IS_NOTassembledsilhouettefit':True,'cell_native_count':sum('_cell_' in n and n.startswith('g16_pack_') for n in by),'ghost_mass_rows_except_explicitlogicalglobal':missing,'duplicate_mass_row_IDs':[n for n,c in collections.Counter(rows).items() if c>1],'actual_retired_IDs':s['proposed_retired_ids'],'actual_retirement_members_all_absent':all(n not in by for n in s['proposed_retired_ids']),'actual_removed_vs_G17':sorted(set(oldby)-set(by)),'actual_new_vs_G17':sorted(set(by)-set(oldby)),'joined_port_function_preserved_in_plateIDs':[f'g16_pack_{i}_coldplate' for i in range(4)],'retained_old_shoulder_G13_A_is_context_newG18serialbranch_NOTintegrated':True,'no_legacy_serial26kg_function_retirement_credit':True,'workingfluid_alias_mass_countedonly_global_not_actualnewinventoryqualification':True})
+ # Every actual vertex grouping, deduplicatedYZ rays, not sparse sample nor AABB containment claim.
+ white=by['continuous_ivory_torso_armor_cover'];wv,wf=g.h.triangles(white,True);wt=wv[wf];wlo=wv.min(0);whi=wv.max(0);groups=[q for q in s['complete_partition_slots'] if q['id'].startswith(('g16_pack','g16_low_es','g16_hot_es','g17_low_series','g18_low_es','g18_WP32'))]
+ groups.append({'id':'newaux_complete','member_ids':[n for n in by if n.startswith('g18_188_')]+['ds_compute']})
+ exposures=[]
+ for q in groups:
+  pp=[by[n] for n in q['member_ids'] if n in by and by[n]['role']!='service_after_shell_removal'];vv=np.concatenate([np.array(p['vertices_world_m']) for p in pp]);YZ={}
+  for point in vv:
+   key=(round(point[1],12),round(point[2],12));lim=YZ.setdefault(key,[point[0],point[0]]);lim[0]=min(lim[0],point[0]);lim[1]=max(lim[1],point[0])
+  known=0;missing=0;front=-1e6;rear=-1e6;frontpt=None;rearpt=None
+  for (y,z),(xmin,xmax) in YZ.items():
+   hh=g.h.xhits(wt,float(y),float(z));F=hh[hh>.02];B=hh[hh<-.06]
+   if len(F) and len(B):
+    known+=1;df=float(xmax-max(F));dr=float(min(B)-xmin)
+    if df>front:front=df;frontpt=[xmax,y,z]
+    if dr>rear:rear=dr;rearpt=[xmin,y,z]
+   else:missing+=1
+  lo=vv.min(0);hi=vv.max(0);necessary=np.maximum(np.maximum(wlo-lo,hi-whi),0)
+  exposures.append({'group':q['id'],'all_native_vertex_count':len(vv),'distinct_YZ_rays':len(YZ),'paired_visible_rays':known,'missing_visible_face_rays':missing,'positive_front_exposure_lowerbound_m':max(front,0) if known else None,'positive_rear_exposure_lowerbound_m':max(rear,0) if known else None,'front_witness_point':frontpt,'rear_witness_point':rearpt,'actual_group_AABB_m':[lo.tolist(),hi.tolist()],'outside_originalwhite_outer_AABB_necessary_extension_xyz_m':necessary.tolist(),'AABB_only_upperbound_exterior_rejection_NOTcavity_fit':True,'all_vertex_scan_not_complete_continuous_surface_or_unseenface_certification':True})
+ wr(D/'all_vertex_visible_exposure_receipt.json',{'scene_SHA':sha(file),'actual_white_outer_source_ID':white['name'],'white_outer_AABB_m':[wlo.tolist(),whi.tolist()],'algorithm':'all actualgroup native vertices; exactYZ dedup to1e-12m; min/maxX at each; originalvisibleouter triangles x-ray; missingfaces remain unknown. Outside originalwhite AABB is necessary extension only, not an inscribed cavity.','groups':exposures,'appearancefit_or_visiblechange_adopted':False})
+ print('EVENT G18 complete receipt',variant,'receiverface',[x['actual_visible_planar_area_m2'] for x in seats],'fullvertexgroups',len(exposures),flush=True)
