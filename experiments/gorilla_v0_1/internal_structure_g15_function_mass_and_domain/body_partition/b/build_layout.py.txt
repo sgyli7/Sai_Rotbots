@@ -1,0 +1,187 @@
+#!/usr/bin/env python3
+"""G15 B: exact complete groups + two full thermal circuits + proposed wide cage; no qualification."""
+import pathlib,json,gzip,copy,hashlib,importlib.util,sys,time
+import numpy as np
+import manifold3d as mf
+D=pathlib.Path(__file__).resolve().parent;P=D.parent;R=P.parents[1]
+sp=importlib.util.spec_from_file_location('g15helpers',R/'.scratch/gorilla_internal_g14_complete_thermal_colayout/geometry_helpers.py');g=importlib.util.module_from_spec(sp);sp.loader.exec_module(g);g.P=D
+BASE=R/'.scratch/gorilla_internal_g14_complete_thermal_colayout/b/scene.json.gz';SH=R/'.scratch/gorilla_internal_g13_shoulder_cooling_zones/a/scene.json.gz';THERM=R/'.scratch/gorilla_internal_g14_thermal_complete_inventory/thermal_complete_inventory.json';OLD=R/'.scratch/gorilla_internal_g13_load_cage_colayout/b/scene.json.gz'
+def read(p):return json.load(gzip.open(p,'rt')) if str(p).endswith('.gz') else json.load(open(p))
+def sha(p):return hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
+def wr(n,v):(D/n).write_text(json.dumps(v,indent=2,ensure_ascii=False)+'\n')
+def ct(p):v=np.array(p['vertices_world_m']);return (v.min(0)+v.max(0))/2
+s=read(BASE);by={p['name']:p for p in s['parts']};sh=read(SH);old=read(OLD);oldby={p['name']:p for p in old['parts']}
+# Explicit obsolete geometry is removed with nonzero replacements below, never delete functions silently.
+thermal_routes={p['name'] for p in s['parts'] if p['name'].startswith('e_') and (any(x in p['name'] for x in ['_hose','_header','_core_to_pump','_hot_to_core','_supplement_rear_core','_original_to_emrax_air','_emrax_air_exit','_side_intake_plenum','_rear_exhaust','_pump_to_cold','_reservoir_pump_tee','_coolant_pump_complete_reserve']))}
+oldhydroutes={p['name'] for p in s['parts'] if p['name'].startswith('e2_') and (any(x in p['name'] for x in ['_hose','oil_P_18port_header','oil_T_18port_header','_header_']))}
+retire=thermal_routes|oldhydroutes|{p['name'] for p in s['parts'] if p['name'].startswith('g14_') and not p['name'].startswith('g14_pack_') and p['name'] not in ['g14_HV_contactors_precharge_disconnect_current_sensor','g14_LV_converter']}|{'rear_control_screen_module_envelope'}
+parts=[copy.deepcopy(p) for p in s['parts'] if p['name'] not in retire];mass=[];newids=[];moves=[];routes=[];replacement=[]
+def add(m,n,body,role,mr,color=[.3,.58,.68,1],meta=None):
+ md={'mass_range_kg':mr,'finite_material':role=='finite_new_material','source_or_assumption':'own finite functional layout, no installed rating','physics_unknown':['mount/pressure/thermal/owner/COM-I not qualified']};md.update(meta or {});p=g.nat(m,n,body,role,color,md);parts.append(p);newids.append(n)
+ if mr is not None:mass.append({'id':n,'body':body,'mass_range_kg':mr,'geometry_role':role,'source_scope':md['source_or_assumption']})
+ return p
+def move_group(ids,origin,target,M=np.eye(3),tag=''):
+ global parts
+ ids=set(ids);origin=np.array(origin);target=np.array(target);rec=[]
+ for p in parts:
+  if p['name'] in ids:
+   v=np.array(p['vertices_world_m']);p['vertices_world_m']=((v-origin)@M.T+target).tolist();p['g15_transform_source_id']=p['name'];p['movement_installation_qualified']=False;rec.append(p['name'])
+ moves.append({'group':tag,'complete_member_ids':sorted(rec),'source_datum_m':origin.tolist(),'target_datum_m':target.tolist(),'proper_rotation':M.tolist(),'common_rigid_transform_applied':True,'body_installation_after_move_unknown':True})
+# Four complete480cell packs, unchanged grid/cell/aux.
+packcenters=[[.10,-.095,2.055],[.10,.095,2.055],[-.04,-.095,2.055],[-.04,.095,2.055]]
+packinfo=[]
+for k,info in enumerate(s['new_pack_info']):
+ ids=[p['name'] for p in parts if p['name'].startswith(info['id']+'_')];move_group(ids,info['center_world_m'],packcenters[k],tag=info['id']);q=copy.deepcopy(info);q['center_world_m']=packcenters[k];packinfo.append(q)
+# Full pumps retain stack common source datum, filters/inverters have independent mounts unknown.
+for side,word in [(1,'left'),(-1,'right')]:
+ pref=f'ds_{word}_hydraulic_input';ids=[p['name'] for p in parts if p['name'].startswith(pref) and not p['name'].endswith(('_return_filter','_inverter'))];move_group(ids,[-.06,side*.40,1.80],[-.04,side*.40,1.63],tag=word+'_pump_stack')
+ for suf,newct in [('_return_filter',[-.14,side*.28,1.70]),('_inverter',[.15,side*.18,2.28])]:
+  n=pref+suf
+  if n in by:move_group([n],ct(by[n]),newct,tag=word+suf)
+# HX exact five-part common group transform. Compute/display separately, no collapse.
+HX=[n for n in by if n.startswith('e2_oil_HX_') or n=='e2_dual_fluid_HX_material'];move_group(HX,[.35,.17,1.90],[-.22,0,1.635],tag='HX_complete_core_four_ports')
+for n,newct in [('ds_compute',[.05,0,1.605]),('ds_back_screen',[-.435,0,2.24]),('g14_HV_contactors_precharge_disconnect_current_sensor',[.01,0,1.73]),('g14_LV_converter',[.01,0,1.82])]:move_group([n],ct(by[n]),newct,tag=n)
+# Normalize each real21-piece valve group to same signed own local orientation, then distribute full204mm guards.
+groups={}
+for p in parts:
+ if '_directional__' in p['name']:groups.setdefault(p['name'].split('__')[0],[]).append(p)
+valvecenters={}
+for j,(key,pp) in enumerate(sorted(groups.items())):
+ core=next(p for p in pp if p['name'].endswith('core_reference'));v=np.array(core['vertices_world_m']);c=v.mean(0);w,Q=np.linalg.eigh((v-c).T@(v-c));S=Q[:,[2,0,1]]
+ if np.linalg.det(S)<0:S[:,2]*=-1
+ M=np.array([[0,1,0],[1,0,0],[0,0,-1]])@S.T
+ bank=j//9;ii=j%9;nc=[.39 if bank==0 else -.385,(ii%3-1)*.25,1.49+(ii//3)*.215]
+ move_group([p['name'] for p in pp],c,nc,M,key);valvecenters[key]=nc
+ # True finite mounting rail/block with a through mounting pattern; no installedbolt proof.
+ plate=g.bx(np.array(nc)+[-.074,0,-.070],[.008,.23,.05])
+ for yy in [-.09,.09]:plate=plate-g.cyl((np.array(nc)+[-.074,yy,-.070]).tolist(),.0033,.014,'X')
+ add(plate,'g15_'+key+'_mount_plate','torso' if ii//3==2 else 'pelvis','finite_new_material',[plate.volume()*7850]*3,meta={'density_kg_m3':7850,'real_source_baseplate_mating_unknown':True})
+# Two complete4320 thermal circuits. Separate low/hot, no opaque secondary core.
+cores={}
+for label,c,sign in [('low',[.30,0,2.31],1),('hot',[-.31,0,2.31],-1)]:
+ c=np.array(c);cores[label]=c;add(g.bx(c,[.064,.584,.305]),'g15_'+label+'_4320_complete_reference','torso','complete_component_reference',[6.4]*3,meta={'source_or_assumption':'historicalLytron4320 complete584W305H64D; exactbody/portsdatumunknown; no installedcurve transfer','globalwater_alias':True,'known_internal_water_L':.844})
+ for side in [-1,1]:
+  f=c+[-sign*.063,side*.125,0];add(g.bx(f,[.051,.172,.172]),f'g15_{label}_full172_fan_{side}','torso','complete_component_reference',[1,2.5,4],meta={'source_or_assumption':'full172x172x51 actualvendorbody; massown1..4kg allowance','curve_after_guard_unknown':True})
+  gc=f+[-sign*.030,0,0];guard=g.bx(gc,[.006,.180,.180])-g.bx(gc,[.010,.164,.164])
+  for jj in range(7):guard=guard+g.bx(gc+[0,(jj-3)*.024,0],[.004,.003,.164])
+  add(guard,f'g15_{label}_fan_guard_{side}','torso','finite_new_material',[guard.volume()*2700]*3,meta={'density_kg_m3':2700})
+  add(g.bx(f+[0,side*.097,-.05],[.055,.025,.065]),f'g15_{label}_fan_connector_bend_{side}','torso','complete_custom_function_envelope',[.08,.15,.3],meta={'cable/connector_fullbendunknown':True})
+ # Full pump and all aux functions explicit, masses not treated as measuredwhole.
+ pc=[.13,0,2.62] if label=='low' else [-.13,0,2.62]
+ add(g.bx(pc,[.14,.17,.12]),f'g15_{label}_ewp80_complete_reference','torso','complete_component_reference',[1.025]*3,meta={'source_or_assumption':'2023EWP80alloy bare1.025kg; own140x170x120stock notexactOEM','flowheadNPSHcompatibility_unknown':True})
+ aux=[('controller',[.045,.065,.030],[.2,.4,.8]),('degas',[.08,.08,.10],[.2,.5,1]),('filter',[.06,.06,.08],[.2,.4,.8]),('relief',[.045,.045,.075],[.15,.3,.6]),('isolation',[.05,.05,.075],[.2,.4,.8]),('fittings',[.06,.08,.08],[.25,.5,1])]
+ for jj,(fn,dm,mr) in enumerate(aux):add(g.bx(np.array(pc)+[0,(-1 if jj%2 else 1)*(.13+.045*(jj//2)),0],dm),f'g15_{label}_{fn}_complete_reserve','torso','complete_custom_function_envelope',mr,meta={'ownboundedfunctionalstock_notcataloguedassembly':True})
+ # True hollow sealed plenum/outlet candidate; original front louvers are not cut.
+ pl=g.bx(c+[sign*.050,0,0],[.035,.510,.277])-g.bx(c+[sign*.050,0,0],[.045,.506,.273]);add(pl,f'g15_{label}_fullface_sealed_plenum','torso','finite_new_material',[pl.volume()*1200]*3,meta={'density_kg_m3':1200,'originalvisibleopenings_not_adopted':True})
+ out=g.bx(c+[-sign*.120,0,0],[.020,.40,.205])-g.bx(c+[-sign*.120,0,0],[.030,.392,.197]);add(out,f'g15_{label}_external_outlet_frame','torso','finite_new_material',[out.volume()*2700]*3,meta={'density_kg_m3':2700,'newvisibleopening_onlyproposal':True})
+ # transition fullface twofan + duct native stock, no bare anonymous core.
+ adapter=g.bx(c+[-sign*.035,0,0],[.008,.510,.277])
+ for yy in [-.125,.125]:adapter=adapter-g.cyl((c+[-sign*.035,yy,0]).tolist(),.080,.020,'X')
+ add(adapter,f'g15_{label}_fan_adapter_mount_seal','torso','finite_new_material',[adapter.volume()*2700]*3,meta={'density_kg_m3':2700,'seal_fastener_loadunknown':True})
+ service=g.bx(c+[sign*.20,0,0],[.30,.65,.36]);add(service,f'g15_{label}_removed_shell_service','torso','service_after_shell_removal',None,meta={'mass_counted':False,'permanent_exclusion':False})
+# B solemacro: both unchanged584completefaces nowverticalXZ inuppercentralbody; no縮source.
+Rz=np.array([[0,-1,0],[1,0,0],[0,0,1.]])
+for label,origin,target in [('low',[.30,0,2.31],[-.02,.13,2.49]),('hot',[-.31,0,2.31],[-.02,-.13,2.49])]:
+ ids=[p['name'] for p in parts if p['name'].startswith('g15_'+label+'_') and any(k in p['name'] for k in ['4320','full172','fan_guard','fan_connector','fullface','external_outlet','fan_adapter','removed_shell_service'])]
+ # Newsourceownparts aren't in frozenbaseline; proof uses savedpretransformvertices.
+ oldfields={n:next(p['vertices_world_m'] for p in parts if p['name']==n) for n in ids}
+ move_group(ids,origin,target,Rz,tag=label+'_fullthermal_stock_rotation')
+ moves[-1]['new_native_group_before_transform_vertices']=oldfields
+ pc=[.13,0,2.62] if label=='low' else [-.13,0,2.62];nc=[.08,.25,1.73] if label=='low' else [.08,-.25,1.73]
+ ids=[p['name'] for p in parts if p['name'].startswith('g15_'+label+'_') and any(k in p['name'] for k in ['ewp80','controller_complete','degas_complete','filter_complete','relief_complete','isolation_complete','fittings_complete'])]
+ oldfields={n:next(p['vertices_world_m'] for p in parts if p['name']==n) for n in ids};move_group(ids,pc,nc,tag=label+'_pump_aux_complete_rigidgroup');moves[-1]['new_native_group_before_transform_vertices']=oldfields
+# Workingstorage separate from whole global fluid inventory. Tank oil18L, low3L/hot1.5L; distribution unknown.
+waterstock=12.481996328832434
+for lab,working,c,dm,rho in [('oil',18,[-.22,0,1.91],[.21,.36,.28],850),('low_water',3,[-.23,0,2.23],[.18,.20,.12],1000),('hot_water',1.5,[-.23,0,2.11],[.16,.18,.08],1000)]:
+ c=np.array(c);inner=np.array(dm)-.006;cavity=g.bx(c,inner);shell=g.bx(c,dm)-cavity;cap=cavity.volume()*1000
+ add(shell,f'g15_{lab}_working_tank_shell','torso','finite_new_material',[shell.volume()*2700]*3,meta={'density_kg_m3':2700,'capacity_L':cap,'working_fill_L':working,'return/headspace/cavitation_unknown':True})
+ hh=inner[2]*working/cap;fc=c+[0,0,(hh-inner[2])/2]
+ add(g.bx(fc,[inner[0],inner[1],hh]),f'g15_{lab}_working_fill_alias','torso','fluid_lumen_global_alias',None,[.65,.43,.15,.28],{'mass_counted_elsewhere':'global_'+('oil' if lab=='oil' else 'water'),'working_fill_L':working,'must_exclude_material_intrusion':True,'finite_material':False})
+ port=g.cyl((c+[0,0,dm[2]/2+.012]).tolist(),.012,.024,'Z')-g.cyl((c+[0,0,dm[2]/2+.012]).tolist(),.008,.030,'Z');add(port,f'g15_{lab}_fill_degas_mount_port','torso','finite_new_material',[.05,.08,.12])
+# Logical fullinventory counted once, no fullglobal reserve box material fictitiously parked in workingtank.
+for fl,L,rho in [('oil',30,850),('water',waterstock,1000)]:mass.append({'id':'g15_global_'+fl+'_inventory_once','body':'distributed_inventory_owner_unknown','mass_range_kg':[L*rho/1000]*3,'geometry_role':'distributed_fluid_inventory_not_geometry','source_scope':'globalstockhypothesis retained once; perdevicebody allocation unknown'})
+# Native hollow tube/cable paths: oldroutes replacedfunctionally, endpoint/motion/bendqualifiedfalse.
+def tube_path(path,ro,ri):
+ outs=[];ins=[]
+ for aa,bb in zip(path[:-1],path[1:]):
+  aa=np.array(aa);bb=np.array(bb);d=bb-aa;L=np.linalg.norm(d)
+  if L<1e-8:continue
+  z=d/L;ax=np.cross([0,0,1],z);an=np.linalg.norm(ax);angle=np.degrees(np.arccos(np.clip(z[2],-1,1)))
+  o=mf.Manifold.cylinder(L,ro,ro,16);ii=mf.Manifold.cylinder(L+.0002,ri,ri,16).translate([0,0,-.0001])
+  if an>1e-9:
+   # quaternion-free Rodrigues matrix supported by transform
+   a=ax/an;K=np.array([[0,-a[2],a[1]],[a[2],0,-a[0]],[-a[1],a[0],0]]);th=np.radians(angle);M=np.eye(3)+np.sin(th)*K+(1-np.cos(th))*(K@K);T=np.column_stack([M,aa]);o=o.transform(T);ii=ii.transform(T)
+  elif z[2]<0:o=o.rotate([180,0,0]).translate(aa.tolist());ii=ii.rotate([180,0,0]).translate(aa.tolist())
+  else:o=o.translate(aa.tolist());ii=ii.translate(aa.tolist())
+  outs.append(o);ins.append(ii)
+ return mf.Manifold.batch_boolean(outs,mf.OpType.Add)-mf.Manifold.batch_boolean(ins,mf.OpType.Add)
+# Coolant headers have actual bore, then source motor/EMRAX/pack/compute/HX nodes receive pairedlines.
+for sign in [-1,1]:
+ path=[[.20,sign*.06,1.80],[.20,sign*.06,2.61]];m=tube_path(path,.012,.009);add(m,f'g15_coolant_header_{sign}','torso','finite_new_material',[m.volume()*1200]*3,meta={'density_kg_m3':1200,'lumen_volume_L':np.pi*.009**2*.81*1000,'route_unrated':True})
+nodes=[]
+for p in parts:
+ if p['name'].endswith('_motor_cooling_case') or p['name'].endswith('_emrax188_lc') or p['name'] in ['ds_compute','e2_dual_fluid_HX_material'] or p['name'].endswith('_coldplate') and p['name'].startswith('g14_pack_'):nodes.append((p['name'],ct(p),p['body']))
+for kk,(n,end,body) in enumerate(nodes):
+ for sign in [-1,1]:
+  st=np.array([.20,sign*.06,np.clip(end[2],1.81,2.60)]);e=end+[0,sign*.009,0];lane=.32+kk*.011;path=[st,[lane,st[1],st[2]],[lane,e[1],e[2]],e];m=tube_path(path,.005,.0035);L=sum(np.linalg.norm(np.array(b)-a) for a,b in zip(path[:-1],path[1:]));add(m,f'g15_coolant_{kk}_{sign}','routing_segments_owner_pending','finite_new_material',[m.volume()*1200]*3,meta={'density_kg_m3':1200,'target_actual_source_id':n,'target_body':body,'lumen_L':np.pi*.0035**2*L*1000,'crossjoint_flexible_route_and_ports_UNKNOWN':True});routes.append({'id':f'g15_coolant_{kk}_{sign}','path_world_m':np.array(path).tolist(),'fluid':'water','source_target':n,'endpoint_is_stockdatum_NOT_certifiedport':True,'length_m':L,'motion/curvature/pressure_unknown':True})
+# Real layer separatedP/T rigidheaders +18shortbranches; A/B remain peractuator, allstockportsfinite.
+hold={}
+for p in parts:
+ if '_holding__' in p['name']:hold.setdefault(p['name'].split('__')[0],[]).append(p)
+for bank in [0,1]:
+ hx=.305 if bank==0 else -.46
+ for ch,hy in [('P',.095),('T',-.095)]:
+  path=[[hx,hy,1.36],[hx,hy,2.045]];m=tube_path(path,.014,.010);add(m,f'g15_hyd_{bank}_{ch}_layered_trunk','torso_pelvis_rigid_owner_pending','finite_new_material',[m.volume()*7850]*3,meta={'density_kg_m3':7850,'source_or_assumption':'ownsteelcontinuouspressureheader_reference','lumen_L':np.pi*.01**2*.685*1000,'pressure/branchboss/supportunknown':True});routes.append({'id':f'g15_hyd_{bank}_{ch}_layered_trunk','fluid':'oil','path_world_m':path,'length_m':.685,'lumen_L':np.pi*.01**2*.685*1000,'source_target':'all9bankvalves','pressureunknown':True})
+for j,(key,nc) in enumerate(valvecenters.items()):
+ hk=key.replace('_directional','_holding');hp=hold.get(hk,[]);ec=np.mean([ct(p) for p in hp],0) if hp else np.array(nc)+[.05,0,-.15];bank=j//9
+ for ch,off in [('P',.030),('T',.010),('A',-.010),('B',-.030)]:
+  fit=next(p for p in parts if p['name']==key+'__d1fb_c_obe_fitting_'+ch);startpoint=ct(fit)+[-.025,0,0]
+  if ch in ['P','T']:
+   hx=.305 if bank==0 else -.46;hy=.095 if ch=='P' else -.095;en=np.array([hx,hy,nc[2]-.075]);lane=hx+(.022 if ch=='P' else -.022);path=[startpoint,[lane,startpoint[1],startpoint[2]],[lane,hy,startpoint[2]],en]
+  else:
+   en=ec+[0,off,0];lane=.27+j*.018 if j<9 else -.25-(j-9)*.018;path=[startpoint,[lane,startpoint[1],startpoint[2]],[lane,en[1],en[2]],en]
+  m=tube_path(path,.008,.005);L=sum(np.linalg.norm(np.array(bb)-aa) for aa,bb in zip(path[:-1],path[1:]));add(m,f'g15_hydraulic_{j}_{ch}','motion_group_route_owner_pending','finite_new_material',[m.volume()*1400]*3,meta={'density_kg_m3':1400,'knownfinite_directional_fitting_center_as_interface':fit['name'],'threadengagement_and_actualenddatum_unknown':True,'required_holding_group':hk,'missingholding_owner_or_installation_preserved':not bool(hp),'lumen_L':np.pi*.005**2*L*1000});routes.append({'id':f'g15_hydraulic_{j}_{ch}','path_world_m':np.array(path).tolist(),'fluid':'oil','source_target':hk,'length_m':L,'lumen_L':np.pi*.005**2*L*1000,'actual_fitting_source_id':fit['name'],'21MPa_qualification':False})
+# Complete two waterloop pump→header→core→workingtank candidates; source4320 portdatumunknown remainsred.
+for label,pc,cc,tc in [('low',[.08,.25,1.73],[-.02,.13,2.49],[-.23,0,2.23]),('hot',[.08,-.25,1.73],[-.02,-.13,2.49],[-.23,0,2.11])]:
+ pts=[np.array(pc),np.array([.20,.06 if label=='low' else -.06,1.82]),np.array(cc)+[.292,0,-.0235],np.array(tc)]
+ for k,(aa,bb) in enumerate(zip(pts,pts[1:]+pts[:1])):
+  lane=-.355 if label=='low' else -.38;path=[aa,[lane,aa[1],aa[2]],[lane,bb[1],bb[2]],bb];m=tube_path(path,.012,.009);L=sum(np.linalg.norm(np.array(b)-a) for a,b in zip(path[:-1],path[1:]));add(m,f'g15_{label}_water_primary_connection_{k}','torso_routing_owner_pending','finite_new_material',[m.volume()*1200]*3,meta={'density_kg_m3':1200,'lumen_L':np.pi*.009**2*L*1000,'actualcoreportXdatum_notknown':'conservativeG14catalogueportregion only','pump35mmbarb_reducers_complete_reserve_present_NOTconnectedrating':True});routes.append({'id':f'g15_{label}_water_primary_connection_{k}','fluid':'water','path_world_m':np.array(path).tolist(),'length_m':L,'lumen_L':np.pi*.009**2*L*1000,'source_target':label+'_fullthermal_loop','portdatum_and_flowclosureunknown':True})
+# True hollow transitionsegments, visible originalfaces untouched; only proposalsfornewrear/sideopenings.
+def duct_native(path,dm):
+ oo=[];ii=[]
+ for a,b in zip(path[:-1],path[1:]):
+  a=np.array(a);b=np.array(b);delta=np.abs(b-a);dims=np.array(dm)+delta;center=(a+b)/2;oo.append(g.bx(center,dims));ii.append(g.bx(center,dims-.004))
+ return mf.Manifold.batch_boolean(oo,mf.OpType.Add)-mf.Manifold.batch_boolean(ii,mf.OpType.Add)
+for side in [-1,1]:
+ path=[[.35,side*.327,2.147],[.35,side*.327,2.49],[.05,side*.327,2.49],[.05,.18,2.49]];m=duct_native(path,[.075,.075,.09]);add(m,f'g15_low_original_front_intake_path_{side}','torso','finite_new_material',[m.volume()*1200]*3,meta={'density_kg_m3':1200,'originaltwofrontlouvers_source_geometry_kept':'noopeningadopted','seal/flowgapunknown':True})
+ path=[[-.36,side*.20,2.49],[-.12,side*.20,2.49],[-.12,-.18,2.49]];m=duct_native(path,[.075,.075,.09]);add(m,f'g15_hot_rear_intake_path_{side}','torso','finite_new_material',[m.volume()*1200]*3,meta={'density_kg_m3':1200,'rearvisibleopening_proposalonly':True})
+for label,yy in [('low',.015),('hot',-.015)]:
+ for side in [-1,1]:
+  path=[[side*.125-.02,yy,2.49],[side*.125-.02,side*.22,2.49],[-.36,side*.22,2.49]];m=duct_native(path,[.07,.08,.09]);add(m,f'g15_{label}_fan_to_external_exhaust_{side}','torso','finite_new_material',[m.volume()*1200]*3,meta={'density_kg_m3':1200,'separatehotcoldexhaustNOTactualrated':'sourceplenumglobalP-Qunknown','visibleexternalopeningnotadopted':True})
+# Power/data trunkfinite ducts and perlimbfullbounded routes; no raw geometricmovement inherits connection.
+for sign in [-1,1]:
+ path=[[.08,sign*.075,1.80],[.08,sign*.075,2.60],[.02,sign*.50,2.45]];m=tube_path(path,.013,.010);add(m,f'g15_powerdata_trunk_{sign}','torso','finite_new_material',[m.volume()*1200+.4,m.volume()*1200+.8,m.volume()*1200+1.4],meta={'density_kg_m3':1200,'cable_inventory_included_range_notdoublecount':'newtrunk only; oldlimbcables retained pendingreplacement','clearance_voltage_and_flexible_joints_unknown':True})
+# Broadclosedloadcage, actualsourceanchors + samebodyadapter exactlyonce. Ownmaterial may be cut by exact protectedstock.
+anchors=[p for p in sh['parts'] if p['name'].endswith('fixed_reaction_closed_anchor')];adapter=oldby['f1_ds_waist_roll_hollow_output_adapter'];framepieces=[]
+for side in [-1,1]:
+ c=[.185,side*.265,2.20];dm=[.15,.10,.60];outer=g.bx(c,dm);inner=g.bx(c,[.140,.090,.610]);framepieces.append(outer-inner)
+# fulltop andlowercrossmembers, pluscontinuouswaistneck toknownsourceadapter
+def beam(c,dm,t,axis):
+ ii=np.array(dm)-2*t;ii[axis]=dm[axis]+.01;return g.bx(c,dm)-g.bx(c,ii)
+framepieces.extend([beam([.185,0,2.505],[.15,.66,.10],.005,1),beam([.225,0,1.945],[.13,.63,.12],.006,1),beam([.23,0,1.92],[.09,.21,.20],.006,2)])
+frame=mf.Manifold.batch_boolean(framepieces+[g.mm(p) for p in anchors]+[g.mm(adapter)],mf.OpType.Add)
+protected=[p for p in parts if (p['name'].startswith('g13_') and any(k in p['name'] for k in ['gear','motor','holder','cooling_case','bearing'])) or p['name']=='f1_ds_waist_roll_gear']
+# Realstockclearancecut only own frame, NOTOEM. Wholepack/corefunctionalstock intersects remain diagnostic, not erased.
+for p in protected:
+ if g.mm(p).status()==mf.Error.NoError:frame=frame-g.mm(p)
+add(frame,'g15_chest_shoulder_waist_net_cage','torso','finite_new_material',[frame.volume()*7850]*3,[.26,.52,.73,1],{'density_kg_m3':7850,'sourceanchors_exact_union_once':[p['name'] for p in anchors],'sourceadapter_exact_union_once':adapter['name'],'sourceOEM_no_drill_no_union':True,'steel5/6mmowncandidate_notrating':True,'closedsectionandboltweldqualification':False})
+# Retainedmass rows only presentIDs; no phantom rows; globalfluidlogicalrows not missingphysicalbug.
+present={p['name'] for p in parts};oldrows=[copy.deepcopy(r) for r in s['new_module_mass_rows'] if r['id'] in present and r['id'] not in set(newids)]
+scene={'schema':'gorilla_g15_thorax_functional_colayout_v1','coordinate_frame':'worldSI m Xfront Yleft Zup','producer_sha256':sha(__file__),'sources':{k:{'path':str(v),'sha256':sha(v)} for k,v in {'G14_final':BASE,'G13_installedshoulderA':SH,'G14thermal':THERM,'G13_adapter':OLD,'helpers':R/'.scratch/gorilla_internal_g14_complete_thermal_colayout/geometry_helpers.py'}.items()},'parts':parts,'new_module_mass_rows':mass,'retained_present_mass_rows':oldrows,'new_pack_info':packinfo,'proposed_retired_ids':sorted(retire),'rigid_group_transforms':moves,'routes':routes,'original_visible_armor_ids':s['original_visible_armor_ids'],'visible_faces_changed_or_adopted':False,'source_shoulders_G13A190':True,'global_inventory':s['global_inventory'],'fluid_stock_aliases_counted_once':True,'thermal_working_inventory_allocation':{'oil_global_L':30,'oil_working_tank_L':18,'oil_devices_lines_unknown_allocated_L':12,'water_global_L':waterstock,'water_working_tanks_L':4.5,'two_cores_known_L':1.688,'HX_known_L':.924,'source_shoulders_known_L':.251,'water_other_lines_devices_unknown_remaining_L':waterstock-4.5-1.688-.924-.251,'currentroute_lumens_must_reconcile_not_add_to_global':True,'return_expansion_cavitation_and_cavityfillunknown':True},'replacement_ledger':{'retiredthermalrouteIDs':sorted(thermal_routes),'retiredhydraulicrouteIDs':sorted(oldhydroutes),'newthermalreplacementIDs':[n for n in newids if n.startswith(('g15_low_','g15_hot_','g15_coolant_'))],'newhydraulicreplacementIDs':[n for n in newids if n.startswith(('g15_hydraulic_','g15_hyd_'))],'alloldroutes_otherthanlisted_retained_pending':True,'oldtwo_rearcores_retired':True,'oldreserve_andduct_mass_notactive':True,'backscreen_singleelectronics_alias_retired':'rear_control_screen_module_envelope'},'functionality_reduced':False,'allinstallation_thermal_strength_COM_fullI_unknown':True,'macro':'b','no_FEM_SIMP_GPU_Git':True}
+(D/'scene.json.gz').write_bytes(gzip.compress(json.dumps(scene,separators=(',',':')).encode(),mtime=0));wr('spec.json',{'frame_net_mass_kg':frame.volume()*7850,'source_sha256':sha(D/'scene.json.gz'),'complete_modules_conserved':True,'retirement_onlygeometry_notfunction':True,'two4320fullreferences':True,'valveguard_complete_dimensions_m':[.122,.240,.204],'replacement_ledger':scene['replacement_ledger'],'water_oil_inventory':scene['thermal_working_inventory_allocation'],'mass_source_partial_notwhole_kg':np.array([r['mass_range_kg'] for r in mass]).sum(0).tolist()})
+print('EVENT G15B source '+sha(D/'scene.json.gz')+' parts '+str(len(parts))+' framekg '+str(frame.volume()*7850),flush=True)
+g.h.OUT=D;g.h.render(parts,'native_four_view.png');g.h.render(parts,'native_cutaway_four_view.png',True);g.h.sections([p for p in parts if p['name'] in scene['original_visible_armor_ids'] or p['name'] in newids])
+from PIL import Image,ImageDraw
+for name in ['native_four_view.png','native_cutaway_four_view.png']:
+ im=Image.open(D/name);dd=ImageDraw.Draw(im);dd.rectangle((0,0,1800,50),fill='#f3f2ed');dd.text((25,8),'G15 B — TWO FULL4320 / 18 FULL VALVE GROUPS / 480CELLS / BROAD LOAD CAGE',fill='black');dd.text((25,30),'Source-bound conditional macros; visible armor unchanged; routes, installation, strength, heat and whole SI NOT accepted',fill='black');im.save(D/name)
+print('EVENT G15B actual4views',flush=True);cad=g.export_cad(frame);wr('cad_receipt.json',cad);print('EVENT G15B CAD '+str(cad['BRep_valid']),flush=True)

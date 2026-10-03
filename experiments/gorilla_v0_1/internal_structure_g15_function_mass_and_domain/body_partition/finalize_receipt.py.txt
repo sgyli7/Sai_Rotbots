@@ -1,0 +1,115 @@
+#!/usr/bin/env python3
+import pathlib,json,gzip,hashlib,collections,importlib.util,numpy as np
+from PIL import Image,ImageDraw
+import manifold3d as mf
+P=pathlib.Path(__file__).resolve().parent;R=P.parents[1]
+def sha(p):return hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
+def read(p):return json.load(gzip.open(p,'rt')) if str(p).endswith('.gz') else json.load(open(p))
+def wr(d,n,v):(d/n).write_text(json.dumps(v,indent=2,ensure_ascii=False)+'\n')
+sp=importlib.util.spec_from_file_location('g15finalgeo',R/'.scratch/gorilla_internal_g14_complete_thermal_colayout/geometry_helpers.py');g=importlib.util.module_from_spec(sp);sp.loader.exec_module(g)
+reports=[]
+for lab in ['a','b']:
+ d=P/lab;s=read(d/'scene.json.gz');by={p['name']:p for p in s['parts']};a=read(d/'audit_summary.json');c=read(d/'collision_receipt.json');cad=read(d/'cad_receipt.json');fr=read(d/'frame_signed_geometry.json');nr=read(d/'native_resource_receipt.json');rr=read(d/'rigid_group_receipt.json');ex=read(d/'outer_face_samples.json')
+ # Sourceport→cage actualZsections, not an invented extraoptimizedframe.
+ frame=g.mm(by['g15_chest_shoulder_waist_net_cage']);secs=[];im=Image.new('RGB',(1600,1000),'#f3f2ed');draw=ImageDraw.Draw(im);draw.text((25,12),'G15 '+lab.upper()+' actual cage sections / world SI / preserved source / no strength or closed-section qualification',fill='black')
+ for j,z in enumerate([1.91,2.05,2.29,2.49]):
+  cross=frame.slice(z);pol=cross.to_polygons();secs.append({'plane_Z_m':z,'actual_net_material_area_m2':cross.area(),'native_polygons_xy_m':[np.asarray(q).tolist() for q in pol],'section_cuts_from_actualnetmaterial_not_envelope':True});ox=400+(j%2)*800;oy=380+(j//2)*480
+  draw.text((ox-360,oy-330),f'Z={z:.3f}m | signed net area {cross.area()*1e6:.1f} mm2 | same1000px/m',fill='black')
+  for q in pol:
+   q=np.asarray(q);ar=.5*np.sum(q[:,0]*np.roll(q[:,1],-1)-q[:,1]*np.roll(q[:,0],-1));draw.polygon([(ox+float(x)*800,oy-float(y)*800) for x,y in q],fill='#317b9d' if ar>0 else '#f3f2ed',outline='#173d4a')
+ im.save(d/'actual_cage_sections.png');wr(d,'actual_cage_sections.json',{'source_sha256':sha(d/'scene.json.gz'),'sections':secs,'shoulder_X115_andwaistplane_mating_notcertified_by_section':True})
+ # Truecircularlumen accounting computed fromeachstored actualcenterline; uniondiagnostic neverconnectedqualification.
+ lum=[];globalinner=[]
+ for r in s['routes']:
+  fluid=r['fluid'];name=r['id'];rad=.009 if 'water_primary_connection' in name else (.0035 if fluid=='water' else (.010 if 'layered_trunk' in name else (.005 if lab=='b' else .006)))
+  path=np.asarray(r['path_world_m']);inner=[]
+  for aa,bb in zip(path[:-1],path[1:]):
+   delta=bb-aa;L=np.linalg.norm(delta)
+   if L<1e-9:continue
+   z=delta/L;ax=np.cross([0,0,1],z);an=np.linalg.norm(ax);o=mf.Manifold.cylinder(L,rad,rad,16)
+   if an>1e-9:
+    v=ax/an;K=np.array([[0,-v[2],v[1]],[v[2],0,-v[0]],[-v[1],v[0],0]]);t=np.arccos(np.clip(z[2],-1,1));M=np.eye(3)+np.sin(t)*K+(1-np.cos(t))*K@K;o=o.transform(np.column_stack([M,aa]))
+   elif z[2]<0:o=o.rotate([180,0,0]).translate(aa.tolist())
+   else:o=o.translate(aa.tolist())
+   inner.append(o)
+  if not inner:continue
+  actual=mf.Manifold.batch_boolean(inner,mf.OpType.Add);length=float(np.linalg.norm(np.diff(path,axis=0),axis=1).sum());lum.append({'id':name,'fluid':fluid,'centerline_length_m':length,'bore_radius_m':rad,'analytic_round_lengthsum_L':np.pi*rad*rad*length*1000,'actual16facet_lumen_union_L':actual.volume()*1000,'path_bend_and_join_pressure_qualified':False});globalinner.append((fluid,actual))
+ headers=[]
+ for n in ['g15_coolant_header_-1','g15_coolant_header_1']:
+  p=by[n];headers.append({'id':n,'analytic_lumen_L':p['lumen_volume_L'],'source_primitive16facet_geometry_L':p['lumen_volume_L']*16*np.sin(2*np.pi/16)/(2*np.pi)})
+ sums={f:sum(q['actual16facet_lumen_union_L'] for q in lum if q['fluid']==f) for f in ['water','oil']};union={f:mf.Manifold.batch_boolean([m for ff,m in globalinner if ff==f],mf.OpType.Add).volume()*1000 for f in ['water','oil']};packL=sum(p.get('channel_void_m3',0)*1000 for p in s['parts'] if p['name'].startswith('g14_pack_') and p['name'].endswith('_coldplate'));fluid={'scene_sha256':sha(d/'scene.json.gz'),'line_lumens':lum,'two_new_coolant_headers':headers,'retired_old104x59x264_header_total_L':3.239808,'old_header_inventory_NOTactive':True,'perline_native_lumen_sum_L':sums,'allline_spatial_union_L_diagnostic_ONLY':union,'overlap_lumens_not_allowed_samefluid_connections':True,'packcoldplate_source_void_L':packL,'global_oil_L':30,'global_water_L':12.481996328832434,'working_tank_fill_L':{'oil':18,'water':4.5},'globalfluids_count_once_kg':[25.5,12.481996328832434],'two_complete4320_knownwater_L':1.688,'HX_known_water_L':.924,'G13_shoulders_water_L_reference':.251,'EMRAX_andallretainedcases_fluid_lumens_unknown':True,'allsourcefluidgeometry_andold_allowances_mass_alias_to_global':['g13_left_bounded_water_region','g13_right_bounded_water_region','e_two_emrax_unknown_internal_liquid_allowance'],'actualdevices_stock_andline_bodyfluid_allocation_notclosed':True,'sumwater_known_current_geometry_L':sums['water']+sum(q['source_primitive16facet_geometry_L'] for q in headers)+packL+4.5+1.688+.924+.251,'unknown_inventory_NOT_zero':'remaining globalstock is not evidence of installed liquid, NPSH/return fill and manufacturer lumens unknown'};wr(d,'actual_fluid_inventory_receipt.json',fluid)
+ # Functional conflict buckets prioritize independent mechanisms; retain ALLpositivepairs.
+ important=[]
+ for q in c['positive_pairs']:
+  both=q['a']+' '+q['b']
+  if any(x in both for x in ['4320_complete_reference','net_cage','ds_left_hydraulic_input','ds_right_hydraulic_input','ds_back_screen','Al_enclosure']) and not any(x in both for x in ['g15_hydraulic_','g15_coolant_','water_primary_connection']):important.append(q)
+ buckets=collections.Counter(tuple(sorted([q['class_a'],q['class_b']])) for q in c['positive_pairs']);rolecounts=collections.Counter(p['role'] for p in s['parts']);retiredthe=[n for n in s['proposed_retired_ids'] if n.startswith('e_')];original=read(pathlib.Path(s['sources']['G14_final']['path']));old={p['name']:p for p in original['parts']};knownretmr=sum((np.array(r['mass_range_kg']) for r in s['retained_present_mass_rows']),np.zeros(3));newmr=sum((np.array(r['mass_range_kg']) for r in s['new_module_mass_rows']),np.zeros(3))
+ resources={p['id']:p for p in nr['parts']};reasons=[{'id':n,'errors':resources[n]['errors']} for n in a['resource_rejectIDs']]
+ report={'scene_sha256':sha(d/'scene.json.gz'),'producer_sha256':sha(d/'build_layout.py'),'source_baseline_SHA':s['sources']['G14_final']['sha256'],'macro':lab,'actual_parts':len(s['parts']),'actual_cell_count':a['480cells'],'cell_mass70g_max_reference_NOTknownnominal':True,'pack_grid_shape_fullsourcefunctions_kept':True,'true_group_transforms':rr['allmembers_samepropertransform'],'all0relative_vertex_error':max(q['max_vertex_reconstruction_m'] for q in rr['groups']),'all18directional21pieces_guards_preserved':all(len(q['complete_member_ids'])==21 for q in s['rigid_group_transforms'] if '_directional' in q['group']),'18holdinggroups_retained_missing4originalinstallation_notresolved':True,'original_visible111identity_NOTcavity_or_externalappearance_preserved':a['original111armor_exact'],'exact_installed_shoulder_G13A188plus2anchors_unioned_once':True,'G14benchshoulder_not_adopted':True,'replacement_ledger':s['replacement_ledger'],'retired_oldthermalgeometry_massrange_kg':sum((np.array(old[n]['mass_range_kg']) for n in retiredthe if old[n].get('mass_range_kg') is not None),np.zeros(3)).tolist(),'retired_thermalIDs':retiredthe,'actual_frame_net_mass_kg':fr['ownmaterial_only_mass_kg'],'sameA_Bframe_not_new_weightreduction':True,'frame_source_materialroots':fr['materialroots_not_signedshellcount'],'frame_closedsection_actualsections_saved':'actual_cage_sections.json; sections not strengthproof','CAD':cad,'native_source_resource_gate':a['newsource_resource_pass'],'native_invalid_details':reasons,'allsource_stock_COM_fullI_andmechanicalowners_UNKNOWN':True,'partial_newfunction_massrange_NOTwhole_kg':newmr.tolist(),'partial_present_retainedrows_range_NOTwhole_kg':knownretmr.tolist(),'unknownparts_massnot0':True,'fluid_receipt':fluid,'real_positive_scope':c['scope'],'positive_total':len(c['positive_pairs']),'finite_material_pairs':c['finite_material_pairs'],'globalalias_fluid_material_exclusive_pairs':len(c['fluid_material_exclusive_pairs']),'pair_classes':[{'classes':list(k),'count':v} for k,v in buckets.items()],'top5_actual_nonroute_function_conflicts':important[:5],'top5_finite_material_conflicts':c['top5_finite'],'real_samefluidroute_crossing_andbranch_sealing_unknown':True,'no_collision_waiver_byowner_reference_stock_orfluidalias':True,'exterior_surface_diagnostics':ex['diagnostics'],'remaining_functional_ledger_unknowns':['old e_compute_coldplate/e_power_aux_coldplate stayactive but movedcompute/HV mounting and route notconnected','retained ds_hv_distribution and newHV contactor stock need functional overlap audit; no removalcredit granted','G13A output/input/holder/bearing and sourcecase joint/heat assumptions not adoptedrating','retained limb hyd/cooling source fittings and unretired wires need mapped support/port validation','oil18L/water4.5L workfill remains ownbaseline not newphysicalminimum','frame OEM clearancefilter missed CSG_complete_reference IDs; trueframeCSGintersections notwaived','strictnative hollowP/Tbranchboundary gaprejects and intake topology reject must close before materialadmission'],'thermal_pressure_voltage_domain_NOTadmitted':True,'no_FEM_SIMP_GPU_Git_or_source_oldedits':True,'whole_mass_COM_I_rating_notclosed':True,'assembly_admission':False}
+ # Exterioridentity is not packagefit: actualexterior111 and whitebody visibletriangle bounds; corefaces sampled densely.
+ allarmor=np.concatenate([np.array(by[n]['vertices_world_m']) for n in s['original_visible_armor_ids']]);white=by['continuous_ivory_torso_armor_cover'];wv,wf=g.h.triangles(white,True);tris=wv[wf];bodylo=wv.min(0);bodyhi=wv.max(0);overalllo=allarmor.min(0);overallhi=allarmor.max(0);exposure=[]
+ for p in s['parts']:
+  if not p['name'].startswith(('g15_low_','g15_hot_')) or p['role']=='service_after_shell_removal':continue
+  vv=np.array(p['vertices_world_m']);lo=vv.min(0);hi=vv.max(0);record={'id':p['name'],'actualcomponent_AABB_m':[lo.tolist(),hi.tolist()],'axis_excess_beyond_original111_overall_m':{'negative':np.maximum(overalllo-lo,0).tolist(),'positive':np.maximum(hi-overallhi,0).tolist()},'axis_excess_beyond_actualvisible_white_torso_outer_bounds_m':{'negative':np.maximum(bodylo-lo,0).tolist(),'positive':np.maximum(hi-bodyhi,0).tolist()},'AABB_tests_notcavity_orfitproof':True}
+  if '4320_complete_reference' in p['name']:
+   pts=[]
+   for ax in range(3):
+    other=[i for i in range(3) if i!=ax]
+    for val in [lo[ax],hi[ax]]:
+     for aa in np.linspace(lo[other[0]],hi[other[0]],5):
+      for bb in np.linspace(lo[other[1]],hi[other[1]],5):
+       q=np.zeros(3);q[ax]=val;q[other]=[aa,bb];pts.append(q)
+   tests=[]
+   for ax in range(3):
+    perm=[ax]+[i for i in range(3) if i!=ax];tri=tris[:,:,perm];missing=0;neg=[];pos=[]
+    for pp in pts:
+     pp=pp[perm];hits=g.h.xhits(tri,pp[1],pp[2])
+     if len(hits)<2:missing+=1;continue
+     if ax==0:
+      front=hits[hits>.02];rear=hits[hits<-.06]
+      if not len(front) or not len(rear):missing+=1;continue
+      hits=np.array([rear.min(),front.max()])
+     elif ax==1:
+      sidepos=hits[hits>.02];sideneg=hits[hits<-.02]
+      if not len(sidepos) or not len(sideneg):missing+=1;continue
+      hits=np.array([sideneg.min(),sidepos.max()])
+     neg.append(max(0,float(hits.min()-pp[0])));pos.append(max(0,float(pp[0]-hits.max())))
+    tests.append({'axis':'XYZ'[ax],'actualsurface_samples':len(pts),'open_or_missing_ray_samples':missing,'maxnegative_excess_m':max(neg or [0]),'maxpositive_excess_m':max(pos or [0]),'raypairs_do_NOTcertify_original_openbody_cavity':True})
+   record['dense_real_box_surface_ray_diagnostics']=tests
+  exposure.append(record)
+ wr(d,'actual_exposed_complete_modules.json',{'scene_sha256':sha(d/'scene.json.gz'),'original111_overallbounds_m':[overalllo.tolist(),overallhi.tolist()],'actualwhite_visibleouter_bounds_m':[bodylo.tolist(),bodyhi.tolist()],'newmodule_exposure':exposure,'no_adopted_visible_change':'any geometricenvelope change must be separately aestheticapproved','atmosttwo_minimalpackaging_proposals':[{'name':'upperthoraxroof_service_cap_proposal','bound':'at least actualpositiveZ sampled excess +mount/seal clearance; completecore andduct identities retained; notadopted'},{'name':'thoraxside_orrear_duct_panel_proposal','bound':'at least actual XYZ excess offullstock+fittings/guard; originalvisiblepanels notchanged; notadopted'}]})
+ report['actualexterior_exposure_receipt']='actual_exposed_complete_modules.json';report['globalfluid_COM_andbodyallocation_UNKNOWN']=True
+ # Independentthermalreview exposes omittedknowncasechambers: preserve tighter redline, no stockfillgeometry adjustment.
+ capture=P/'inputs/independent_body_fluid_capture.json'
+ if capture.exists() and lab=='b':
+  report['independent_thermal_inventory_review']={'path':str(capture),'sha256':sha(capture),'source_B_sha256':sha(d/'scene.json.gz'),'knownwaterlines_roundpath_L':5.6643,'knownwaterdevices_L':4.5604,'workingfill_L':4.5,'knownminimum_water_required_L':14.7247,'declaredglobal_water_L':12.481996328832434,'minimum_stock_shortfall_L':14.7247-12.481996328832434,'unknowndevices_additional_L_range':[.5,3.5],'oil18fill_cap_L':19.787,'global30L_oil_4percentexpansion_L':1.2,'oilremaininghotair_headspace_L':.587,'oilhotair_fraction_approx':.03,'waterinventory_oilheadspace_admission':False,'ourperline16facetunion_vs_roundlength_diagnostics_NOTcredit_to_lower_inventory':True,'no_thirdgeometry_or_changedfill_stock':True}
+  report['fluid_receipt']['knownsource_retained_motorcases_missingfrompartialmacrovolume']=True
+ wr(d,'final_report.json',report);reports.append(report)
+# Exactsource provenance saved per macro andoneB same-macrofunctional completion.
+history={'A_exactproducer':str(P/'a/build_layout.py'),'A_sha':sha(P/'a/scene.json.gz'),'B_before_functioncompletion_exactproducer':str(P/'b_before_function_completion/build_layout.py'),'B_before_sha':sha(P/'b_before_function_completion/scene.json.gz'),'B_final_exactproducer':str(P/'b/build_layout.py'),'B_final_sha':sha(P/'b/scene.json.gz'),'macros':2,'B_loop_andtrunk_completion_NOTthirdlayout':True,'alloldG14_frozenbytesunchanged':True};wr(P,'producer_history.json',history)
+(P/'README.md').write_text('''# G15 thorax functional co-layout — two macros, rejected
+
+A and B are saved with exact independent producer scripts. B_before_function_completion preserves the earlier B whole scene and exact producer; final B adds the required true layered P/T trunks, short branches, both water-loop connection geometry and inlet/exhaust duct segments without a third layout. No old frozen source was overwritten. Run a/build_layout.py + a/audit_layout.py or b/build_layout.py + b/audit_layout.py in an expendable copy; finalized directories are immutable. finalize_receipt.py produces source-bound diagnostic receipts, not new geometry.
+
+A faces two complete 584×305×64mm historical Lytron4320 references front/rear. B rotates both exact references to upper-chest faceXZ, uses the full two172×51mm fans/core with guards/adapter/connector, waterpump/degas/filter/relief/isolation/controller/fittings, actual sealed-duct candidates and outlet proposals. All four complete480cell packs remain, min7.44kWh cell reference, max70g percell budget. No performance, pack/HV approval, thermal curve transfer or visible exterior change is adopted. Original111 visible source identity does not prove appearance preserved: modules visibly protrude and actual armor intersections remain.
+
+Installed shoulder context is G13A190:188 separate source parts plus the2 native anchors net-unioned in a new wide closed beam candidate once with the exact waist outputadapter. Net ownsteel83.6070kg, identical A/B; one native materialroot. Frame section cuts are actual net material, but gross OEM protectfilter missed CSG_complete_reference names, so frame still crosses completeCSG references. OCC sewnCAD is invalid even with matched SI/volume readback: preserve failure, do not call CAD valid or stiffness/strength through.
+
+18 complete21-piece directional groups are moved by one common proper transform each, guard204mm height preserved. B has4actual hollow P/T layered trunks +18×4per-valve branches using actual finitefitting source positions, with per-cylinderholding functions retained; missing4original owner/installed holders are not resolved. The independent exact source inventory requires at least14.7247Lwater vsdeclared12.482L (2.2427Lshortfall), with unknowndevicefluid extra. Oil18L fill in19.787L tank gives only.587Lhotheadspace after4% globalexpansion, about3% before rod/return allowances. Both are red; no geometryfill orstock is changed to conceal this. Real route crossings, unclosed branch boundary topology and independent hot/cold exhaust collisions reject integration. Contacts at candidate fittings do not establish actual pressure seals, thread engagement, motion routing or pump capability.
+
+Explicit old coolant reserve,2rearcores, legacy air/hot/water hose/header geometry and old hydraulicroute inventory are retired with nonzero new paths and completefunction replacements. Globaloil30L/water12.481996L count once as logical distributed inventory; real workingtankfills18/3/1.5L and sourcejacket fluid geometries are aliases, not extra fluids. Actual individual lumen geometry and union diagnostics are in actual_fluid_inventory_receipt.json. Workingstock does not prove globalbody allocation, actual chamber capacities, line pressure rating, expansion, dwell or cavitation. Sameglobalalias closes duplicate inventory only, never excuses frame/water collision.
+
+Final_report.json gives allclass changed×all collision counts and the5leading non-route mechanism conflicts separately. Unchanged-retained/unchanged-retained and motion collisions are excluded from this local scope; raw totals cannot be compared to earlier scopes as improvement. COM/fullI/mass remain unclosed for the complete body; ownframe geometry integration and partialfunction mass ranges are distinct. Native strict source failures and invalidCAD remain authoritative; no repair, third macro, FEM, SIMP, GPU, Git or whole-robot physical conclusion follows.
+''')
+inputs=[]
+for r in reports:
+ for v in read(P/r['macro']/'scene.json.gz')['sources'].values():
+  if v not in inputs:inputs.append(v)
+# Actualrenderer dependency andsourcecontract frozenhash inputs, not hiddenreproduction dependencies.
+for path in [R/'.scratch/gorilla_internal_g11_body_design_domain/build_domain.py',R/'experiments/gorilla_v0_1/internal_structure_g_studies/material_contract/native_signed_material.py.txt']:
+ inputs.append({'path':str(path),'sha256':sha(path)})
+capture=P/'inputs/independent_body_fluid_capture.json'
+if capture.exists():inputs.append({'path':str(capture),'sha256':sha(capture),'scope':'exact local snapshot of independent sourcebound water/oilbodycapture; provenance retains original path/hash'})
+outs=[{'path':str(p),'sha256':sha(p)} for p in sorted(P.rglob('*')) if p.is_file() and p.name not in ['freeze_manifest.json','finalize.log'] and '__pycache__' not in p.parts]
+manifest={'inputs':inputs,'outputs':outs,'A_sha256':history['A_sha'],'final_B_sha256':history['B_final_sha'],'exact_versioned_producers':True,'macro_count':2,'geometry_frozen':True,'assembly_admission':False,'reproduction_commands':['.venv/bin/python a/build_layout.py','.venv/bin/python a/audit_layout.py','.venv/bin/python b/build_layout.py','.venv/bin/python b/audit_layout.py','.venv/bin/python finalize_receipt.py']};wr(P,'freeze_manifest.json',manifest);print('FREEZE',sha(P/'freeze_manifest.json'),'inputs',len(inputs),'outputs',len(outs),'errors',sum(sha(v['path'])!=v['sha256'] for v in inputs+outs),flush=True)
+print('FINAL',[(r['macro'],r['positive_total'],r['finite_material_pairs'],r['native_source_resource_gate'],r['fluid_receipt']['sumwater_known_current_geometry_L']) for r in reports],flush=True)

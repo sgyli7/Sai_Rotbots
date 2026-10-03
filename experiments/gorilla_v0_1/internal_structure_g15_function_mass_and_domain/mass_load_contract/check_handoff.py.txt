@@ -1,0 +1,24 @@
+"""Independent algebra/identity checks for bounded Gorilla G15 mass/load handoff."""
+from pathlib import Path
+import json,gzip,hashlib,itertools
+import numpy as np
+O=Path(__file__).resolve().parent
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def read(n):return json.loads((O/n).read_text())
+def put(n,d):(O/n).write_text(json.dumps(d,indent=2,allow_nan=False)+'\n')
+def main():
+ s=json.loads(gzip.decompress((O/'bound_g15_b_scene.json.gz').read_bytes()));m=read('g15_b_mass_contract.json');l=read('sixd_load_contract.json');d=read('mass_diagnosis.json');a=read('bound_B_resource_summary.json');before=json.loads((O/'before_resource_correction/g15_b_mass_contract.json').read_text());rs={r['id']:r for r in m['function_mass_rows']};bs={r['id']:r for r in before['function_mass_rows']};rejects=a['resource_rejectIDs'];removed_mass=np.zeros(3)
+ for n in rejects:
+  q=rs['g15_current_function:'+n];assert q['mass_range_kg']is None;assert q['prior_planning_mass_range_kg_NOT_adopted']==bs[q['id']]['mass_range_kg'];removed_mass+=q['prior_planning_mass_range_kg_NOT_adopted']
+ assert set(m['present_id_accounting_decisions'])=={p['name']for p in s['parts']};assert all(len(v)==1 for v in m['present_id_accounting_decisions'].values());assert not d['ghost_native_member_overlap_current'];assert l['mass_contract_sha256']==sha(O/'g15_b_mass_contract.json');assert len([r for r in m['function_mass_rows']if r.get('global_inventory_once')])==2
+ cells=[r for r in l['unresolved_mass_or_owner_terms']if r['id'].endswith('_m_cell_kg')];assert len(cells)==4;assert all(r['unit_single_cell_kg_wrench_at_waist'][2]==-9.81*120 for r in cells);assert not any(':complete_pack'in r['id']for r in l['unresolved_mass_or_owner_terms'])
+ maxres=max(float(np.max(np.abs(x['decomposition_transport_residual6'])))for x in l['macro1_source_neutral_gravity_known_subset']);assert maxres<1e-7
+ for x in l['macro1_source_neutral_gravity_known_subset']:assert np.allclose(np.array(x['upper_known_Fxyz_Mxyz_at_waist'])+np.array(x['waist_on_upper_balancing_reaction']),0,atol=1e-9)
+ # Extract actual native planar candidate interface patches, no mating assumption.
+ p=next(p for p in s['parts']if p['name']=='g15_chest_shoulder_waist_net_cage');v=np.asarray(p.get('vertices_world_m',p.get('vertices')));f=np.asarray([[q[0],q[k],q[k+1]]for q in p['faces']for k in range(1,len(q)-1)]);tri=v[f];c=tri.mean(1);areas=np.linalg.norm(np.cross(tri[:,1]-tri[:,0],tri[:,2]-tri[:,0]),axis=1)*.5;ports=[]
+ for name,side in [('left_shoulder',1),('right_shoulder',-1)]:
+  mask=np.all(np.abs(tri[:,:,0]-.115)<2e-8,axis=1)&(c[:,1]*side>=.24)&(c[:,1]*side<=.4)&(c[:,2]>=2.12)&(c[:,2]<=2.46);sel=areas[mask];pts=c[mask];ports.append({'id':name,'source_frame_id':p['name'],'native_triangle_indices':np.flatnonzero(mask).tolist(),'actual_planar_native_area_m2':float(sel.sum()),'geometric_patch_centroid_world_m':(np.sum(pts*sel[:,None],0)/sel.sum()).tolist()if len(sel)else None,'candidate_fixedface_plane_X_m':.115,'actual_mating_contact_area_and_bolt_distribution_unknown':True,'used_load_origin_scope':'historical retained anchor interface reference; remap tractions on these same-source triangles before FE'})
+ mask=np.all(np.abs(tri[:,:,0]-.2475)<2e-8,axis=1)&(np.hypot(c[:,1],c[:,2]-1.91)<=.081);sel=areas[mask];pts=c[mask];ports.append({'id':'waist','native_triangle_indices':np.flatnonzero(mask).tolist(),'actual_planar_native_area_m2':float(sel.sum()),'geometric_patch_centroid_world_m':(np.sum(pts*sel[:,None],0)/sel.sum()).tolist()if len(sel)else None,'actual_mating_contact_area_pressurecentre_unknown':True,'candidate_receiver_assembly_axis_world':[1,0,0]})
+ put('actual_native_interface_patches.json',{'source_sha256':m['source']['sha256'],'source_frame_id':p['name'],'source_frame_vertices_faces_hash':hashlib.sha256(json.dumps({'v':v.tolist(),'f':f.tolist()},separators=(',',':')).encode()).hexdigest(),'plane_query_tolerance_m':2e-8,'ports':ports,'not_a_mating_or_connection_pass':True})
+ receipt={'schema':'gorilla_g15_mass_load_handoff_verification','source_sha256':m['source']['sha256'],'ledger_sha256':sha(O/'g15_b_mass_contract.json'),'loads_sha256':sha(O/'sixd_load_contract.json'),'source_ID_coverage_once':True,'ghost_member_overlap_zero':True,'19_rejected_required_functions_mass_null':True,'removed_planning_mass_from_numeric_subset_kg':removed_mass.tolist(),'cells_coefficient_is120times_unit_cellmass':True,'whole_pack_unknown_term_not_double_added_to_aux_and_cells':True,'globalfluids_exactly2logicalrows_without_geometry_COM':True,'sixd_transport_max_residual_N_or_Nm':maxres,'force_moment_balance_checks':True,'finite_OEM_internal_inertia_not_invented':True,'whole_mass_COM_I_accepted':False,'physical_or_FE_accepted':False,'producer_sha256':sha(Path(__file__))};put('verification_receipt.json',receipt);print(json.dumps(receipt),flush=True)
+if __name__=='__main__':main()

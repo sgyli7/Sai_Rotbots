@@ -1,0 +1,132 @@
+"""Gorilla G finite native material contract prototype; no source repair.
+
+SI input, exact IDs, indexed triangle topology, signed closed boundaries,
+Mesh64 containment and source-specified tolerances. No fix_normals, split,
+compose, vertex merging or silent solid/void guessing. Diagnostic parity is
+explicit and never changes resource_contract_pass or original arrays.
+"""
+from dataclasses import dataclass,asdict
+from collections import Counter
+import hashlib,json
+import numpy as np
+import trimesh
+import manifold3d as mf
+
+@dataclass(frozen=True)
+class Tolerances:
+    min_boundary_volume_m3: float=1e-10
+    min_triangle_area_m2: float=1e-16
+    containment_abs_volume_m3: float=1e-12
+    containment_rel_volume: float=1e-8
+    containment_bbox_m: float=1e-9
+    minimum_parent_boundary_gap_m: float=1e-8
+    native_kernel_volume_difference_m3: float=1e-8
+
+    def __post_init__(self):
+        if not all(isinstance(x,(int,float)) and np.isfinite(x) and x>0 for x in asdict(self).values()):raise ValueError('All source tolerances must be finite positive SI values')
+        if not self.containment_rel_volume<1:raise ValueError('Containment relative tolerance must be below1')
+        if not self.containment_abs_volume_m3<self.min_boundary_volume_m3:raise ValueError('Containment absolute volume tolerance must be below effective boundary threshold')
+
+def geometry_hash(part):
+    return hashlib.sha256(json.dumps({k:part[k] for k in ('name','vertices_world_m','faces')},sort_keys=True,separators=(',',':')).encode()).hexdigest()
+
+def kernel(vertices,faces):
+    return mf.Manifold(mf.Mesh64(np.array(vertices,dtype=np.float64,order='C',copy=True),np.array(faces,dtype=np.uint64,order='C',copy=True)))
+
+def signed_volume(vertices,faces):
+    origin=np.mean(vertices,axis=0);v=vertices-origin;t=v[faces]
+    return float(np.einsum('ij,ij->i',t[:,0],np.cross(t[:,1],t[:,2])).sum()/6)
+
+def _positive_boundary(vertices,faces,volume):
+    # This is an analytical containment query; original signed faces remain unchanged.
+    return kernel(vertices,faces if volume>0 else faces[:,::-1])
+
+def _outside_gap(inner,outer,threshold):
+    box=np.array(outer.bounding_box());margin=max(.001,threshold*10)
+    size=box[3:]-box[:3]+2*margin;center=(box[3:]+box[:3])/2
+    outside=mf.Manifold.cube(size.tolist(),center=True).translate(center.tolist())-outer
+    return float(inner.min_gap(outside,threshold*2)),str(outside.status())
+
+def validate_part(part,tolerances=Tolerances(),require_single_material_component=False,diagnose_parity=False):
+    if not isinstance(part,dict):return {'id':None,'errors':[{'code':'part_must_be_object'}],'resource_contract_pass':False,'source_modified':False,'physical_accepted':False}
+    t=tolerances;r={'id':part.get('name'),'tolerances_si':asdict(t),'errors':[],'boundaries':[],'containment_queries':[],'resource_contract_pass':False,'source_modified':False,'physical_accepted':False,'full_material_geometry_acceptance':False}
+    def reject(code,**data):r['errors'].append({'code':code,**data})
+    if not isinstance(part.get('name'),str) or not part['name'].strip():
+        reject('missing_or_invalid_unique_id');return r
+    try:v=np.array(part['vertices_world_m'],dtype=np.float64);f=np.array(part['faces'])
+    except (KeyError,TypeError,ValueError) as e:reject('invalid_native_array_schema',reason=str(e));return r
+    if v.ndim!=2 or v.shape[1]!=3 or len(v)<4:reject('vertices_must_be_nonempty_n_by_3');return r
+    if f.ndim!=2 or f.shape[1]!=3 or len(f)<4 or f.dtype.kind not in 'iu':reject('native_indexed_triangles_required_no_implicit_polygon_triangulation');return r
+    f=f.astype(np.int64)
+    if not np.isfinite(v).all():reject('non_finite_coordinate');return r
+    if f.min()<0 or f.max()>=len(v):reject('face_index_out_of_range');return r
+    r['source_geometry_sha256']=geometry_hash(part);r['native_vertices']=len(v);r['native_triangles']=len(f)
+    tris=v[f];areas=np.linalg.norm(np.cross(tris[:,1]-tris[:,0],tris[:,2]-tris[:,0]),axis=1)/2
+    tiny=np.flatnonzero(areas<=t.min_triangle_area_m2)
+    if len(tiny):reject('degenerate_or_below_threshold_triangle',face_indices=tiny.tolist())
+    mesh=trimesh.Trimesh(v,f,process=False)
+    if not mesh.is_watertight:reject('native_index_edges_not_closed')
+    if not mesh.is_winding_consistent:reject('native_edge_winding_inconsistent')
+    fatal=[e for e in r['errors'] if e['code']!='degenerate_or_below_threshold_triangle']
+    if fatal or (r['errors'] and not diagnose_parity):return r
+    r['diagnostic_continued_after_invalid_small_triangles']=bool(r['errors'])
+    solid=kernel(v,f);r['kernel_status']=str(solid.status());r['native_signed_volume_m3']=signed_volume(v,f);r['kernel_signed_volume_m3']=float(solid.volume())
+    if solid.status()!=mf.Error.NoError:
+        reject('mesh64_kernel_rejected');return r
+    if abs(solid.volume()-r['native_signed_volume_m3'])>t.native_kernel_volume_difference_m3:reject('native_kernel_volume_disagreement')
+    # Explicit indexed-face adjacency partition: a boundary partition, not a material count.
+    labels=trimesh.graph.connected_component_labels(mesh.face_adjacency,node_count=len(f));queries={}
+    for i in range(int(labels.max())+1):
+        ff=f[labels==i];vol=signed_volume(v,ff);used=np.unique(ff);vv=v[used];remap=np.full(len(v),-1,dtype=np.int64);remap[used]=np.arange(len(used));local=remap[ff]
+        row={'boundary_index':i,'signed_volume_m3':vol,'native_faces':int(len(ff)),'source_sign':1 if vol>0 else -1 if vol<0 else 0,'parent':None,'depth':None,'bounds_world_m':[vv.min(axis=0).tolist(),vv.max(axis=0).tolist()]};r['boundaries'].append(row)
+        if abs(vol)<=t.min_boundary_volume_m3:reject('closed_boundary_volume_below_source_threshold',boundary=i,volume_m3=vol);continue
+        q=_positive_boundary(vv,local,vol)
+        if q.status()!=mf.Error.NoError:reject('boundary_query_kernel_rejected',boundary=i);continue
+        queries[i]=q
+    candidates={i:[] for i in queries}
+    for i in queries:
+        for j in queries:
+            if j<=i:continue
+            a=queries[i];b=queries[j];va=abs(r['boundaries'][i]['signed_volume_m3']);vb=abs(r['boundaries'][j]['signed_volume_m3']);aa=np.array(a.bounding_box());bb=np.array(b.bounding_box())
+            if not(np.all(aa[3:]>=bb[:3]-t.containment_bbox_m) and np.all(bb[3:]>=aa[:3]-t.containment_bbox_m)):continue
+            iv=float((a^b).volume());tol_a=max(t.containment_abs_volume_m3,t.containment_rel_volume*va);tol_b=max(t.containment_abs_volume_m3,t.containment_rel_volume*vb)
+            a_in_b=abs(iv-va)<=tol_a and va<vb-tol_b;b_in_a=abs(iv-vb)<=tol_b and vb<va-tol_a
+            query={'a':i,'b':j,'intersection_volume_m3':iv,'a_in_b':a_in_b,'b_in_a':b_in_a,'abs_tol_m3':t.containment_abs_volume_m3,'rel_tol':t.containment_rel_volume};r['containment_queries'].append(query)
+            if a_in_b:candidates[i].append(j)
+            if b_in_a:candidates[j].append(i)
+            if iv>min(tol_a,tol_b) and not(a_in_b or b_in_a):reject('crossing_or_equal_closed_boundaries',a=i,b=j,intersection_volume_m3=iv)
+            elif iv<=min(tol_a,tol_b) and not(a_in_b or b_in_a):
+                gap=float(a.min_gap(b,t.minimum_parent_boundary_gap_m*2));query['disjoint_boundary_gap_m']=gap
+                if gap<=t.minimum_parent_boundary_gap_m:reject('touching_or_unresolved_disjoint_boundary_gap',a=i,b=j,gap_m=gap)
+    for i,q in queries.items():
+        row=r['boundaries'][i]
+        if candidates[i]:
+            parent=min(candidates[i],key=lambda j:abs(r['boundaries'][j]['signed_volume_m3']));row['parent']=parent
+            gap,status=_outside_gap(q,queries[parent],t.minimum_parent_boundary_gap_m);row['minimum_parent_boundary_gap_query_m']=gap;row['parent_gap_query_cap_m']=2*t.minimum_parent_boundary_gap_m;row['outside_kernel_status']=status
+            if status!='Error.NoError':reject('outside_parent_query_failed',boundary=i,parent=parent,status=status)
+            if gap<=t.minimum_parent_boundary_gap_m:reject('parent_boundary_tolerance_unresolved',boundary=i,parent=parent,gap_m=gap)
+    for i,row in enumerate(r['boundaries']):
+        if i not in queries:continue
+        depth=0;j=row['parent'];seen={i}
+        while j is not None:
+            if j in seen:reject('containment_cycle',boundary=i);break
+            seen.add(j);depth+=1;j=r['boundaries'][j]['parent']
+        row['depth']=depth;row['expected_source_sign']=1 if depth%2==0 else -1
+        row['classification']='outer_material_boundary' if depth==0 else 'closed_void_boundary' if depth%2 else 'material_island_inside_closed_void'
+        if row['source_sign']!=row['expected_source_sign']:reject('same_sign_nested_or_orphan_negative_boundary',boundary=i,parent=row['parent'],depth=depth,actual_sign=row['source_sign'],required_sign=row['expected_source_sign'])
+    r['geometric_root_boundary_indices']=[x['boundary_index'] for x in r['boundaries'] if x['depth']==0]
+    r['material_component_count_from_nesting']=sum(x['depth'] is not None and x['depth']%2==0 for x in r['boundaries'])
+    r['closed_void_count']=sum(x['depth'] is not None and x['depth']%2==1 for x in r['boundaries'])
+    if r['native_signed_volume_m3']<=t.min_boundary_volume_m3:reject('non_positive_or_below_threshold_net_material_volume')
+    if require_single_material_component and r['material_component_count_from_nesting']!=1:reject('source_requires_one_material_component',found=r['material_component_count_from_nesting'])
+    r['resource_contract_pass']=not r['errors'];r['require_single_material_component']=require_single_material_component
+    if diagnose_parity:
+        result=mf.Manifold()
+        for i in sorted(queries,key=lambda i:r['boundaries'][i]['depth']):result=(result+queries[i]) if r['boundaries'][i]['depth']%2==0 else (result-queries[i])
+        r['parity_diagnostic']={'scope':'DIAGNOSTIC_ONLY_UNACCEPTED; assumes nesting parity solely to show possible semantic correction, never changes input or verdict','volume_m3':float(result.volume()),'source_volume_delta_m3':float(result.volume()-r['native_signed_volume_m3']),'method':'Boolean positive root minus positive odd-depth void plus positive even-depth island; no compose'}
+    return r
+
+def validate_scene(scene,tolerances=Tolerances(),require_single_material_component=False,diagnose_parity=False):
+    if not isinstance(scene,dict) or not isinstance(scene.get('parts'),list):return {'resource_contract_pass':False,'errors':[{'code':'scene_parts_list_required'}],'source_modified':False,'physical_accepted':False}
+    parts=scene['parts'];ids=[p.get('name') for p in parts if isinstance(p,dict) and isinstance(p.get('name'),str)];duplicates=[{'id':name,'count':n} for name,n in Counter(ids).items() if n>1];rows=[validate_part(p,tolerances,require_single_material_component,diagnose_parity) for p in parts]
+    return {'schema':'gorilla_native_signed_material_contract_prototype_v1','robot_id':scene.get('robot_id','gorilla_v0_1'),'declared_units':'metres; vertices_world_m','duplicate_ids':duplicates,'parts':rows,'resource_contract_pass':not duplicates and bool(rows) and all(r['resource_contract_pass'] for r in rows),'source_modified':False,'physical_accepted':False,'limits':['Contract proves only listed finite/topology/nested-boundary predicates under source tolerances.','Within-one-connected-boundary self-intersections are not comprehensively tested; Mesh64 NoError alone cannot certify embedding.','Touching or tolerance-ambiguous boundaries reject rather than guess.','Materials connected topologically are not a bearing/joint/assembly/strength/contact qualification.','No parent-body rigid-connection inference, no automatic normal or winding repair.']}

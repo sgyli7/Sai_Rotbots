@@ -1,0 +1,53 @@
+from pathlib import Path
+import json,math,itertools,hashlib,numpy as np
+O=Path(__file__).resolve().parent
+j=json.load(open(O/'operating_domain.json'))
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+cp=4180.;rhoAir=1.2;cpAir=1005.;H=166.;flow=15.1;Cdot=flow/60*cp
+domains=[];trans=[];checks=[]
+for choice in j['two_physical_budget_domains']:
+ a=choice['explicit_nonduplicated_aux_replacements'][1];rr=a['phases'];fanpercore=a['auxiliary_case']['fan_air_kW']/2
+ preheat=fanpercore*1000/(16/60*rhoAir*cpAir)
+ avgLo=[sum(r['duty']*r['lowT_kW_at288_200V'][k] for r in rr) for k in range(2)];peakLo=[max(r['lowT_kW_at288_200V'][k] for r in rr) for k in range(2)];hotavg=sum(r['duty']*r['hot_kW'] for r in rr);hotpeak=max(r['hot_kW'] for r in rr)
+ for ambient in [25.,35.]:
+  for kind,lo,hot in [('average',avgLo,hotavg),('continuous_motion_peak',peakLo,hotpeak)]:
+   air=ambient+preheat;domains.append({'choice':choice['id'],'load':kind,'ambient_C':ambient,'air_entering_each_core_C_if_all_fan_heat_upstream':air,'lowT_kW_at288_200V':lo,'hot_kW':hot,'lowT_cold_supply_C_at288_200V':[air+x*1000/H-x*1000/Cdot for x in lo],'hot_water_radiator_in_C':air+hot*1000/H,'hot_water_radiator_out_C':air+hot*1000/H-hot*1000/Cdot,'whole_core_airflow_m3_min_each':16,'two_fans_each_share_whole_airflow_m3_min':8,'waterflow_each_L_min':flow,'H_W_K_each':H,'same_purewater_reference_not_glycol':True,'operating_point_qualified':False})
+  for k,V in enumerate([288,200]):
+   for loop,Cspan in [('lowT',[15000,45000,90000]),('hot',[15000,45000,90000])]:
+    for C in Cspan:
+     candidates=[]
+     for order in itertools.permutations(range(3)):
+      T=ambient;peakSupply=ambient;peakTin=ambient
+      for idx in order:
+       r=rr[idx];q=(r['lowT_kW_at288_200V'][k] if loop=='lowT' else r['hot_kW'])*1000;Tair=ambient+preheat
+       Teq=Tair+q/H;t=choice['duration_h']*3600*r['duty'];Tend=Teq+(T-Teq)*math.exp(-H*t/C)
+       for Tin in [T,Tend]:
+        qr=H*(Tin-Tair);supply=Tin-qr/Cdot;peakSupply=max(peakSupply,supply);peakTin=max(peakTin,Tin)
+       T=Tend
+      candidates.append({'order':list(order),'peak_supply_C':peakSupply,'peak_radiator_in_C':peakTin,'final_in_C':T})
+     trans.append({'choice':choice['id'],'loop':loop,'ambient_C':ambient,'pack_voltage_V':V,'effective_loop_thermal_capacitance_J_K_own':C,'initial_uniform_temperature_C':ambient,'six_phase_permutations_peak_supply_C_minmax':[min(c['peak_supply_C'] for c in candidates),max(c['peak_supply_C'] for c in candidates)],'six_phase_permutations_peak_rad_in_C_minmax':[min(c['peak_radiator_in_C'] for c in candidates),max(c['peak_radiator_in_C'] for c in candidates)],'results':candidates,'not_rating_or_warmstart_or_control_or_real_branch_solution':True})
+# Pressure examples use actual new G13 shoulder4mm ports, conditional custom3.3L/min, not an OEM minimum.
+pressure=[]
+for ID in [.004,.009,.0113,.014,.018]:
+ for Q in ([1.5,3.3] if ID==.004 else [15.1,48]):
+  v=(Q/60000)/(math.pi*ID**2/4);dyn=1000*v*v/2;L=.81 if ID==.009 else 4.;f=.025;K=4.;dp=(f*L/ID+K)*dyn
+  pressure.append({'ID_m':ID,'Q_L_min':Q,'v_m_s':v,'length_m_own_sensitivity_not_source_port_length':L,'Darcyf_own':f,'sumK_own':K,'dp_Pa':dp,'not_installed_pressure_solution':True})
+# Independent aggregate checks on source-derived arrays and thermal accounting.
+for c in j['two_physical_budget_domains']:
+ checks.append({'check':c['id']+'_duty','pass':abs(sum(r['duty'] for r in c['phases'])-1)<1e-12})
+ for r in c['phases']:
+  checks.append({'check':c['id']+'_'+r['phase']+'_oil_energy','pass':abs(r['oil_total_kW']-(r['hydraulic_pump_mech_loss_hot_kW']+r['throttle_line_hot_kW']))<1e-12})
+ for a in c['explicit_nonduplicated_aux_replacements']:
+  aa=a['auxiliary_case'];checks.append({'check':c['id']+'_'+aa['id']+'_aux_allocation','pass':abs(aa['total_bus_auxiliary_kW']-aa['fan_air_kW']-aa['liquid_lowT_aux_kW']-aa['liquid_hot_aux_kW'])<1e-12})
+  for r in a['phases']:
+   for k,V in enumerate([288.,200.]):
+    cell=(r['bus_kW']*1000/.98/V)**2*.2/1000;checks.append({'check':c['id']+r['phase']+aa['id']+str(V)+'_cell','pass':abs(cell-r['cell_R_kW_at288_200V'][k])<1e-12})
+for f in j['three_inventory_candidates']:
+ w=f['water'];o=f['oil'];checks.extend([{'check':f['id']+'_water_nonzero_unknown','pass':abs(sum(w['unknown_allowance_breakdown_L'].values())-w['unknown_EMRAX_pump_filter_valve_seal_bores_L_allowance'])<1e-10},{'check':f['id']+'_oil_nonzero_unknown','pass':abs(sum(o['unknown_allowance_breakdown_L'].values())-o['unknown_pump_valves_hold_filter_headers_accumulator_L_allowance'])<1e-10},{'check':f['id']+'_global_stock_not_tank','pass':w['global_cold_stock_L']>w['reservoir_cold_working_fill_L'] and o['global_cold_stock_L']>o['tank_cold_working_fill_L']}])
+limits=[{'hardware':'QTL210','published_rating_condition':'mount20C/winding100C for Tc65Nm','inlet_max_C':None,'ordinary_radiator_ambient25_35_can_establish_mount20C':False,'required_condition':'active refrigeration or independently quantified thermal torque derating; no inherited Tr/Tc qualification'}, {'hardware':'QTR160','published_rating_condition':'mount20C/winding100C Tc15.3Nm','inlet_max_C':None,'ordinary_radiator_ambient25_35_can_establish_mount20C':False,'required_condition':'explicit lower torque domain with resistance/temperature data or active refrigeration'}, {'hardware':'two_EMRAX188LC','inlet_max_C':50,'min_waterflow_L_min_each':6,'source_minimum_not_custom_hypothesis':True,'air_circulation_still_required':True}, {'hardware':'480P45B_cells','inlet_max_C':None,'cell_coolant_contact_R_and_gradient_unknown':True,'required_condition':'cell temperature vs discharge and coldplate R/pump/flow; cell source thermal limit is not water inlet limit'}, {'hardware':'compute_power_boards','inlet_max_C':None,'junction_to_water_R_unknown':True}, {'hardware':'oil_hydraulic_system','max_oil_in_C':None,'hot_water70C_used_only_as_design_screen_not_oil_OEMlimit':True}]
+routes={'lowT':'reservoir/degas→pump→parallel all motor/pack/compute branches→return header→4320→reservoir (actual plumbing not yet proven)','hot':'oil tank→hydraulic pumps→valves/cylinders→oil-waterHX→tank; independent water reservoir/degas→water pump→HX→second4320→reservoir','parallel_equations':['ΣQbranch=Qpump; each Δpbranch common between headers, including balancing valve','Treturn=Σ(Qbranch*Tbranch_return)/ΣQbranch for same fluid','Tbranch_out=Tin+qbranch/(rho*cp*Qbranch)','pumpΔp(Qtotal)=trunkΔp+max(branchΔp)+coreΔp+filter/regulatorΔp','If core bypass, Tmix=(Qcore*Tcoreout+Qbypass*Tbypass)/Qtotal and heat transfer uses Qcore—not Qtotal thermal graph'],'series_equations':['ΔTsum=Σq/(rho*cp*Q)','Δpsum=Σ(dp chambers, pipes, fittings); pump sameQ curve at simultaneousΔp','Oil-waterHX q=UA*F*LMTD with both actual fluid endpoints; H4320 is not UA','NPSHa=(Psurface−Pvap)/(rho*g)+suctionheight−suctionloss>NPSHr+margin; both pump suction heads separately'], 'protection_missing':['actual pressure relief cap/setpoint vs test pressure','freeze/boil/glycol compatibility and unified fluid','flow sensors/no-flow derate and blocked radiator stop','two circuits degas/air separators and vacuum-fill/purge points','regenerative energy sink/limit distinct from heat rejection','oil contamination/isolation HX leak handling']}
+out={'stage':'G15','inputs':{'operating_domain.json':sha(O/'operating_domain.json')},'producer_sha256':sha(__file__),'temperature_domains':domains,'lumped_transient_sensitivity':trans,'thermal_capacity_is_own_parameter_not_whole_robot_mass':True,'separate_device_temperature_gates':limits,'routes_and_equations':routes,'pressure_examples':pressure,'legacy_target59_L_min_not_OEMrequirement':True,'lowT_legacy_targets_after_separate_hotHX':{'EMRAX_source_minimum':12,'18rotary_custom':36,'compute_power_custom':3,'four_pack_oldcustom':2,'sum_custom_plus_OEM':53,'not_all_targets_have_actual_new_flow_allocation':True},'same_two_EWP80_cannot_assume_three_independent_flowloops':True,'fullflow53_through4320_outside_published_water15p1thermal_and11p36pressure':True,'fan_notes':{'four_total_two_each_core':True,'mid_fourfan215W_each_point':{'variant':'24V 6314/2TDH4P VWEG','table_Q_m3_h_each':[622,760],'table_Pa_each':[475,350],'power_W_each':215},'high_fourfan249W_each_point':{'variant':'48V 6318/2TDH4P','table_Q_m3_h_each':663,'table_Pa':535,'power_W_each':249},'low_fourfan400Wtotal_is_only_selfallowance_not_source_point':True,'thermal16_m3_min_eachcore_gives480_m3_h_eachfan_outside_power_table_points':True,'upstream_fan_air_temperature_sensitivity_not_added_to_waterheat_again':True,'fan_variant_or_dc_converter_compatibility_not_selected':True},'formula_checks':{'checks':checks,'failed':sum(not c['pass'] for c in checks)},'admission':{'continuous_thermal':False,'installed_flow_pressure':False,'NPSH':False,'rotating_inertia_interface':False,'whole_Gorilla':False}}
+(O/'route_analysis.json').write_text(json.dumps(out,indent=2)+'\n');print('source',sha(O/'route_analysis.json'),'checks',len(checks),'failed',out['formula_checks']['failed'])
+for c in j['two_physical_budget_domains']:
+ a=c['explicit_nonduplicated_aux_replacements'][1];print(c['id'],'newmidaux',a['auxiliary_case']['total_bus_auxiliary_kW'],'avglo',[sum(r['duty']*r['lowT_kW_at288_200V'][k] for r in a['phases']) for k in range(2)],'hotavg',sum(r['duty']*r['hot_kW'] for r in a['phases']),'E',a['required_nameplate_kWh_at_SOC75_288_200V'])
+for x in domains:print(x['choice'],x['load'],x['ambient_C'],'lowCold',x['lowT_cold_supply_C_at288_200V'],'hotTin',x['hot_water_radiator_in_C'])

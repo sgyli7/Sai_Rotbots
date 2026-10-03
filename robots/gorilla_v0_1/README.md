@@ -1,11 +1,12 @@
 # Gorilla V0.1
 
-当前工作：**G14完整热部件主躯候选、肩初装失败与三维拓扑输入已封存；G15继续完整功能与宽厚承力域共同布局。** 壮硕体积用于三维承力与系统设计，尚未装配或物理放行。用户指定「Gorilla 设计」重画腿脚，完成后通知；这里继续内部工程。C15已合主干，AA3为审美权威。稳定SI、双足双手与自主复杂Bevy持续推进。
+当前工作：**G15完整功能两套布局、同版质量/六维接口与热/液体范围已封存；G16推进宽厚设计域与完整系统分区。** 壮硕体积用于三维承力与系统设计，尚未装配或物理放行。用户指定「Gorilla 设计」重画腿脚，完成后通知；这里继续内部工程。C15已合主干，AA3为审美权威。稳定SI、双足双手与自主复杂Bevy持续推进。
 
 唯一当前状态入口：[当前决定与门禁](design/current_decisions.md)。
 
 | 资料 | 入口 |
 |---|---|
+| G15完整功能与物理设计输入 | [同版实际布局、质量/载荷、热/库存与独立复核](../../experiments/gorilla_v0_1/internal_structure_g15_function_mass_and_domain/README.md)；两候选仍拒绝 |
 | G14完整系统与拓扑入口 | [冻结候选、实际图、边界与复核](../../experiments/gorilla_v0_1/internal_structure_g14_complete_thermal_and_assembly/README.md)；尚未装配/物理放行 |
 | 唯一外观基准 | [用户再次确认的四视图](design/concepts/aa3/user_confirmed_four_view.jpg)；其他图片与粗模仅为历史资料 |
 | 来源身份 | [唯一外观权威记录](source/appearance_authority.json)；[原包导入与哈希](source/appearance_import.json) |
@@ -72,3 +73,5 @@ C15 将前掌、足弓与后跟分开，取消跨段连续底板；卸载端姿�
 当前内部检查点：[G12完整系统共同布局与热路筛查](../../experiments/gorilla_v0_1/internal_structure_g12_complete_system_colayout/README.md)已保存；安装和物理仍拒绝。G13改为宽截面承力笼架与完整系统分区，唯一当前状态见[current_decisions](design/current_decisions.md)。
 
 [G13宽截面笼架与肩干湿分区](../../experiments/gorilla_v0_1/internal_structure_g13_load_cage_and_cooling/README.md)：实际CAD/native、载荷和测量范围纠正已保存；三分支未整合或放行。当前排期只读唯一决定索引。
+
+[G15完整功能布局、同版质量与物理设计输入](../../experiments/gorilla_v0_1/internal_structure_g15_function_mass_and_domain/README.md)：两实际宏观方案拒绝、库存与载荷范围纠正及独立复核已保存；G16先解决宽厚身体域与完整功能分区，真实拓扑优化和复杂Bevy目标继续。

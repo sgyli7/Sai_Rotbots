@@ -1,0 +1,87 @@
+{
+  "source_hashes": {
+    ".scratch/gorilla_internal_g14_complete_thermal_colayout/b/scene.json.gz": "a6a457964e87094401d2bba69825435697d3d44ec888eef7d3386408b6580849",
+    ".scratch/gorilla_internal_g14_complete_thermal_colayout/b/finite_overlap_rows.json": "bd1443c4753c7bfb77d451e1d96394ca25f92cf3f1233d350b6156dad09f578f",
+    ".scratch/gorilla_internal_g14_complete_thermal_colayout/b/complete_present_inventory.json": "1fe1002c2b9a20019635f2c5ed5e7aa4764bed41149e29ab55389ded8bffd1a4",
+    ".scratch/gorilla_internal_g14_complete_thermal_colayout/b/final_report.json": "e3fdf88f22769a6d12c6a1d7f5db5e8855f76a2243bc1a4cc2246808a88b8e1b"
+  },
+  "source_inventory_class_predicate_count": 309,
+  "finite_role_OR_flag_OR_density_predicate_count": 311,
+  "finite_material_bool_AND_bool_only_count": 46,
+  "difference_exact2": [
+    {
+      "a": "g14_cage_anchor_output_adapter_net_material",
+      "b": "g13_left_bounded_water_region",
+      "positive_intersection_m3": 1.4047247641620049e-08,
+      "scope": "native fan/kernel overlap diagnostic; original OEM/armor strict source admission not implied",
+      "class_a": "finite_new_material",
+      "class_b": "bounded_water_lumen_source",
+      "source_part_metadata": [
+        {
+          "name": "g14_cage_anchor_output_adapter_net_material",
+          "role": "finite_new_material",
+          "finite_material": true,
+          "density_kg_m3": 7850,
+          "not_robot_rigid_solid": null,
+          "water_region": null,
+          "external_open_port_caps_are_control_surfaces": null
+        },
+        {
+          "name": "g13_left_bounded_water_region",
+          "role": "bounded_water_lumen_source",
+          "finite_material": false,
+          "density_kg_m3": 1050,
+          "not_robot_rigid_solid": true,
+          "water_region": true,
+          "external_open_port_caps_are_control_surfaces": true
+        }
+      ],
+      "inventory_class": {
+        "g14_cage_anchor_output_adapter_net_material": "finite_native_material_unqualified_installation",
+        "g13_left_bounded_water_region": "historical_samefunction_or_globalfluid_alias_not_extra_inventory"
+      },
+      "geometry_overlap_still_obstacle": true,
+      "density_does_not_make_water_rigid_material": true,
+      "global_mass_alias_not_geometry_waiver": true
+    },
+    {
+      "a": "g14_cage_anchor_output_adapter_net_material",
+      "b": "g13_right_bounded_water_region",
+      "positive_intersection_m3": 1.4047247641620029e-08,
+      "scope": "native fan/kernel overlap diagnostic; original OEM/armor strict source admission not implied",
+      "class_a": "finite_new_material",
+      "class_b": "bounded_water_lumen_source",
+      "source_part_metadata": [
+        {
+          "name": "g14_cage_anchor_output_adapter_net_material",
+          "role": "finite_new_material",
+          "finite_material": true,
+          "density_kg_m3": 7850,
+          "not_robot_rigid_solid": null,
+          "water_region": null,
+          "external_open_port_caps_are_control_surfaces": null
+        },
+        {
+          "name": "g13_right_bounded_water_region",
+          "role": "bounded_water_lumen_source",
+          "finite_material": false,
+          "density_kg_m3": 1050,
+          "not_robot_rigid_solid": true,
+          "water_region": true,
+          "external_open_port_caps_are_control_surfaces": true
+        }
+      ],
+      "inventory_class": {
+        "g14_cage_anchor_output_adapter_net_material": "finite_native_material_unqualified_installation",
+        "g13_right_bounded_water_region": "historical_samefunction_or_globalfluid_alias_not_extra_inventory"
+      },
+      "geometry_overlap_still_obstacle": true,
+      "density_does_not_make_water_rigid_material": true,
+      "global_mass_alias_not_geometry_waiver": true
+    }
+  ],
+  "why": "Two bounded water lumen aliases have rho1050 but finite_material=false and not_robot_rigid_solid=true. OR-density predicate counts them as finite; final inventory classifier aliases them to stock. Both are actual water-region x frame exclusions, not extra rigid material and not exempt from containment.",
+  "old_frozen_root_review_total3070_unchanged": true,
+  "old_review_three_categories_scope": "geometry roles include E hose/HX finite approximations and appearance material as geometric exclusions; not strict finite inventory class or strength eligibility",
+  "installation_or_thermal_accepted": false
+}
