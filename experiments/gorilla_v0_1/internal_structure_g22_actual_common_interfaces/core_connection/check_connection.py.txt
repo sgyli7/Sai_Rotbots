@@ -1,0 +1,33 @@
+"""G22 sourcebound native/material/mate/6D screening, no source repair."""
+from pathlib import Path
+import json,gzip,hashlib,importlib.util,sys,math
+import numpy as np,manifold3d as mf
+O=Path(__file__).resolve().parent;R=Path.cwd();S=O/'module_scene.json.gz';sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();put=lambda n,x:(O/n).write_text(json.dumps(x,indent=2,allow_nan=False)+'\n');s=json.loads(gzip.decompress(S.read_bytes()));ps={p['name']:p for p in s['parts']};new=set(s['new_member_ids']);vp=R/'.scratch/gorilla_internal_g_material_contract/native_signed_material.py';sp=importlib.util.spec_from_file_location('g22val',vp);val=importlib.util.module_from_spec(sp);sys.modules[sp.name]=val;sp.loader.exec_module(val);gates=[val.validate_part(ps[n],require_single_material_component=True)for n in sorted(new)];put('native_material_gate.json',{'source_sha256':sha(S),'validator_sha256':sha(vp),'parts':gates,'rejected_count':sum(not x['resource_contract_pass']for x in gates),'no_source_repair':True,'physical_accepted':False})
+ms={n:mf.Manifold(mf.Mesh64(np.array(p['vertices_world_m'],float),np.array(p['faces'],np.uint64)))for n,p in ps.items()};pairs=[]
+for i,a in enumerate(ms):
+ for b in list(ms)[i+1:]:
+  if a not in new and b not in new:continue
+  aa=np.array(ms[a].bounding_box());bb=np.array(ms[b].bounding_box())
+  if not(np.all(aa[3:]>bb[:3])and np.all(bb[3:]>aa[:3])):continue
+  v=float((ms[a]^ms[b]).volume())
+  if v>1e-10:pairs.append({'a':a,'b':b,'volume_m3':v,'volume_cm3':v*1e6,'new_new':a in new and b in new,'finite_flags':[ps[a].get('finite_material',False),ps[b].get('finite_material',False)],'owner':[ps[a]['body'],ps[b]['body']],'same_owner_not_exempt':True,'query_class':'finite_material_challenge'if ps[a].get('finite_material')and ps[b].get('finite_material')else'protected_reference_or_unqualified_context_challenge'})
+pairs.sort(key=lambda q:q['volume_m3'],reverse=True);put('positive_intersections.json',{'source_sha256':sha(S),'threshold_m3':1e-10,'pairs':pairs,'new_new_count':sum(q['new_new']for q in pairs),'finite_flag_count':sum(all(q['finite_flags'])for q in pairs),'note':'Only pairs touching new scope; all retained actual hardware stays. Flags are not material-resource qualification. No same-owner exemption.','physical_accepted':False})
+Q=np.array([[0.,1,0],[0,0,1],[1,0,0]]);T=np.column_stack([Q,[0.,0,0]]);frame=ms['g22_common_core_load_cage_net'];mates=[]
+for n,x in [('g22_left_derived_fixed_pitch_receiver',.115),('g22_right_derived_fixed_pitch_receiver',.115),('g22_conditional_waist_rotating_output_mate',.228)]:
+ a=ms[n].transform(T).slice(x-1e-7);b=frame.transform(T).slice(x+1e-7);common=a^b;mates.append({'part':n,'plane_X_m':x,'side_sample_offset_m':1e-7,'own_side_area_m2':a.area(),'frame_side_area_m2':b.area(),'common_material_contact_projected_area_m2':common.area(),'positive_bulk_overlap_m3':float((ms[n]^frame).volume()),'common_YZ_polygons_m':[np.array(q).tolist()for q in common.to_polygons()],'is_actual_existing_output':not n.endswith('rotating_output_mate'),'preload_and_contact_pressure_unknown':True})
+put('mate_geometry_receipt.json',{'source_sha256':sha(S),'mates':mates,'real_two_sided_material_queries':True,'abstract_contract_plane_not_used_as_material':True,'installation_accepted':False})
+# Literal native Z/X section polygons, not a sketched or AABB section.
+sections=[]
+for axis,x in [('Z',2.15),('X',.120),('X',.127),('Z',2.31),('X',.238)]:
+ q=frame if axis=='Z'else frame.transform(T);cs=q.slice(x);sections.append({'axis':axis,'value_m':x,'area_m2':cs.area(),'polygons_m':[np.array(v).tolist()for v in cs.to_polygons()],'coordinates':'XY world'if axis=='Z'else'YZ world'})
+put('literal_sections.json',{'source_sha256':sha(S),'sections':sections})
+# Force distribution at bolt groups is conditional elastic bolt-group algebra, not contact or FE.
+h=json.loads((O/'interfaces.json').read_text())['holes'];groups={}
+for side in ['left','right','waist']:
+ hh=[q for q in h if q['id'].startswith(side+'_')];yz=np.array([q['center_yz_m']for q in hh]);cyz=yz.mean(0);r=yz-cyz;Iyy=float(np.sum(r[:,0]**2));Izz=float(np.sum(r[:,1]**2));J=float(np.sum(r*r));groups[side]={'holes':len(hh),'centroid_YZ_m':cyz.tolist(),'sum_y2_m2':Iyy,'sum_z2_m2':Izz,'sum_r2_m2':J,'normal_force_per_bolt_formula':'Fx/n + My*r_z/sum(r_z^2) - Mz*r_y/sum(r_y^2)','shear_per_bolt_formula':'[Fy,Fz]/n + Mx*[-r_z,r_y]/sum(r^2)','linear_equal_stiffness_and_no_prying_assumption':True,'no_bolt_grade/preload_friction_rating':True,'rows':[]}
+ # 3t fixture load independent of robot hands/gait. Global waist resultant and a shoulder illustrative scale remain separate.
+ w=np.array([0.,0.,-29430.,-2943.,9711.9,0.])if side=='waist'else np.array([0.,0.,-5000.,0.,1000.,500.])
+ for gamma in [1.,1.5]:
+  fx,fy,fz,mx,my,mz=w*gamma;normal=fx/len(r)+my*r[:,1]/Izz-mz*r[:,0]/Iyy;shear=np.column_stack([np.full(len(r),fy/len(r))-mx*r[:,1]/J,np.full(len(r),fz/len(r))+mx*r[:,0]/J]);groups[side]['rows'].append({'factor':gamma,'conditional_wrench_at_group_N_Nm':(w*gamma).tolist(),'normal_N':normal.tolist(),'shear_YZ_N':shear.tolist(),'maximum_abs_normal_N':float(np.abs(normal).max()),'max_shear_N':float(np.linalg.norm(shear,axis=1).max()),'not_current_real_shoulder_load_or_whole_robot_rating':True})
+put('sixd_node_screen.json',{'source_sha256':sha(S),'groups':groups,'unknown':['actual gravity and inertial group loads','bolt pretension/grade/threads','contact/prying and local plate bending','waist output upstream mechanical path','fatigue/manufacturing residual and stiffness','new bridge/header materials and wet routing']})
+print(json.dumps({'source':sha(S),'new_material_reject':sum(not x['resource_contract_pass']for x in gates),'positive_pairs':len(pairs),'new_new':sum(q['new_new']for q in pairs),'max':pairs[:5],'mates':[{k:v for k,v in q.items()if k!='common_YZ_polygons_m'}for q in mates]},indent=2),flush=True)

@@ -1,0 +1,67 @@
+#!/usr/bin/env python3
+"""Readonly G22 world placement and foreign-function native query; no geometry adoption."""
+import pathlib,json,gzip,hashlib,importlib.util,sys,itertools,collections,time,argparse
+import numpy as np,manifold3d as mf
+from importlib.machinery import SourceFileLoader
+R=pathlib.Path('/home/ethan/Projects/Sai_Rotbots');D=pathlib.Path(__file__).resolve().parent
+P=R/'.scratch/gorilla_internal_g22_typed_routes/scene.json.gz';B=R/'.scratch/gorilla_internal_g21_whole_body_space_allocation/b/scene.json.gz';MAT=R/'experiments/gorilla_v0_1/internal_structure_g_studies/material_contract/native_signed_material.py.txt'
+sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+def read(p):return json.load(gzip.open(p,'rt')) if str(p).endswith('.gz') else json.loads(p.read_text())
+def write(n,o):(D/n).write_text(json.dumps(o,indent=2,allow_nan=False)+'\n')
+loader=SourceFileLoader('g22_install_signed',str(MAT));spec=importlib.util.spec_from_loader('g22_install_signed',loader);mat=importlib.util.module_from_spec(spec);sys.modules['g22_install_signed']=mat;loader.exec_module(mat)
+parser=argparse.ArgumentParser();parser.add_argument('--root',type=pathlib.Path);parser.add_argument('--expected-sha');args=parser.parse_args()
+p=read(P);base=read(B);M=np.array(p['pack0_local_to_world_R']);C=np.array(p['pack0_worldcenter_m']);assert np.allclose(M,[[0,-1,0],[1,0,0],[0,0,1]]) and np.allclose(C,[.30,0,2.145])
+route=[q for q in p['parts'] if q['typed_category']!='source_analysis_bored_barrier'];barriers=[q for q in p['parts'] if q['typed_category']=='source_analysis_bored_barrier'];own_ids=set(base['complete_energy_slots'][0]['members']);own_ids.update(q['source_ID'] for q in barriers)
+cache={};bounds={};rebind=[]
+for q in route:
+ v=np.array(q['vertices_world_m']);local=(v-C)@M;roundtrip=local@M.T+C;assert np.max(np.abs(roundtrip-v))<1e-12
+ cache[q['name']]=mf.Manifold(mf.Mesh64(roundtrip,np.array(q['faces'],np.uint64)));bounds[q['name']]=np.array([roundtrip.min(0),roundtrip.max(0)]);rebind.append({'id':q['name'],'original_world_bounds_m':[v.min(0).tolist(),v.max(0).tolist()],'actual_rebound_world_bounds_m':bounds[q['name']].tolist(),'max_world_roundtrip_delta_m':float(np.max(np.abs(roundtrip-v))),'native_and_mass_unchanged':True})
+write('placement_and_scope.json',{'prototype_sha256':sha(P),'G21_bodyB_sha256':sha(B),'source_already_world_SI_not_double_transformed':True,'C_m':C.tolist(),'proper_R':M.tolist(),'parts':rebind,'route_count':len(route),'analysis_barrier_count':len(barriers),'original_own_pack_members_excluded_from_foreign_scope':sorted(own_ids),'full_other16nets_not_deleted':True,'prototype_mass_unchanged_not_added_wholepack':True})
+print('EVENT G22 prepared',len(route),'routeparts actualworldbbox',np.array([np.min([b[0] for b in bounds.values()],axis=0),np.max([b[1] for b in bounds.values()],axis=0)]).tolist(),flush=True)
+if not args.root:sys.exit(0)
+rootpath=args.root.resolve();source_sha=sha(rootpath);assert source_sha==args.expected_sha,(source_sha,args.expected_sha);source=read(rootpath)
+# Strict precedence: explicit fluid/false finite beats rho; role of finite installation material counts real geometry.
+def classification(q):
+ role=q.get('role','');cat=q.get('category','');rho=q.get('density_kg_m3');flag=q.get('finite_material')
+ if any(k in role for k in ['lumen','fluid_region','working_fluid','bounded_water']) or q.get('mass_counted_elsewhere') and any(k in cat for k in ['water','oil','fluid']):return 'fluid_exclusion','explicit fluid/lumen; density cannot make solid'
+ if 'service' in role or 'holding_mount_window'==role:return 'service_or_dynamic_reserved','own reserved space, not hardware material'
+ if flag is True or role.startswith('finite_') or role.startswith('E2_finite_') or role=='E_thermal_routing_candidate' and flag is not False and (rho or q.get('primitive_material_volume_m3') and q.get('mass_range_kg')):return 'finite_material','explicit finite flag or finite role (includes installation material)'
+ if role in ['armor_cover','armor_surface','visible_mechanism','control_display_glass','control_display_ui','contact_surface_candidate']:return 'source_visible_geometry','source visible/skin/contact geometry, physical material status separate'
+ if flag is False:return 'reference_or_unqualified','explicit finite_material false; never rho-only promoted'
+ if any(k in role for k in ['reference','envelope','stock','reserve','domain','effective_copper']):return 'protected_reference','complete/profile/functional/reference occupancy; not exact material'
+ if rho is not None and rho>0 and any(k in role for k in ['material','frame','route']):return 'finite_material','positive density with material role; no contrary false or fluid'
+ return 'unqualified_geometry','unknown material scope not zero or waived'
+def fgroup(q):
+ x=q['name'].lower();cat=q.get('category','')
+ if 'armor' in q.get('role',''):return 'original_visible_armor'
+ if any(k in x for k in ['pack_','cell_','pdu','hv_','bms']):return 'energy_and_electrical'
+ if any(k in x for k in ['core','primary_cage','frame','receiver','anchor']):return 'common_load_core_or_frame'
+ if any(k in x for k in ['g22_left','g22_right','g21_pitch','g21_roll','g21_yaw']):return 'actual_joint_component'
+ if any(k in x for k in ['pump','emrax','z16','coupling']):return 'pump_powertrain'
+ if any(k in x for k in ['hx','radiator','es0707','es0714','thermal','cool','fan','water','duct','tank','degas','filter']):return 'thermal_or_fluid'
+ if any(k in x for k in ['compute','screen','camera','network','imu']):return 'compute_sensing_ui'
+ if any(k in x for k in ['holding','directional','valve']):return 'hydraulic_valves'
+ return 'retained_other_function'
+rootinvalid=source.get('source_resource_rejected_ids',[]);native_cache={};admissions={};candidates=[];hits=[];ownhits=[];seen=collections.Counter();aabbcount=0
+start=time.time()
+for j,q in enumerate(source['parts']):
+ if 'vertices_world_m' not in q or not len(q['vertices_world_m']):continue
+ v=np.array(q['vertices_world_m']);b=np.array([v.min(0),v.max(0)]);cls,why=classification(q);own=q['name'] in own_ids or q['name'].startswith('g21_pack_0_');seen[cls]+=1
+ route_candidates=[r for r in route if np.all(bounds[r['name']][1]-b[0]>1e-10) and np.all(b[1]-bounds[r['name']][0]>1e-10)]
+ if not route_candidates:continue
+ aabbcount+=len(route_candidates);admit=mat.validate_scene({'parts':[q]});rr=admit['parts'][0];admissions[q['name']]={'source_contract_pass':rr['resource_contract_pass'],'errors':rr['errors'],'signed_V_m3':rr.get('native_signed_volume_m3'),'material_roots':rr.get('material_component_count_from_nesting'),'category':cls,'classification_basis':why,'function':fgroup(q),'body':q.get('body'),'actual_world_bounds_m':b.tolist()}
+ try: mm=mf.Manifold(mf.Mesh64(v,np.array(q['faces'],np.uint64)));status=str(mm.status())
+ except Exception as e:
+  for r in route_candidates:
+   rec={'route':r['name'],'target':q['name'],'target_body':q.get('body'),'target_classification':cls,'classification_basis':why,'function':fgroup(q),'target_role':q.get('role'),'target_resource_pass':False,'kernel_status':'construction_not_admitted','own_pack_internal_scope':own,'target_global_bounds_m':b.tolist(),'route_global_bounds_m':bounds[r['name']].tolist(),'actual_positive_intersection_V_m3':None,'query_exception':repr(e),'not_installation_admission':True,'unknown_never_zero':True};candidates.append(rec);(ownhits if own else hits).append(rec)
+  continue
+ for r in route_candidates:
+  rec={'route':r['name'],'target':q['name'],'target_body':q.get('body'),'target_classification':cls,'classification_basis':why,'function':fgroup(q),'target_role':q.get('role'),'target_resource_pass':rr['resource_contract_pass'],'kernel_status':status,'own_pack_internal_scope':own,'target_global_bounds_m':b.tolist(),'route_global_bounds_m':bounds[r['name']].tolist()}
+  try:rec['actual_positive_intersection_V_m3']=float((cache[r['name']]^mm).volume()) if mm.status()==mf.Error.NoError else None
+  except Exception as e:rec['actual_positive_intersection_V_m3']=None;rec['query_exception']=repr(e)
+  rec['not_installation_admission']=True;candidates.append(rec)
+  if rec['actual_positive_intersection_V_m3'] is None or rec['actual_positive_intersection_V_m3']>1e-12:(ownhits if own else hits).append(rec)
+ if j%200==0:print('EVENT G22 queried sourceindex',j,'foreignpositive',len(hits),'elapsed',round(time.time()-start,2),flush=True)
+write('foreign_installation_queries.json',{'schema':'gorilla_g22_readonly_route_foreign_function_check_v1','root_source':str(rootpath),'root_scene_sha256':source_sha,'prototype_sha256':sha(P),'source_rules_sha256':sha(R/'sai_robots_engineering_rules.md'),'native_contract_sha256':sha(MAT),'proper_world_roundtrip_verified':True,'route_count':len(route),'source_part_count':len(source['parts']),'root_source_input_manifest':source.get('inputs'),'source_metadata_resource_rejected_ids':rootinvalid,'source_classes_allparts':dict(seen),'AABB_pair_count':aabbcount,'queried_target_resource_receipts':admissions,'all_candidate_pairs':candidates,'foreign_positive_or_unknown_pairs':hits,'own_original_pack_positive_or_unknown_pairs_notforeign':ownhits,'foreign_positive_known_threshold_m3':1e-12,'unknown_queries_not_zero':True,'kernel_NoError_not_native_or_installed_admission':True,'no_source_modified':True,'full_720pack_routes_complete':False,'installation_accepted':False,'runtime_seconds':time.time()-start})
+assert sha(rootpath)==source_sha,'root source mutated during query; report historical SHA only'
+print('EVENT G22 actualrootdone',source_sha,'AABBpairs',aabbcount,'targets',len(admissions),'foreignhits',len(hits),'ownpackhits',len(ownhits),'elapsed',time.time()-start,flush=True)

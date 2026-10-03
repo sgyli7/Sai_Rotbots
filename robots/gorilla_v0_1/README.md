@@ -1,11 +1,12 @@
 # Gorilla V0.1
 
-当前工作：**[G21真实主架/三轴肩/720能源与宏观粗算已封存](../../experiments/gorilla_v0_1/internal_structure_g21_common_body_and_joint/README.md)，共同安装未成立；G22先统一真实源接口与合法导体/绝缘路由，再回整体共同设计。** 首工程检查点、稳定SI、物理与审美仍未达。AA3上躯审美保留，新下半身持续修订，不冻结旧腿轴位；完整双足双手/自主复杂Bevy目标活动。
+当前工作：**最新实际阶段为[G22共同装配与独立检查](../../experiments/gorilla_v0_1/internal_structure_g22_actual_common_interfaces/README.md)：真实双肩入共同源，安装／承力／整机物理与审美仍未放行。G23正在共同重排完整肩、主架、能源与热系统。** AA3上躯审美保留，新下半身持续修订，不冻结旧腿轴位；完整双足双手与自主复杂Bevy目标活动。
 
 唯一当前状态入口：[当前决定与门禁](design/current_decisions.md)。
 
 | 资料 | 入口 |
 |---|---|
+| G22实际共同接口／线路／安装 | [原生共同源、同源四视与独立空间／FK检查](../../experiments/gorilla_v0_1/internal_structure_g22_actual_common_interfaces/README.md)；共同安装仍失败，下一整组设计正在执行 |
 | G21主架/三轴/能源/宏观粗算 | [真实源、有限截面与功能范围裁决](../../experiments/gorilla_v0_1/internal_structure_g21_common_body_and_joint/README.md)；新肩尚未装入body，未放行 |
 | G20实际完整模块/安装 | [真实原生/CAD/四视、完整包络和独立复核](../../experiments/gorilla_v0_1/internal_structure_g20_native_complete_modules/README.md)；三分支A/B均拒绝，接续共同设计 |
 | G19完整功能与架构 | [实际功能账、两路线、电压热与储能/空间裁决](../../experiments/gorilla_v0_1/internal_structure_g19_function_and_actuation_architecture/README.md)；下一原生探针，未采用/物理放行 |

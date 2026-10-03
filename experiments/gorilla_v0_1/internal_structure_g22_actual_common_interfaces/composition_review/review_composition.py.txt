@@ -1,0 +1,88 @@
+"""Gorilla G22 read-only identity/FK placement review, without physical admission."""
+from pathlib import Path
+import argparse,collections,gzip,hashlib,json
+import numpy as np
+ROOT=next(p for p in Path(__file__).resolve().parents if(p/'sai_robots_engineering_rules.md').is_file());D=Path(__file__).resolve().parent
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def read(p):
+ b=Path(p).read_bytes();return json.loads(gzip.decompress(b) if str(p).endswith('.gz') else b)
+def put(p,x):Path(p).write_text(json.dumps(x,indent=2,allow_nan=False)+'\n')
+def vv(p):return np.array(p['vertices_world_m'],float)
+def ff(p):
+ rows=p['faces'];out=np.full((len(rows),max(map(len,rows))),-1,dtype=int)
+ for i,row in enumerate(rows):out[i,:len(row)]=row
+ return out
+def main(source_dir,version):
+ out=D/version;out.mkdir(exist_ok=True);paths=[source_dir/n for n in ['scene.json.gz','composition_receipt.json','build_common_probe.py']];bind={p.name:{'path':str(p.relative_to(ROOT)),'sha256':sha(p)} for p in paths}
+ snap=out/'bound_inputs';snap.mkdir(exist_ok=True)
+ for p in paths:
+  q=snap/p.name
+  if q.exists():assert q.read_bytes()==p.read_bytes(),'Refuse replacing already bound review input'
+  else:q.write_bytes(p.read_bytes())
+ s=read(snap/'scene.json.gz');r=read(snap/'composition_receipt.json');bodypath=ROOT/'.scratch/gorilla_internal_g21_whole_body_space_allocation/b/scene.json.gz';corepath=ROOT/'.scratch/gorilla_internal_g22_core_connection/module_scene.json.gz';contractpath=ROOT/'.scratch/gorilla_internal_g22_source_derived_interfaces/source_derived_interfaces.json';body=read(bodypath);core=read(corepath);c=read(contractpath)
+ for rel,h in r['inputs'].items():assert sha(ROOT/rel)==h,(rel,'receipt/input mismatch')
+ P={p['name']:p for p in s['parts']};B={p['name']:p for p in body['parts']};C={p['name']:p for p in core['parts']};tree=s['body_tree_candidate'];oldtree=body['body_tree_candidate'];retire=set(c['bilateral_replacement_contract']['conditional_geometry_probe_retire_ids'])|{core['old_frame_reference_not_active']};dups=set(C)&(set(B)-retire);added=set(C)-dups
+ checks=[]
+ def ck(n,ok,**kw):checks.append({'id':n,'pass':bool(ok),**kw})
+ ck('unique_part_IDs',len(P)==len(s['parts']),part_count=len(s['parts']))
+ ck('exact_conditional_retirement291',retire==set(s['conditional_probe_replaced_exact_ids']),expected_count=len(retire),conditional_geometry_only=True,qualified_retirement_credit=r['qualified_function_retirement_credit'])
+ ck('exact_actual_added246',added==set(s['actual_added_core_and_joint_ids']),actual_count=len(added))
+ ck('five_waistduplicates_once',dups==set(r['duplicate_waist_ids_kept_once']) and all(sum(p['name']==n for p in s['parts'])==1 for n in dups),exact_ids=sorted(dups))
+ ck('composition_ID_set_exact',set(P)==(set(B)-retire)|added)
+ ck('count_arithmetic',len(P)==len(B)-len(retire)+len(C)-len(dups),counts={'source':len(B),'retired':len(retire),'core_source':len(C),'duplicate':len(dups),'result':len(P)})
+ newdiff=[]
+ for n in sorted(added):
+  if not np.array_equal(vv(P[n]),vv(C[n])) or not np.array_equal(ff(P[n]),ff(C[n])):newdiff.append(n)
+ ck('actual_core_joint_geometry_unchanged',not newdiff,different_ids=newdiff)
+ lefts=[n for n in P if n.startswith('g21_b_')];rights=[n for n in P if n.startswith('g22_right_context_')];mirror=[];S=np.diag([1.,-1.,1.]);S4=np.diag([1.,-1.,1.,1.])
+ for rn in sorted(rights):
+  ln='g21_b_'+rn[len('g22_right_context_'):]
+  if ln not in P:mirror.append({'right':rn,'left':ln,'status':'missing'});continue
+  lv,rv=vv(P[ln]),vv(P[rn]);lf,rf=ff(P[ln]),ff(P[rn]);dv=float(np.max(abs(rv-lv@S))) if rv.shape==lv.shape else None
+  mirror.append({'right':rn,'left':ln,'vertex_shape_match':rv.shape==lv.shape,'max_reflection_vertex_error_m':dv,'triangle_winding_exact_reversed':rf.shape==lf.shape and any(np.array_equal(rf,lf[:,order]) for order in [[0,2,1],[2,1,0],[1,0,2]]),'left_body':P[ln]['body'],'right_body':P[rn]['body']})
+ ck('actual_bilateral_native_joint_instances',bool(lefts) and len(lefts)==len(rights),left_count=len(lefts),right_count=len(rights))
+ ck('right_geometry_exact_reflection_and_reversed_winding',all(x.get('max_reflection_vertex_error_m')==0 and x.get('triangle_winding_exact_reversed') for x in mirror),pair_count=len(mirror))
+ rebind=[];changed=set();trans={x['side']:np.array(x['proper_transform_4x4']) for x in r['rest_rebinds']}
+ for rb in r['rest_rebinds']:
+  side=rb['side'];T=trans[side];R=T[:3,:3];t=T[:3,3];ids=rb['changed_exact_ids'];errs=[];facebad=[];boxbad=[]
+  for n in ids:
+   before=vv(B[n]);after=vv(P[n]);errs.append(float(np.max(abs(before@R.T+t-after))));changed.add(n)
+   if not np.array_equal(ff(B[n]),ff(P[n])):facebad.append(n)
+   truth=before@R.T+t
+   if not np.allclose([truth.min(0),truth.max(0)],[after.min(0),after.max(0)],rtol=0,atol=1e-12):boxbad.append(n)
+  op=np.array(oldtree[side+'_upper_arm']['pivot_world_m']);oa=np.array(oldtree[side+'_upper_arm']['axis_world']);ny=np.array(tree[side+'_shoulder_yaw_carrier']['axis_world'],float);ny/=np.linalg.norm(ny);ga=R@oa;ga/=np.linalg.norm(ga)
+  rebind.append({'side':side,'R_determinant':float(np.linalg.det(R)),'R_orthogonality_error':float(np.max(abs(R.T@R-np.eye(3)))),'mapped_old_yaw_pivot_world_m':(R@op+t).tolist(),'new_yaw_pivot_world_m':tree[side+'_shoulder_yaw_carrier']['pivot_world_m'],'native_rigid_max_vertex_error_m':max(errs),'face_winding_preserved':not facebad,'native_transformed_bounds_match':not boxbad,'part_count':len(ids),'geometric_axis_line_dot_new_signed_axis':float(ga@ny),'axis_line_parallel':abs(abs(float(ga@ny))-1)<1e-12,'derived_elbow_world_m':tree[side+'_proximal_forearm']['pivot_world_m'],'elbow_plan_is_not_installed_connection':True})
+ ck('all_rest_transforms_proper_and_exact_geometry',all(x['R_orthogonality_error']<1e-12 and abs(x['R_determinant']-1)<1e-12 and x['native_rigid_max_vertex_error_m']<1e-12 and x['face_winding_preserved'] and x['native_transformed_bounds_match'] for x in rebind),side_reports=rebind)
+ expected=S4@trans['left']@S4;me=float(np.max(abs(expected-trans['right'])));le=np.array(tree['left_proximal_forearm']['pivot_world_m']);re=np.array(tree['right_proximal_forearm']['pivot_world_m']);elerr=float(np.linalg.norm(re-S@le))
+ ck('right_rest_is_mirror_consistent_not_directed_axis_flip',me<1e-12 and elerr<.003,right_vs_mirrored_left_T_max_error=me,elbow_mirror_position_error_m=elerr,original_rest_native_not_exact_mirror_possible=True)
+ unaffected=set(B)-retire-changed;unexpected=[]
+ for n in unaffected:
+  if not np.array_equal(vv(B[n]),vv(P[n])) or not np.array_equal(ff(B[n]),ff(P[n])):unexpected.append(n)
+ ck('all_other_retained_geometry_exact',not unexpected,count=len(unaffected),unexpected_ids=unexpected)
+ roots=[];cycles=[];missingparent=[]
+ for n in tree:
+  seen=set();b=n
+  while b in tree:
+   if b in seen:cycles.append(n);break
+   seen.add(b);p=tree[b].get('parent')
+   if p is None:roots.append(b);break
+   if p not in tree:missingparent.append([n,p]);break
+   b=p
+ jointids=[v['joint_id'] for v in tree.values() if 'joint_id' in v];duplicates=[k for k,n in collections.Counter(jointids).items() if n>1]
+ ck('joint_tree_single_root_no_cycle',not cycles and len(set(roots))==1 and not missingparent,roots=sorted(set(roots)),cycle_start_nodes=cycles,missing_parent_refs=missingparent)
+ ck('joint_id_once',not duplicates,duplicate_joint_ids=duplicates,rotational_node_count=len(jointids),total_tree_nodes=len(tree))
+ aliases=[];unmoved=[]
+ for side in ['left','right']:
+  T=trans[side];R=T[:3,:3];t=T[:3,3]
+  for n in sorted(B):
+   if n.startswith('g18_'+side+'_elbow_external_bearing_') and n in P:
+    err=float(np.max(abs(vv(P[n])-(vv(B[n])@R.T+t))));oldsame=np.array_equal(vv(B[n]),vv(P[n]));unmoved.append({'id':n,'source_body':P[n]['body'],'expected_same_elbow_rigidgroup_max_error_m':err,'old_geometry_unchanged':oldsame,'reference_race_owner_dynamics_unknown':True})
+  for n in sorted(added):
+   if any(n.endswith('_'+f) for f in ['WG_official_gross','input_two_seat_stepped_shaft','motor_rotor_complete','rotor_holder_spider']) and ((side=='right')==n.startswith('g22_right_context_')):
+    aliases.append({'id':n,'raw_body':P[n]['body'],'original_dynamic_owner':P[n].get('original_dynamic_owner',P[n].get('original_source_dynamic_owner')),'namespace_NOT_qualified_kinematic_owner':True,'geometric_pose_owner_candidate':P[n].get('geometric_pose_owner_candidate'),'six_separate_input_kinematic_nodes_implemented':P[n].get('geometric_pose_owner_candidate') in tree})
+ ck('elbow_reference_placement_rigidgroup_complete',all(x['expected_same_elbow_rigidgroup_max_error_m']<1e-12 for x in unmoved),rows=unmoved)
+ armorbody={n:B[n] for n in body['original_visible_armor_ids']};armor_moved=[n for n in armorbody if not np.array_equal(vv(B[n]),vv(P[n]))];ck('all111_visiblearmor_IDs_retained',set(armorbody)<=set(P),moved_count=len(armor_moved),moved_ids=armor_moved,source_geometry_motion_not_aesthetic_admission=True)
+ result={'schema':'gorilla_g22_composition_review_v1','version':version,'source_binding':bind,'receipt_input_bindings':r['inputs'],'producer_sha256':sha(__file__),'checks':checks,'new_right_native_reflection_pairs':mirror,'input_body_scope_aliases':aliases,'input_body_ownership_scope':'Inspect raw/original/candidate owner per row. Namespaced geometry inputs are not stable dynamic ownership, actual OEM split inertia, or complete closed-loop input nodes.','whole_robot_M_COM_I':s.get('whole_robot_M_COM_I'),'qualified_retirement_credit':r['qualified_function_retirement_credit'],'physical_arm_transfer_and_waist_output_missing':s['waist_rotating_output_and_arm_transfer_adapters_missing'],'resource_rejections_preserved':r['source_resource_rejections_retained'],'no_new_geometry_or_source_repairs':True,'all_new_physical_admission':False,'all_read_inputs_unchanged_at_end':all(sha(source_dir/n)==b['sha256'] for n,b in bind.items())}
+ put(out/'report.json',result);print(json.dumps({'version':version,'source_sha256':bind['scene.json.gz']['sha256'],'report_sha256':sha(out/'report.json'),'failed_check_ids':[x['id'] for x in checks if not x['pass']],'part_count':len(P)}))
+if __name__=='__main__':
+ ap=argparse.ArgumentParser();ap.add_argument('--source-dir',type=Path,required=True);ap.add_argument('--version',required=True);a=ap.parse_args();main(a.source_dir.resolve(),a.version)

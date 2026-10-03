@@ -1,0 +1,114 @@
+#!/usr/bin/env python3
+"""Small source-bound typed conductor/insulation prototype. No frozenpack repair/adoption."""
+import pathlib,json,gzip,hashlib,importlib.util,sys,math,itertools,collections
+import numpy as np,manifold3d as mf,trimesh
+from importlib.machinery import SourceFileLoader
+R=pathlib.Path('/home/ethan/Projects/Sai_Rotbots');D=pathlib.Path(__file__).resolve().parent
+SOURCE=R/'.scratch/gorilla_internal_g21_whole_body_space_allocation/b/scene.json.gz';HELP=R/'.scratch/gorilla_internal_g14_complete_thermal_colayout/geometry_helpers.py';MAT=R/'experiments/gorilla_v0_1/internal_structure_g_studies/material_contract/native_signed_material.py.txt'
+sha=lambda p:hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
+def wr(n,o):(D/n).write_text(json.dumps(o,ensure_ascii=False,indent=2)+'\n')
+sp=importlib.util.spec_from_file_location('g22geomhelper',HELP);g=importlib.util.module_from_spec(sp);sp.loader.exec_module(g)
+loader=SourceFileLoader('g22signed',str(MAT));sp=importlib.util.spec_from_loader('g22signed',loader);mat=importlib.util.module_from_spec(sp);sys.modules['g22signed']=mat;loader.exec_module(mat)
+s=json.load(gzip.open(SOURCE,'rt'));by={p['name']:p for p in s['parts']};slot=s['complete_energy_slots'][0];C=np.array(slot['center_world_m']);M=np.array(slot['proper_R']);parts=[];geoms={};rows=[];route_spec=[]
+def oldlocal(n):
+ p=by[n];v=(np.array(p['vertices_world_m'])-C)@M;return mf.Manifold(mf.Mesh64(v,np.array(p['faces'],np.uint64)))
+def add(m,n,cat,rho,extra=None,col=[.5,.5,.5,1]):
+ assert m.status()==mf.Error.NoError,(n,m.status());world=m.transform(np.column_stack([M,C]));meta={'finite_material':True,'density_kg_m3':rho,'mass_once_kg':float(m.volume()*rho),'typed_category':cat,'source_or_assumption':'G22 own exact source-cropped/copied finite material and bounded minimumroute, notOEMwire/terminal/connectorCAD','manufacture_electrical_thermal_pressure_rating_accepted':False};meta.update(extra or {});p=g.nat(world,n,'torso_candidate','finite_typed_prototype_material',col,meta);parts.append(p);geoms[n]=m;rows.append({'id':n,'category':cat,'density_assumption_kg_m3':rho,'native_net_V_m3':m.volume(),'once_only_mass_kg':m.volume()*rho});return p
+
+def cylseg(a,b,r,segments=48):
+ a=np.array(a,float);b=np.array(b,float);w=b-a;L=np.linalg.norm(w);assert L>1e-9;zz=w/L;help=np.array([0.,0,1]) if abs(zz[2])<.9 else np.array([1.,0,0]);xx=np.cross(help,zz);xx/=np.linalg.norm(xx);yy=np.cross(zz,xx);T=np.column_stack([xx,yy,zz,a]);return mf.Manifold.cylinder(L,r,r,segments).transform(T)
+def fillet(points,Rbend,step_angle=np.deg2rad(6)):
+ pp=np.array(points,float);path=[pp[0]];info=[]
+ for i in range(1,len(pp)-1):
+  v0=pp[i]-pp[i-1];v1=pp[i+1]-pp[i];d0=v0/np.linalg.norm(v0);d1=v1/np.linalg.norm(v1);theta=math.acos(float(np.clip(d0@d1,-1,1)))
+  if theta<1e-10:continue
+  assert theta<math.pi-1e-8,'reversal';off=Rbend*math.tan(theta/2);assert off<.49*min(np.linalg.norm(v0),np.linalg.norm(v1)),(i,off,np.linalg.norm(v0),np.linalg.norm(v1))
+  begin=pp[i]-d0*off;end=pp[i]+d1*off;normal=np.cross(d0,d1);normal/=np.linalg.norm(normal);bendcenter=begin+np.cross(normal,d0)*Rbend;rad0=(begin-bendcenter)/Rbend;nn=max(2,int(math.ceil(theta/step_angle)));path.append(begin)
+  for k in range(1,nn+1):
+   ang=theta*k/nn;vr=rad0*math.cos(ang)+np.cross(normal,rad0)*math.sin(ang);path.append(bendcenter+vr*Rbend)
+  assert np.linalg.norm(path[-1]-end)<1e-12
+  info.append({'corner':i,'nominal_R_m':Rbend,'angle_rad':theta,'arc_segments':nn,'max_arc_centerline_chord_sag_m':Rbend*(1-math.cos(theta/(2*nn)))})
+ path.append(pp[-1]);out=[path[0]]
+ for x in path[1:]:
+  if np.linalg.norm(x-out[-1])>1e-10:out.append(x)
+ return np.array(out),info
+
+def trim_path(path,start_trim,end_trim):
+ seg=np.linalg.norm(np.diff(path,axis=0),axis=1);cum=np.r_[0,np.cumsum(seg)];L=cum[-1];assert L>start_trim+end_trim
+ def at(t):
+  j=min(np.searchsorted(cum,t,side='right')-1,len(seg)-1);return path[j]+(path[j+1]-path[j])*(t-cum[j])/seg[j]
+ out=[at(start_trim)]+[path[i] for i in range(1,len(path)-1) if start_trim<cum[i]<L-end_trim]+[at(L-end_trim)];return np.array(out)
+
+def sweep_union(path,r):
+ # Exact finite union of straight cylinders and localvertexballs, noendpointballs. Eachjoint has positiveoverlap; smootharc is chordapprox statedabove.
+ atoms=[cylseg(path[i],path[i+1],r) for i in range(len(path)-1)]+[mf.Manifold.sphere(r,48).translate(x) for x in path[1:-1]]
+ return mf.Manifold.batch_boolean(atoms,mf.OpType.Add)
+
+# Threeactual selectedcollector lands cropG21ownCu source; discardedfailedroutesnotadopted as a sourcewhole substitution.
+netpads={0:([- .28125,-.035475,-.045],False),1:([-.28125,.035475,-.045],True),2:([-.16875,-.035475,-.045],False)}
+pads={}
+for net,(c,positive) in netpads.items():pads[net]=oldlocal(f'g21_pack_0_Cu_potential_net_{net:02}')^g.bx(c,[.030,.0008,.024])
+# Ownstranded-wiregeometry references: Rbend50mm terminalOD10mm; Rbend6mm senseOD1.3. RealSKU minimumR andservicefatigueunknown.
+terminal_start=[-.28125,-.035775,-.045];terminal_end=[-.420,-.145,-.045]
+raw={0:[terminal_start,[-.28125,-.145,-.045],terminal_end],1:[[-.28125,.035775,-.045],[-.28125,.075,-.045],[-.28125,.075,.115],[-.260,.075,.115],[-.260,.105,.115]],2:[[-.16875,-.035775,-.045],[-.16875,-.075,-.045],[-.16875,-.075,.115],[-.16875,.075,.115],[-.248,.075,.115],[-.248,.105,.115]]}
+radii={0:(.00335,.005,.050),1:(.00025,.00065,.006),2:(.00025,.00065,.006)}
+cuids=[];insids=[];endpoint_records=[]
+for net in [0,1,2]:
+ rc,ro,rb=radii[net];path,info=fillet(raw[net],rb);core=sweep_union(path,rc);outside_path=trim_path(path,.002,.003);outer=sweep_union(outside_path,ro)
+ if net==0:
+  endpart=g.bx([-.422,-.145,-.045],[.016,.016,.014])-g.cyl([-.425,-.145,-.045],.0032,.022,'Z',48)
+ else:endpart=g.cyl([-.260 if net==1 else -.248,.109,.115],.00040,.018,'Y',48)
+ copper=core+pads[net]+endpart
+ # Criticaltyped invariant: insulationouterunion minus COMPLETE SAME-NET Cuunion, including elbow overlaps and land/pin.
+ dielectric=outer-copper
+ cn=f'g22_net_{net:02}_Cu_union';jn=f'g22_net_{net:02}_dielectric_net';cuids.append(cn);insids.append(jn);add(copper,cn,'conductor',8960,{'potential_net':net,'source_cropped_cap_ID':f'g21_pack_0_Cu_potential_net_{net:02}','source_cap_is_owncollector_NOTOEMactualterminal','endpointcap_bond_current_heat_fatigue_unqualified':True},col=[[.72,.40,.16,1],[.72,.17,.15,1],[.16,.54,.35,1]][net]);add(dielectric,jn,'wire_insulation',1200,{'potential_net':net,'generation':'outerUnion minus complete SAME-NET core/land/pin union; no per-segmentjacket','not_subtracted_othernet_Cu_to_hidecollision':True,'dielectricvoltage/flame/temperature_certification_unknown':True},col=[.36,.57,.75,1])
+ route_spec.append({'net':net,'core_radius_m':rc,'outer_radius_m':ro,'own_nominalbend_R_m':rb,'raw_waypoints_packlocal_m':raw[net],'filleted_sample_centerline_packlocal_m':path.tolist(),'arc_diagnostics':info,'bare_start_end_m':[.002,.003],'coppercrosssection_mm2':math.pi*rc*rc*1e6,'sweep_tessellation48spheres':'not analyticOEMwire; physicalfatigue/RSKU unknown'})
+ # Independentportland overlap ensuresoneconnectedCu root; otherface sourcecontactuncertified.
+ endpoint_records.append({'net':net,'cap_source_crop_signedV_m3':pads[net].volume(),'core_to_pad_positive_bondV_m3':float((core^pads[net]).volume()),'core_to_endpart_positiveV_m3':float((core^endpart).volume()),'core_start_end_world_m':[(C+M@path[0]).tolist(),(C+M@path[-1]).tolist()],'joined_Cu_material_root_count_expected':1,'physical_solder/weld/contactnotqualified':True})
+
+# Sourcebarrier analysiscopies, noG21write. True boresthrough skin/TIM/coldplate/case at crossings andisolating sleeves; sourceholesproposedonly.
+barrier_ids=['negative_dielectric_thermal_skin','positive_dielectric_skin','negative_thermal_TIM','coldplate_integral_ports','Al_enclosure_and_bored_mount_tabs'];barriers={n:oldlocal('g21_pack_0_'+n) for n in barrier_ids};holemods=[]
+for net in [0,1,2]:
+ c,positive=netpads[net];rc,ro,rb=radii[net];hr=.0066 if net==0 else .0017;sg=1 if positive else -1;hole=g.cyl([c[0],sg*.049,c[2]],hr,.040,'Y',64)
+ names=['positive_dielectric_skin','Al_enclosure_and_bored_mount_tabs'] if positive else ['negative_dielectric_thermal_skin','negative_thermal_TIM','coldplate_integral_ports','Al_enclosure_and_bored_mount_tabs']
+ for name in names:
+  before=barriers[name];removed=float((before^hole).volume());barriers[name]=before-hole;holemods.append({'net':net,'source_barrier':f'g21_pack_0_{name}','analysiscopy_new_ID':f'g22_analysis_{name}_bored','holecenterlocal': [c[0],sg*.049,c[2]],'holeR_m':hr,'holelength_m':.040,'positive_actualremoved_V_m3':removed,'prototypecopy_only_frozenG21source_immutable':True})
+ sleeve_ro=.0063 if net==0 else .0014;sleeve_ri=.0052 if net==0 else .0009;start=sg*.036375;end=sg*.061375;mid=(start+end)/2
+ sleeve=g.cyl([c[0],mid,c[2]],sleeve_ro,abs(end-start),'Y',64)-g.cyl([c[0],mid,c[2]],sleeve_ri,abs(end-start)+.004,'Y',64);add(sleeve,f'g22_net_{net:02}_case_feedthrough_sleeve','feedthrough_dielectric',1200,{'potentialnet':net,'own_innerclearance_m':sleeve_ri-ro,'true_material_ring_nothypotheticalemptyhole':True,'grommet_seal_voltage_creep_pressure_mount_unknown':True},col=[.74,.70,.36,1])
+# Ownsignal2pin dielectricbank, actualholes and separateannularbushings. Centerpitch12mm derivedfromactualpaths, no0.1mmnetseparationguess.
+bank=g.bx([-.254,.109,.115],[.032,.024,.016])
+for net,x in [(1,-.260),(2,-.248)]:
+ bank=bank-g.cyl([x,.109,.115],.0017,.030,'Y',64)
+ bush=g.cyl([x,.109,.115],.0014,.024,'Y',64)-g.cyl([x,.109,.115],.0009,.030,'Y',64);add(bush,f'g22_signal_bank_bushing_{net}','feedthrough_dielectric',1200,col=[.74,.70,.36,1])
+add(bank,'g22_two_pin_isolated_port_bank','connector_dielectric',1200,{'actualportcenterdistance_m':.012,'source_BMS_notmoved':'ownproposedconnectorinterfaceonly; actual BMS taptermination/rating unknown'},col=[.5,.66,.66,1])
+for name,mm in barriers.items():
+ rho=2700 if name in ['coldplate_integral_ports','Al_enclosure_and_bored_mount_tabs'] else 2500 if name=='negative_thermal_TIM' else 1200;add(mm,'g22_analysis_'+name+'_bored','source_analysis_bored_barrier',rho,{'source_ID':'g21_pack_0_'+name,'source_geometry_hash':hashlib.sha256(json.dumps({'v':by['g21_pack_0_'+name]['vertices_world_m'],'f':by['g21_pack_0_'+name]['faces']},sort_keys=True).encode()).hexdigest(),'sourcecopy_only_holes_proposalNOTadopted':True,'oldwholebarrier_NOTalso_counted':True},col=[.55,.66,.68,1])
+scene={'schema':'gorilla_g22_typed_three_net_minimumroute_prototype_v1','coordinate_frame':'world SI m fromG21pack0localproperR; originalsourceimmutable','input_scene_SHA':sha(SOURCE),'source_paths':{str(p):sha(p) for p in [SOURCE,HELP,MAT,R/'sai_robots_engineering_rules.md']},'pack0_worldcenter_m':C.tolist(),'pack0_local_to_world_R':M.tolist(),'parts':parts,'route_spec':route_spec,'source_analysiscopy_bores':holemods,'Cu_endpoint_proposals':endpoint_records,'prototype_pressure_heat_electrical_assembly_admission':False,'whole720pack_accepted':False,'no_globalmass_COMI':True,'mass_ledger_once_rows':rows}
+(D/'scene.json.gz').write_bytes(gzip.compress(json.dumps(scene,separators=(',',':')).encode(),mtime=0));wr('input_and_route_spec.json',{'input_source':str(SOURCE),'SHA':sha(SOURCE),'producerSHA':sha(__file__),'selected_source_nets':[0,1,2],'route_spec':route_spec,'G21frozenparts_not_changed':True,'new_case_coupons_only_notnewrobot_shell':True});print('EVENT G22 actualtypedsource',sha(D/'scene.json.gz'),'parts',len(parts),flush=True)
+resource=mat.validate_scene({'parts':parts});wr('native_signed_resource.json',dict(resource,source_scene_SHA=sha(D/'scene.json.gz')))
+# Independentwholepair audit. Every category considersoriginaltypednet arrays; no repairs or other-net subtraction.
+checks=[];bad=[]
+for aa,bb in itertools.combinations(geoms,2):
+ V=float((geoms[aa]^geoms[bb]).volume());ca=next(p['typed_category'] for p in parts if p['name']==aa);cb=next(p['typed_category'] for p in parts if p['name']==bb);checks.append({'a':aa,'b':bb,'V_m3':V,'categories':[ca,cb]})
+ if V>1e-12:bad.append(checks[-1])
+sep=[];configured_gap=.003
+for i,j in itertools.combinations([0,1,2],2):
+ ci=geoms[f'g22_net_{i:02}_Cu_union'];cj=geoms[f'g22_net_{j:02}_Cu_union'];oi=ci+geoms[f'g22_net_{i:02}_dielectric_net'];oj=cj+geoms[f'g22_net_{j:02}_dielectric_net'];gap=oi.min_gap(oj,.1);sep.append({'nets':[i,j],'sum_wire_outer_radius_m':radii[i][1]+radii[j][1],'own_required_centerline_min_distance_m':radii[i][1]+radii[j][1]+configured_gap,'whole_outer_sweeps_material_min_gap_m':gap,'own_surfaceclearance_target_m':configured_gap,'passes_clearance':gap>=configured_gap-1e-9,'no_certified_voltagecreepage_clearance':True})
+# Sourcewaterchannel physicallynotpunctured by proposedfeedholes: exact finite void fromrawplate+portstock minus actualsourceplate. Minimum wall remains unqualified.
+stock=g.bx([0,-.043075,0],[.6745,.008,.135])
+for zz in [-.0325,.0325]:stock=stock+g.cyl([-.31375,-.052575,zz],.006,.019,'Y',64)
+sourceplate=oldlocal('g21_pack_0_coldplate_integral_ports');void=stock-sourceplate;water=[]
+for net in [0,2]:
+ c,_=netpads[net];hole=g.cyl([c[0],-.049,c[2]],.0066 if net==0 else .0017,.040,'Y',64);water.append({'net':net,'hole_vs_exactcandidate_water_void_V_m3':float((hole^void).volume()),'candidate_void_to_hole_min_gap_m':void.min_gap(hole,.01),'pressure_proofor_seal_NOTaccepted':True,'void_stock_difference_is_analysis_budget_NOTfluidmass':True})
+# Physicalwire/sourceface crossing withoutnewholes versus proposedboredcopy. Reportboth, neveradoptwholepack.
+sourcecross=[]
+for name in barrier_ids:
+ oo=oldlocal('g21_pack_0_'+name)
+ for net in [0,1,2]:
+  outer=geoms[f'g22_net_{net:02}_Cu_union']+geoms[f'g22_net_{net:02}_dielectric_net'];v=float((oo^outer).volume())
+  if v>1e-12:sourcecross.append({'net':net,'unmodifiedsource_ID':'g21_pack_0_'+name,'actual_positive_cross_V_m3':v,'originalfrozenG21pack_failswithroute_noimplicit_sameownerwaiver':True})
+ allcu=mf.Manifold.batch_boolean([geoms[n] for n in cuids],mf.OpType.Add);alldiel=mf.Manifold.batch_boolean([m for n,m in geoms.items() if next(p['typed_category'] for p in parts if p['name']==n) in ['wire_insulation','feedthrough_dielectric','connector_dielectric']],mf.OpType.Add)
+CuVdiel=float((allcu^alldiel).volume());intrnet=[q for q in checks if q['categories']==['conductor','conductor']]
+VV=np.concatenate([p['vertices_world_m'] for p in parts if p['typed_category'] in ['conductor','wire_insulation','feedthrough_dielectric','connector_dielectric']]);localV=(VV-C)@M;bounds=[localV.min(0).tolist(),localV.max(0).tolist()];originalslot=np.concatenate([by[n]['vertices_world_m'] for n in slot['members'] if 'service' not in by[n]['role']]);ll=(originalslot-C)@M;origbound=[ll.min(0).tolist(),ll.max(0).tolist()];combinedlo=np.minimum(localV.min(0),ll.min(0));combinedhi=np.maximum(localV.max(0),ll.max(0));massonce=sum(x['once_only_mass_kg'] for x in rows);routingmass=sum(x['once_only_mass_kg'] for x in rows if x['category']!='source_analysis_bored_barrier')
+rec={'scene_SHA':sha(D/'scene.json.gz'),'native_resource_gate':resource['resource_contract_pass'],'typed_Cu_vs_all_insulation_V_m3':CuVdiel,'all_pair_positive_V_above1e12_m3':bad,'pair_table':checks,'interpotential_Cu_positive_V_above1e12_m3':[q for q in intrnet if q['V_m3']>1e-12],'outer_clearance':sep,'actual_endpoint_material_overlaps':endpoint_records,'original_source_without_proposedholes_failure_crossings':sourcecross,'real_modifiedcopy_holes':holemods,'exactcandidate_water_void_hole_checks':water,'ownedrouting_local_AABB_m':bounds,'original_actual_fullslot_local_AABB_m':origbound,'oldslot_plusnewrouting_AABB_dimensions_m':(combinedhi-combinedlo).tolist(),'newrouting_outside_originalslot_low_high_m':[np.maximum(ll.min(0)-localV.min(0),0).tolist(),np.maximum(localV.max(0)-ll.max(0),0).tolist()],'prototype_all_material_once_mass_kg':massonce,'ownedrouting_caps_wire_pin_sleeve_bank_only_mass_kg':routingmass,'originalbarriercopy_replacement_nominal_material_scope_notwholemass':True,'mass_rows':rows,'true_Cu_bond_contact_and_dielectric_pressuremount_heat_ampacity_ratings':False,'whole720pack_electrical_thermal_or_installation_qualified':False,'prototype_geometric_gate':resource['resource_contract_pass'] and not bad and CuVdiel<1e-12 and all(q['passes_clearance'] for q in sep) and all(q['core_to_pad_positive_bondV_m3']>1e-12 and q['core_to_endpart_positiveV_m3']>1e-12 for q in endpoint_records),'notpressure_thermal_collision_motionrating':True}
+wr('typed_route_audit.json',rec);print('EVENT G22 typedgate',rec['prototype_geometric_gate'],'badpairs',len(bad),'CuVsIns',CuVdiel,'mass',routingmass,flush=True)
