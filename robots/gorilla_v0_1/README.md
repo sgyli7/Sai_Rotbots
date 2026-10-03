@@ -1,11 +1,12 @@
 # Gorilla V0.1
 
-当前工作：**G16宽厚CAD/native设计域、完整模块两套布局与真实连接入口已封存；G17推进连续承力连接、完整肩三轴与同工作点冷却。** 两候选仍拒绝，尚未装配或物理放行。壮硕体积用于三维承力与系统设计。用户指定「Gorilla 设计」重画腿脚，完成后通知；这里继续内部工程。C15已合主干，AA3为审美权威。稳定SI、双足双手与自主复杂Bevy持续推进。
+当前工作：**G17连续宽厚主架、完整肩三轴与联合冷却工作点已封存；G18推进肩座—上臂共同安装与完整系统布局。** 壮硕体积用于真实三维承力和拓扑优化；本轮已有连续材料，但整机安装、驱动/热、稳定SI与审美尚未放行。用户指定「Gorilla 设计」重画腿脚，这里继续内部工程。C15已合主干，AA3为审美权威，双足双手与自主复杂Bevy目标持续。
 
 唯一当前状态入口：[当前决定与门禁](design/current_decisions.md)。
 
 | 资料 | 入口 |
 |---|---|
+| G17连续主架与联合工作点 | [实际CAD/native、完整肩三轴、整组拒绝与热预算](../../experiments/gorilla_v0_1/internal_structure_g17_connected_frame_and_workpoint/README.md)；两候选仍拒绝 |
 | G16宽厚设计域与真实接口 | [实际CAD/native、完整两布局、热工作范围与独立复核](../../experiments/gorilla_v0_1/internal_structure_g16_broad_domain_and_interfaces/README.md)；两候选仍拒绝 |
 | G15完整功能与物理设计输入 | [同版实际布局、质量/载荷、热/库存与独立复核](../../experiments/gorilla_v0_1/internal_structure_g15_function_mass_and_domain/README.md)；两候选仍拒绝 |
 | G14完整系统与拓扑入口 | [冻结候选、实际图、边界与复核](../../experiments/gorilla_v0_1/internal_structure_g14_complete_thermal_and_assembly/README.md)；尚未装配/物理放行 |

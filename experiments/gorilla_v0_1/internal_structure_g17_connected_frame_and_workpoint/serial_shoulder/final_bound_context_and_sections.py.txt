@@ -1,0 +1,46 @@
+"""G17 final read-only bound-body, pump auxiliary and literal native sections."""
+from pathlib import Path
+import json,gzip,hashlib,sys,math,copy
+import numpy as np,trimesh,manifold3d as mf
+from PIL import Image,ImageDraw,ImageFont
+O=Path(__file__).resolve().parent;ROOT=next(p for p in O.parents if(p/'sai_robots_engineering_rules.md').is_file());D=O/'b';sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();read=lambda p:json.loads(gzip.decompress(Path(p).read_bytes()))if str(p).endswith('.gz')else json.loads(Path(p).read_bytes());put=lambda p,d:Path(p).write_text(json.dumps(d,indent=2,allow_nan=False)+'\n');s=read(D/'scene.json.gz');original=read(ROOT/'.scratch/gorilla_internal_g15_mass_load_contract/bound_g15_b_scene.json.gz');pm={p['name']:p for p in s['parts']};bp={p['name']:p for p in original['parts']};bodypath=ROOT/'.scratch/gorilla_internal_g17_connected_cage_layout/b/scene.json.gz';expected='52eb6bb53bb84cfacf24fbe4f2f4f4e35b4a97d4cef90729fc3ff9f0382c2756';assert sha(bodypath)==expected;bound=O/'bound_connected_body_b_scene.json.gz';assert not bound.exists();bound.write_bytes(bodypath.read_bytes());body=read(bound);frame=next(p for p in body['parts']if p['name']=='g17_connected_cage_and_fixed_anchor_net')
+V=lambda p:np.asarray(p.get('vertices_world_m',p.get('vertices')),float);F=lambda p:np.asarray([[q[0],q[i],q[i+1]]for q in p['faces']for i in range(1,len(q)-1)],np.uint64);K=lambda p:mf.Manifold(mf.Mesh64(V(p),F(p)));cache={p['name']:K(p)for p in s['parts']};frameK=K(frame)
+def check(A,B,p,q,pose,scope):
+ aa=np.array(A.bounding_box());bb=np.array(B.bounding_box())
+ if np.any(aa[3:]<=bb[:3])or np.any(bb[3:]<=aa[:3]):return None
+ if A.status()!=mf.Error.NoError or B.status()!=mf.Error.NoError:return {'a':p['name'],'b':q['name'],'pose':pose,'query_invalid_kernel_status':[str(A.status()),str(B.status())],'scope':scope}
+ z=A^B;vv=z.volume()
+ if vv<=1e-10:return None
+ return {'a':p['name'],'b':q['name'],'pose':pose,'positive_volume_cm3':float(vv*1e6),'intersection_bounds_world_m':list(z.bounding_box()),'sameowner_not_exempted':True,'class':'actual_finite_material'if p.get('finite_material')and q.get('finite_material')else'protectedreference_or_unscreened_context_NOT_material_acceptance','scope':scope}
+poses=read(D/'pose_collision_report.json');Ts=[('neutral',{})]+[(p['id'],p['body_transforms_world'])for p in poses['poses']];queries=[p for p in s['parts']if p['name'].startswith('g17_')or p['name'].startswith('g13_')or p.get('g17_neutral_rigid_translation_world_m')];pairs=[]
+for name,TT in Ts:
+ for p in queries:
+  T=np.array(TT.get(p['body'],np.eye(4)));r=check(cache[p['name']].transform(T[:3,:]),frameK,p,frame,name,'newfixedbody+actuallocalshoulder; notwholebodyornewloads')
+  if r:pairs.append(r)
+put(D/'new_connected_body_context_query.json',{'shoulder_source_sha256':sha(D/'scene.json.gz'),'bound_body_source_sha256':sha(bound),'producer_sha256':sha(__file__),'body_source_filename':str(bodypath),'frame_id':frame['name'],'body_source_is_not_original_source_current_B':True,'query_pairs':pairs,'scope':'Newbody actual material+all retained G13 source and G17 source in five rigid poses; fullstock/otherbodycontexts not exhaustive','original_body_frame_context_notduplicated_in_queries':True,'old_mass_load_not_applied_to_newbody':True,'assembly_physical_accepted':False})
+# Protect return filters/inverters alongside the two five-part complete mechanical pump stacks.
+aux=[p for g in original['rigid_group_transforms']if g['group']in['left_return_filter','right_return_filter','left_inverter','right_inverter']for p in [bp[n]for n in g['complete_member_ids']]];auxpairs=[]
+for q in aux:
+ B=K(q)
+ for p in queries:
+  r=check(cache[p['name']],B,p,q,'neutral','Originalpumpauxiliarycompletefilters/inverters retained source; notmass/netOEMguess')
+  if r:auxpairs.append(r)
+put(D/'pump_auxiliary_complete_query.json',{'shoulder_source_sha256':sha(D/'scene.json.gz'),'original_function_context_sha256':sha(ROOT/'.scratch/gorilla_internal_g15_mass_load_contract/bound_g15_b_scene.json.gz'),'producer_sha256':sha(__file__),'aux_ids':[p['name']for p in aux],'query_pairs':auxpairs,'original_ninegroup_query_scope':'Fourcompletepacks/twofive-partcompletepumpmechanicalstacks/HX/compute/screen; filter/inverterextras protectedhere; allcurrentfunctionalbodywasnotexhaustivelyscreened','physical_accepted':False})
+# Literal intersections, no material repair, no inferred cavity filling.
+font=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',18);small=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',13);W,H=1600,1500;im=Image.new('RGB',(W,H),'white');d=ImageDraw.Draw(im);sections=[];newparts=[p for p in s['parts']if p['name'].startswith('g17_')or p['name'].startswith('ds_left_shoulder')or p['name'].startswith('g13_left')];views=[('XZ at Y=.740',1,.740,(0,2),[-.42,.50,1.58,2.67]),('YZ at X=-.130',0,-.130,(1,2),[-1.0,1.0,1.58,2.67]),('XY at Z=2.290',2,2.290,(0,1),[-.48,.58,-1.0,1.0]),('YZ core datum X=.115',0,.115,(1,2),[-.60,.60,1.82,2.60])]
+for i,(label,axis,pos,uv,lims)in enumerate(views):
+ x0=(i%2)*800+60;y0=(i//2)*750+95;wid=690;hei=570;xmin,xmax,ymin,ymax=lims
+ def xy(p):return(x0+(p[uv[0]]-xmin)/(xmax-xmin)*wid,y0+hei-(p[uv[1]]-ymin)/(ymax-ymin)*hei)
+ d.text((x0,y0-55),'Gorilla G17 B / literal '+label,font=font,fill=(20,30,40));d.text((x0,y0-28),'Finite/source triangle intersections; no FE or connection acceptance.',font=small,fill=(40,55,70));d.rectangle((x0,y0,x0+wid,y0+hei),outline=(130,130,130),width=1);segments=[]
+ for p in newparts+[frame]:
+  normal=np.zeros(3);normal[axis]=1;origin=np.zeros(3);origin[axis]=pos
+  arr=trimesh.intersections.mesh_plane(trimesh.Trimesh(V(p),F(p),process=False),normal,origin)
+  if len(arr):segments.append({'id':p['name'],'segments_world_m':arr.tolist()})
+  color=(40,80,115)if p['name'].startswith('g17_')else(155,75,25)if p['name'].startswith('ds_')else(95,95,95)
+  if p['name']==frame['name']:color=(50,135,60)
+  for line in arr:
+   a,b=xy(line[0]),xy(line[1]);d.line((*a,*b),fill=color,width=2)
+ sections.append({'label':label,'plane_axis':axis,'plane_coordinate_m':pos,'projection_axes':list(uv),'plot_limits_m':lims,'actual_segments':segments})
+ d.text((x0,y0+hei+18),'Blue own broadpaths; brown retained complete drive reference; green newcage.',font=small,fill=(35,45,50))
+im.save(D/'literal_native_sections.png');put(D/'literal_native_sections.json',{'source_sha256':sha(D/'scene.json.gz'),'bound_body_sha256':sha(bound),'producer_sha256':sha(__file__),'sections':sections,'output_sha256':sha(D/'literal_native_sections.png'),'operation':'actualsource meshplane intersections, no repairedgeometry or newshapes'})
+print('FINAL_CONTEXT',len(pairs),'actualfinite',sum(x.get('class')=='actual_finite_material'for x in pairs),'pumpaux',len(auxpairs),flush=True)

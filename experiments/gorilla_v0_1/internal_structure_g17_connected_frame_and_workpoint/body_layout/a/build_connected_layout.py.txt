@@ -1,0 +1,118 @@
+#!/usr/bin/env python3
+"""G17A actual co-layout, continuous own steel cage/anchors; no FEM or qualification."""
+import pathlib,json,gzip,hashlib,importlib.util,copy,math,numpy as np,manifold3d as mf
+from OCP.BRepPrimAPI import BRepPrimAPI_MakeBox,BRepPrimAPI_MakeCylinder
+from OCP.BRepAlgoAPI import BRepAlgoAPI_Fuse,BRepAlgoAPI_Cut
+from OCP.gp import gp_Pnt,gp_Dir,gp_Ax2
+from OCP.BRepCheck import BRepCheck_Analyzer
+from OCP.BRepGProp import BRepGProp
+from OCP.GProp import GProp_GProps
+from OCP.BRepTools import BRepTools
+from OCP.TopAbs import TopAbs_SOLID
+from OCP.TopExp import TopExp_Explorer
+from OCP.STEPControl import STEPControl_Writer,STEPControl_AsIs,STEPControl_Reader
+D=pathlib.Path(__file__).resolve().parent;P=D.parent;R=P.parents[1]
+def sha(p):return hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
+def read(p):return json.load(gzip.open(p,'rt')) if str(p).endswith('.gz') else json.loads(pathlib.Path(p).read_text())
+def wr(n,v):(D/n).write_text(json.dumps(v,indent=2,ensure_ascii=False)+'\n')
+sp=importlib.util.spec_from_file_location('g17helpers',R/'.scratch/gorilla_internal_g14_complete_thermal_colayout/geometry_helpers.py');g=importlib.util.module_from_spec(sp);sp.loader.exec_module(g)
+BASE=R/'.scratch/gorilla_internal_g16_body_domain_partition/b/scene.json.gz';THERM=R/'.scratch/gorilla_internal_g16_compact_thermal_scope/compact_module_scope.json';s=read(BASE);thermal=read(THERM);old={p['name']:p for p in s['parts']}
+retire={'g16_native_cage_CAD_parameter_mapping','g13_left_fixed_reaction_closed_anchor','g13_right_fixed_reaction_closed_anchor','g16_low_EWP80_reference','g16_low_pump_mount_reducers_fittings'}
+parts=[copy.deepcopy(p) for p in s['parts'] if p['name'] not in retire];mass=[copy.deepcopy(r) for r in s['new_module_mass_rows'] if r['id'] not in retire and not r['id'].startswith('g16_global_')];groups=[];newids=[];slots=copy.deepcopy(s['complete_partition_slots'])
+def ct(p):v=np.array(p['vertices_world_m']);return (v.min(0)+v.max(0))/2
+by={p['name']:p for p in parts}
+def move(ids,a,b,Q=np.eye(3),tag=''):
+ a=np.array(a);b=np.array(b);ids=set(ids);present=[]
+ for n in ids:
+  if n not in by:continue
+  p=by[n];p['vertices_world_m']=((np.array(p['vertices_world_m'])-a)@Q.T+b).tolist();p['g17actual_common_group_move_unknown_mount_routes']=True;present.append(n)
+ groups.append({'id':tag,'member_ids':sorted(present),'source_datum_m':a.tolist(),'target_datum_m':b.tolist(),'R':Q.tolist(),'commonrigidtransform':True,'actualinstallationowner_unknown':True})
+def add(m,n,role,mr,color=[.34,.61,.66,1],meta=None,body='torso'):
+ extra={'finite_material':role=='finite_new_material','mass_range_kg':mr,'source_or_assumption':'G17 own bounded functional installation assumption, no qualification','physics_unknown':['actual mount/contact/thermal/pressure/COMbody unknown']};extra.update(meta or {});p=g.nat(m,n,body,role,color,extra);parts.append(p);by[n]=p;newids.append(n)
+ if mr is not None:mass.append({'id':n,'body':body,'mass_range_kg':mr,'geometry_role':role,'source_scope':extra['source_or_assumption']})
+ return p
+# MacroA: all four complete120-cell native packs rotate as one rigidgroup back to X axis; cells/aux never scaled.
+Q=np.array([[0,1,0],[-1,0,0],[0,0,1.]])
+for k,newc in enumerate([[-.070,-.143,2.12],[-.070,.143,2.12],[-.070,-.143,2.38],[-.070,.143,2.38]]):
+ tag=f'g16_pack_{k}';slot=next(q for q in slots if q['id']==tag);oldc=[.25,-.070 if k%2==0 else .070,2.115 if k<2 else 2.375]
+ ids=[p['name'] for p in parts if p['name'].startswith(tag+'_')];move(ids,oldc,newc,Q,tag=tag+'_complete_axisX');slot['fullprofile_commonR']=Q.tolist();slot['g17new_center_world_m']=newc;slot['retain_all_original_member_ids']=True
+# Full thermal segments retain body/core/fans/guard/plenum/ports; thirteen-mm rearward move clears originalshoulder connector stock, actual visible fit separately fails if needed.
+for j in range(4):
+ tag=f'g16_low_es0707_segment_{j}';slot=next(q for q in slots if q['id']==tag+'_fullthermal');a=np.array(slot['center_world_m']);b=a+[-.013,0,0];ids=[p['name'] for p in parts if p['name'].startswith(tag+'_')];move(ids,a,b,tag=tag+'_fullgroup');slot['center_world_m']=b.tolist()
+# Independent functional groups are relocated without collapsing internal relativegeometry.
+for name,c in [('ds_compute',[.270,0,2.25]),('ds_hv_distribution',[.275,0,2.085]),('ds_low_voltage_converter',[.30,-.10,2.38]),('e2_shared_unload_relief_accumulator_reserve',[.025,0,1.74])]:
+ if name in by:move([name],ct(by[name]),c,tag=name)
+HX=[n for n in by if n.startswith('e2_oil_HX_') or n=='e2_dual_fluid_HX_material'];move(HX,[-.24,0,2.12],[.270,0,2.43],tag='HX_complete_core_fourports')
+# Tanks: exact previous finite shell and finite fill move as groups; workingfill unchanged exceptoilownfill rebuild documented below.
+for label,newc in [('oil',[-.115,0,1.86]),('low_water',[.28,.20,2.20]),('hot_water',[.28,-.20,2.20])]:
+ ids=[f'g16_{label}_working_tank_shell',f'g16_{label}_workingfluid_alias'];a=ct(by[ids[0]]);move(ids,a,newc,tag=label+'_complete_tank_andfill')
+# Low pump: two full EWP150 conservative140×190×120mm+30mmseriesconnection, sourcegeometry not ratedsystem.
+pc=np.array([.31,.21,1.98]);pumpids=[]
+for stage,zoff in enumerate([-.075,.075]):
+ n=f'g17_low_EWP150_stage_{stage}_reference';add(g.bx(pc+[0,0,zoff],[.14,.19,.12]),n,'complete_component_reference',[1.17]*3,meta={'source_or_assumption':'official2023 EWP150 dimensions; conservative140x190x120 own completebarbstock','sourcepressureflow59Lmin_38p8kPa_notinstalled':True});pumpids.append(n)
+cm=g.cyl(pc,.019,.030,'Z',64)-g.cyl(pc,.016,.032,'Z',64);add(cm,'g17_low_series_full_bore_connection','finite_new_material',[cm.volume()*2700]*3,meta={'density_kg_m3':2700,'source_or_assumption':'own finite OD38/ID32 tube connector, pressure/seal/materialcompatibility unknown'})
+add(g.bx(pc+[.080,0,0],[.025,.220,.280]),'g17_low_series_mount_guard_reducers','complete_custom_function_envelope',[.6,1,1.5],meta={'fullseries_guard_mount_reducers_notdeleted':'own0.6..1.5kg fromthermal completefunctionbudget; service/mating unknown'})
+add(g.bx(pc+[0,0,-.165],[.20,.23,.030]),'g17_low_pump_installation_tool','service_after_shell_removal',None,[1,.6,.2,.2],{'notpermanentexclusion_or_mass':True})
+slots.append({'id':'g17_low_series_waterpump_full','member_ids':pumpids+['g17_low_series_full_bore_connection','g17_low_series_mount_guard_reducers'],'hardware_full_reference_xyz_m':[.14,.19,.27],'sourcepressureflow_andNPSH_unknown':True})
+for label,c in [('low',[.28,.20,2.36]),('hot',[.28,-.20,2.36])]:
+ n=f'g16_{label}_pump_controller';move([n],ct(by[n]),c,tag=n)
+ n=f'g16_{label}_filter_regulator_isolation';move([n],ct(by[n]),[.275,.18 if label=='low' else -.18,2.49],tag=n)
+ if label=='hot':
+  for n,c in [('g16_hot_EWP80_reference',[.31,-.22,2.015]),('g16_hot_pump_mount_reducers_fittings',[.31,-.22,1.93])]:move([n],ct(by[n]),c,tag=n)
+# Repartition functional line layers; these are honest nonzero stocks, not fake connectedrouted tubes.
+for n,c in [('g16_powerdata_and_thermal_line_layer',[.09,0,2.20]),('g16_P_T_hydraulicroute_layer',[-.185,0,2.20]),('g16_degas_return_guard_service',[.03,0,1.75])]:move([n],ct(by[n]),c,tag=n)
+# Primary OCC/native sameparameter construction for continuous ownanchor+cage. OEMcase/support/bearing/bolts are NOT unioned.
+def obox(c,d):return BRepPrimAPI_MakeBox(gp_Pnt(*(np.array(c)-np.array(d)/2)),*map(float,d)).Shape()
+def ocyl(c,r,L,axis):axis=np.array(axis,float);return BRepPrimAPI_MakeCylinder(gp_Ax2(gp_Pnt(*(np.array(c)-axis*L/2)),gp_Dir(*axis)),r,L).Shape()
+def op(fn,a,b):z=fn(a,b);z.Build();assert z.IsDone();return z.Shape()
+def fuse(a,b):return op(BRepAlgoAPI_Fuse,a,b)
+def cut(a,b):return op(BRepAlgoAPI_Cut,a,b)
+class Pair:
+ def __init__(self,o,n):self.o=o;self.n=n
+ def __add__(self,b):return Pair(fuse(self.o,b.o),self.n+b.n)
+ def __sub__(self,b):return Pair(cut(self.o,b.o),self.n-b.n)
+def bx(c,d):return Pair(obox(c,d),g.bx(c,d))
+def cy(c,r,L,axis):return Pair(ocyl(c,r,L,axis),g.cyl(c,r,L,'Y' if abs(axis[1]) else 'X',64))
+def ring(c,ro,ri,L,axis):return cy(c,ro,L,axis)-cy(c,ri,L+.002,axis)
+def closed(c,d,t,axis=None):
+ di=np.array(d)-2*t
+ if axis is not None:di[axis]=d[axis]+.01
+ return bx(c,d)-bx(c,di)
+anchors=[];anchorRec=[]
+for side,sg in [('left',1),('right',-1)]:
+ origin=np.array([-.13,sg*.3735,2.29]);axis=np.array([0,sg,0.])
+ def C(q,x=0,z=0):return origin+[x,sg*q,z]
+ def cyl(q,r,L,x=0,z=0):return cy(C(q,x,z),r,L,axis)
+ def rg(q,ro,ri,L):return ring(C(q),ro,ri,L,axis)
+ reactor=closed(C(-.055,.1575),[.175,.150,.330],.006)-cyl(-.080,.1325,.400)-cyl((-.150-.0128)/2,.1405,.150-.0128)
+ housing=rg(.012,.140,.132,.024)+rg(-.0065,.140,.0851,.013)+rg(.020,.140,.118,.010)
+ for i in range(8):
+  t=math.pi/8+i*math.pi/4;housing=housing-cyl(-.0065,.00725,.017,.118*math.cos(t),.118*math.sin(t));housing=housing-cyl(.020,.0043,.012,.135*math.cos(t),.135*math.sin(t))
+ an=reactor+housing
+ for i in range(8):
+  t=math.pi/8+i*math.pi/4;an=an-cyl(.026,.0043,.030,.135*math.cos(t),.135*math.sin(t))
+ anchors.append(an);oldm=g.mm(old[f'g13_{side}_fixed_reaction_closed_anchor']);Vdiff=(an.n-oldm).volume()+(oldm-an.n).volume();anchorRec.append({'side':side,'sourceanchor_ID':f'g13_{side}_fixed_reaction_closed_anchor','source_native_V_m3':oldm.volume(),'reproduced_native_V_m3':an.n.volume(),'symmetric_difference_m3':Vdiff,'no_OEMgeometry_scaled_ORincluded':True,'original_B_holes_PC236_andsupport_PC270_preserved':True})
+# Two broad closedbeam paths have genuine4mm materialoverlap with ownanchorfrontwall; this is an explicitly assumed onematerial manufacturedconnection, not qualification.
+params=[];cage=[]
+for sg in [-1,1]:
+ c=[.153,sg*.275,2.265];dm=[.088,.20,.66];cage.append(closed(c,dm,.005,2));params.append({'function':'wideclosedverticalbeam','center':c,'dims':dm,'wall':.005,'axis':2})
+ c=[.115,sg*.3185,2.29];dm=[.016,.15,.33];cage.append(bx(c,dm));params.append({'function':'continuous_anchor_node','center':c,'dims':dm,'nominalsourcefrontwall_X_range':[.109,.115],'true_material_overlap_depth_m':.006,'OEM_NOunion':True})
+for c,dm,t,ax,fn in [([.153,0,2.565],[.088,.75,.08],.005,1,'topclosedbeam'),([.315,0,1.91],[.08,.73,.09],.006,1,'waistclosedbeam'),([.235,-.275,1.94],[.18,.11,.08],.005,0,'rightlowerclosedbridge'),([.235,.275,1.94],[.18,.11,.08],.005,0,'leftlowerclosedbridge')]:cage.append(closed(c,dm,t,ax));params.append({'function':fn,'center':c,'dims':dm,'wall':t,'axis':ax})
+for x,L,ro,ri in [(.23,.035,.08,.03),(.277,.060,.07,.03)]:cage.append(ring([x,0,1.91],ro,ri,L,[1,0,0]));params.append({'function':'ownoutputadapter_orneck','axis':'X','center':[x,0,1.91],'L':L,'OD':2*ro,'ID':2*ri,'outputbearing_case_support_unknown':True})
+whole=cage[0]
+for a in cage[1:]+anchors:whole=whole+a
+prop=GProp_GProps();BRepGProp.VolumeProperties_s(whole.o,prop);cadvalid=bool(BRepCheck_Analyzer(whole.o).IsValid());ex=TopExp_Explorer(whole.o,TopAbs_SOLID);ns=0
+while ex.More():ns+=1;ex.Next()
+BRepTools.Write_s(whole.o,str(D/'connected_cage_primary.brep'));w=STEPControl_Writer();w.Transfer(whole.o,STEPControl_AsIs);w.Write(str(D/'connected_cage_si.step'));step=D/'connected_cage_si.step';raw=step.read_text();step.write_text(raw.replace('SI_UNIT(.MILLI.,.METRE.)','SI_UNIT($,.METRE.)'));reader=STEPControl_Reader();reader.ReadFile(str(step));reader.TransferRoots();rp=GProp_GProps();BRepGProp.VolumeProperties_s(reader.OneShape(),rp)
+add(whole.n,'g17_connected_cage_and_fixed_anchor_net','finite_new_material',[whole.n.volume()*7850]*3,[.24,.50,.72,1],{'density_kg_m3':7850,'integrated_oldanchor_IDs':sorted(n for n in retire if n.endswith('fixed_reaction_closed_anchor')),'one_material_assumption':'own weldedorintegrallymanufacturedloadcage; joint fatigue/strength/manufacturing unknown','primaryOCC_valid':cadvalid,'two_anchor_mass_counted_once_in_net':True,'retainedOEMsupport_bearings_case_NOTunioned':True})
+wr('anchor_reproduction_receipt.json',anchorRec);wr('frame_CAD_native_mapping.json',{'primaryCAD_valid':cadvalid,'primaryCAD_solidcount':ns,'cadvolume_m3':prop.Mass(),'nativevolume_m3':whole.n.volume(),'native_mass_density7850':whole.n.volume()*7850,'CADmass_density7850':prop.Mass()*7850,'relative_curve_approx_volume_difference':(whole.n.volume()-prop.Mass())/prop.Mass(),'native_vsCAD_curve_facets':64,'maxchord_m':.1405*(1-np.cos(np.pi/64)),'allparams':params,'STEPsha':sha(step),'STEP_readback_m3':rp.Mass()/1e9,'STEP_relative_Verror':(rp.Mass()/1e9-prop.Mass())/prop.Mass(),'SI_declaration_only_no_coordinate_scale':True,'source_native_anchor_reproduction':'anchor_reproduction_receipt.json','geometric_continuity_not_structurequalification':True})
+# Logical globalfluid range is an explicit newconditional proposal, not assignedalltotank, not routedvolume or COM.
+for fl,L,rho in [('oil',[12.759,16.356,21.654],850),('water',[12.084,14.317,17.550],1000)]:mass.append({'id':f'g17_global_{fl}_conditional_once','body':'distributed_owner_COM_UNKNOWN','mass_range_kg':[x*rho/1000 for x in L],'geometry_role':'globalfluid_logicalconditionalinventory_no_geometry','source_scope':'thermal source route×.8/1/1.2 historicalrange, mustrecompute newroutes/chambers; notinstalledstock'})
+scene={'schema':'gorilla_g17_connected_cage_layout_v1','coordinate_frame':'worldSI XfrontYleftZup','producer_sha256':sha(__file__),'sources':{k:{'path':str(p),'sha256':sha(p)} for k,p in {'G16_finalB':BASE,'G13_original_shoulder':R/'.scratch/gorilla_internal_g13_shoulder_cooling_zones/a/scene.json.gz','thermal_final':THERM,'rules':R/'sai_robots_engineering_rules.md','geometryhelper':R/'.scratch/gorilla_internal_g14_complete_thermal_colayout/geometry_helpers.py','interface_contract':D/'source_interface_contract.json'}.items()},'parts':parts,'new_module_mass_rows':mass,'new_geometry_ids':newids,'proposed_retired_ids':sorted(retire),'rigidgroup_transforms':groups,'complete_partition_slots':slots,'original_visible_armor_ids':s['original_visible_armor_ids'],'originalvisible_source_identity_notfit':True,'fixed_interface_candidate_planes':{'B_supportbolt_PC236_andmount270_reference_kept':True,'sourceOEM115_QTL66_ANDactualseats_unchanged':True,'ownanchors_andframe_one_net_ID':True},'globalfluidinventory':{'oil_L_historical':30,'water_L_historical':12.481996328832434,'newconditional_oil_L_range':[12.759,16.356,21.654],'newconditional_water_L_range':[12.084,14.317,17.55],'workingfilloil_L':7,'workingfillwater_L':2.0,'actualnewroutes_notbuilt_unknown_inventoryCOM':True,'globalmass_countedonce_range_not_alltotank':True},'macro':'a','noFE_SIMP_GPU_Git_source_oldedit':True,'assembly_admission':False}
+(D/'scene.json.gz').write_bytes(gzip.compress(json.dumps(scene,separators=(',',':')).encode(),mtime=0));wr('spec.json',{'scene_SHA':sha(D/'scene.json.gz'),'parts':len(parts),'cells':480,'two_low_EWP150_full_installedstock':True,'frameprimaryCAD_valid':cadvalid,'frameCAD_solidcount':ns,'netframeincludesanchors_once_kg':whole.n.volume()*7850,'fullfunction_physicalqualification':False})
+print('EVENT G17A source',sha(D/'scene.json.gz'),'parts',len(parts),'CADvalid',cadvalid,'CADsolid',ns,'netmass',whole.n.volume()*7850,flush=True)
+g.h.OUT=D;pp=[p for p in parts if p['role']!='design_domain_bulk'];g.h.render(pp,'native_four_view.png');g.h.render(pp,'native_cutaway_four_view.png',True);g.h.sections([p for p in parts if p['name'] in scene['original_visible_armor_ids'] or p['name'] in newids or p['name'].startswith('g16_')])
+from PIL import Image,ImageDraw
+for n in ['native_four_view.png','native_cutaway_four_view.png']:
+ im=Image.open(D/n);dr=ImageDraw.Draw(im);dr.rectangle((0,0,1800,50),fill='#f3f2ed');dr.text((25,10),'G17 A / ACTUAL CONTINUOUS OWN ANCHOR+CAGE / COMPLETE FUNCTION CO-LAYOUT',fill='black');dr.text((25,30),'OEM/support interfaces retained / assembly, silhouette, load joint, fluid and heat still unqualified / no computational-domain overlay',fill='black');im.save(D/n)
+print('EVENT G17A views',flush=True)

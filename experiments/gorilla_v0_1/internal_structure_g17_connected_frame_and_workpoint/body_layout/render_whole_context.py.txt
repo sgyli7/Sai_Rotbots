@@ -1,0 +1,7 @@
+#!/usr/bin/env python3
+import pathlib,json,gzip,hashlib,importlib.util,inspect,numpy as np
+from PIL import Image,ImageDraw
+P=pathlib.Path(__file__).resolve().parent;R=P.parents[1]
+sp=importlib.util.spec_from_file_location('g17wholehelpers',R/'.scratch/gorilla_internal_g14_complete_thermal_colayout/geometry_helpers.py');g=importlib.util.module_from_spec(sp);sp.loader.exec_module(g)
+for vname in ['a','b']:
+ D=P/vname;s=json.load(gzip.open(D/'scene.json.gz','rt'));code=inspect.getsource(g.h.render).replace('def render(', 'def render_whole(').replace('ppm=460','ppm=225').replace('ox,oy=450,390','ox,oy=450,355').replace('ct=np.array([0,0,2.22])','ct=np.array([0,0,1.35])').replace('>1.8','>3.5').replace('same 460 px/m','same225px/m').replace('upper-body ROI','wholebody nativeprojection');ns={'Image':Image,'ImageDraw':ImageDraw,'np':np,'triangles':g.h.triangles,'OUT':D};exec(code,ns);ns['render_whole']([p for p in s['parts'] if p['role']!='design_domain_bulk'],'native_whole_four_view.png');im=Image.open(D/'native_whole_four_view.png');dd=ImageDraw.Draw(im);dd.rectangle((0,0,1800,50),fill='#f3f2ed');dd.text((25,10),'G17 '+vname.upper()+' WHOLE NATIVE CO-LAYOUT / SOURCE '+hashlib.sha256((D/'scene.json.gz').read_bytes()).hexdigest()[:16],fill='black');dd.text((25,30),'Original visible armor retained; new exposedstock and all collisions remain failed candidate / no visible changes adopted',fill='black');im.save(D/'native_whole_four_view.png');print('EVENT wholeview',vname,flush=True)

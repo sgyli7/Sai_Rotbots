@@ -1,0 +1,64 @@
+#!/usr/bin/env python3
+import pathlib,json,gzip,hashlib,numpy as np
+P=pathlib.Path(__file__).resolve().parent;R=P.parents[1]
+def sha(p):return hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
+def read(p):return json.load(gzip.open(p,'rt')) if str(p).endswith('.gz') else json.loads(pathlib.Path(p).read_text())
+def wr(p,d):pathlib.Path(p).write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n')
+inputs={};out={'scope':'G17 two macro co-layouts; real owncage continuous geometry, all assembly/thermal/SI/appearance admission rejected','variants':{},'reproduction_interpreter':str(R/'.venv/bin/python'),'hard_no_third_macro':True}
+for vn in ['a','b']:
+ D=P/vn;s=read(D/'scene.json.gz');au=read(D/'audit_summary.json');fi=read(D/'function_mass_retirement_receipt.json');fl=read(D/'fluid_installation_receipt.json');mp=read(D/'current_interface_mapping_receipt.json');ex=read(D/'visible_surface_exposure_samples.json');col=read(D/'changed_all_collision_receipt.json');cad=read(D/'frame_CAD_native_mapping.json');rr=read(D/'rigidgroup_receipt.json');bs=read(D/'current_bearing_seat_queries.json')
+ for k,v in s['sources'].items():inputs[v['path']]=v['sha256']
+ finite=[r for r in col['positive_pairs'] if r['class_a']==r['class_b']=='finite_material'];fluidfinite=[r for r in col['positive_pairs'] if 'exclusivefluid_lumen_globalalias' in [r['class_a'],r['class_b']] and 'finite_material' in [r['class_a'],r['class_b']]]
+ classifications={}
+ for r in finite:
+  a,b=r['a'],r['b'];key='other_finite_material_pair'
+  if '_pack_' in a and '_pack_' in b:
+   if 'Al_enclosure' in a+b and 'coldplate_port' in a+b:key='port_enclosure_real_throughhole_missing'
+   elif 'coldplate_port' in a+b and 'coldplate' in a+b:key='port_coldplate_sameAl_joint_net_union_NOTconstructed'
+   elif 'Al_enclosure' in a+b and 'mount_bolt' in a+b:key='mount_bolt_enclosure_throughhole_missing'
+  classifications.setdefault(key,[]).append(r)
+ dryrows=[r for r in s['new_module_mass_rows'] if 'globalfluid_logical' not in r['geometry_role'] and '_cell_' not in r['id']];dry=np.sum([r['mass_range_kg'] for r in dryrows],axis=0).tolist()
+ corrections={'source_scene_sha':sha(D/'scene.json.gz'),'raw_source_not_rewritten':True,'raw_oil_range':[12.759,16.356,21.654],'raw_scope':'G16 historical coldworking2.608/4.108/6.608L+oldroute external proxy; inconsistent with G17 actual7L working','same_external_proxy_plus_actual7L_conditional_oil_L':[17.151,19.248,22.046],'not_new_route_union_or_installed_inventory':True,'bodyCOM_INERTIA_unknown':True,'conditional_tank_target_L':[9.18,10.717139,12.8042],'current_oil_actual_capacity_L':10.716264,'mid_target_shortfall_L':.000875,'tiny_shortfall_NOTsignificant_catalogue_precision_or_rating':True,'high_target_shortfall_L':12.8042-10.716264,'water_2Lwork_vs_global_range_not_actual_routes':True,'cells_max70g_not_known_nom_or_lower':'rawrows .07/.07/.07 are sizingmax proxies, not credible physical low/nom/high; keepm_cell parameter ≤.07kg','partial_raw_mass_arithmetic_not_physicalmassbounds':True}
+ if vn=='b':corrections['low_pump_stage0_to_lowwater_free_surface_suction_lift_m']=.154;corrections['NPSHr_NPSHa_and200kPagOEMlimit_unclosed']=True
+ wr(D/'inventory_scope_corrections.json',corrections)
+ result={'scene_sha':sha(D/'scene.json.gz'),'producer_sha_recorded':s['producer_sha256'],'producer_sha_actual':sha(D/'build_connected_layout.py'),'actual_parts':len(s['parts']),'native_resource_gate_of_new_and_moved':au['native_source_gate'],'ownnet_resource_roots':au['ownframe_native_roots'],'CAD_valid_and1solid':cad['primaryCAD_valid'] and cad['primaryCAD_solidcount']==1,'CAD_native_mapping':cad,'net_mass_includes_twoanchors_once_kg':au['ownframe_mass_kg'],'wholeCOM_I_mass_notqualified':True,'primary_frame_COM_I_only':read(D/'frame_geometry_mass_COM_I.json'),'originalanchors_inclusion':mp['original_anchor_material_inclusion'],'OEM_profile_overlaps_ownnet_REJECT':mp['newframe_vs_all_independentG13_positive'],'majorblock_overlaps_only_tested_profiles':au['majorblock_top10'],'finite_pair_categories':classifications,'fluid_finite_pairs_in_changed_scope':fluidfinite,'changed_all_mixed_pairs':len(col['positive_pairs']),'changed_all_scope':col['scope'],'scope_not_unchangedretained_ORmotion_ORsealedroutes':True,'rigidgroup_commontransforms':rr,'two_actual_low150stages_fullstock_notpressure_orcoolingqualified':True,'sixfans_S1_exactstock_NOTcapacity':True,'independent_radiator_sourceEGW71C_notcold20mount':True,'function_mass_retirement':fi,'dry_partial_ranges_excluding480cells_andlogicalfluids_kg':dry,'raw_480cell_max_budget_kg':33.6,'all480cell_min_energy_kWh':7.44,'unknown_auxrotor_mass_COMI_notzero_ORqualified':True,'fluid_current_actual_chambers':fl,'inventory_scope_corrections':corrections,'actual17datum_queries':'current_interface_mapping_receipt.json','actual_four_bearing_seat_queries':'current_bearing_seat_queries.json','bearing_area_vs_history_max_abs_m2':max(abs(p['delta_area_m2']) for q in bs['four_bearing_functional_interfaces'] for p in q['new_radius_axial_source_selection']),'source17oldindices_NOTnew_FEMboundary':True,'oldsource_corepatches_internalized_newwaistpatchchanged':True,'visible_exposure_samples':ex,'original111face_source_identity_not_assembledsilhouette':True,'newserial_shoulder_source_not_integrated':'separate rootintegration required; neverstacknew/old output or4carriers','missing_air_routes':'S1 actualplenum/guard stocks, noactual originalfront/side/rear openings/sealedloops; lowEMRAX3m3min each airrenewalguardduct missing','noFE_SIMP_or_defaultSI_change':True,'assembly_or_visiblechanges_adopted':False}
+ out['variants'][vn]=result;wr(D/'final_receipt.json',result)
+# Independentthermalv2 is scope/physics proposal, not geometryproducerinput. Its outputs are read-only snapshot references.
+tp=R/'.scratch/gorilla_internal_g17_thermal_joint_workpoint/joint_workpoint_v2.json'
+if tp.exists():inputs[str(tp)]=sha(tp);out['thermal_v2_scope_reference']={'path':str(tp),'sha256':sha(tp),'body_sourceB':out['variants']['b']['scene_sha'],'allmissingduct_andhydraulicpressureconditions_remain_red':True}
+wr(P/'report.json',out)
+b=out['variants']['b'];a=out['variants']['a'];md=f'''# G17 connected cage / complete functional co-layout
+
+A/B 两宏观候选均封存，不采用；没有第三布局或有限元。本轮实际改善是自有宽梁、节点和原肩锚形成合法连续 CAD，双EWP150完整stock真实画入；不因此宣布承力、安装、热、外观或整机SI通过。
+
+| 同版事实 | A | B |
+|---|---:|---:|
+| 实际native件数 | 2530 | 2530 |
+| 新/移动×all混合正体积 | 1352 | 336 |
+| finite–finite | 473 | 24 |
+| 液腔×finite | 17 | 0 |
+| 测试主要组profile交 | 8 | 1 |
+| 净自有frame+两锚，ρ7850假设 | 95.705637kg | 95.705637kg |
+
+筛查只覆盖本版新/移动件与全部present件，不覆盖unchanged-retained之间、运动/气液全回路。主要组仅4pack/18directional/S1×5/双液压输入/两肩及低串联泵，单独aux/罐/HV/compute由changed×all另审；不同版本数字不能直接作优化率。
+
+B 恢复四个完整120芯axisY包，抬高两层至Z2.140/2.396；两水罐移前侧，油罐完整壳和7Lfill移后中央；完整HX四port、compute、HV/LV、泵/filters/controllers用统一刚体datum搬位。480芯maxØ21.55×70.15、pitch22.5及全部辅助功能保留，min能量7.44kWh只是cell参照，不是整包额定或30min验收。70g是max而非已知nom，rawrows的33.6kg不能成为真实low/nom；部件/rotor分体质量、全机COM/fullI及真实安装均unknown。
+
+B24 finite分类：8port穿Al壳缺真实孔，8port×coldplate同Al安装未净料union，8mountbolt穿壳缺孔，全部保失败；不是macro frame×pack撞但sameowner不豁免。唯一主要组pair为pack3×低串联泵mount/guard等完整profile7.6235cm³，保失败不删辅助。\n另外净自有frame含旧锚housing，仍各与CSG65完整profile交84.009315cm³：旧ring(q.020,L.010,Ri.118)侵入q0..024/R.130 flange。OEM没有被union或裁掉，这项gross/真实接口未知是核心安装红线，不能当正常内部空间或同固定body免除。
+
+主CAD来自解析OCC Cut/Fuse，合法1solid；native用相同参数64段圆弧，二者V/最大弦差/实际SI回读在frame_CAD_native_mapping.json。原两锚native重建对原source对称差左1.57e−20、右4.57e−20m³，旧料均被新net实际包含；各独立锚ID退休为一个g17_connected_cage_and_fixed_anchor_net，只计一次，所有OEM case/双支承/bolts/bearings仍独立。真实6mm节点贯入自有前墙并连通，不靠共面或owner；材料制造、焊接/疲劳/载荷闭合未知。
+
+17旧contract只作source datum。新native重新按实际world plane和源区域查询面，不复制G15face编号。PC270 parent席面、B receiver/A output查询面积保留；两旧coreX=.115面已内部化，waistX=.2475实际面变为.00470482m²，不能继承旧traction。四bearing另按当前native真实半径/轴向区间重新裁取弦面，历史面积差0；source座保持不等于接触/预紧/压力中心/FE边界通过。完整新serial肩是另分支，当前候选没有叠加它或删除旧4carrier的下游功能；root综合版本需exact替换。
+
+油罐实际容量10.716264L/work7；水低2.352504/work1.2，高1.741464/work.8。全局库存只逻辑一次，不全归罐中心：rawsource oil range12.759/16.356/21.654L是旧G16工作域，不能套当前7L；同旧external-route proxy应17.151/19.248/22.046L，但新routes未建仍不当实际库存/质量闭合。中条件所需tank10.717139与当前差.875mL只是假设敏感，非额定精度；高条件12.8042明确不足。水range同样不是新实际路线。低pump stage0比低水液面高约154mm，NPSH/吸空/入口压/接管均未关。
+
+S1保4×ES0707完整254×212×80、1×ES0714完整457×212×80，各176mm硬件厚/6完整172×51fans及plenum/guard/ports。低两个完整150 stage共140×190×270，加真实有限OD38/ID32短连接与非零mount/guard/reducers；hot80独立。EGW71°C来源曲线、20°C安装面、35°C环境、branch压降与LC转子空气需求仍红；并未因能画入继承容量。EMRAX空气guard/duct .248×.150×.248/每motor的后续预算尚未画，缺项不为零；两低芯可借原前格栅，其他低/hot仍需真实独立侧后进排口和密封风路，原甲缺面不当通风孔。
+
+111旧可见面保留只证明来源。actual-native白躯曲面配对射线采样下界：低双150前露188.09mm，上电池前露46.64mm，后上散热段后露62.96mm；有缺面样本，既非AABB认证腔，也不能宣称AA3全局不可行。当前同源四视/拆壳/全身/切面都显示失败；至少需要局部侧/前泵包装与后风道包装方案或下一完整架构重排，未自动采用可见改形。未修改外腿脚。
+
+源A `{a['scene_sha']}`；源B `{b['scene_sha']}`。每版producer独立保存，当前源不再改。用`{R/'.venv/bin/python'}`执行对应a/b build_connected_layout.py，再audit_connected_layout.py；diagnose_layout.py、map_unchanged_bearing_seats.py和render_whole_context.py生成实际诊断。冻结审计读原bytes/manifest；重放会写本scratch目录，旧G16/G15未改，未Git/GPU/默认SI。
+'''
+(P/'README.md').write_text(md)
+files=[p for p in P.rglob('*') if p.is_file() and '__pycache__' not in p.parts and p.suffix!='.log' and p.name not in ['freeze_manifest.json','freeze_check.json']]
+outputs={str(p):sha(p) for p in sorted(files)};wr(P/'freeze_manifest.json',{'scope':'two preservedmacro variants; source geometry locked; no finalphysics qualification','source_A':a['scene_sha'],'source_B':b['scene_sha'],'inputs':inputs,'outputs':outputs,'runtime':str(R/'.venv/bin/python'),'logs_preserved_unhashed_progress':sorted(str(p) for p in P.rglob('*.log'))})
+errs=[p for p,h in {**inputs,**outputs}.items() if not pathlib.Path(p).exists() or sha(p)!=h];wr(P/'freeze_check.json',{'manifest_sha':sha(P/'freeze_manifest.json'),'inputs':len(inputs),'outputs':len(outputs),'hash_errors':errs,'no_source_change':not errs});print('EVENT G17 freeze',sha(P/'freeze_manifest.json'),'README',sha(P/'README.md'),'inputs',len(inputs),'outputs',len(outputs),'errors',len(errs))

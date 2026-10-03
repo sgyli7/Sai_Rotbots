@@ -1,0 +1,65 @@
+"""G17 exact source interface comparisons, inventory and original armor/context query; no FE."""
+from pathlib import Path
+import sys,json,gzip,hashlib,argparse,copy
+import numpy as np,trimesh,manifold3d as mf
+from shapely.geometry import Polygon
+from shapely.ops import unary_union
+ROOT=next(p for p in Path(__file__).resolve().parents if(p/'sai_robots_engineering_rules.md').is_file());sys.path.insert(0,str(ROOT/'.scratch/gorilla_internal_g16_load_interface_domain'));import build_interface_layer as H
+O=Path(__file__).resolve().parent;ap=argparse.ArgumentParser();ap.add_argument('--variant',choices=['a','b'],required=True);a=ap.parse_args();D=O/a.variant;load=H.read;s=load(D/'scene.json.gz');pm={p['name']:p for p in s['parts']};base=load(H.FILES['current']);bp={p['name']:p for p in base['parts']};sha=H.sha;put=lambda n,d:(D/n).write_text(json.dumps(d,indent=2,allow_nan=False)+'\n');v=H.v;f=H.f
+kcache={}
+def K(p):
+ if p['name']not in kcache:kcache[p['name']]=mf.Manifold(mf.Mesh64(v(p),f(p)))
+ return kcache[p['name']]
+def pair(p,q,scope):
+ A=K(p);B=K(q);r={'a':p['name'],'b':q['name'],'scope':scope,'kernel_status':[str(A.status()),str(B.status())],'source_polygon_query_triangulation_not_resource_reissue':True,'connections_not_qualified_by_sameowner':True}
+ if A.status()==B.status()==mf.Error.NoError:
+  z=A^B;r['positive_volume_cm3']=float(z.volume()*1e6);r['bounds_world_m']=list(z.bounding_box())if z.volume()>1e-10 else None;r['material_gap_search_5mm_m']=float(A.min_gap(B,.005))
+ return r
+I=load(ROOT/'.scratch/gorilla_internal_g16_load_interface_domain/interface_contract.json');ports=[]
+for side,sg in [('left',1),('right',-1)]:
+ p=pm['g17_'+side+'_pitch_to_roll_closed_load_path'];old=bp['g13_'+side+'_output_flange_journals_closed_arm_carrier'];oldpatch=H.planar(old,1,sg*.480);newpatch=H.planar(p,1,sg*.480)
+ def poly(q,pa):return unary_union([Polygon(v(q)[f(q)[i]][:,[0,2]])for i in pa['triangle_indices']])
+ sym=poly(old,oldpatch).symmetric_difference(poly(p,newpatch));row={'side':side,'new_pitch_A_face_source_id':p['name'],'original_A_face_source_id':old['name'],'original_face_area_m2':oldpatch['area_m2'],'new_face_area_m2':newpatch['area_m2'],'actual_A_face_polygon_symmetric_difference_m2':float(sym.area),'no_OEM_recess_or_thread_approval':True,'journal_patches':[]}
+ for j,Y in enumerate([.5255,.5855]):
+  c=np.array([-.13,sg*Y,2.29]);axis=[0,sg,0];p0=H.cylpatch(old,c,axis,.02995,-.014875,.014875);p1=H.cylpatch(p,c,axis,.02995,-.014875,.014875);row['journal_patches'].append({'id':side+'_pitch_external_'+str(j),'old_patch_area_m2':p0['area_m2'],'new_patch':p1,'area_delta_m2':p1['area_m2']-p0['area_m2'],'exact_d60_D110_T29p75_reference_not_pressurecentre':True})
+ ports.append(row)
+ yo=pm['g17_'+side+'_yaw_output_upper_arm_datum'];arm=pm['e2_upper_net_'+side+'_upper_arm'];ports.append({'side':side,'downstream_arm_material_interface':pair(yo,arm,'finite_same-movingowner_candidate_join not a weld orbolt'),'actual_downstream_mount_world_m':yo['upperarm_attachment_port_world_m'],'all_original_arm_material_fields_unchanged':all(arm[k]==x for k,x in bp[arm['name']].items()),'attachment_admissibility_unknown':True})
+ unchanged=[]
+ for p in s['parts']:
+  if p['name'].startswith('g13_'):unchanged.append({'id':p['name'],'all_original_fields_exact':all(p[k]==x for k,x in bp[p['name']].items())})
+put('actual_interface_contract.json',{'source_sha256':sha(D/'scene.json.gz'),'producer_sha256':sha(__file__),'G16_original17_interfaces':I['interfaces'],'original17_context_datum_not_newcore_mate_validation':True,'actual_new_interface_comparisons':ports,'G13_fixed_input_bearings_brake_cooling_feedback_original_field_checks':unchanged,'new_pitch_70mm_axis_delta_and_all_serial_transforms':s['joint_interfaces'],'unknowns':['OEM50 downstream mating drawing andpreload/thread actual engagement','G13 OEM65 2mm A recess, B flange pressure/contact','complete stator-rotor andbearinginner motion/fullI','integral bearingcup assembly path','no downstream upperarm fastening/weld yet','new wholemass/statics/thermal not inherited fromG15'],'stable_SI_accepted':False})
+# Function-specific replacement ledger; source full package net materials vs catalogue mass not mixed.
+newrows=[];nullids=[];existingfluid=[]
+for p in s['parts']:
+ if p.get('g17_context_only'):continue
+ if p.get('water_region')or'bounded_water_region'in p['name']:existingfluid.append(p['name']);continue
+ m=p.get('mass_range_kg')
+ if m is None:nullids.append(p['name'])
+ newrows.append({'id':p['name'],'owner_scope':p['body'],'mass_range_kg':m,'basis':'new_OCC_finite_density_material'if p['name'].startswith('g17_')and p.get('finite_material')else 'retained_source_known_or_reference_scope_not_uniformI','COM_world_m':p.get('exact_CAD_COM_world_m'),'full_I_at_COM_world_kg_m2':p.get('exact_CAD_full_I_at_COM_world_kg_m2')if p.get('finite_material')else None,'mass_andCOM_owner_disaggregation_unknown_for_OEM':bool(p.get('OEM_inertia_and_mass_split_unknown')or p.get('OEM_internal_full_I_unknown')or p.get('g17_geometric_owner_NOT_OEM_stator_rotor_partition'))})
+oldrows=[{'id':n,'mass_range_kg':bp[n].get('mass_range_kg'),'source_role':bp[n].get('role'),'removed_only_in_candidate_not_verified_credit':True}for n in s['nominated_replaced_part_ids']];known=np.sum([q['mass_range_kg']for q in newrows if q['mass_range_kg']is not None],axis=0);oldknown=np.sum([q['mass_range_kg']for q in oldrows if q['mass_range_kg']is not None],axis=0);cad=load(D/'cad_part_manifest.json');net=sum(q['exact_CAD_volume_m3']*q['density_kg_m3']for q in cad if q['density_kg_m3']is not None);newbearing=sum(q['mass_range_kg'][1]for q in newrows if q['id'].startswith('g17_')and'_external_bearing_'in q['id']);g13bearing=sum(q['mass_range_kg'][1]for q in newrows if q['id'].startswith('g13_')and'_independent_load_bearing_'in q['id'])
+put('functional_mass_inventory.json',{'robot_id':'gorilla_v0_1','source_sha256':sha(D/'scene.json.gz'),'producer_sha256':sha(__file__),'new_candidate_rows':newrows,'candidate_replaced_original_rows':oldrows,'new_own_CAD_net_material_kg':net,'added_downstream_SKF_reference_mass_once_kg':newbearing,'retained_pitch_SKF_reference_mass_once_kg':g13bearing,'new_complete_scope_known_source_subtotal_kg':known.tolist(),'candidate_removed_source_range_kg':oldknown.tolist(),'nominated_replace_delta_not_qualified_credit_kg':(net+newbearing-oldknown).tolist(),'actual_qualified_mass_credit_kg':0,'null_mass_ids_not_zero':nullids,'existing_water_volume_rows_not_added_to_globalfluid_again':existingfluid,'core_and_existingupperarm_context_not_additive':True,'complete_subassembly_total_notclosed_if_nulls_or_catalogues_unknown':True,'OEM_internal_I_not_inferred_from_uniform_reference':True})
+# Query original 111 actual armor and nine COMPLETE old body groups; none removed to fit.
+armor=[bp[n]for n in base['original_visible_armor_ids']];groups=[]
+for name in ['g14_pack_0','g14_pack_1','g14_pack_2','g14_pack_3','left_pump_stack','right_pump_stack','HX_complete_core_four_ports','ds_compute','ds_back_screen']:
+ g=next(x for x in base['rigid_group_transforms']if x['group']==name);members=[bp[n]for n in g['complete_member_ids']if n in bp];groups.append({'id':name,'members':members,'complete_ids':g['complete_member_ids']})
+queries=[p for p in s['parts']if p['name'].startswith('g17_')or p.get('g17_neutral_rigid_translation_world_m')and any(p['g17_neutral_rigid_translation_world_m'])];conf=[];invalid=[]
+for p in queries:
+ A=K(p);aa=np.array(A.bounding_box())
+ for q in armor:
+  bb=np.r_[v(q).min(0),v(q).max(0)]
+  if np.any(aa[3:]<=bb[:3])or np.any(bb[3:]<=aa[:3]):continue
+  Bq=K(q)
+  if A.status()!=mf.Error.NoError or Bq.status()!=mf.Error.NoError:invalid.append({'a':p['name'],'b':q['name'],'kernel_status':[str(A.status()),str(Bq.status())]});continue
+  vv=(A^Bq).volume()
+  if vv>1e-10:conf.append({'candidate':p['name'],'original_armor':q['name'],'positive_volume_cm3':float(vv*1e6),'scope':'actualoriginal111modelthinwallquery_notAA3mustchangeproof'})
+mod=[]
+for g in groups:
+ for p in queries:
+  aa=np.array(K(p).bounding_box())
+  for q in g['members']:
+   bb=np.r_[v(q).min(0),v(q).max(0)]
+   if np.any(aa[3:]<=bb[:3])or np.any(bb[3:]<=aa[:3]):continue
+   z=pair(p,q,'whole_module_member_reference_or_finite_scope retained, neverOEMnetguess')
+   if z.get('positive_volume_cm3',0)>1e-4:mod.append({'group':g['id'],**z})
+put('original_armor_complete_groups_query.json',{'source_sha256':sha(D/'scene.json.gz'),'original_current_B_sha256':sha(H.FILES['current']),'producer_sha256':sha(__file__),'armor_ids':[p['name']for p in armor],'original_armor_count':len(armor),'groups_complete_member_IDs':[{k:q[k]for k in ['id','complete_ids']}for q in groups],'original_armor_intersections':conf,'original_invalid_kernel_queries':invalid,'complete_group_member_intersections':mod,'original_armor_outer_delta_mm':0,'same_pose_source_allpieces_retained':True,'AA3_or_whole_package_accepted':False})
+print('INVENTORY',a.variant,'own',net,'subtotal',known.tolist(),'oldnominated',oldknown.tolist(),'armor',len(conf),'9group',len(mod),'null',len(nullids),flush=True)
