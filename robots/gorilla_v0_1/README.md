@@ -1,11 +1,12 @@
 # Gorilla V0.1
 
-当前工作：**G18完整躯干—肩臂候选、实际组合与独立冷却核算已封存，安装与整机物理仍拒绝。** 主躯连续材料和电池接口有实际改进；下一轮回完整关节架构与功能分配，不继续局部补壳。AA3保留上半身与配色审美；用户新下半身仍在修订，确认后在本项目重建工程几何。旧腿足仅历史占位。C15已合主干，双足双手与自主复杂Bevy目标持续。
+当前工作：**G19完整功能/驱动架构、电压热和整数能源候选已封存；G20开始一个完整组件关节、A350控制/保持与720完整模块的原生设计。** 首检查点和整机物理仍未达。选择探索路线不等于采用或减重；AA3上半身审美保留，新下半身仍在修图，确认后这里重建。旧腿足仅历史占位，C15已合主干，最终双足双手与自主复杂Bevy目标持续。
 
 唯一当前状态入口：[当前决定与门禁](design/current_decisions.md)。
 
 | 资料 | 入口 |
 |---|---|
+| G19完整功能与架构 | [实际功能账、两路线、电压热与储能/空间裁决](../../experiments/gorilla_v0_1/internal_structure_g19_function_and_actuation_architecture/README.md)；下一原生探针，未采用/物理放行 |
 | G18完整内部集成与冷却 | [实际源、原生四视、独立质量/干涉与能量范围](../../experiments/gorilla_v0_1/internal_structure_g18_full_assembly_and_cooling/README.md)；仍拒绝装配/物理/审美 |
 | G17连续主架与联合工作点 | [实际CAD/native、完整肩三轴、整组拒绝与热预算](../../experiments/gorilla_v0_1/internal_structure_g17_connected_frame_and_workpoint/README.md)；两候选仍拒绝 |
 | G16宽厚设计域与真实接口 | [实际CAD/native、完整两布局、热工作范围与独立复核](../../experiments/gorilla_v0_1/internal_structure_g16_broad_domain_and_interfaces/README.md)；两候选仍拒绝 |
@@ -74,7 +75,7 @@ C15 将前掌、足弓与后跟分开，取消跨段连续底板；卸载端姿�
 
 [G11 宽厚身体域与功能预算](../../experiments/gorilla_v0_1/internal_structure_g11_body_domain_and_budget/README.md)：完整条件域/肩接面与任务预算，实际几何、单位和库存独立核；失效格栅面积推论明确撤销，整机仍未放行。
 
-当前内部检查点：[G12完整系统共同布局与热路筛查](../../experiments/gorilla_v0_1/internal_structure_g12_complete_system_colayout/README.md)已保存；安装和物理仍拒绝。G13改为宽截面承力笼架与完整系统分区，唯一当前状态见[current_decisions](design/current_decisions.md)。
+历史内部检查点：[G12完整系统共同布局与热路筛查](../../experiments/gorilla_v0_1/internal_structure_g12_complete_system_colayout/README.md)已保存；安装和物理仍拒绝。G13改为宽截面承力笼架与完整系统分区，唯一当前状态见[current_decisions](design/current_decisions.md)。
 
 [G13宽截面笼架与肩干湿分区](../../experiments/gorilla_v0_1/internal_structure_g13_load_cage_and_cooling/README.md)：实际CAD/native、载荷和测量范围纠正已保存；三分支未整合或放行。当前排期只读唯一决定索引。
 

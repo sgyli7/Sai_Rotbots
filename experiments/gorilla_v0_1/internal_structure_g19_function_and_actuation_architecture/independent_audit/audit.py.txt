@@ -1,0 +1,70 @@
+import json,hashlib,math,re,gzip
+from pathlib import Path
+ROOT=Path('/home/ethan/Projects/Sai_Rotbots'); P=ROOT/'.scratch/gorilla_internal_g19_root_macro'; O=ROOT/'.scratch/gorilla_internal_g19_independent_audit'; W=ROOT/'.scratch/gorilla_internal_g19_drive_architecture'
+def read(p):return json.loads(p.read_text())
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+r=read(P/'energy_and_space_comparison_v3.json'); c=read(P/'bound_cell_source_facts.json')['source_facts']['high_power_cell_official_reference']; m=read(P/'bound_mission_duration_source.json'); t=read(P/'bound_g18_thermal_v3.json'); w=read(W/'winding_ratio_voltage.json'); ws=read(W/'winding_summary.json')
+paths=[P/k for k in r['source_hashes']]+[P/'energy_and_space_comparison_v3.json',P/'energy_and_space_comparison_v2.json',P/'compare_energy_and_space_v3.py',W/'winding_ratio_voltage.json',W/'winding_summary.json',W/'calculate_winding_routes.py']
+inputs={str(p.relative_to(ROOT)):sha(p) for p in paths}
+bound_checks={k:sha(P/k)==v for k,v in r['source_hashes'].items()}
+missions={x['id']:x for x in m['two_physical_budget_domains']}; aux=t['B_proposal']['auxiliary_once_allocation']; auxs={28:aux['total28V_W']/1000,32:aux['total32V_W']/1000}
+errors=[]; checks=[]; independent=[]
+def ck(name,got,expected):
+ if isinstance(got,(list,tuple)):
+  for i,(a,b) in enumerate(zip(got,expected)):ck(name+f'[{i}]',a,b)
+  if len(got)!=len(expected):errors.append({'field':name,'length_difference':True})
+ elif got is None or expected is None:
+  if got!=expected:errors.append({'field':name,'got':got,'expected':expected})
+ else:
+  delta=abs(float(got)-float(expected));checks.append((name,delta))
+  if delta>1e-10*max(1,abs(float(expected))):errors.append({'field':name,'got':got,'expected':expected,'difference':delta})
+for x in r['cell_count_sensitivities']:
+ ns,np=map(int,re.fullmatch(r'(\d+)s(\d+)p',x['topology']).groups());n=ns*np; nominal=ns*c['nominal_V']; cutoff=ns*c['discharge_cutoff_V']; energy=n*c['minimum_energy_Wh']/1000; resistance=ns*c['typical_DC_50percentSOC_ohm']/np
+ ck(x['topology']+'/cells',x['cells'],n);ck(x['topology']+'/energy',x['lower_reference_nameplate_kWh'],energy);ck(x['topology']+'/mass',x['cell_mass_kg'],[None,None,n*c['max_mass_kg']]);ck(x['topology']+'/Rpack',x['typical_DC_Rpack_ohm_not_guaranteed'],resistance);ck(x['topology']+'/Vcolumns',x['numeric_terminal_voltage_column_order'],[nominal,cutoff]);ck(x['topology']+'/cylvolume',x['maximum_cylindrical_cell_envelope_L'],n*math.pi*(c['max_diameter_m']/2)**2*c['max_height_m']*1000)
+ budgets=[]
+ for b in x['budgets']:
+  mission=missions[b['mission']]; duration=mission['duration_h']; auxiliary=auxs[b['auxiliary_supply_upper_V']];means=[0.,0.]; phases=[]
+  ck(x['topology']+'/'+b['mission']+'/duration',b['actual_duration_h'],duration);ck('aux',b['auxiliary_source_upper_kW'],auxiliary)
+  for old,out in zip(mission['phases'],b['phases']):
+   assert old['phase']==out['phase']; bus=old['Pbus_kW']-old['legacy_aux_low_or_air_unallocated_kW']+auxiliary; terminal=bus/.98;currents=[terminal*1000/v for v in [nominal,cutoff]]; cell=[v/np for v in currents]; heat=[n*v*v*c['typical_DC_50percentSOC_ohm']/1000 for v in cell];storage=[terminal+h for h in heat]
+   ck('bus',out['unchanged_bus_kW'],bus);ck('packI',out['pack_terminal_A_at_nominal_cutoff'],currents);ck('cellI',out['cell_A_at_nominal_cutoff'],cell);ck('cellHeat',out['cell_heat_kW_at_nominal_cutoff'],heat);ck('storage',out['storage_input_kW_at_nominal_cutoff'],storage);ck('duty',out['duty'],old['duty'])
+   means=[a+old['duty']*v for a,v in zip(means,storage)];phases.append({'phase':old['phase'],'duty':old['duty'],'duration_s':duration*3600*old['duty'],'Pbus_kW':bus,'Pterminal_kW':terminal,'Ipack_A':currents,'Icell_A':cell,'cell_I2R_kW':heat,'storage_kW':storage})
+  req=[z*duration/(.75*.90) for z in means];time=[60*energy*.75*.90/z for z in means];margin=[energy-z for z in req]
+  for key,val in [('average_storage_input_kW_at_nominal_cutoff',means),('required_nameplate_SOC75_reserve10_kWh_at_nominal_cutoff',req),('conditional_time_min_SOC75_reserve10_at_nominal_cutoff',time),('conditional_energy_margin_kWh_at_nominal_cutoff',margin)]:ck(key,b[key],val)
+  ck('available',b['conditionally_available_energy_kWh'],energy)
+  budgets.append({'mission':b['mission'],'duration_h':duration,'auxiliary_V':b['auxiliary_supply_upper_V'],'terminal_voltage_columns_V':[nominal,cutoff],'phases':phases,'mean_storage_kW':means,'required_nameplate_kWh':req,'conditional_time_min':time,'margin_kWh':margin})
+ independent.append({'topology':x['topology'],'cells':n,'minimum_reference_kWh':energy,'max_cell_mass_kg':n*c['max_mass_kg'],'budgets':budgets})
+# Mechanical grid computed from actual finite max cell + stated own pitch/margin. Never import producer.
+mechanical=[]
+for q in r['package_space_questions']:
+ a,b=q['physical_grid_x_z'];pitch=q['cell_pitch_m'];dia=c['max_diameter_m'];height=c['max_height_m'];dims=[(a-1)*pitch+dia,height,(b-1)*pitch+dia];ck('grid count',q['cells_per_module'],a*b);ck('grid dims',q['cell_array_dimensions_XYZ_m'],dims);ck('gap',q['cell_surface_gap_m'],pitch-dia)
+ # Reconstruct all180 center positions and adjacent min surfacegap, declared own enclosure expansion.
+ coords=[[(i-(a-1)/2)*pitch,0,(j-(b-1)/2)*pitch] for i in range(a) for j in range(b)];enc=[dims[0]+.01495,dims[1]+.04085,dims[2]+.02295];ck('enclosure',q['custom_enclosure_gross_dimensions_XYZ_m'],enc);ck('4gross L',q['four_enclosure_gross_AABB_sum_L'],4*math.prod(enc)*1000);ck('2high H',q['two_high_stack_enclosure_height_with_design25mm_gap_m'],2*enc[2]+.025)
+ mechanical.append({'id':q['id'],'grid_XZ':[a,b],'module_count':4,'cell_centers_local_m':coords,'count':4*a*b,'maxcell_array_XYZ_m':dims,'own_enclosure_XYZ_m':enc,'own_margin_XYZ_m':[.01495,.04085,.02295],'surface_gap_m':pitch-dia,'actual_pack_native_CAD_present':False})
+# Independent steady iq torque/voltage/copper computations; inputs literal source facts only.
+wind_errors=[];wind_error_max={k:0. for k in ['Tin','I','Vreq','copper','Tc','gearref','qmax']};selected=[]
+def wck(k,a,b,row):
+ d=abs(a-b);wind_error_max[k]=max(wind_error_max[k],d)
+ if d>1e-9*max(1,abs(b)):wind_errors.append({'field':k,'row':row,'got':a,'expected':b})
+for i,s in enumerate(w['screens']):
+ f=w['motor_facts'][s['motor']];N=s['gear']['ratio'];Tin=s['known_subset_output_torque_abs_Nm']/(s['eta_gear_assumed']*N);I=Tin/f['Kt_Nm_per_Arms'];R=f['R_phase_25C_ohm']*(1+.00393*75);iq=math.sqrt(2)*I
+ # emf phasepeak proportional to output qdot; vq=a*qdot+b, vd=c*qdot.
+ a=f['Ke_LL_rms_V_krpm']*(N*60/(2*math.pi*1000))*math.sqrt(2/3);b=R*iq;cc=(f['poles']/2)*N*f['L_phase_H']*iq
+ req=math.sqrt(3)*math.hypot(a*.5+b,cc*.5)/.9;limit=.9*min(s['Vbus_assumed_V'],f['Umax_Vdc'])/math.sqrt(3);A=a*a+cc*cc;B=2*a*b;C=b*b-limit*limit;dis=B*B-4*A*C;q=max(0.,(-B+math.sqrt(max(0.,dis)))/(2*A)) if C<=0 else 0.
+ cop=3*R*I*I
+ for k,z,g in [('Tin',Tin,s['motor_input_torque_Nm']),('I',I,s['motor_current_Arms_linear_assumption']),('Vreq',req,s['steady_qdot_p5_required_Vdc_including_10pct_margin']),('copper',cop,s['hot_copper_loss_known_subset_W']),('Tc',Tin/f['Tc_Nm'],s['catalogue_Tc_utilization_known_subset']),('gearref',s['known_subset_output_torque_abs_Nm']/s['gear']['L10_reference_Nm'],s['catalogue_L10_utilization_reference_not_static_hardlimit']),('qmax',q,s['model_qmax_rad_s_voltage_only_with_10pct_margin'])]:wck(k,z,g,i)
+ if s['Vbus_assumed_V'] in (180,302.4) and s['level']=='nominal_range_marker' and s['external_hand_mass_kg_sensitivity']==50 and s['eta_gear_assumed']==.75:selected.append(dict(s,independent_qmax_rad_s=q,independent_Vreq_V=req))
+# Summary source-check every24 row against corresponding actual screens with nominal/50/eta.75.
+summarychecks=[]
+for s in ws['summary']:
+ matching=[x for x in w['screens'] if x['joint_id']==s['joint_id'] and x['candidate']==s['candidate'] and x['pose']=='combined_reach_conditional' and x['level']=='nominal_range_marker' and x['external_hand_mass_kg_sensitivity']==50 and x['eta_gear_assumed']==.75]
+ if not matching:matching=[x for x in w['screens'] if x['joint_id']==s['joint_id'] and x['candidate']==s['candidate'] and x['level']=='nominal_range_marker' and x['external_hand_mass_kg_sensitivity']==50 and x['eta_gear_assumed']==.75]
+ for z in matching:
+  for a,b in [('input_torque_Nm','motor_input_torque_Nm'),('current_Arms','motor_current_Arms_linear_assumption'),('catalogue_Tc_fraction_not_qualification','catalogue_Tc_utilization_known_subset'),('known_only_L10_fraction_not_qualification','catalogue_L10_utilization_reference_not_static_hardlimit'),('Vdc_p5_with_10pct_margin_V','steady_qdot_p5_required_Vdc_including_10pct_margin'),('known_only_hot_copper_W','hot_copper_loss_known_subset_W')]:ck('summary/'+a,s[a],z[b])
+  ck('summary/qmax',s['qmax_model_by_bus_V'][str(z['Vbus_assumed_V'])],z['model_qmax_rad_s_voltage_only_with_10pct_margin'])
+ summarychecks.append({'joint_id':s['joint_id'],'candidate':s['candidate'],'exact_matching_row_count':len(matching),'summary':s})
+report={'stage':'G19 independent formula and source identity audit','inputs_sha256':inputs,'four_bound_input_hash_checks':bound_checks,'energy_scalar_checks':len(checks),'energy_max_abs_difference':max(v for _,v in checks),'energy_errors':errors,'independent_all_energy_budgets':independent,'mechanical_lattices':mechanical,'motor_screen_count':len(w['screens']),'motor_formula_max_abs_differences':wind_error_max,'motor_formula_errors':wind_errors,'winding_summary_correspondence':summarychecks,'selected_72s_bus_rows':selected,'scope':{'SOC_usable_fraction':.75*.9,'reserve_definition':'10% withheld from75%usablewindow, not10percentagepoints of nameplate','battery_terminal_voltage_is_fixed_sensitivity_not_OCV_sag_solution':True,'cell_R_typical_50percent_SOC_not_hot_aged_guarantee':True,'mass_nominal_unknown_maxcell_only':True,'mechanical_grid_is_arithmetic_not_new_pack_installation':True,'all_robot_M_COM_I':None,'stable_SI_or_physical_admission':False}}
+(O/'audit.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
+print(json.dumps({'bound_checks':bound_checks,'energy_checks':len(checks),'energy_maxdiff':report['energy_max_abs_difference'],'energy_errors':errors,'wind_errors_count':len(wind_errors),'wind_errors_first':wind_errors[:5],'wind_max':wind_error_max,'summarymatchcounts':[x['exact_matching_row_count'] for x in summarychecks]},indent=2))
+for x in independent:
+ print(x['topology'],[(b['auxiliary_V'],b['mission'],[round(z,6) for z in b['required_nameplate_kWh']],[round(z,6) for z in b['conditional_time_min']]) for b in x['budgets']])

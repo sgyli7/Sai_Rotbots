@@ -1,0 +1,13 @@
+from pathlib import Path
+import json,hashlib,urllib.request,shutil,subprocess
+D=Path(__file__).resolve().parent;C=D/'cache';C.mkdir(exist_ok=True);h=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();r=[]
+for n,u in [('csg50_component_set.pdf','https://www.harmonicdrive.net/_hd/content/caddownloads/dxf/csg-2a-gr_component_sets/csg-50-xxx-2a-gr.pdf'),('csg65_component_set.pdf','https://www.harmonicdrive.net/_hd/content/caddownloads/dxf/csg-2a-gr_component_sets/csg-65-xxx-2a-gr.pdf')]:
+ p=C/n;assert p.exists();r.append({'file':str(p),'url':u,'sha256':h(p),'initial_inline_download_bytes_retained':True,'initial_HTTP_receipt_notpersisted':True,'not_reissued_download':True});subprocess.run(['pdftoppm','-f','1','-l','1','-singlefile','-png','-r','150',str(p),str(p.with_suffix(''))],check=True)
+p=C/'tecnotion_torque_brochure_2_5.pdf';original=D.parent/'gorilla_internal_d_system/tecnotion_torque_brochure_2_5.pdf';shutil.copyfile(original,p);r.append({'file':str(p),'url':'https://www.tecnotion.com/wp-content/uploads/2022/05/Torque_Brochure_EN_2-5.pdf','sha256':h(p),'copied_cached_original':str(original)})
+for pno in [19,20]:subprocess.run(['pdftoppm','-f',str(pno+1),'-l',str(pno+1),'-singlefile','-png','-r','150',str(p),str(C/f'qtr160_page_{pno}')],check=True)
+u='https://assets.gates.com/content/dam/gates/home/knowledge-center/resource-library/catalogs/powergripdrivedesignmanual_17195_2014.pdf'
+try:
+ with urllib.request.urlopen(urllib.request.Request(u,headers={'User-Agent':'Mozilla/5.0'}),timeout=20)as f:
+  b=f.read();p=C/'gates_gt3_manual.pdf';p.write_bytes(b);r.append({'file':str(p),'url':u,'sha256':h(p),'status':f.status,'content_type':f.headers.get('Content-Type')})
+except Exception as e:r.append({'url':u,'download_failure':str(e),'manual_browsed_official_URL_only':True})
+(D/'official_download_receipt.json').write_text(json.dumps({'producer_sha256':h(__file__),'sources':r,'first_gates_download_403_preserved_as_failure':True},indent=2)+'\n');print(r)

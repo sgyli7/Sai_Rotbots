@@ -1,0 +1,12 @@
+from pathlib import Path
+import urllib.request,hashlib,json,subprocess,time
+O=Path(__file__).resolve().parent
+r=[]
+for name,url in [('hydraforce_hsp12_47c.pdf','https://www.hydraforce.com/globalassets/2.-products/product-pdf-files/hsp12-47c_25sep2024_16-39.pdf'),('hydraforce_coil10_e_2026.pdf','https://www.hydraforce.com/globalassets/2.-products/product-pdf-override-files/coil_10-xxex-x_2026-07-22.pdf')]:
+ try:
+  d=urllib.request.urlopen(urllib.request.Request(url,headers={'User-Agent':'Mozilla/5.0'}),timeout=15).read();assert d.startswith(b'%PDF');(O/name).write_bytes(d);subprocess.run(['pdftotext','-layout',str(O/name),str(O/(name[:-4]+'.txt'))],check=True);r.append({'path':name,'url':url,'bytes':len(d),'sha256':hashlib.sha256(d).hexdigest(),'pdf_magic':True,'downloaded_utc':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime())})
+ except Exception as e:r.append({'path':name,'url':url,'error':str(e)})
+(O/'primary_download_receipt_v4.json').write_text(json.dumps(r,indent=2)+'\n')
+for name,page in [('hydraforce_hsp12_47c',3),('hydraforce_hsp12_47c',4),('hydraforce_hsp10_47c',2),('moog_epu_catalog',14)]:
+ subprocess.run(['pdftoppm','-f',str(page),'-l',str(page),'-scale-to','2000','-png','-singlefile',str(O/(name+'.pdf')),str(O/(name+'_p'+str(page)))],check=True,stderr=subprocess.DEVNULL)
+print(json.dumps(r,indent=2))

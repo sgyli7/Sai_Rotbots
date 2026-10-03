@@ -1,0 +1,74 @@
+#!/usr/bin/env python3
+"""Source-bound architecture inventory/thermal ranges and numeric plots; no CAD changes."""
+import gzip,hashlib,importlib.util,json,math,shutil
+from pathlib import Path
+from collections import Counter
+import numpy as np
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+HERE=Path(__file__).resolve().parent;ROOT=HERE.parents[1]
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+def read(p):return json.loads(gzip.decompress(p.read_bytes()) if p.suffix=='.gz' else p.read_bytes())
+def dump(p,d):p.write_text(json.dumps(d,indent=2,ensure_ascii=False)+'\n')
+def main():
+ req=read(HERE/'requirements.json');wind=read(HERE/'winding_summary.json');wf=read(HERE/'winding_ratio_voltage.json');inp=ROOT/'.scratch/gorilla_internal_g18_root_review/body_b_arm_b';mass=read(inp/'function_mass_and_actual_joint_gravity.json.gz');scene=read(inp/'scene.json.gz')
+ input_paths=[inp/'scene.json.gz',inp/'function_mass_and_actual_joint_gravity.json.gz',inp/'summary.json',ROOT/'.scratch/gorilla_internal_g18_shoulder_arm_codesign/b/rigid_pose_report.json',ROOT/'.scratch/gorilla_internal_g3_root_mechanics/bearing_family_facts.json']
+ bound=HERE/'bound_inputs';bound.mkdir(exist_ok=True);input_receipt=[]
+ for p in input_paths:
+  target=bound/(p.parent.name+'__'+p.name)
+  if not target.exists():shutil.copyfile(p,target)
+  assert sha(p)==sha(target)
+  input_receipt.append({'original':str(p),'snapshot':str(target),'sha256':sha(p)})
+ # Independently bind actual stored G18 FK, not merely identical angle text.
+ oldpose=read(input_paths[3]);reach=[p for p in oldpose['poses'] if len(p['q_rad'])==8][0]
+ spec=importlib.util.spec_from_file_location('calc',HERE/'calculate_architecture_requirements.py');mod=importlib.util.module_from_spec(spec);spec.loader.exec_module(mod)
+ tree=scene['body_tree_candidate'];q=req['poses'][1]['joint_degrees'];memo={}
+ def fk(b):
+  if b is None or b not in tree:return np.eye(4)
+  if b in memo:return memo[b]
+  n=tree[b];T=fk(n.get('parent')).copy()
+  if n.get('joint_id') in q:T=T@mod.joint_rotation(n['pivot_world_m'],n['axis_world'],math.radians(q[n['joint_id']]))
+  memo[b]=T;return T
+ errs={b:float(np.max(np.abs(fk(b)-np.asarray(T)))) for b,T in reach['body_transforms_world'].items() if b in tree}
+ assert max(errs.values())<1e-10,errs
+ # Current inventory scope. No deletion or altered fullfunction mass adopted; old numeric values are not proof of fit.
+ def relevant(mid):
+  return mid.startswith(('g13_left_','g13_right_','g18_left_','g18_right_')) or any(f'ds_{s}_{j}' in mid for s in ['left','right'] for j in ['shoulder_roll','shoulder_yaw','elbow_pitch'])
+ current=[r for r in mass['function_mass_rows'] if any(relevant(mid) for mid in r.get('member_ids',[]))]
+ for r in current:r['G19_inventory_role']='current rejected/context; function retained unless full specific replacement rebuilt';r['mass_credit_kg']=0
+ required=['CS/FS/WG full serialized set or intact housed gear','motor full stator and rotor with proper rotation/input support','two input support bearings + two output support bearings/pressure-center defined','CS fixed receiver/FS output clamp and torque joints','independent external load path to closed serial upperarm/elbow shells','input and output encoders plus closed-loop controller','brake complete spring/release force/stroke and joint support during service','sealed separated motor thermal mount, wetted cavity, inlet/outlet/vent/drain','lubrication and seals protected from water, pressure and moving swept hardware','electrical power/feedback and water routing across full pitch-roll-yaw-elbow chain','actual bolts/seats/keys/splines, preload and installation/retrieval spaces','downstream forearm/wrist/hand complete functions remain context']
+ contracts={'inputs':input_receipt,'producer_sha256':sha(Path(__file__)),'complete_required_functions':required,'current_function_rows':current,'current_function_count':len(current),'retired_source_ids_applied':[],'mass_credit_applied_kg':0,'proposed_function_replacement_not_applied':{'A':'2UH complete gear can be replaced only by whole2A + actual full reaction housing,input/output support,clamp/shaft/seals/bolt/thermal/brake/electronics assembly; not a stripped2UH','B':'full drive gear/motor/brake/controller/cooling bank displaced as intactfunction; remote transmission, local output support/encoder/lock added; actual coupling and bank mount required','differentiated_SKU':'QTL210 -> distinct QTR16034Z or yaw QTR34 -> QTR17Z is new module, not an unqualified winding/size edit of oldCAD; all corresponding cooling/driver/bearing/adapter rechecked'},'unknown_owner_histogram':dict(Counter(x['owner_candidate'] for x in req['unmapped_owner_rows_symbolic'])),'G18_combined_FK_match_max_abs_transform_error':max(errs.values()),'G18_combined_FK_match_body_count':len(errs),'actual_new_CAD_fit_or_si_qualified':False}
+ dump(HERE/'function_scope_contract.json',contracts)
+ # Conditional heat source, actual small motor mounting area upper bound only.
+ pitch=next(x for x in wind['summary'] if x['joint_id']=='right_pitch' and x['motor']=='QTR160_34_Z');P=pitch['known_only_hot_copper_W'];Rvendor=.17;area=math.pi*.16*.0345;thermal=[]
+ for extra in [0,50,150]:
+  total=P+extra
+  for Tw in [30,40,50,60]:
+   Rmax=(100-Tw)/total-Rvendor
+   thermal.append({'known_only_proxy_hot_copper_W':P,'additional_iron_friction_drive_rotor_heat_W_assumed':extra,'coil_limit_C_assumed_vendor_condition':100,'local_coolant_bulk_C_assumed':Tw,'conditional_mount_max_C':100-Rvendor*total,'required_effective_motor_mount_to_local_water_Rth_upper_K_W':Rmax,'negative_budget_means_impossible_under_this_constant_Rth_hypothesis':Rmax<=0,'real_Tn_map_TIM_hotspots_mount_area_flow_HX_unknown':True})
+ tim=[]
+ for frac in [.25,.5,1]:
+  for k in [1,3,6]:tim.append({'mount_area_fraction_assumed':frac,'OD_cylindrical_gross_area_upper_m2':area,'TIM_thickness_m_assumed':.0001,'TIM_k_W_mK_assumed_not_selected_material':k,'one_dimensional_Rth_K_W':.0001/(k*frac*area),'actual_thermal_mount_interface_area_contact_pressure_and_vendor_Rth_boundary_unknown':True})
+ # Differentiated eight-motor gross heat accounting, no local gyro/body double-sum.
+ proposed={'pitch':'low_Ke_distinct_QTR_Z_ratio100','roll':'low_Ke_QTR_Z_ratio100','yaw':'distinct_smaller_component_and_QTR17Z_ratio100','elbow_pitch':'low_Ke_QTR_Z_ratio100'}
+ sel=[x for x in wind['summary'] if x['candidate']==proposed[x['joint_id'].split('_',1)[1]]]
+ Pcu=sum(x['known_only_hot_copper_W'] for x in sel);tau=sum(x['input_torque_Nm']*100*.75 for x in sel);gearheat=tau*.5*(1/.75-1)
+ th={'requirements_sha256':sha(HERE/'requirements.json'),'winding_summary_sha256':sha(HERE/'winding_summary.json'),'producer_sha256':sha(Path(__file__)),'specific_scope':'G18 combined pose, known proxy nominal+50kg/activehand and eta.75; R100 synthetic. Not complete motor loss or qualified mounting temperature.','right_pitch_low_Ke_reference':pitch,'mount_surface_gross_upper_m2':area,'vendor_Rth_coil_to_mount_K_W':Rvendor,'Rth_vendor_boundary_not_portable_to_arbitrary_own_housing':True,'thermal_budget_sensitivity':thermal,'TIM_one_dimensional_parameter_sensitivity':tim,'8_motor_known_only_hot_copper_sum_W':Pcu,'8_gears_known_only_motor_driven_p5_loss_eta_p75_sum_W':gearheat,'combined_partial_thermal_sum_W':Pcu+gearheat,'heat_unclosed':['actual iron/core loss at speed','bearing/grease friction','PWM/inverterloss','dynamic load and 422 owner terms','motor mount area/pressure/TIM/contact temperature','water channel wall and flow/fittings/pressure','pump heat and actual supply/radiator/air inlet-outlet','brake slip/fault and regenerative energy','gearbackdrive branch'],'cold_source_accepted':False}
+ dump(HERE/'low_Ke_cooling_budget.json',th)
+ # Data visuals use source numeric requirements only, no new geometry nor restyled exterior.
+ fig,ax=plt.subplots(figsize=(12,6));labels=[]
+ for pi,pose in enumerate(req['poses']):
+  val=[];low=[];high=[]
+  for j in pose['joint_screens']:
+   vals=[x['axis_torque_Nm'] for x in j['known_subset_levels']];n=vals[1];val.append(n);low.append(n-min(vals));high.append(max(vals)-n)
+  xx=np.arange(8)+(pi-.5)*.32;ax.bar(xx,val,.32,yerr=np.array([low,high]),label=pose['id'],capsize=3)
+ ax.set_xticks(np.arange(8),[j['joint_id'].replace('_','\n') for j in req['poses'][0]['joint_screens']]);ax.set_ylabel('Signed axis gravity torque, Nm (known proxy subset)');ax.set_title('Gorilla G19: 8 actual source axes; 422 unknown owner rows excluded, not zero');ax.axhline(0,color='k',lw=.7);ax.legend();fig.tight_layout();fig.savefig(HERE/'actual_axis_gravity_comparison.png',dpi=150);plt.close(fig)
+ fig,axs=plt.subplots(2,2,figsize=(13,8));show=['right_pitch','left_roll','left_yaw','right_elbow_pitch']
+ for ax,jid in zip(axs.ravel(),show):
+  for ss in [x for x in wind['summary'] if x['joint_id']==jid]:
+   vs=[float(v) for v in ss['qmax_model_by_bus_V']];ys=list(ss['qmax_model_by_bus_V'].values());ax.plot(vs,ys,marker='o',label=ss['candidate'].replace('_',' '))
+  ax.axhline(.5,color='k',ls='--',lw=1,label='0.5 rad/s comparison point (not adopted speed)');ax.set_title(jid+'; actual known load+50kg sensitivity');ax.set_xlabel('Raw bus V, not a selected architecture');ax.set_ylabel('Voltage-only ceiling rad/s; not rated speed');ax.set_ylim(0,1.5);ax.legend(fontsize=7)
+ fig.suptitle('Steady id=0/R100/omegaL and 10% voltage margin; dynamic/thermal/regen unknown',fontsize=12);fig.tight_layout();fig.savefig(HERE/'winding_voltage_comparison.png',dpi=150);plt.close(fig)
+ print(json.dumps({'functions':len(current),'FK_error':max(errs.values()),'thermal_motor_W':Pcu,'gear_W':gearheat,'coldpitch':P,'area_m2':area},indent=2))
+if __name__=='__main__':main()
