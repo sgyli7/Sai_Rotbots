@@ -1,0 +1,83 @@
+from pathlib import Path
+import json,hashlib,math
+import numpy as np
+import trimesh
+from PIL import Image,ImageDraw
+
+B=Path(__file__).resolve().parent
+R=Path('/home/ethan/Projects/Sai_Rotbots')
+C=R/'experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_scene.json'
+E=R/'.scratch/gorilla_internal_e2a_integrated/scene.json'
+base=json.loads(C.read_text());old=json.loads(E.read_text());joint={x['id']:x for x in old['joint_supports']}
+scene=json.loads((B/'scene_a.json').read_text());refs={p['name']:p for p in base['parts']}
+summaries={}
+for name in ['a','b']:
+ col=json.loads((B/f'collision_{name}.json').read_text())
+ armor=[x for x in col['hits'] if x['reference'] in refs and refs[x['reference']]['role'] in ['armor_surface','armor_cover']]
+ existing=[x for x in col['hits'] if x['reference_scope']=='E2a old motor/gear module']
+ orig=[x for x in col['hits'] if x not in armor and x not in existing]
+ summaries[name]={'armor_positive_pairs':len(armor),'old_roll_wrist_envelope_pairs':len(existing),'original_visible_mechanism_pairs':len(orig),'top_armor':armor[:8],'top_old_roll_wrist':existing[:8],'interpretation':'positive volumes retained; visible legacy mechanisms may need replacement but no automatic removal; armor is unchanged; only selected neutral reference pairs screened'}
+
+# Correct the motion interpretation without altering frozen A/B native layouts.
+# Driver all on distal_forearm means full downstream motion under forearm_roll,
+# not a fixed upstream actuator. The earlier routing file is retained as an
+# explicitly incorrect generic split sensitivity, never an ownership proof.
+motion=[]
+for route in scene['routes']:
+ pts=np.array(route['points_world_m']);nom=route['length_m'];rows=[]
+ side='left' if 'left' in route['id'] else 'right'
+ for jname,start in [(side+'_forearm_roll',0),(side+'_wrist_pitch',2),(side+'_wrist_yaw',4)]:
+  j=joint[jname];c=np.array(j['center_world_m']);a=np.array(j['axis_world'])
+  for angle in [-math.pi/4,math.pi/4]:
+   moved=pts.copy();moved[start:]=trimesh.transform_points(moved[start:],trimesh.transformations.rotation_matrix(angle,a,c))
+   length=float(np.linalg.norm(np.diff(moved,axis=0),axis=1).sum())
+   rows.append({'joint':jname,'angle_rad':angle,'first_moving_point':start,'delta_length_m':length-nom,'scope':'assigned owner conditional; fixed sheath elbows not mechanically qualified'})
+ # If root moves driver upstream of roll, this is a different macro route.
+ j=joint[side+'_forearm_roll'];jname=side+'_forearm_roll'
+ for angle in [-math.pi/4,math.pi/4]:
+  moved=pts.copy();moved[1:]=trimesh.transform_points(moved[1:],trimesh.transformations.rotation_matrix(angle,j['axis_world'],j['center_world_m']))
+  L=float(np.linalg.norm(np.diff(moved,axis=0),axis=1).sum())
+  rows.append({'joint':jname,'angle_rad':angle,'first_moving_point':1,'delta_length_m':L-nom,'scope':'ALTERNATE upstream-driver hypothetical; not the current distal owner'})
+ motion.append({'route':route['id'],'neutral_length_m':nom,'rows':rows,'physical_contract':'native segments carry packaging body only; must become flexible multibody route/anchor ownership, NOT rigid tubes on distal_forearm','original_routing_file_scope_correction':'generic points2 split is not a forearm-roll ownership result; superseded by this review for motion semantics'})
+(B/'routing_owner_review.json').write_text(json.dumps({'source_scene_sha256':hashlib.sha256((B/'scene_a.json').read_bytes()).hexdigest(),'motion':motion,'scope':'one joint at a time +/-45deg, provisional node owners; excludes serial simultaneous poses, sheath slack/bend and actual contact'},indent=2)+'\n')
+(B/'collision_classification.json').write_text(json.dumps(summaries,indent=2)+'\n')
+
+# Native facet orthographic projection. No photo editing, invented structure,
+# armor cutting or aesthetic redesign. Gray outlines are exact source facets.
+W,H=1500,1050;img=Image.new('RGB',(W,H),'white');draw=ImageDraw.Draw(img)
+draw.text((20,15),'G1 HAND A - native finite parts and original C15 outlines; rejected neutral diagnostic',(0,0,0))
+draw.text((20,38),'Original armor unchanged; no collision/holding/thermal qualification. Two projections use the same scale.',(0,0,0))
+parts=[p for p in scene['parts'] if 'left' in p['body']]
+original=[p for p in base['parts'] if p['body'].startswith(('left_forearm','left_palm','left_finger','left_thumb'))]
+scale=900
+for view,dims,origin in [('XZ',(0,2),(625,930)),('YZ',(1,2),(440,930))]:
+ if view=='YZ':origin=(690,930)
+ def project(v):
+  if view=='XZ':return (origin[0]+float(v[0])*scale,origin[1]-(float(v[2])-.80)*scale)
+  return (origin[0]+(float(v[1])-.55)*scale,origin[1]-(float(v[2])-.80)*scale)
+ for p in original:
+  v=np.array(p['vertices_world_m'])
+  for f in p['faces']:
+   points=[project(v[i]) for i in f];draw.line(points+[points[0]],fill=(198,206,215),width=1)
+ for p in sorted(parts,key=lambda x:np.mean(np.asarray(x['vertices_world_m'])[:,1 if view=='XZ' else 0])):
+  v=np.array(p['vertices_world_m']);rgb=(135,110,76) if p['role']=='component_module_envelope' else (55,79,88)
+  for f in p['faces']:
+   points=[project(v[i]) for i in f];draw.polygon(points,fill=rgb,outline=(35,45,50))
+ draw.text((80 if view=='XZ' else 840,100),view+' exact neutral geometry',(0,0,0))
+img.save(B/'native_neutral_projection_a.png')
+
+rows=json.loads((B/'force_travel_budget.json').read_text())['rows']
+worst=[x for x in rows if x['channel'].startswith('left') and x['payload_sensitivity_kg']==50 and x['contact_mu']==.35 and x['route_eta_assumed']==.5 and x['screw_eta_assumed']==.5 and x['tendon_speed_m_s']==.025]
+area=math.pi*.0025**2/4
+elastic=[]
+for x in worst:
+ route=next(xr for xr in scene['routes'] if xr['id'].startswith('g1h_left_'+str(4 if 'thumb' in x['channel'] else int(x['channel'][-1]))+'_route'))
+ F=x['screw_force_N'];L=route['length_m']
+ elastic.append({'channel':x['channel'],'force_N':F,'route_length_m':L,'nominal_full_area_stress_Pa':F/area,'extension_m_by_effective_E_GPa':{str(e):F*L/(e*1e9*area) for e in [20,50,100]},'scope':'own stiffness/full nominal metal area sensitivity only; real wire effective area/E/fatigue and Bowden compression unknown'})
+(B/'elasticity_and_power_screen.json').write_text(json.dumps({'worst_workpoint':worst,'elasticity':elastic,'bare_motor_source_Pc_W_each_hand_upper_reference':4*190+295,'source_Pc_is_not_simultaneous_installed_heat_load':True,'holding':'brake torque and feedback unqualified; active stall or disabled current cannot automatically hold payload','opposition_working_point':'geometry-only independent fifth path; true thumb opposition axis/contact wrench unknown so no assigned continuous output'},indent=2)+'\n')
+
+manifest={'input_hashes':scene['input_hashes'],'A_B_native_geometry_not_changed_by_postprocess':True,'matplotlib_missing_build_exit':'A/B native/mass/collision completed then plotting import failed; this entry renders exact frozen scene independently','outputs':[]}
+for p in sorted(B.iterdir()):
+ if p.is_file() and p.name!='manifest.json':manifest['outputs'].append({'path':str(p),'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'bytes':p.stat().st_size})
+(B/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+print('POSTPROCESS_READY',B/'native_neutral_projection_a.png','hash',hashlib.sha256((B/'native_neutral_projection_a.png').read_bytes()).hexdigest(),flush=True)

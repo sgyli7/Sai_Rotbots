@@ -1,0 +1,45 @@
+"""Analytic finite material regressions, separate from implementation construction."""
+from pathlib import Path
+import json,hashlib,copy,math
+import numpy as np,trimesh
+from native_signed_material import validate_scene,validate_part,Tolerances
+O=Path(__file__).resolve().parent
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def box(size,center=(0,0,0),sign=1):
+ m=trimesh.creation.box([size]*3);m.apply_translation(center)
+ return m.vertices.copy(),m.faces.copy() if sign>0 else m.faces[:,::-1].copy()
+def joined(name,pieces):
+ vs=[];fs=[];n=0
+ for v,f in pieces:vs.extend(v.tolist());fs.extend((f+n).tolist());n+=len(v)
+ return {'name':name,'vertices_world_m':vs,'faces':fs}
+fixtures={
+ 'legal_hollow':joined('legal_hollow',[box(.1),box(.05,sign=-1)]),
+ 'flipped_hollow':joined('flipped_hollow',[box(.1),box(.05)]),
+ 'two_hollow_materials':joined('two_hollow_materials',[box(.1),box(.05,sign=-1),box(.1,(.2,0,0)),box(.05,(.2,0,0),sign=-1)]),
+ 'positive_island_inside_void':joined('positive_island_inside_void',[box(.1),box(.05,sign=-1),box(.02)]),
+ 'tiny_particle':joined('tiny_particle',[box(.1),box(.00005,(.2,0,0))]),
+ 'parent_near_skin':joined('parent_near_skin',[box(.1),box(.09999,sign=-1)]),
+ 'crossing_closed_boundary':joined('crossing_closed_boundary',[box(.1),box(.05,(.04,0,0),sign=-1)]),
+}
+m=trimesh.creation.annulus(r_min=.02,r_max=.05,height=.02,sections=64);fixtures['through_hole_ring']=joined('through_hole_ring',[(m.vertices.copy(),m.faces.copy())])
+rows={}
+for name,p in fixtures.items():
+ r=validate_part(p,diagnose_parity=True);rows[name]=r
+ assert r['source_geometry_sha256']==hashlib.sha256(json.dumps({k:p[k] for k in ('name','vertices_world_m','faces')},sort_keys=True,separators=(',',':')).encode()).hexdigest()
+assert rows['legal_hollow']['resource_contract_pass'] and abs(rows['legal_hollow']['native_signed_volume_m3']-.000875)<1e-12
+assert not rows['flipped_hollow']['resource_contract_pass'] and any(e['code']=='same_sign_nested_or_orphan_negative_boundary' for e in rows['flipped_hollow']['errors'])
+assert abs(rows['flipped_hollow']['native_signed_volume_m3']-.001125)<1e-12 and abs(rows['flipped_hollow']['parity_diagnostic']['volume_m3']-.000875)<1e-12
+assert rows['two_hollow_materials']['resource_contract_pass'] and rows['two_hollow_materials']['material_component_count_from_nesting']==2 and abs(rows['two_hollow_materials']['native_signed_volume_m3']-.00175)<1e-12
+assert rows['positive_island_inside_void']['resource_contract_pass'] and rows['positive_island_inside_void']['material_component_count_from_nesting']==2 and abs(rows['positive_island_inside_void']['native_signed_volume_m3']-.000883)<1e-12
+assert not rows['tiny_particle']['resource_contract_pass'] and any(e['code']=='closed_boundary_volume_below_source_threshold' for e in rows['tiny_particle']['errors'])
+assert rows['through_hole_ring']['resource_contract_pass'] and len(rows['through_hole_ring']['boundaries'])==1 and rows['through_hole_ring']['closed_void_count']==0
+assert abs(rows['through_hole_ring']['native_signed_volume_m3']-64*math.sin(2*math.pi/64)/2*(.05**2-.02**2)*.02)<1e-12
+assert rows['parent_near_skin']['resource_contract_pass']
+strict=validate_part(fixtures['parent_near_skin'],Tolerances(minimum_parent_boundary_gap_m=.000020));assert not strict['resource_contract_pass'] and any(e['code']=='parent_boundary_tolerance_unresolved' for e in strict['errors']);rows['parent_near_skin_strict_source_tolerance']=strict
+connected=validate_part(fixtures['two_hollow_materials'],require_single_material_component=True);assert not connected['resource_contract_pass'];rows['two_hollow_single_component_required']=connected
+assert not rows['crossing_closed_boundary']['resource_contract_pass'] and any(e['code']=='crossing_or_equal_closed_boundaries' for e in rows['crossing_closed_boundary']['errors'])
+dup=validate_scene({'robot_id':'gorilla_v0_1','parts':[fixtures['legal_hollow'],copy.deepcopy(fixtures['legal_hollow'])]});assert not dup['resource_contract_pass'] and dup['duplicate_ids']==[{'id':'legal_hollow','count':2}]
+original=copy.deepcopy(fixtures['legal_hollow']);validate_part(fixtures['legal_hollow'],diagnose_parity=True);assert original==fixtures['legal_hollow']
+(O/'regression_fixtures.json').write_text(json.dumps({'robot_id':'gorilla_v0_1','parts':list(fixtures.values()),'fixture_source':'Independent analytic boxes/explicit signed face join and annulus primitive; no repairing or mirroring validator construction.'},indent=2)+'\n')
+report={'robot_id':'gorilla_v0_1','assertions_passed':True,'script_sha256':sha(__file__),'validator_sha256':sha(O/'native_signed_material.py'),'fixture_source_sha256':sha(O/'regression_fixtures.json'),'cases':rows,'duplicate_id_case':dup,'input_immutability_assertion_pass':True,'physical_accepted':False}
+(O/'regression_report.json').write_text(json.dumps(report,indent=2)+'\n');print('REGRESSIONS PASS',len(rows),'plus duplicate/immutability; fixtures preserved')

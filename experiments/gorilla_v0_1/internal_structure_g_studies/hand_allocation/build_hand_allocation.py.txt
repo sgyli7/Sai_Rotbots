@@ -1,0 +1,198 @@
+from pathlib import Path
+import json, hashlib, math
+import numpy as np
+import trimesh
+import manifold3d as mf
+
+ROOT=Path('/home/ethan/Projects/Sai_Rotbots')
+OUT=Path(__file__).resolve().parent
+C15=ROOT/'experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_scene.json'
+E2=ROOT/'.scratch/gorilla_internal_e2a_integrated/scene.json'
+PDF=ROOT/'.scratch/gorilla_internal_d_system/tecnotion_torque_brochure_2_5.pdf'
+base=json.loads(C15.read_text()); old=json.loads(E2.read_text())
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def triangles(f):return np.asarray([[ff[0],ff[i],ff[i+1]] for ff in f for i in range(1,len(ff)-1)],dtype=np.uint32)
+def native(p):return trimesh.Trimesh(np.asarray(p['vertices_world_m']),triangles(p['faces']),process=False)
+def center(p):
+ t=np.asarray(p['vertices_world_m'])[triangles(p['faces'])]
+ vv=np.einsum('ij,ij->i',t[:,0],np.cross(t[:,1],t[:,2]))/6
+ return ((t.sum(1)/4)*vv[:,None]).sum(0)/vv.sum()
+def pinaxis(p):
+ v=np.asarray(p['vertices_world_m']);f=max(p['faces'],key=len)
+ a=np.cross(v[f[1]]-v[f[0]],v[f[2]]-v[f[0]])
+ return a/np.linalg.norm(a)
+def mani(mesh):return mf.Manifold(mf.Mesh64(np.asarray(mesh.vertices,dtype=np.float64),np.asarray(mesh.faces,dtype=np.uint32)))
+def from_m(m):
+ a=m.to_mesh64();return trimesh.Trimesh(a.vert_properties[:,:3],a.tri_verts,process=False)
+def box(c,d):
+ m=trimesh.creation.box(extents=d);m.apply_translation(c);return m
+def cyl(c,r,L,a=(0,0,1)):
+ m=trimesh.creation.cylinder(radius=r,height=L,sections=24)
+ m.apply_transform(trimesh.geometry.align_vectors([0,0,1],a));m.apply_translation(c);return m
+def tube(c,ro,ri,L,a=(0,0,1)):
+ return from_m(mani(cyl(c,ro,L,a))-mani(cyl(c,ri,L+.004,a)))
+def segment(p,q,ro,ri=0):
+ p=np.asarray(p);q=np.asarray(q);a=q-p;L=np.linalg.norm(a)
+ return tube((p+q)/2,ro,ri,L,a/L) if ri else cyl((p+q)/2,ro,L,a/L)
+
+refs={p['name']:p for p in base['parts']}
+source_motor={
+ 'small':dict(sku='QTR-A-78-34-Y',D=.078,L=.0348,mass=.627,stator=.501,rotor=.126,Jr=3.8e-5,Tc=2.10,Kt=.199,Rph25=.438,Ic=10.54,Pc=190,rpm48=1533,page=14),
+ 'thumb':dict(sku='QTR-A-105-34-Z',D=.105,L=.0345,mass=.964,stator=.746,rotor=.218,Jr=2.2e-4,Tc=5.10,Kt=.29,Rph25=.24,Ic=17.7,Pc=295,rpm48=1061,page=16),
+}
+features=[]; budget=[]
+for side,s in [('left',1),('right',-1)]:
+ channels=[]
+ for i in (1,2,3):
+  names=[f'{side}_finger_{i}_root_joint',f'{side}_finger_{i}_interphalangeal_joint',f'{side}_finger_{i}_tip_contact_pad']
+  p0,p1,pc=[refs[n] for n in names]
+  channels.append(dict(id=f'{side}_finger_{i}',kind='finger',source_names=names,root=center(p0),distal=center(p1),contact=center(pc),axis0=pinaxis(p0),axis1=pinaxis(p1),r0=.022,r1=.016))
+ names=[f'{side}_thumb_root_pin',f'{side}_thumb_middle_pin',f'{side}_thumb_black_terminal']
+ p0,p1,pc=[refs[n] for n in names]
+ channels.append(dict(id=f'{side}_thumb_flexion',kind='thumb',source_names=names,root=center(p0),distal=center(p1),contact=center(pc),axis0=pinaxis(p0),axis1=pinaxis(p1),r0=.024,r1=.016))
+ for ch in channels:
+  r0=ch['contact']-ch['root'];r1=ch['contact']-ch['distal']
+  ch['lever0_upper_m']=float(np.linalg.norm(np.cross(ch['axis0'],r0)))
+  ch['lever1_upper_m']=float(np.linalg.norm(np.cross(ch['axis1'],r1)))
+  ch['travel_at_two_90deg_rad_m']=float((ch['r0']+ch['r1'])*math.pi/2)
+  for kg in [25,50]:
+   for mu in [.35,.6]:
+    N=kg*9.80665/(2*mu);Fn=N/3 if ch['kind']=='finger' else N
+    tau0=Fn*ch['lever0_upper_m'];tau1=Fn*ch['lever1_upper_m']
+    ideal=max(tau0/ch['r0'],tau1/ch['r1'])
+    for eta_route in [.5,.75,.9]:
+     F=ideal/eta_route
+     for eta_screw in [.5,.8,.9]:
+      for vel in [.01,.025,.05]:
+       mm=source_motor['thumb' if ch['kind']=='thumb' else 'small'];T=F*.002/(2*math.pi*eta_screw);rpm=vel/.002*60
+       budget.append(dict(channel=ch['id'],payload_sensitivity_kg=kg,contact_mu=mu,N_opposing_side_N=N,channel_normal_N=Fn,root_tau_upper_Nm=tau0,distal_tau_upper_Nm=tau1,ideal_shared_tendon_min_N=ideal,route_eta_assumed=eta_route,screw_eta_assumed=eta_screw,screw_force_N=F,screw_lead_m=.002,tendon_speed_m_s=vel,motor_rpm=rpm,motor_torque_Nm=T,ideal_tendon_power_W=ideal*vel,motor_mechanical_power_W=F*vel/eta_screw,source_Tc_Nm=mm['Tc'],source_rpm48_at_Tc=mm['rpm48'],source_torque_rpm_rectangular_screen_only=(T<=.9*mm['Tc'] and rpm<=mm['rpm48']),coil_current_proxy_Arms=T/mm['Kt'],copper_loss_25C_proxy_W=3*(T/mm['Kt'])**2*mm['Rph25'],source_working_temperature_not_met=True))
+  features.append({k:(v.tolist() if isinstance(v,np.ndarray) else v) for k,v in ch.items()})
+features.append(dict(id='palm_uniform_geometry_COM',source_names=['left_palm_inner_carrier','right_palm_inner_carrier'],left=center(refs['left_palm_inner_carrier']).tolist(),right=center(refs['right_palm_inner_carrier']).tolist(),status='exact uniform signed-volume geometry proxy, NOT assigned physical mass COM'))
+
+def build(layout):
+ parts=[];modules=[];routes=[];service=[]
+ def add(name,body,category,m,mr=None,density=None,source=None,assumption='',**kw):
+  if density is not None:
+   nom=float(m.volume*density);mr=[.9*nom,nom,1.25*nom]
+  row=dict(id=name,body=body,category=category,mass_range_kg=mr,source=source or 'own finite geometry/material allowance',assumption=assumption,physics_unknown=['actual load/connection/thermal certification'],geometry_scope='actual closed finite material' if density else 'component functional envelope; no OEM internals inferred',**kw)
+  modules.append(row);parts.append(dict(name=name,body=body,role='actual_material' if density else 'component_module_envelope',vertices_world_m=np.asarray(m.vertices).tolist(),faces=np.asarray(m.faces).tolist(),rgba=[.32,.37,.4,1] if density else [.58,.39,.2,1],module_id=name));return row
+ # 3 fingers + thumb flexion + independent opposition, no tiny joint motor guesses.
+ locations=[[-.28,.755,1.545],[-.18,.755,1.545],[-.08,.755,1.545],[-.155,.88,1.545],[-.28,.865,1.545]]
+ for side,s in [('left',1),('right',-1)]:
+  sidefeatures=[x for x in features if x['id'].startswith(side+'_')]
+  for k,loc in enumerate(locations):
+   c=np.array(loc,float);c[1]*=s
+   if layout=='b':c+=np.array([-.025,s*.018,-.045])
+   prefix=f'g1h_{side}_{k+1}';body=side+'_distal_forearm';mm=source_motor['thumb' if k==3 else 'small'];a=np.array([0,0,1])
+   src='https://www.tecnotion.com/wp-content/uploads/2022/05/Torque_Brochure_EN_2-5.pdf printed p'+str(mm['page'])
+   add(prefix+'_motor_reference',body,'motor',cyl(c,mm['D']/2,mm['L']),[mm['mass']]*3,source=src,assumption=mm['sku']+' bare source envelope. Mount20C/coil100C not achieved; 48V source point only.',known_rotor_mass_kg=mm['rotor'],known_stator_mass_kg=mm['stator'],known_rotor_Jr_kg_m2=mm['Jr'],body_assignment_status='packaging owner only; rotor motion/inertia split incomplete',motor_source=mm)
+   add(prefix+'_motor_load_cooling_case',body,'case',tube(c,mm['D']/2+.006,mm['D']/2+.001,mm['L']+.01),density=2700,assumption='5mm radial aluminum material; water channel void/ports not finalized; thermal path not qualified')
+   # Real screw/carriage/guide/axial support inventory, not a single force cylinder.
+   sc=c+np.array([0,0,-.112])
+   add(prefix+'_screw_12mm_root10',body,'transmission',cyl(sc,.006,.160),density=7850,assumption='Own 12mm screw envelope/root10mm, lead2mm; nut rating, preload, efficiency and fatigue unknown')
+   carrier=mani(box(sc,[.064,.06,.174]))-mani(box(sc,[.056,.052,.166]))
+   add(prefix+'_finite_load_frame',body,'case',from_m(carrier),density=2700,assumption='Closed finite 4mm frame with actual internal cavity, not uniformly filled actuator envelope')
+   for sg in [-1,1]:
+    q=sc+np.array([sg*.023,0,0]);add(prefix+f'_guide_rod_{sg}',body,'transmission',cyl(q,.004,.15),density=7850,assumption='8mm guide rod; alignment/connection/side load unknown')
+    bc=sc+np.array([0,0,sg*.077]);add(prefix+f'_axial_bearing_{sg}',body,'support',tube(bc,.015,.006,.008),[.055,.09,.15],assumption='Generic paired thrust/radial bearing functional annular envelope; dimensions/ratings unselected, all screw reaction unqualified')
+   carriage=sc+np.array([0,0,.018]);add(prefix+'_nut_carriage',body,'transmission',from_m(mani(box(carriage,[.047,.038,.026]))-mani(cyl(carriage,.0065,.04))),[.12,.22,.4],assumption='Actual central bore, nut/thread contact not modeled; 70mm travel sweeps separately reserved')
+   add(prefix+'_brake',body,'brake',tube(c+[0,0,.036],.024,.008,.021),[.16,.28,.45],assumption='Nonzero normally closed brake/holding reserve; torque and fail-safe qualification absent')
+   add(prefix+'_coupling',body,'transmission',tube(c+[0,0,-.031],.012,.006,.021),density=7850,assumption='Own input hub and coupling material; no matched bolt/key specification')
+   add(prefix+'_controller',body,'drive',box(c+[-.017,0,.068],[.045,.022,.056]),[.1,.2,.35],assumption='Full local drive including connector and thermal path allowance; motor current/source bus not qualified')
+   add(prefix+'_encoder',body,'sensor',tube(c+[0,0,.037],.018,.008,.008),[.025,.045,.075],assumption='Screw encoder mechanical reserve; position feedback does not replace fingertip force sensor')
+   add(prefix+'_loadcell',body,'sensor',box(sc+[0,0,-.04],[.033,.019,.025]),[.05,.09,.15],assumption='Tendon inline force feedback reserve; actual stiffness overload and calibration unknown')
+   add(prefix+'_fasteners_connectors',body,'service',box(c+[0,.022*s,.052],[.025,.019,.04]),[.055,.095,.16],assumption='Nonzero seals connector and bolts inventory')
+   service.append(dict(id=prefix+'_stroke_and_removal_keepout',body=body,center_world_m=sc.tolist(),dimensions_xyz_m=[.055,.05,.09],mass_counted=False,scope='70mm carriage travel +10mm tolerance, not hidden collision material'))
+   if k<4:
+    ff=sidefeatures[k];p0=np.asarray(ff['root']);p1=np.asarray(ff['distal']);end=np.asarray(ff['contact']);ax0=np.asarray(ff['axis0']);ax1=np.asarray(ff['axis1'])
+   else:
+    ff=sidefeatures[3];p0=np.asarray(ff['root']);p1=p0;end=p0+np.array([.04,-s*.035,.035]);ax0=np.array([0,0,1.]);ax1=ax0
+   # Physical pulley and finite clevis/anchor. Active root/distal linkage ratio remains unknown.
+   add(prefix+'_root_pulley',side+'_palm','guide',tube(p0,float(ff['r0']) if k<4 else .02,.009,.014,ax0),density=2700,assumption='Actual tendon-radius pulley envelope at extracted source axis; original joint replacement not applied, conflicts retained')
+   if k<4:add(prefix+'_distal_pulley',side+('_thumb_proximal_link' if k==3 else f'_finger_{k+1}_proximal_link'),'guide',tube(p1,ff['r1'],.007,.012,ax1),density=2700,assumption='Passive differential distal pulley geometry; torque ratio/contact equilibrium not yet established')
+   add(prefix+'_palm_tendon_anchor',side+'_palm','support',box(p0+[0,0,.036],[.042,.016,.012]),density=7850,assumption='Finite tendon anchor/guide bracket, no attachment strength proof')
+   add(prefix+'_pad_force_sensor',side+('_thumb_distal_link' if k>=3 else f'_finger_{k+1}_distal_link'),'sensor',box(end,[.018,.012,.005]),[.008,.016,.027],assumption='Real nonzero fingertip force sensing reserve; surface placement and contact loss unknown')
+   # Paired supply/return tendon spaces through 3 actual serial motion interfaces.
+   for antagonist in [-1,1]:
+    dy=antagonist*.005
+    pts=[(sc+[0,dy,-.067]).tolist(),[-.24, s*(.805+dy),1.31],[-.195,s*(.80+dy),1.245],[-.09,s*(.77+dy),1.18],(p0+[0,dy*s,.027]).tolist(),(p1+[0,dy*s,.025]).tolist(),end.tolist()]
+    if k==4:pts=pts[:5]+[end.tolist()]
+    lengths=[]
+    for j,(p,q) in enumerate(zip(pts,pts[1:])):
+     if np.linalg.norm(np.array(q)-p)<1e-6:continue
+     name=prefix+f'_bowden_{antagonist}_{j}'
+     add(name,body,'route',segment(p,q,.004,.002),density=3500,assumption='Finite hollow composite Bowden reserve OD8/ID4; own effective density, friction/bend/fatigue unknown',moving_interface=True)
+     add(name+'_tendon',body,'route',segment(p,q,.00125),density=7850,assumption='2.5mm geometric metallic tendon equivalent; actual cable certification, effective E/area and fatigue unknown; counted once')
+     lengths.append(float(np.linalg.norm(np.array(q)-p)))
+    routes.append(dict(id=prefix+f'_route_{antagonist}',driver_body=body,points_world_m=pts,length_m=sum(lengths),crossed_joints=[side+'_forearm_roll',side+'_wrist_pitch',side+'_wrist_yaw'],routing_state='neutral physical tubes/cable; NOT rigid attachment across moving joints',minimum_bend_radius_m='unverified; polygon corners not qualified manufactured elbows',coupled_finger_path='passive differential unqualified; four flexion channels independent',opposition=k==4))
+  # Each hand has actual coolant/electrical service, not zero hidden auxiliary mass.
+  add(f'g1h_{side}_coolant_distribution',body,'cooling',box([-.29,s*.84,1.65],[.05,.03,.06]),[.14,.23,.38],assumption='Nonzero coolant supply/return manifold; full robot loop and thermal target20C unclosed')
+  add(f'g1h_{side}_power_data_bundle',body,'service',segment([-.25,s*.815,1.72],[-.25,s*.815,1.25],.008,.002),[.18,.3,.5],assumption='Full power/encoder/data/ground cable inventory; phase currents connector flex/roll service life unknown')
+  add(f'g1h_{side}_service_guard',body,'case',from_m(mani(box([-.18,s*.825,1.475],[.325,.245,.285]))-mani(box([-.18,s*.825,1.475],[.321,.241,.281]))),density=1100,assumption='Finite 2mm guard; not appearance armor replacement, removal path unverified')
+ return dict(schema='gorilla_native_hand_allocation_v1',robot_id='gorilla_v0_1',candidate='g1_hand_'+layout,coordinate_frame=base['coordinate_frame'],parts=parts,modules=modules,routes=routes,service_keepouts=service,source_motor=source_motor,input_hashes={'C15':sha(C15),'E2a_reference_only':sha(E2),'Tecnotion_brochure':sha(PDF),'builder':sha(__file__)},source_geometry_reference_only=True,original_design_change_mm=0,geometry_accepted=False,physics_accepted=False,stable_physical_contract=False)
+
+def collision_screen(scene):
+ # Scope is selected arm/hand reference geometry, not whole robot or dynamics.
+ reference=[p for p in base['parts'] if any(p['body'].startswith(s) for s in ['left_forearm','right_forearm','left_palm','right_palm','left_finger','right_finger','left_thumb','right_thumb'])]
+ known=[p for p in old['parts'] if p['name'].startswith(('ds_left_forearm_roll_','ds_right_forearm_roll_','ds_left_wrist_','ds_right_wrist_'))]
+ targets=reference+known; cache={};hits=[];unknown=[]
+ for p in scene['parts']:
+  pm=native(p);pb=pm.bounds;P=None
+  for q in targets:
+   if p['name'].split('_')[1]!=q['name'].split('_')[0] and ('left' in p['name'])!=('left' in q['name']):continue
+   qm=native(q);qb=qm.bounds
+   if np.any(np.minimum(pb[1],qb[1])-np.maximum(pb[0],qb[0])<=1e-8):continue
+   try:
+    if P is None:P=mani(pm)
+    if q['name'] not in cache:cache[q['name']]=mani(qm)
+    Q=cache[q['name']]
+    if P.status()!=mf.Error.NoError or Q.status()!=mf.Error.NoError:
+     unknown.append([p['name'],q['name'],'source native Manifold invalid, not zero overlap']);continue
+    vol=(P^Q).volume()
+    if vol>1e-9:hits.append(dict(new=p['name'],reference=q['name'],volume_m3=vol,reference_scope='C15 original' if q in reference else 'E2a old motor/gear module'))
+   except Exception as e:unknown.append([p['name'],q['name'],str(e)])
+ return dict(scope='neutral new complete hand parts vs actual C15 forearm/palm/finger/thumb and E2a old wrist/forearm module envelopes only; excludes new-new pairs and full robot and all poses',reference_parts=len(targets),new_parts=len(scene['parts']),positive_hits=len(hits),hits=sorted(hits,key=lambda x:x['volume_m3'],reverse=True),unknown_pairs=unknown,accepted=False)
+
+def route_motion(routes):
+ joints={j['id']:j for j in old['joint_supports']};out=[]
+ for r in routes:
+  pts=np.array(r['points_world_m']);nom=r['length_m'];rows=[]
+  # Parent driver to downstream anchors: finite true eye paths, still need flexible sheath routing.
+  for joint in r['crossed_joints']:
+   j=joints[joint];c=np.array(j['center_world_m']);a=np.array(j['axis_world']);a/=np.linalg.norm(a)
+   for angle in [-math.pi/4,math.pi/4]:
+    moved=pts.copy();R=trimesh.transformations.rotation_matrix(angle,a,c)
+    moved[2:]=trimesh.transform_points(moved[2:],R)
+    L=float(np.linalg.norm(np.diff(moved,axis=0),axis=1).sum())
+    rows.append(dict(joint=joint,angle_rad=angle,route_length_m=L,delta_m=L-nom,scope='one joint separately, anchor split at point2 is explicit proxy; full serial attachment and swept Bowden route still unknown'))
+  out.append(dict(id=r['id'],neutral_length_m=nom,sensitivities=rows,max_abs_delta_m=max(abs(x['delta_m']) for x in rows)))
+ return out
+
+def main():
+ OUT.mkdir(parents=True,exist_ok=True)
+ (OUT/'features.json').write_text(json.dumps({'input_scene':str(C15),'scene_sha256':sha(C15),'features':features,'axis_status':'native cap-normal geometry hypotheses, not certified bearings; actual prior display joints not used','COM_status':'uniform signed-volume geometric proxy only; physical mass distribution unknown'},indent=2)+'\n')
+ (OUT/'force_travel_budget.json').write_text(json.dumps({'scope':'25/50kg per-hand and mu sensitivity, NOT payload rating. Max perpendicular source geometric lever, common tendon minimum is necessary not sufficient for contact equilibrium. Selfweight and dynamic shock unassigned','rows':budget,'own_screw_lead_m':.002,'own_stroke_m':.070,'tendon_effective_E_GPa_sensitivity':[20,50,100],'cable_nominal_area_m2':math.pi*.0025**2/4},indent=2)+'\n')
+ for name in ['a','b']:
+  scene=build(name);path=OUT/('scene_'+name+'.json');path.write_text(json.dumps(scene,separators=(',',':'))+'\n')
+  print('SOURCE_READY',path,sha(path),len(scene['parts']),flush=True)
+  collisions=collision_screen(scene)
+  (OUT/('collision_'+name+'.json')).write_text(json.dumps(collisions,indent=2)+'\n')
+  (OUT/('routing_'+name+'.json')).write_text(json.dumps(route_motion(scene['routes']),indent=2)+'\n')
+  mass=np.array([r['mass_range_kg'] for r in scene['modules']]).sum(axis=0)
+  summary={'scene_sha256':sha(path),'parts':len(scene['parts']),'mass_range_kg_two_hands':mass.tolist(),'positive_hits':collisions['positive_hits'],'unknown_pairs':len(collisions['unknown_pairs']),'capacity_qualified':False}
+  (OUT/('summary_'+name+'.json')).write_text(json.dumps(summary,indent=2)+'\n');print('SCREEN_READY',name,summary,flush=True)
+ if any(True for _ in [1]):
+  import matplotlib;matplotlib.use('Agg');import matplotlib.pyplot as plt
+  from matplotlib.collections import PolyCollection
+  scene=json.loads((OUT/'scene_a.json').read_text());fig,axs=plt.subplots(1,2,figsize=(11,7))
+  for ax,dims in zip(axs,[(0,2),(1,2)]):
+   for group,color,alpha in [(base['parts'],'#8092a0',.08),(scene['parts'],'#bb8040',.32)]:
+    for p in group:
+     if not p['body'].startswith(('left_forearm','left_palm','left_finger','left_thumb','left_distal_forearm')):continue
+     v=np.asarray(p['vertices_world_m']);polys=[v[f][:,dims] for f in p['faces']]
+     ax.add_collection(PolyCollection(polys,facecolor=color,edgecolor=color,linewidth=.15,alpha=alpha))
+   ax.set_aspect('equal');ax.autoscale();ax.set_xlabel('X m' if dims[0]==0 else 'Y m');ax.set_ylabel('Z m');ax.set_title('Native neutral allocation; original armor untouched');ax.grid(alpha=.2)
+  fig.suptitle('G1 hand A: actual finite material/envelopes; rejected diagnostic, NOT qualified hand')
+  fig.savefig(OUT/'native_neutral_projection_a.png',dpi=160);plt.close(fig)
+ if __name__=='__main__':pass
+main()

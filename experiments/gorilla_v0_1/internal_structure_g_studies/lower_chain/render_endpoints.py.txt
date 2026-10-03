@@ -1,0 +1,8 @@
+from pathlib import Path
+import ast,json,hashlib
+import numpy as np
+from PIL import Image,ImageDraw
+O=Path(__file__).resolve().parent;S=O/'chain_scene.json';s=json.loads(S.read_text());sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();W=H=1400;scale=850.;views={'left':(np.array([-1,0,0]),np.array([0,0,1]),np.array([0,1,0]))};images=[]
+tree=ast.parse((O/'check_chain.py').read_text());f=next(x for x in tree.body if isinstance(x,ast.FunctionDef) and x.name=='drawview');exec(compile(ast.Module(body=[f],type_ignores=[]),str(O/'check_chain.py'),'exec'))
+for po in s['pose_scenes'][1:]:drawview(po['id'],po,'left',False)
+p=O/'report.json';r=json.loads(p.read_text());names={x['path'] for x in images};r['images']=[x for x in r['images'] if x['path'] not in names]+[dict(x,canvas_pixels=[W,H],camera_center_world_m=[-.02,.5,.48],renderer_entry='render_endpoints.py') for x in images];p.write_text(json.dumps(r,indent=2)+'\n');m=json.loads((O/'manifest.json').read_text());m['files']=[{'path':q.name,'sha256':sha(q),'bytes':q.stat().st_size} for q in sorted(O.iterdir()) if q.is_file() and q.name!='manifest.json'];(O/'manifest.json').write_text(json.dumps(m,indent=2)+'\n');print('FINAL MANIFEST',sha(O/'manifest.json'))

@@ -1,0 +1,29 @@
+"""Source-catalogue input inertia and ideal ratio reflection; not a full spatial robot tensor."""
+from pathlib import Path
+import json,hashlib
+ROOT=Path(__file__).resolve().parents[2];OUT=Path(__file__).resolve().parent
+doc=ROOT/'.scratch/gorilla_internal_g1_oem_installation/csg_csf_gear_units.pdf'
+motor=ROOT/'robots/gorilla_v0_1/configs/internal_structure_d_system_spec.json'
+d=json.loads(motor.read_text())['sources']
+rows=[]
+for family,gear_J,motor_id in [('csg50',12.5e-4,'qtr160'),('csg65',46.8e-4,'qtl210')]:
+    Jr=d[motor_id]['rotor_Jr_kg_m2'];N=100.
+    rows.append({'family':family,'ratio':N,'catalogue_CSG_input_reflected_inertia_kg_m2':gear_J,
+        'published_bare_motor_rotor_inertia_kg_m2':Jr,
+        'ideal_fixed_parent_reflected_input_total_at_output_kg_m2':(gear_J+Jr)*N*N,
+        'accelerations':[{'joint_acceleration_rad_s2':a,'extra_ideal_fixed_parent_input_acceleration_torque_Nm':(gear_J+Jr)*N*N*a} for a in [.25,.5,1.,2.]],
+        'not_full_body_spatial_inertia':True,
+        'gear_source_scope':'July2026 CSG rating table p12, definition p13 refers to wave-generator/input. Additional own shafts/couplings/brake rotor are not included here.',
+        'motor_source':d[motor_id]['exact_source']})
+report={'schema':'gorilla_g_rotary_input_inertia_sensitivity_v1',
+    'source_hashes':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in [doc,motor]},
+    'source_pages':[12,13],'source_table_units':'moment of inertia x1e-4 kg m^2, not x1e-5 kgf m s^2',
+    'rows':rows,'own_formula':'J_reflected=(Jgear_input+Jmotor_rotor)*N^2; extra torque=J_reflected*qddot in fixed-parent ideal reduction.',
+    'decision_input':'Retain published motor and gear input inertias before defining drive acceleration; do not replace them with an arbitrary solid-cylinder mass or omit input inertia.',
+    'stable_physical_contract':False,'physical_accepted':False,
+    'limits':['Catalogue scalar input inertia is not a complete installed gear fixed/input/output COM and 3x3 inertia split.',
+        'Rotor spatial mass/COM and transmission constraints need one consistent model; naive parent rotor mass plus armature can miss free-base coupling or double count.',
+        'Fixed-parent ideal reflection omits actual floating-base and multi-axis cross terms, losses, flexibility and added coupling/shaft/brake inertias.',
+        'No motor torque-speed/voltage/thermal, gearbox duty or trajectory qualification follows from this acceleration sensitivity.']}
+(OUT/'rotary_input_inertia_screen.json').write_text(json.dumps(report,indent=2)+'\n')
+for r in rows:print(r['family'],'output_reflected_kg_m2',r['ideal_fixed_parent_reflected_input_total_at_output_kg_m2'])

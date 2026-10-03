@@ -1,0 +1,78 @@
+from pathlib import Path
+import json,copy,hashlib,collections
+import numpy as np,trimesh as tm,manifold3d as mf
+from PIL import Image, ImageDraw, ImageFont
+O=Path(__file__).resolve().parent;R=Path('/home/ethan/Projects/Sai_Rotbots');P=R/'.scratch/gorilla_internal_f2_waist_hip_module/candidate_a_scene.json';S=json.loads(P.read_text());PM={p['name']:p for p in S['parts']};sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();write=lambda p,d:Path(p).write_text(json.dumps(d,indent=2,allow_nan=False)+'\n')
+COL={'gear':'#43729c','motor':'#339990','brake':'#b89337','encoder':'#a376ae','controller':'#bd7a34','wire_coolant_connector':'#c2676d','gear_load_shell':'#55636a','motor_cooling_case':'#4b838e','input_hub_reserve':'#ab8043','hollow_output_adapter':'#ca8a39','shared_input_reaction_step':'#2b5365','shared_fixed_output_support_shell':'#2b5365','shared_output_flange_extension':'#dba353'}
+def mesh(p):return tm.Trimesh(p['vertices_world_m'],[[f[0],f[j],f[j+1]] for f in p['faces'] for j in range(1,len(f)-1)],process=False)
+def native(m,n,b,role,**meta):return {'name':n,'body':b,'role':role,'vertices_world_m':m.vertices.tolist(),'faces':m.faces.tolist(),**meta}
+def tube(c,ro,ri,L):
+ a=tm.creation.cylinder(radius=ro,height=L,sections=64);b=tm.creation.cylinder(radius=ri,height=L+.002,sections=64);q=tm.boolean.difference([a,b],engine='manifold');Q=tm.geometry.align_vectors([0,0,1],[1,0,0]);q.apply_transform(Q);q.apply_translation(c);return q
+rows=[];worldparts=[];locals_by={};axes=[]
+for g in S['kit_groups']:
+ ps=[copy.deepcopy(PM[n]) for n in g['part_ids']];gear=ps[0];adapter=next(p for p in ps if p['name'].endswith('hollow_output_adapter'));c=np.mean(np.array(gear['vertices_world_m']),axis=0);ac=np.mean(np.array(adapter['vertices_world_m']),axis=0);axis=(ac-c)/np.linalg.norm(ac-c);rad=np.array([1.,0,0]) if abs(axis[0])<.8 else np.array([0.,0,1.]);side=np.cross(axis,rad);side/=np.linalg.norm(side);rad=np.cross(side,axis);B=np.stack([axis,rad,side],axis=1);local=[]
+ for p in ps:
+  suffix=p['name'].split(g['id']+'_',1)[1];v=np.array(p['vertices_world_m']);vv=(v-c)@B;p['name']='g_'+g['id']+'_'+suffix;p['vertices_world_m']=vv.tolist();p['source_F2_part_id']='f2_a_ds_'+g['id']+'_'+suffix;p['local_basis_columns_world']=B.tolist();p['local_origin_world_m']=c.tolist();p['role']='complete_component_reference' if p['role']=='complete_component_reference' else 'finite_inherited_function_material';p['catalog_projection_correction']=False;p['inherited_D_source_dimensions']=p.pop('source_dimensions',None);p['native_vertices_authoritative_inherited_D_primitive_params_are_historical']=True
+  if g['id']=='waist_roll' and suffix=='gear':
+   mm=tm.creation.cylinder(radius=.095,height=.098,sections=64);mm.apply_transform(tm.geometry.align_vectors([0,0,1],[1,0,0]));mm.apply_translation([-.004,0,0]);p['vertices_world_m']=mm.vertices.tolist();p['faces']=mm.faces.tolist();p['catalog_projection_correction']={'previous_core_L_m':.090,'full_drawing_bound_L_m':.098,'input_side_local_projection_m':.008,'native_shape_scope':'conservative full cylinder envelope; actual 8mm projection local radial shape not recovered','not_OEM_material':True,'output_side_identity_still_installation_hypothesis':True}
+  vv=np.array(p['vertices_world_m']);lo=vv.min(0);hi=vv.max(0);mass=p.get('mass_range_kg');rows.append({'group':g['id'],'function':suffix,'source_part_id':p['source_F2_part_id'],'native_local_bounds_m':[lo.tolist(),hi.tolist()],'native_local_AABB_dimensions_m':(hi-lo).tolist(),'axial_interval_from_gear_center_m':[float(lo[0]),float(hi[0])],'radial_max_radius_m':float(np.max(np.linalg.norm(vv[:,1:],axis=1))),'mass_range_kg':mass,'finite_material_density_kg_m3':p.get('density_kg_m3'),'reference_mass_includes_integrated_output_bearing':suffix=='gear','OEM_dimensional_reference_not_exact_material':suffix in ['gear','motor'],'projection_correction':p['catalog_projection_correction']});local.append(p)
+  w=copy.deepcopy(p);w['vertices_world_m']=(vv@B.T+c).tolist();w['name']='g_world_'+g['id']+'_'+suffix;worldparts.append(w)
+ locals_by[g['id']]=local;vv=np.vstack([np.array(p['vertices_world_m']) for p in local]);axes.append({'id':g['id'],'output_axis_hypothesis_world':axis.tolist(),'gear_center_world_m':c.tolist(),'F2_canonical_joint_axis':next(j for j in S['module_joint_scope'] if j['id']==g['id']),'whole_group_local_AABB_m':[vv.min(0).tolist(),vv.max(0).tolist()],'whole_group_axial_extent_m':float(np.ptp(vv[:,0])),'axis_region':'central pelvis vertical' if g['id']=='waist_yaw' else 'lumbar front/rear sagittal horizontal' if g['id']=='waist_roll' else 'left/right pelvis top to upper-thigh vertical root','no_global_installation_claim':True})
+write(O/'stock_dimensions_and_axis_regions.json',{'schema':'gorilla_g_full_stack_source_dimensions_v1','F2_source_path':str(P),'F2_source_sha256':sha(P),'four_groups_40_functions':rows,'axis_region_starting_context':axes,'OEM_gear50_98mm_projection_corrected_in_new_G_only':True,'no_solid_internal_gear_or_motor_inertia_claim':True})
+write(O/'route_1_complete_stock_world_reference.json',{'schema':'gorilla_g_route1_complete_dimensional_inventory_v1','parts':worldparts,'original_armor_delta_mm':0,'F2_source_sha256':sha(P),'extra_F2_external_bearing_races_not_part_of_integral_OEM_inventory':True,'OEM_gear_internal_support_geometry_and_face_owner_unknown':True,'installed':False,'geometry_accepted':False,'physics_accepted':False})
+custom=[];checks=[]
+for family,gid in [('csg65','waist_yaw'),('csg50','waist_roll')]:
+ ps=copy.deepcopy(locals_by[gid]);fixed=family+'_fixed_load_shell';output=family+'_output_adapter';gearp=next(p for p in ps if p['name'].endswith('_gear'));bounds=mesh(gearp).bounds;outend=bounds[1,0];inend=-.06175 if family=='csg65' else -.045 # source body interface; extra projection at input remains catalog occupancy
+ for p in ps:p['body']=output if p['name'].endswith('hollow_output_adapter') else fixed;p['name']='g_custom_'+family+'_'+p['name'].split(gid+'_',1)[1]
+ if family=='csg65':ro=.136;ri_input=.107;ri_fixed=.102;ro_output=.090
+ else:ro=.101;ri_input=.082;ri_fixed=.092;ro_output=.084
+ specs=[('shared_input_reaction_step',fixed,[inend-.005,0,0],ro,ri_input,.004),('shared_fixed_output_support_shell',fixed,[outend+.0245,0,0],ro,ri_fixed,.030),('shared_output_flange_extension',output,[outend+.0225,0,0],ro_output,.030,.020)]
+ # Input step and front shell are finite connection proposals, not OEM bearing parts. New output support still missing.
+ for n,b,c,rr,ii,L in specs:ps.append(native(tube(c,rr,ii,L),'g_custom_'+family+'_'+n,b,'finite_shared_shell_proposal',density_kg_m3=7850.,function=n,capacity_and_installed_interface_unknown=True))
+ mats=[p for p in ps if p['role']!='complete_component_reference'];hits=[]
+ for i,p in enumerate(mats):
+  for q in mats[i+1:]:
+   if p['body']==q['body']:continue
+   a=mesh(p);b=mesh(q)
+   if np.any(np.minimum(a.bounds[1],b.bounds[1])-np.maximum(a.bounds[0],b.bounds[0])<=1e-7):continue
+   v=float(tm.boolean.intersection([a,b],engine='manifold').volume)
+   if v>1e-10:hits.append({'a':p['name'],'b':q['name'],'material_positive_volume_m3':v})
+ counts={};mass={}
+ for owner in [fixed,output]:
+  mm=[mesh(p) for p in mats if p['body']==owner];u=tm.boolean.union(mm,engine='manifold');man=mf.Manifold(mf.Mesh64(vert_properties=np.array(u.vertices,np.float64),tri_verts=np.array(u.faces,np.uint64)));counts[owner]=sum(c.volume()>1e-10 for c in man.decompose());mass[owner]=float(man.volume())*7850
+ refmass=np.sum([p['mass_range_kg'] for p in ps if p['role']=='complete_component_reference'],axis=0).tolist();unknown={'radial_inner_m':ro_output,'radial_outer_m':ri_fixed,'axial_interval_m':[outend+.0145,outend+.0345],'finite_module_installed':False,'function':'would require complete output support / preload / seal / lubrication / precise races and mounting','credible_output_support_capacity_range_available':False,'not_an_installed_bearing_material':True}
+ checks.append({'family':family,'actual_distinct_fixed_output_material_hits':hits,'same_owner_positive_material_components':counts,'net_finite_shared_shell_plus_inherited_function_mass_kg':mass,'complete_reference_mass_range_kg_once':refmass,'support_window_only_not_complete_bearing':unknown,'complete_custom_module':False,'sim_design_possible_but_joint_ratings_unassigned':True,'actual_hardware_validation':False});custom+=ps
+write(O/'route_2_common_shell_local_probe.json',{'schema':'gorilla_g_shared_shell_macro_probe_v1','parts':custom,'checks':checks,'functions_retained_each10_plus3finite_shared_material_proposals':True,'catalog_gears_unscaled_and_gear50_complete98mm':True,'not_installed_custom_output_support':True,'no_mass_credit_or_reducer_internal_part_removal':True,'geometry_accepted':False,'physics_accepted':False,'SI_accepted':False})
+# Exact native axis-plane sections; native contours projected at common 1.8px/mm.
+fontpath='/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf';font=lambda z:ImageFont.truetype(fontpath,z)
+im=Image.new('RGB',(1600,1300),'white');dr=ImageDraw.Draw(im);svg=['<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1300" viewBox="0 0 1600 1300"><rect width="1600" height="1300" fill="white"/>'];scale=1.4
+textrows=[]
+def txt(x,y,s,z=17,c='#28343e'):
+ dr.text((x,y),s,font=font(z),fill=c);svg.append(f'<text x="{x}" y="{y+z}" font-size="{z}" fill="{c}" font-family="sans-serif">{s.replace("&","&amp;").replace("<","&lt;")}</text>')
+txt(30,18,'GORILLA G | SAME-SCALE NATIVE STACK SECTIONS',27);txt(30,56,'Gear/motor/brake/feedback/control/cooling retained. OEM internal solids and custom bearing are unknown.',18)
+for col,(family,gid) in enumerate([('csg65','waist_yaw'),('csg50','waist_roll')]):
+ for rr in [0,1]:
+  xbase=35+col*790;ybase=125+rr*530;ox=xbase+385;oy=ybase+260
+  def xy(x,y):return [ox+x*scale,oy-y*scale]
+  dr.rectangle([xbase,ybase,xbase+745,ybase+490],outline='#91a1b0',width=1);svg.append(f'<rect x="{xbase}" y="{ybase}" width="745" height="490" fill="none" stroke="#91a1b0"/>')
+  txt(xbase+10,ybase+10,('Route 1: integrated catalog support | ' if rr==0 else 'Route 2: finite common shell; support missing | ')+family.upper(),16)
+  ps=locals_by[gid] if rr==0 else [p for p in custom if p['name'].startswith('g_custom_'+family+'_')]
+  for axx in range(-180,121,30):
+   X=xy(axx,0)[0];dr.line([X,ybase+70,X,ybase+460],fill='#edf0f2');txt(X-10,ybase+462,str(axx),11,'#586874')
+  for yy in [-120,-60,0,60,120]:
+   Y=xy(0,yy)[1];dr.line([xbase+20,Y,xbase+725,Y],fill='#dde2e7');txt(xbase+22,Y+2,str(yy),11,'#586874')
+  for p in ps:
+   suffix=p['name'].split(gid+'_',1)[1] if rr==0 else p['name'].split(family+'_',1)[1];co=COL.get(suffix,'#78909c');sec=tm.intersections.mesh_plane(mesh(p),plane_origin=[0,0,0],plane_normal=[0,0,1])
+   if len(sec)==0:continue
+   for line in sec:
+    points=[xy(q[0]*1000,q[1]*1000) for q in line];dr.line([tuple(a) for a in points],fill=co,width=3);svg.append('<polyline points="'+' '.join(f'{q[0]:.4f},{q[1]:.4f}' for q in points)+f'" fill="none" stroke="{co}" stroke-width="2"/>')
+  if rr==1:
+   ck=next(c for c in checks if c['family']==family);w=ck['support_window_only_not_complete_bearing'];x0,x1=np.array(w['axial_interval_m'])*1000
+   for sign in [-1,1]:
+    y0=sign*w['radial_inner_m']*1000;y1=sign*w['radial_outer_m']*1000;p0=xy(x0,max(y0,y1));p1=xy(x1,min(y0,y1));dr.rectangle([*p0,*p1],outline='#b32121',width=3);svg.append(f'<rect x="{p0[0]}" y="{p0[1]}" width="{p1[0]-p0[0]}" height="{p1[1]-p0[1]}" fill="none" stroke="#b32121" stroke-width="3"/>')
+   txt(xbase+10,ybase+40,'RED: geometric support window only; no bearing/rating installed',14,'#a41414')
+  txt(xbase+15,ybase+487,'Axial mm from gear center; +u is F2 output hypothesis. Radial mm.',13)
+legend='gear blue | motor teal | fixed load shell gray | output orange | brake gold | feedback purple'
+txt(30,1190,legend,17);txt(30,1220,'65: Ø260×123.5mm /20.9kg. 50: Ø190×98mm incl.8mm projection /8.9kg. Native 1.4px/mm.',17);txt(30,1250,'DIAGNOSTIC ONLY. OEM support mass already included. Assembly/physics/SI/aesthetic gates remain false.',17,'#a41414')
+im.save(O/'stack_routes_native_sections.png');svg.append('</svg>');(O/'stack_routes_native_sections.svg').write_text('\n'.join(svg))
+print('dimensions',len(rows),'world stock',len(worldparts),'custom sections',len(custom),'checks',[(x['family'],len(x['actual_distinct_fixed_output_material_hits']),x['same_owner_positive_material_components']) for x in checks],flush=True)

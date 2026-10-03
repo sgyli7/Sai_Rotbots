@@ -1,0 +1,134 @@
+"""Gorilla G1 complete lower/segmented-foot finite CSG candidate; no old-source repair."""
+from pathlib import Path
+import json,math,hashlib,copy,sys
+import numpy as np,trimesh as tr,manifold3d as mf,shapely
+from shapely.geometry import MultiPoint
+O=Path(__file__).resolve().parent;ROOT=O.parents[1];RHO=7850.;sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+BASEP=ROOT/'experiments/gorilla_v0_1/appearance_c_round_fifteen/appearance_c_scene.json';BASE=json.loads(BASEP.read_text());OLD={p['name']:p for p in BASE['parts']}
+K=np.array([-.080,.398,.970]);F=np.array([-.120,.470,.530]);A=np.array([-.075,.500,.285]);R=np.array([-.205,.500,.245]);PF=np.array([-.050,.500,.124]);PH=np.array([-.180,.500,.124])
+J=[dict(id='knee',parent='thigh_interface',child='middle',c=K,axis=[0,1,0],seats=[-.115,.115],collars=[-.080,.080]),dict(id='fold',parent='middle',child='distal',c=F,axis=[0,1,0],seats=[-.140,.140],collars=[-.095,.095]),dict(id='ankle_pitch',parent='distal',child='ankle_carrier',c=A,axis=[0,1,0],seats=[-.140,.140],collars=[-.085,.085]),dict(id='ankle_roll',parent='ankle_carrier',child='arch',c=R,axis=[1,0,0],seats=[-.060,.086],collars=[.003,.067]),dict(id='forefoot',parent='arch',child='forefoot',c=PF,axis=[0,1,0],seats=[-.130,.130],collars=[-.080,.080]),dict(id='heel',parent='arch',child='heel',c=PH,axis=[0,1,0],seats=[-.200,.200],collars=[-.167,.167])]
+def C(m):return mf.Manifold(mf.Mesh64(np.array(m.vertices,np.float64,order='C',copy=True),np.array(m.faces,np.uint64,order='C',copy=True)))
+def arrays(s):q=s.to_mesh64();return np.asarray(q.vert_properties[:,:3]).tolist(),np.asarray(q.tri_verts).tolist()
+def box(c,d):return mf.Manifold.cube(list(d),center=True).translate(list(c))
+def ring(c,ro,ri,L,ax):
+ m=tr.creation.annulus(ri,ro,L,sections=64) if ri else tr.creation.cylinder(ro,L,sections=64);m.apply_transform(tr.geometry.align_vectors([0,0,1],ax));m.apply_translation(c);return C(m)
+def unite(xs):
+ s=mf.Manifold()
+ for x in xs:s=s+x
+ return s
+
+def beam(a,b,w=.030,d=.042,wall=.006,solid=False):
+ a=np.array(a);b=np.array(b);u=(b-a)/np.linalg.norm(b-a);L=np.linalg.norm(b-a);s=mf.Manifold.cube([w,d,L],center=True)
+ if not solid:s=s-mf.Manifold.cube([w-2*wall,d-2*wall,L+.004],center=True)
+ x=np.array([0.,1.,0.]);x=x-u*(x@u)
+ if np.linalg.norm(x)<1e-8:x=np.array([1.,0.,0.])-u*u[0]
+ x/=np.linalg.norm(x);T=np.eye(4);T[:3,:3]=np.column_stack([x,np.cross(u,x),u]);T[:3,3]=(a+b)/2;return s.transform(T[:3,:4].copy())
+def path(points,**kw):return unite([beam(a,b,**kw) for a,b in zip(points,points[1:])])
+def slab(poly,z,h):
+ vv=[];fs=[];lookup={}
+ for tri in shapely.constrained_delaunay_triangles(poly).geoms:
+  f=[]
+  for xy in list(tri.exterior.coords)[:3]:
+   xy=tuple(xy)
+   if xy not in lookup:lookup[xy]=len(vv);vv.append(xy)
+   f.append(lookup[xy])
+  fs.append(f)
+ m=tr.creation.extrude_triangulation(np.array(vv),np.array(fs),h);m.apply_translation([0,0,z]);return C(m)
+frames={b:[] for b in ['thigh_interface','middle','distal','ankle_carrier','arch','forefoot','heel']};parts=[];actions=[];motions={}
+def fm(body,shape):frames[body].append(shape)
+def add(name,body,s,role='finite_metal',**kw):
+ v,f=arrays(s);p={'name':'g1_'+name,'body':body,'role':role,'vertices_world_m':v,'faces':f,'density_kg_m3':RHO,'material_assumption':'S355 geometry density only; no material/pressure/wear qualification','rgba':[.22,.33,.39,1],**kw};parts.append(p);return p
+# Fixed housing + explicit plain-journal candidate and moving hollow output; nominal contact not rated bearing.
+for j in J:
+ c=j['c'];ax=np.array(j['axis']);ro=.055 if j['id'] not in ['forefoot','heel'] else .036;rs=.030 if ro>.04 else .0248;rb=.040 if ro>.04 else .0252
+ for off in j['seats']:
+  fm(j['parent'],ring(c+ax*off,ro,rb,.018,ax));add(j['id']+'_journal_'+str(off),j['parent'],ring(c+ax*off,rb,rs,.016,ax),'finite_journal_candidate',contact_scope='Nominal exact journal interfaces; lubrication/rating/fit/preload/retention unresolved')
+ for off in j['collars']:fm(j['child'],ring(c+ax*off,.045 if ro>.04 else .032,rs-.0005,.016,ax))
+ if j['id']=='ankle_roll':shaftcenter=[-.1975,.5,.245];length=.175
+ else:shaftcenter=c;length=.290 if j['id']=='knee' else .340 if j['id']=='ankle_pitch' else .390 if j['id']=='fold' else .340 if j['id']=='forefoot' else .440
+ fm(j['child'],ring(shaftcenter,rs,.018 if ro>.04 else .016,length,ax))
+fm('thigh_interface',beam(K+[-.050,-.115,.045],K+[-.050,.115,.045],.045,.035))
+# Deliberate front middle / rear distal / aft roll-carrier bays, not nearest-pivot rods.
+for sg in [-1,1]:
+ ky=K[1]+sg*.08;fy=F[1]+sg*.14
+ fm('middle',path([[K[0],ky,K[2]-.035],[.150,ky,.85],[.220,fy,.67],[F[0],fy,F[2]+.050]],w=.028,d=.040))
+ dy=.350 if sg<0 else .650;fc=F[1]+sg*.095;ay=A[1]+sg*.14
+ fm('distal',path([[F[0],fc,F[2]+.035],[-.170,dy,.600],[-.170,dy,.920]],w=.028,d=.036))
+ fm('distal',path([[F[0],fc,F[2]+.035],[.110,dy,.455],[A[0],ay,A[2]+.050]],w=.028,d=.040))
+ cy=.390 if sg<0 else .610
+ fm('ankle_carrier',path([[A[0],A[1]+sg*.085,A[2]-.035],[-.240,cy,.370],[-.240,cy,.721]],w=.028,d=.040))
+ for sx in [-.265,-.119]:fm('ankle_carrier',beam([sx,R[1]+sg*.050,R[2]],[sx,cy,R[2]],.026,.035))
+ fm('ankle_carrier',beam([-.240,cy,.721],[-.138,.405 if sg<0 else .595,.721],.024,.018,.004))
+fm('distal',beam([-.17,.35,.920],[-.17,.65,.920],.036,.020,.005))
+# Four complete finite cylinders, their actual fixed forks / torque cranks / eyes / pins.
+def action(id,pivot,aa,bb,parent,child,ax,rangeq):
+ aa=np.array(aa);bb=np.array(bb);pivot=np.array(pivot);samples=[]
+ for q in np.linspace(*rangeq,121):
+  T=tr.transformations.rotation_matrix(math.radians(q),ax,pivot);b=tr.transformations.transform_points([bb],T)[0];u=(b-aa)/np.linalg.norm(b-aa);jac=float(u@np.cross(ax,b-pivot));samples.append({'q_deg':float(q),'eye_length_m':float(np.linalg.norm(b-aa)),'J_m_per_rad':jac,'cap_flow_L_min_per_rad_s':abs(jac)*math.pi*.063**2/4*60000,'rod_flow_L_min_per_rad_s':abs(jac)*math.pi*(.063**2-.03**2)/4*60000,'positive_q_supply_branch':'cap' if jac>0 else 'rod'})
+ lo=min(x['eye_length_m'] for x in samples);hi=max(x['eye_length_m'] for x in samples);stroke=hi-lo+.020;minimum=stroke+.170;zero=lo-.010;tail=zero-minimum
+ a={'id':id,'parent_body':parent,'output_body':child,'pivot_world_m':pivot.tolist(),'axis_world':ax,'A_world_m':aa.tolist(),'B_world_m':bb.tolist(),'bore_m':.063,'rod_m':.030,'wall_m':.005,'pin_m':.040,'q_range_deg':rangeq,'stroke_m':stroke,'minimum_zero_eye_m':minimum,'custom_zero_eye_m':zero,'extra_hollow_sleeve_m':tail,'short_zero_deficit_m':max(0.,-tail),'samples':samples,'qualified':False};actions.append(a)
+ ax=np.array(ax)
+ for sg in [-1,1]:
+  p=aa+ax*sg*.032;fm(parent,ring(p,.050,.020,.014,ax));support=aa+[0,0,.048];support=support+ax*sg*.032
+  anchor=np.array([-.17,.35 if sg<0 else .65,.920]) if id=='ankle_pitch' else np.array([.15,.42,.90]) if id=='fold' else np.array([-.24,.39 if aa[1]<.5 else .61,.721]);fm(parent,beam(support,anchor,.028,.022,.004))
+  p=bb+ax*sg*.032;fm(child,ring(p,.047,.020,.014,ax));root=pivot.copy()+ax*float((p-pivot)@ax);fm(child,beam(root,p,.020,.028,.004,solid=True));fm(child,ring(root,.045,.0295,.014,ax))
+ add(id+'_fixed_pin',parent,ring(aa,.020,0,.100,ax),contact_scope='Intended eye/journal contact; pin axial retention unresolved');add(id+'_moving_pin',child,ring(bb,.020,0,.100,ax),contact_scope='Intended eye/journal contact; pin axial retention unresolved')
+ if tail<0:return
+ u=(bb-aa)/np.linalg.norm(bb-aa);L=np.linalg.norm(bb-aa);ear=.030;start=ear+tail+.020;ext=L-zero
+ def seg(x0,x1,ro,ri=0):return ring(aa+u*(x0+x1)/2,ro,ri,x1-x0+.0004,u)
+ fixed=[ring(aa,.038,.020,.044,ax),seg(.024,.030,.020),seg(.030,.030+tail,.0365,.0155),seg(.030+tail,start,.0365),seg(start,start+stroke+.020,.0365,.0315),seg(start+stroke+.020,start+stroke+.040,.0365,.0155),seg(start+stroke+.040,start+stroke+.060,.0335,.0155)]
+ rod=[seg(start+ext,start+ext+.020,.0310),seg(start+ext+.010,L-ear,.015),seg(L-ear,L-.024,.018),ring(bb,.038,.020,.044,ax)]
+ bv=tr.geometry.align_vectors([0,0,1],u); # Use endpoint rigid transforms, not owning parent T.
+ z=u;x=ax-u*(ax@u);x/=np.linalg.norm(x);basis=np.column_stack([x,np.cross(z,x),z]);a['barrel_neutral_frame_world']=np.block([[basis,aa[:,None]],[np.zeros((1,3)),np.ones((1,1))]]).tolist()
+ for kind,ms,owner in [('barrel',fixed,parent),('rod',rod,child)]:add(id+'_'+kind,id+'_'+kind+'_link',unite(ms),'finite_actuator',mass_owner_body=owner,motion_id=id,motion_kind=kind)
+ motions[id]={'aa':aa,'bb':bb,'L':L,'basis':basis,'axis':ax,'parent':parent,'child':child};a['complete_geometry_present']=True
+
+action('fold',F,[.020,.420,.900],[.120,.420,.540],'middle','distal',[0,1,0],[-20,0])
+action('ankle_pitch',A,[-.170,.500,.865],[-.180,.500,.315],'distal','ankle_carrier',[0,1,0],[-10,0])
+for sg in [-1,1]:action('roll_'+str(sg),R,[-.170,.500+sg*.095,.665],[-.170,.500+sg*.080,.220],'ankle_carrier','arch',[1,0,0],[-10,10])
+# Roll moving web and bent arch through heel front mouth; no shared full sole.
+for xx in [-.202,-.138]:
+ for sg in [-1,1]:
+  y=.34 if sg<0 else .66
+  fm('arch',path([[xx,.5,.245],[xx,y,.205],[-.105,y,.180]],w=.030,d=.034,wall=.006))
+for sg in [-1,1]:
+ y=.300 if sg<0 else .700
+ fm('arch',path([[-.105,.34 if sg<0 else .66,.180],[PF[0],.37 if sg<0 else .63,.155],[PH[0],y,.155]],w=.040,d=.018,wall=.005))
+for pp in [PF,PH]:fm('arch',beam([pp[0],.30,pp[2]+.030],[pp[0],.70,pp[2]+.030],.028,.010,.003,solid=True))
+# Tray-to-pad real planar compression, separate steel plates. Profile inset is explicit, not a spanning skin.
+for body,padname,pivot in [('forefoot','left_composite_forepad',PF),('heel','left_composite_heel_pad',PH)]:
+ pad=OLD[padname];v=np.array(pad['vertices_world_m']);top=v[np.isclose(v[:,2],.033)];poly=MultiPoint(top[:,:2]).convex_hull.buffer(-.008);fm(body,slab(poly,.033,.006));p=copy.deepcopy(pad);p['name']='g1_retained_'+padname;p['body']=body;p['role']='retained_contact_pad';p['faces']=[[f[0],f[i],f[i+1]] for f in p['faces'] for i in range(1,len(f)-1)];p['mass_range_kg']=[float(poly.area*.033*900),float(poly.area*.033*1100),float(poly.area*.033*1400)];parts.append(p)
+ if body=='forefoot':
+  for y in [.42,.58]:fm(body,path([[pivot[0],y,.124],[.075,y,.068],[.390,y,.058]],w=.032,d=.040,wall=.006))
+  fm(body,box([.150,.5,.112],[.060,.16,.024]));fm(body,beam([.150,.42,.090],[.150,.58,.090],.042,.028,.006))
+ else:
+  for y in [.333,.667]:fm(body,beam([pivot[0],y,.124],[-.255,.5,.055],.035,.035,.006))
+  fm(body,beam([-.245,.5,.048],[-.390,.5,.048],.120,.018,.005));fm(body,box([-.320,.5,.0625],[.060,.080,.011]))
+# Vertical unloading compression caps, real guides and separately withdrawn retaining pins.
+locks=[]
+for body,x,z,lift in [('forefoot',.150,.124,.065),('heel',-.320,.068,.040)]:
+ capname='g1_'+body+'_compression_cap';cap=box([x,.5,z+.008],[.062,.130,.016])
+ for yy in [.440,.560]:cap=cap-ring([x,yy,z+.018],.010,0,.100,[1,0,0])
+ add(body+'_compression_cap','lock_'+body,cap,lock_state='loaded compression contact face',unlock_translation_world_m=[0,0,lift]);locks.append({'body':'lock_'+body,'translation':[0,0,lift]})
+ for sg in [-1,1]:
+  yy=.5+sg*.060;guide=box([x,yy,z+.028],[.080,.022,.070])-box([x,yy,z+.028],[.046,.026,.080]);fm('arch',guide);fm('arch',beam([x,yy,z+.048],[-.105,.34 if sg<0 else .66,.180],.032,.032,.005))
+  pincenter=[x,yy,z+.018];pin=ring(pincenter,.010,0,.100,[1,0,0]);add(body+'_lock_pin_'+str(sg),'pin_'+body+'_'+str(sg),pin,unlock_translation_world_m=[.110,0,0],pin_qualification='Candidate20mm retention; strength/actuation unqualified');locks.append({'body':'pin_'+body+'_'+str(sg),'translation':[.110,0,0]});frames['arch']=[s-ring(pincenter,.010,0,.100,[1,0,0]) for s in frames['arch']]
+for body,ss in frames.items():add(body+'_net',body,unite(ss),construction_scope='Finite CSG direct signed boundary; monolithic geometry candidate, joining/shaft/contact/strength unresolved')
+# Original armor only as separately posed comparator, no changes to its source.
+armor=[copy.deepcopy(p) for p in BASE['parts'] if p['role'] in ['armor_surface','armor_cover'] and (p['name'].startswith('left_') or p['body']=='pelvis')]
+for p in armor:
+ p['faces']=[[f[0],f[i],f[i+1]] for f in p['faces'] for i in range(1,len(f)-1)];p['comparison_body']={'left_middle_shank':'middle','left_distal_shank':'distal','left_foot':'arch','left_forefoot_display':'forefoot','left_heel_display':'heel'}.get(p['body'],'thigh_interface')
+poses=[]
+for id,qs,unlocked in [('neutral',{},False),('lower_negative_endpoint',{'fold':-20,'ankle_pitch':-10,'ankle_roll':-10},False),('unloaded_split_endpoint',{'fold':-20,'ankle_pitch':-10,'ankle_roll':10,'forefoot':-15,'heel':10},True)]:
+ T={'thigh_interface':np.eye(4)}
+ for j in J:T[j['child']]=T[j['parent']]@tr.transformations.rotation_matrix(math.radians(qs.get(j['id'],0)),j['axis'],j['c'])
+ for lock in locks:T[lock['body']]=T['arch']@tr.transformations.translation_matrix(lock['translation'] if unlocked else [0,0,0])
+ mts={};end=[]
+ for id2,d in motions.items():
+  aa=tr.transformations.transform_points([d['aa']],T[d['parent']])[0];bb=tr.transformations.transform_points([d['bb']],T[d['child']])[0];u=(bb-aa)/np.linalg.norm(bb-aa);ax=T[d['parent']][:3,:3]@d['axis'];x=ax-u*(ax@u);x/=np.linalg.norm(x);basis=np.column_stack([x,np.cross(u,x),u]);rot=basis@d['basis'].T;tf=np.eye(4);tf[:3,:3]=rot;tf[:3,3]=aa-rot@d['aa'];tt=tf.copy();tt[:3,3]+=u*(np.linalg.norm(bb-aa)-d['L']);mts[(id2,'barrel')]=tf;mts[(id2,'rod')]=tt;end.append({'id':id2,'A_world_m':aa.tolist(),'B_world_m':bb.tolist(),'barrel_transform_world':tf.tolist(),'rod_transform_world':tt.tolist()})
+ pp=[]
+ for p in parts:
+  q=copy.deepcopy(p);tt=mts[(p['motion_id'],p['motion_kind'])] if p.get('motion_id') else T[p['body']];q['vertices_world_m']=tr.transformations.transform_points(p['vertices_world_m'],tt).tolist();q['applied_transform_world']=tt.tolist();pp.append(q)
+ poses.append({'id':id,'parts':pp,'body_transforms':{k:v.tolist() for k,v in T.items()},'joint_angles_deg':qs,'locks_unloaded_retracted':unlocked,'endpoint_transforms':end,'root_shift_z_m':0})
+scene={'robot_id':'gorilla_v0_1','candidate':'G1 new finite CSG lower + segmented feet','parts':parts,'pose_scenes':poses,'armor_comparator':armor,'joints':[{**j,'c':j['c'].tolist()} for j in J],'actuators':actions,'locks':locks,'physical_accepted':False,'geometry_accepted':False,'original_armor_delta_mm':0,'original_armor_comparator_not_aesthetic_approval':True,'scope':'Knee support interface onward; missing thigh/knee actuator, full upperbody and continuous flow/thermal qualification. New axes require new FK/LP.','input_hashes':{str(p.relative_to(ROOT)):sha(p) for p in [BASEP,Path(__file__),ROOT/'.scratch/gorilla_internal_g_material_contract/native_signed_material.py']}}
+(O/'chain_scene.json').write_text(json.dumps(scene,indent=2)+'\n');print('G1 BUILT',len(parts),'cyl',sum(a.get('complete_geometry_present',False) for a in actions),'sha',sha(O/'chain_scene.json'),flush=True)

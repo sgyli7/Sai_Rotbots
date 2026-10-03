@@ -1,0 +1,88 @@
+from pathlib import Path
+import json,hashlib,math,sys,collections
+import numpy as np,trimesh as tm,manifold3d as mf
+R=Path('/home/ethan/Projects/Sai_Rotbots');O=Path(__file__).resolve().parent;sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();write=lambda p,d:Path(p).write_text(json.dumps(d,indent=2,allow_nan=False)+'\n');M=json.loads((R/'.scratch/gorilla_internal_e2a_integrated/scene.json').read_text());parts=[];inventory=[];interfaces=[]
+def orient(c,axis):
+ Q=tm.geometry.align_vectors([0,0,1],np.array(axis)/np.linalg.norm(axis));Q[:3,3]=c;return Q[:3,:]
+def cy(c,r,L,a):return mf.Manifold.cylinder(L,r,r,64,True).transform(orient(c,a))
+def bx(c,d):return mf.Manifold.cube(d,True).translate(c)
+def rg(c,ro,ri,L,a):return cy(c,ro,L,a)-cy(c,ri,L+.004,a) if ri else cy(c,ro,L,a)
+def hb(c,d,t):return bx(c,d)-bx(c,(np.array(d)-2*t).tolist())
+def union(ms):
+ u=ms[0]
+ for m in ms[1:]:u=u+m
+ return u
+COL={'pelvis':[.20,.31,.38,1],'waist_yaw_carrier':[.40,.50,.57,1],'waist_pitch_carrier':[.30,.45,.49,1],'torso':[.39,.50,.61,1]}
+def add(n,b,m,role='finite_frame_material',**kw):
+ q=m.to_mesh64();p={'name':'g1_'+n,'body':b,'material_union_group':b,'role':role,'rgba':COL.get(b,[.52,.36,.25,1]),'vertices_world_m':np.asarray(q.vert_properties)[:,:3].tolist(),'faces':np.asarray(q.tri_verts).astype(int).tolist(),**kw};
+ if role!='complete_component_reference':p['density_kg_m3']=7850.
+ parts.append(p);return p['name']
+frame=collections.defaultdict(list)
+# OEM drawing-left A maps to world output +Z / +X; B case and WG input are opposite.
+# Reference cylinder covers complete asymmetric output-side projection, not invented internal OEM material.
+kits={}
+for k,parent,child,c,a,fam,motD,motL,motmass,core,proj,D,gm,caseRo in [('waist_yaw','pelvis','waist_yaw_carrier',[0,0,1.46],[0,0,1],'csg65',.210,.066,5.8,.115,.0085,.260,20.9,.136),('waist_roll','waist_pitch_carrier','torso',[-.078,0,2.05],[1,0,0],'csg50',.160,.0345,1.613,.090,.008,.190,8.9,.101)]:
+ c=np.array(c,float);a=np.array(a,float);cp=lambda u:c+a*u;inputface=-core/2;outface=core/2+proj;mc=inputface-.007-motL/2;bc=mc-motL/2-.02525;ec=bc-.025;ids={};mass={'gear':[gm]*3,'motor':[motmass]*3,'brake':[.8,1.5,3.0],'encoder':[.1,.2,.35],'controller':[.7,1.1,1.8],'wire_coolant_connector':[.12,.25,.5]}
+ for suffix,r,L,u in [('gear',D/2,core+proj,proj/2),('motor',motD/2,motL,mc),('brake',.060,.035,bc),('encoder',.035,.012,ec)]:ids[suffix]=add(k+'_'+suffix,parent,cy(cp(u),r,L,a),'complete_component_reference',mass_range_kg=mass[suffix],catalogue_or_function_reference=True,OEM_internal_material_not_drawn=True,OEM_owner_split_unknown=suffix in ['gear','motor','brake'],complete_catalogue_dimensions_m={'D':r*2,'L':L},OEM_A_output_world_m=cp(outface).tolist(),OEM_B_case_input_world_m=cp(inputface).tolist())
+ ids['gear_load_shell']=add(k+'_gear_load_shell',parent,rg(cp(proj/2),caseRo,D/2+.002,core+proj+.020,a),functional_inventory='fixed external load shell, entire OEM envelope unchanged')
+ ids['motor_cooling_case']=add(k+'_motor_cooling_case',parent,rg(cp(mc),motD/2+.008,motD/2+.002,motL+.008,a),functional_inventory='motor cooling/seal carrier; actual water ports and thermal test pending')
+ # Complete finite input coupling and rotor-interface flange; actual bore/key and OEM rotor attachment conditional.
+ sr=.01360 if fam=='csg65' else .00945;front=inputface-.003;rr=.074 if fam=='csg65' else .052
+ hub=union([cy(cp(front-.024),sr,.060,a),rg(cp(inputface-.0035),.035,sr-.0001,.013,a),rg(cp(mc+.004),rr,sr-.0001,.004,a)])
+ ids['input_hub_reserve']=add(k+'_input_coupling',k+'_input_link',hub,functional_inventory='fast rotor-to-WG shaft/hub/rotor flange',OEM_WG_bore_diameter_m=.0273 if fam=='csg65' else .019,mechanical_key_rotor_interface_and_motor_bearing_conditional=True,QTR_rotor_flange_radius_is_own_hypothesis=fam=='csg50')
+ # Exact output bolt circles from OEM drawing A; finite holes, retained adapter function.
+ ad=rg(cp(outface+.0175),.080,.030,.035,a);pc=.055 if fam=='csg65' else .042;bolt=.008 if fam=='csg65' else .007;clear=bolt+.001
+ u=np.array([1.,0,0]) if abs(a[0])<.8 else np.array([0.,1,0]);v=np.cross(a,u)
+ for i in range(8):
+  p=cp(outface+.0175)+pc*(math.cos(i*math.pi/4)*u+math.sin(i*math.pi/4)*v);ad=ad-cy(p,clear,.040,a)
+ ids['hollow_output_adapter']=add(k+'_output_flange_adapter',child,ad,functional_inventory='OEM A flange bolt pattern to child carrier',OEM_A_bolt_PCD_m=pc*2,bolt_count=8,bolt_thread='M16x24' if fam=='csg65' else 'M14x21',flange_mount_capacity_and_preload_conditional=True)
+ # Control and connector at actual side bay, beyond gearbox outer radius; no lost functions.
+ side=np.array([0.,1,0]);cc=cp(mc+.015)+side*(caseRo+.055);ctrl=bx(cc,[.070,.035,.100]);conn=cp(inputface+.010)-side*(caseRo+.052)
+ ids['controller']=add(k+'_controller',parent,ctrl,'complete_component_reference',mass_range_kg=mass['controller'],functional_inventory='whole controller in side bay; no hidden overlap credit')
+ ids['wire_coolant_connector']=add(k+'_wire_coolant_connector',parent,bx(conn,[.035,.045,.070]),'complete_component_reference',mass_range_kg=mass['wire_coolant_connector'],functional_inventory='whole service connector and coolant/electrical separation pending')
+ bay=hb(cc,[.090,.060,.120],.003);frame[parent].append(bay)
+ # Whole fixed shell connection: motor-to-gear step and documented B bolt flange, with matching radial bore.
+ frame[parent]+=[rg(cp(inputface-.005),caseRo,motD/2+.002,.006,a),rg(cp(inputface-.002),caseRo,D/2-.020,.008,a)]
+ # Finite radial tab to side bay, terminating outside controller block.
+ if k=='waist_yaw':frame[parent].append(bx([0,caseRo+.013,cc[2]],[.075,.032,.010]))
+ else:frame[parent].append(bx([cc[0],caseRo+.013,2.05],[.040,.032,.015]))
+ inventory.append({'group':k,'family':fam,'functional_part_ids':ids,'all10functions':len(ids)==10,'gear_core_L_m':core,'complete_projection_m':proj,'complete_L_m':core+proj,'output_direction_world':a.tolist(),'OEM_A_output_m':cp(outface).tolist(),'OEM_B_case_input_m':cp(inputface).tolist(),'orientation_from_official_installation_A_output_B_case_WG_input':True,'no_F2_external_races':True});kits[k]={'c':c,'a':a,'outface':outface,'inputface':inputface}
+# Fixed pelvis connection datum and real yaw output fork.
+frame['pelvis'] += [rg([0,0,1.399],.136,.045,.012,[0,0,1]),bx([0,0,1.387],[.27,.40,.020])]
+frame['waist_yaw_carrier'] += [rg([0,0,1.558],.14,.030,.014,[0,0,1]),bx([-.090,0,1.566],[.48,.65,.012]),bx([-.278,0,1.710],[.020,.650,.110])]
+for s in [-1,1]:
+ cheek=bx([-.090,s*.30,1.715],[.38,.018,.29])-cy([0,s*.30,1.75],.05015,.025,[0,1,0]);frame['waist_yaw_carrier'].append(cheek)
+ # Actual passive pitch sleeve/bush, no F2 guessed reducer race. Source pressure/fatigue unknown.
+ frame['waist_yaw_carrier'].append(rg([0,s*.30,1.75],.065,.05015,.026,[0,1,0]))
+# Independent pitch output shaft / continuous box shell and complete roll-case support sleeve.
+frame['waist_pitch_carrier'].append(rg([0,0,1.75],.0499,.030,.650,[0,1,0]))
+carrier=hb([-.06,0,1.935],[.36,.48,.43],.006)-cy([0,0,1.75],.049,.60,[0,1,0])-cy([-.06,0,2.05],.105,.44,[1,0,0]);frame['waist_pitch_carrier'].append(carrier)
+frame['waist_pitch_carrier'].append(rg([-.018,0,2.05],.115,.1005,.29,[1,0,0]))
+# Roll output connects to front spine and a continuous shoulder reaction box, not nearest-pivot sticks.
+frame['torso'] += [rg([.091,0,2.05],.0499,.030,.166,[1,0,0]),rg([.170,0,2.05],.090,.030,.020,[1,0,0]),hb([.190,0,2.215],[.070,.30,.270],.006),hb([.035,0,2.335],[.38,1.14,.110],.006)]
+for s in [-1,1]:frame['torso'].append(rg([-.130,s*.46,2.36],.140,.132,.022,[0,1,0]))
+# Two rebuilt custom pitch cylinders, full finite sleeve/caps/rod/eyes and own A/B forks. No source F1 geometries imported.
+acts=[]
+for s in [-1,1]:
+ A=np.array([-.240,s*.180,1.68]);B=np.array([.100,s*.180,2.13]);pivot=np.array([0,0,1.75]);axis=np.array([0.,1,0]);samples=[]
+ for q in np.linspace(-25,25,121):
+  T=tm.transformations.rotation_matrix(math.radians(q),axis,pivot);bb=(T@np.r_[B,1])[:3];vv=bb-A;uu=vv/np.linalg.norm(vv);samples.append({'q_deg':float(q),'length_m':float(np.linalg.norm(vv)),'J_m_per_rad':float(uu@np.cross(axis,bb-pivot))})
+ lo=min(r['length_m'] for r in samples);hi=max(r['length_m'] for r in samples);stroke=hi-lo+.020;zero=lo-.010;tail=zero-(stroke+.170);L=np.linalg.norm(B-A);u=(B-A)/L;start=.030+tail+.020;e=L-zero;pin=.020;bore=.050;rod=.025;rad=bore/2;rr=rod/2;seg=lambda aa,bb,ro,ri=0:rg(A+u*((aa+bb)/2),ro,ri,bb-aa,u)
+ # Producer constructs all coaxial barrel material in local Z, then one whole transform. No diagnostic normal/cavity repair.
+ localA=np.zeros(3);localB=np.array([0,0,L]);axL=np.array([0.,1,0]);ss=lambda aa,bb,ro,ri=0:rg([0,0,(aa+bb)/2],ro,ri,bb-aa,[0,0,1])
+ fixedL=union([rg(localA,.038,.0203,.044,axL),ss(.018,.030+tail+.023,.024,.014),ss(.030+tail-.001,.030+tail+.020,.031),ss(start-.001,start+stroke+.041,.031,.025),ss(start+stroke+.034,start+stroke+.056,.031,rr+.0005)])
+ movingL=union([ss(start+e,start+e+.020,rad-.0004),ss(start+e+.011,L-.029,rr),ss(L-.040,L-.013,.018),rg(localB,.038,.0203,.044,axL)])
+ Q=tm.geometry.align_vectors([0,0,1],u);Q[:3,3]=A;fixed=fixedL.transform(Q[:3,:]);moving=movingL.transform(Q[:3,:])
+ aid='waist_pitch_'+('left' if s==1 else 'right');add(aid+'_barrel',aid+'_barrel_link',fixed,'finite_actuator_material',actuator_id=aid);add(aid+'_rod',aid+'_rod_link',moving,'finite_actuator_material',actuator_id=aid)
+ for which,point,owner in [('A',A,'waist_yaw_carrier'),('B',B,'waist_pitch_carrier')]:
+  forks=[]
+  for off in [-.050,.050]:forks.append(rg(point+axis*off,.040,.0203,.008,axis))
+  forks.append(bx((point+[-.048,0,0]).tolist(),[.014,.112,.080]));frame[owner]+=forks
+  add(aid+'_'+which+'_pin',owner,cy(point,.0198,.116,axis),'finite_pin_material',pin_interface_capacity_unknown=True)
+  # Real fork root merges into its frame at rear, not into a floating abstract pivot.
+  if which=='A':frame[owner].append(bx([-.285,s*.180,1.632],[.04,.112,.078]))
+  # B rear fork connects directly to real pitch shell side wall; no beam through its moving eye.
+ acts.append({'id':aid,'base_body':'waist_yaw_carrier','output_body':'waist_pitch_carrier','A_world_m':A.tolist(),'B_world_m':B.tolist(),'pin_axis_world':axis.tolist(),'pivot_world_m':pivot.tolist(),'bore_m':bore,'rod_m':rod,'wall_m':.006,'pressure_hypothesis_Pa':21e6,'stroke_m':stroke,'zero_eye_m':zero,'minimum_constructed_zero_eye_m':stroke+.170,'tail_m':tail,'range_deg':[-25,25],'neutral_eye_length_m':float(L),'neutral_extension_m':float(e),'J_samples':samples,'port_cap_world_m':(A+u*(start-.010)+axis*.034).tolist(),'port_rod_world_m':(A+u*(start+stroke+.042)+axis*.034).tolist(),'supply_branch':'g1_pitch_distributed_branch_two_cylinders','valve_and_holding_complete_modules_not_in_this_waist_scope':True,'full_bore_force_N':21e6*math.pi*bore*bore/4,'annulus_force_N':21e6*math.pi*(bore*bore-rod*rod)/4,'fluid_stock_not_added_to_finite_dry_material':True,'sim_hypothesis_not_manufacturing_qualified':True})
+for b,ms in frame.items():add(b+'_net_reaction_material',b,union(ms),functional_scope='continuous finite module shell/shaft/reaction bridge; actual material topology checked, capacity conditional')
+TREE={'pelvis':{'parent':None},'waist_yaw_carrier':{'parent':'pelvis','pivot_world_m':[0,0,1.526],'axis_world':[0,0,1],'joint_id':'waist_yaw'},'waist_pitch_carrier':{'parent':'waist_yaw_carrier','pivot_world_m':[0,0,1.75],'axis_world':[0,1,0],'joint_id':'waist_pitch'},'torso':{'parent':'waist_pitch_carrier','pivot_world_m':[-.025,0,2.05],'axis_world':[1,0,0],'joint_id':'waist_roll'}}
+scene={'schema':'gorilla_g1_waist_chain_native_v1','robot_id':'gorilla_v0_1','parts':parts,'original_armor_comparator':[p for p in M['parts'] if p['role'] in ['armor_cover','armor_surface']],'body_tree':TREE,'rotary_functional_inventory':inventory,'pitch_actuators':acts,'shoulder_reaction_interfaces':[{'body':'torso','point_world_m':[-.13,s*.46,2.36],'axis_world':[0,s,0],'matches_E2_upper_shoulder_pitch_axis':True,'full_arm_hardware_not_in_this_module':True} for s in [-1,1]],'bearing_reference_points_world_m':{'waist_yaw':[0,0,1.526-.0225],'waist_roll':[-.025-.018,0,2.05]},'OEM_motion_identity_from_source_installation_document':{'A':'output flange/inner race','B_large_PCD':'fixed case','B_center':'WG input'},'upper_external_context_nominal_mass_kg':880.424,'upper_external_context_COM_world_m':[-.05414,.000822,1.98331],'scope':'waist yaw/pitch/roll plus continuous shoulder bridge, two complete custom cylinders; no legs/arms/system acceptance or reused oil routes','source_hashes':{str(p.relative_to(R)):sha(p) for p in [R/'.scratch/gorilla_internal_e2a_integrated/scene.json',R/'.scratch/gorilla_internal_g_output_support_reference/output_support_reference.md',Path(__file__)]},'source_material_produced_directly_Mesh64_no_fix_normals_split_or_compose':True,'geometry_accepted':False,'physics_accepted':False,'stable_SI':False,'aesthetic_accepted':False};write(O/'scene.json',scene);write(O/'parameters_and_interfaces.json',{k:v for k,v in scene.items() if k not in ['parts','original_armor_comparator']});print('parts',len(parts),'sha',sha(O/'scene.json'),'cyl',[{k:a[k] for k in ['id','stroke_m','zero_eye_m','tail_m']} for a in acts],flush=True)
