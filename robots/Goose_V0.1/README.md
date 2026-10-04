@@ -10,6 +10,8 @@
 
 当前电气：[精确驱动资料与18轴端点](hardware/power_release_checkpoint.md)绑定478件源、17CAN＋独立5V TTL。[绝对阈值制动候选](hardware/absolute_brake_chopper_checkpoint.md)已补实际可编辑KiCad、原生针脚/网络核对、阈值角点和真实NGSPICE行为/故障对照；名义及单电阻断开峰值约26.08V，关闭制动反例被检出。这仍未覆盖PCB时序/热、完整断开、冷启动或安装资格；供电保护、制造线束和实机启用门槛保留，未改CAD/SI或003包。
 
+后续[制动安装比较](hardware/brake_packaging_checkpoint.md)提供独立48件CAD增量、525件装配源和10.486951740kg条件SI；零位原生配合、21个有限转向／低姿态及同版静力已通过。PCB仍是预留，热／工具／线束和连续扫掠未放行；没有替换上面的478件基线或11凸体003运行模型。
+
 历史初始训练版本：[460件 Sai_Lab 初始训练检查点](design/training_checkpoint_handoff.md)。同源一体头壳、18主动轴、10.430762603kg；MJCF/URDF、完整SI参数、软脚底、四色实际图和运行入口已打包。实际65/18接口与0.2秒自由根站立冒烟通过，零初始自碰撞候选、零求解器警告；解压校验见[打包检查](evidence/training_checkpoint_bundle_check.json)。完整制造、电气、步行/转向/夹拖及第三、第四阶段仍未完成；不是硬件冻结，不把旧动作当本版通过。
 
 [单件头壳结构说明](design/one_piece_head_checkpoint.md)记录10姿态、33核心平移及126同源静力筛查，完整装配仍未通过。

@@ -1,0 +1,130 @@
+{
+  "schema": "goose_brake_motion_rejection_v1",
+  "status": "REJECTED_NOT_RELEASED",
+  "failed_new_bolt": "cad/source/brake_packaging_rejections/package_bolt_m3x20.brep",
+  "failed_cases": [
+    {
+      "name": "left_yaw_-0.261799",
+      "joint_q_rad": {
+        "left_hip_yaw": -0.2617993877991494
+      },
+      "failed_pairs": [
+        {
+          "first": "brake_pcb_draft",
+          "second": "left_hip_pitch_catalog_case",
+          "gap_mm": 0.0,
+          "common": {
+            "volume_mm3": 3291.4711188164656,
+            "wall_seconds": 0.12063461099751294
+          },
+          "minimum_gap_mm": 2,
+          "pair_pass": false,
+          "mating": false
+        }
+      ]
+    },
+    {
+      "name": "both_yaw_-0.261799",
+      "joint_q_rad": {
+        "right_hip_yaw": -0.2617993877991494,
+        "left_hip_yaw": -0.2617993877991494
+      },
+      "failed_pairs": [
+        {
+          "first": "brake_pcb_draft",
+          "second": "left_hip_pitch_catalog_case",
+          "gap_mm": 0.0,
+          "common": {
+            "volume_mm3": 3291.4711188164656,
+            "wall_seconds": 0.11298150301445276
+          },
+          "minimum_gap_mm": 2,
+          "pair_pass": false,
+          "mating": false
+        }
+      ]
+    },
+    {
+      "name": "right_yaw_roll_corner_0.6_0.5",
+      "joint_q_rad": {
+        "right_hip_yaw": 0.6,
+        "right_hip_roll": 0.5
+      },
+      "failed_pairs": [
+        {
+          "first": "brake_rd_0_1_m3x20",
+          "second": "right_hip_pitch_catalog_case",
+          "gap_mm": 0.0,
+          "common": {
+            "volume_mm3": 0.5219324484418274,
+            "wall_seconds": 0.10054745402885601
+          },
+          "minimum_gap_mm": 2,
+          "pair_pass": false,
+          "mating": false
+        }
+      ]
+    },
+    {
+      "name": "left_yaw_roll_corner_-0.6_-0.5",
+      "joint_q_rad": {
+        "left_hip_yaw": -0.6,
+        "left_hip_roll": -0.5
+      },
+      "failed_pairs": [
+        {
+          "first": "brake_rd_0_1_m3x20",
+          "second": "left_hip_pitch_catalog_case",
+          "gap_mm": 0.019587683288669284,
+          "common": {
+            "volume_mm3": 0.0,
+            "wall_seconds": 0.07591684104409069
+          },
+          "minimum_gap_mm": 2,
+          "pair_pass": false,
+          "mating": false
+        },
+        {
+          "first": "brake_pcb_draft",
+          "second": "left_hip_pitch_catalog_case",
+          "gap_mm": 0.0,
+          "common": {
+            "volume_mm3": 15166.317299038554,
+            "wall_seconds": 0.11397839797427878
+          },
+          "minimum_gap_mm": 2,
+          "pair_pass": false,
+          "mating": false
+        }
+      ]
+    },
+    {
+      "name": "left_yaw_roll_corner_-0.6_0.5",
+      "joint_q_rad": {
+        "left_hip_yaw": -0.6,
+        "left_hip_roll": 0.5
+      },
+      "failed_pairs": [
+        {
+          "first": "brake_pcb_draft",
+          "second": "left_hip_pitch_catalog_case",
+          "gap_mm": 0.0,
+          "common": {
+            "volume_mm3": 9894.158047934856,
+            "wall_seconds": 0.1278001070022583
+          },
+          "minimum_gap_mm": 2,
+          "pair_pass": false,
+          "mating": false
+        }
+      ]
+    }
+  ],
+  "explanation": "Draft PCB intersects the turning left hip case. M3x20 package shaft protrusion interferes at a declared yaw/roll corner; no range reduction or simulation ignore rule can waive this hardware result.",
+  "source_hashes": {
+    "robots/Goose_V0.1/cad/source/brake_packaging_rejections/package_bolt_m3x20.brep": "a867239a27250535c54dd999ae5878122e41bd914ab1a5360212a2f2febddb07",
+    "robots/Goose_V0.1/cad/source/brake_packaging_rejections/motion_rejection_configuration.json": "d42f2cb0bec2ce64d9263faf92adf5f54cf423cccf3f3bb0228dbed2d357958b",
+    "robots/Goose_V0.1/cad/source/manual_wing_service/assembly_scene.json": "0eb5468d86792ccad23503c96b54ec4c8c54a4cef134998db4555e0d7c651cfe",
+    "robots/Goose_V0.1/configs/mechanical_physics_contract.json": "9073495567afae24cc4921a09234b572d183beec22f9f78d5ec50f35e6681c3d"
+  }
+}
