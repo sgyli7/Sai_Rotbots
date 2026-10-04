@@ -118,6 +118,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     {
         return Err("Plant/control identity mismatch".into());
     }
+    plant.validate_collision_binding(&c)?;
     let cfg = &c["contact_mapping"];
     if cfg["method"] != "whole_sole_native_manifold_backward_euler_v1"
         || (cfg["per_foot_stiffness_n_m"].as_f64().unwrap() - 140142.1824).abs() > 1e-8
@@ -125,6 +126,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         || cfg["prediction_band_m"] != 0.01
     {
         return Err("Unknown material mapping requires a new receiver revision".into());
+    }
+    if args.get(4).map(String::as_str) == Some("collision_filters") {
+        let report = builder::probe_collision_filters(&plant)?;
+        fs::write(&args[3], serde_json::to_vec_pretty(&report)?)?;
+        println!(
+            "Native collider-pair filtering probe completed; report {}",
+            args[3]
+        );
+        return Ok(());
     }
     let mut simulation = SimulationWorld::new_with_profile(PhysicsClockProfile::Goose50);
     simulation
@@ -298,5 +308,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[cfg(test)]
+mod collision_filter_tests;
 #[cfg(test)]
 mod foundation_tests;

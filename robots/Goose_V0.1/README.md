@@ -4,6 +4,8 @@
 
 碰撞范围与参考：[现行对照与范围](configs/game_collision_budget_v1.json)、[MicroDuck 双足游戏包计数核对](evidence/microduck_game_collision_baseline_v1.json)、[MD/G1 接触角色与精度对照](design/simulation_collision_reference_review.md)。29 是用户澄清的随手数字，MD 的 11 个是具体参考版本实数；新版以任务接触、实际目标烹制及动态测试共同验收。原 512 目标与 30,105 块源参考均不作为游戏交付。硬件源与完整 SI 参数保留；本版足底采用独立的平地整体接触近似，未继承真实多区 TPU 的材料和复杂地面资格。
 
+相邻凸包可在连接处交错；[有效过滤表](configs/task_proxy_11_v1_collision_filter.json)只忽略同机内 9 组连接处配对，其余 46 组自碰保留，包括头与身体、左右脚。地面、物品与其他机器人接触均保留；[逐对实测](evidence/task_proxy_11_v1_collision_filter_acceptance.json)在 MuJoCo 和原生 Rapier 各通过 97 个刻意重叠夹具。真实 CAD 装配干涉单独检查，代理例外不放行制造。
+
 历史初始训练版本：[460件 Sai_Lab 初始训练检查点](design/training_checkpoint_handoff.md)。同源一体头壳、18主动轴、10.430762603kg；MJCF/URDF、完整SI参数、软脚底、四色实际图和运行入口已打包。实际65/18接口与0.2秒自由根站立冒烟通过，零初始自碰撞候选、零求解器警告；解压校验见[打包检查](evidence/training_checkpoint_bundle_check.json)。完整制造、电气、步行/转向/夹拖及第三、第四阶段仍未完成；不是硬件冻结，不把旧动作当本版通过。
 
 [单件头壳结构说明](design/one_piece_head_checkpoint.md)记录10姿态、33核心平移及126同源静力筛查，完整装配仍未通过。

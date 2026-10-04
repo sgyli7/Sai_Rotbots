@@ -21,6 +21,10 @@ use crate::control::GooseNativeState;
 use crate::world::{BodyTorque, PhysicsClockProfile, SimulationError, SimulationWorld};
 use rapier3d::{geometry::ExperimentalNormalSpring, pipeline::ContactModificationContext};
 
+#[path = "collision_filter_probe.rs"]
+mod collision_filter_probe;
+pub use collision_filter_probe::run as probe_collision_filters;
+
 /// Measurements compare the actual backend body to the full source tensor.
 #[derive(Debug, Serialize)]
 pub struct GooseBodyMeasurement {

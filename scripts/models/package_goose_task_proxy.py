@@ -12,6 +12,8 @@ CONTRACT = f"{ROBOT}/configs/task_proxy_11_v1_contract.json"
 MODEL = f"{ROBOT}/models/task_proxy_11_v1/robot.xml"
 PLANT = f"{ROBOT}/models/task_proxy_11_v1/native_plant.json"
 ACCEPTANCE = f"{ROBOT}/evidence/task_proxy_11_v1_acceptance.json"
+FILTER_POLICY = f"{ROBOT}/configs/task_proxy_11_v1_collision_filter.json"
+FILTER_ACCEPTANCE = f"{ROBOT}/evidence/task_proxy_11_v1_collision_filter_acceptance.json"
 MANIFEST = "handoff_manifest.json"
 
 
@@ -39,6 +41,20 @@ def check_binding(root):
     for name, sha in contract["source_module_sha256"].items():
         if sha != digest((root / "src/sai_agent/goose" / name).read_bytes()):
             raise ValueError("Runtime identity mismatch: " + name)
+    filters = json.loads((root / FILTER_ACCEPTANCE).read_text())
+    for key, path in (("model", MODEL), ("contract", CONTRACT),
+                      ("native_plant", PLANT), ("collision_policy", FILTER_POLICY),
+                      ("evaluator", "scripts/evaluation/check_goose_collision_filters.py")):
+        if filters[key + "_sha256"] != digest((root / path).read_bytes()):
+            raise ValueError("Collision filter identity mismatch: " + key)
+    for path, expected in filters["receiver_source_sha256"].items():
+        if expected != digest((root / path).read_bytes()):
+            raise ValueError("Collision receiver changed: " + path)
+    if filters["native_binary_sha256"] != report["environment"]["native_binary_sha256"]:
+        raise ValueError("Filter and dynamics probes used different receivers")
+    if set(filters["results"]) != {"source", "standalone_rapier"} or not all(
+            r["passed"] and r["total_fixtures"] == 97 for r in filters["results"].values()):
+        raise ValueError("Both source and target collision filters must pass")
 
 
 def verify(root):
@@ -59,7 +75,8 @@ def verify(root):
 
 def package(out):
     check_binding(ROOT)
-    selected = [ENTRY, CONTRACT, ACCEPTANCE, "LICENSE", "THIRD_PARTY_NOTICES.md",
+    selected = [ENTRY, CONTRACT, ACCEPTANCE, FILTER_POLICY, FILTER_ACCEPTANCE,
+                "LICENSE", "THIRD_PARTY_NOTICES.md",
                 f"{ROBOT}/evidence/task_proxy_11_v1_physical_identity.json",
                 f"{ROBOT}/evidence/task_proxy_11_v1_rejected_variants.json",
                 f"{ROBOT}/evidence/task_action_domain_v1.json",
@@ -68,7 +85,9 @@ def package(out):
                 f"{ROBOT}/images/task_proxy_11_v1_colliders.png",
                 "src/sai_agent/__init__.py", "src/sai_agent/goose/__init__.py",
                 "tests/test_goose_task_proxy.py",
+                "tests/test_goose_collision_filters.py",
                 "scripts/evaluation/check_goose_task_proxy.py",
+                "scripts/evaluation/check_goose_collision_filters.py",
                 "scripts/models/build_goose_task_proxy.py",
                 "scripts/models/render_goose_task_proxy.py",
                 "scripts/models/package_goose_task_proxy.py"]

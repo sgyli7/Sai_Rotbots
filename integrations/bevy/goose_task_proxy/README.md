@@ -12,6 +12,9 @@ python -m pip install -r integrations/bevy/goose_task_proxy/requirements.txt
 cargo test --manifest-path integrations/bevy/goose_task_proxy/Cargo.toml --release --locked
 cargo build --manifest-path integrations/bevy/goose_task_proxy/Cargo.toml --release --locked
 PYTHONPATH=src python -m pytest tests/test_goose_task_proxy.py -q
+PYTHONPATH=src python -m pytest tests/test_goose_collision_filters.py -q
+PYTHONPATH=src python scripts/evaluation/check_goose_collision_filters.py \
+  --native-probe integrations/bevy/goose_task_proxy/target/release/goose_task_proxy_native_probe
 PYTHONPATH=src python scripts/evaluation/check_goose_task_proxy.py \
   --native-probe integrations/bevy/goose_task_proxy/target/release/goose_task_proxy_native_probe
 PYTHONPATH=src python scripts/models/build_goose_task_proxy.py --out artifacts/goose_proxy_reproduced
@@ -37,6 +40,11 @@ contact quadrature assumes a horizontal plane and an upright sole; other poses
 must be independently validated before task acceptance.
 
 The new receiver checks the exact plant/control binding and candidate revision.
+It also rejects an exclusion list that differs from the source contract. The
+companion collision policy lists all 55 role pairs, including implicit direct
+parent filtering: nine connected pairs ignored, 46 retained. Each backend's
+97 deliberate-overlap fixtures verify internal, ground, object and cross-robot
+filtering. These fixtures are diagnostic placements, not physical pose tests.
 The fork's opt-in frictional spring path retains the native Coulomb solver, with
 load/slip regression fixtures. PGS passes converge one integration, without
 subdividing physical time. See the contact fork's `GOOSE_CONTACT_CHANGES.md` and

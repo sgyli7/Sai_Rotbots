@@ -94,6 +94,46 @@ pub struct GooseJawLoop {
 }
 
 impl GoosePlant {
+    /// An imported plant cannot add a self-contact exclusion absent from source.
+    pub fn validate_collision_binding(
+        &self,
+        contract: &serde_json::Value,
+    ) -> Result<(), RobotError> {
+        let source = contract["collision_exclusions"]
+            .as_array()
+            .ok_or_else(|| invalid("Source collision exclusions absent"))?;
+        let mut expected = HashSet::new();
+        for row in source {
+            let a = row["body1"]
+                .as_str()
+                .ok_or_else(|| invalid("Invalid source exclusion"))?;
+            let b = row["body2"]
+                .as_str()
+                .ok_or_else(|| invalid("Invalid source exclusion"))?;
+            let mut pair = [a.to_owned(), b.to_owned()];
+            pair.sort();
+            expected.insert(pair);
+        }
+        let observed: HashSet<_> = self
+            .exclusions
+            .iter()
+            .cloned()
+            .map(|mut p| {
+                p.sort();
+                p
+            })
+            .collect();
+        if source.len() != expected.len()
+            || self.exclusions.len() != observed.len()
+            || expected != observed
+        {
+            return Err(invalid(
+                "Native collision exclusions differ from source contract",
+            ));
+        }
+        Ok(())
+    }
+
     /// Return the parsed contract and the hash of the exact bytes read.
     pub fn read(path: &Path) -> Result<(Self, String), RobotError> {
         let bytes = fs::read(path).map_err(|error| invalid(error.to_string()))?;
