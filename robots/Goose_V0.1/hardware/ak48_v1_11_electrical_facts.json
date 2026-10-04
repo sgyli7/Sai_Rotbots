@@ -1,0 +1,355 @@
+{
+  "schema": "goose_ak48_v1_11_electrical_facts_v1",
+  "status": "EXACT_VENDOR_DOCUMENTS_REVIEWED_NOT_PHYSICAL_COMMISSIONING",
+  "sources": {
+    "ak48": {
+      "url": "https://www.cubemars.com/data/cms/202609/ak48-2405-2d-a2-drive-installation-instructions-cn.pdf",
+      "sha256": "77a028bf2de6636cf693ec96b87d765aac03f23f740df3dd4c2ac6afea231b1b",
+      "bytes": 854995,
+      "pdf_pages_one_based": [
+        5,
+        8,
+        9
+      ],
+      "retrieved_utc": "2026-10-04",
+      "raw_download_in_git": false
+    },
+    "software": {
+      "url": "https://www.cubemars.com/data/cms/202609/ak-series-motor-module-v3-driver-software-user-manual.pdf",
+      "sha256": "bdfd5b6514b175c28dfaebe005b4db579e1d4f89b9ab3f2b42d729e1b4478114",
+      "bytes": 1232091,
+      "pdf_pages_one_based": [
+        26,
+        28,
+        32
+      ],
+      "retrieved_utc": "2026-10-04",
+      "raw_download_in_git": false
+    },
+    "download_cn": {
+      "url": "https://www.cubemars.com/cn/technical-support-and-software-download.html",
+      "sha256": "ef20b7155348ca90a8d791bf4137cd11cf4b28aa6b44c13cb3c7f9801ad4cd89",
+      "bytes": 241911,
+      "pdf_pages_one_based": [],
+      "retrieved_utc": "2026-10-04",
+      "raw_download_in_git": false
+    },
+    "download_en": {
+      "url": "https://www.cubemars.com/technical-support-and-software-download.html",
+      "sha256": "f6e1365bef936c67759ab50d562f18a26a2b44402c52194ac822e9adc9fae205",
+      "bytes": 240344,
+      "pdf_pages_one_based": [],
+      "retrieved_utc": "2026-10-04",
+      "raw_download_in_git": false
+    },
+    "connector": {
+      "url": "https://www.china-amass.net/uploads/71.XT30-2%2B2-F-SPEC-2025V0.pdf",
+      "sha256": "a54eb3e219f8c7aca6afe55168f7664f7bc45ec9637e591bea504f5a098e109a",
+      "bytes": 211762,
+      "pdf_pages_one_based": [
+        1
+      ],
+      "retrieved_utc": "2026-10-04",
+      "raw_download_in_git": false
+    },
+    "head_servo": {
+      "url": "https://emanual.robotis.com/docs/en/dxl/x/xc330-m288/",
+      "sha256": "c70b353ef9ee9091b290b14c307210dad3075e281818975e999278e145fc644d",
+      "bytes": 360784,
+      "pdf_pages_one_based": [],
+      "retrieved_utc": "2026-10-04",
+      "raw_download_in_git": false
+    },
+    "ttl_interface": {
+      "url": "https://emanual.robotis.com/docs/en/parts/interface/u2d2/",
+      "sha256": "87995f91a20566f04d24b04164679931598b8c96b599bd66005613b08e9daf89",
+      "bytes": 217213,
+      "pdf_pages_one_based": [],
+      "retrieved_utc": "2026-10-04",
+      "raw_download_in_git": false
+    },
+    "clamp": {
+      "url": "https://docs.odriverobotics.com/v/latest/hardware/regen-clamp-datasheet.html",
+      "retrieved_utc": "2026-10-04",
+      "raw_download_in_git": false,
+      "sha256": "677094028e169d059578fcc9cf7bae1f0b04ea52ba3f3a53cae7e88a4f48b8c3",
+      "bytes": 111068
+    }
+  },
+  "applicability": {
+    "driver_model": "AK48-2405-2D-A2",
+    "hardware_revision": "V1.11",
+    "hardware_manual_version": "V1.0.0",
+    "software_manual_version": "V1.0.1",
+    "selected_models": [
+      "AK40-10 V3.0 KV170",
+      "AK45-10 V3.0 KV75",
+      "AK45-36 V3.0 KV80"
+    ],
+    "actual_device_revision_verified": false,
+    "actual_firmware_verified": false
+  },
+  "driver": {
+    "source": "ak48",
+    "nominal_input_v": 24,
+    "allowed_operating_v": [
+      15,
+      28
+    ],
+    "rated_output_current_arms": 5,
+    "maximum_output_current_ap": 10,
+    "current_scope": "manufacturer labels Arms / AP; not a DC bus current rating and not an assumed RMS-to-Iq conversion",
+    "standby_power_upper_w": 1,
+    "can_bitrate_bps": 1000000,
+    "ambient_c": [
+      -20,
+      65
+    ],
+    "maximum_board_c": 100,
+    "pcb_dimensions_mm": [
+      48,
+      48
+    ]
+  },
+  "motor_connector": {
+    "source": "ak48",
+    "board_connector": "AMASS XT30PW(2+2)-M",
+    "cable_mate": "AMASS XT30(2+2)-F",
+    "pin_view": "board mating face in manufacturer page 8; cable viewing direction may mirror this",
+    "pins": [
+      {
+        "pin": 1,
+        "function": "power_positive",
+        "wire_color": "red"
+      },
+      {
+        "pin": 2,
+        "function": "power_negative",
+        "wire_color": "black"
+      },
+      {
+        "pin": 3,
+        "function": "can_l",
+        "wire_color": "blue"
+      },
+      {
+        "pin": 4,
+        "function": "can_h",
+        "wire_color": "white"
+      }
+    ],
+    "included_cable": {
+      "length_mm": 100,
+      "length_tolerance_mm": 10,
+      "power_awg": 16,
+      "can_awg": 30,
+      "bare_end_tin_length_mm": [
+        2,
+        4
+      ]
+    },
+    "full_robot_route_qualified": false
+  },
+  "service_uart": {
+    "source": "ak48",
+    "board_connector": "CJT A1257WR-S-3P",
+    "cable_mate": "CJT A1257H-3P",
+    "pins": [
+      {
+        "pin": 1,
+        "function": "ground",
+        "wire_color": "black"
+      },
+      {
+        "pin": 2,
+        "function": "rx",
+        "wire_color": "yellow"
+      },
+      {
+        "pin": 3,
+        "function": "tx",
+        "wire_color": "green"
+      }
+    ],
+    "included_cable_length_mm": 200,
+    "included_cable_awg": 30
+  },
+  "connector_rating": {
+    "source": "connector",
+    "version": "2025V0",
+    "current_a": 20,
+    "test_wire_awg": 16,
+    "allowed_temperature_rise_k": 85,
+    "voltage_dc_v": 80,
+    "contact_resistance_max_ohm": 0.0012,
+    "mating_cycles": 100,
+    "meaning": "manufacturer connector test condition, not installed-robot temperature qualification; never route aggregate motor-bus current through one motor connector"
+  },
+  "nominal_protocol_catalog": {
+    "source": "software",
+    "page": 28,
+    "function": 8,
+    "position_rad": [
+      -12.56,
+      12.56
+    ],
+    "kp_nm_rad": [
+      0,
+      500
+    ],
+    "kd_nm_s_rad": [
+      0,
+      5
+    ],
+    "models": {
+      "ak40_10_v3": {
+        "model": "AK40-10 V3.0 KV170",
+        "velocity_rad_s": [
+          -45,
+          45
+        ],
+        "torque_nm": [
+          -5,
+          5
+        ],
+        "nominal_output_kt_nm_per_iq_a": 0.4894
+      },
+      "ak45_10_v3": {
+        "model": "AK45-10 V3.0 KV75",
+        "velocity_rad_s": [
+          -20,
+          20
+        ],
+        "torque_nm": [
+          -8,
+          8
+        ],
+        "nominal_output_kt_nm_per_iq_a": 1.1286
+      },
+      "ak45_36_v3": {
+        "model": "AK45-36 V3.0 KV80",
+        "velocity_rad_s": [
+          -6,
+          6
+        ],
+        "torque_nm": [
+          -34,
+          34
+        ],
+        "nominal_output_kt_nm_per_iq_a": 3.979
+      }
+    },
+    "torque_relation": "manufacturer output torque = Iq * Kt; catalogue coefficient, not physical calibration or continuous thermal rating",
+    "mit_field_order_bits": [
+      [
+        "kp",
+        12
+      ],
+      [
+        "kd",
+        12
+      ],
+      [
+        "position",
+        16
+      ],
+      [
+        "velocity",
+        12
+      ],
+      [
+        "torque",
+        12
+      ]
+    ],
+    "current_mode": {
+      "function": 1,
+      "data": "signed int32 big endian, mA",
+      "format_range_a": [
+        -60,
+        60
+      ],
+      "not_a_driver_current_permission": true
+    },
+    "disable": {
+      "function": 15,
+      "dlc": 0,
+      "ack_function": 41,
+      "ack_last_byte": 119,
+      "ack_count": "once"
+    },
+    "feedback": {
+      "function": 41,
+      "position_scale_deg": 0.1,
+      "electrical_rpm_scale": 10,
+      "iq_scale_a": 0.01,
+      "temperature_scope": "driver board",
+      "output_rpm_requires": [
+        "pole_pairs",
+        "reduction_ratio"
+      ]
+    },
+    "hardware_watchdog_timeout_s": null,
+    "physical_commissioned_profiles_created": false
+  },
+  "head_ttl": {
+    "source": "head_servo",
+    "model": "XC330-M288-T",
+    "allowed_input_v": [
+      3.7,
+      6.0
+    ],
+    "nominal_input_v": 5,
+    "protocol": "half-duplex DYNAMIXEL TTL",
+    "board_connector": "JST B3B-EH-A",
+    "cable_mate": "JST EHR-03",
+    "cable_terminal": "JST SEH-001T-P0.6",
+    "suggested_cable_awg": 21,
+    "pins": [
+      {
+        "pin": 1,
+        "function": "ground"
+      },
+      {
+        "pin": 2,
+        "function": "power_positive"
+      },
+      {
+        "pin": 3,
+        "function": "data"
+      }
+    ],
+    "u2d2_source": "ttl_interface",
+    "u2d2_supplies_servo_power": false
+  },
+  "clamp_candidate": {
+    "source": "clamp",
+    "model": "ODrive Regen Clamp",
+    "input_v": [
+      10,
+      58
+    ],
+    "activation_above_input_v_typ": 2.35,
+    "activation_above_input_v_max": 2.5,
+    "deactivation_above_input_v_typ": 0.75,
+    "continuous_brake_a_free_air": 20,
+    "continuous_brake_a_with_heat_spreader": 40,
+    "peak_brake_a_3s": 80,
+    "onboard_capacitance_f_nominal": 0.0008,
+    "maximum_response_delay_s": null,
+    "board_mass_kg": 0.028,
+    "with_terminal_mass_kg": 0.047,
+    "with_heat_spreader_mass_kg": 0.079,
+    "hardware_selected": false
+  },
+  "remaining_gates": [
+    "actual purchased driver revision and firmware identity",
+    "hardware communication-loss timeout and independent stopping behaviour",
+    "driver regen/reverse current and loss-of-source behaviour",
+    "exact protection, inrush, disconnect and dump-resistor installation and thermal capacity",
+    "per-branch fuse, full harness routing, wire temperature, connector mating and continuity",
+    "motor physical SI calibration and zero-speed thermal capability"
+  ],
+  "hardware_release": false,
+  "training_release_changed": false
+}
