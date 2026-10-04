@@ -2,9 +2,11 @@
 
 **当前碰撞交付（2026-10-04）：[11 叶 Sim2Sim 工程入口](design/task_proxy_11_v1.md)已通过 M0 验收。** [唯一入口](configs/task_proxy_11_v1_entry.json)绑定同版模型、契约与原生接收器；硬件源未改，源／目标各完成 2,500 次实际积分，并通过有限 FK、已知危险组合、惯量、时钟与摩擦测试。该入口可交 Sai_Lab 绑定新策略；学会行走、起身、拾取／拖拽、复杂地面、其他引擎及完整制造仍各自验收。旧 30,105 叶和 89 叶失败版本保留为历史，以下较早“默认／最新”均属于各自检查点。
 
-碰撞范围与参考：[现行对照与范围](configs/game_collision_budget_v1.json)、[MicroDuck 双足游戏包计数核对](evidence/microduck_game_collision_baseline_v1.json)、[MD/G1 接触角色与精度对照](design/simulation_collision_reference_review.md)。29 是用户澄清的随手数字，MD 的 11 个是具体参考版本实数；新版以任务接触、实际目标烹制及动态测试共同验收。原 512 目标与 30,105 块源参考均不作为游戏交付。硬件源与完整 SI 参数保留；本版足底采用独立的平地整体接触近似，未继承真实多区 TPU 的材料和复杂地面资格。
+碰撞范围与参考：[现行对照与范围](configs/game_collision_budget_v1.json)、[MicroDuck 双足游戏包计数核对](evidence/microduck_game_collision_baseline_v1.json)、[MD/G1 接触角色与精度对照](design/simulation_collision_reference_review.md)。29 是用户澄清的随手数字，MD 的 11 个是具体参考版本实数；新版以任务接触、实际目标后端及动态测试共同验收。原 512 目标与 30,105 块源参考均不作为游戏交付。硬件源与完整 SI 参数保留；本版足底采用独立的平地整体接触近似，未继承真实多区 TPU 的材料和复杂地面资格。
 
 相邻凸包可在连接处交错；[有效过滤表](configs/task_proxy_11_v1_collision_filter.json)只忽略同机内 9 组连接处配对，其余 46 组自碰保留，包括头与身体、左右脚。地面、物品与其他机器人接触均保留；[逐对实测](evidence/task_proxy_11_v1_collision_filter_acceptance.json)在 MuJoCo 和原生 Rapier 各通过 97 个刻意重叠夹具。真实 CAD 装配干涉单独检查，代理例外不放行制造。
+
+当前独立整机结构：[手动翼形检修门检查点](design/manual_wing_service_checkpoint.md)。478显示对象、18主动轴、19体SI、10.398672986kg条件质量；真实双铰链、轴向保持和手拧关闭件已进入24件CAD/采购增量，有限配合、同源静力及19项针对性测试通过。四色实际图已更新，门缝/最终审美、完整制造与电气仍待资格。003运行模型保持原身份；新结构未冒充旧训练版本。
 
 历史初始训练版本：[460件 Sai_Lab 初始训练检查点](design/training_checkpoint_handoff.md)。同源一体头壳、18主动轴、10.430762603kg；MJCF/URDF、完整SI参数、软脚底、四色实际图和运行入口已打包。实际65/18接口与0.2秒自由根站立冒烟通过，零初始自碰撞候选、零求解器警告；解压校验见[打包检查](evidence/training_checkpoint_bundle_check.json)。完整制造、电气、步行/转向/夹拖及第三、第四阶段仍未完成；不是硬件冻结，不把旧动作当本版通过。
 
@@ -12,7 +14,7 @@
 
 # Goose_V0.1 — 工程与原始资料入口
 
-最新整机结构增量：[固定机壳到内部框架的四处连接](design/torso_shell_mount_checkpoint.md)。独立462个显示对象、18轴、10.4408944kg条件质量，比446件版增加36.198g；30件名义原生CAD/五金、19体SI参数与采购表已保存，18个有限姿态及两组63个静力工况通过。外部轮廓和连续头壳保持；翼门/接缝、整机强度、电气与同版动力学仍待闭合，三、四阶段未完成。
+历史整机结构增量：[固定机壳到内部框架的四处连接](design/torso_shell_mount_checkpoint.md)。独立462个显示对象、18轴、10.4408944kg条件质量，比446件版增加36.198g；30件名义原生CAD/五金、19体SI参数与采购表已保存，18个有限姿态及两组63个静力工况通过。外部轮廓和连续头壳保持；翼门/接缝、整机强度、电气与同版动力学仍待闭合，三、四阶段未完成。
 
 最新局部修正：[头壳后缘与相机闭合检查点](design/camera_head_closure_checkpoint.md)。原生 CAD 已去除头壳后缘台阶，并补上相机面与头壳之间的连续空心鼻罩；独立候选为446个显示对象、18轴、10.4046964kg条件质量，比419件版增加2.29248g。十个有限头部姿态与同源静力筛查通过；完整装配、制造、审美和训练放行仍未通过。新版[头部近景](images/microduck_color_blocking_446_parts/cream_head_detail.png)及[四色实际渲染](design/microduck_color_blocking_446_parts.md)与原生装配同源。
 

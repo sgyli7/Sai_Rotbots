@@ -1,0 +1,153 @@
+{
+  "schema": "goose_manual_wing_service_development_rejections_v1",
+  "files": {
+    "merged_left_aft.brep": {
+      "path": "cad/source/manual_wing_service_rejections/merged_left_aft.brep",
+      "sha256": "0daae68c2c99cc333459d0f1dc8c8cfdf51aac26f02d0ab5545b273e93a0dbbf"
+    },
+    "arm_right_fore.brep": {
+      "path": "cad/source/manual_wing_service_rejections/arm_right_fore.brep",
+      "sha256": "2ba6e80d59acfdef5bb777f189de2232207e7f399a7dd2a15e42c98fd57fbebc"
+    },
+    "arm_right_door.brep": {
+      "path": "cad/source/manual_wing_service_rejections/arm_right_door.brep",
+      "sha256": "6cc37ec7d03f47ea07f7dc09d9b4283083966777ffba479d1a531b807b99893b"
+    },
+    "latch_right_fore.brep": {
+      "path": "cad/source/manual_wing_service_rejections/latch_right_fore.brep",
+      "sha256": "98d9f8c534aec985435d47baa3be6c8be6708814e3bae7e4bfe4798279e3ff08"
+    },
+    "latch_right_door.brep": {
+      "path": "cad/source/manual_wing_service_rejections/latch_right_door.brep",
+      "sha256": "938d4226e8c806980de772591f139d5e84db7a26ff8d9ab1dcc9d7e2542b67aa"
+    }
+  },
+  "same_domain_merge_rejection": {
+    "name": "roof_neck_left_aft",
+    "valid": false,
+    "faults": [
+      {
+        "status": "BOPAlgo_CheckStatus.BOPAlgo_SelfIntersect",
+        "shapes": [
+          {
+            "group": "first",
+            "type": "TopAbs_ShapeEnum.TopAbs_FACE",
+            "bbox": [
+              -170.0000001,
+              -12.673789214290007,
+              245.29855576301154,
+              -27.63078167172814,
+              131.73194858634383,
+              307.6364813249314
+            ],
+            "faces": [
+              2
+            ]
+          },
+          {
+            "group": "first",
+            "type": "TopAbs_ShapeEnum.TopAbs_FACE",
+            "bbox": [
+              -167.7798299795172,
+              -12.509631793430025,
+              246.1396667474087,
+              -21.223240329845968,
+              130.78575255093756,
+              401.6141601083425
+            ],
+            "faces": [
+              9
+            ]
+          }
+        ]
+      },
+      {
+        "status": "BOPAlgo_CheckStatus.BOPAlgo_SelfIntersect",
+        "shapes": [
+          {
+            "group": "first",
+            "type": "TopAbs_ShapeEnum.TopAbs_FACE",
+            "bbox": [
+              -170.00000010107362,
+              -12.673789214290007,
+              244.80855779670117,
+              -21.263845404497832,
+              133.18547624538883,
+              404.014327071625
+            ],
+            "faces": [
+              0
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "long_arm_rejections": [
+    {
+      "side": "right",
+      "angle": 30,
+      "fixed": "fore",
+      "common": {
+        "volume_mm3": 1.1933226416955531,
+        "wall_seconds": 0.9056925569893792
+      },
+      "gap_mm": 0.0,
+      "pass_finite_pose": false
+    },
+    {
+      "side": "right",
+      "angle": 45,
+      "fixed": "fore",
+      "common": {
+        "volume_mm3": 4.2204429723259045,
+        "wall_seconds": 0.7918633689987473
+      },
+      "gap_mm": 0.0,
+      "pass_finite_pose": false
+    },
+    {
+      "side": "right",
+      "angle": 60,
+      "fixed": "fore",
+      "common": {
+        "volume_mm3": 2.784673437289876,
+        "wall_seconds": 0.6781570200109854
+      },
+      "gap_mm": 0.0,
+      "pass_finite_pose": false
+    },
+    {
+      "side": "right",
+      "angle": 75,
+      "fixed": "fore",
+      "common": {
+        "volume_mm3": 0.08910788535615799,
+        "wall_seconds": 0.5062295600073412
+      },
+      "gap_mm": 0.0,
+      "pass_finite_pose": false
+    }
+  ],
+  "shallow_latch_link_rejection": [
+    {
+      "side": "right",
+      "angle": 0,
+      "fixed": "fore",
+      "common": {
+        "volume_mm3": 1.3928374519097044,
+        "wall_seconds": 1.2090700319968164
+      },
+      "gap_mm": 6.029155041345696e-14,
+      "pass_finite_pose": false
+    }
+  ],
+  "fixes": [
+    "Preserve exact valid trimmed surface partitions through Boolean operations.",
+    "Terminate moving arm below the pivot without wrapping inward toward the fixed roof.",
+    "Move the fixed-side latch link end further inward; retain the insert entry and thread engagement."
+  ],
+  "snapshots_are_rejected_and_not_current_assembly": true,
+  "manufacturing_release": false,
+  "native_recheck_and_pair_queries_reproducible_from_saved_brep": true
+}
