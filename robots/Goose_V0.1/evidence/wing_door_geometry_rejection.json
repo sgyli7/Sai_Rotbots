@@ -1,0 +1,212 @@
+{
+  "schema": "goose_wing_door_geometry_rejection_v1",
+  "environment": {
+    "python": "3.12.14",
+    "build123d": "0.11.1",
+    "ocp": "7.9.3.1",
+    "numpy": "2.5.3",
+    "trimesh": "4.11.1"
+  },
+  "source_closed_case": {
+    "pair": [
+      "wing_access_cover_right",
+      "torso_mounted_shell_right_fore"
+    ],
+    "pose": "closed_source_assembly",
+    "common": {
+      "volume_mm3": 4.730269435854441,
+      "wall_seconds": 0.7348327770014293
+    },
+    "point_queries": [
+      {
+        "point_mm": [
+          68.3893354918588,
+          -108.41674744685972,
+          273.4040630641006
+        ],
+        "raw_native_classification": "IN",
+        "conservative_bounds_mm": [
+          [
+            -146.27683627298353,
+            -134.59227589118848,
+            262.8890446936526
+          ],
+          [
+            85.49709218364096,
+            -70.09683074213028,
+            364.1874893670938
+          ]
+        ],
+        "within_conservative_bounds": true,
+        "boundary_distance_mm": 0.05678333656989271,
+        "query_consistent": true,
+        "strict_material_witness_candidate": true,
+        "proves_manufacturing_clearance": false
+      },
+      {
+        "point_mm": [
+          68.3893354918588,
+          -108.41674744685972,
+          273.4040630641006
+        ],
+        "raw_native_classification": "IN",
+        "conservative_bounds_mm": [
+          [
+            -35.31983632336,
+            -132.2287185711,
+            215.34527468386
+          ],
+          [
+            148.08000010938,
+            4.962811368167,
+            403.73822117569
+          ]
+        ],
+        "within_conservative_bounds": true,
+        "boundary_distance_mm": 0.14921556668283537,
+        "query_consistent": true,
+        "strict_material_witness_candidate": true,
+        "proves_manufacturing_clearance": false
+      }
+    ]
+  },
+  "rejected_resampled_trim": {
+    "construction": {
+      "outer_u_bounds": [
+        0.16025,
+        0.746
+      ],
+      "outer_v_bounds": [
+        0.2996666666666667,
+        0.742
+      ],
+      "sample_grid": [
+        39,
+        23
+      ],
+      "outward_y_shift_mm": 0.25,
+      "central_y_bulge_mm": 1.2,
+      "hinge_axis_yz_mm": [
+        -110,
+        359
+      ]
+    },
+    "native_volume_mm3": 35766.82396475031,
+    "common": {
+      "volume_mm3": 0.0,
+      "wall_seconds": 2.779411375988275
+    },
+    "point_queries": [
+      {
+        "point_mm": [
+          -121.025714449275,
+          -102.852046607637,
+          302.818235463254
+        ],
+        "raw_native_classification": "IN",
+        "conservative_bounds_mm": [
+          [
+            -140.72816889544956,
+            -134.56485025913545,
+            271.593737325299
+          ],
+          [
+            81.62863110653126,
+            -80.10640664707509,
+            357.930742447979
+          ]
+        ],
+        "within_conservative_bounds": true,
+        "boundary_distance_mm": 0.3089960270442212,
+        "query_consistent": true,
+        "strict_material_witness_candidate": true,
+        "proves_manufacturing_clearance": false
+      },
+      {
+        "point_mm": [
+          -121.025714449275,
+          -102.852046607637,
+          302.818235463254
+        ],
+        "raw_native_classification": "IN",
+        "conservative_bounds_mm": [
+          [
+            -170.08000010066965,
+            -133.2703705178854,
+            213.17371340182143
+          ],
+          [
+            -17.70358875676272,
+            10.307037408581724,
+            404.01646834917506
+          ]
+        ],
+        "within_conservative_bounds": true,
+        "boundary_distance_mm": 0.020875094961677946,
+        "query_consistent": true,
+        "strict_material_witness_candidate": true,
+        "proves_manufacturing_clearance": false
+      }
+    ],
+    "independent_sampled_mesh_contains": [
+      true,
+      true
+    ],
+    "independent_mesh_scope": "One point, CAD surface sampling3x; not a global clearance certificate",
+    "zero_common_conflicts_with_material_queries": true
+  },
+  "rotated_native_point_query": {
+    "point_mm": [
+      -88.97004,
+      -79.13337,
+      364.36332
+    ],
+    "raw_native_classification": "IN",
+    "conservative_bounds_mm": [
+      [
+        -140.72816889544956,
+        -183.0269501304211,
+        292.90094813737335
+      ],
+      [
+        81.62863110653126,
+        -101.71187336512699,
+        357.52333304355585
+      ]
+    ],
+    "within_conservative_bounds": false,
+    "boundary_distance_mm": 48.57049152186533,
+    "query_consistent": false,
+    "strict_material_witness_candidate": false,
+    "proves_manufacturing_clearance": false
+  },
+  "original_cad_modified": false,
+  "physical_parameters_modified": false,
+  "collision_proxy_modified": false,
+  "new_manufacturing_parts_generated": false,
+  "manufacturing_release": false,
+  "manual_door_assembly_pass": false,
+  "integrations": 0,
+  "optimizer_steps": 0,
+  "limitations": [
+    "This diagnoses one original closed pair and one rejected trim, not the full wing mechanism.",
+    "Completed Common/is_valid flags alone do not release thin trimmed skin fit.",
+    "Contradictory kernel/classifier/distance results remain rejected; no guess about the kernel root cause.",
+    "No hinge/latch, continuous sweep, local strength, print fit or complete assembly acceptance."
+  ],
+  "source_hashes": {
+    "robots/Goose_V0.1/configs/body_bay_layout_candidate.json": "6bcce25bd74f9e089397c178d77913008032f59fef434b02b6fa2cd8596929eb",
+    "robots/Goose_V0.1/cad/source/one_piece_head_service_fixture/assembly_scene.json": "1a05dc55c66f96bee59f8cdb50d2f15942fdcf201e91c8d2e72140ba30be25de",
+    "robots/Goose_V0.1/cad/source/body_bay_skins/wing_access_cover_right.brep": "fe76681817f1f76112243791ad2d3e580e302afbc8d5d57b63a2751ec294b5c0",
+    "robots/Goose_V0.1/cad/source/body_bay_skins/wing_access_cover_right_quad.npz": "ec9ffd4edb12723c335f41fc2ac50a42916e98d1c892ef2d26f6af1ec314d900",
+    "robots/Goose_V0.1/cad/source/torso_shell_mounts/torso_mounted_shell_right_fore.brep": "11f4985ab793f3ad3973bd555eceae1473e8a90e2f6aad1938c83e895c7bf2f1",
+    "robots/Goose_V0.1/cad/source/torso_shell_mounts/torso_mounted_shell_right_aft.brep": "49f80b1fc41d7573b20113afd10d303c756d904610632061b309365476e188e3",
+    "robots/Goose_V0.1/cad/source/torso_shell_mounts/torso_mounted_shell_right_aft_quad.npz": "902c6621258a59769f74d1e567c0d17c2c277bb9f5f6009674522be61d9c4c22",
+    "scripts/diagnostics/check_goose_wing_door_geometry.py": "ed645464b995748b39302557f3fad0917691caa13bdd977fb0e2d1ebc96205bc",
+    "src/sai_agent/native_cad_query.py": "cbfd856e21135a53a97265b9b75ffb9f793726124eba0d15514fe1902162f7ab",
+    "src/sai_agent/native_cad.py": "86ba7c231518642364e339f2288a119d067d7f0b24964b8c9072c1e7c717cba1",
+    "src/sai_agent/goose/morphology.py": "8c1b1809510c2f1274de9e9ce32b04418b21781c698cb47adf5886a9de320ebd",
+    "scripts/cad/goose_nurbs_skin.py": "2519e3ef3e7dce483cf866c4ecd2db947451d343516be2e5fda2bd389782c743",
+    "scripts/diagnostics/check_goose_grip_cassettes.py": "0be8337fa098958734bea4491ced88d77c6bc0c3d9d8702a1b9d9d3ab456258f"
+  }
+}
