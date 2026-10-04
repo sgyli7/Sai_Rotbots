@@ -4,6 +4,8 @@
 
 **当前优先级：先跑通虚拟侧。** [本周期训练冻结及直接交接](design/virtual_training_freeze_handoff.md)固定004包和10.430690821kg完整SI，不等待PCB、采购及制造收尾；Lab独立物理／GPU准入通过后开展训练。后续硬件候选与虚拟版的逐体参数差异已明确记录，没有静默改入训练版。
 
+[倒地接触诊断](design/source_contact_domain_diagnostic.md)已在004原样CPU源完成14个初态、1,400次有限积分及最差初态的100步精确回放。前倾首次头部触地仍出现最大37.21mm瞬态穿地，故站立M0不覆盖翻倒／起身；具体输入已交Lab，站立／移动主线继续。
+
 碰撞范围与参考：[现行对照与范围](configs/game_collision_budget_v1.json)、[MicroDuck 双足游戏包计数核对](evidence/microduck_game_collision_baseline_v1.json)、[MD/G1 接触角色与精度对照](design/simulation_collision_reference_review.md)。29 是用户澄清的随手数字，MD 的 11 个是具体参考版本实数；新版以任务接触、实际目标后端及动态测试共同验收。原 512 目标与 30,105 块源参考均不作为游戏交付。硬件源与完整 SI 参数保留；本版足底采用独立的平地整体接触近似，未继承真实多区 TPU 的材料和复杂地面资格。
 
 相邻凸包可在连接处交错；[有效过滤表](configs/task_proxy_11_v1_collision_filter.json)只忽略同机内 9 组连接处配对，其余 46 组自碰保留，包括头与身体、左右脚。地面、物品与其他机器人接触均保留；[逐对实测](evidence/task_proxy_11_v1_collision_filter_acceptance.json)在 MuJoCo 和原生 Rapier 各通过 97 个刻意重叠夹具。真实 CAD 装配干涉单独检查，代理例外不放行制造。
