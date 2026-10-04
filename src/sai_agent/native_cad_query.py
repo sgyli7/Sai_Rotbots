@@ -85,3 +85,25 @@ def native_difference_witness(source, tool, result, point_mm, tolerance_mm=1e-7)
                 boolean_query_consistent=query_consistent and not identity_violated,
                 difference_identity_violated=identity_violated,
                 proves_full_boolean_result=False)
+
+
+def native_solid_integrity(shape):
+    """Check native topology, small edges and self-interference separately.
+
+    build123d.is_valid alone misses some folded BSpline faces. This gate is a
+    necessary input condition for Booleans/clearance, not a manufacturing or
+    minimum-wall certificate. Callers bound runtime for complex inputs.
+    """
+    from OCP.BRepAlgoAPI import BRepAlgoAPI_Check
+    topology = bool(shape.is_valid)
+    solid_count = len(shape.solids())
+    check = BRepAlgoAPI_Check(shape.wrapped, True, True)
+    faults = [dict(status=str(row.GetCheckStatus()),
+                   first_shape_count=row.GetFaultyShapes1().Size(),
+                   second_shape_count=row.GetFaultyShapes2().Size())
+              for row in check.Result()]
+    independent_valid = bool(check.IsValid())
+    return dict(topology_valid=topology, solid_count=solid_count,
+                native_small_edge_and_self_interference_valid=independent_valid,
+                boolean_input_integrity_pass=topology and solid_count == 1 and independent_valid,
+                faults=faults, proves_manufacturing_release=False)

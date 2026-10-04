@@ -22,7 +22,7 @@ from goose_nurbs_skin import skin, surface, native_properties
 from check_goose_grip_cassettes import bounded_common
 from sai_agent.goose.morphology import body_grids
 from sai_agent.native_cad import sampled_skin_quads
-from sai_agent.native_cad_query import native_point_query
+from sai_agent.native_cad_query import native_point_query, native_solid_integrity
 
 
 def sha(path):
@@ -95,6 +95,10 @@ def main():
                   environment=dict(python=platform.python_version(), build123d=build123d.__version__,
                                    ocp=OCP.__version__, numpy=np.__version__, trimesh=trimesh.__version__),
                   source_closed_case=source_case, rejected_resampled_trim=trim_case,
+                  native_integrity=dict(source_door=native_solid_integrity(door),
+                                        source_fore=native_solid_integrity(fore),
+                                        source_aft=native_solid_integrity(aft),
+                                        rejected_trim=native_solid_integrity(candidate)),
                   rotated_native_point_query=outside_case,
                   original_cad_modified=False, physical_parameters_modified=False,
                   collision_proxy_modified=False, new_manufacturing_parts_generated=False,
@@ -103,7 +107,7 @@ def main():
                   limitations=[
                       'This diagnoses one original closed pair and one rejected trim, not the full wing mechanism.',
                       'Completed Common/is_valid flags alone do not release thin trimmed skin fit.',
-                      'Contradictory kernel/classifier/distance results remain rejected; no guess about the kernel root cause.',
+                      'Contradictory kernel/classifier/distance results remain rejected; the independent self-interference gate also rejects these inputs.',
                       'No hinge/latch, continuous sweep, local strength, print fit or complete assembly acceptance.'],
                   source_hashes={str(p.relative_to(ROOT)): sha(p) for p in sources + [
                       Path(__file__), ROOT / 'src/sai_agent/native_cad_query.py',
