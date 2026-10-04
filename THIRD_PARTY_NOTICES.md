@@ -56,3 +56,13 @@ references. Upstream repositories are not bundled in this milestone. Sources and
 pinned comparison revisions are recorded in Goose's design documents. Any later
 copied source or hardware asset must retain its own upstream license and notices;
 this reference does not relicense material not present in this repository.
+
+## Goose Rapier contact receiver
+
+`third_party/rapier3d_goose_contact` preserves the Apache-2.0 license and exact
+published Rapier 0.35.3 baseline provenance. It derives from the existing Sai_Lab
+fork and adds an explicitly enabled frictional normal-spring path and free-root
+quaternion normalization. Inherited changes and this variant's scope are listed
+in `LOCAL_CHANGES.md` and `GOOSE_CONTACT_CHANGES.md`. The standalone receiver's
+Goose tree, SI conversion and actuator boundary derive from the project's existing
+Sai_Lab/Bevy_Sim2Sim Goose implementation; existing production modules are untouched.

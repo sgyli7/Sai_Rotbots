@@ -1,0 +1,12 @@
+[package]
+name="goose_task_proxy_native_probe"
+version="0.1.0"
+edition="2024"
+[dependencies]
+rapier3d={path="../../../third_party/rapier3d_goose_contact",features=["sim2sim-physical-friction-contact","sim2sim-observation"]}
+serde={version="1",features=["derive"]}
+serde_json="1"
+sha2="0.10"
+thiserror="2"
+[profile.release]
+opt-level=2

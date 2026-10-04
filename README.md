@@ -47,11 +47,11 @@ Goose 的初衷来自 [Untitled Goose Game](https://goose.game/)：把鹅的好�
 
 ### 当前交付与下一步
 
-当前[初始训练检查点](robots/Goose_V0.1/design/training_checkpoint_handoff.md)提供同源 MJCF／URDF、质量与完整惯量、18 轴 SI 契约、65 项观测／18 项动作，以及每脚六个被动压缩垫的软脚底模型。0.2 秒名义自由根站立冒烟检查通过；这仅支持初始训练探索，尚未证明行走、转向、地面拾取或日用品拖拽。MuJoCo、Godot/Jolt、Unity 和 Bevy 适配共同遵循中立契约，跨引擎验收仍待完成。
+当前 Sim2Sim 入口是[11 个碰撞体的任务代理](robots/Goose_V0.1/design/task_proxy_11_v1.md)，绑定[同版入口与契约](robots/Goose_V0.1/configs/task_proxy_11_v1_entry.json)。硬件 CAD、打印源、BOM、质量与完整惯量保持独立；MuJoCo 与原生 Rapier 各完成 2,500 次实际积分，通过冷启动、站立、有限关节动作、嘴部行程和负载／摩擦检查。18 项动作、65 项基础观测及 82 项指定物扩展可供 Sai_Lab 绑定新策略；这不代表已学会行走、转向、拾取／拖拽或适应复杂地面。Godot/Jolt、Unity 仍需各自验证。
 
 完整安装与线束、翼门固定、供电保护和独立急停、真实电机额定及热／载荷检查仍未闭合，**不能直接按候选 BOM 下单装机；第三、第四阶段和硬件冻结尚未完成**。原交接图片、文档、采购表以及成功／失败记录均保留，历史模型的结果不替代当前版本验证。
 
-从[Goose 资料入口](robots/Goose_V0.1/README.md)、[460 件训练交接](robots/Goose_V0.1/design/training_checkpoint_handoff.md)、[Sai_Lab 源码接入](docs/guides/goose_sai_lab_handoff.md)、[单件头壳结构](robots/Goose_V0.1/design/one_piece_head_checkpoint.md)、[行为要求](robots/Goose_V0.1/design/behavior_requirements.md)继续；[原始资料图片库](robots/Goose_V0.1/design/concepts/index.html)与[导入记录](robots/Goose_V0.1/source/workspace_import.md)保留溯源。大型 Blender／OBJ 资产须按 [Git LFS 拉取说明](docs/guides/large_asset_checkout.md)获取完整内容。
+从[Goose 资料入口](robots/Goose_V0.1/README.md)、[新版独立接收器与复测命令](integrations/bevy/goose_task_proxy/README.md)、[历史 460 件训练交接](robots/Goose_V0.1/design/training_checkpoint_handoff.md)、[单件头壳结构](robots/Goose_V0.1/design/one_piece_head_checkpoint.md)、[行为要求](robots/Goose_V0.1/design/behavior_requirements.md)继续；[原始资料图片库](robots/Goose_V0.1/design/concepts/index.html)与[导入记录](robots/Goose_V0.1/source/workspace_import.md)保留溯源。大型 Blender／OBJ 资产须按 [Git LFS 拉取说明](docs/guides/large_asset_checkout.md)获取完整内容。
 
 ## Project organization
 

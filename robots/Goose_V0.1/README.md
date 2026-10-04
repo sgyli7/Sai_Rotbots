@@ -1,6 +1,10 @@
 # Goose V0.1
 
-当前可交接版本：[460件 Sai_Lab 初始训练检查点](design/training_checkpoint_handoff.md)。同源一体头壳、18主动轴、10.430762603kg；MJCF/URDF、完整SI参数、软脚底、四色实际图和运行入口已打包。实际65/18接口与0.2秒自由根站立冒烟通过，零初始自碰撞候选、零求解器警告；解压校验见[打包检查](evidence/training_checkpoint_bundle_check.json)。完整制造、电气、步行/转向/夹拖及第三、第四阶段仍未完成；不是硬件冻结，不把旧动作当本版通过。
+**当前碰撞交付（2026-10-04）：[11 叶 Sim2Sim 工程入口](design/task_proxy_11_v1.md)已通过 M0 验收。** [唯一入口](configs/task_proxy_11_v1_entry.json)绑定同版模型、契约与原生接收器；硬件源未改，源／目标各完成 2,500 次实际积分，并通过有限 FK、已知危险组合、惯量、时钟与摩擦测试。该入口可交 Sai_Lab 绑定新策略；学会行走、起身、拾取／拖拽、复杂地面、其他引擎及完整制造仍各自验收。旧 30,105 叶和 89 叶失败版本保留为历史，以下较早“默认／最新”均属于各自检查点。
+
+碰撞范围与参考：[现行对照与范围](configs/game_collision_budget_v1.json)、[MicroDuck 双足游戏包计数核对](evidence/microduck_game_collision_baseline_v1.json)、[MD/G1 接触角色与精度对照](design/simulation_collision_reference_review.md)。29 是用户澄清的随手数字，MD 的 11 个是具体参考版本实数；新版以任务接触、实际目标烹制及动态测试共同验收。原 512 目标与 30,105 块源参考均不作为游戏交付。硬件源与完整 SI 参数保留；本版足底采用独立的平地整体接触近似，未继承真实多区 TPU 的材料和复杂地面资格。
+
+历史初始训练版本：[460件 Sai_Lab 初始训练检查点](design/training_checkpoint_handoff.md)。同源一体头壳、18主动轴、10.430762603kg；MJCF/URDF、完整SI参数、软脚底、四色实际图和运行入口已打包。实际65/18接口与0.2秒自由根站立冒烟通过，零初始自碰撞候选、零求解器警告；解压校验见[打包检查](evidence/training_checkpoint_bundle_check.json)。完整制造、电气、步行/转向/夹拖及第三、第四阶段仍未完成；不是硬件冻结，不把旧动作当本版通过。
 
 [单件头壳结构说明](design/one_piece_head_checkpoint.md)记录10姿态、33核心平移及126同源静力筛查，完整装配仍未通过。
 

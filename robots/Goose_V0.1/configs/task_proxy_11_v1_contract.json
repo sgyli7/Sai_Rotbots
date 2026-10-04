@@ -1,0 +1,1642 @@
+{
+  "schema": "goose_task_proxy_si_v1",
+  "robot": "Goose_V0.1",
+  "coordinates": "right-handed X forward Y left Z up; radians, metres, seconds, kilograms, newton-metres; quaternion wxyz",
+  "root_origin_at_zero_m": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "joint_order": [
+    "neck_yaw",
+    "neck_pitch",
+    "neck_mid_pitch",
+    "head_pitch",
+    "head_roll",
+    "beak_hinge",
+    "right_hip_yaw",
+    "right_hip_roll",
+    "right_hip_pitch",
+    "right_knee_pitch",
+    "right_ankle_pitch",
+    "right_ankle_roll",
+    "left_hip_yaw",
+    "left_hip_roll",
+    "left_hip_pitch",
+    "left_knee_pitch",
+    "left_ankle_pitch",
+    "left_ankle_roll"
+  ],
+  "joints": [
+    {
+      "name": "neck_yaw",
+      "parent": "torso",
+      "pivot_world_at_zero_m": [
+        0.043,
+        0.0,
+        0.3457
+      ],
+      "axis_parent": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "range_rad": [
+        -0.5,
+        0.5
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 0.5,
+      "kp_nm_rad": 12.0,
+      "kd_nm_s_rad": 0.175,
+      "torque_peak_limit_nm": 2.0,
+      "continuous_design_limit_nm": 1.04,
+      "speed_limit_rad_s": 38.746309394274114,
+      "armature_kg_m2": 0.0009734999999999999,
+      "frictionloss_nm": 0.03,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak40_10_v3",
+      "limits_status": "unreleased candidate ranges; full combined native sweep has not passed"
+    },
+    {
+      "name": "neck_pitch",
+      "parent": "neck_yaw",
+      "pivot_world_at_zero_m": [
+        0.043,
+        0.0,
+        0.41169999999999995
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.6,
+        2.6
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 2.6,
+      "kp_nm_rad": 100.0,
+      "kd_nm_s_rad": 0.875,
+      "torque_peak_limit_nm": 12.0,
+      "continuous_design_limit_nm": 6.4,
+      "speed_limit_rad_s": 4.1887902047863905,
+      "armature_kg_m2": 0.02357424,
+      "frictionloss_nm": 0.4,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_36_v3",
+      "limits_status": "unreleased candidate ranges; full combined native sweep has not passed"
+    },
+    {
+      "name": "neck_mid_pitch",
+      "parent": "neck_pitch",
+      "pivot_world_at_zero_m": [
+        -0.03,
+        0.0,
+        0.5157
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        -1.4,
+        1.4
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 1.4,
+      "kp_nm_rad": 100.0,
+      "kd_nm_s_rad": 0.875,
+      "torque_peak_limit_nm": 12.0,
+      "continuous_design_limit_nm": 6.4,
+      "speed_limit_rad_s": 4.1887902047863905,
+      "armature_kg_m2": 0.02357424,
+      "frictionloss_nm": 0.4,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_36_v3",
+      "limits_status": "unreleased candidate ranges; full combined native sweep has not passed"
+    },
+    {
+      "name": "head_pitch",
+      "parent": "neck_mid_pitch",
+      "pivot_world_at_zero_m": [
+        0.042,
+        0.0,
+        0.6087
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        -1.6,
+        1.6
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 1.6,
+      "kp_nm_rad": 20.0,
+      "kd_nm_s_rad": 0.175,
+      "torque_peak_limit_nm": 4.0,
+      "continuous_design_limit_nm": 2.0,
+      "speed_limit_rad_s": 12.56637061435917,
+      "armature_kg_m2": 0.0015733,
+      "frictionloss_nm": 0.05,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_10_v3",
+      "limits_status": "unreleased candidate ranges; full combined native sweep has not passed"
+    },
+    {
+      "name": "head_roll",
+      "parent": "head_pitch",
+      "pivot_world_at_zero_m": [
+        0.081,
+        0.0,
+        0.5892000000000001
+      ],
+      "axis_parent": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.6,
+        0.6
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 0.6,
+      "kp_nm_rad": 2.0,
+      "kd_nm_s_rad": 0.025,
+      "torque_peak_limit_nm": 0.18,
+      "continuous_design_limit_nm": 0.14,
+      "speed_limit_rad_s": 3.0,
+      "armature_kg_m2": 2e-05,
+      "frictionloss_nm": 0.006,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "xc330_m288_t",
+      "limits_status": "unreleased candidate ranges; full combined native sweep has not passed"
+    },
+    {
+      "name": "beak_hinge",
+      "parent": "head_roll",
+      "pivot_world_at_zero_m": [
+        0.16,
+        0.0,
+        0.5797
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        0.0,
+        0.55
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 0.55,
+      "kp_nm_rad": 12.0,
+      "kd_nm_s_rad": 0.15,
+      "torque_peak_limit_nm": 4.5,
+      "continuous_design_limit_nm": 4.4,
+      "speed_limit_rad_s": 1.0,
+      "armature_kg_m2": 0.0,
+      "frictionloss_nm": 0.0,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_36_v3_parallel_crank_1_to_1",
+      "limits_status": "unreleased candidate ranges; full combined native sweep has not passed",
+      "actuation_joint": "beak_input_rotor"
+    },
+    {
+      "name": "right_hip_yaw",
+      "parent": "torso",
+      "pivot_world_at_zero_m": [
+        -0.018,
+        -0.065,
+        0.3387
+      ],
+      "axis_parent": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "range_rad": [
+        -0.6,
+        0.6
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 0.6,
+      "kp_nm_rad": 12.0,
+      "kd_nm_s_rad": 0.175,
+      "torque_peak_limit_nm": 2.0,
+      "continuous_design_limit_nm": 1.04,
+      "speed_limit_rad_s": 38.746309394274114,
+      "armature_kg_m2": 0.0009734999999999999,
+      "frictionloss_nm": 0.03,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak40_10_v3",
+      "limits_status": "unreleased candidate ranges; full combined native sweep has not passed"
+    },
+    {
+      "name": "right_hip_roll",
+      "parent": "right_hip_yaw",
+      "pivot_world_at_zero_m": [
+        -0.051,
+        -0.065,
+        0.2837
+      ],
+      "axis_parent": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.5,
+        0.5
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 0.5,
+      "kp_nm_rad": 100.0,
+      "kd_nm_s_rad": 0.875,
+      "torque_peak_limit_nm": 12.0,
+      "continuous_design_limit_nm": 6.4,
+      "speed_limit_rad_s": 4.1887902047863905,
+      "armature_kg_m2": 0.02357424,
+      "frictionloss_nm": 0.4,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_36_v3",
+      "limits_status": "unreleased candidate ranges; full combined native sweep has not passed"
+    },
+    {
+      "name": "right_hip_pitch",
+      "parent": "right_hip_roll",
+      "pivot_world_at_zero_m": [
+        0.015,
+        -0.076,
+        0.2707
+      ],
+      "axis_parent": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "range_rad": [
+        -1.1,
+        1.1
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 1.1,
+      "kp_nm_rad": 100.0,
+      "kd_nm_s_rad": 0.875,
+      "torque_peak_limit_nm": 12.0,
+      "continuous_design_limit_nm": 6.4,
+      "speed_limit_rad_s": 4.1887902047863905,
+      "armature_kg_m2": 0.02357424,
+      "frictionloss_nm": 0.4,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_36_v3",
+      "limits_status": "unreleased candidate ranges; full combined native sweep has not passed"
+    },
+    {
+      "name": "right_knee_pitch",
+      "parent": "right_hip_pitch",
+      "pivot_world_at_zero_m": [
+        -0.05,
+        -0.076,
+        0.1557
+      ],
+      "axis_parent": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.2,
+        1.8
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 1.8,
+      "kp_nm_rad": 100.0,
+      "kd_nm_s_rad": 0.875,
+      "torque_peak_limit_nm": 12.0,
+      "continuous_design_limit_nm": 6.4,
+      "speed_limit_rad_s": 4.1887902047863905,
+      "armature_kg_m2": 0.02357424,
+      "frictionloss_nm": 0.4,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_36_v3",
+      "limits_status": "unreleased candidate ranges; full combined native sweep has not passed"
+    },
+    {
+      "name": "right_ankle_pitch",
+      "parent": "right_knee_pitch",
+      "pivot_world_at_zero_m": [
+        0.001,
+        -0.076,
+        0.0657
+      ],
+      "axis_parent": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "range_rad": [
+        -1.1,
+        1.1
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 1.1,
+      "kp_nm_rad": 100.0,
+      "kd_nm_s_rad": 0.875,
+      "torque_peak_limit_nm": 12.0,
+      "continuous_design_limit_nm": 6.4,
+      "speed_limit_rad_s": 4.1887902047863905,
+      "armature_kg_m2": 0.02357424,
+      "frictionloss_nm": 0.4,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_36_v3",
+      "limits_status": "unreleased candidate ranges; full combined native sweep has not passed"
+    },
+    {
+      "name": "right_ankle_roll",
+      "parent": "right_ankle_pitch",
+      "pivot_world_at_zero_m": [
+        0.061,
+        -0.076,
+        0.0397
+      ],
+      "axis_parent": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.5,
+        0.5
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 0.5,
+      "kp_nm_rad": 20.0,
+      "kd_nm_s_rad": 0.175,
+      "torque_peak_limit_nm": 4.0,
+      "continuous_design_limit_nm": 2.0,
+      "speed_limit_rad_s": 12.56637061435917,
+      "armature_kg_m2": 0.0015733,
+      "frictionloss_nm": 0.05,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_10_v3",
+      "limits_status": "unreleased candidate ranges; full combined native sweep has not passed"
+    },
+    {
+      "name": "left_hip_yaw",
+      "parent": "torso",
+      "pivot_world_at_zero_m": [
+        -0.018,
+        0.065,
+        0.3387
+      ],
+      "axis_parent": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "range_rad": [
+        -0.6,
+        0.6
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 0.6,
+      "kp_nm_rad": 12.0,
+      "kd_nm_s_rad": 0.175,
+      "torque_peak_limit_nm": 2.0,
+      "continuous_design_limit_nm": 1.04,
+      "speed_limit_rad_s": 38.746309394274114,
+      "armature_kg_m2": 0.0009734999999999999,
+      "frictionloss_nm": 0.03,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak40_10_v3",
+      "limits_status": "unreleased candidate ranges; full combined native sweep has not passed"
+    },
+    {
+      "name": "left_hip_roll",
+      "parent": "left_hip_yaw",
+      "pivot_world_at_zero_m": [
+        -0.051,
+        0.065,
+        0.2837
+      ],
+      "axis_parent": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.5,
+        0.5
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 0.5,
+      "kp_nm_rad": 100.0,
+      "kd_nm_s_rad": 0.875,
+      "torque_peak_limit_nm": 12.0,
+      "continuous_design_limit_nm": 6.4,
+      "speed_limit_rad_s": 4.1887902047863905,
+      "armature_kg_m2": 0.02357424,
+      "frictionloss_nm": 0.4,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_36_v3",
+      "limits_status": "unreleased candidate ranges; full combined native sweep has not passed"
+    },
+    {
+      "name": "left_hip_pitch",
+      "parent": "left_hip_roll",
+      "pivot_world_at_zero_m": [
+        0.015,
+        0.076,
+        0.2707
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        -1.1,
+        1.1
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 1.1,
+      "kp_nm_rad": 100.0,
+      "kd_nm_s_rad": 0.875,
+      "torque_peak_limit_nm": 12.0,
+      "continuous_design_limit_nm": 6.4,
+      "speed_limit_rad_s": 4.1887902047863905,
+      "armature_kg_m2": 0.02357424,
+      "frictionloss_nm": 0.4,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_36_v3",
+      "limits_status": "unreleased candidate ranges; full combined native sweep has not passed"
+    },
+    {
+      "name": "left_knee_pitch",
+      "parent": "left_hip_pitch",
+      "pivot_world_at_zero_m": [
+        -0.05,
+        0.076,
+        0.1557
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        -1.8,
+        0.2
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 1.8,
+      "kp_nm_rad": 100.0,
+      "kd_nm_s_rad": 0.875,
+      "torque_peak_limit_nm": 12.0,
+      "continuous_design_limit_nm": 6.4,
+      "speed_limit_rad_s": 4.1887902047863905,
+      "armature_kg_m2": 0.02357424,
+      "frictionloss_nm": 0.4,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_36_v3",
+      "limits_status": "unreleased candidate ranges; full combined native sweep has not passed"
+    },
+    {
+      "name": "left_ankle_pitch",
+      "parent": "left_knee_pitch",
+      "pivot_world_at_zero_m": [
+        0.001,
+        0.076,
+        0.0657
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        -1.1,
+        1.1
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 1.1,
+      "kp_nm_rad": 100.0,
+      "kd_nm_s_rad": 0.875,
+      "torque_peak_limit_nm": 12.0,
+      "continuous_design_limit_nm": 6.4,
+      "speed_limit_rad_s": 4.1887902047863905,
+      "armature_kg_m2": 0.02357424,
+      "frictionloss_nm": 0.4,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_36_v3",
+      "limits_status": "unreleased candidate ranges; full combined native sweep has not passed"
+    },
+    {
+      "name": "left_ankle_roll",
+      "parent": "left_ankle_pitch",
+      "pivot_world_at_zero_m": [
+        0.061,
+        0.076,
+        0.0397
+      ],
+      "axis_parent": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.5,
+        0.5
+      ],
+      "q_neutral_rad": 0.0,
+      "action_scale_rad": 0.5,
+      "kp_nm_rad": 20.0,
+      "kd_nm_s_rad": 0.175,
+      "torque_peak_limit_nm": 4.0,
+      "continuous_design_limit_nm": 2.0,
+      "speed_limit_rad_s": 12.56637061435917,
+      "armature_kg_m2": 0.0015733,
+      "frictionloss_nm": 0.05,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_10_v3",
+      "limits_status": "unreleased candidate ranges; full combined native sweep has not passed"
+    }
+  ],
+  "bodies": [
+    {
+      "name": "torso",
+      "mass_kg": 2.2150174075282045,
+      "com_local_m": [
+        -0.015485186559974514,
+        -0.001653147017662223,
+        0.3299157437733833
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          0.008528631017576284,
+          -0.00019109930609443148,
+          0.0009479946153045958
+        ],
+        [
+          -0.00019109930609443145,
+          0.015071610221222942,
+          1.1432533996507601e-05
+        ],
+        [
+          0.0009479946153045959,
+          1.1432533996507603e-05,
+          0.017584300665100947
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.15178595881779472,
+      "com_randomization_m": 0.005,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "neck_yaw",
+      "mass_kg": 0.45294349124138206,
+      "com_local_m": [
+        -1.7268310993634461e-07,
+        -0.0007048891988300066,
+        0.060960584342048596
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          0.00030439833882130505,
+          1.872708192641246e-09,
+          3.2364934546964377e-08
+        ],
+        [
+          1.87270819264125e-09,
+          0.00023774486791757594,
+          8.806948048426432e-06
+        ],
+        [
+          3.2364934546964363e-08,
+          8.80694804842643e-06,
+          0.00023083202677042986
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.04606391200578971,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "neck_pitch",
+      "mass_kg": 0.6107350780492311,
+      "com_local_m": [
+        -0.05799548597643267,
+        -0.0009078086584944603,
+        0.08185788015302148
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          0.0012909814201038188,
+          -4.547012227302407e-05,
+          0.0005566316243505274
+        ],
+        [
+          -4.5470122273024066e-05,
+          0.0013881252930672057,
+          7.964983467041422e-05
+        ],
+        [
+          0.0005566316243505274,
+          7.964983467041422e-05,
+          0.000871625840298899
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.07309799192723693,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "neck_mid_pitch",
+      "mass_kg": 0.5145364404531154,
+      "com_local_m": [
+        0.052393753795951604,
+        0.002063425478576288,
+        0.06752041621990124
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          0.0011354498725309528,
+          6.750631292422947e-05,
+          -0.0005196656193582194
+        ],
+        [
+          6.750631292422948e-05,
+          0.0012305544887446448,
+          8.848428021518056e-05
+        ],
+        [
+          -0.0005196656193582195,
+          8.848428021518054e-05,
+          0.0008790069978961767
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.07601724770138138,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "head_pitch",
+      "mass_kg": 0.05813070923092986,
+      "com_local_m": [
+        0.020548682972421815,
+        0.00557068165139365,
+        -0.021424731068606317
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          2.8138983496849594e-05,
+          5.1679567920628755e-06,
+          8.725728094332611e-06
+        ],
+        [
+          5.167956792062874e-06,
+          4.068213244787739e-05,
+          -2.3267300960853475e-06
+        ],
+        [
+          8.725728094332611e-06,
+          -2.3267300960853487e-06,
+          2.937305448382977e-05
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.13440522275506406,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "head_roll",
+      "mass_kg": 0.6593799033333092,
+      "com_local_m": [
+        0.06081670316810249,
+        -0.0013338700177895505,
+        0.00943233500530316
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          0.00043150819765593604,
+          -1.0139424284005475e-05,
+          0.0001284306431195458
+        ],
+        [
+          -1.0139424284005474e-05,
+          0.0007814085982895078,
+          2.631111459374545e-06
+        ],
+        [
+          0.00012843064311954583,
+          2.631111459374547e-06,
+          0.0007640991116032188
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.16087834735530562,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "beak_hinge",
+      "mass_kg": 0.12444184333803009,
+      "com_local_m": [
+        0.022105349738602786,
+        0.0021783860398677996,
+        -0.0158287818399776
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          5.9815463793932156e-05,
+          6.67054863962993e-06,
+          3.1879502956955006e-05
+        ],
+        [
+          6.670548639629931e-06,
+          0.00010144378189161729,
+          -3.102445199462759e-06
+        ],
+        [
+          3.1879502956955e-05,
+          -3.10244519946276e-06,
+          0.00011603177618500173
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.1,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "right_hip_yaw",
+      "mass_kg": 0.4679029510549537,
+      "com_local_m": [
+        -0.02222674674999112,
+        8.851795824105224e-10,
+        -0.04114163681515337
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          0.0005134200786291527,
+          -8.413091484933092e-12,
+          -0.00020654148753968205
+        ],
+        [
+          -8.413091484933493e-12,
+          0.0007198312073257861,
+          -4.79779883840085e-10
+        ],
+        [
+          -0.00020654148753968205,
+          -4.797798838400858e-10,
+          0.00037031396313128126
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.05206270883859917,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "right_hip_roll",
+      "mass_kg": 0.4793867924884531,
+      "com_local_m": [
+        0.059580137134601426,
+        -0.010388214790760894,
+        -0.011597649834218682
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          0.00026049571018583334,
+          -3.249242209490623e-07,
+          2.3518959104301165e-05
+        ],
+        [
+          -3.249242209490621e-07,
+          0.0002787778304798857,
+          -5.983451374010265e-06
+        ],
+        [
+          2.3518959104301158e-05,
+          -5.983451374010264e-06,
+          0.0003580259779646378
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.05321105972993558,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "right_hip_pitch",
+      "mass_kg": 0.5993243195245721,
+      "com_local_m": [
+        -0.051659257799522386,
+        0.001718937647631577,
+        -0.0913936699560374
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          0.0013995022993145657,
+          3.7517105607905796e-05,
+          -0.0005257418807643583
+        ],
+        [
+          3.7517105607905796e-05,
+          0.0014155882062195826,
+          6.638261683810811e-05
+        ],
+        [
+          -0.0005257418807643583,
+          6.638261683810811e-05,
+          0.0007685572503505673
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.06257452055709482,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "right_knee_pitch",
+      "mass_kg": 0.6123304183589124,
+      "com_local_m": [
+        0.03970846910665156,
+        0.0007221527825113649,
+        -0.07007417027842668
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          0.0012368041849337849,
+          -6.568197704963897e-05,
+          0.00037689758660876976
+        ],
+        [
+          -6.568197704963896e-05,
+          0.0010739961699116364,
+          0.00011590872773519857
+        ],
+        [
+          0.00037689758660876976,
+          0.00011590872773519856,
+          0.0007863182675660951
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.06336945001015312,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "right_ankle_pitch",
+      "mass_kg": 0.4346741956471732,
+      "com_local_m": [
+        0.04590239802950088,
+        -0.005313866191867717,
+        -0.015068831057171363
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          0.0004914091039474495,
+          -4.8678397629231025e-05,
+          0.00012548468940271981
+        ],
+        [
+          -4.867839762923105e-05,
+          0.0005055478160767454,
+          1.9502735198598985e-05
+        ],
+        [
+          0.00012548468940271984,
+          1.9502735198598968e-05,
+          0.0005857760745597091
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.05780747929447679,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "right_ankle_roll",
+      "mass_kg": 0.29298065203309476,
+      "com_local_m": [
+        -0.015929887580024237,
+        -7.502205121023883e-08,
+        -0.022237546734798774
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          0.00018492286717916484,
+          2.4534687128047003e-08,
+          -4.057991892163762e-05
+        ],
+        [
+          2.4534687128047003e-08,
+          0.0007942059949554937,
+          2.016858088010676e-11
+        ],
+        [
+          -4.0579918921637614e-05,
+          2.016858088010916e-11,
+          0.0008753337200253541
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.10402979346432731,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "left_hip_yaw",
+      "mass_kg": 0.4679029510549538,
+      "com_local_m": [
+        -0.022226746749991113,
+        8.851796240438858e-10,
+        -0.041141636815153426
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          0.0005134200786291522,
+          -8.413091305032889e-12,
+          -0.00020654148753968216
+        ],
+        [
+          -8.413091305033106e-12,
+          0.0007198312073257861,
+          -4.797798858972406e-10
+        ],
+        [
+          -0.0002065414875396821,
+          -4.797798858972413e-10,
+          0.00037031396313128126
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.052062708838599175,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "left_hip_roll",
+      "mass_kg": 0.4793867845955629,
+      "com_local_m": [
+        0.059580137572231566,
+        0.010388304328403139,
+        -0.011597746622571015
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          0.00026049436805099783,
+          3.260651245111436e-07,
+          2.351772724771369e-05
+        ],
+        [
+          3.260651245111455e-07,
+          0.0002787783320940442,
+          5.969887996492003e-06
+        ],
+        [
+          2.351772724771368e-05,
+          5.9698879964920045e-06,
+          0.0003580241230390559
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.05321105895957649,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "left_hip_pitch",
+      "mass_kg": 0.5993241243826795,
+      "com_local_m": [
+        -0.051656484807437585,
+        -0.0017189377854475857,
+        -0.09139215608072909
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          0.0013996708580227893,
+          -3.752157673389335e-05,
+          -0.0005252354021864336
+        ],
+        [
+          -3.7521576733893345e-05,
+          0.001415582276568987,
+          -6.638520409086238e-05
+        ],
+        [
+          -0.0005252354021864337,
+          -6.638520409086238e-05,
+          0.0007683822571898105
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.06257450837123647,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "left_knee_pitch",
+      "mass_kg": 0.6123304565879957,
+      "com_local_m": [
+        0.039708267584740976,
+        -0.0007221520383150076,
+        -0.0700737211387009
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          0.0012368218549283487,
+          6.568612471489022e-05,
+          0.0003770177371938468
+        ],
+        [
+          6.568612471489024e-05,
+          0.0010740329260672604,
+          -0.00011591153990375867
+        ],
+        [
+          0.00037701773719384676,
+          -0.00011591153990375862,
+          0.0007863374873101752
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.06336945229707569,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "left_ankle_pitch",
+      "mass_kg": 0.4346741919504113,
+      "com_local_m": [
+        0.04590239773598142,
+        0.0053138819986097985,
+        -0.015068997759136296
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          0.0004914096559309721,
+          4.867827582782351e-05,
+          0.00012548640852806143
+        ],
+        [
+          4.86782758278235e-05,
+          0.0005055398692115477,
+          -1.9525671937074144e-05
+        ],
+        [
+          0.00012548640852806143,
+          -1.9525671937074144e-05,
+          0.0005857845677090688
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.057807478935643204,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "left_ankle_roll",
+      "mass_kg": 0.29298065203332774,
+      "com_local_m": [
+        -0.015929887579990462,
+        -7.502205218168315e-08,
+        -0.022237546734798302
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          0.00018492286717941103,
+          2.4534687128075174e-08,
+          -4.057991892169189e-05
+        ],
+        [
+          2.4534687128075174e-08,
+          0.0007942059949564356,
+          2.0168580877837736e-11
+        ],
+        [
+          -4.057991892169189e-05,
+          2.016858087783786e-11,
+          0.0008753337200265238
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.10402979346432409,
+      "com_randomization_m": 0.003,
+      "inertia_multiplier_range": [
+        0.8,
+        1.2
+      ]
+    },
+    {
+      "name": "beak_input_rotor",
+      "mass_kg": 0.01713015122738488,
+      "com_local_m": [
+        -0.000722912037014467,
+        0.030037179254881457,
+        -0.0012521203775123224
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          1.5634736654262022e-06,
+          7.115889094387194e-08,
+          -1.1318918128567265e-07
+        ],
+        [
+          7.115889094387195e-08,
+          2.705772316457009e-06,
+          1.2325081452502414e-07
+        ],
+        [
+          -1.1318918128567284e-07,
+          1.2325081452502414e-07,
+          1.4327800005069282e-06
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.1,
+      "com_randomization_m": 0.001,
+      "inertia_multiplier_range": [
+        0.9,
+        1.1
+      ]
+    },
+    {
+      "name": "beak_coupler_link",
+      "mass_kg": 0.005177307249452544,
+      "com_local_m": [
+        0.015499999888487326,
+        0.034964001297447034,
+        -0.012500000368660724
+      ],
+      "inertia_at_com_body_kg_m2": [
+        [
+          4.4914186848174836e-07,
+          2.0788210936688012e-17,
+          4.868994715990822e-07
+        ],
+        [
+          2.078821093668784e-17,
+          1.0949643091432262e-06,
+          6.878895781578252e-17
+        ],
+        [
+          4.868994715990823e-07,
+          6.878895781578252e-17,
+          6.602364291911628e-07
+        ]
+      ],
+      "mass_relative_design_uncertainty": 0.10000000000000002,
+      "com_randomization_m": 0.001,
+      "inertia_multiplier_range": [
+        0.9,
+        1.1
+      ]
+    }
+  ],
+  "physics_dt_s": 0.02,
+  "torque_dt_s": 0.02,
+  "policy_dt_s": 0.02,
+  "observation_size": 65,
+  "action_size": 18,
+  "observation_layout": [
+    {
+      "name": "body_angular_velocity_rad_s",
+      "start": 0,
+      "length": 3,
+      "scale": 0.25
+    },
+    {
+      "name": "projected_gravity_unit",
+      "start": 3,
+      "length": 3,
+      "scale": 1
+    },
+    {
+      "name": "command_vx_vy_yaw_rate",
+      "start": 6,
+      "length": 3,
+      "scale": 1
+    },
+    {
+      "name": "joint_q_minus_neutral_rad",
+      "start": 9,
+      "length": 18,
+      "scale": 1
+    },
+    {
+      "name": "joint_velocity_rad_s",
+      "start": 27,
+      "length": 18,
+      "scale": 0.1
+    },
+    {
+      "name": "previous_clipped_action",
+      "start": 45,
+      "length": 18,
+      "scale": 1
+    },
+    {
+      "name": "phase_sin_cos",
+      "start": 63,
+      "length": 2,
+      "scale": 1
+    }
+  ],
+  "action_semantics": "clip to [-1,1]; target=q_neutral+scale*action; clamp to range; slew at speed_limit; PD at 50Hz; speed-envelope torque clipping; 2s squared-torque budget derates to continuous limit; nominal-model gravity feedforward for five neck/head joints from encoder q and IMU orientation only; no root support, no actual randomized-mass input",
+  "gravity_feedforward_joints": [
+    "neck_yaw",
+    "neck_pitch",
+    "neck_mid_pitch",
+    "head_pitch",
+    "head_roll"
+  ],
+  "positive_mechanical_power_limit_w": 350.0,
+  "phase_frequency_hz": 1.2,
+  "foot_friction_range": [
+    0.45,
+    0.9
+  ],
+  "latency_policy_steps": [
+    0,
+    1
+  ],
+  "strength_multiplier_range": [
+    0.85,
+    1.0
+  ],
+  "passive_linkage_joints": [
+    {
+      "name": "beak_input_rotor",
+      "parent": "head_roll",
+      "pivot_world_at_zero_m": [
+        0.129,
+        0.0,
+        0.6047
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        0.0,
+        0.55
+      ],
+      "mimic_joint": "beak_hinge",
+      "mimic_multiplier": 1.0,
+      "mimic_offset_rad": 0.0,
+      "armature_kg_m2": 0.02357424,
+      "frictionloss_nm": 0.08
+    },
+    {
+      "name": "beak_coupler_link",
+      "parent": "beak_input_rotor",
+      "pivot_world_at_zero_m": [
+        0.123,
+        0.0,
+        0.5943076951545867
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.55,
+        0.0
+      ],
+      "mimic_joint": "beak_hinge",
+      "mimic_multiplier": -1.0,
+      "mimic_offset_rad": 0.0
+    }
+  ],
+  "beak_transmission": {
+    "type": "uncrossed_equal_parallel_cranks",
+    "drive_axis_world_m": [
+      0.129,
+      0.0,
+      0.6047
+    ],
+    "jaw_axis_world_m": [
+      0.16,
+      0.0,
+      0.5797
+    ],
+    "crank_radius_m": 0.012,
+    "closed_crank_angle_in_xz_rad": 4.1887902047863905,
+    "coupler_pin_spacing_m": 0.039824615503479766,
+    "ideal_angle_ratio": 1.0,
+    "efficiency_design_assumption": 0.85,
+    "output_design_continuous_nm": 4.4,
+    "output_peak_limit_nm": 4.5,
+    "thermal_status": "manufacturer rated8Nm at40rpm; stationary enclosed-head thermal hold still requires bench test",
+    "lumped_mass_status": "Native input rotor and translating coupler are explicit passive bodies; closed-pose static ledger is a separate reduction.",
+    "head_shell_required_local_wall_m": 0.002,
+    "connector_clearance_status": "main case and mechanism screened; actual mating plug and bend radius still pending",
+    "passive_constraints": "qin=qjaw; qcoupler=-qjaw; URDF mimic and neutral SI authoritative; backend enforcement required."
+  },
+  "physics_steps_per_tick": 1,
+  "torque_updates_per_tick": 1,
+  "policy_calls_per_tick": 1,
+  "observation_sizes": {
+    "locomotion": 65,
+    "recovery": 65,
+    "pickup": 82
+  },
+  "candidate": "goose_task_proxy_11_v1",
+  "candidate_id": "goose_task_proxy_11_v1",
+  "model_sha256": "273cb236fc4d1fbbd306e1acb4ced7a70014fd98cefa58d3d94890745674f17c",
+  "asset_sha256": {
+    "torso_envelope.obj": "32c27770c1060a266e7cfdca5c65847322cfb1c71ad27524da362ac52a0f0fbe",
+    "lower_neck_envelope.obj": "c3a06769764c3c7d3064eb882208bba8175b3d97e6a2aae9176c186a7b3004d2",
+    "upper_neck_envelope.obj": "d7e8d7429c44273a2981395a9eb61ff437fbdd6b25863a5509e5124131eae297",
+    "head_upper_bill_envelope.obj": "447c822d8478b9a7b1fecf6b0ad7b47995cfdff3dee47a12f6add81cbfa2041c",
+    "lower_bill_envelope.obj": "fdbec665d8c48bb3a14edecf882a4a406a90c713a0eafbec38f9ace3ce977108",
+    "right_thigh_envelope.obj": "ae168761bbcaa070b1fa720ab6673790426c1634a8cbd1d93a4f447d772b220f",
+    "right_shin_envelope.obj": "3905250a1b46f6c1a0de7e623c2a540a09185a9df6c78bc7d395d095f6573e1f",
+    "left_thigh_envelope.obj": "6caeaffc2e9eac735f56ab194bcc01350629cbfbc0ee644a4302a68922daa153",
+    "left_shin_envelope.obj": "acf18f64e6fc4e18450c8bf65cf690f397d57827d1733b6ebf8dd539c31b22fd",
+    "right_flexible_sole.obj": "4f96b933f00b24e4bf0aca8a9d6ef42ea8a3f8694e114b7a8b145053eabf8b98",
+    "left_flexible_sole.obj": "92f26955d768fc052d6b66433a60a84d0eb74a058eb78f004298d4498c83136d"
+  },
+  "nominal_robot_mass_kg": 10.43069082136313,
+  "passive_contacts": [],
+  "collision_geometries": [
+    {
+      "name": "torso_envelope",
+      "part": "torso_envelope",
+      "body": "torso"
+    },
+    {
+      "name": "lower_neck_envelope",
+      "part": "lower_neck_envelope",
+      "body": "neck_pitch"
+    },
+    {
+      "name": "upper_neck_envelope",
+      "part": "upper_neck_envelope",
+      "body": "neck_mid_pitch"
+    },
+    {
+      "name": "head_upper_bill_envelope",
+      "part": "head_upper_bill_envelope",
+      "body": "head_roll"
+    },
+    {
+      "name": "lower_bill_envelope",
+      "part": "lower_bill_envelope",
+      "body": "beak_hinge"
+    },
+    {
+      "name": "right_thigh_envelope",
+      "part": "right_thigh_envelope",
+      "body": "right_hip_pitch"
+    },
+    {
+      "name": "right_shin_envelope",
+      "part": "right_shin_envelope",
+      "body": "right_knee_pitch"
+    },
+    {
+      "name": "right_flexible_sole",
+      "part": "right_flexible_sole",
+      "body": "right_ankle_roll"
+    },
+    {
+      "name": "left_thigh_envelope",
+      "part": "left_thigh_envelope",
+      "body": "left_hip_pitch"
+    },
+    {
+      "name": "left_shin_envelope",
+      "part": "left_shin_envelope",
+      "body": "left_knee_pitch"
+    },
+    {
+      "name": "left_flexible_sole",
+      "part": "left_flexible_sole",
+      "body": "left_ankle_roll"
+    }
+  ],
+  "hardware_parent_commit": "89fdbe50e63fb3004ff39b697e87af43a8a1e0a0",
+  "source_scene_sha256": "1a05dc55c66f96bee59f8cdb50d2f15942fdcf201e91c8d2e72140ba30be25de",
+  "mechanical_parent_binary_sha256": "1f0f816dbbee48e876742bbfd35a01fefa9e3d6b7b35959f187e846bc4281be8",
+  "source_runtime": "sai_agent.goose.task_proxy_runtime.TaskProxyRuntime",
+  "runtime_revision": "goose_task_proxy_be_contact_v1",
+  "controller_revision": "sampled_pd_kp_parent_kd_quarter_v1",
+  "source_module_sha256": {
+    "stage_one_gravity.py": "da0e918deaacc822289a4ce1d1013a22ae9ee89c26929640960af2d3ce34e949",
+    "task_goal.py": "8a90ad92eb01083246ab42a6fc2c722456a9f17bad862fb9a966488bb3374043",
+    "task_proxy_runtime.py": "a4b32873bc4938c1dc1a416a429217f4e007058be0e3a60bccf5758240e22847"
+  },
+  "task_scope": "M0 engineering entry: finite FK, cold-start holding and small joint motions; learned task performance is independently scored",
+  "contact_mapping": {
+    "method": "whole_sole_native_manifold_backward_euler_v1",
+    "per_foot_stiffness_n_m": 140142.1824,
+    "per_foot_damping_n_s_m": 12.0,
+    "friction": 0.65,
+    "prediction_band_m": 0.01,
+    "observed_domain_depth_limit_m": 0.0015,
+    "parameters_measured": false,
+    "approximation": "One convex shoe per foot includes exterior upper housing and a sole support rectangle over the original six pads. Source plane uses four explicit material points; target uses native manifold on the same planar support face. Total K/C is equally shared. Pad gaps and rotational foundation remain approximations, not measured terrain/material conformance.",
+    "ground_contact_quadrature": [
+      {
+        "body": "right_ankle_roll",
+        "geom": "right_flexible_sole",
+        "bottom_corners_body_m": [
+          [
+            -0.11050000000000001,
+            -0.030000000000000002,
+            -0.0392
+          ],
+          [
+            -0.11050000000000001,
+            0.030000000000000002,
+            -0.0392
+          ],
+          [
+            0.04750000000000002,
+            -0.030000000000000002,
+            -0.0392
+          ],
+          [
+            0.04750000000000002,
+            0.030000000000000002,
+            -0.0392
+          ]
+        ],
+        "authority": "original six-zone pad support bounding rectangle; upper housing adds no ground support outside this face"
+      },
+      {
+        "body": "left_ankle_roll",
+        "geom": "left_flexible_sole",
+        "bottom_corners_body_m": [
+          [
+            -0.11050000000000001,
+            -0.030000000000000002,
+            -0.0392
+          ],
+          [
+            -0.11050000000000001,
+            0.030000000000000002,
+            -0.0392
+          ],
+          [
+            0.04750000000000002,
+            -0.030000000000000002,
+            -0.0392
+          ],
+          [
+            0.04750000000000002,
+            0.030000000000000002,
+            -0.0392
+          ]
+        ],
+        "authority": "original six-zone pad support bounding rectangle; upper housing adds no ground support outside this face"
+      }
+    ],
+    "source_plane_quadrature": true
+  },
+  "collision_exclusions": [
+    {
+      "body1": "beak_coupler_link",
+      "body2": "beak_hinge"
+    },
+    {
+      "body1": "torso",
+      "body2": "neck_pitch"
+    },
+    {
+      "body1": "torso",
+      "body2": "right_hip_pitch"
+    },
+    {
+      "body1": "torso",
+      "body2": "left_hip_pitch"
+    },
+    {
+      "body1": "right_knee_pitch",
+      "body2": "right_ankle_roll"
+    },
+    {
+      "body1": "left_knee_pitch",
+      "body2": "left_ankle_roll"
+    }
+  ],
+  "hardware_sources_modified": false,
+  "manufacturing_pass": false,
+  "hardware_freeze": false,
+  "final_appearance_pass": false,
+  "qualification": {
+    "engineering_entry": true,
+    "learned_locomotion": false,
+    "learned_recovery": false,
+    "pickup": false,
+    "dragging": false,
+    "godot_jolt": false,
+    "unity": false,
+    "qualified_scope": "M0 finite geometry / SI / clocks / flat-floor source and native receiver entry"
+  },
+  "omitted_contact_scope": "Intermediate axis carriers and installed interior hardware have no independent task collider; all their masses and inertias remain in their physical bodies. Exterior link hulls fill fork interiors; five explicit neighbouring-role filters exclude those mounting overlaps. Non-neighbour self-contact remains enabled.",
+  "functional_grip_refinement": {
+    "method": "halfspace_clip_at_actual_upper_grip_face",
+    "source_part": "upper_grip_cassette_pad",
+    "source_sha256": "794910d403eff7f27ffe2960bf8d8305ea87b37e0213030f0843d62ba3acf668",
+    "contact_plane_world_zero_z_m": 0.5567000000000001,
+    "maximum_removed_role_extent_m": 0.0012000000000000274,
+    "hardware_mesh_modified": false,
+    "exact_source_contact_polygon_world_m": [
+      [
+        0.1793000030517578,
+        0.011699999809265137,
+        0.5567000000000001
+      ],
+      [
+        0.1793000030517578,
+        -0.011699999809265137,
+        0.5567000000000001
+      ],
+      [
+        0.215,
+        -0.011699999809265137,
+        0.5567000000000001
+      ],
+      [
+        0.239,
+        -0.0066999998092651366,
+        0.5567000000000001
+      ],
+      [
+        0.25770001220703126,
+        -0.0027000000476837156,
+        0.5567000000000001
+      ],
+      [
+        0.25770001220703126,
+        0.0027000000476837156,
+        0.5567000000000001
+      ],
+      [
+        0.239,
+        0.0066999998092651366,
+        0.5567000000000001
+      ],
+      [
+        0.215,
+        0.011699999809265137,
+        0.5567000000000001
+      ]
+    ]
+  }
+}
