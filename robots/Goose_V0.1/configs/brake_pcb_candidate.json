@@ -1,0 +1,2544 @@
+{
+  "schema": "goose_brake_pcb_candidate_v1",
+  "status": "NATIVE_PCB_CANDIDATE_NOT_SYSTEM_RELEASE",
+  "source_hardware_parts": 478,
+  "source_hardware_parameters": "robots/Goose_V0.1/evidence/manual_wing_service_parameters.json",
+  "source_contract": "robots/Goose_V0.1/configs/mechanical_physics_contract.json",
+  "sources": {
+    "tlv3201": {
+      "url": "https://www.ti.com/lit/ds/symlink/tlv3201.pdf",
+      "sha256": "1777bba814c74772bb54c6f1f56702985039043ce2fb2affaf996a83eaf1076e",
+      "retrieved_utc": "2026-10-04",
+      "raw_pdf_in_git": false
+    },
+    "ref50": {
+      "url": "https://www.ti.com/lit/ds/symlink/ref50.pdf",
+      "sha256": "d2da9488194dba11732c85c498b563c12e0bb6b3e2d21631022dde9bff51a13d",
+      "retrieved_utc": "2026-10-04",
+      "raw_pdf_in_git": false
+    },
+    "tps7a16": {
+      "url": "https://www.ti.com/lit/ds/symlink/tps7a16.pdf",
+      "sha256": "4e05cfdef8f64684f9f24b7d1f86e83badb7784c09c96f2ddbcbdbc0a3b48f80",
+      "retrieved_utc": "2026-10-04",
+      "raw_pdf_in_git": false
+    },
+    "ucc27511": {
+      "url": "https://www.ti.com/lit/ds/symlink/ucc27511.pdf",
+      "sha256": "781cc451dbb371a4137337a4bdecbe11a9f1ff8979a11e238e97d8a80a287b31",
+      "retrieved_utc": "2026-10-04",
+      "raw_pdf_in_git": false
+    },
+    "bsc027n06ls5": {
+      "url": "https://www.infineon.com/assets/row/public/documents/24/49/infineon-bsc027n06ls5-datasheet-en.pdf",
+      "sha256": "665756d9e3f9cf3eba95b5c3a6c3e114962b2a34b219f8dbbe27e2c891ae4c79",
+      "retrieved_utc": "2026-10-04",
+      "raw_pdf_in_git": false
+    },
+    "svpf": {
+      "url": "https://industrial.panasonic.com/cdbs/www-data/pdf/AAB8000/AAB8000COL88.pdf",
+      "sha256": "67d63186bb6dcacf21cfa4c87b253d06d0ae6e8bd0bd97be5fb19f504744e268",
+      "retrieved_utc": "2026-10-04",
+      "raw_pdf_in_git": false
+    },
+    "resistor": {
+      "url": "https://www.vishay.com/docs/50051/lto100.pdf",
+      "sha256": "515c3182df5bc59cf92b00a7c8d8041e02138338e5af29b4e6ce9bb68692d29c",
+      "retrieved_utc": "2026-10-04",
+      "raw_pdf_in_git": false,
+      "exact_order_code_from_vendor_nomenclature": "LTO100F4R700FTE3",
+      "stock_verified": false
+    },
+    "yageo_rt": {
+      "url": "https://yageogroup.com/content/datasheet/asset/file/PYU-RT_1-TO-0-01_ROHS_L",
+      "retrieved_utc": "2026-10-04",
+      "basis": "Electrical specification table and ordering nomenclature: RT0603 25ppm/C 0.1% range <=1Mohm. Two 825k series preserve 1.65Mohm feedback. Exact ordering code candidate, no verified stock.",
+      "raw_pdf_in_git": false
+    }
+  },
+  "components": [
+    {
+      "ref": "U1",
+      "value": "TPS7A1650DGNR",
+      "kind": "ic",
+      "pins": {
+        "1": {
+          "name": "OUT",
+          "net": "BIAS_5V"
+        },
+        "2": {
+          "name": "DNC",
+          "net": null
+        },
+        "3": {
+          "name": "PG",
+          "net": "BIAS_PG"
+        },
+        "4": {
+          "name": "GND",
+          "net": "GND"
+        },
+        "5": {
+          "name": "EN",
+          "net": "BUS"
+        },
+        "6": {
+          "name": "NC",
+          "net": null
+        },
+        "7": {
+          "name": "DELAY",
+          "net": "BIAS_PG_DELAY"
+        },
+        "8": {
+          "name": "IN",
+          "net": "BUS"
+        },
+        "9": {
+          "name": "EP KiCad pad",
+          "net": "GND"
+        }
+      },
+      "source": "tps7a16",
+      "sku": "TPS7A1650DGNR",
+      "footprint_release": false,
+      "qualification": "PRIMARY_DATASHEET_BOUND_NOT_PURCHASE_RELEASE",
+      "footprint": "dgn8"
+    },
+    {
+      "ref": "U2",
+      "value": "REF5025IDR",
+      "kind": "ic",
+      "pins": {
+        "1": {
+          "name": "DNC",
+          "net": null
+        },
+        "2": {
+          "name": "VIN",
+          "net": "BIAS_5V"
+        },
+        "3": {
+          "name": "TEMP",
+          "net": null
+        },
+        "4": {
+          "name": "GND",
+          "net": "GND"
+        },
+        "5": {
+          "name": "TRIM_NR",
+          "net": null
+        },
+        "6": {
+          "name": "VOUT",
+          "net": "REF_2V5"
+        },
+        "7": {
+          "name": "NC",
+          "net": null
+        },
+        "8": {
+          "name": "DNC",
+          "net": null
+        }
+      },
+      "source": "ref50",
+      "sku": "REF5025IDR",
+      "footprint_release": false,
+      "qualification": "PRIMARY_DATASHEET_BOUND_NOT_PURCHASE_RELEASE",
+      "footprint": "soic8"
+    },
+    {
+      "ref": "U3",
+      "value": "TLV3201DBVR",
+      "kind": "ic",
+      "pins": {
+        "1": {
+          "name": "OUT",
+          "net": "BRAKE_REQUEST"
+        },
+        "2": {
+          "name": "GND",
+          "net": "GND"
+        },
+        "3": {
+          "name": "IN+",
+          "net": "SENSE"
+        },
+        "4": {
+          "name": "IN-",
+          "net": "REF_2V5"
+        },
+        "5": {
+          "name": "VCC",
+          "net": "BIAS_5V"
+        }
+      },
+      "source": "tlv3201",
+      "sku": "TLV3201DBVR",
+      "footprint_release": false,
+      "qualification": "PRIMARY_DATASHEET_BOUND_NOT_PURCHASE_RELEASE",
+      "footprint": "dbv5"
+    },
+    {
+      "ref": "U4",
+      "value": "UCC27511DBVR",
+      "kind": "ic",
+      "pins": {
+        "1": {
+          "name": "VDD",
+          "net": "BIAS_5V"
+        },
+        "2": {
+          "name": "OUTH",
+          "net": "GATE_DRIVE"
+        },
+        "3": {
+          "name": "OUTL",
+          "net": "GATE_DRIVE"
+        },
+        "4": {
+          "name": "GND",
+          "net": "GND"
+        },
+        "5": {
+          "name": "IN-",
+          "net": "GND"
+        },
+        "6": {
+          "name": "IN+",
+          "net": "BRAKE_REQUEST"
+        }
+      },
+      "source": "ucc27511",
+      "sku": "UCC27511DBVR",
+      "footprint_release": false,
+      "qualification": "PRIMARY_DATASHEET_BOUND_NOT_PURCHASE_RELEASE",
+      "footprint": "dbv6"
+    },
+    {
+      "ref": "R1",
+      "value": "100000 ohm",
+      "kind": "resistor",
+      "pins": {
+        "1": {
+          "name": "1",
+          "net": "BUS"
+        },
+        "2": {
+          "name": "2",
+          "net": "SENSE"
+        }
+      },
+      "source": "yageo_rt",
+      "sku": "RT0603BRD07100KL",
+      "footprint_release": false,
+      "qualification": "CATALOG_ORDER_CODE_CANDIDATE_NOT_STOCK_OR_PURCHASE_RELEASE",
+      "footprint": "r0603"
+    },
+    {
+      "ref": "R2",
+      "value": "10700 ohm",
+      "kind": "resistor",
+      "pins": {
+        "1": {
+          "name": "1",
+          "net": "SENSE"
+        },
+        "2": {
+          "name": "2",
+          "net": "GND"
+        }
+      },
+      "source": "yageo_rt",
+      "sku": "RT0603BRD0710K7L",
+      "footprint_release": false,
+      "qualification": "CATALOG_ORDER_CODE_CANDIDATE_NOT_STOCK_OR_PURCHASE_RELEASE",
+      "footprint": "r0603"
+    },
+    {
+      "ref": "R3",
+      "value": "825000 ohm",
+      "kind": "resistor",
+      "pins": {
+        "1": {
+          "name": "1",
+          "net": "BRAKE_REQUEST"
+        },
+        "2": {
+          "name": "2",
+          "net": "FEEDBACK_MID"
+        }
+      },
+      "source": "yageo_rt",
+      "sku": "RT0603BRD07825KL",
+      "footprint_release": false,
+      "qualification": "CATALOG_ORDER_CODE_CANDIDATE_NOT_STOCK_OR_PURCHASE_RELEASE",
+      "footprint": "r0603"
+    },
+    {
+      "ref": "R4",
+      "value": "10000 ohm",
+      "kind": "resistor",
+      "pins": {
+        "1": {
+          "name": "1",
+          "net": "BIAS_5V"
+        },
+        "2": {
+          "name": "2",
+          "net": "BIAS_PG"
+        }
+      },
+      "source": "yageo_rt",
+      "sku": "RT0603BRD0710KL",
+      "footprint_release": false,
+      "qualification": "CATALOG_ORDER_CODE_CANDIDATE_NOT_STOCK_OR_PURCHASE_RELEASE",
+      "footprint": "r0603"
+    },
+    {
+      "ref": "Q1",
+      "value": "BSC027N06LS5",
+      "kind": "mosfet",
+      "pins": {
+        "1": {
+          "name": "S",
+          "net": "GND"
+        },
+        "2": {
+          "name": "S",
+          "net": "GND"
+        },
+        "3": {
+          "name": "S",
+          "net": "GND"
+        },
+        "4": {
+          "name": "G",
+          "net": "GATE1"
+        },
+        "5": {
+          "name": "D",
+          "net": "SW_RETURN"
+        },
+        "6": {
+          "name": "D",
+          "net": "SW_RETURN"
+        },
+        "7": {
+          "name": "D",
+          "net": "SW_RETURN"
+        },
+        "8": {
+          "name": "D",
+          "net": "SW_RETURN"
+        }
+      },
+      "source": "bsc027n06ls5",
+      "sku": "BSC027N06LS5",
+      "footprint_release": false,
+      "qualification": "PRIMARY_DATASHEET_BOUND_NOT_PURCHASE_RELEASE",
+      "footprint": "tdson8"
+    },
+    {
+      "ref": "RG1",
+      "value": "2.2 ohm",
+      "kind": "resistor",
+      "pins": {
+        "1": {
+          "name": "1",
+          "net": "GATE_DRIVE"
+        },
+        "2": {
+          "name": "2",
+          "net": "GATE1"
+        }
+      },
+      "source": null,
+      "sku": "2.2 ohm 1%, exact ordering code pending",
+      "footprint_release": false,
+      "qualification": "VALUE_AND_ENVELOPE_ONLY_EXACT_SKU_PENDING",
+      "footprint": "r0603"
+    },
+    {
+      "ref": "RP1",
+      "value": "100000 ohm",
+      "kind": "resistor",
+      "pins": {
+        "1": {
+          "name": "1",
+          "net": "GATE1"
+        },
+        "2": {
+          "name": "2",
+          "net": "GND"
+        }
+      },
+      "source": null,
+      "sku": "100k 1%, exact ordering code pending",
+      "footprint_release": false,
+      "qualification": "VALUE_AND_ENVELOPE_ONLY_EXACT_SKU_PENDING",
+      "footprint": "r0603"
+    },
+    {
+      "ref": "Q2",
+      "value": "BSC027N06LS5",
+      "kind": "mosfet",
+      "pins": {
+        "1": {
+          "name": "S",
+          "net": "GND"
+        },
+        "2": {
+          "name": "S",
+          "net": "GND"
+        },
+        "3": {
+          "name": "S",
+          "net": "GND"
+        },
+        "4": {
+          "name": "G",
+          "net": "GATE2"
+        },
+        "5": {
+          "name": "D",
+          "net": "SW_RETURN"
+        },
+        "6": {
+          "name": "D",
+          "net": "SW_RETURN"
+        },
+        "7": {
+          "name": "D",
+          "net": "SW_RETURN"
+        },
+        "8": {
+          "name": "D",
+          "net": "SW_RETURN"
+        }
+      },
+      "source": "bsc027n06ls5",
+      "sku": "BSC027N06LS5",
+      "footprint_release": false,
+      "qualification": "PRIMARY_DATASHEET_BOUND_NOT_PURCHASE_RELEASE",
+      "footprint": "tdson8"
+    },
+    {
+      "ref": "RG2",
+      "value": "2.2 ohm",
+      "kind": "resistor",
+      "pins": {
+        "1": {
+          "name": "1",
+          "net": "GATE_DRIVE"
+        },
+        "2": {
+          "name": "2",
+          "net": "GATE2"
+        }
+      },
+      "source": null,
+      "sku": "2.2 ohm 1%, exact ordering code pending",
+      "footprint_release": false,
+      "qualification": "VALUE_AND_ENVELOPE_ONLY_EXACT_SKU_PENDING",
+      "footprint": "r0603"
+    },
+    {
+      "ref": "RP2",
+      "value": "100000 ohm",
+      "kind": "resistor",
+      "pins": {
+        "1": {
+          "name": "1",
+          "net": "GATE2"
+        },
+        "2": {
+          "name": "2",
+          "net": "GND"
+        }
+      },
+      "source": null,
+      "sku": "100k 1%, exact ordering code pending",
+      "footprint_release": false,
+      "qualification": "VALUE_AND_ENVELOPE_ONLY_EXACT_SKU_PENDING",
+      "footprint": "r0603"
+    },
+    {
+      "ref": "Q3",
+      "value": "BSC027N06LS5",
+      "kind": "mosfet",
+      "pins": {
+        "1": {
+          "name": "S",
+          "net": "GND"
+        },
+        "2": {
+          "name": "S",
+          "net": "GND"
+        },
+        "3": {
+          "name": "S",
+          "net": "GND"
+        },
+        "4": {
+          "name": "G",
+          "net": "GATE3"
+        },
+        "5": {
+          "name": "D",
+          "net": "SW_RETURN"
+        },
+        "6": {
+          "name": "D",
+          "net": "SW_RETURN"
+        },
+        "7": {
+          "name": "D",
+          "net": "SW_RETURN"
+        },
+        "8": {
+          "name": "D",
+          "net": "SW_RETURN"
+        }
+      },
+      "source": "bsc027n06ls5",
+      "sku": "BSC027N06LS5",
+      "footprint_release": false,
+      "qualification": "PRIMARY_DATASHEET_BOUND_NOT_PURCHASE_RELEASE",
+      "footprint": "tdson8"
+    },
+    {
+      "ref": "RG3",
+      "value": "2.2 ohm",
+      "kind": "resistor",
+      "pins": {
+        "1": {
+          "name": "1",
+          "net": "GATE_DRIVE"
+        },
+        "2": {
+          "name": "2",
+          "net": "GATE3"
+        }
+      },
+      "source": null,
+      "sku": "2.2 ohm 1%, exact ordering code pending",
+      "footprint_release": false,
+      "qualification": "VALUE_AND_ENVELOPE_ONLY_EXACT_SKU_PENDING",
+      "footprint": "r0603"
+    },
+    {
+      "ref": "RP3",
+      "value": "100000 ohm",
+      "kind": "resistor",
+      "pins": {
+        "1": {
+          "name": "1",
+          "net": "GATE3"
+        },
+        "2": {
+          "name": "2",
+          "net": "GND"
+        }
+      },
+      "source": null,
+      "sku": "100k 1%, exact ordering code pending",
+      "footprint_release": false,
+      "qualification": "VALUE_AND_ENVELOPE_ONLY_EXACT_SKU_PENDING",
+      "footprint": "r0603"
+    },
+    {
+      "ref": "Q4",
+      "value": "BSC027N06LS5",
+      "kind": "mosfet",
+      "pins": {
+        "1": {
+          "name": "S",
+          "net": "GND"
+        },
+        "2": {
+          "name": "S",
+          "net": "GND"
+        },
+        "3": {
+          "name": "S",
+          "net": "GND"
+        },
+        "4": {
+          "name": "G",
+          "net": "GATE4"
+        },
+        "5": {
+          "name": "D",
+          "net": "SW_RETURN"
+        },
+        "6": {
+          "name": "D",
+          "net": "SW_RETURN"
+        },
+        "7": {
+          "name": "D",
+          "net": "SW_RETURN"
+        },
+        "8": {
+          "name": "D",
+          "net": "SW_RETURN"
+        }
+      },
+      "source": "bsc027n06ls5",
+      "sku": "BSC027N06LS5",
+      "footprint_release": false,
+      "qualification": "PRIMARY_DATASHEET_BOUND_NOT_PURCHASE_RELEASE",
+      "footprint": "tdson8"
+    },
+    {
+      "ref": "RG4",
+      "value": "2.2 ohm",
+      "kind": "resistor",
+      "pins": {
+        "1": {
+          "name": "1",
+          "net": "GATE_DRIVE"
+        },
+        "2": {
+          "name": "2",
+          "net": "GATE4"
+        }
+      },
+      "source": null,
+      "sku": "2.2 ohm 1%, exact ordering code pending",
+      "footprint_release": false,
+      "qualification": "VALUE_AND_ENVELOPE_ONLY_EXACT_SKU_PENDING",
+      "footprint": "r0603"
+    },
+    {
+      "ref": "RP4",
+      "value": "100000 ohm",
+      "kind": "resistor",
+      "pins": {
+        "1": {
+          "name": "1",
+          "net": "GATE4"
+        },
+        "2": {
+          "name": "2",
+          "net": "GND"
+        }
+      },
+      "source": null,
+      "sku": "100k 1%, exact ordering code pending",
+      "footprint_release": false,
+      "qualification": "VALUE_AND_ENVELOPE_ONLY_EXACT_SKU_PENDING",
+      "footprint": "r0603"
+    },
+    {
+      "ref": "C1",
+      "value": "35SVPF120M",
+      "kind": "capacitor",
+      "pins": {
+        "1": {
+          "name": "+",
+          "net": "BUS"
+        },
+        "2": {
+          "name": "-",
+          "net": "GND"
+        }
+      },
+      "source": "svpf",
+      "sku": "35SVPF120M",
+      "footprint_release": false,
+      "qualification": "PRIMARY_DATASHEET_BOUND_NOT_PURCHASE_RELEASE",
+      "footprint": "f12"
+    },
+    {
+      "ref": "C2",
+      "value": "35SVPF120M",
+      "kind": "capacitor",
+      "pins": {
+        "1": {
+          "name": "+",
+          "net": "BUS"
+        },
+        "2": {
+          "name": "-",
+          "net": "GND"
+        }
+      },
+      "source": "svpf",
+      "sku": "35SVPF120M",
+      "footprint_release": false,
+      "qualification": "PRIMARY_DATASHEET_BOUND_NOT_PURCHASE_RELEASE",
+      "footprint": "f12"
+    },
+    {
+      "ref": "C3",
+      "value": "35SVPF120M",
+      "kind": "capacitor",
+      "pins": {
+        "1": {
+          "name": "+",
+          "net": "BUS"
+        },
+        "2": {
+          "name": "-",
+          "net": "GND"
+        }
+      },
+      "source": "svpf",
+      "sku": "35SVPF120M",
+      "footprint_release": false,
+      "qualification": "PRIMARY_DATASHEET_BOUND_NOT_PURCHASE_RELEASE",
+      "footprint": "f12"
+    },
+    {
+      "ref": "C4",
+      "value": "35SVPF120M",
+      "kind": "capacitor",
+      "pins": {
+        "1": {
+          "name": "+",
+          "net": "BUS"
+        },
+        "2": {
+          "name": "-",
+          "net": "GND"
+        }
+      },
+      "source": "svpf",
+      "sku": "35SVPF120M",
+      "footprint_release": false,
+      "qualification": "PRIMARY_DATASHEET_BOUND_NOT_PURCHASE_RELEASE",
+      "footprint": "f12"
+    },
+    {
+      "ref": "C5",
+      "value": "35SVPF120M",
+      "kind": "capacitor",
+      "pins": {
+        "1": {
+          "name": "+",
+          "net": "BUS"
+        },
+        "2": {
+          "name": "-",
+          "net": "GND"
+        }
+      },
+      "source": "svpf",
+      "sku": "35SVPF120M",
+      "footprint_release": false,
+      "qualification": "PRIMARY_DATASHEET_BOUND_NOT_PURCHASE_RELEASE",
+      "footprint": "f12"
+    },
+    {
+      "ref": "C6",
+      "value": "35SVPF120M",
+      "kind": "capacitor",
+      "pins": {
+        "1": {
+          "name": "+",
+          "net": "BUS"
+        },
+        "2": {
+          "name": "-",
+          "net": "GND"
+        }
+      },
+      "source": "svpf",
+      "sku": "35SVPF120M",
+      "footprint_release": false,
+      "qualification": "PRIMARY_DATASHEET_BOUND_NOT_PURCHASE_RELEASE",
+      "footprint": "f12"
+    },
+    {
+      "ref": "C7",
+      "value": "35SVPF120M",
+      "kind": "capacitor",
+      "pins": {
+        "1": {
+          "name": "+",
+          "net": "BUS"
+        },
+        "2": {
+          "name": "-",
+          "net": "GND"
+        }
+      },
+      "source": "svpf",
+      "sku": "35SVPF120M",
+      "footprint_release": false,
+      "qualification": "PRIMARY_DATASHEET_BOUND_NOT_PURCHASE_RELEASE",
+      "footprint": "f12"
+    },
+    {
+      "ref": "C8",
+      "value": "35SVPF120M",
+      "kind": "capacitor",
+      "pins": {
+        "1": {
+          "name": "+",
+          "net": "BUS"
+        },
+        "2": {
+          "name": "-",
+          "net": "GND"
+        }
+      },
+      "source": "svpf",
+      "sku": "35SVPF120M",
+      "footprint_release": false,
+      "qualification": "PRIMARY_DATASHEET_BOUND_NOT_PURCHASE_RELEASE",
+      "footprint": "f12"
+    },
+    {
+      "ref": "C11",
+      "value": "10 uF",
+      "kind": "capacitor",
+      "pins": {
+        "1": {
+          "name": "1",
+          "net": "BUS"
+        },
+        "2": {
+          "name": "2",
+          "net": "GND"
+        }
+      },
+      "source": null,
+      "sku": "ceramic, voltage and DC bias qualification pending",
+      "footprint_release": false,
+      "qualification": "VALUE_AND_ENVELOPE_ONLY_EXACT_SKU_PENDING",
+      "footprint": "c1210"
+    },
+    {
+      "ref": "C12",
+      "value": "10 uF",
+      "kind": "capacitor",
+      "pins": {
+        "1": {
+          "name": "1",
+          "net": "BIAS_5V"
+        },
+        "2": {
+          "name": "2",
+          "net": "GND"
+        }
+      },
+      "source": null,
+      "sku": "ceramic, voltage and DC bias qualification pending",
+      "footprint_release": false,
+      "qualification": "VALUE_AND_ENVELOPE_ONLY_EXACT_SKU_PENDING",
+      "footprint": "c1206"
+    },
+    {
+      "ref": "C13",
+      "value": "0.1 uF",
+      "kind": "capacitor",
+      "pins": {
+        "1": {
+          "name": "1",
+          "net": "BIAS_5V"
+        },
+        "2": {
+          "name": "2",
+          "net": "GND"
+        }
+      },
+      "source": null,
+      "sku": "ceramic, voltage and DC bias qualification pending",
+      "footprint_release": false,
+      "qualification": "VALUE_AND_ENVELOPE_ONLY_EXACT_SKU_PENDING",
+      "footprint": "c0603"
+    },
+    {
+      "ref": "C14",
+      "value": "1 uF",
+      "kind": "capacitor",
+      "pins": {
+        "1": {
+          "name": "1",
+          "net": "REF_2V5"
+        },
+        "2": {
+          "name": "2",
+          "net": "GND"
+        }
+      },
+      "source": null,
+      "sku": "ceramic, voltage and DC bias qualification pending",
+      "footprint_release": false,
+      "qualification": "VALUE_AND_ENVELOPE_ONLY_EXACT_SKU_PENDING",
+      "footprint": "c0805"
+    },
+    {
+      "ref": "C15",
+      "value": "0.0001 uF",
+      "kind": "capacitor",
+      "pins": {
+        "1": {
+          "name": "1",
+          "net": "SENSE"
+        },
+        "2": {
+          "name": "2",
+          "net": "GND"
+        }
+      },
+      "source": null,
+      "sku": "ceramic, voltage and DC bias qualification pending",
+      "footprint_release": false,
+      "qualification": "VALUE_AND_ENVELOPE_ONLY_EXACT_SKU_PENDING",
+      "footprint": "c0603"
+    },
+    {
+      "ref": "J1",
+      "value": "protected motor bus solder pads",
+      "kind": "connector",
+      "pins": {
+        "1": {
+          "name": "+",
+          "net": "BUS"
+        },
+        "2": {
+          "name": "-",
+          "net": "GND"
+        }
+      },
+      "source": null,
+      "sku": "custom PCB solder terminals; current, strain relief and soldering qualification pending",
+      "footprint_release": false,
+      "qualification": "CUSTOM_TERMINAL_CANDIDATE_NOT_CURRENT_RELEASE",
+      "footprint": "power_terminal"
+    },
+    {
+      "ref": "J2",
+      "value": "brake resistor solder pads",
+      "kind": "connector",
+      "pins": {
+        "1": {
+          "name": "+",
+          "net": "BUS"
+        },
+        "2": {
+          "name": "return",
+          "net": "SW_RETURN"
+        }
+      },
+      "source": null,
+      "sku": "custom PCB solder terminals; current, strain relief and soldering qualification pending",
+      "footprint_release": false,
+      "qualification": "CUSTOM_TERMINAL_CANDIDATE_NOT_CURRENT_RELEASE",
+      "footprint": "power_terminal"
+    },
+    {
+      "ref": "J3",
+      "value": "bias ready monitor",
+      "kind": "connector",
+      "pins": {
+        "1": {
+          "name": "PG",
+          "net": "BIAS_PG"
+        },
+        "2": {
+          "name": "GND",
+          "net": "GND"
+        }
+      },
+      "source": null,
+      "sku": "header pending; monitor only, not brake control",
+      "footprint_release": false,
+      "qualification": "VALUE_AND_ENVELOPE_ONLY_EXACT_SKU_PENDING",
+      "footprint": "monitor_header"
+    },
+    {
+      "ref": "RD1",
+      "value": "LTO100F4R700FTE3",
+      "kind": "external_resistor",
+      "pins": {
+        "1": {
+          "name": "1",
+          "net": "BUS"
+        },
+        "2": {
+          "name": "2",
+          "net": "SW_RETURN"
+        }
+      },
+      "source": "resistor",
+      "sku": "LTO100F4R700FTE3",
+      "footprint_release": false,
+      "qualification": "PRIMARY_DATASHEET_BOUND_NOT_PURCHASE_RELEASE"
+    },
+    {
+      "ref": "RD2",
+      "value": "LTO100F4R700FTE3",
+      "kind": "external_resistor",
+      "pins": {
+        "1": {
+          "name": "1",
+          "net": "BUS"
+        },
+        "2": {
+          "name": "2",
+          "net": "SW_RETURN"
+        }
+      },
+      "source": "resistor",
+      "sku": "LTO100F4R700FTE3",
+      "footprint_release": false,
+      "qualification": "PRIMARY_DATASHEET_BOUND_NOT_PURCHASE_RELEASE"
+    },
+    {
+      "ref": "RD3",
+      "value": "LTO100F4R700FTE3",
+      "kind": "external_resistor",
+      "pins": {
+        "1": {
+          "name": "1",
+          "net": "BUS"
+        },
+        "2": {
+          "name": "2",
+          "net": "SW_RETURN"
+        }
+      },
+      "source": "resistor",
+      "sku": "LTO100F4R700FTE3",
+      "footprint_release": false,
+      "qualification": "PRIMARY_DATASHEET_BOUND_NOT_PURCHASE_RELEASE"
+    },
+    {
+      "ref": "RD4",
+      "value": "LTO100F4R700FTE3",
+      "kind": "external_resistor",
+      "pins": {
+        "1": {
+          "name": "1",
+          "net": "BUS"
+        },
+        "2": {
+          "name": "2",
+          "net": "SW_RETURN"
+        }
+      },
+      "source": "resistor",
+      "sku": "LTO100F4R700FTE3",
+      "footprint_release": false,
+      "qualification": "PRIMARY_DATASHEET_BOUND_NOT_PURCHASE_RELEASE"
+    },
+    {
+      "ref": "RD5",
+      "value": "LTO100F4R700FTE3",
+      "kind": "external_resistor",
+      "pins": {
+        "1": {
+          "name": "1",
+          "net": "BUS"
+        },
+        "2": {
+          "name": "2",
+          "net": "SW_RETURN"
+        }
+      },
+      "source": "resistor",
+      "sku": "LTO100F4R700FTE3",
+      "footprint_release": false,
+      "qualification": "PRIMARY_DATASHEET_BOUND_NOT_PURCHASE_RELEASE"
+    },
+    {
+      "ref": "RD6",
+      "value": "LTO100F4R700FTE3",
+      "kind": "external_resistor",
+      "pins": {
+        "1": {
+          "name": "1",
+          "net": "BUS"
+        },
+        "2": {
+          "name": "2",
+          "net": "SW_RETURN"
+        }
+      },
+      "source": "resistor",
+      "sku": "LTO100F4R700FTE3",
+      "footprint_release": false,
+      "qualification": "PRIMARY_DATASHEET_BOUND_NOT_PURCHASE_RELEASE"
+    },
+    {
+      "ref": "RD7",
+      "value": "LTO100F4R700FTE3",
+      "kind": "external_resistor",
+      "pins": {
+        "1": {
+          "name": "1",
+          "net": "BUS"
+        },
+        "2": {
+          "name": "2",
+          "net": "SW_RETURN"
+        }
+      },
+      "source": "resistor",
+      "sku": "LTO100F4R700FTE3",
+      "footprint_release": false,
+      "qualification": "PRIMARY_DATASHEET_BOUND_NOT_PURCHASE_RELEASE"
+    },
+    {
+      "ref": "RD8",
+      "value": "LTO100F4R700FTE3",
+      "kind": "external_resistor",
+      "pins": {
+        "1": {
+          "name": "1",
+          "net": "BUS"
+        },
+        "2": {
+          "name": "2",
+          "net": "SW_RETURN"
+        }
+      },
+      "source": "resistor",
+      "sku": "LTO100F4R700FTE3",
+      "footprint_release": false,
+      "qualification": "PRIMARY_DATASHEET_BOUND_NOT_PURCHASE_RELEASE"
+    },
+    {
+      "ref": "C9",
+      "value": "35SVPF120M",
+      "kind": "capacitor",
+      "pins": {
+        "1": {
+          "name": "+",
+          "net": "BUS"
+        },
+        "2": {
+          "name": "-",
+          "net": "GND"
+        }
+      },
+      "source": "svpf",
+      "sku": "35SVPF120M",
+      "footprint_release": false,
+      "qualification": "PRIMARY_DATASHEET_BOUND_NOT_PURCHASE_RELEASE",
+      "footprint": "f12"
+    },
+    {
+      "ref": "C10",
+      "value": "35SVPF120M",
+      "kind": "capacitor",
+      "pins": {
+        "1": {
+          "name": "+",
+          "net": "BUS"
+        },
+        "2": {
+          "name": "-",
+          "net": "GND"
+        }
+      },
+      "source": "svpf",
+      "sku": "35SVPF120M",
+      "footprint_release": false,
+      "qualification": "PRIMARY_DATASHEET_BOUND_NOT_PURCHASE_RELEASE",
+      "footprint": "f12"
+    },
+    {
+      "ref": "R31",
+      "value": "825000 ohm",
+      "kind": "resistor",
+      "pins": {
+        "1": {
+          "name": "1",
+          "net": "FEEDBACK_MID"
+        },
+        "2": {
+          "name": "2",
+          "net": "SENSE"
+        }
+      },
+      "source": "yageo_rt",
+      "sku": "RT0603BRD07825KL",
+      "footprint": "r0603",
+      "footprint_release": false,
+      "qualification": "CATALOG_ORDER_CODE_CANDIDATE_NOT_STOCK_OR_PURCHASE_RELEASE"
+    },
+    {
+      "ref": "C16",
+      "value": "1 uF",
+      "kind": "capacitor",
+      "pins": {
+        "1": {
+          "name": "1",
+          "net": "BIAS_5V"
+        },
+        "2": {
+          "name": "2",
+          "net": "GND"
+        }
+      },
+      "source": null,
+      "sku": "Exact MLCC SKU and effective capacitance pending",
+      "footprint": "c0805",
+      "footprint_release": false,
+      "qualification": "VALUE_AND_ENVELOPE_ONLY_EXACT_SKU_PENDING"
+    },
+    {
+      "ref": "C17",
+      "value": "1 uF",
+      "kind": "capacitor",
+      "pins": {
+        "1": {
+          "name": "1",
+          "net": "BIAS_5V"
+        },
+        "2": {
+          "name": "2",
+          "net": "GND"
+        }
+      },
+      "source": null,
+      "sku": "Exact MLCC SKU and effective capacitance pending",
+      "footprint": "c0805",
+      "footprint_release": false,
+      "qualification": "VALUE_AND_ENVELOPE_ONLY_EXACT_SKU_PENDING"
+    },
+    {
+      "ref": "C18",
+      "value": "0.1 uF",
+      "kind": "capacitor",
+      "pins": {
+        "1": {
+          "name": "1",
+          "net": "BIAS_5V"
+        },
+        "2": {
+          "name": "2",
+          "net": "GND"
+        }
+      },
+      "source": null,
+      "sku": "Exact MLCC SKU and effective capacitance pending",
+      "footprint": "c0603",
+      "footprint_release": false,
+      "qualification": "VALUE_AND_ENVELOPE_ONLY_EXACT_SKU_PENDING"
+    },
+    {
+      "ref": "C19",
+      "value": "0.1 uF",
+      "kind": "capacitor",
+      "pins": {
+        "1": {
+          "name": "1",
+          "net": "BIAS_5V"
+        },
+        "2": {
+          "name": "2",
+          "net": "GND"
+        }
+      },
+      "source": null,
+      "sku": "Exact MLCC SKU and effective capacitance pending",
+      "footprint": "c0603",
+      "footprint_release": false,
+      "qualification": "VALUE_AND_ENVELOPE_ONLY_EXACT_SKU_PENDING"
+    },
+    {
+      "ref": "C20",
+      "value": "0.01 uF",
+      "kind": "capacitor",
+      "pins": {
+        "1": {
+          "name": "1",
+          "net": "BIAS_PG_DELAY"
+        },
+        "2": {
+          "name": "2",
+          "net": "GND"
+        }
+      },
+      "source": null,
+      "sku": "Exact MLCC SKU and effective capacitance pending",
+      "footprint": "c0603",
+      "footprint_release": false,
+      "qualification": "VALUE_AND_ENVELOPE_ONLY_EXACT_SKU_PENDING"
+    }
+  ],
+  "threshold": {
+    "top_ohm": 100000,
+    "bottom_ohm": 10700,
+    "feedback_ohm": 1650000,
+    "resistor_initial_tolerance_fraction": 0.001,
+    "resistor_tcr_per_k": 2.5e-05,
+    "temperature_delta_max_k": 100,
+    "reference_v": 2.5,
+    "reference_initial_error_fraction": 0.0005,
+    "reference_tcr_per_k": 3e-06,
+    "reference_post_reflow_allowance_fraction": 0.001,
+    "post_reflow_allowance_is_vendor_guarantee": false,
+    "comparator_offset_max_v": 0.004,
+    "comparator_intrinsic_hysteresis_allowance_v": 0.005,
+    "intrinsic_hysteresis_allowance_is_vendor_guarantee": false,
+    "comparator_bias_max_a": 5e-09,
+    "logic_v_range": [
+      4.9,
+      5.1
+    ],
+    "output_low_max_v": 0.225,
+    "output_high_drop_max_v": 0.17,
+    "sense_cap_f": 1e-10,
+    "switching_delay_data": {
+      "comparator_max_s": 5.5e-08,
+      "comparator_required_input_overdrive_v": 0.02,
+      "comparator_test_vcc_v": 5,
+      "comparator_test_load_f": 1.5e-11,
+      "driver_max_s": 2.6e-08,
+      "driver_test_load_f": 1.8e-09,
+      "actual_comparator_driver_load_qualified": false
+    },
+    "full_path_response_budget_s_assumed": 5e-06
+  },
+  "power_stage": {
+    "mosfet_parallel_count": 4,
+    "mosfet_vds_v": 60,
+    "mosfet_rds_at_4_5v_max_ohm": 0.0039,
+    "mosfet_gate_charge_at_4_5v_max_c": 3e-08,
+    "mosfet_ciss_max_f": 4.4e-09,
+    "mosfet_hot_resistance_multiplier_assumed": 1.8,
+    "mosfet_rthja_k_per_w_at_vendor_test_geometry": 50,
+    "vendor_copper_area_cm2_each": 6,
+    "dump_resistors_parallel": 8,
+    "dump_resistance_each_ohm": 4.7,
+    "dump_resistance_tolerance_fraction": 0.01,
+    "dump_resistor_rating_each_w": 100,
+    "rating_requires_specified_heatsink": true,
+    "cap_count": 10,
+    "cap_each_f": 0.00012,
+    "cap_tolerance_fraction": 0.2,
+    "cap_esr_max_ohm_at_100khz": 0.018,
+    "cap_ripple_a_at_100khz_105c": 4.4,
+    "ripple_frequency_derating_qualification": false,
+    "cap_voltage_rating_v": 35,
+    "cap_dimension_diameter_height_mm": [
+      10,
+      12.6
+    ],
+    "dump_resistor_tcr_per_k": 0.00035,
+    "dump_resistor_element_delta_max_k": 150,
+    "dump_resistor_rth_jc_k_per_w": 1.5,
+    "dump_resistor_max_element_c": 175,
+    "dump_resistor_each_mass_upper_kg": 0.0035,
+    "cap_ripple_factor_10_to_100khz": 0.7,
+    "cap_ripple_frequency_source_page": 33
+  },
+  "mechanical_candidate": {
+    "pcb_width_length_thickness_mm": [
+      50,
+      80,
+      1.6
+    ],
+    "layout_is_completed": false,
+    "thermal_copper_and_clearance_pass": false,
+    "dump_resistor_each_xyz_mm": [
+      15.76,
+      20.7,
+      5.0
+    ],
+    "pcb_and_components_mass_kg": null,
+    "resistor_and_heatsink_mass_kg": null,
+    "source_assembly_mass_changed": false,
+    "flat_heat_spreader_candidate_xyz_mm": [
+      120,
+      80,
+      6
+    ],
+    "heat_spreader_density_kg_m3": 2700,
+    "airflow_or_heat_sink_resistance_qualified": false,
+    "existing_reserved_mass_items_kg": {
+      "main_protection": 0.093,
+      "brake_hardware_extra_allocation": 0.12
+    },
+    "replace_only_after_complete_same_version_inventory": true
+  },
+  "remaining_system_gates": [
+    "PCB land peer review, manufacturing process, copper/current/temperature, gate loading and electrical-rule checks; native signal connectivity and DRC completed",
+    "combined driver threshold/delay across actual bias supply and soldered reference",
+    "capacitor ripple frequency, lifetime and sharing",
+    "brake resistor pulse/average heat and cooling",
+    "supply reverse-block, inrush, independent disconnect and watchdog",
+    "cold-start regeneration, output short/open and hardware faults",
+    "physical packing, actual mass and same-version whole-robot static and dynamic regression",
+    "capacitor minimum retention over rated endurance; current comparison covers initial tolerance only"
+  ],
+  "hardware_enable_release": false,
+  "source_si_changed": false,
+  "frozen_003_changed": false,
+  "source_circuit": "configs/absolute_brake_chopper_candidate.json",
+  "source_circuit_sha256": "5bae7c6fbbc4fe048d8f176898d3fc109da8089b2e07cc7e695a4eaa9fc94efb",
+  "source_packaging": "configs/brake_packaging_candidate.json",
+  "source_packaging_sha256": "8ee973ce81f9477258899501f3f4f3fb85c4a632f09466bf961fd972dad06308",
+  "footprints": {
+    "dgn8": {
+      "name": "tps7a1650_dgn0008c",
+      "body_bounds_mm": [
+        -1.5,
+        -1.5,
+        1.5,
+        1.5
+      ],
+      "courtyard_bounds_mm": [
+        -3.15,
+        -1.8,
+        3.15,
+        1.8
+      ],
+      "pads": [
+        {
+          "number": "1",
+          "at_mm": [
+            -2.2,
+            -0.975
+          ],
+          "size_mm": [
+            1.4,
+            0.45
+          ]
+        },
+        {
+          "number": "2",
+          "at_mm": [
+            -2.2,
+            -0.32499999999999996
+          ],
+          "size_mm": [
+            1.4,
+            0.45
+          ]
+        },
+        {
+          "number": "3",
+          "at_mm": [
+            -2.2,
+            0.32500000000000007
+          ],
+          "size_mm": [
+            1.4,
+            0.45
+          ]
+        },
+        {
+          "number": "4",
+          "at_mm": [
+            -2.2,
+            0.9750000000000002
+          ],
+          "size_mm": [
+            1.4,
+            0.45
+          ]
+        },
+        {
+          "number": "8",
+          "at_mm": [
+            2.2,
+            -0.975
+          ],
+          "size_mm": [
+            1.4,
+            0.45
+          ]
+        },
+        {
+          "number": "7",
+          "at_mm": [
+            2.2,
+            -0.32499999999999996
+          ],
+          "size_mm": [
+            1.4,
+            0.45
+          ]
+        },
+        {
+          "number": "6",
+          "at_mm": [
+            2.2,
+            0.32500000000000007
+          ],
+          "size_mm": [
+            1.4,
+            0.45
+          ]
+        },
+        {
+          "number": "5",
+          "at_mm": [
+            2.2,
+            0.9750000000000002
+          ],
+          "size_mm": [
+            1.4,
+            0.45
+          ]
+        },
+        {
+          "number": "9",
+          "at_mm": [
+            0,
+            0
+          ],
+          "size_mm": [
+            1.6,
+            1.92
+          ],
+          "no_paste": true
+        }
+      ],
+      "basis": "TI DGN0008C example land; PDF page35",
+      "max_height_mm": 1.1,
+      "paste_windows": [
+        {
+          "at_mm": [
+            0,
+            -0.45
+          ],
+          "size_mm": [
+            1.3,
+            0.7
+          ]
+        },
+        {
+          "at_mm": [
+            0,
+            0.45
+          ],
+          "size_mm": [
+            1.3,
+            0.7
+          ]
+        }
+      ]
+    },
+    "soic8": {
+      "name": "ref5025_d0008a",
+      "body_bounds_mm": [
+        -1.95,
+        -2.45,
+        1.95,
+        2.45
+      ],
+      "courtyard_bounds_mm": [
+        -3.725,
+        -2.7,
+        3.725,
+        2.7
+      ],
+      "pads": [
+        {
+          "number": "1",
+          "at_mm": [
+            -2.7,
+            -1.905
+          ],
+          "size_mm": [
+            1.55,
+            0.6
+          ]
+        },
+        {
+          "number": "2",
+          "at_mm": [
+            -2.7,
+            -0.635
+          ],
+          "size_mm": [
+            1.55,
+            0.6
+          ]
+        },
+        {
+          "number": "3",
+          "at_mm": [
+            -2.7,
+            0.635
+          ],
+          "size_mm": [
+            1.55,
+            0.6
+          ]
+        },
+        {
+          "number": "4",
+          "at_mm": [
+            -2.7,
+            1.905
+          ],
+          "size_mm": [
+            1.55,
+            0.6
+          ]
+        },
+        {
+          "number": "8",
+          "at_mm": [
+            2.7,
+            -1.905
+          ],
+          "size_mm": [
+            1.55,
+            0.6
+          ]
+        },
+        {
+          "number": "7",
+          "at_mm": [
+            2.7,
+            -0.635
+          ],
+          "size_mm": [
+            1.55,
+            0.6
+          ]
+        },
+        {
+          "number": "6",
+          "at_mm": [
+            2.7,
+            0.635
+          ],
+          "size_mm": [
+            1.55,
+            0.6
+          ]
+        },
+        {
+          "number": "5",
+          "at_mm": [
+            2.7,
+            1.905
+          ],
+          "size_mm": [
+            1.55,
+            0.6
+          ]
+        }
+      ],
+      "basis": "TI D0008A example land; PDF page47",
+      "max_height_mm": 1.75
+    },
+    "dbv5": {
+      "name": "ti_dbv0005a",
+      "body_bounds_mm": [
+        -0.875,
+        -1.5,
+        0.875,
+        1.5
+      ],
+      "courtyard_bounds_mm": [
+        -2.1,
+        -1.75,
+        2.1,
+        1.75
+      ],
+      "pads": [
+        {
+          "number": "1",
+          "at_mm": [
+            -1.3,
+            -0.95
+          ],
+          "size_mm": [
+            1.1,
+            0.6
+          ]
+        },
+        {
+          "number": "2",
+          "at_mm": [
+            -1.3,
+            0.0
+          ],
+          "size_mm": [
+            1.1,
+            0.6
+          ]
+        },
+        {
+          "number": "3",
+          "at_mm": [
+            -1.3,
+            0.95
+          ],
+          "size_mm": [
+            1.1,
+            0.6
+          ]
+        },
+        {
+          "number": "5",
+          "at_mm": [
+            1.3,
+            -0.95
+          ],
+          "size_mm": [
+            1.1,
+            0.6
+          ]
+        },
+        {
+          "number": "4",
+          "at_mm": [
+            1.3,
+            0.95
+          ],
+          "size_mm": [
+            1.1,
+            0.6
+          ]
+        }
+      ],
+      "basis": "TI DBV5 example land; comparator PDF35 / driver PDF38",
+      "max_height_mm": 1.45
+    },
+    "dbv6": {
+      "name": "ti_dbv0006a",
+      "body_bounds_mm": [
+        -0.875,
+        -1.5,
+        0.875,
+        1.5
+      ],
+      "courtyard_bounds_mm": [
+        -2.1,
+        -1.75,
+        2.1,
+        1.75
+      ],
+      "pads": [
+        {
+          "number": "1",
+          "at_mm": [
+            -1.3,
+            -0.95
+          ],
+          "size_mm": [
+            1.1,
+            0.6
+          ]
+        },
+        {
+          "number": "2",
+          "at_mm": [
+            -1.3,
+            0.0
+          ],
+          "size_mm": [
+            1.1,
+            0.6
+          ]
+        },
+        {
+          "number": "3",
+          "at_mm": [
+            -1.3,
+            0.95
+          ],
+          "size_mm": [
+            1.1,
+            0.6
+          ]
+        },
+        {
+          "number": "6",
+          "at_mm": [
+            1.3,
+            -0.95
+          ],
+          "size_mm": [
+            1.1,
+            0.6
+          ]
+        },
+        {
+          "number": "5",
+          "at_mm": [
+            1.3,
+            0
+          ],
+          "size_mm": [
+            1.1,
+            0.6
+          ]
+        },
+        {
+          "number": "4",
+          "at_mm": [
+            1.3,
+            0.95
+          ],
+          "size_mm": [
+            1.1,
+            0.6
+          ]
+        }
+      ],
+      "basis": "TI DBV6 example land; comparator PDF35 / driver PDF38",
+      "max_height_mm": 1.45
+    },
+    "tdson8": {
+      "name": "bsc027n06ls5_pg_tdson8",
+      "body_bounds_mm": [
+        -2.675,
+        -3.21,
+        2.675,
+        3.21
+      ],
+      "courtyard_bounds_mm": [
+        -2.925,
+        -3.65,
+        2.925,
+        3.65
+      ],
+      "pads": [
+        {
+          "number": "1",
+          "at_mm": [
+            -1.905,
+            2.8625
+          ],
+          "size_mm": [
+            0.6,
+            0.925
+          ]
+        },
+        {
+          "number": "2",
+          "at_mm": [
+            -0.635,
+            2.8625
+          ],
+          "size_mm": [
+            0.6,
+            0.925
+          ]
+        },
+        {
+          "number": "3",
+          "at_mm": [
+            0.635,
+            2.8625
+          ],
+          "size_mm": [
+            0.6,
+            0.925
+          ]
+        },
+        {
+          "number": "4",
+          "at_mm": [
+            1.905,
+            2.8625
+          ],
+          "size_mm": [
+            0.6,
+            0.925
+          ]
+        },
+        {
+          "number": "8",
+          "at_mm": [
+            -1.905,
+            -2.925
+          ],
+          "size_mm": [
+            0.6,
+            0.8
+          ]
+        },
+        {
+          "number": "7",
+          "at_mm": [
+            -0.635,
+            -2.925
+          ],
+          "size_mm": [
+            0.6,
+            0.8
+          ]
+        },
+        {
+          "number": "6",
+          "at_mm": [
+            0.635,
+            -2.925
+          ],
+          "size_mm": [
+            0.6,
+            0.8
+          ]
+        },
+        {
+          "number": "5",
+          "at_mm": [
+            1.905,
+            -2.925
+          ],
+          "size_mm": [
+            0.6,
+            0.8
+          ]
+        },
+        {
+          "number": "8",
+          "at_mm": [
+            0,
+            -0.8975
+          ],
+          "size_mm": [
+            4.44,
+            4.055
+          ],
+          "no_paste": true
+        }
+      ],
+      "basis": "Infineon BSC027N06LS5 rev2.3 PDF11 figure2; bulk width reconstructed from drawing; independent review pending",
+      "max_height_mm": 1.2,
+      "paste_windows": [
+        {
+          "at_mm": [
+            -0.85,
+            -1.6
+          ],
+          "size_mm": [
+            1.5,
+            1.5
+          ]
+        },
+        {
+          "at_mm": [
+            -0.85,
+            0.1
+          ],
+          "size_mm": [
+            1.5,
+            1.5
+          ]
+        },
+        {
+          "at_mm": [
+            0.85,
+            -1.6
+          ],
+          "size_mm": [
+            1.5,
+            1.5
+          ]
+        },
+        {
+          "at_mm": [
+            0.85,
+            0.1
+          ],
+          "size_mm": [
+            1.5,
+            1.5
+          ]
+        }
+      ]
+    },
+    "f12": {
+      "name": "panasonic_f12",
+      "body_bounds_mm": [
+        -5.25,
+        -5.25,
+        5.25,
+        5.25
+      ],
+      "courtyard_bounds_mm": [
+        -6.8,
+        -5.5,
+        6.8,
+        5.5
+      ],
+      "pads": [
+        {
+          "number": "1",
+          "at_mm": [
+            -4.35,
+            0
+          ],
+          "size_mm": [
+            4.4,
+            1.9
+          ]
+        },
+        {
+          "number": "2",
+          "at_mm": [
+            4.35,
+            0
+          ],
+          "size_mm": [
+            4.4,
+            1.9
+          ]
+        }
+      ],
+      "basis": "Panasonic catalog PDF19 land a4.3/b13.1/c1.9; PDF34 body W/H10.3+/-0.2 L12.6+0.1/-0.4",
+      "max_height_mm": 12.7
+    },
+    "r0603": {
+      "name": "r0603",
+      "body_bounds_mm": [
+        -0.8,
+        -0.4,
+        0.8,
+        0.4
+      ],
+      "courtyard_bounds_mm": [
+        -1.65,
+        -0.7,
+        1.65,
+        0.7
+      ],
+      "pads": [
+        {
+          "number": "1",
+          "at_mm": [
+            -0.825,
+            0
+          ],
+          "size_mm": [
+            0.8,
+            0.9
+          ]
+        },
+        {
+          "number": "2",
+          "at_mm": [
+            0.825,
+            0
+          ],
+          "size_mm": [
+            0.8,
+            0.9
+          ]
+        }
+      ],
+      "basis": "Engineering land candidate; exact passive package/SKU validation pending",
+      "max_height_mm": 0.55
+    },
+    "c0603": {
+      "name": "c0603",
+      "body_bounds_mm": [
+        -0.8,
+        -0.4,
+        0.8,
+        0.4
+      ],
+      "courtyard_bounds_mm": [
+        -1.65,
+        -0.8,
+        1.65,
+        0.8
+      ],
+      "pads": [
+        {
+          "number": "1",
+          "at_mm": [
+            -0.825,
+            0
+          ],
+          "size_mm": [
+            0.8,
+            1.0
+          ]
+        },
+        {
+          "number": "2",
+          "at_mm": [
+            0.825,
+            0
+          ],
+          "size_mm": [
+            0.8,
+            1.0
+          ]
+        }
+      ],
+      "basis": "Engineering land candidate; exact passive package/SKU validation pending",
+      "max_height_mm": 0.9
+    },
+    "c0805": {
+      "name": "c0805",
+      "body_bounds_mm": [
+        -1,
+        -0.625,
+        1,
+        0.625
+      ],
+      "courtyard_bounds_mm": [
+        -2.05,
+        -1.025,
+        2.05,
+        1.025
+      ],
+      "pads": [
+        {
+          "number": "1",
+          "at_mm": [
+            -1,
+            0
+          ],
+          "size_mm": [
+            1,
+            1.45
+          ]
+        },
+        {
+          "number": "2",
+          "at_mm": [
+            1,
+            0
+          ],
+          "size_mm": [
+            1,
+            1.45
+          ]
+        }
+      ],
+      "basis": "Engineering land candidate; exact passive package/SKU validation pending",
+      "max_height_mm": 1.45
+    },
+    "c1206": {
+      "name": "c1206",
+      "body_bounds_mm": [
+        -1.6,
+        -0.8,
+        1.6,
+        0.8
+      ],
+      "courtyard_bounds_mm": [
+        -2.575,
+        -1.2,
+        2.575,
+        1.2
+      ],
+      "pads": [
+        {
+          "number": "1",
+          "at_mm": [
+            -1.475,
+            0
+          ],
+          "size_mm": [
+            1.55,
+            1.6
+          ]
+        },
+        {
+          "number": "2",
+          "at_mm": [
+            1.475,
+            0
+          ],
+          "size_mm": [
+            1.55,
+            1.6
+          ]
+        }
+      ],
+      "basis": "Engineering land candidate; exact passive package/SKU validation pending",
+      "max_height_mm": 1.8
+    },
+    "c1210": {
+      "name": "c1210",
+      "body_bounds_mm": [
+        -1.6,
+        -1.25,
+        1.6,
+        1.25
+      ],
+      "courtyard_bounds_mm": [
+        -2.575,
+        -1.65,
+        2.575,
+        1.65
+      ],
+      "pads": [
+        {
+          "number": "1",
+          "at_mm": [
+            -1.5,
+            0
+          ],
+          "size_mm": [
+            1.55,
+            2.8
+          ]
+        },
+        {
+          "number": "2",
+          "at_mm": [
+            1.5,
+            0
+          ],
+          "size_mm": [
+            1.55,
+            2.8
+          ]
+        }
+      ],
+      "basis": "Engineering land candidate; exact passive package/SKU validation pending",
+      "max_height_mm": 2.7
+    },
+    "power_terminal": {
+      "name": "paired_wire_terminal_7mm",
+      "body_bounds_mm": [
+        -2.5,
+        -2.5,
+        2.5,
+        9.5
+      ],
+      "courtyard_bounds_mm": [
+        -2.75,
+        -2.75,
+        2.75,
+        9.75
+      ],
+      "pads": [
+        {
+          "number": "1",
+          "at_mm": [
+            0,
+            0
+          ],
+          "size_mm": [
+            5,
+            5
+          ],
+          "drill_mm": 2.2
+        },
+        {
+          "number": "2",
+          "at_mm": [
+            0,
+            7
+          ],
+          "size_mm": [
+            5,
+            5
+          ],
+          "drill_mm": 2.2
+        }
+      ],
+      "basis": "Own wire solder termination, mechanical strain relief and current rating pending",
+      "max_height_mm": 3,
+      "smd": false
+    },
+    "monitor_header": {
+      "name": "pg_monitor_2p_254",
+      "body_bounds_mm": [
+        -1.27,
+        -1.27,
+        3.81,
+        1.27
+      ],
+      "courtyard_bounds_mm": [
+        -1.52,
+        -1.52,
+        4.06,
+        1.52
+      ],
+      "pads": [
+        {
+          "number": "1",
+          "at_mm": [
+            0,
+            0
+          ],
+          "size_mm": [
+            1.8,
+            1.8
+          ],
+          "drill_mm": 1
+        },
+        {
+          "number": "2",
+          "at_mm": [
+            2.54,
+            0
+          ],
+          "size_mm": [
+            1.8,
+            1.8
+          ],
+          "drill_mm": 1
+        }
+      ],
+      "basis": "2.54mm monitor header nominal; exact vendor part pending",
+      "max_height_mm": 8.5,
+      "smd": false
+    }
+  },
+  "placements_mm": {
+    "U1": [
+      11,
+      34
+    ],
+    "U2": [
+      21,
+      35
+    ],
+    "U3": [
+      25,
+      45
+    ],
+    "U4": [
+      32,
+      45
+    ],
+    "R1": [
+      15,
+      41
+    ],
+    "R2": [
+      19,
+      42
+    ],
+    "R3": [
+      22.5,
+      41
+    ],
+    "R31": [
+      26,
+      41
+    ],
+    "R4": [
+      16.2,
+      38.5
+    ],
+    "C11": [
+      17.5,
+      30.5
+    ],
+    "C12": [
+      11,
+      30
+    ],
+    "C13": [
+      9.5,
+      37.5
+    ],
+    "C14": [
+      21,
+      38.9
+    ],
+    "C15": [
+      20,
+      45
+    ],
+    "C16": [
+      23,
+      30.5
+    ],
+    "C17": [
+      32,
+      41
+    ],
+    "C18": [
+      36,
+      43
+    ],
+    "C19": [
+      28,
+      38.5
+    ],
+    "C20": [
+      12.7,
+      39.5
+    ],
+    "J1": [
+      5,
+      32
+    ],
+    "J2": [
+      76,
+      32
+    ],
+    "J3": [
+      12,
+      46
+    ],
+    "C1": [
+      12,
+      11.6
+    ],
+    "C2": [
+      26,
+      11.6
+    ],
+    "C3": [
+      40,
+      11.6
+    ],
+    "C4": [
+      54,
+      11.6
+    ],
+    "C5": [
+      68,
+      11.6
+    ],
+    "C6": [
+      12,
+      23
+    ],
+    "C7": [
+      26,
+      23
+    ],
+    "C8": [
+      40,
+      23
+    ],
+    "C9": [
+      54,
+      23
+    ],
+    "C10": [
+      68,
+      23
+    ],
+    "Q1": [
+      42,
+      37
+    ],
+    "RG1": [
+      43.5,
+      43
+    ],
+    "RP1": [
+      43.5,
+      46
+    ],
+    "Q2": [
+      51,
+      37
+    ],
+    "RG2": [
+      52.5,
+      43
+    ],
+    "RP2": [
+      52.5,
+      46
+    ],
+    "Q3": [
+      60,
+      37
+    ],
+    "RG3": [
+      61.5,
+      43
+    ],
+    "RP3": [
+      61.5,
+      46
+    ],
+    "Q4": [
+      69,
+      37
+    ],
+    "RG4": [
+      70.5,
+      43
+    ],
+    "RP4": [
+      70.5,
+      46
+    ]
+  },
+  "mounting_holes_mm": {
+    "H1": [
+      3,
+      3
+    ],
+    "H2": [
+      77,
+      3
+    ],
+    "H3": [
+      3,
+      47
+    ],
+    "H4": [
+      77,
+      47
+    ]
+  },
+  "routing": {
+    "signal_width_mm": 0.2,
+    "clearance_mm": 0.15,
+    "grid_mm": 0.1,
+    "manufacturing_release": false,
+    "native_signal_routing_completed": true
+  },
+  "decoupling_map": {
+    "C11": "U1 pin8 BUS input",
+    "C12": "U1 pin1 BIAS output",
+    "C13": "U1 local bypass",
+    "C14": "U2 pin6 reference output",
+    "C16": "U2 pin2 input local 1u",
+    "C17": "U4 pin1 local bulk 1u",
+    "C18": "U4 pin1 local 100n",
+    "C19": "U3 pin5 local 100n",
+    "C20": "U1 pin7 typical PG delay; J3 observe only"
+  },
+  "board_envelope": {
+    "outline_xy_mm": [
+      80,
+      50
+    ],
+    "thickness_mm": 1.6,
+    "front_height_max_mm": 12.7,
+    "raw_robot_mount_reference_centre_mm": [
+      107,
+      0,
+      290
+    ],
+    "layout_to_robot_rotation": [
+      [
+        0,
+        0,
+        1
+      ],
+      [
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        0
+      ]
+    ],
+    "mount_not_designed_yet": true,
+    "actual_copper_thickness_um_requested": 70,
+    "actual_current_and_thermal_qualification": false,
+    "raw_robot_board_back_origin_mm": [
+      101.4,
+      -40,
+      265
+    ],
+    "raw_robot_finished_board_centre_mm": [
+      102.2,
+      0,
+      290
+    ],
+    "package_layout_completed": true
+  }
+}

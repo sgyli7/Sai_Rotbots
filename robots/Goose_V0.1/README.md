@@ -2,6 +2,8 @@
 
 **当前碰撞交付（2026-10-04）：[11 叶 Sim2Sim 工程入口](design/task_proxy_11_v1.md)已通过 M0 验收。** [唯一入口](configs/task_proxy_11_v1_entry.json)绑定同版模型、契约与原生接收器；硬件源未改，源／目标各完成 2,500 次实际积分，并通过有限 FK、已知危险组合、惯量、时钟与摩擦测试。该入口可交 Sai_Lab 绑定新策略；学会行走、起身、拾取／拖拽、复杂地面、其他引擎及完整制造仍各自验收。旧 30,105 叶和 89 叶失败版本保留为历史，以下较早“默认／最新”均属于各自检查点。
 
+**当前优先级：先跑通虚拟侧。** [本周期训练冻结及直接交接](design/virtual_training_freeze_handoff.md)固定004包和10.430690821kg完整SI，不等待PCB、采购及制造收尾；Lab独立物理／GPU准入通过后开展训练。后续硬件候选与虚拟版的逐体参数差异已明确记录，没有静默改入训练版。
+
 碰撞范围与参考：[现行对照与范围](configs/game_collision_budget_v1.json)、[MicroDuck 双足游戏包计数核对](evidence/microduck_game_collision_baseline_v1.json)、[MD/G1 接触角色与精度对照](design/simulation_collision_reference_review.md)。29 是用户澄清的随手数字，MD 的 11 个是具体参考版本实数；新版以任务接触、实际目标后端及动态测试共同验收。原 512 目标与 30,105 块源参考均不作为游戏交付。硬件源与完整 SI 参数保留；本版足底采用独立的平地整体接触近似，未继承真实多区 TPU 的材料和复杂地面资格。
 
 相邻凸包可在连接处交错；[有效过滤表](configs/task_proxy_11_v1_collision_filter.json)只忽略同机内 9 组连接处配对，其余 46 组自碰保留，包括头与身体、左右脚。地面、物品与其他机器人接触均保留；[逐对实测](evidence/task_proxy_11_v1_collision_filter_acceptance.json)在 MuJoCo 和原生 Rapier 各通过 97 个刻意重叠夹具。真实 CAD 装配干涉单独检查，代理例外不放行制造。
@@ -13,6 +15,8 @@
 当前电气：[精确驱动资料与18轴端点](hardware/power_release_checkpoint.md)绑定478件源、17CAN＋独立5V TTL。[绝对阈值制动候选](hardware/absolute_brake_chopper_checkpoint.md)已补实际可编辑KiCad、原生针脚/网络核对、阈值角点和真实NGSPICE行为/故障对照；名义及单电阻断开峰值约26.08V，关闭制动反例被检出。这仍未覆盖PCB时序/热、完整断开、冷启动或安装资格；供电保护、制造线束和实机启用门槛保留，未改CAD/SI或003包。
 
 后续[制动安装比较](hardware/brake_packaging_checkpoint.md)提供独立48件CAD增量、525件装配源和10.486951740kg条件SI；零位原生配合、21个有限转向／低姿态及同版静力已通过。PCB仍是预留，热／工具／线束和连续扫掠未放行；没有替换上面的478件基线或11凸体003运行模型。
+
+当前供电增量：[独立原生制动板](hardware/brake_pcb_checkpoint.md)提供44个板上元件、8个外置电阻、同版原理图／PCB、35条信号连接和45件包络STEP。KiCad DRC与复制项目检查均为0违规／0未连接，实际破坏焊盘或反馈走线均被拒绝；42项相关测试通过。PCB包络落在前轮预留内，但质量、真实固定、功率／散热、冷启动及急停使能链仍待闭合；未改写上述硬件参数或11凸体交付。
 
 历史初始训练版本：[460件 Sai_Lab 初始训练检查点](design/training_checkpoint_handoff.md)。同源一体头壳、18主动轴、10.430762603kg；MJCF/URDF、完整SI参数、软脚底、四色实际图和运行入口已打包。实际65/18接口与0.2秒自由根站立冒烟通过，零初始自碰撞候选、零求解器警告；解压校验见[打包检查](evidence/training_checkpoint_bundle_check.json)。完整制造、电气、步行/转向/夹拖及第三、第四阶段仍未完成；不是硬件冻结，不把旧动作当本版通过。
 
