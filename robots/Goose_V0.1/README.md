@@ -4,6 +4,8 @@
 
 **当前优先级：先跑通虚拟侧。** [本周期训练冻结及直接交接](design/virtual_training_freeze_handoff.md)固定004包和10.430690821kg完整SI，不等待PCB、采购及制造收尾；Lab独立物理／GPU准入通过后开展训练。后续硬件候选与虚拟版的逐体参数差异已明确记录，没有静默改入训练版。
 
+[指定物虚拟输入v1](design/task_samples_v1_handoff.md)一次交付圆柱抓杆／把手两家族×100／200／300g的几何、完整SI、外部凸体和实际示意图。320个有限地面组合中35个实际样件端点及三档理想静力筛查通过；把手使用嘴垫前移30mm的参考位置，原中部抓点的配重箱碰撞反例保留。局部接触台架仍有穿透／速度超限，完整拾取和接触质量未放行；本批不改变004或等待采购。
+
 [倒地接触诊断](design/source_contact_domain_diagnostic.md)已在004原样CPU源完成14个初态、1,400次有限积分及最差初态的100步精确回放。前倾首次头部触地仍出现最大37.21mm瞬态穿地，故站立M0不覆盖翻倒／起身；具体输入已交Lab，站立／移动主线继续。
 
 碰撞范围与参考：[现行对照与范围](configs/game_collision_budget_v1.json)、[MicroDuck 双足游戏包计数核对](evidence/microduck_game_collision_baseline_v1.json)、[MD/G1 接触角色与精度对照](design/simulation_collision_reference_review.md)。29 是用户澄清的随手数字，MD 的 11 个是具体参考版本实数；新版以任务接触、实际目标后端及动态测试共同验收。原 512 目标与 30,105 块源参考均不作为游戏交付。硬件源与完整 SI 参数保留；本版足底采用独立的平地整体接触近似，未继承真实多区 TPU 的材料和复杂地面资格。
