@@ -22,6 +22,10 @@ MD 的任务模型、启用掩码和嘴部固定关系见[实际参考核对](..
 
 移植时应按这张配对表设置局部例外，包含引擎隐式父子过滤，不能仅复制 MJCF 的显式名单。Unity 可逐对调用 [Physics.IgnoreCollision](https://docs.unity3d.com/ScriptReference/Physics.IgnoreCollision.html)，其状态不会随场景保存，实例化后需重新应用；Godot 可对指定刚体调用 [body_add_collision_exception](https://docs.godotengine.org/en/stable/classes/class_physicsserver3d.html#class-physicsserver3d-method-body-add-collision-exception)，并核对两向例外与目标端实测。全局层屏蔽会误删非相邻自碰或跨实例接触。Unity/Godot 的整机运行尚未验收；Unity [Convex MeshCollider 的 255 三角面限制](https://docs.unity3d.com/Manual/class-MeshCollider.html)还要求独立烹制与接触面误差检查，不能把本版高分辨率凸包直接标成 Unity 已通过。
 
+Godot 4.7.2 / Jolt 的[独立原生过滤验收](../evidence/task_proxy_11_v1_godot_filter_acceptance.json)已通过152个夹具和7项拒绝／生命周期检查。使用真实源凸包、正确基变换与米制，先在另一位置的静态副本上用[原生形状查询](https://docs.godotengine.org/en/stable/classes/class_physicsdirectspacestate3d.html#class-physicsdirectspacestate3d-method-collide-shape)证明未过滤穿入，再读取动态刚体的实际接触回调。97项有效表检查外加55个全部内部配对的未过滤阳性对照；头与身体、左右鞋及跨实例连接角色均保留接触。新[过滤工具](../../../integrations/godot/goose_collision_filters/collision_policy.gd)先校验完整55组表和机械连接链，按实例句柄双向应用9组例外，并移除旧的错误例外；创建关节后须显式复位[关节的自动碰撞排除](https://docs.godotengine.org/en/stable/classes/class_physicsserver3d.html#class-physicsserver3d-method-joint-disable-collisions-between-bodies)，再应用和读回名单。
+
+该夹具使用1kg诊断刚体、零重力、20ms步长，不是完整21体装配、关节动力学、足底柔度或任务验证，也不替换旧硬件／003模型。Godot自带`GodotPhysics3D`在相同深重叠夹具中15项出现查询或接触失败，11项接触结果不符；[失败证据](../evidence/godot_physics_collision_filter_rejection.json)继续保留，根因未判定。该后端不能继承Jolt通过状态。
+
 合并头部与上喙前曾出现夹持面被凸包侵入的问题。本版按打印源实际上喙接触平面裁切，补入真实夹持垫轮廓，裁去头部包络底端最多 1.2 mm；硬件头壳未改。有限功能面查询误差约 2.6 nm，目标烹制的支持平面差异小于 0.2 μm。该几何一致性不等于真实夹物成功。
 
 每只鞋只有一个凸形碰撞体，包括鞋面外壳及原六块脚垫的支撑包围面。脚垫间空隙和旋转支撑刚度采用整体足底近似。每脚总法向刚度约 140,142 N/m、阻尼 12 N·s/m，来自原设计假设，未实测标定。MuJoCo 对平面上的正向足底使用四个材料积分点；Rapier 在同一支撑面上使用原生接触流形。这些点是求解器接触点，碰撞叶仍是 11 个。凹凸地面、足底侧面及翻倒后的接触不能继承本轮平地通过状态。

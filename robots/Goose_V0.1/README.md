@@ -6,6 +6,8 @@
 
 相邻凸包可在连接处交错；[有效过滤表](configs/task_proxy_11_v1_collision_filter.json)只忽略同机内 9 组连接处配对，其余 46 组自碰保留，包括头与身体、左右脚。地面、物品与其他机器人接触均保留；[逐对实测](evidence/task_proxy_11_v1_collision_filter_acceptance.json)在 MuJoCo 和原生 Rapier 各通过 97 个刻意重叠夹具。真实 CAD 装配干涉单独检查，代理例外不放行制造。
 
+[Godot/Jolt过滤实测](evidence/task_proxy_11_v1_godot_filter_acceptance.json)另外通过152个原生夹具（同样97个配对／外部接触检查，另加55个未过滤阳性对照），并验证实例重新应用、错误排除拒绝和关节默认屏蔽复位。新接收工具逐对应用有效表，不沿用旧接收器的全部关节自动排除。这里只验收独立形状／过滤夹具，Jolt整机动力学仍未放行；[Godot自带物理后端的深重叠失败](evidence/godot_physics_collision_filter_rejection.json)保留，未混入Jolt通过结论。
+
 当前独立整机结构：[手动翼形检修门检查点](design/manual_wing_service_checkpoint.md)。478显示对象、18主动轴、19体SI、10.398672986kg条件质量；真实双铰链、轴向保持和手拧关闭件已进入24件CAD/采购增量，有限配合、同源静力及19项针对性测试通过。四色实际图已更新，门缝/最终审美、完整制造与电气仍待资格。003运行模型保持原身份；新结构未冒充旧训练版本。
 
 当前电气：[精确驱动资料与18轴端点](hardware/power_release_checkpoint.md)绑定478件源、17CAN＋独立5V TTL。[绝对阈值制动候选](hardware/absolute_brake_chopper_checkpoint.md)已补实际可编辑KiCad、原生针脚/网络核对、阈值角点和真实NGSPICE行为/故障对照；名义及单电阻断开峰值约26.08V，关闭制动反例被检出。这仍未覆盖PCB时序/热、完整断开、冷启动或安装资格；供电保护、制造线束和实机启用门槛保留，未改CAD/SI或003包。

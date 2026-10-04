@@ -49,3 +49,20 @@ The fork's opt-in frictional spring path retains the native Coulomb solver, with
 load/slip regression fixtures. PGS passes converge one integration, without
 subdividing physical time. See the contact fork's `GOOSE_CONTACT_CHANGES.md` and
 Goose's task-proxy design note for provenance and approximations.
+
+The additional Godot/Jolt filter-only diagnostic uses the same 11 hulls and
+effective 55-pair policy. It passes 97 policy/environment/instance fixtures,
+55 unfiltered controls and seven rejection/lifecycle checks in Godot 4.7.2:
+
+```bash
+PYTHONPATH=src:. python scripts/evaluation/check_goose_godot_collision_filters.py
+PYTHONPATH=src:. python -m pytest tests/test_goose_godot_collision_filters.py -q
+```
+
+`integrations/godot/goose_collision_filters/collision_policy.gd` is a reusable
+instance-scoped helper. Create joints, call `configure_joint` to clear their
+default collision exclusions, then apply and read back the complete policy.
+These artificial 1 kg fixtures are separate from whole-robot Jolt dynamics;
+the old Godot adapter is not promoted. `--engine GodotPhysics3D` is an optional
+rejection diagnostic: its deep-overlap queries/contacts currently fail and
+cannot inherit the Jolt result. The new ZIP retains that failure record.

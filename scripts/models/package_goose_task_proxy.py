@@ -14,6 +14,8 @@ PLANT = f"{ROBOT}/models/task_proxy_11_v1/native_plant.json"
 ACCEPTANCE = f"{ROBOT}/evidence/task_proxy_11_v1_acceptance.json"
 FILTER_POLICY = f"{ROBOT}/configs/task_proxy_11_v1_collision_filter.json"
 FILTER_ACCEPTANCE = f"{ROBOT}/evidence/task_proxy_11_v1_collision_filter_acceptance.json"
+JOLT_FILTER_ACCEPTANCE = f"{ROBOT}/evidence/task_proxy_11_v1_godot_filter_acceptance.json"
+JOLT_FILTER_FIXTURES = f"{ROBOT}/evidence/task_proxy_11_v1_jolt_filter_fixtures.json"
 MANIFEST = "handoff_manifest.json"
 
 
@@ -55,6 +57,20 @@ def check_binding(root):
     if set(filters["results"]) != {"source", "standalone_rapier"} or not all(
             r["passed"] and r["total_fixtures"] == 97 for r in filters["results"].values()):
         raise ValueError("Both source and target collision filters must pass")
+    jolt = json.loads((root / JOLT_FILTER_ACCEPTANCE).read_text())
+    for path, expected in (jolt["input_sha256"] | jolt["receiver_source_sha256"]).items():
+        if digest((root / path).read_bytes()) != expected:
+            raise ValueError("Jolt filter source changed: " + path)
+    if digest((root / "scripts/evaluation/check_goose_godot_collision_filters.py").read_bytes()) != jolt["evaluator_sha256"]:
+        raise ValueError("Jolt filter evaluator changed")
+    if digest((root / JOLT_FILTER_FIXTURES).read_bytes()) != jolt["results"]["jolt"]["result_sha256"]:
+        raise ValueError("Jolt filter measurements changed")
+    summary = jolt["results"]["jolt"]["summary"]
+    if not (summary["passed"] and summary["total_fixtures"] == 152
+            and summary["retained_self_pairs"] == 46 and summary["ignored_connected_pairs"] == 9):
+        raise ValueError("Jolt selective filter diagnostics did not pass")
+    if jolt["native_full_robot_qualified"] or jolt["full_task_success_claim"]:
+        raise ValueError("Independent Jolt fixtures cannot qualify full robot tasks")
 
 
 def verify(root):
@@ -76,6 +92,8 @@ def verify(root):
 def package(out):
     check_binding(ROOT)
     selected = [ENTRY, CONTRACT, ACCEPTANCE, FILTER_POLICY, FILTER_ACCEPTANCE,
+                JOLT_FILTER_ACCEPTANCE, JOLT_FILTER_FIXTURES,
+                f"{ROBOT}/evidence/godot_physics_collision_filter_rejection.json",
                 "LICENSE", "THIRD_PARTY_NOTICES.md",
                 f"{ROBOT}/evidence/task_proxy_11_v1_physical_identity.json",
                 f"{ROBOT}/evidence/task_proxy_11_v1_rejected_variants.json",
@@ -86,8 +104,10 @@ def package(out):
                 "src/sai_agent/__init__.py", "src/sai_agent/goose/__init__.py",
                 "tests/test_goose_task_proxy.py",
                 "tests/test_goose_collision_filters.py",
+                "tests/test_goose_godot_collision_filters.py",
                 "scripts/evaluation/check_goose_task_proxy.py",
                 "scripts/evaluation/check_goose_collision_filters.py",
+                "scripts/evaluation/check_goose_godot_collision_filters.py",
                 "scripts/models/build_goose_task_proxy.py",
                 "scripts/models/render_goose_task_proxy.py",
                 "scripts/models/package_goose_task_proxy.py"]
@@ -97,9 +117,10 @@ def package(out):
     for directory in (f"{ROBOT}/models/task_proxy_11_v1",
                       f"{ROBOT}/source/task_proxy_11_v1",
                       "integrations/bevy/goose_task_proxy",
+                      "integrations/godot/goose_collision_filters",
                       "third_party/rapier3d_goose_contact"):
         for path in sorted((ROOT / directory).rglob("*")):
-            if not path.is_file() or any(p in ("target", "__pycache__", ".git")
+            if not path.is_file() or any(p in ("target", "__pycache__", ".git", ".godot")
                                          for p in path.relative_to(ROOT).parts):
                 continue
             selected.append(path.relative_to(ROOT).as_posix())
