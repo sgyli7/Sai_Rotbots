@@ -1,0 +1,84 @@
+{
+  "schema": "goose_absolute_brake_behavioral_spice_v1",
+  "status": "BEHAVIORAL_TRANSIENT_AND_NEGATIVE_CONTROL_PASS_NOT_HARDWARE_RELEASE",
+  "simulator": "NGSPICE 42",
+  "input_config_sha256": "5bae7c6fbbc4fe048d8f176898d3fc109da8089b2e07cc7e695a4eaa9fc94efb",
+  "source_generator_sha256": "f66f6e84772aea0397aa499e17e161597a85e162e611962098b7eb77947b7d49",
+  "analysis_script_sha256": "48e241d870a2d96ce868b92bb4d5eb24afbe5f88966746f1d31191f76883fae7",
+  "model_hashes": {
+    "nominal.cir": "fbd3d3187da61a3b54546ffa46e8da96f4d3adbe6ecac40db49616d6b21508f0",
+    "one_resistor_open.cir": "73d2933a2709e3447d6bad06f34070bd456f9ee5b55b971f8dc3e718e64d7872",
+    "brake_disabled.cir": "c5dc00b27e9325d0cc2cc5c5eb8d1ccfc84ec81db568667eb4296e81bcd28aee"
+  },
+  "upstream_source_open_at_s": 0.0005,
+  "regen_start_s": 0.00075,
+  "scenarios": {
+    "nominal": {
+      "samples": 80409,
+      "duration_s": 0.004,
+      "all_values_finite": true,
+      "maximum_bus_voltage_v": 26.0754211,
+      "first_exceed_28v_s": null,
+      "measured_median_switching_frequency_hz": 26268.902938373747,
+      "ideal_equal_share_cap_rms_each_a": 1.7918276831964912,
+      "energy_window_s": [
+        0.0010000337,
+        0.004
+      ],
+      "injected_energy_j": 2.6712573774875312,
+      "dissipated_energy_j": 2.677686794323065,
+      "stored_energy_delta_j": -0.006429442163631102,
+      "relative_bus_energy_error": 9.481713529455488e-09,
+      "trace_sha256": "8a478761db90c5a4aba0131498f98071183214fe429dd4eed88eeec6a70c197f",
+      "log_sha256": "74e2c223f55cb9d1e8af468de5d678fa2ca4941d31f18ab18d844068156e0e56"
+    },
+    "one_resistor_open": {
+      "samples": 80221,
+      "duration_s": 0.004,
+      "all_values_finite": true,
+      "maximum_bus_voltage_v": 26.075315,
+      "first_exceed_28v_s": null,
+      "measured_median_switching_frequency_hz": 12520.053996488867,
+      "ideal_equal_share_cap_rms_each_a": 1.1620329022680829,
+      "energy_window_s": [
+        0.00100002254,
+        0.004
+      ],
+      "injected_energy_j": 2.671267314635938,
+      "dissipated_energy_j": 2.6677079788808467,
+      "stored_energy_delta_j": 0.003559312336632429,
+      "relative_bus_energy_error": 8.76679724923314e-09,
+      "trace_sha256": "7b6f7318e90dd6857cc4707998105595e2d8c20093f24830ea2a42a669570b98",
+      "log_sha256": "5ccb5eb2587c0a2a9dfb556a047021b4743580a84b8bdc8c2210fdf60f9dc16d"
+    },
+    "brake_disabled": {
+      "samples": 80019,
+      "duration_s": 0.004,
+      "all_values_finite": true,
+      "maximum_bus_voltage_v": 81.6284429,
+      "first_exceed_28v_s": 0.000828775,
+      "measured_median_switching_frequency_hz": null,
+      "ideal_equal_share_cap_rms_each_a": 1.4264672925025426,
+      "energy_window_s": [
+        0.001000025,
+        0.004
+      ],
+      "injected_energy_j": 2.671265124197628,
+      "dissipated_energy_j": 0.0014911252037188624,
+      "stored_energy_delta_j": 2.6697739976967574,
+      "relative_bus_energy_error": 4.855945250886062e-10,
+      "trace_sha256": "0f4a58a412ec0e830c4687e3910e5d2da3a3b554a0637f59daf6382ed1d29147",
+      "log_sha256": "8eafa6da930c81481f8a187b9f77696d5c9861fc8fda3ed8061f69d62f9be47d"
+    }
+  },
+  "model_limits": [
+    "pre-established ideal 5V bias/reference",
+    "nominal threshold resistors; corners calculated separately",
+    "Ron-only FET switches with approximated gate charge",
+    "initial minimum capacitance and 100kHz ESR used at all frequencies",
+    "no wire inductance or physical temperature solver",
+    "no device damage model after overvoltage; disabled-brake trace only proves rejection"
+  ],
+  "pcb_thermal_fault_or_hardware_release": false,
+  "assembly_si_or_frozen_003_changed": false
+}

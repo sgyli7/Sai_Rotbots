@@ -8,7 +8,7 @@
 
 当前独立整机结构：[手动翼形检修门检查点](design/manual_wing_service_checkpoint.md)。478显示对象、18主动轴、19体SI、10.398672986kg条件质量；真实双铰链、轴向保持和手拧关闭件已进入24件CAD/采购增量，有限配合、同源静力及19项针对性测试通过。四色实际图已更新，门缝/最终审美、完整制造与电气仍待资格。003运行模型保持原身份；新结构未冒充旧训练版本。
 
-当前电气：[精确驱动资料与18轴端点](hardware/power_release_checkpoint.md)。AK48 V1.11的15–28V、合并插头及所选KV型号协议范围已按原厂新资料确认；[端点表](hardware/current_actuator_endpoints.csv)绑定478件源，17CAN＋独立5V TTL及通信/故障回归共71项通过。回馈稳态条件已纠正并经独立积分核对，但6S满电触发裕量仍不足以放行未确认的响应延迟；供电保护、完整线束和实机启用门槛保留，未改CAD/SI或003包。
+当前电气：[精确驱动资料与18轴端点](hardware/power_release_checkpoint.md)绑定478件源、17CAN＋独立5V TTL。[绝对阈值制动候选](hardware/absolute_brake_chopper_checkpoint.md)已补实际可编辑KiCad、原生针脚/网络核对、阈值角点和真实NGSPICE行为/故障对照；名义及单电阻断开峰值约26.08V，关闭制动反例被检出。这仍未覆盖PCB时序/热、完整断开、冷启动或安装资格；供电保护、制造线束和实机启用门槛保留，未改CAD/SI或003包。
 
 历史初始训练版本：[460件 Sai_Lab 初始训练检查点](design/training_checkpoint_handoff.md)。同源一体头壳、18主动轴、10.430762603kg；MJCF/URDF、完整SI参数、软脚底、四色实际图和运行入口已打包。实际65/18接口与0.2秒自由根站立冒烟通过，零初始自碰撞候选、零求解器警告；解压校验见[打包检查](evidence/training_checkpoint_bundle_check.json)。完整制造、电气、步行/转向/夹拖及第三、第四阶段仍未完成；不是硬件冻结，不把旧动作当本版通过。
 

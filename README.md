@@ -49,7 +49,7 @@ Goose 的初衷来自 [Untitled Goose Game](https://goose.game/)：把鹅的好�
 
 当前 Sim2Sim 入口是[11 个碰撞体的任务代理](robots/Goose_V0.1/design/task_proxy_11_v1.md)，绑定[同版入口与契约](robots/Goose_V0.1/configs/task_proxy_11_v1_entry.json)。硬件 CAD、打印源、BOM、质量与完整惯量保持独立；MuJoCo 与原生 Rapier 各完成 2,500 次实际积分，通过冷启动、站立、有限关节动作、嘴部行程和负载／摩擦检查。18 项动作、65 项基础观测及 82 项指定物扩展可供 Sai_Lab 绑定新策略；这不代表已学会行走、转向、拾取／拖拽或适应复杂地面。Godot/Jolt、Unity 仍需各自验证。
 
-当前[478件结构检查点](robots/Goose_V0.1/design/manual_wing_service_checkpoint.md)有独立CAD/SI与采购增量；003运行模型继续绑定原来的10.430690821kg参数，不混用新版硬件质量。[精确驱动资料及18轴端点](robots/Goose_V0.1/hardware/power_release_checkpoint.md)已补齐电压、插头及型号协议范围，71项离线/通信回归通过。完整安装与线束、翼门连续开合和接缝、供电保护和独立急停、真实电机额定及热／载荷检查仍未闭合，**不能直接按候选 BOM 下单装机；第三、第四阶段和硬件冻结尚未完成**。原交接图片、文档、采购表以及成功／失败记录均保留，历史模型的结果不替代当前版本验证。
+当前[478件结构检查点](robots/Goose_V0.1/design/manual_wing_service_checkpoint.md)有独立CAD/SI与采购增量；003运行模型继续绑定原来的10.430690821kg参数，不混用新版硬件质量。[精确驱动资料及18轴端点](robots/Goose_V0.1/hardware/power_release_checkpoint.md)已补齐电压、插头及型号协议范围；新增[绝对阈值制动电路候选](robots/Goose_V0.1/hardware/absolute_brake_chopper_checkpoint.md)通过原生连通、条件角点和实际NGSPICE行为/故障对照，仍未取得PCB、热与完整安装资格。完整安装与线束、翼门连续开合和接缝、供电保护和独立急停、真实电机额定及热／载荷检查仍未闭合，**不能直接按候选 BOM 下单装机；第三、第四阶段和硬件冻结尚未完成**。原交接图片、文档、采购表以及成功／失败记录均保留，历史模型的结果不替代当前版本验证。
 
 从[Goose 资料入口](robots/Goose_V0.1/README.md)、[新版独立接收器与复测命令](integrations/bevy/goose_task_proxy/README.md)、[历史 460 件训练交接](robots/Goose_V0.1/design/training_checkpoint_handoff.md)、[单件头壳结构](robots/Goose_V0.1/design/one_piece_head_checkpoint.md)、[行为要求](robots/Goose_V0.1/design/behavior_requirements.md)继续；[原始资料图片库](robots/Goose_V0.1/design/concepts/index.html)与[导入记录](robots/Goose_V0.1/source/workspace_import.md)保留溯源。大型 Blender／OBJ 资产须按 [Git LFS 拉取说明](docs/guides/large_asset_checkout.md)获取完整内容。
 
