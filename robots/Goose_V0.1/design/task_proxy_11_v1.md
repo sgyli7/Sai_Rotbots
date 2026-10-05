@@ -1,5 +1,29 @@
 # 11 个碰撞体的 Sim2Sim 工程入口
 
+## 直接取用
+
+[碰撞体三视图 PNG](../images/task_proxy_11_v1_colliders.png) · [全部碰撞文件](../models/task_proxy_11_v1/) · [装配模型 robot.xml](../models/task_proxy_11_v1/robot.xml)
+
+文件目录共11个OBJ、1个MJCF及1个原硬件参数JSON。OBJ是米制局部凸包；装配变换在XML中，不能把所有OBJ直接叠放在同一世界原点。保持文件原名与同目录关系。
+
+| 碰撞角色 | OBJ文件 |
+|---|---|
+| 躯干 | [torso_envelope.obj](../models/task_proxy_11_v1/torso_envelope.obj) |
+| 下颈 | [lower_neck_envelope.obj](../models/task_proxy_11_v1/lower_neck_envelope.obj) |
+| 上颈 | [upper_neck_envelope.obj](../models/task_proxy_11_v1/upper_neck_envelope.obj) |
+| 头部＋上喙 | [head_upper_bill_envelope.obj](../models/task_proxy_11_v1/head_upper_bill_envelope.obj) |
+| 下喙 | [lower_bill_envelope.obj](../models/task_proxy_11_v1/lower_bill_envelope.obj) |
+| 右大腿 | [right_thigh_envelope.obj](../models/task_proxy_11_v1/right_thigh_envelope.obj) |
+| 右小腿 | [right_shin_envelope.obj](../models/task_proxy_11_v1/right_shin_envelope.obj) |
+| 右脚／足底代理 | [right_flexible_sole.obj](../models/task_proxy_11_v1/right_flexible_sole.obj) |
+| 左大腿 | [left_thigh_envelope.obj](../models/task_proxy_11_v1/left_thigh_envelope.obj) |
+| 左小腿 | [left_shin_envelope.obj](../models/task_proxy_11_v1/left_shin_envelope.obj) |
+| 左脚／足底代理 | [left_flexible_sole.obj](../models/task_proxy_11_v1/left_flexible_sole.obj) |
+
+游戏引擎接收时一起读取[同版SI／关节与控制契约](../configs/task_proxy_11_v1_contract.json)和[逐对碰撞过滤表](../configs/task_proxy_11_v1_collision_filter.json)。[运行入口清单](../configs/task_proxy_11_v1_entry.json)绑定源运行时及原生接收器；只加载XML不能继承足底接触修正或动态验收。此目录不是Unity场景文件，硬件CAD与打印文件也不在其中。
+
+## 验证与移植细节
+
 `goose_task_proxy_11_v1`通过本轮 M0 入口验收。它是独立的任务碰撞版本，硬件 CAD、打印源、BOM 与外观源保持原样；31 组编译后的质量、重心、惯量、关节、驱动与闭环字段逐项相等。唯一入口是[task_proxy_11_v1_entry.json](../configs/task_proxy_11_v1_entry.json)。
 
 ![实际碰撞体三视图](../images/task_proxy_11_v1_colliders.png)
