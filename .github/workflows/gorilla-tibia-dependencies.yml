@@ -1,0 +1,44 @@
+name: Tibia CEM dependency staging
+on:
+  push:
+    branches: [codex/gorilla-tibia-cem-v1]
+    paths: [.github/workflows/gorilla-tibia-dependencies.yml]
+permissions:
+  contents: read
+jobs:
+  dependencies:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Download self-contained native runtime and analysis wheels
+        run: |
+          mkdir -p payload/wheels payload/gorilla_sources
+          for pkg in picopie==0.7.0 pyamg tetgen pyvista scooby gmsh meshio; do
+            python -m pip download --no-deps --only-binary=:all: -d payload/wheels "$pkg" || true
+          done
+          python - <<'PY'
+          import urllib.request,json,hashlib,pathlib
+          root=pathlib.Path('payload')
+          base='https://raw.githubusercontent.com/sgyli7/Sai_Rotbots/e5b2cb5ecb7ad7cd898f117c3110f95dc0ca1ffe/robots/gorilla_v0_1/'
+          files=['configs/appearance_c_spec.json','design/current_decisions.md','hardware/internal_module_research.md','hardware/component_basis.md','design/structure_c14_basis.md','design/appearance_c15_stage.md','configs/layout_b_spec.json']
+          meta=[]
+          for path in files:
+              try:
+                  data=urllib.request.urlopen(base+path,timeout=30).read()
+                  dst=root/'gorilla_sources'/path.replace('/','__');dst.write_bytes(data)
+                  meta.append(dict(path=path,url=base+path,sha256=hashlib.sha256(data).hexdigest(),bytes=len(data)))
+              except Exception as exc: meta.append(dict(path=path,error=str(exc)))
+          (root/'source_manifest.json').write_text(json.dumps(meta,indent=2))
+          wheels=[dict(name=p.name,sha256=hashlib.sha256(p.read_bytes()).hexdigest(),bytes=p.stat().st_size) for p in (root/'wheels').glob('*.whl')]
+          (root/'wheel_manifest.json').write_text(json.dumps(wheels,indent=2))
+          print(json.dumps(wheels,indent=2))
+          assert any('picopie-' in x['name'] for x in wheels),'PicoGK native binding was not downloaded'
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tibia-cem-dependencies
+          path: payload/
+          retention-days: 7
