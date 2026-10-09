@@ -1,0 +1,49 @@
+name: Gorilla Tibia PicoGK Native Proof
+on:
+  push:
+    branches: [codex/gorilla-tibia-cem-v1]
+    paths: [.github/workflows/gorilla-tibia-cem-proof.yml, experiments/tibia_cem_v1/**]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+      - name: Compile and execute real PicoGK C++ runtime through C#
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path proof | Out-Null
+          Set-Location proof
+          @'
+          <Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net9.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup><ItemGroup><PackageReference Include="PicoGK" Version="2.3.0" /></ItemGroup></Project>
+          '@ | Set-Content Proof.csproj
+          @'
+          using System.Numerics;
+          using System.Text.Json;
+          using PicoGK;
+          using var lib = new Library(0.5f);
+          using var outer = Voxels.voxSphere(lib, Vector3.Zero, 20f);
+          using var inner = Voxels.voxSphere(lib, Vector3.Zero, 15f);
+          outer.BoolSubtract(inner);
+          using var hole = Voxels.voxLatticeBeam(lib,new(0,0,-30),5,new(0,0,30),5);
+          outer.BoolSubtract(hole);
+          using var mesh = new Mesh(outer);
+          mesh.SaveToStlFile("native_smoke.stl",Mesh.EStlUnit.MM);
+          outer.CalculateProperties(out var vol,out var bbox);
+          var result = new {engine="PicoGK",package="2.3.0",runtime=System.Runtime.InteropServices.RuntimeInformation.RuntimeIdentifier,executed=true,voxel_mm=0.5,volume_mm3=vol,vertices=mesh.nVertexCount(),triangles=mesh.nTriangleCount(),center_is_void=!outer.bIsInside(Vector3.Zero),shell_is_solid=outer.bIsInside(new(18,0,0)),stl_sha256=Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes("native_smoke.stl")))};
+          var json=JsonSerializer.Serialize(result);
+          Console.WriteLine("PICO_NATIVE_PROOF_BEGIN\n"+json+"\nPICO_NATIVE_PROOF_END");
+          File.WriteAllText("native_smoke.json",json);
+          if(vol<=0 || outer.bIsInside(Vector3.Zero) || !outer.bIsInside(new(18,0,0))) throw new Exception("Native smoke test failed");
+          '@ | Set-Content Program.cs
+          dotnet run -c Release
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-smoke
+          path: proof/native_smoke.*
+          retention-days: 7
