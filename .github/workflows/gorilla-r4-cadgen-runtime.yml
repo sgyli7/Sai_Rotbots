@@ -1,0 +1,30 @@
+name: Gorilla R4 pinned cadgen runtime
+on:
+  push:
+    branches: [codex/gorilla-tibia-cem-v1]
+    paths: [.github/workflows/gorilla-r4-cadgen-runtime.yml]
+permissions:
+  contents: read
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Resolve exact CAD runtime
+        run: |
+          mkdir -p payload/wheels
+          python -m pip download --only-binary=:all: -d payload/wheels 'cadgen==0.7.20'
+          python -m pip download --only-binary=:all: --no-deps -d payload/wheels 'mujoco' || true
+          python - <<'PY'
+          import pathlib,json,hashlib
+          p=pathlib.Path('payload')
+          (p/'MANIFEST.json').write_text(json.dumps([{'name':f.name,'sha256':hashlib.sha256(f.read_bytes()).hexdigest(),'bytes':f.stat().st_size} for f in (p/'wheels').glob('*.whl')],indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gorilla-r4-pinned-cadgen
+          path: payload
+          retention-days: 7
