@@ -16,7 +16,7 @@ jobs:
       - name: Download numerical and remeshing wheels
         run: |
           mkdir -p payload
-          python -m pip download --no-deps --only-binary=:all: -d payload scikit-fem pyvista-validation manifold3d pyacvd pymeshfix pykdtree || exit 1
+          python -m pip download --no-deps --only-binary=:all: -d payload scikit-fem pyvista-validation manifold3d pyacvd pymeshfix pykdtree python-fcl rtree || exit 1
           python - <<'PY'
           import pathlib,json,hashlib
           p=pathlib.Path('payload')
