@@ -1,0 +1,29 @@
+name: Gorilla R4 conforming volume meshing
+on:
+  push:
+    branches: [codex/gorilla-tibia-cem-v1]
+    paths: [.github/workflows/gorilla-r4-conforming-mesh.yml]
+permissions:
+  contents: read
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Download fixed meshing runtime
+        run: |
+          mkdir -p payload
+          python -m pip download --no-deps --only-binary=:all: -d payload 'pytetwild==0.3.0'
+          python - <<'PY'
+          import pathlib,json,hashlib
+          p=pathlib.Path('payload')
+          (p/'MANIFEST.json').write_text(json.dumps([{'name':f.name,'sha256':hashlib.sha256(f.read_bytes()).hexdigest()} for f in p.glob('*.whl')],indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gorilla-r4-volume-mesher
+          path: payload
+          retention-days: 7
