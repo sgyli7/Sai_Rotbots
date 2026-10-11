@@ -1,0 +1,49 @@
+name: Gorilla R4 CAD tool trial staging
+on:
+  push:
+    branches: [codex/gorilla-tibia-cem-v1]
+    paths: [.github/workflows/gorilla-r4-cad-tool-trial.yml]
+permissions:
+  contents: read
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Stage public code and dependencies
+        env:
+          GIT_LFS_SKIP_SMUDGE: '1'
+          CADGEN_UPDATE_CHECK: '0'
+        run: |
+          mkdir -p payload/repos payload/wheels
+          git clone --depth 1 https://github.com/earthtojake/text-to-cad.git payload/repos/text-to-cad
+          git clone --depth 1 https://github.com/Pan-Chera/Multi-Agent-CAD.git payload/repos/Multi-Agent-CAD
+          git clone --depth 1 https://github.com/UNITES-Lab/AID-SR.git payload/repos/AID-SR
+          for pkg in 'cadgen==0.7.20' build123d scikit-fem manifold3d pymeshfix pyacvd pyvista-validation rtree; do
+            python -m pip download --only-binary=:all: --no-deps -d payload/wheels "$pkg" || true
+          done
+          python - <<'PY'
+          import pathlib,subprocess,json,hashlib,urllib.request
+          p=pathlib.Path('payload'); meta={}
+          for r in (p/'repos').iterdir():
+              meta[r.name]={'sha':subprocess.check_output(['git','-C',str(r),'rev-parse','HEAD'],text=True).strip()}
+          for f in (p/'wheels').glob('*.whl'):
+              meta[f.name]={'sha256':hashlib.sha256(f.read_bytes()).hexdigest(),'bytes':f.stat().st_size}
+          for url in ['https://hub.metheus.ai/cad','https://metheus.ai/guide/getting-started']:
+              try:
+                  res=urllib.request.urlopen(url,timeout=30)
+                  data=res.read();name='metheus_cad.html' if '/cad' in url else 'metheus_setup.html'
+                  (p/name).write_bytes(data);meta[url]={'status':res.status,'final_url':res.url,'bytes':len(data)}
+              except Exception as e:meta[url]={'error':str(e)}
+          (p/'MANIFEST.json').write_text(json.dumps(meta,indent=2))
+          print(json.dumps(meta,indent=2))
+          PY
+          find payload/repos -type d -name .git -prune -exec rm -rf {} +
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gorilla-r4-tool-trial
+          path: payload
+          retention-days: 7
