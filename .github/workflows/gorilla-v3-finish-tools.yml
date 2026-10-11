@@ -1,0 +1,34 @@
+name: Gorilla V3 finishing tools
+on:
+  push:
+    branches: [codex/gorilla-tibia-cem-v1]
+    paths: [.github/workflows/gorilla-v3-finish-tools.yml]
+permissions:
+  contents: read
+jobs:
+  dependencies:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Stage self-contained wheels and immutable hashes
+        run: |
+          mkdir -p payload/wheels
+          for pkg in pyvista==0.46.5 pyacvd pykdtree scikit-fem pymeshfix pymeshlab bpy; do
+            python -m pip download --no-deps --only-binary=:all: -d payload/wheels "$pkg" || true
+          done
+          python - <<'PY'
+          import pathlib,hashlib,json
+          root=pathlib.Path('payload')
+          files=[dict(name=p.name,bytes=p.stat().st_size,sha256=hashlib.sha256(p.read_bytes()).hexdigest()) for p in (root/'wheels').glob('*.whl')]
+          (root/'manifest.json').write_text(json.dumps(files,indent=2))
+          print(json.dumps(files,indent=2))
+          assert any('pyacvd-' in p['name'] or 'pymeshlab-' in p['name'] for p in files)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gorilla-v3-finish-tools
+          path: payload/
+          retention-days: 7
