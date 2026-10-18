@@ -1,0 +1,121 @@
+{
+  "schema": "goose_lab_coordination_v1",
+  "experiment_id": "grip_100g_pilot_001",
+  "state": "closed",
+  "created_at_utc": "2026-10-18T10:32:30.372383+00:00",
+  "order_sha256": "276cc7d169df364d66224b258b6cfeff938cec3f817f100290da557773317983",
+  "executor_thread_id": "01a13301-ba51-73f2-85df-1389413ca758",
+  "history": [
+    {
+      "at_utc": "2026-10-18T10:32:30.372383+00:00",
+      "state": "ready_to_dispatch",
+      "detail": "Existing Picking chat inspected; latest completed old experiment does not cover04. No duplicate executor created."
+    },
+    {
+      "at_utc": "2026-10-18T10:33:27.650500+00:00",
+      "state": "dispatched_waiting_acceptance",
+      "detail": "Approved bounded order sent once to existing Picking chat; no new chat, no training or schedule resumed by PM."
+    },
+    {
+      "at_utc": "2026-10-18T10:34:01.939772+00:00",
+      "state": "executing",
+      "detail": "Same Picking executor is active in a new bounded turn. No second experiment dispatched."
+    },
+    {
+      "at_utc": "2026-10-18T10:35:50.555273+00:00",
+      "state": "executing",
+      "detail": "Read Lab acceptance receipt and absolute deadline; experiment input copy and sealed archive audit are in progress."
+    },
+    {
+      "at_utc": "2026-10-18T10:52:05.820803+00:00",
+      "state": "executing",
+      "detail": "First physical exploratory attempt returned failure; same executor continues a discriminating initial-state comparison inside original attempt/budget cap."
+    },
+    {
+      "at_utc": "2026-10-18T11:05:49.978520+00:00",
+      "state": "executing",
+      "detail": "Four cases returned including negative control. Same-order PM checkpoint requested closeout rather than filling attempt5 or expanding scope."
+    },
+    {
+      "at_utc": "2026-10-18T11:24:13.752618+00:00",
+      "state": "result_returned",
+      "detail": "Lab final turn completed;178 returned file identities independently verified. Curated evidence, exact source snapshots and representative actual video retained in Rotbots."
+    },
+    {
+      "at_utc": "2026-10-18T11:28:06.824138+00:00",
+      "state": "closed",
+      "detail": "PM review complete; first budget closed at42.81min with4 attempts. New user priority moves main line to actual ground-supported heavy dragging."
+    }
+  ],
+  "dispatch": {
+    "at_utc": "2026-10-18T10:33:27.650500+00:00",
+    "host_id": "local",
+    "thread_id": "01a13301-ba51-73f2-85df-1389413ca758",
+    "send_succeeded": true,
+    "duplicate_dispatches": 0
+  },
+  "return": {
+    "summary_path": "/home/ethan/ProjectBackups/2026-10-18/Sai_Lab/grip_100g_pilot_001/summary.json",
+    "summary_sha256": "3b815e1bb9a27c561b7e3eeabc25f18e1d3b97fb7ea8ba02877d94a424bef554",
+    "manifest_sha256": "91b5a61a65e2a3eeba0724017f07d75d76844d63892eeeb9ee029304be16223f",
+    "manifest_files_verified": 178,
+    "manifest_total_bytes": 17417752,
+    "wall_s_from_acceptance": 2568.7493698596954,
+    "within_budget": true,
+    "dynamics_executor_exited": true,
+    "counts": {
+      "all_dynamic_attempts": 4,
+      "normal_contact_attempts": 3,
+      "negative_control_attempts": 1,
+      "max_authorized_attempts": 5,
+      "fifth_attempt": "NOT_EXECUTED",
+      "physics_integrations": 1540,
+      "command50Hz_updates": 385,
+      "drive200Hz_updates": 1540,
+      "NN_forwards": 0,
+      "training_updates": 0,
+      "GPU": 0,
+      "simulated_seconds_total": 7.7
+    }
+  },
+  "pm_review": {
+    "at_utc": "2026-10-18T11:28:06.824138+00:00",
+    "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/robots/goose_v0_2/evidence/grip_100g_pilot_001/pm_review.md",
+    "decision": "Accept evidence; no stable-grip/hardware-limit qualification; retain04; prioritize grounded heavy dragging under goose appearance constraint.",
+    "review_evidence": "robots/goose_v0_2/evidence/grip_100g_pilot_001/pm_trace_review.json",
+    "next_experiment": "ground_drag_load_002"
+  },
+  "next_action": "Closed. No additional pilot001 attempts; next work is a separately identified grounded-load question.",
+  "executor_turn": {
+    "id": "01a14e92-8824-7133-b77c-7024932b6229",
+    "started_at_utc": "2026-10-18T10:33:08+00:00",
+    "conservative_deadline_utc": "2026-10-18T11:33:08+00:00",
+    "observation": "App reports active/inProgress; actual Lab acceptance receipt pending."
+  },
+  "lab_acceptance": {
+    "path": "/home/ethan/ProjectBackups/2026-10-18/Sai_Lab/grip_100g_pilot_001/acceptance.json",
+    "sha256": "6d669b704e8f0e8a32be4075954567454728ab2ef7318ef89f97c74094df55a5",
+    "received_at_utc": "2026-10-18T10:33:40.949999+00:00",
+    "absolute_deadline_utc": "2026-10-18T11:33:40.949999+00:00",
+    "output_directory": "/home/ethan/ProjectBackups/2026-10-18/Sai_Lab/grip_100g_pilot_001",
+    "budget": {
+      "max_experiment_processes": 1,
+      "max_threads": 4,
+      "memory_limit_bytes": 8589934592,
+      "gpu": 0,
+      "training_updates": 0,
+      "max_100g_attempts": 5
+    }
+  },
+  "latest_lab_checkpoint": {
+    "at_utc": "2026-10-18T11:05:49.978520+00:00",
+    "attempts_returned": 4,
+    "actual_integrations": 1540,
+    "positive_attempts": 3,
+    "negative_controls": 1,
+    "new_experiments_requested": false,
+    "preliminary_result": "No positive case met stable-grip gate; diagnosis confounded by closure/contact error and speed excursions; final packet/PM review pending."
+  },
+  "subphase": "PM reviewed; next task changed by explicit user priority",
+  "returned_at_utc": "2026-10-18T11:24:13.752618+00:00"
+}
