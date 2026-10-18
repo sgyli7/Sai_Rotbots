@@ -22,6 +22,13 @@ def main(a):
  # C's source-derived leaf coordinates are already in owning rigid body's frame.
  exclusions=write_model(contract,rows,package/'robot.xml',cold_root_z_m=a.cold_root_z_m,excludes=mf.get('explicit_exclusions',mf.get('explicit_body_pair_filters'))if isinstance(mf,dict)else None,contact_pairs=mf.get('explicit_contact_pairs')if isinstance(mf,dict)else None)
  p=package/'robot.xml'
+ # Asset filenames can stay identical between two different convex proxies.
+ # Bind their source digest in inert metadata so XML identity is unambiguous.
+ tree=ET.parse(p);root=tree.getroot();custom=ET.SubElement(root,'custom')
+ ET.SubElement(custom,'text',name='contact_source_sha256',data=sha(a.collision_manifest))
+ ET.SubElement(custom,'text',name='physical_contract_sha256',data=sha(package/'physical_contract.json'))
+ ET.SubElement(custom,'text',name='collision_package_id',data=package.name)
+ ET.indent(tree);tree.write(p,encoding='utf-8',xml_declaration=True)
  receipt=dict(schema='goose_frozen_SI_and_source_contacts_runtime_composition_v1',physical_contract_sha256=sha(package/'physical_contract.json'),actuator_contract_sha256=sha(package/'actuator_contract.json'),collision_source_manifest=dict(sha256=sha(a.collision_manifest),provenance_path=str(a.collision_manifest),runtime_dependency=False),collision_geometries=rows,source_collision_metadata=mf if isinstance(mf,dict)else{},actuation=[dict(public_axis=j['name'],actuated_joint=j.get('actuation_joint',j['name']),mode='continuous_bounded_effort_200Hz_reference_adapter')for j in contract['joints']],explicit_exclusions=exclusions,robot_xml_sha256=sha(p),runtime_assets_all_relative=True,original_XML_native_position_actuators_not_used=True,training_tasks_or_policies_modified=False)
  receipt.update(active_physical_contract=dict(file='physical_contract.json',release_id=contract['release_id'],sha256=sha(package/'physical_contract.json')),contact_geometry_inherited_from_source_manifest=dict(sha256=sha(a.collision_manifest),provenance_path=str(a.collision_manifest)),historical_source_contact_metadata_does_not_override_active_SI=True,contact_assets_rescaled_for_material_change=False)
  (package/'collision_manifest.json').write_text(json.dumps(receipt,indent=2)+'\n')

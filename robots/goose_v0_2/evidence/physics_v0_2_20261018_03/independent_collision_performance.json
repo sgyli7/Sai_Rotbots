@@ -1,0 +1,471 @@
+{
+  "schema": "goose_independent_low_leaf_collision_cost_decision_v1",
+  "created_utc": "2026-10-18T06:43:28.832899+00:00",
+  "scope": "Fixed-seed ten finite fixture poses, single pinned CPU. Native integration only; no trained policy, GPU or multi-environment throughput. Final archive identity and readback remain separate.",
+  "host": {
+    "machine": "aarch64",
+    "platform": "Linux-6.17.0-1029-nvidia-aarch64-with-glibc2.39",
+    "pinned_cpu": 19,
+    "affinity": [
+      19
+    ],
+    "seed": 20261018,
+    "mujoco_version": "3.10.0",
+    "process_id": 2558506
+  },
+  "workload": {
+    "calls_per_repeat": 80,
+    "repeats": 9,
+    "warmup": 20,
+    "steps_per_rollout": 80
+  },
+  "statistics_scope": "Each timing sample is a repeat average over80 calls/steps. Reported p95 is the percentile of nine repeat averages, not a per-step latency-tail estimate.",
+  "effective_solver": {
+    "dt_s": 0.005,
+    "solver": 2,
+    "iterations": 100,
+    "ls_iterations": 50,
+    "tolerance": 1e-08,
+    "integrator": 3,
+    "cone": 1,
+    "jacobian": 0,
+    "enableflags": 0,
+    "disableflags": 65536,
+    "ccd_iterations": 35,
+    "ccd_tolerance": 1e-06
+  },
+  "all_three_effective_solver_options_equal": true,
+  "actual_new_mesh_asset_digest": "d0cd970f25e62dd880902bcecbbc9d1a86e5a12cdc75def1a8fe16b300c01e22",
+  "complexity": {
+    "new14": {
+      "model": {
+        "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/integration_release/collision14_runtime_candidate_02/robot.xml",
+        "sha256": "5990355c461ea3332438556fb346f059a0c2dd827aaf650a6f7165702d74e501"
+      },
+      "actual_collision_leaves": 14,
+      "actual_hull_vertices": 544,
+      "actual_maximum_hull_vertices": 63,
+      "actual_hull_triangles": 1032,
+      "loaded_mesh_vertices": 544,
+      "loaded_mesh_faces": 1032,
+      "complexity_gate": "PASS",
+      "failures": []
+    },
+    "withdrawn291": {
+      "model": {
+        "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/robots/goose_v0_2/models/physics_v0_2_20261018_02/robot.xml",
+        "sha256": "3d52cbff0db121a0a25e30eba80d22502b1f306266b6f32b11c38e7b2a57434d"
+      },
+      "actual_collision_leaves": 291,
+      "actual_hull_vertices": 106289,
+      "actual_maximum_hull_vertices": 8756,
+      "actual_hull_triangles": 211414,
+      "loaded_mesh_vertices": 106670,
+      "loaded_mesh_faces": 212002,
+      "complexity_gate": "REJECT",
+      "failures": [
+        "actual collision leaves 291 !=14",
+        "actual maximum convex supports 8756 >64",
+        "actual total convex supports 106289 >896"
+      ]
+    },
+    "oldMove14": {
+      "model": {
+        "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/independent_whole_audit/collision_cost_gate_01/old_move14_normalized_reference/robot.xml",
+        "sha256": "d10a6994674eeef2646eb11da5bd105ff8be464d7c7cb3de2a298e461fcf84d1"
+      },
+      "actual_collision_leaves": 14,
+      "actual_hull_vertices": 46069,
+      "actual_maximum_hull_vertices": 19300,
+      "actual_hull_triangles": 92090,
+      "loaded_mesh_vertices": 46266,
+      "loaded_mesh_faces": 92484,
+      "complexity_gate": "REJECT",
+      "failures": [
+        "actual maximum convex supports 19300 >64",
+        "actual total convex supports 46069 >896",
+        "new fourteen-block gate requires explicit convex mesh topology"
+      ]
+    }
+  },
+  "old_actual14_primitive_count": 2,
+  "old_reference_legacy_complexity_is_descriptive_not_subject_to_new64_support_gate": true,
+  "cost_bounds": {
+    "new14": {
+      "collision_query": {
+        "minimum_pose_median_us": 7.1244125,
+        "maximum_pose_median_us": 9.0896125,
+        "maximum_pose_repeat_average_p95_us": 9.15088
+      },
+      "fixed_pose_forward": {
+        "minimum_pose_median_us": 21.9206,
+        "maximum_pose_median_us": 51.370824999999996,
+        "maximum_pose_repeat_average_p95_us": 51.449105
+      },
+      "source_native_step": {
+        "minimum_pose_median_us": 32.021625,
+        "maximum_pose_median_us": 41.709824999999995,
+        "maximum_pose_repeat_average_p95_us": 42.152657500000004
+      }
+    },
+    "withdrawn291": {
+      "collision_query": {
+        "minimum_pose_median_us": 335.1531375,
+        "maximum_pose_median_us": 611.6730500000001,
+        "maximum_pose_repeat_average_p95_us": 615.48017
+      },
+      "fixed_pose_forward": {
+        "minimum_pose_median_us": 358.58115000000004,
+        "maximum_pose_median_us": 892.5197625,
+        "maximum_pose_repeat_average_p95_us": 894.7196425
+      },
+      "source_native_step": {
+        "minimum_pose_median_us": 387.6813625,
+        "maximum_pose_median_us": 488.8181875,
+        "maximum_pose_repeat_average_p95_us": 490.072635
+      }
+    },
+    "oldMove14": {
+      "collision_query": {
+        "minimum_pose_median_us": 3.764,
+        "maximum_pose_median_us": 13.7126,
+        "maximum_pose_repeat_average_p95_us": 13.7908075
+      },
+      "fixed_pose_forward": {
+        "minimum_pose_median_us": 12.063,
+        "maximum_pose_median_us": 74.921825,
+        "maximum_pose_repeat_average_p95_us": 75.2265175
+      },
+      "source_native_step": {
+        "minimum_pose_median_us": 17.3208,
+        "maximum_pose_median_us": 35.2942125,
+        "maximum_pose_repeat_average_p95_us": 35.6764125
+      }
+    }
+  },
+  "same_hardware_differential": {
+    "same23bodies_3loops_18drives_and_MCI": true,
+    "collision_speedup_range": [
+      42.7638209859298,
+      67.29363325444292
+    ],
+    "native_step_speedup_range": [
+      9.565193616893975,
+      13.474318526932972
+    ],
+    "scenarios": [
+      {
+        "name": "cold_saved_reset",
+        "collision_median_ratio": 0.022574399156374842,
+        "collision_p95_ratio": 0.02255181380398643,
+        "forward_median_ratio": 0.061131490040678374,
+        "whole_step_median_ratio": 0.09341896453172387,
+        "contacts_reference": 4,
+        "contacts_candidate": 4
+      },
+      {
+        "name": "standing_support",
+        "collision_median_ratio": 0.02303401083988447,
+        "collision_p95_ratio": 0.02324399703881479,
+        "forward_median_ratio": 0.11924137970164798,
+        "whole_step_median_ratio": 0.09206523916442287,
+        "contacts_reference": 10,
+        "contacts_candidate": 9
+      },
+      {
+        "name": "prone_front",
+        "collision_median_ratio": 0.02298113649614872,
+        "collision_p95_ratio": 0.022973589455242735,
+        "forward_median_ratio": 0.07165215716354881,
+        "whole_step_median_ratio": 0.09177998176255825,
+        "contacts_reference": 5,
+        "contacts_candidate": 5
+      },
+      {
+        "name": "supine_back",
+        "collision_median_ratio": 0.023080223536652143,
+        "collision_p95_ratio": 0.023044923459770696,
+        "forward_median_ratio": 0.07456837446094287,
+        "whole_step_median_ratio": 0.07421525608149775,
+        "contacts_reference": 10,
+        "contacts_candidate": 6
+      },
+      {
+        "name": "lying_left",
+        "collision_median_ratio": 0.023384252785293,
+        "collision_p95_ratio": 0.023448450919815404,
+        "forward_median_ratio": 0.0958575578521996,
+        "whole_step_median_ratio": 0.09588745865480731,
+        "contacts_reference": 6,
+        "contacts_candidate": 5
+      },
+      {
+        "name": "lying_right",
+        "collision_median_ratio": 0.023319421677069286,
+        "collision_p95_ratio": 0.02333062552254972,
+        "forward_median_ratio": 0.13112102174485468,
+        "whole_step_median_ratio": 0.0927179513697068,
+        "contacts_reference": 6,
+        "contacts_candidate": 7
+      },
+      {
+        "name": "finite_work_seed_0",
+        "collision_median_ratio": 0.02100927127750898,
+        "collision_p95_ratio": 0.021065909341601182,
+        "forward_median_ratio": 0.07023869547146337,
+        "whole_step_median_ratio": 0.07982377161961556,
+        "contacts_reference": 29,
+        "contacts_candidate": 2
+      },
+      {
+        "name": "finite_work_seed_1",
+        "collision_median_ratio": 0.01486024682630696,
+        "collision_p95_ratio": 0.014867871372687767,
+        "forward_median_ratio": 0.04668245371205436,
+        "whole_step_median_ratio": 0.07890420914422297,
+        "contacts_reference": 79,
+        "contacts_candidate": 3
+      },
+      {
+        "name": "finite_work_seed_2",
+        "collision_median_ratio": 0.019129902980415368,
+        "collision_p95_ratio": 0.019058811728911027,
+        "forward_median_ratio": 0.059463194816249454,
+        "whole_step_median_ratio": 0.08975641956245174,
+        "contacts_reference": 33,
+        "contacts_candidate": 2
+      },
+      {
+        "name": "finite_work_seed_3",
+        "collision_median_ratio": 0.020714768605495076,
+        "collision_p95_ratio": 0.020719581414682393,
+        "forward_median_ratio": 0.07937791405388019,
+        "whole_step_median_ratio": 0.1045457143945113,
+        "contacts_reference": 14,
+        "contacts_candidate": 2
+      }
+    ]
+  },
+  "old14_comparison": {
+    "scenarios": [
+      {
+        "name": "cold_saved_reset",
+        "collision_median_ratio": 1.9476367715290879,
+        "collision_p95_ratio": 1.9453588766573218,
+        "forward_median_ratio": 1.8058204841250103,
+        "whole_step_median_ratio": 2.211176099412981,
+        "contacts_reference": 0,
+        "contacts_candidate": 4
+      },
+      {
+        "name": "standing_support",
+        "collision_median_ratio": 1.8980354111084163,
+        "collision_p95_ratio": 1.8920713416765542,
+        "forward_median_ratio": 2.483238822295484,
+        "whole_step_median_ratio": 2.253477033393377,
+        "contacts_reference": 8,
+        "contacts_candidate": 9
+      },
+      {
+        "name": "prone_front",
+        "collision_median_ratio": 2.0490967056323064,
+        "collision_p95_ratio": 2.0465903596093806,
+        "forward_median_ratio": 1.157547318572157,
+        "whole_step_median_ratio": 1.3616243875483838,
+        "contacts_reference": 1,
+        "contacts_candidate": 5
+      },
+      {
+        "name": "supine_back",
+        "collision_median_ratio": 1.8560106307246929,
+        "collision_p95_ratio": 1.844084722605009,
+        "forward_median_ratio": 1.5126015771184178,
+        "whole_step_median_ratio": 1.584871249429099,
+        "contacts_reference": 2,
+        "contacts_candidate": 6
+      },
+      {
+        "name": "lying_left",
+        "collision_median_ratio": 1.9009777007176225,
+        "collision_p95_ratio": 1.877141956762802,
+        "forward_median_ratio": 1.850130174852147,
+        "whole_step_median_ratio": 1.921418446118712,
+        "contacts_reference": 2,
+        "contacts_candidate": 5
+      },
+      {
+        "name": "lying_right",
+        "collision_median_ratio": 1.9400285110357371,
+        "collision_p95_ratio": 1.927861287305253,
+        "forward_median_ratio": 2.538675501677248,
+        "whole_step_median_ratio": 1.7379476666063107,
+        "contacts_reference": 2,
+        "contacts_candidate": 7
+      },
+      {
+        "name": "finite_work_seed_0",
+        "collision_median_ratio": 1.6222656792117185,
+        "collision_p95_ratio": 1.6150331093972972,
+        "forward_median_ratio": 1.037171358388336,
+        "whole_step_median_ratio": 1.1502536566358115,
+        "contacts_reference": 1,
+        "contacts_candidate": 2
+      },
+      {
+        "name": "finite_work_seed_1",
+        "collision_median_ratio": 1.3969397493919522,
+        "collision_p95_ratio": 1.4001576132241937,
+        "forward_median_ratio": 1.7990863905785581,
+        "whole_step_median_ratio": 1.4485292562503966,
+        "contacts_reference": 1,
+        "contacts_candidate": 3
+      },
+      {
+        "name": "finite_work_seed_2",
+        "collision_median_ratio": 0.5867742076630252,
+        "collision_p95_ratio": 0.5852336783034642,
+        "forward_median_ratio": 0.4190716456786791,
+        "whole_step_median_ratio": 1.4273696646481655,
+        "contacts_reference": 6,
+        "contacts_candidate": 2
+      },
+      {
+        "name": "finite_work_seed_3",
+        "collision_median_ratio": 1.452361596618161,
+        "collision_p95_ratio": 1.444080925052094,
+        "forward_median_ratio": 0.9064362779216266,
+        "whole_step_median_ratio": 1.1442732997655067,
+        "contacts_reference": 1,
+        "contacts_candidate": 2
+      }
+    ],
+    "collision_specialty_target_max_ratio": 1.5,
+    "worst_collision_median_ratio": 2.0490967056323064,
+    "collision_specialty_gate": "REJECT",
+    "full_step_ratio_is_descriptive_not_geometry_causal_proof": true,
+    "gpu_or_parallel_training_throughput_measured": false
+  },
+  "old_hardware_differs": {
+    "old_rigid_bodies": 21,
+    "new_rigid_bodies": 23,
+    "old_loops": 1,
+    "new_loops": 3,
+    "old_mass_kg": 10.430690821363129,
+    "new_mass_kg": 16.970203928833527,
+    "whole_step_ratios_cannot_be_attributed_only_to_colliders": true
+  },
+  "warning_count_new14": 0,
+  "warning_count_old14": 0,
+  "warning_count_291": 0,
+  "old_reference_normalization": {
+    "source_xml": "/home/ethan/ProjectBackups/2026-10-09/Sai_Lab/goose_move_200hz_fast_001/native_lateral_skill_106/model/robot.xml",
+    "source_sha256": "ea4fbce17add6c2cfa0fcaf1fe061b4f9c3bd46ef91cd3a3557c6b4d9790dbc6",
+    "source_evidence": "stage324 input_manifest frozen model and actual C14 runtime identity",
+    "changes": [
+      {
+        "field": "compiler.meshdir",
+        "old": ".",
+        "new": "/home/ethan/ProjectBackups/2026-10-09/Sai_Lab/goose_move_200hz_fast_001/native_lateral_skill_106/model",
+        "purpose": "resolve identical original assets from independent diagnostic directory"
+      },
+      {
+        "field": "option.integrator",
+        "old": "discrete",
+        "new": "implicitfast",
+        "purpose": "3.15-only source keyword cannot compile3.10; all benchmark solvers deliberately normalized to implicitfast"
+      },
+      {
+        "field": "option.timestep",
+        "old": ".02",
+        "new": ".005",
+        "purpose": "uniform200Hz benchmark"
+      }
+    ],
+    "not_a_runtime_handoff_or_training_model": true,
+    "source_unchanged": "ea4fbce17add6c2cfa0fcaf1fe061b4f9c3bd46ef91cd3a3557c6b4d9790dbc6"
+  },
+  "contact_workload": [
+    {
+      "tag": "new14",
+      "all_robot_geom_pairs": 91,
+      "enabled_geom_pairs": 76,
+      "hidden_geom_pairs": 15,
+      "reason_counts": {
+        "same_rigid_body": 1,
+        "explicit_entire_body_exclusion": 9,
+        "ordinary_collision_enabled": 75,
+        "simulator_parent_filter": 5,
+        "explicit_geom_pair": 1
+      },
+      "explicit_geom_pairs": 1,
+      "body_exclusion_pairs": 6,
+      "mass_kg": 16.970203928833527
+    },
+    {
+      "tag": "old14",
+      "all_robot_geom_pairs": 91,
+      "enabled_geom_pairs": 67,
+      "hidden_geom_pairs": 24,
+      "reason_counts": {
+        "same_rigid_body": 6,
+        "explicit_entire_body_exclusion": 14,
+        "ordinary_collision_enabled": 67,
+        "simulator_parent_filter": 4
+      },
+      "explicit_geom_pairs": 0,
+      "body_exclusion_pairs": 6,
+      "mass_kg": 10.430690821363129
+    },
+    {
+      "tag": "samehardware291",
+      "all_robot_geom_pairs": 42195,
+      "enabled_geom_pairs": 28226,
+      "hidden_geom_pairs": 13969,
+      "reason_counts": {
+        "same_rigid_body": 13459,
+        "simulator_parent_filter": 510,
+        "ordinary_collision_enabled": 28225,
+        "explicit_geom_pair": 1
+      },
+      "explicit_geom_pairs": 1,
+      "body_exclusion_pairs": 0,
+      "mass_kg": 16.970203928833527
+    }
+  ],
+  "manager_decision": {
+    "new_complexity_gate": "PASS",
+    "relative_old14_collision_target_1_5": "REJECT",
+    "decision_source": "root message2026-10-18 approximately06:41UTC",
+    "decision": "Accept bounded training-physics reference after final archive/numeric/contact gates, retaining functional contacts and documenting the internal relative-performance target miss. Do not relabel that performance test PASS."
+  },
+  "evidence": [
+    {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/independent_whole_audit/collision_cost_gate_01/full_14_candidate02_vs_actual_old14_equal_multiccd.json",
+      "sha256": "dc927f46a8f1a519dd949671411bec06acc9bdde6e2afa6a94aec75304f196fb"
+    },
+    {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/independent_whole_audit/collision_cost_gate_01/full_14_candidate02_vs_same_hardware291.json",
+      "sha256": "6611ce8b6165a59dbd9e260dd0d3fbc82fadbfd9ebba47c2a9ad4da3eaefc2b8"
+    },
+    {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/independent_whole_audit/collision_cost_gate_01/full_14_candidate02_vs_actual_old14.json",
+      "sha256": "af322d28b96796d562c888bdf00969e5a877727681a13e82df264c82733485f3"
+    },
+    {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/independent_whole_audit/collision_cost_gate_01/source_contact_workload_counts.json",
+      "sha256": "271015c93a230675d76bf6df2efdee7c23c16951abfdaea51c1527a794e0ffd2"
+    },
+    {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/independent_whole_audit/collision_cost_gate_01/candidate02_independent_contacts.json",
+      "sha256": "87e5d239f6698c4d54d80f9ae44a3040de2597a48379cb5ed4a322425e584b62"
+    }
+  ],
+  "remaining": [],
+  "final_archive_binding": {
+    "archive_sha256": "f5ab4baed6604f83b84e7ef7f1ee5c6f33b036932d94502b268703df60a8fa4e",
+    "final_xml_sha256": "be30a247ecd234602cae0f7de758878ca08802897367847dc5a1dbab57f3e00c",
+    "final_14_asset_digest": "d0cd970f25e62dd880902bcecbbc9d1a86e5a12cdc75def1a8fe16b300c01e22",
+    "all14meshes_byte_identical_to_cost_tested_candidate02": true,
+    "cost_tests_not_rerun_after_metadata_only_xml_identity_change": true
+  }
+}

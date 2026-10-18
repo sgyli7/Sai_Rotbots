@@ -6,7 +6,7 @@ ROOT=Path(__file__).resolve().parents[2]
 def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 def main(a):
  p=a.package.resolve();p.mkdir(parents=True,exist_ok=True)
- for src,dest in[(ROOT/'src/sai_agent/goose/frozen_physics_runtime.py','runtime_adapter.py'),(ROOT/'scripts/diagnostics/verify_goose_physics_package_files.py','verify_package.py'),(ROOT/'scripts/diagnostics/verify_goose_frozen_physics_independent.py','verify_physics.py'),(ROOT/'scripts/diagnostics/verify_goose_frozen_contacts_independent.py','verify_contacts.py'),(ROOT/'LICENSE','LICENSE')]:shutil.copyfile(src,p/dest)
+ for src,dest in[(ROOT/'src/sai_agent/goose/frozen_physics_runtime.py','runtime_adapter.py'),(ROOT/'scripts/diagnostics/verify_goose_physics_package_files.py','verify_package.py'),(ROOT/'scripts/diagnostics/verify_goose_frozen_physics_independent.py','verify_physics.py'),(ROOT/'scripts/diagnostics/verify_goose_frozen_contacts_independent.py','verify_contacts.py'),(ROOT/'scripts/diagnostics/benchmark_goose_collision_cost.py','benchmark_collision_cost.py'),(ROOT/'LICENSE','LICENSE')]:shutil.copyfile(src,p/dest)
  if(ROOT/'THIRD_PARTY_NOTICES.md').exists():shutil.copyfile(ROOT/'THIRD_PARTY_NOTICES.md',p/'THIRD_PARTY_NOTICES.md')
  files=[]
  for path in sorted(p.rglob('*')):
@@ -19,6 +19,7 @@ def main(a):
  receipt=dict(release_id=p.name,archive=str(a.archive.resolve()),archive_sha256=sha(a.archive),archive_bytes=a.archive.stat().st_size,manifest_sha256=sha(p/'manifest.json'),package_files=len(files)+1,max_regular_file_bytes=max(x['bytes']for x in files),model_sha256=sha(p/'robot.xml'),physical_contract_sha256=sha(p/'physical_contract.json'),created_UTC=datetime.datetime.now(datetime.timezone.utc).isoformat())
  a.archive.with_suffix('.sha256').write_text(receipt['archive_sha256']+'  '+a.archive.name+'\n');a.archive.with_suffix('.receipt.json').write_text(json.dumps(receipt,indent=2)+'\n')
  whitelist=[str((p/r).relative_to(ROOT))for r in[r['path']for r in files]+['manifest.json']];whitelist+=['robots/goose_v0_2/README.md','robots/goose_v0_2/hardware/training_physics_20261018_followup.md','src/sai_agent/goose/frozen_physics_runtime.py','src/sai_agent/goose/frozen_mjcf.py','scripts/models/freeze_goose_training_physics.py','scripts/models/revise_goose_frozen_material_physics.py','scripts/models/assemble_goose_frozen_runtime.py','scripts/models/package_goose_frozen_physics.py','scripts/models/render_goose_frozen_physics.py','scripts/models/export_goose_frozen_contact_preview.py','scripts/diagnostics/check_goose_frozen_physics_release.py','scripts/diagnostics/verify_goose_physics_package_files.py','scripts/diagnostics/verify_goose_frozen_physics_independent.py','scripts/diagnostics/verify_goose_frozen_contacts_independent.py','scripts/diagnostics/read_goose_frozen_contacts.py']
+ whitelist+=['scripts/models/build_goose_collision14.py','scripts/diagnostics/benchmark_goose_collision_cost.py','scripts/diagnostics/audit_goose_low_leaf_candidate_contacts.py','scripts/diagnostics/audit_goose_low_leaf_contact_roles.py']
  a.archive.with_suffix('.git_whitelist.json').write_text(json.dumps(dict(files=sorted(whitelist),archive_is_local_delivery_not_git_staged=True),indent=2)+'\n');print(json.dumps(receipt,indent=2))
 
 if __name__=='__main__':

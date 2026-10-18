@@ -1,22 +1,23 @@
 # Goose V0.2
 
-**[独立训练物理包 physics_v0_2_20261018_02](models/physics_v0_2_20261018_02/)**：固定设计质量 **16.970203929 kg**，23 个刚体、18 个控制轴、4 个内部机械坐标；驱动和物理更新200 Hz，策略接口50 Hz。
+**当前入口：[physics_v0_2_20261018_04](models/physics_v0_2_20261018_04/README.md)，14块低复杂度凸碰撞代理。** 实际MuJoCo凸包为14块、547个支持顶点、单块最多63点、1038个凸三角面；加载源网格为548顶点/1040面，二者分别统计。
 
-本轮按用户最新要求优先交付训练物理数据。它来自实际 whole05 和明确的电气固定质量分配；任务训练、实体安装和制造仍是独立工作。运行和接触验证结论以包内 manifest 与配套验证记录为准。
+04只替换碰撞代理。物理合同、执行器合同、逐项质量账和运行适配器与02逐字相同；设计总质量16.970203929 kg、23个刚体、18个控制轴、4个内部机械坐标，驱动/物理200 Hz、策略接口50 Hz。代理不参与质量计算，完整惯量、轴系、闭环和连续扭矩/速度/电源降额仍来自硬件合同。原生CAD、硬件资料和02源文件未改。
 
-- [运行说明与唯一加载入口](models/physics_v0_2_20261018_02/README.md)
-- [物理合同](models/physics_v0_2_20261018_02/physical_contract.json) · [执行器合同](models/physics_v0_2_20261018_02/actuator_contract.json) · [逐项质量账](models/physics_v0_2_20261018_02/mass_ledger.json)
-- [源身份索引](models/physics_v0_2_20261018_02/source_snapshot.json)
-- [硬件续办入口与未完事项](hardware/training_physics_20261018_followup.md)
+- [运行说明与唯一加载入口](models/physics_v0_2_20261018_04/README.md)
+- [物理合同](models/physics_v0_2_20261018_04/physical_contract.json) · [执行器合同](models/physics_v0_2_20261018_04/actuator_contract.json) · [逐项质量账](models/physics_v0_2_20261018_04/mass_ledger.json)
+- [凸块来源与机械相邻例外](models/physics_v0_2_20261018_04/collision_manifest.json) · [源身份](models/physics_v0_2_20261018_04/source_snapshot.json)
+- [实际碰撞体三视](images/physics_v0_2_20261018_04/runtime_contacts_three_views.png) · [可旋转GLB](models/physics_v0_2_20261018_04/preview/runtime_contacts.glb) · [OBJ](models/physics_v0_2_20261018_04/preview/runtime_contacts.obj)
+- [独立解包及硬件数据不变核对](evidence/physics_v0_2_20261018_04/independent_release_gate.json)
+- [直接原生CAD夹持轮廓检查](evidence/physics_v0_2_20261018_04/independent_native_grip_contour_sealed_source.json) · [关键接触检查](evidence/physics_v0_2_20261018_04/independent_critical_contact_sealed_source.json)
+- [接触参数与Sim2real标定边界](evidence/physics_v0_2_20261018_03/sim2real_contact_boundary.json) · [硬件续办](hardware/training_physics_20261018_followup.md)
 
-默认按连续设计能力限制扭矩，峰值单列且禁用；参考适配器执行速度曲线、电压降额、200 Hz目标斜坡和350 W总正机械功率预算。新脚raw8和head17装拆方案未采用，保留正确旧六件脚部机械回退及原脚底接触。包不包含任务、奖励或策略，不修改Sai Lab训练仓。
+真实下夹持面侧前缘在03中漏覆盖4.041mm，已作为[真实CAD拒绝用例](evidence/physics_v0_2_20261018_03/native_contact_reference_check.json)保留。04只在原下喙凸块补入已采用TPU垫的真实平面边界，其余13个OBJ与03逐字相同，不增碰撞块、不改变硬件数据。两份小原生BREP和可重放轮廓随源保存，采用身份由原生质量/COM与whole05保存面放置相互核对。
 
-后续硬件须服从冻结的逐体质量、重心、惯量、轴系、外接触与功率合同。需要改变时另发物理版本，保留本包，不热覆盖。TangPa外观一比一、完整实体装配、热、疲劳及实测称重未因本包交付而被视为完成。
+有限直接CAD复核中，下夹持轮廓在数值精度内吻合、无虚增凹口或孔区；上夹持轮廓最大缩入约0.025mm，脚底约0.524mm。上下真实夹持平面、嘴部真实物体、双脚地面、有限颈部姿态及身体–小腿/跨脚阳性检查另有记录。只有明确机械相邻的6对例外，非相邻自碰保留。原整机2.4315mm/躯干6.9954mm数值是相对02父代理的有限方向差，不能当作相对native CAD或实体的绝对误差，更不是全ROM认证。
 
-本次已按有源结构筛查恢复双髋铝材，连同正常压盖/螺钉配套净减重441.069076 g；未发布的17.411 kg基线保留为历史，不进入本次发布。
+同MuJoCo3.10、同CPU成本按独立性能报告的实际模型/资产身份读取。相同新硬件从291块简化后成本显著降低；对旧Move14部分姿态仍慢约2倍，事前建议1.5倍相对成本目标未达，拒绝结果保留。GPU和批量训练吞吐未测，不宣称全任务或旧版同吞吐已验证。
 
-- [实际碰撞体可旋转GLB](models/physics_v0_2_20261018_02/preview/runtime_contacts.glb) · [OBJ](models/physics_v0_2_20261018_02/preview/runtime_contacts.obj)
-- [实际运行碰撞体三视](images/physics_v0_2_20261018_02/runtime_contacts_three_views.png)
-- [独立验收记录](evidence/physics_v0_2_20261018_02/independent_release_gate.json)
+摩擦系数0.65与接触柔度仍是设计假设，condim3未实证滚动/扭转阻力；接触几何通过不等于真实抓持力、地面牵引或温度/磨损响应已标定。实物质量/COM/惯量、摩擦柔度、电机力矩速度与延迟仍须台架实测。后续标定若改变物理合同或接触则另发版本，不热覆盖本包。
 
-运行模型实际291碰撞叶，14是语义职责数；不宣称它仍是旧14叶。
+Sai Lab负责任务、奖励、网络和策略，本轮不修改其仓库或启动训练。02的291块及03漏边版本不作为当前训练入口；硬件制造、布线、拓扑减重和TangPa外观收尾继续暂停，等待用户安排。

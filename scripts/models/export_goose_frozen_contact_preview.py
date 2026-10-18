@@ -30,6 +30,10 @@ def main(a):
             continue
         mid = int(model.geom_dataid[gid])
         begin, count = int(model.mesh_vertadr[mid]), int(model.mesh_vertnum[mid])
+        graph = int(model.mesh_graphadr[mid])
+        if graph < 0:
+            raise ValueError("Compiled collision mesh has no convex support graph")
+        support_count, support_triangles = map(int, model.mesh_graph[graph:graph + 2])
         points = model.mesh_vert[begin:begin + count].copy()
         # MuJoCo mesh contacts use their convex support, including when a
         # source file has nonconvex display triangles. Show that actual hull.
@@ -43,7 +47,9 @@ def main(a):
         owner = model.body(int(model.geom_bodyid[gid])).name
         hull.metadata.update(runtime_geom=name, owner=owner, units="metres")
         scene.add_geometry(hull, node_name=name, geom_name=name)
-        rows.append(dict(name=name, owner=owner, engine_support_vertices=count,
+        rows.append(dict(name=name, owner=owner, loaded_mesh_vertices=count,
+                         actual_convex_support_vertices=support_count,
+                         actual_convex_hull_triangles=support_triangles,
                          exported_hull_vertices=len(hull.vertices),
                          world_bounds_m=hull.bounds.tolist()))
     a.output.mkdir(parents=True, exist_ok=True)
@@ -58,7 +64,11 @@ def main(a):
                    runtime_model_sha256=sha(package / "robot.xml"),
                    physical_contract_sha256=sha(package / "physical_contract.json"),
                    geometry_source="Compiled MuJoCo mesh convex support at packaged reset; no visual CAD, AI image or painted repair",
-                   leaf_count=len(rows), support_vertices=sum(r["engine_support_vertices"] for r in rows),
+                   leaf_count=len(rows), loaded_mesh_vertices=sum(r["loaded_mesh_vertices"] for r in rows),
+                   actual_convex_support_vertices=sum(r["actual_convex_support_vertices"] for r in rows),
+                   actual_maximum_convex_support_vertices=max(r["actual_convex_support_vertices"] for r in rows),
+                   actual_convex_hull_triangles=sum(r["actual_convex_hull_triangles"] for r in rows),
+                   support_measurement="MuJoCo3.10 mesh_graph header, independently calibrated on cube/octahedron by benchmark_goose_collision_cost.py",
                    units="metres", axes="right-handed +X forward, +Y robot-left, +Z up",
                    ground_excluded=True, per_body_COM=bodies, geometry=rows,
                    outputs=[dict(file=p.name, sha256=sha(p), bytes=p.stat().st_size) for p in (glb, obj)])

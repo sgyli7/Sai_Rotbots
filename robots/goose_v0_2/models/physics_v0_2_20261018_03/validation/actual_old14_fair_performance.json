@@ -1,0 +1,5911 @@
+{
+  "schema": "goose_independent_collision_cost_gate_v1",
+  "script": {
+    "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/scripts/diagnostics/benchmark_goose_collision_cost.py",
+    "sha256": "21f28ae8f7b23254b2c06e4a034b796aedf9c8fd48271d7659351de800732064"
+  },
+  "graph_layout": {
+    "mujoco_version": "3.10.0",
+    "header": "mesh_graph[mesh_graphadr: +2] = hull vertices, triangulated hull faces",
+    "fixtures": [
+      {
+        "name": "cube",
+        "expected": [
+          8,
+          12
+        ],
+        "actual": [
+          8,
+          12
+        ]
+      },
+      {
+        "name": "octahedron",
+        "expected": [
+          6,
+          8
+        ],
+        "actual": [
+          6,
+          8
+        ]
+      }
+    ]
+  },
+  "candidate": {
+    "model": {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/integration_release/collision14_runtime_candidate_02/robot.xml",
+      "sha256": "5990355c461ea3332438556fb346f059a0c2dd827aaf650a6f7165702d74e501"
+    },
+    "referenced_mesh_assets": {
+      "files": [
+        {
+          "name": "torso_central_keel",
+          "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/integration_release/collision14_runtime_candidate_02/meshes/torso_central_keel.obj",
+          "sha256": "d1637074c69fe1a1187ec3ef178216876d499f5fa5913df3e51e8b10205f7c42",
+          "file_vertices": 40,
+          "file_face_records": 76,
+          "file_triangulated_faces": 76
+        },
+        {
+          "name": "torso_upper_envelope",
+          "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/integration_release/collision14_runtime_candidate_02/meshes/torso_upper_envelope.obj",
+          "sha256": "f310b962f25612d7d00e50f13528d3ceab61a9dec3acd92c1769c70021861bf6",
+          "file_vertices": 39,
+          "file_face_records": 74,
+          "file_triangulated_faces": 74
+        },
+        {
+          "name": "neck_pitch_envelope",
+          "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/integration_release/collision14_runtime_candidate_02/meshes/neck_pitch_envelope.obj",
+          "sha256": "e12942f6428256a150a4951688dc29c9df866b57535e47fe5a9a30cd708e064d",
+          "file_vertices": 39,
+          "file_face_records": 74,
+          "file_triangulated_faces": 74
+        },
+        {
+          "name": "neck_mid_pitch_envelope",
+          "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/integration_release/collision14_runtime_candidate_02/meshes/neck_mid_pitch_envelope.obj",
+          "sha256": "231f964dc7e755183ed77f65af66cdf864c7811d0be9862ba4d9aa28550c1031",
+          "file_vertices": 35,
+          "file_face_records": 66,
+          "file_triangulated_faces": 66
+        },
+        {
+          "name": "upper_bill_envelope",
+          "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/integration_release/collision14_runtime_candidate_02/meshes/upper_bill_envelope.obj",
+          "sha256": "cfd3556451ac945b2c40d14040ad673bd1ddd34d0cda145659daf9a21bfd1c59",
+          "file_vertices": 45,
+          "file_face_records": 86,
+          "file_triangulated_faces": 86
+        },
+        {
+          "name": "lower_bill_envelope",
+          "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/integration_release/collision14_runtime_candidate_02/meshes/lower_bill_envelope.obj",
+          "sha256": "812efca012762f1f7f2a0c57264f7cb05aa1d14087adcd10aa1fa105318bdbab",
+          "file_vertices": 41,
+          "file_face_records": 78,
+          "file_triangulated_faces": 78
+        },
+        {
+          "name": "left_hip_envelope",
+          "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/integration_release/collision14_runtime_candidate_02/meshes/left_hip_envelope.obj",
+          "sha256": "069b9be201c4c4cf3d9aabb66adcbc1d86966e6c1ecaab71ee76df0ce507cc6b",
+          "file_vertices": 28,
+          "file_face_records": 52,
+          "file_triangulated_faces": 52
+        },
+        {
+          "name": "left_thigh_envelope",
+          "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/integration_release/collision14_runtime_candidate_02/meshes/left_thigh_envelope.obj",
+          "sha256": "c9822e42e9be5e21e95f81d143f0fe60aab4eaa80e043b618e70719748d8bc65",
+          "file_vertices": 34,
+          "file_face_records": 64,
+          "file_triangulated_faces": 64
+        },
+        {
+          "name": "left_shin_envelope",
+          "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/integration_release/collision14_runtime_candidate_02/meshes/left_shin_envelope.obj",
+          "sha256": "0e0a6d30a70817705b47fda9a11c61b335159e02ef2542b97215bc7d5a52bfdf",
+          "file_vertices": 28,
+          "file_face_records": 52,
+          "file_triangulated_faces": 52
+        },
+        {
+          "name": "left_actual_sole",
+          "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/integration_release/collision14_runtime_candidate_02/meshes/left_actual_sole.obj",
+          "sha256": "b2cf58a3935216183f6ff49357ed6d20f9739fd59191b96755c67d40cfc84573",
+          "file_vertices": 63,
+          "file_face_records": 122,
+          "file_triangulated_faces": 122
+        },
+        {
+          "name": "right_hip_envelope",
+          "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/integration_release/collision14_runtime_candidate_02/meshes/right_hip_envelope.obj",
+          "sha256": "e89e7ba97ae62d54161a07b73b2811bfa55dffbddfe83909f581b6824912351d",
+          "file_vertices": 28,
+          "file_face_records": 52,
+          "file_triangulated_faces": 52
+        },
+        {
+          "name": "right_thigh_envelope",
+          "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/integration_release/collision14_runtime_candidate_02/meshes/right_thigh_envelope.obj",
+          "sha256": "595f8cddb25860e2cc1cce4e471fc03c00ce25a223a4d395a472709f8cb3411c",
+          "file_vertices": 34,
+          "file_face_records": 64,
+          "file_triangulated_faces": 64
+        },
+        {
+          "name": "right_shin_envelope",
+          "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/integration_release/collision14_runtime_candidate_02/meshes/right_shin_envelope.obj",
+          "sha256": "fd6c73caf69a40abbe9b9a94b7baaaaa28c3aead17e81aa2257ff0a7b6fbf836",
+          "file_vertices": 27,
+          "file_face_records": 50,
+          "file_triangulated_faces": 50
+        },
+        {
+          "name": "right_actual_sole",
+          "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/integration_release/collision14_runtime_candidate_02/meshes/right_actual_sole.obj",
+          "sha256": "ef00cb85e372e459e1015df761509733d1a080566c582364d9be031c47afffe3",
+          "file_vertices": 63,
+          "file_face_records": 122,
+          "file_triangulated_faces": 122
+        }
+      ],
+      "ordered_names_and_sha256": "d0cd970f25e62dd880902bcecbbc9d1a86e5a12cdc75def1a8fe16b300c01e22"
+    },
+    "actual_collision_leaves": 14,
+    "actual_hull_vertices": 544,
+    "actual_maximum_hull_vertices": 63,
+    "actual_hull_triangles": 1032,
+    "loaded_mesh_vertices": 544,
+    "loaded_mesh_faces": 1032,
+    "rows": [
+      {
+        "geom": "torso_central_keel",
+        "body": "torso",
+        "type": 7,
+        "contype": 2,
+        "conaffinity": 3,
+        "mesh": "torso_central_keel",
+        "loaded_vertices": 40,
+        "loaded_faces": 76,
+        "hull_vertices": 40,
+        "hull_faces": 76
+      },
+      {
+        "geom": "torso_upper_envelope",
+        "body": "torso",
+        "type": 7,
+        "contype": 2,
+        "conaffinity": 3,
+        "mesh": "torso_upper_envelope",
+        "loaded_vertices": 39,
+        "loaded_faces": 74,
+        "hull_vertices": 39,
+        "hull_faces": 74
+      },
+      {
+        "geom": "neck_pitch_envelope",
+        "body": "neck_pitch",
+        "type": 7,
+        "contype": 2,
+        "conaffinity": 3,
+        "mesh": "neck_pitch_envelope",
+        "loaded_vertices": 39,
+        "loaded_faces": 74,
+        "hull_vertices": 39,
+        "hull_faces": 74
+      },
+      {
+        "geom": "neck_mid_pitch_envelope",
+        "body": "neck_mid_pitch",
+        "type": 7,
+        "contype": 2,
+        "conaffinity": 3,
+        "mesh": "neck_mid_pitch_envelope",
+        "loaded_vertices": 35,
+        "loaded_faces": 66,
+        "hull_vertices": 35,
+        "hull_faces": 66
+      },
+      {
+        "geom": "upper_bill_envelope",
+        "body": "head_roll",
+        "type": 7,
+        "contype": 2,
+        "conaffinity": 3,
+        "mesh": "upper_bill_envelope",
+        "loaded_vertices": 45,
+        "loaded_faces": 86,
+        "hull_vertices": 45,
+        "hull_faces": 86
+      },
+      {
+        "geom": "lower_bill_envelope",
+        "body": "beak_hinge",
+        "type": 7,
+        "contype": 2,
+        "conaffinity": 3,
+        "mesh": "lower_bill_envelope",
+        "loaded_vertices": 41,
+        "loaded_faces": 78,
+        "hull_vertices": 41,
+        "hull_faces": 78
+      },
+      {
+        "geom": "right_hip_envelope",
+        "body": "right_hip_roll",
+        "type": 7,
+        "contype": 2,
+        "conaffinity": 3,
+        "mesh": "right_hip_envelope",
+        "loaded_vertices": 28,
+        "loaded_faces": 52,
+        "hull_vertices": 28,
+        "hull_faces": 52
+      },
+      {
+        "geom": "right_thigh_envelope",
+        "body": "right_hip_pitch",
+        "type": 7,
+        "contype": 2,
+        "conaffinity": 3,
+        "mesh": "right_thigh_envelope",
+        "loaded_vertices": 34,
+        "loaded_faces": 64,
+        "hull_vertices": 34,
+        "hull_faces": 64
+      },
+      {
+        "geom": "right_shin_envelope",
+        "body": "right_knee_pitch",
+        "type": 7,
+        "contype": 2,
+        "conaffinity": 3,
+        "mesh": "right_shin_envelope",
+        "loaded_vertices": 27,
+        "loaded_faces": 50,
+        "hull_vertices": 27,
+        "hull_faces": 50
+      },
+      {
+        "geom": "right_actual_sole",
+        "body": "right_ankle_roll",
+        "type": 7,
+        "contype": 2,
+        "conaffinity": 3,
+        "mesh": "right_actual_sole",
+        "loaded_vertices": 63,
+        "loaded_faces": 122,
+        "hull_vertices": 63,
+        "hull_faces": 122
+      },
+      {
+        "geom": "left_hip_envelope",
+        "body": "left_hip_roll",
+        "type": 7,
+        "contype": 2,
+        "conaffinity": 3,
+        "mesh": "left_hip_envelope",
+        "loaded_vertices": 28,
+        "loaded_faces": 52,
+        "hull_vertices": 28,
+        "hull_faces": 52
+      },
+      {
+        "geom": "left_thigh_envelope",
+        "body": "left_hip_pitch",
+        "type": 7,
+        "contype": 2,
+        "conaffinity": 3,
+        "mesh": "left_thigh_envelope",
+        "loaded_vertices": 34,
+        "loaded_faces": 64,
+        "hull_vertices": 34,
+        "hull_faces": 64
+      },
+      {
+        "geom": "left_shin_envelope",
+        "body": "left_knee_pitch",
+        "type": 7,
+        "contype": 2,
+        "conaffinity": 3,
+        "mesh": "left_shin_envelope",
+        "loaded_vertices": 28,
+        "loaded_faces": 52,
+        "hull_vertices": 28,
+        "hull_faces": 52
+      },
+      {
+        "geom": "left_actual_sole",
+        "body": "left_ankle_roll",
+        "type": 7,
+        "contype": 2,
+        "conaffinity": 3,
+        "mesh": "left_actual_sole",
+        "loaded_vertices": 63,
+        "loaded_faces": 122,
+        "hull_vertices": 63,
+        "hull_faces": 122
+      }
+    ],
+    "complexity_gate": "PASS",
+    "failures": []
+  },
+  "host": {
+    "machine": "aarch64",
+    "platform": "Linux-6.17.0-1029-nvidia-aarch64-with-glibc2.39",
+    "pinned_cpu": 19,
+    "affinity": [
+      19
+    ],
+    "seed": 20261018,
+    "mujoco_version": "3.10.0",
+    "process_id": 2556665
+  },
+  "candidate_benchmark": {
+    "model": {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/integration_release/collision14_runtime_candidate_02/robot.xml",
+      "sha256": "5990355c461ea3332438556fb346f059a0c2dd827aaf650a6f7165702d74e501"
+    },
+    "actual_complexity": {
+      "model": {
+        "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/integration_release/collision14_runtime_candidate_02/robot.xml",
+        "sha256": "5990355c461ea3332438556fb346f059a0c2dd827aaf650a6f7165702d74e501"
+      },
+      "referenced_mesh_assets": {
+        "files": [
+          {
+            "name": "torso_central_keel",
+            "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/integration_release/collision14_runtime_candidate_02/meshes/torso_central_keel.obj",
+            "sha256": "d1637074c69fe1a1187ec3ef178216876d499f5fa5913df3e51e8b10205f7c42",
+            "file_vertices": 40,
+            "file_face_records": 76,
+            "file_triangulated_faces": 76
+          },
+          {
+            "name": "torso_upper_envelope",
+            "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/integration_release/collision14_runtime_candidate_02/meshes/torso_upper_envelope.obj",
+            "sha256": "f310b962f25612d7d00e50f13528d3ceab61a9dec3acd92c1769c70021861bf6",
+            "file_vertices": 39,
+            "file_face_records": 74,
+            "file_triangulated_faces": 74
+          },
+          {
+            "name": "neck_pitch_envelope",
+            "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/integration_release/collision14_runtime_candidate_02/meshes/neck_pitch_envelope.obj",
+            "sha256": "e12942f6428256a150a4951688dc29c9df866b57535e47fe5a9a30cd708e064d",
+            "file_vertices": 39,
+            "file_face_records": 74,
+            "file_triangulated_faces": 74
+          },
+          {
+            "name": "neck_mid_pitch_envelope",
+            "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/integration_release/collision14_runtime_candidate_02/meshes/neck_mid_pitch_envelope.obj",
+            "sha256": "231f964dc7e755183ed77f65af66cdf864c7811d0be9862ba4d9aa28550c1031",
+            "file_vertices": 35,
+            "file_face_records": 66,
+            "file_triangulated_faces": 66
+          },
+          {
+            "name": "upper_bill_envelope",
+            "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/integration_release/collision14_runtime_candidate_02/meshes/upper_bill_envelope.obj",
+            "sha256": "cfd3556451ac945b2c40d14040ad673bd1ddd34d0cda145659daf9a21bfd1c59",
+            "file_vertices": 45,
+            "file_face_records": 86,
+            "file_triangulated_faces": 86
+          },
+          {
+            "name": "lower_bill_envelope",
+            "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/integration_release/collision14_runtime_candidate_02/meshes/lower_bill_envelope.obj",
+            "sha256": "812efca012762f1f7f2a0c57264f7cb05aa1d14087adcd10aa1fa105318bdbab",
+            "file_vertices": 41,
+            "file_face_records": 78,
+            "file_triangulated_faces": 78
+          },
+          {
+            "name": "left_hip_envelope",
+            "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/integration_release/collision14_runtime_candidate_02/meshes/left_hip_envelope.obj",
+            "sha256": "069b9be201c4c4cf3d9aabb66adcbc1d86966e6c1ecaab71ee76df0ce507cc6b",
+            "file_vertices": 28,
+            "file_face_records": 52,
+            "file_triangulated_faces": 52
+          },
+          {
+            "name": "left_thigh_envelope",
+            "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/integration_release/collision14_runtime_candidate_02/meshes/left_thigh_envelope.obj",
+            "sha256": "c9822e42e9be5e21e95f81d143f0fe60aab4eaa80e043b618e70719748d8bc65",
+            "file_vertices": 34,
+            "file_face_records": 64,
+            "file_triangulated_faces": 64
+          },
+          {
+            "name": "left_shin_envelope",
+            "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/integration_release/collision14_runtime_candidate_02/meshes/left_shin_envelope.obj",
+            "sha256": "0e0a6d30a70817705b47fda9a11c61b335159e02ef2542b97215bc7d5a52bfdf",
+            "file_vertices": 28,
+            "file_face_records": 52,
+            "file_triangulated_faces": 52
+          },
+          {
+            "name": "left_actual_sole",
+            "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/integration_release/collision14_runtime_candidate_02/meshes/left_actual_sole.obj",
+            "sha256": "b2cf58a3935216183f6ff49357ed6d20f9739fd59191b96755c67d40cfc84573",
+            "file_vertices": 63,
+            "file_face_records": 122,
+            "file_triangulated_faces": 122
+          },
+          {
+            "name": "right_hip_envelope",
+            "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/integration_release/collision14_runtime_candidate_02/meshes/right_hip_envelope.obj",
+            "sha256": "e89e7ba97ae62d54161a07b73b2811bfa55dffbddfe83909f581b6824912351d",
+            "file_vertices": 28,
+            "file_face_records": 52,
+            "file_triangulated_faces": 52
+          },
+          {
+            "name": "right_thigh_envelope",
+            "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/integration_release/collision14_runtime_candidate_02/meshes/right_thigh_envelope.obj",
+            "sha256": "595f8cddb25860e2cc1cce4e471fc03c00ce25a223a4d395a472709f8cb3411c",
+            "file_vertices": 34,
+            "file_face_records": 64,
+            "file_triangulated_faces": 64
+          },
+          {
+            "name": "right_shin_envelope",
+            "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/integration_release/collision14_runtime_candidate_02/meshes/right_shin_envelope.obj",
+            "sha256": "fd6c73caf69a40abbe9b9a94b7baaaaa28c3aead17e81aa2257ff0a7b6fbf836",
+            "file_vertices": 27,
+            "file_face_records": 50,
+            "file_triangulated_faces": 50
+          },
+          {
+            "name": "right_actual_sole",
+            "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/integration_release/collision14_runtime_candidate_02/meshes/right_actual_sole.obj",
+            "sha256": "ef00cb85e372e459e1015df761509733d1a080566c582364d9be031c47afffe3",
+            "file_vertices": 63,
+            "file_face_records": 122,
+            "file_triangulated_faces": 122
+          }
+        ],
+        "ordered_names_and_sha256": "d0cd970f25e62dd880902bcecbbc9d1a86e5a12cdc75def1a8fe16b300c01e22"
+      },
+      "actual_collision_leaves": 14,
+      "actual_hull_vertices": 544,
+      "actual_maximum_hull_vertices": 63,
+      "actual_hull_triangles": 1032,
+      "loaded_mesh_vertices": 544,
+      "loaded_mesh_faces": 1032,
+      "rows": [
+        {
+          "geom": "torso_central_keel",
+          "body": "torso",
+          "type": 7,
+          "contype": 2,
+          "conaffinity": 3,
+          "mesh": "torso_central_keel",
+          "loaded_vertices": 40,
+          "loaded_faces": 76,
+          "hull_vertices": 40,
+          "hull_faces": 76
+        },
+        {
+          "geom": "torso_upper_envelope",
+          "body": "torso",
+          "type": 7,
+          "contype": 2,
+          "conaffinity": 3,
+          "mesh": "torso_upper_envelope",
+          "loaded_vertices": 39,
+          "loaded_faces": 74,
+          "hull_vertices": 39,
+          "hull_faces": 74
+        },
+        {
+          "geom": "neck_pitch_envelope",
+          "body": "neck_pitch",
+          "type": 7,
+          "contype": 2,
+          "conaffinity": 3,
+          "mesh": "neck_pitch_envelope",
+          "loaded_vertices": 39,
+          "loaded_faces": 74,
+          "hull_vertices": 39,
+          "hull_faces": 74
+        },
+        {
+          "geom": "neck_mid_pitch_envelope",
+          "body": "neck_mid_pitch",
+          "type": 7,
+          "contype": 2,
+          "conaffinity": 3,
+          "mesh": "neck_mid_pitch_envelope",
+          "loaded_vertices": 35,
+          "loaded_faces": 66,
+          "hull_vertices": 35,
+          "hull_faces": 66
+        },
+        {
+          "geom": "upper_bill_envelope",
+          "body": "head_roll",
+          "type": 7,
+          "contype": 2,
+          "conaffinity": 3,
+          "mesh": "upper_bill_envelope",
+          "loaded_vertices": 45,
+          "loaded_faces": 86,
+          "hull_vertices": 45,
+          "hull_faces": 86
+        },
+        {
+          "geom": "lower_bill_envelope",
+          "body": "beak_hinge",
+          "type": 7,
+          "contype": 2,
+          "conaffinity": 3,
+          "mesh": "lower_bill_envelope",
+          "loaded_vertices": 41,
+          "loaded_faces": 78,
+          "hull_vertices": 41,
+          "hull_faces": 78
+        },
+        {
+          "geom": "right_hip_envelope",
+          "body": "right_hip_roll",
+          "type": 7,
+          "contype": 2,
+          "conaffinity": 3,
+          "mesh": "right_hip_envelope",
+          "loaded_vertices": 28,
+          "loaded_faces": 52,
+          "hull_vertices": 28,
+          "hull_faces": 52
+        },
+        {
+          "geom": "right_thigh_envelope",
+          "body": "right_hip_pitch",
+          "type": 7,
+          "contype": 2,
+          "conaffinity": 3,
+          "mesh": "right_thigh_envelope",
+          "loaded_vertices": 34,
+          "loaded_faces": 64,
+          "hull_vertices": 34,
+          "hull_faces": 64
+        },
+        {
+          "geom": "right_shin_envelope",
+          "body": "right_knee_pitch",
+          "type": 7,
+          "contype": 2,
+          "conaffinity": 3,
+          "mesh": "right_shin_envelope",
+          "loaded_vertices": 27,
+          "loaded_faces": 50,
+          "hull_vertices": 27,
+          "hull_faces": 50
+        },
+        {
+          "geom": "right_actual_sole",
+          "body": "right_ankle_roll",
+          "type": 7,
+          "contype": 2,
+          "conaffinity": 3,
+          "mesh": "right_actual_sole",
+          "loaded_vertices": 63,
+          "loaded_faces": 122,
+          "hull_vertices": 63,
+          "hull_faces": 122
+        },
+        {
+          "geom": "left_hip_envelope",
+          "body": "left_hip_roll",
+          "type": 7,
+          "contype": 2,
+          "conaffinity": 3,
+          "mesh": "left_hip_envelope",
+          "loaded_vertices": 28,
+          "loaded_faces": 52,
+          "hull_vertices": 28,
+          "hull_faces": 52
+        },
+        {
+          "geom": "left_thigh_envelope",
+          "body": "left_hip_pitch",
+          "type": 7,
+          "contype": 2,
+          "conaffinity": 3,
+          "mesh": "left_thigh_envelope",
+          "loaded_vertices": 34,
+          "loaded_faces": 64,
+          "hull_vertices": 34,
+          "hull_faces": 64
+        },
+        {
+          "geom": "left_shin_envelope",
+          "body": "left_knee_pitch",
+          "type": 7,
+          "contype": 2,
+          "conaffinity": 3,
+          "mesh": "left_shin_envelope",
+          "loaded_vertices": 28,
+          "loaded_faces": 52,
+          "hull_vertices": 28,
+          "hull_faces": 52
+        },
+        {
+          "geom": "left_actual_sole",
+          "body": "left_ankle_roll",
+          "type": 7,
+          "contype": 2,
+          "conaffinity": 3,
+          "mesh": "left_actual_sole",
+          "loaded_vertices": 63,
+          "loaded_faces": 122,
+          "hull_vertices": 63,
+          "hull_faces": 122
+        }
+      ],
+      "complexity_gate": "PASS",
+      "failures": []
+    },
+    "body_count": 23,
+    "articulated_velocity_dimensions": 28,
+    "equality_count": 3,
+    "actuator_count": 18,
+    "total_mass_kg": 16.970203928833527,
+    "source_collision_body_exclusions": [
+      65539,
+      65547,
+      65553,
+      262150,
+      851983,
+      1245205
+    ],
+    "effective_solver": {
+      "dt_s": 0.005,
+      "solver": 2,
+      "iterations": 100,
+      "ls_iterations": 50,
+      "tolerance": 1e-08,
+      "integrator": 3,
+      "cone": 1,
+      "jacobian": 0,
+      "enableflags": 0,
+      "disableflags": 65536,
+      "ccd_iterations": 35,
+      "ccd_tolerance": 1e-06
+    },
+    "workload": {
+      "calls_per_repeat": 80,
+      "repeats": 9,
+      "warmup": 20,
+      "steps_per_rollout": 80
+    },
+    "scenarios": [
+      {
+        "name": "cold_saved_reset",
+        "fixture": {
+          "qpos": [
+            0.0,
+            0.0,
+            0.0055,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "qvel": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "kinematic_terrain_placement": false,
+          "terrain_penetration_fixture_m": null,
+          "named_hinges": {
+            "neck_yaw": 0.0,
+            "neck_pitch": 0.0,
+            "neck_mid_pitch": 0.0,
+            "head_pitch": 0.0,
+            "head_roll": 0.0,
+            "beak_hinge": 0.0,
+            "beak_input_rotor": 0.0,
+            "beak_coupler_link": 0.0,
+            "right_hip_yaw": 0.0,
+            "right_hip_roll": 0.0,
+            "right_hip_pitch": 0.0,
+            "right_knee_pitch": 0.0,
+            "right_ankle_pitch": 0.0,
+            "right_ankle_roll": 0.0,
+            "left_hip_yaw": 0.0,
+            "left_hip_roll": 0.0,
+            "left_hip_pitch": 0.0,
+            "left_knee_pitch": 0.0,
+            "left_ankle_pitch": 0.0,
+            "left_ankle_roll": 0.0,
+            "left_yaw_input_rotor": 0.0,
+            "right_yaw_input_rotor": 0.0
+          }
+        },
+        "collision_query": {
+          "median_us": 7.6398,
+          "p95_us": 7.8240875,
+          "minimum_us": 7.6042125,
+          "repeats": 9,
+          "samples_us": [
+            7.6352,
+            7.7348,
+            7.8836125,
+            7.6398,
+            7.719600000000001,
+            7.6478,
+            7.6042125,
+            7.634600000000001,
+            7.613
+          ]
+        },
+        "fixed_pose_forward": {
+          "median_us": 21.7836125,
+          "p95_us": 22.124007499999998,
+          "minimum_us": 21.708012500000002,
+          "repeats": 9,
+          "samples_us": [
+            21.830599999999997,
+            22.319612499999998,
+            21.787612499999998,
+            21.801012500000002,
+            21.7316,
+            21.708012500000002,
+            21.7836125,
+            21.7450125,
+            21.733400000000003
+          ]
+        },
+        "fixed_counts": {
+          "contacts": 4,
+          "constraints": 35,
+          "solver_iterations": 1,
+          "warnings": 0
+        },
+        "source_native_step": {
+          "median_us": 39.0286125,
+          "p95_us": 39.6252525,
+          "minimum_us": 38.890225,
+          "repeats": 9,
+          "samples_us": [
+            39.792612500000004,
+            39.3742125,
+            39.271625,
+            39.0286125,
+            38.995012499999994,
+            38.890225,
+            39.0520125,
+            38.9928125,
+            39.003825
+          ]
+        },
+        "terminal_step_counts": [
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 4
+          }
+        ],
+        "step_warnings": 0,
+        "step_finite": true,
+        "diagnostic_ablation_not_admissible_for_delivery": {
+          "no_contact": {
+            "forward": {
+              "median_us": 8.855799999999999,
+              "p95_us": 8.88664,
+              "minimum_us": 8.832012500000001,
+              "repeats": 9,
+              "samples_us": [
+                8.8992,
+                8.8542,
+                8.832012500000001,
+                8.848,
+                8.8574,
+                8.855799999999999,
+                8.8458125,
+                8.867799999999999,
+                8.8674
+              ]
+            },
+            "contacts": 0,
+            "constraints": 23
+          },
+          "no_contact_no_equality": {
+            "forward": {
+              "median_us": 8.178212499999999,
+              "p95_us": 8.202,
+              "minimum_us": 8.1554125,
+              "repeats": 9,
+              "samples_us": [
+                8.1776,
+                8.1954,
+                8.1554125,
+                8.2064,
+                8.185,
+                8.1616,
+                8.178212499999999,
+                8.1908,
+                8.1564
+              ]
+            },
+            "contacts": 0,
+            "constraints": 18
+          }
+        }
+      },
+      {
+        "name": "standing_support",
+        "fixture": {
+          "qpos": [
+            0.0,
+            0.0,
+            0.004500002805734565,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "qvel": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "kinematic_terrain_placement": true,
+          "terrain_penetration_fixture_m": 0.0005,
+          "named_hinges": {
+            "neck_yaw": 0.0,
+            "neck_pitch": 0.0,
+            "neck_mid_pitch": 0.0,
+            "head_pitch": 0.0,
+            "head_roll": 0.0,
+            "beak_hinge": 0.0,
+            "beak_input_rotor": 0.0,
+            "beak_coupler_link": 0.0,
+            "right_hip_yaw": 0.0,
+            "right_hip_roll": 0.0,
+            "right_hip_pitch": 0.0,
+            "right_knee_pitch": 0.0,
+            "right_ankle_pitch": 0.0,
+            "right_ankle_roll": 0.0,
+            "left_hip_yaw": 0.0,
+            "left_hip_roll": 0.0,
+            "left_hip_pitch": 0.0,
+            "left_knee_pitch": 0.0,
+            "left_ankle_pitch": 0.0,
+            "left_ankle_roll": 0.0,
+            "left_yaw_input_rotor": 0.0,
+            "right_yaw_input_rotor": 0.0
+          }
+        },
+        "collision_query": {
+          "median_us": 7.8256000000000006,
+          "p95_us": 7.889279999999999,
+          "minimum_us": 7.7943999999999996,
+          "repeats": 9,
+          "samples_us": [
+            7.898,
+            7.8418125,
+            7.7943999999999996,
+            7.825,
+            7.804399999999999,
+            7.872012499999999,
+            7.8762,
+            7.8034,
+            7.8256000000000006
+          ]
+        },
+        "fixed_pose_forward": {
+          "median_us": 48.328824999999995,
+          "p95_us": 48.775777500000004,
+          "minimum_us": 48.2056125,
+          "repeats": 9,
+          "samples_us": [
+            48.211825,
+            48.2056125,
+            48.217625,
+            48.328824999999995,
+            48.2792125,
+            48.388825,
+            48.551625,
+            48.9252125,
+            48.469225
+          ]
+        },
+        "fixed_counts": {
+          "contacts": 9,
+          "constraints": 50,
+          "solver_iterations": 5,
+          "warnings": 0
+        },
+        "source_native_step": {
+          "median_us": 39.032025000000004,
+          "p95_us": 39.2918175,
+          "minimum_us": 38.9644125,
+          "repeats": 9,
+          "samples_us": [
+            39.3454125,
+            39.211425000000006,
+            39.0612125,
+            39.0102125,
+            39.098025,
+            39.0114125,
+            38.9644125,
+            39.032025000000004,
+            38.9802125
+          ]
+        },
+        "terminal_step_counts": [
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 4
+          }
+        ],
+        "step_warnings": 0,
+        "step_finite": true,
+        "diagnostic_ablation_not_admissible_for_delivery": {
+          "no_contact": {
+            "forward": {
+              "median_us": 8.8614,
+              "p95_us": 8.887845,
+              "minimum_us": 8.834,
+              "repeats": 9,
+              "samples_us": [
+                8.8892,
+                8.8858125,
+                8.8624,
+                8.8394,
+                8.8592125,
+                8.8614,
+                8.834,
+                8.8530125,
+                8.8632
+              ]
+            },
+            "contacts": 0,
+            "constraints": 23
+          },
+          "no_contact_no_equality": {
+            "forward": {
+              "median_us": 8.1636,
+              "p95_us": 8.178845,
+              "minimum_us": 8.137,
+              "repeats": 9,
+              "samples_us": [
+                8.163,
+                8.1762125,
+                8.1522,
+                8.1806,
+                8.164412500000001,
+                8.137,
+                8.154399999999999,
+                8.1636,
+                8.1650125
+              ]
+            },
+            "contacts": 0,
+            "constraints": 18
+          }
+        }
+      },
+      {
+        "name": "prone_front",
+        "fixture": {
+          "qpos": [
+            0.0,
+            0.0,
+            0.24895001518307983,
+            0.7071067811865476,
+            0.0,
+            0.7071067811865476,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "qvel": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "kinematic_terrain_placement": true,
+          "terrain_penetration_fixture_m": 0.0005,
+          "named_hinges": {
+            "neck_yaw": 0.0,
+            "neck_pitch": 0.0,
+            "neck_mid_pitch": 0.0,
+            "head_pitch": 0.0,
+            "head_roll": 0.0,
+            "beak_hinge": 0.0,
+            "beak_input_rotor": 0.0,
+            "beak_coupler_link": 0.0,
+            "right_hip_yaw": 0.0,
+            "right_hip_roll": 0.0,
+            "right_hip_pitch": 0.0,
+            "right_knee_pitch": 0.0,
+            "right_ankle_pitch": 0.0,
+            "right_ankle_roll": 0.0,
+            "left_hip_yaw": 0.0,
+            "left_hip_roll": 0.0,
+            "left_hip_pitch": 0.0,
+            "left_knee_pitch": 0.0,
+            "left_ankle_pitch": 0.0,
+            "left_ankle_roll": 0.0,
+            "left_yaw_input_rotor": 0.0,
+            "right_yaw_input_rotor": 0.0
+          }
+        },
+        "collision_query": {
+          "median_us": 7.7128000000000005,
+          "p95_us": 7.7877675,
+          "minimum_us": 7.6818,
+          "repeats": 9,
+          "samples_us": [
+            7.791212499999999,
+            7.7826,
+            7.7128000000000005,
+            7.7791999999999994,
+            7.7006125,
+            7.6936,
+            7.682600000000001,
+            7.7668125,
+            7.6818
+          ]
+        },
+        "fixed_pose_forward": {
+          "median_us": 25.784612499999998,
+          "p95_us": 25.8185725,
+          "minimum_us": 25.7768125,
+          "repeats": 9,
+          "samples_us": [
+            25.8284125,
+            25.8038125,
+            25.781612499999998,
+            25.7824125,
+            25.7956,
+            25.7810125,
+            25.784612499999998,
+            25.7968125,
+            25.7768125
+          ]
+        },
+        "fixed_counts": {
+          "contacts": 5,
+          "constraints": 38,
+          "solver_iterations": 3,
+          "warnings": 0
+        },
+        "source_native_step": {
+          "median_us": 38.840625,
+          "p95_us": 39.3777375,
+          "minimum_us": 38.7182125,
+          "repeats": 9,
+          "samples_us": [
+            39.4990125,
+            39.195825,
+            39.0230125,
+            38.9108125,
+            38.840625,
+            38.747412499999996,
+            38.7824125,
+            38.7338125,
+            38.7182125
+          ]
+        },
+        "terminal_step_counts": [
+          {
+            "contacts": 9,
+            "constraints": 51,
+            "solver_iterations": 9
+          },
+          {
+            "contacts": 9,
+            "constraints": 51,
+            "solver_iterations": 9
+          },
+          {
+            "contacts": 9,
+            "constraints": 51,
+            "solver_iterations": 9
+          },
+          {
+            "contacts": 9,
+            "constraints": 51,
+            "solver_iterations": 9
+          },
+          {
+            "contacts": 9,
+            "constraints": 51,
+            "solver_iterations": 9
+          },
+          {
+            "contacts": 9,
+            "constraints": 51,
+            "solver_iterations": 9
+          },
+          {
+            "contacts": 9,
+            "constraints": 51,
+            "solver_iterations": 9
+          },
+          {
+            "contacts": 9,
+            "constraints": 51,
+            "solver_iterations": 9
+          },
+          {
+            "contacts": 9,
+            "constraints": 51,
+            "solver_iterations": 9
+          }
+        ],
+        "step_warnings": 0,
+        "step_finite": true,
+        "diagnostic_ablation_not_admissible_for_delivery": {
+          "no_contact": {
+            "forward": {
+              "median_us": 8.963,
+              "p95_us": 8.987119999999999,
+              "minimum_us": 8.936399999999999,
+              "repeats": 9,
+              "samples_us": [
+                8.9398125,
+                8.9698,
+                8.963,
+                8.9560125,
+                8.936399999999999,
+                8.9904,
+                8.9822,
+                8.937012500000002,
+                8.9674
+              ]
+            },
+            "contacts": 0,
+            "constraints": 23
+          },
+          "no_contact_no_equality": {
+            "forward": {
+              "median_us": 8.2434125,
+              "p95_us": 8.26064,
+              "minimum_us": 8.2286,
+              "repeats": 9,
+              "samples_us": [
+                8.2434125,
+                8.2548,
+                8.2586,
+                8.2394,
+                8.2568125,
+                8.241200000000001,
+                8.2286,
+                8.2434125,
+                8.262
+              ]
+            },
+            "contacts": 0,
+            "constraints": 18
+          }
+        }
+      },
+      {
+        "name": "supine_back",
+        "fixture": {
+          "qpos": [
+            0.0,
+            0.0,
+            0.24168654225780054,
+            0.7071067811865476,
+            0.0,
+            -0.7071067811865476,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "qvel": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "kinematic_terrain_placement": true,
+          "terrain_penetration_fixture_m": 0.0005,
+          "named_hinges": {
+            "neck_yaw": 0.0,
+            "neck_pitch": 0.0,
+            "neck_mid_pitch": 0.0,
+            "head_pitch": 0.0,
+            "head_roll": 0.0,
+            "beak_hinge": 0.0,
+            "beak_input_rotor": 0.0,
+            "beak_coupler_link": 0.0,
+            "right_hip_yaw": 0.0,
+            "right_hip_roll": 0.0,
+            "right_hip_pitch": 0.0,
+            "right_knee_pitch": 0.0,
+            "right_ankle_pitch": 0.0,
+            "right_ankle_roll": 0.0,
+            "left_hip_yaw": 0.0,
+            "left_hip_roll": 0.0,
+            "left_hip_pitch": 0.0,
+            "left_knee_pitch": 0.0,
+            "left_ankle_pitch": 0.0,
+            "left_ankle_roll": 0.0,
+            "left_yaw_input_rotor": 0.0,
+            "right_yaw_input_rotor": 0.0
+          }
+        },
+        "collision_query": {
+          "median_us": 7.8216,
+          "p95_us": 7.8619325,
+          "minimum_us": 7.8038,
+          "repeats": 9,
+          "samples_us": [
+            7.8656125,
+            7.81,
+            7.8262,
+            7.8564125,
+            7.8038,
+            7.826,
+            7.8078,
+            7.820412500000001,
+            7.8216
+          ]
+        },
+        "fixed_pose_forward": {
+          "median_us": 28.293212500000003,
+          "p95_us": 28.3680125,
+          "minimum_us": 28.1924125,
+          "repeats": 9,
+          "samples_us": [
+            28.4064125,
+            28.3008125,
+            28.310412499999998,
+            28.293212500000003,
+            28.2482125,
+            28.1924125,
+            28.2364125,
+            28.1950125,
+            28.302212500000003
+          ]
+        },
+        "fixed_counts": {
+          "contacts": 6,
+          "constraints": 41,
+          "solver_iterations": 4,
+          "warnings": 0
+        },
+        "source_native_step": {
+          "median_us": 31.9250125,
+          "p95_us": 32.4288925,
+          "minimum_us": 31.6958125,
+          "repeats": 9,
+          "samples_us": [
+            32.5868125,
+            32.192012500000004,
+            32.0368125,
+            31.9250125,
+            31.9588125,
+            31.778825,
+            31.7420125,
+            31.7656125,
+            31.6958125
+          ]
+        },
+        "terminal_step_counts": [
+          {
+            "contacts": 8,
+            "constraints": 50,
+            "solver_iterations": 3
+          },
+          {
+            "contacts": 8,
+            "constraints": 50,
+            "solver_iterations": 3
+          },
+          {
+            "contacts": 8,
+            "constraints": 50,
+            "solver_iterations": 3
+          },
+          {
+            "contacts": 8,
+            "constraints": 50,
+            "solver_iterations": 3
+          },
+          {
+            "contacts": 8,
+            "constraints": 50,
+            "solver_iterations": 3
+          },
+          {
+            "contacts": 8,
+            "constraints": 50,
+            "solver_iterations": 3
+          },
+          {
+            "contacts": 8,
+            "constraints": 50,
+            "solver_iterations": 3
+          },
+          {
+            "contacts": 8,
+            "constraints": 50,
+            "solver_iterations": 3
+          },
+          {
+            "contacts": 8,
+            "constraints": 50,
+            "solver_iterations": 3
+          }
+        ],
+        "step_warnings": 0,
+        "step_finite": true,
+        "diagnostic_ablation_not_admissible_for_delivery": {
+          "no_contact": {
+            "forward": {
+              "median_us": 8.9802,
+              "p95_us": 9.099527499999999,
+              "minimum_us": 8.949399999999999,
+              "repeats": 9,
+              "samples_us": [
+                9.016,
+                8.999012500000001,
+                8.963799999999999,
+                8.997399999999999,
+                9.1552125,
+                8.9802,
+                8.9502,
+                8.9622125,
+                8.949399999999999
+              ]
+            },
+            "contacts": 0,
+            "constraints": 23
+          },
+          "no_contact_no_equality": {
+            "forward": {
+              "median_us": 8.2702125,
+              "p95_us": 8.28468,
+              "minimum_us": 8.2458,
+              "repeats": 9,
+              "samples_us": [
+                8.2842,
+                8.2608125,
+                8.2458,
+                8.2674,
+                8.2726125,
+                8.25,
+                8.2832,
+                8.285,
+                8.2702125
+              ]
+            },
+            "contacts": 0,
+            "constraints": 18
+          }
+        }
+      },
+      {
+        "name": "lying_left",
+        "fixture": {
+          "qpos": [
+            0.0,
+            0.0,
+            0.17099999867246857,
+            0.7071067811865476,
+            0.7071067811865476,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "qvel": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "kinematic_terrain_placement": true,
+          "terrain_penetration_fixture_m": 0.0005,
+          "named_hinges": {
+            "neck_yaw": 0.0,
+            "neck_pitch": 0.0,
+            "neck_mid_pitch": 0.0,
+            "head_pitch": 0.0,
+            "head_roll": 0.0,
+            "beak_hinge": 0.0,
+            "beak_input_rotor": 0.0,
+            "beak_coupler_link": 0.0,
+            "right_hip_yaw": 0.0,
+            "right_hip_roll": 0.0,
+            "right_hip_pitch": 0.0,
+            "right_knee_pitch": 0.0,
+            "right_ankle_pitch": 0.0,
+            "right_ankle_roll": 0.0,
+            "left_hip_yaw": 0.0,
+            "left_hip_roll": 0.0,
+            "left_hip_pitch": 0.0,
+            "left_knee_pitch": 0.0,
+            "left_ankle_pitch": 0.0,
+            "left_ankle_roll": 0.0,
+            "left_yaw_input_rotor": 0.0,
+            "right_yaw_input_rotor": 0.0
+          }
+        },
+        "collision_query": {
+          "median_us": 7.894,
+          "p95_us": 7.922365,
+          "minimum_us": 7.8676,
+          "repeats": 9,
+          "samples_us": [
+            7.887,
+            7.9064125,
+            7.902399999999999,
+            7.8676,
+            7.8956125,
+            7.894,
+            7.933,
+            7.8904,
+            7.8872124999999995
+          ]
+        },
+        "fixed_pose_forward": {
+          "median_us": 37.4148125,
+          "p95_us": 37.466412500000004,
+          "minimum_us": 37.277612500000004,
+          "repeats": 9,
+          "samples_us": [
+            37.3268125,
+            37.4292125,
+            37.413025000000005,
+            37.4132125,
+            37.4148125,
+            37.420225,
+            37.422012499999994,
+            37.4912125,
+            37.277612500000004
+          ]
+        },
+        "fixed_counts": {
+          "contacts": 5,
+          "constraints": 38,
+          "solver_iterations": 5,
+          "warnings": 0
+        },
+        "source_native_step": {
+          "median_us": 39.376012499999995,
+          "p95_us": 39.884052499999996,
+          "minimum_us": 39.187825,
+          "repeats": 9,
+          "samples_us": [
+            40.059012499999994,
+            39.621612500000005,
+            39.484625,
+            39.376012499999995,
+            39.3326125,
+            39.268825,
+            39.3778125,
+            39.253212500000004,
+            39.187825
+          ]
+        },
+        "terminal_step_counts": [
+          {
+            "contacts": 8,
+            "constraints": 52,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 8,
+            "constraints": 52,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 8,
+            "constraints": 52,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 8,
+            "constraints": 52,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 8,
+            "constraints": 52,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 8,
+            "constraints": 52,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 8,
+            "constraints": 52,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 8,
+            "constraints": 52,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 8,
+            "constraints": 52,
+            "solver_iterations": 4
+          }
+        ],
+        "step_warnings": 0,
+        "step_finite": true,
+        "diagnostic_ablation_not_admissible_for_delivery": {
+          "no_contact": {
+            "forward": {
+              "median_us": 8.981200000000001,
+              "p95_us": 9.0062475,
+              "minimum_us": 8.9538,
+              "repeats": 9,
+              "samples_us": [
+                8.9994,
+                8.9538,
+                8.9828125,
+                8.981200000000001,
+                8.9558,
+                9.0108125,
+                8.9688,
+                8.9852,
+                8.9588
+              ]
+            },
+            "contacts": 0,
+            "constraints": 23
+          },
+          "no_contact_no_equality": {
+            "forward": {
+              "median_us": 8.273200000000001,
+              "p95_us": 8.2818,
+              "minimum_us": 8.239,
+              "repeats": 9,
+              "samples_us": [
+                8.2636,
+                8.239,
+                8.2672125,
+                8.2782,
+                8.2512,
+                8.273200000000001,
+                8.2732125,
+                8.273399999999999,
+                8.2842
+              ]
+            },
+            "contacts": 0,
+            "constraints": 18
+          }
+        }
+      },
+      {
+        "name": "lying_right",
+        "fixture": {
+          "qpos": [
+            0.0,
+            0.0,
+            0.17099999722816397,
+            0.7071067811865476,
+            -0.7071067811865476,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "qvel": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "kinematic_terrain_placement": true,
+          "terrain_penetration_fixture_m": 0.0005,
+          "named_hinges": {
+            "neck_yaw": 0.0,
+            "neck_pitch": 0.0,
+            "neck_mid_pitch": 0.0,
+            "head_pitch": 0.0,
+            "head_roll": 0.0,
+            "beak_hinge": 0.0,
+            "beak_input_rotor": 0.0,
+            "beak_coupler_link": 0.0,
+            "right_hip_yaw": 0.0,
+            "right_hip_roll": 0.0,
+            "right_hip_pitch": 0.0,
+            "right_knee_pitch": 0.0,
+            "right_ankle_pitch": 0.0,
+            "right_ankle_roll": 0.0,
+            "left_hip_yaw": 0.0,
+            "left_hip_roll": 0.0,
+            "left_hip_pitch": 0.0,
+            "left_knee_pitch": 0.0,
+            "left_ankle_pitch": 0.0,
+            "left_ankle_roll": 0.0,
+            "left_yaw_input_rotor": 0.0,
+            "right_yaw_input_rotor": 0.0
+          }
+        },
+        "collision_query": {
+          "median_us": 7.8932,
+          "p95_us": 7.914487500000001,
+          "minimum_us": 7.8754,
+          "repeats": 9,
+          "samples_us": [
+            7.8956,
+            7.892412500000001,
+            7.8754,
+            7.8796,
+            7.9116,
+            7.893612500000001,
+            7.8792,
+            7.8932,
+            7.916412500000001
+          ]
+        },
+        "fixed_pose_forward": {
+          "median_us": 51.396025,
+          "p95_us": 51.522465000000004,
+          "minimum_us": 51.354025,
+          "repeats": 9,
+          "samples_us": [
+            51.474025000000005,
+            51.527425,
+            51.513012499999995,
+            51.396025,
+            51.376025,
+            51.354025,
+            51.3744125,
+            51.515025,
+            51.390425
+          ]
+        },
+        "fixed_counts": {
+          "contacts": 7,
+          "constraints": 44,
+          "solver_iterations": 6,
+          "warnings": 0
+        },
+        "source_native_step": {
+          "median_us": 36.4736125,
+          "p95_us": 36.926692499999994,
+          "minimum_us": 36.2758125,
+          "repeats": 9,
+          "samples_us": [
+            37.0578125,
+            36.730012499999994,
+            36.611425000000004,
+            36.5060125,
+            36.4736125,
+            36.420025,
+            36.411212500000005,
+            36.3198125,
+            36.2758125
+          ]
+        },
+        "terminal_step_counts": [
+          {
+            "contacts": 8,
+            "constraints": 53,
+            "solver_iterations": 6
+          },
+          {
+            "contacts": 8,
+            "constraints": 53,
+            "solver_iterations": 6
+          },
+          {
+            "contacts": 8,
+            "constraints": 53,
+            "solver_iterations": 6
+          },
+          {
+            "contacts": 8,
+            "constraints": 53,
+            "solver_iterations": 6
+          },
+          {
+            "contacts": 8,
+            "constraints": 53,
+            "solver_iterations": 6
+          },
+          {
+            "contacts": 8,
+            "constraints": 53,
+            "solver_iterations": 6
+          },
+          {
+            "contacts": 8,
+            "constraints": 53,
+            "solver_iterations": 6
+          },
+          {
+            "contacts": 8,
+            "constraints": 53,
+            "solver_iterations": 6
+          },
+          {
+            "contacts": 8,
+            "constraints": 53,
+            "solver_iterations": 6
+          }
+        ],
+        "step_warnings": 0,
+        "step_finite": true,
+        "diagnostic_ablation_not_admissible_for_delivery": {
+          "no_contact": {
+            "forward": {
+              "median_us": 8.984200000000001,
+              "p95_us": 9.115007499999999,
+              "minimum_us": 8.9526,
+              "repeats": 9,
+              "samples_us": [
+                9.0964,
+                9.1274125,
+                9.0276,
+                8.984200000000001,
+                8.9736125,
+                8.9734,
+                8.9526,
+                8.9618125,
+                8.994200000000001
+              ]
+            },
+            "contacts": 0,
+            "constraints": 23
+          },
+          "no_contact_no_equality": {
+            "forward": {
+              "median_us": 8.258,
+              "p95_us": 8.290245,
+              "minimum_us": 8.2292125,
+              "repeats": 9,
+              "samples_us": [
+                8.290799999999999,
+                8.289412500000001,
+                8.233,
+                8.261,
+                8.2660125,
+                8.2418,
+                8.258,
+                8.2544,
+                8.2292125
+              ]
+            },
+            "contacts": 0,
+            "constraints": 18
+          }
+        }
+      },
+      {
+        "name": "finite_work_seed_0",
+        "fixture": {
+          "qpos": [
+            0.0,
+            0.0,
+            0.036556459573488596,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.2578984070558977,
+            0.0291464284276877,
+            0.374014744048047,
+            0.08645582571690501,
+            -0.033388616619664864,
+            0.08477221901968125,
+            0.08477221901968125,
+            -0.08477221901968125,
+            -0.014715011419451394,
+            0.006958700834352643,
+            -0.22188529551938907,
+            0.20302675794755012,
+            -0.17045346453935492,
+            -0.1081989659576693,
+            0.283835875830996,
+            -0.11366959368482732,
+            0.09581084982889988,
+            -0.01180487401318083,
+            0.15650392060727394,
+            -0.08719758775709645,
+            0.283835875830996,
+            -0.014715011419451394
+          ],
+          "qvel": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "kinematic_terrain_placement": true,
+          "terrain_penetration_fixture_m": 0.0005,
+          "named_hinges": {
+            "neck_yaw": 0.2578984070558977,
+            "neck_pitch": 0.0291464284276877,
+            "neck_mid_pitch": 0.374014744048047,
+            "head_pitch": 0.08645582571690501,
+            "head_roll": -0.033388616619664864,
+            "beak_hinge": 0.08477221901968125,
+            "beak_input_rotor": 0.08477221901968125,
+            "beak_coupler_link": -0.08477221901968125,
+            "right_hip_yaw": -0.014715011419451394,
+            "right_hip_roll": 0.006958700834352643,
+            "right_hip_pitch": -0.22188529551938907,
+            "right_knee_pitch": 0.20302675794755012,
+            "right_ankle_pitch": -0.17045346453935492,
+            "right_ankle_roll": -0.1081989659576693,
+            "left_hip_yaw": 0.283835875830996,
+            "left_hip_roll": -0.11366959368482732,
+            "left_hip_pitch": 0.09581084982889988,
+            "left_knee_pitch": -0.01180487401318083,
+            "left_ankle_pitch": 0.15650392060727394,
+            "left_ankle_roll": -0.08719758775709645,
+            "left_yaw_input_rotor": 0.283835875830996,
+            "right_yaw_input_rotor": -0.014715011419451394
+          }
+        },
+        "collision_query": {
+          "median_us": 8.0364,
+          "p95_us": 8.058240000000001,
+          "minimum_us": 7.9760124999999995,
+          "repeats": 9,
+          "samples_us": [
+            8.042399999999999,
+            8.063600000000001,
+            7.9760124999999995,
+            8.0076,
+            7.982,
+            8.047,
+            7.9924125,
+            8.0364,
+            8.0502
+          ]
+        },
+        "fixed_pose_forward": {
+          "median_us": 35.916012499999994,
+          "p95_us": 35.9421325,
+          "minimum_us": 35.8870125,
+          "repeats": 9,
+          "samples_us": [
+            35.899625,
+            35.942212500000004,
+            35.9032125,
+            35.9308125,
+            35.935025,
+            35.916012499999994,
+            35.9420125,
+            35.8870125,
+            35.894425000000005
+          ]
+        },
+        "fixed_counts": {
+          "contacts": 2,
+          "constraints": 29,
+          "solver_iterations": 5,
+          "warnings": 0
+        },
+        "source_native_step": {
+          "median_us": 36.087612500000006,
+          "p95_us": 36.8235725,
+          "minimum_us": 35.8342125,
+          "repeats": 9,
+          "samples_us": [
+            36.9874125,
+            36.5778125,
+            36.272825,
+            36.1412125,
+            36.0394125,
+            36.087612500000006,
+            35.981625,
+            35.8858125,
+            35.8342125
+          ]
+        },
+        "terminal_step_counts": [
+          {
+            "contacts": 4,
+            "constraints": 36,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 4,
+            "constraints": 36,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 4,
+            "constraints": 36,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 4,
+            "constraints": 36,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 4,
+            "constraints": 36,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 4,
+            "constraints": 36,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 4,
+            "constraints": 36,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 4,
+            "constraints": 36,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 4,
+            "constraints": 36,
+            "solver_iterations": 4
+          }
+        ],
+        "step_warnings": 0,
+        "step_finite": true,
+        "diagnostic_ablation_not_admissible_for_delivery": {
+          "no_contact": {
+            "forward": {
+              "median_us": 9.188600000000001,
+              "p95_us": 9.2242075,
+              "minimum_us": 9.1558125,
+              "repeats": 9,
+              "samples_us": [
+                9.2044,
+                9.197799999999999,
+                9.1558125,
+                9.1826,
+                9.188600000000001,
+                9.2374125,
+                9.161200000000001,
+                9.1846,
+                9.203012500000002
+              ]
+            },
+            "contacts": 0,
+            "constraints": 23
+          },
+          "no_contact_no_equality": {
+            "forward": {
+              "median_us": 8.446399999999999,
+              "p95_us": 8.461920000000001,
+              "minimum_us": 8.4248125,
+              "repeats": 9,
+              "samples_us": [
+                8.458200000000001,
+                8.446399999999999,
+                8.4358125,
+                8.446399999999999,
+                8.441,
+                8.4248125,
+                8.4644,
+                8.4482,
+                8.436612499999999
+              ]
+            },
+            "contacts": 0,
+            "constraints": 18
+          }
+        }
+      },
+      {
+        "name": "finite_work_seed_1",
+        "fixture": {
+          "qpos": [
+            0.0,
+            0.0,
+            0.025759018544485437,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.1810575037289496,
+            -0.02706183222037095,
+            0.1709340565943438,
+            -0.22816195153875654,
+            -0.038798044313309896,
+            0.06023674535311126,
+            0.06023674535311126,
+            -0.06023674535311126,
+            0.14458442506362432,
+            0.2881007406317078,
+            0.1960334344973431,
+            -0.199,
+            -0.005727804420687811,
+            -0.10842816398283496,
+            0.25960477050127123,
+            0.10325841205646437,
+            0.5353761162045302,
+            -0.046331313497655464,
+            -0.22655160548788153,
+            0.1916075322583558,
+            0.25960477050127123,
+            0.14458442506362432
+          ],
+          "qvel": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "kinematic_terrain_placement": true,
+          "terrain_penetration_fixture_m": 0.0005,
+          "named_hinges": {
+            "neck_yaw": 0.1810575037289496,
+            "neck_pitch": -0.02706183222037095,
+            "neck_mid_pitch": 0.1709340565943438,
+            "head_pitch": -0.22816195153875654,
+            "head_roll": -0.038798044313309896,
+            "beak_hinge": 0.06023674535311126,
+            "beak_input_rotor": 0.06023674535311126,
+            "beak_coupler_link": -0.06023674535311126,
+            "right_hip_yaw": 0.14458442506362432,
+            "right_hip_roll": 0.2881007406317078,
+            "right_hip_pitch": 0.1960334344973431,
+            "right_knee_pitch": -0.199,
+            "right_ankle_pitch": -0.005727804420687811,
+            "right_ankle_roll": -0.10842816398283496,
+            "left_hip_yaw": 0.25960477050127123,
+            "left_hip_roll": 0.10325841205646437,
+            "left_hip_pitch": 0.5353761162045302,
+            "left_knee_pitch": -0.046331313497655464,
+            "left_ankle_pitch": -0.22655160548788153,
+            "left_ankle_roll": 0.1916075322583558,
+            "left_yaw_input_rotor": 0.25960477050127123,
+            "right_yaw_input_rotor": 0.14458442506362432
+          }
+        },
+        "collision_query": {
+          "median_us": 9.0748,
+          "p95_us": 9.141125,
+          "minimum_us": 9.0522125,
+          "repeats": 9,
+          "samples_us": [
+            9.1410125,
+            9.141200000000001,
+            9.076600000000001,
+            9.0522125,
+            9.0674,
+            9.0748,
+            9.0566125,
+            9.1216,
+            9.0688
+          ]
+        },
+        "fixed_pose_forward": {
+          "median_us": 41.6438125,
+          "p95_us": 42.102652500000005,
+          "minimum_us": 41.5634125,
+          "repeats": 9,
+          "samples_us": [
+            41.641012499999995,
+            41.6438125,
+            41.709425,
+            41.5634125,
+            41.567625,
+            42.2060125,
+            41.920625,
+            41.947612500000005,
+            41.616412499999996
+          ]
+        },
+        "fixed_counts": {
+          "contacts": 3,
+          "constraints": 32,
+          "solver_iterations": 7,
+          "warnings": 0
+        },
+        "source_native_step": {
+          "median_us": 38.5248125,
+          "p95_us": 39.0206125,
+          "minimum_us": 38.426425,
+          "repeats": 9,
+          "samples_us": [
+            39.1390125,
+            38.8430125,
+            38.652225,
+            38.5752125,
+            38.5112125,
+            38.450425,
+            38.5248125,
+            38.4698125,
+            38.426425
+          ]
+        },
+        "terminal_step_counts": [
+          {
+            "contacts": 2,
+            "constraints": 33,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 2,
+            "constraints": 33,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 2,
+            "constraints": 33,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 2,
+            "constraints": 33,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 2,
+            "constraints": 33,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 2,
+            "constraints": 33,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 2,
+            "constraints": 33,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 2,
+            "constraints": 33,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 2,
+            "constraints": 33,
+            "solver_iterations": 4
+          }
+        ],
+        "step_warnings": 0,
+        "step_finite": true,
+        "diagnostic_ablation_not_admissible_for_delivery": {
+          "no_contact": {
+            "forward": {
+              "median_us": 9.1570125,
+              "p95_us": 9.1986,
+              "minimum_us": 9.137799999999999,
+              "repeats": 9,
+              "samples_us": [
+                9.1594,
+                9.1782,
+                9.1718125,
+                9.1394,
+                9.212200000000001,
+                9.1570125,
+                9.1548,
+                9.137799999999999,
+                9.156799999999999
+              ]
+            },
+            "contacts": 0,
+            "constraints": 23
+          },
+          "no_contact_no_equality": {
+            "forward": {
+              "median_us": 8.4394,
+              "p95_us": 8.4900475,
+              "minimum_us": 8.4264,
+              "repeats": 9,
+              "samples_us": [
+                8.4384,
+                8.4628,
+                8.508212499999999,
+                8.4322,
+                8.446399999999999,
+                8.4560125,
+                8.4264,
+                8.4394,
+                8.4374
+              ]
+            },
+            "contacts": 0,
+            "constraints": 18
+          }
+        }
+      },
+      {
+        "name": "finite_work_seed_2",
+        "fixture": {
+          "qpos": [
+            0.0,
+            0.0,
+            0.02584864413229048,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            -0.019043558796613985,
+            -0.016722757395955072,
+            -0.16924127431038796,
+            0.05387189174012309,
+            -0.1319410054900998,
+            0.001,
+            0.001,
+            -0.001,
+            0.01251370725267441,
+            0.10674105926300889,
+            -0.28526498928217947,
+            0.3060348900202505,
+            0.006008334759735805,
+            -0.056081837178545764,
+            0.24893213057250588,
+            -0.27384185044953335,
+            -0.09533189052980814,
+            0.16191539760444454,
+            -0.07439586313891446,
+            0.06570267691904527,
+            0.24893213057250588,
+            0.01251370725267441
+          ],
+          "qvel": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "kinematic_terrain_placement": true,
+          "terrain_penetration_fixture_m": 0.0005,
+          "named_hinges": {
+            "neck_yaw": -0.019043558796613985,
+            "neck_pitch": -0.016722757395955072,
+            "neck_mid_pitch": -0.16924127431038796,
+            "head_pitch": 0.05387189174012309,
+            "head_roll": -0.1319410054900998,
+            "beak_hinge": 0.001,
+            "beak_input_rotor": 0.001,
+            "beak_coupler_link": -0.001,
+            "right_hip_yaw": 0.01251370725267441,
+            "right_hip_roll": 0.10674105926300889,
+            "right_hip_pitch": -0.28526498928217947,
+            "right_knee_pitch": 0.3060348900202505,
+            "right_ankle_pitch": 0.006008334759735805,
+            "right_ankle_roll": -0.056081837178545764,
+            "left_hip_yaw": 0.24893213057250588,
+            "left_hip_roll": -0.27384185044953335,
+            "left_hip_pitch": -0.09533189052980814,
+            "left_knee_pitch": 0.16191539760444454,
+            "left_ankle_pitch": -0.07439586313891446,
+            "left_ankle_roll": 0.06570267691904527,
+            "left_yaw_input_rotor": 0.24893213057250588,
+            "right_yaw_input_rotor": 0.01251370725267441
+          }
+        },
+        "collision_query": {
+          "median_us": 8.0462,
+          "p95_us": 8.070845,
+          "minimum_us": 8.0190125,
+          "repeats": 9,
+          "samples_us": [
+            8.0838,
+            8.0514125,
+            8.028,
+            8.048399999999999,
+            8.0498,
+            8.0190125,
+            8.0432,
+            8.024,
+            8.0462
+          ]
+        },
+        "fixed_pose_forward": {
+          "median_us": 31.3976125,
+          "p95_us": 31.5322925,
+          "minimum_us": 31.370412499999997,
+          "repeats": 9,
+          "samples_us": [
+            31.3948125,
+            31.4058125,
+            31.370412499999997,
+            31.3852125,
+            31.3768125,
+            31.467212500000002,
+            31.3976125,
+            31.5132125,
+            31.545012500000002
+          ]
+        },
+        "fixed_counts": {
+          "contacts": 2,
+          "constraints": 29,
+          "solver_iterations": 6,
+          "warnings": 0
+        },
+        "source_native_step": {
+          "median_us": 41.712612500000006,
+          "p95_us": 42.1343775,
+          "minimum_us": 41.646025,
+          "repeats": 9,
+          "samples_us": [
+            42.2786125,
+            41.918025,
+            41.712612500000006,
+            41.7538125,
+            41.668625,
+            41.6866125,
+            41.656825,
+            41.7254125,
+            41.646025
+          ]
+        },
+        "terminal_step_counts": [
+          {
+            "contacts": 3,
+            "constraints": 32,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 3,
+            "constraints": 32,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 3,
+            "constraints": 32,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 3,
+            "constraints": 32,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 3,
+            "constraints": 32,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 3,
+            "constraints": 32,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 3,
+            "constraints": 32,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 3,
+            "constraints": 32,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 3,
+            "constraints": 32,
+            "solver_iterations": 4
+          }
+        ],
+        "step_warnings": 0,
+        "step_finite": true,
+        "diagnostic_ablation_not_admissible_for_delivery": {
+          "no_contact": {
+            "forward": {
+              "median_us": 9.1684,
+              "p95_us": 9.183725,
+              "minimum_us": 9.1292125,
+              "repeats": 9,
+              "samples_us": [
+                9.1882,
+                9.153,
+                9.1376125,
+                9.1684,
+                9.1504,
+                9.1292125,
+                9.172600000000001,
+                9.1748,
+                9.1770125
+              ]
+            },
+            "contacts": 0,
+            "constraints": 23
+          },
+          "no_contact_no_equality": {
+            "forward": {
+              "median_us": 8.417399999999999,
+              "p95_us": 8.44788,
+              "minimum_us": 8.405012500000002,
+              "repeats": 9,
+              "samples_us": [
+                8.4502,
+                8.430200000000001,
+                8.407612499999999,
+                8.4148,
+                8.427200000000001,
+                8.405012500000002,
+                8.4444,
+                8.417399999999999,
+                8.4084
+              ]
+            },
+            "contacts": 0,
+            "constraints": 18
+          }
+        }
+      },
+      {
+        "name": "finite_work_seed_3",
+        "fixture": {
+          "qpos": [
+            0.0,
+            0.0,
+            0.03573941628526156,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            -0.18177177191755078,
+            0.10288217975383082,
+            -0.3477322880124054,
+            -0.003676570562259872,
+            0.02367647503718882,
+            0.001,
+            0.001,
+            -0.001,
+            -0.0113196244892561,
+            -0.10866443211672974,
+            -0.08025256920118669,
+            0.0652255567370368,
+            0.08614870300266839,
+            0.020162454430060973,
+            -0.15543780170523464,
+            -0.00793098482631066,
+            0.3596562554661098,
+            0.06765889069081796,
+            0.16411111139518092,
+            -0.09379777032699115,
+            -0.15543780170523464,
+            -0.0113196244892561
+          ],
+          "qvel": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "kinematic_terrain_placement": true,
+          "terrain_penetration_fixture_m": 0.0005,
+          "named_hinges": {
+            "neck_yaw": -0.18177177191755078,
+            "neck_pitch": 0.10288217975383082,
+            "neck_mid_pitch": -0.3477322880124054,
+            "head_pitch": -0.003676570562259872,
+            "head_roll": 0.02367647503718882,
+            "beak_hinge": 0.001,
+            "beak_input_rotor": 0.001,
+            "beak_coupler_link": -0.001,
+            "right_hip_yaw": -0.0113196244892561,
+            "right_hip_roll": -0.10866443211672974,
+            "right_hip_pitch": -0.08025256920118669,
+            "right_knee_pitch": 0.0652255567370368,
+            "right_ankle_pitch": 0.08614870300266839,
+            "right_ankle_roll": 0.020162454430060973,
+            "left_hip_yaw": -0.15543780170523464,
+            "left_hip_roll": -0.00793098482631066,
+            "left_hip_pitch": 0.3596562554661098,
+            "left_knee_pitch": 0.06765889069081796,
+            "left_ankle_pitch": 0.16411111139518092,
+            "left_ankle_roll": -0.09379777032699115,
+            "left_yaw_input_rotor": -0.15543780170523464,
+            "right_yaw_input_rotor": -0.0113196244892561
+          }
+        },
+        "collision_query": {
+          "median_us": 7.146199999999999,
+          "p95_us": 7.217812500000001,
+          "minimum_us": 7.1022,
+          "repeats": 9,
+          "samples_us": [
+            7.148,
+            7.1046000000000005,
+            7.1776125,
+            7.1022,
+            7.146199999999999,
+            7.1138,
+            7.244612500000001,
+            7.163600000000001,
+            7.1254
+          ]
+        },
+        "fixed_pose_forward": {
+          "median_us": 31.2396125,
+          "p95_us": 31.3003325,
+          "minimum_us": 31.141012500000002,
+          "repeats": 9,
+          "samples_us": [
+            31.3108125,
+            31.283825,
+            31.2208125,
+            31.284612499999998,
+            31.2148125,
+            31.284212500000002,
+            31.2396125,
+            31.228012500000002,
+            31.141012500000002
+          ]
+        },
+        "fixed_counts": {
+          "contacts": 2,
+          "constraints": 29,
+          "solver_iterations": 5,
+          "warnings": 0
+        },
+        "source_native_step": {
+          "median_us": 40.386224999999996,
+          "p95_us": 41.4338975,
+          "minimum_us": 40.2212125,
+          "repeats": 9,
+          "samples_us": [
+            41.378225,
+            41.4710125,
+            40.736012499999994,
+            40.386224999999996,
+            40.372412499999996,
+            40.467225,
+            40.2212125,
+            40.2248125,
+            40.280025
+          ]
+        },
+        "terminal_step_counts": [
+          {
+            "contacts": 10,
+            "constraints": 57,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 10,
+            "constraints": 57,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 10,
+            "constraints": 57,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 10,
+            "constraints": 57,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 10,
+            "constraints": 57,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 10,
+            "constraints": 57,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 10,
+            "constraints": 57,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 10,
+            "constraints": 57,
+            "solver_iterations": 4
+          },
+          {
+            "contacts": 10,
+            "constraints": 57,
+            "solver_iterations": 4
+          }
+        ],
+        "step_warnings": 0,
+        "step_finite": true,
+        "diagnostic_ablation_not_admissible_for_delivery": {
+          "no_contact": {
+            "forward": {
+              "median_us": 9.1648,
+              "p95_us": 9.323725,
+              "minimum_us": 9.1326,
+              "repeats": 9,
+              "samples_us": [
+                9.1600125,
+                9.1326,
+                9.1648,
+                9.1664125,
+                9.1526,
+                9.1984,
+                9.3758,
+                9.2456125,
+                9.154200000000001
+              ]
+            },
+            "contacts": 0,
+            "constraints": 23
+          },
+          "no_contact_no_equality": {
+            "forward": {
+              "median_us": 8.420612499999999,
+              "p95_us": 8.450967499999999,
+              "minimum_us": 8.406,
+              "repeats": 9,
+              "samples_us": [
+                8.457212499999999,
+                8.441600000000001,
+                8.406,
+                8.419012500000001,
+                8.4294,
+                8.409600000000001,
+                8.4294,
+                8.420612499999999,
+                8.4166
+              ]
+            },
+            "contacts": 0,
+            "constraints": 18
+          }
+        }
+      }
+    ]
+  },
+  "reference_benchmark": {
+    "model": {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/independent_whole_audit/collision_cost_gate_01/old_move14_normalized_reference/robot.xml",
+      "sha256": "d10a6994674eeef2646eb11da5bd105ff8be464d7c7cb3de2a298e461fcf84d1"
+    },
+    "actual_complexity": {
+      "model": {
+        "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/independent_whole_audit/collision_cost_gate_01/old_move14_normalized_reference/robot.xml",
+        "sha256": "d10a6994674eeef2646eb11da5bd105ff8be464d7c7cb3de2a298e461fcf84d1"
+      },
+      "referenced_mesh_assets": {
+        "files": [
+          {
+            "name": "lower_neck_envelope",
+            "path": "/home/ethan/ProjectBackups/2026-10-09/Sai_Lab/goose_move_200hz_fast_001/native_lateral_skill_106/model/lower_neck_envelope.obj",
+            "sha256": "c3a06769764c3c7d3064eb882208bba8175b3d97e6a2aae9176c186a7b3004d2",
+            "file_vertices": 160,
+            "file_face_records": 316,
+            "file_triangulated_faces": 316
+          },
+          {
+            "name": "upper_neck_envelope",
+            "path": "/home/ethan/ProjectBackups/2026-10-09/Sai_Lab/goose_move_200hz_fast_001/native_lateral_skill_106/model/upper_neck_envelope.obj",
+            "sha256": "d7e8d7429c44273a2981395a9eb61ff437fbdd6b25863a5509e5124131eae297",
+            "file_vertices": 95,
+            "file_face_records": 186,
+            "file_triangulated_faces": 186
+          },
+          {
+            "name": "head_upper_bill_envelope",
+            "path": "/home/ethan/ProjectBackups/2026-10-09/Sai_Lab/goose_move_200hz_fast_001/native_lateral_skill_106/model/head_upper_bill_envelope.obj",
+            "sha256": "447c822d8478b9a7b1fecf6b0ad7b47995cfdff3dee47a12f6add81cbfa2041c",
+            "file_vertices": 294,
+            "file_face_records": 584,
+            "file_triangulated_faces": 584
+          },
+          {
+            "name": "lower_bill_envelope",
+            "path": "/home/ethan/ProjectBackups/2026-10-09/Sai_Lab/goose_move_200hz_fast_001/native_lateral_skill_106/model/lower_bill_envelope.obj",
+            "sha256": "fdbec665d8c48bb3a14edecf882a4a406a90c713a0eafbec38f9ace3ce977108",
+            "file_vertices": 230,
+            "file_face_records": 456,
+            "file_triangulated_faces": 456
+          },
+          {
+            "name": "right_thigh_envelope",
+            "path": "/home/ethan/ProjectBackups/2026-10-09/Sai_Lab/goose_move_200hz_fast_001/native_lateral_skill_106/model/right_thigh_envelope.obj",
+            "sha256": "ae168761bbcaa070b1fa720ab6673790426c1634a8cbd1d93a4f447d772b220f",
+            "file_vertices": 118,
+            "file_face_records": 232,
+            "file_triangulated_faces": 232
+          },
+          {
+            "name": "right_shin_envelope",
+            "path": "/home/ethan/ProjectBackups/2026-10-09/Sai_Lab/goose_move_200hz_fast_001/native_lateral_skill_106/model/right_shin_envelope.obj",
+            "sha256": "3905250a1b46f6c1a0de7e623c2a540a09185a9df6c78bc7d395d095f6573e1f",
+            "file_vertices": 141,
+            "file_face_records": 278,
+            "file_triangulated_faces": 278
+          },
+          {
+            "name": "left_thigh_envelope",
+            "path": "/home/ethan/ProjectBackups/2026-10-09/Sai_Lab/goose_move_200hz_fast_001/native_lateral_skill_106/model/left_thigh_envelope.obj",
+            "sha256": "6caeaffc2e9eac735f56ab194bcc01350629cbfbc0ee644a4302a68922daa153",
+            "file_vertices": 117,
+            "file_face_records": 230,
+            "file_triangulated_faces": 230
+          },
+          {
+            "name": "left_shin_envelope",
+            "path": "/home/ethan/ProjectBackups/2026-10-09/Sai_Lab/goose_move_200hz_fast_001/native_lateral_skill_106/model/left_shin_envelope.obj",
+            "sha256": "acf18f64e6fc4e18450c8bf65cf690f397d57827d1733b6ebf8dd539c31b22fd",
+            "file_vertices": 145,
+            "file_face_records": 286,
+            "file_triangulated_faces": 286
+          },
+          {
+            "name": "right_flexible_sole",
+            "path": "/home/ethan/ProjectBackups/2026-10-09/Sai_Lab/goose_move_200hz_fast_001/native_lateral_skill_106/model/right_flexible_sole.obj",
+            "sha256": "4f96b933f00b24e4bf0aca8a9d6ef42ea8a3f8694e114b7a8b145053eabf8b98",
+            "file_vertices": 201,
+            "file_face_records": 398,
+            "file_triangulated_faces": 398
+          },
+          {
+            "name": "left_flexible_sole",
+            "path": "/home/ethan/ProjectBackups/2026-10-09/Sai_Lab/goose_move_200hz_fast_001/native_lateral_skill_106/model/left_flexible_sole.obj",
+            "sha256": "92f26955d768fc052d6b66433a60a84d0eb74a058eb78f004298d4498c83136d",
+            "file_vertices": 201,
+            "file_face_records": 398,
+            "file_triangulated_faces": 398
+          },
+          {
+            "name": "torso_mounted_shell_right_aft",
+            "path": "/home/ethan/ProjectBackups/2026-10-09/Sai_Lab/goose_move_200hz_fast_001/native_lateral_skill_106/model/torso_mounted_shell_right_aft.obj",
+            "sha256": "107fc7386dbde08161e56a7dfc2fadc03bcad2b2ddf34c2d2f6a929c4cb13ff3",
+            "file_vertices": 19308,
+            "file_face_records": 38612,
+            "file_triangulated_faces": 38612
+          },
+          {
+            "name": "torso_mounted_shell_left_aft",
+            "path": "/home/ethan/ProjectBackups/2026-10-09/Sai_Lab/goose_move_200hz_fast_001/native_lateral_skill_106/model/torso_mounted_shell_left_aft.obj",
+            "sha256": "a24a487d2613596e4f4dec5c0f97669ee30339961d380ae9ec89f9c84b06e8fd",
+            "file_vertices": 19307,
+            "file_face_records": 38610,
+            "file_triangulated_faces": 38610
+          },
+          {
+            "name": "torso_mounted_shell_right_fore",
+            "path": "/home/ethan/ProjectBackups/2026-10-09/Sai_Lab/goose_move_200hz_fast_001/native_lateral_skill_106/model/torso_mounted_shell_right_fore.obj",
+            "sha256": "ce3bd69c1e3dd2ad740bf7ba6d990b79aa21ab9243b5a470205b30b12716b809",
+            "file_vertices": 3192,
+            "file_face_records": 6380,
+            "file_triangulated_faces": 6380
+          },
+          {
+            "name": "torso_mounted_shell_left_fore",
+            "path": "/home/ethan/ProjectBackups/2026-10-09/Sai_Lab/goose_move_200hz_fast_001/native_lateral_skill_106/model/torso_mounted_shell_left_fore.obj",
+            "sha256": "ed137bf34653bd2af83fa9b2772c7d9cddf1a3d3de0a5ee15c8787a1d5e040af",
+            "file_vertices": 3159,
+            "file_face_records": 6314,
+            "file_triangulated_faces": 6314
+          }
+        ],
+        "ordered_names_and_sha256": "416f55425c1cb47683d92b5f2e5d3348aff5d37aef960867733be38f3dc038bd"
+      },
+      "actual_collision_leaves": 14,
+      "actual_hull_vertices": 46069,
+      "actual_maximum_hull_vertices": 19300,
+      "actual_hull_triangles": 92090,
+      "loaded_mesh_vertices": 46266,
+      "loaded_mesh_faces": 92484,
+      "rows": [
+        {
+          "geom": "torso_mounted_shell_right_aft",
+          "body": "torso",
+          "type": 7,
+          "contype": 2,
+          "conaffinity": 3,
+          "mesh": "torso_mounted_shell_right_aft",
+          "loaded_vertices": 19308,
+          "loaded_faces": 38612,
+          "hull_vertices": 19300,
+          "hull_faces": 38596
+        },
+        {
+          "geom": "torso_mounted_shell_left_aft",
+          "body": "torso",
+          "type": 7,
+          "contype": 2,
+          "conaffinity": 3,
+          "mesh": "torso_mounted_shell_left_aft",
+          "loaded_vertices": 19307,
+          "loaded_faces": 38610,
+          "hull_vertices": 19300,
+          "hull_faces": 38596
+        },
+        {
+          "geom": "torso_mounted_shell_right_fore",
+          "body": "torso",
+          "type": 7,
+          "contype": 2,
+          "conaffinity": 3,
+          "mesh": "torso_mounted_shell_right_fore",
+          "loaded_vertices": 3192,
+          "loaded_faces": 6380,
+          "hull_vertices": 3099,
+          "hull_faces": 6194
+        },
+        {
+          "geom": "torso_mounted_shell_left_fore",
+          "body": "torso",
+          "type": 7,
+          "contype": 2,
+          "conaffinity": 3,
+          "mesh": "torso_mounted_shell_left_fore",
+          "loaded_vertices": 3159,
+          "loaded_faces": 6314,
+          "hull_vertices": 3070,
+          "hull_faces": 6136
+        },
+        {
+          "geom": "lower_neck_envelope",
+          "body": "neck_pitch",
+          "type": 7,
+          "contype": 2,
+          "conaffinity": 3,
+          "mesh": "lower_neck_envelope",
+          "loaded_vertices": 160,
+          "loaded_faces": 316,
+          "hull_vertices": 160,
+          "hull_faces": 316
+        },
+        {
+          "geom": "upper_neck_envelope",
+          "body": "neck_mid_pitch",
+          "type": 7,
+          "contype": 2,
+          "conaffinity": 3,
+          "mesh": "upper_neck_envelope",
+          "loaded_vertices": 95,
+          "loaded_faces": 186,
+          "hull_vertices": 95,
+          "hull_faces": 186
+        },
+        {
+          "geom": "head_upper_bill_envelope",
+          "body": "head_roll",
+          "type": 7,
+          "contype": 2,
+          "conaffinity": 3,
+          "mesh": "head_upper_bill_envelope",
+          "loaded_vertices": 294,
+          "loaded_faces": 584,
+          "hull_vertices": 294,
+          "hull_faces": 584
+        },
+        {
+          "geom": "lower_bill_envelope",
+          "body": "beak_hinge",
+          "type": 7,
+          "contype": 2,
+          "conaffinity": 3,
+          "mesh": "lower_bill_envelope",
+          "loaded_vertices": 230,
+          "loaded_faces": 456,
+          "hull_vertices": 230,
+          "hull_faces": 456
+        },
+        {
+          "geom": "right_thigh_envelope",
+          "body": "right_hip_pitch",
+          "type": 7,
+          "contype": 2,
+          "conaffinity": 3,
+          "mesh": "right_thigh_envelope",
+          "loaded_vertices": 118,
+          "loaded_faces": 232,
+          "hull_vertices": 118,
+          "hull_faces": 232
+        },
+        {
+          "geom": "right_shin_envelope",
+          "body": "right_knee_pitch",
+          "type": 7,
+          "contype": 2,
+          "conaffinity": 3,
+          "mesh": "right_shin_envelope",
+          "loaded_vertices": 141,
+          "loaded_faces": 278,
+          "hull_vertices": 141,
+          "hull_faces": 278
+        },
+        {
+          "geom": "right_flexible_sole",
+          "body": "right_ankle_roll",
+          "type": 6,
+          "contype": 2,
+          "conaffinity": 3,
+          "hull_vertices": null,
+          "hull_faces": null,
+          "primitive_support_function_not_finite_vertex_mesh": true
+        },
+        {
+          "geom": "left_thigh_envelope",
+          "body": "left_hip_pitch",
+          "type": 7,
+          "contype": 2,
+          "conaffinity": 3,
+          "mesh": "left_thigh_envelope",
+          "loaded_vertices": 117,
+          "loaded_faces": 230,
+          "hull_vertices": 117,
+          "hull_faces": 230
+        },
+        {
+          "geom": "left_shin_envelope",
+          "body": "left_knee_pitch",
+          "type": 7,
+          "contype": 2,
+          "conaffinity": 3,
+          "mesh": "left_shin_envelope",
+          "loaded_vertices": 145,
+          "loaded_faces": 286,
+          "hull_vertices": 145,
+          "hull_faces": 286
+        },
+        {
+          "geom": "left_flexible_sole",
+          "body": "left_ankle_roll",
+          "type": 6,
+          "contype": 2,
+          "conaffinity": 3,
+          "hull_vertices": null,
+          "hull_faces": null,
+          "primitive_support_function_not_finite_vertex_mesh": true
+        }
+      ],
+      "complexity_gate": "REJECT",
+      "failures": [
+        "actual maximum convex supports 19300 >64",
+        "actual total convex supports 46069 >896",
+        "new fourteen-block gate requires explicit convex mesh topology"
+      ]
+    },
+    "body_count": 21,
+    "articulated_velocity_dimensions": 26,
+    "equality_count": 1,
+    "actuator_count": 18,
+    "total_mass_kg": 10.430690821363129,
+    "source_collision_body_exclusions": [
+      65539,
+      65548,
+      65554,
+      458761,
+      851983,
+      1245205
+    ],
+    "effective_solver": {
+      "dt_s": 0.005,
+      "solver": 2,
+      "iterations": 100,
+      "ls_iterations": 50,
+      "tolerance": 1e-08,
+      "integrator": 3,
+      "cone": 1,
+      "jacobian": 0,
+      "enableflags": 0,
+      "disableflags": 65536,
+      "ccd_iterations": 35,
+      "ccd_tolerance": 1e-06
+    },
+    "workload": {
+      "calls_per_repeat": 80,
+      "repeats": 9,
+      "warmup": 20,
+      "steps_per_rollout": 80
+    },
+    "scenarios": [
+      {
+        "name": "cold_saved_reset",
+        "fixture": {
+          "qpos": [
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "qvel": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "kinematic_terrain_placement": false,
+          "terrain_penetration_fixture_m": null,
+          "named_hinges": {
+            "neck_yaw": 0.0,
+            "neck_pitch": 0.0,
+            "neck_mid_pitch": 0.0,
+            "head_pitch": 0.0,
+            "head_roll": 0.0,
+            "beak_hinge": 0.0,
+            "beak_input_rotor": 0.0,
+            "beak_coupler_link": 0.0,
+            "right_hip_yaw": 0.0,
+            "right_hip_roll": 0.0,
+            "right_hip_pitch": 0.0,
+            "right_knee_pitch": 0.0,
+            "right_ankle_pitch": 0.0,
+            "right_ankle_roll": 0.0,
+            "left_hip_yaw": 0.0,
+            "left_hip_roll": 0.0,
+            "left_hip_pitch": 0.0,
+            "left_knee_pitch": 0.0,
+            "left_ankle_pitch": 0.0,
+            "left_ankle_roll": 0.0
+          }
+        },
+        "collision_query": {
+          "median_us": 3.9226,
+          "p95_us": 4.021925,
+          "minimum_us": 3.9164,
+          "repeats": 9,
+          "samples_us": [
+            4.0548,
+            3.9726125000000003,
+            3.921,
+            3.9442,
+            3.9164,
+            3.92,
+            3.9564,
+            3.9226,
+            3.92
+          ]
+        },
+        "fixed_pose_forward": {
+          "median_us": 12.063,
+          "p95_us": 12.390725,
+          "minimum_us": 12.0386,
+          "repeats": 9,
+          "samples_us": [
+            12.063,
+            12.542,
+            12.0618125,
+            12.0386,
+            12.0622125,
+            12.047600000000001,
+            12.1638125,
+            12.086,
+            12.1098
+          ]
+        },
+        "fixed_counts": {
+          "contacts": 0,
+          "constraints": 21,
+          "solver_iterations": 1,
+          "warnings": 0
+        },
+        "source_native_step": {
+          "median_us": 17.650612499999998,
+          "p95_us": 17.7860475,
+          "minimum_us": 17.604212500000003,
+          "repeats": 9,
+          "samples_us": [
+            17.7168,
+            17.8322125,
+            17.6296,
+            17.650612499999998,
+            17.6164125,
+            17.6546,
+            17.604212500000003,
+            17.656612499999998,
+            17.6266
+          ]
+        },
+        "terminal_step_counts": [
+          {
+            "contacts": 8,
+            "constraints": 45,
+            "solver_iterations": 1
+          },
+          {
+            "contacts": 8,
+            "constraints": 45,
+            "solver_iterations": 1
+          },
+          {
+            "contacts": 8,
+            "constraints": 45,
+            "solver_iterations": 1
+          },
+          {
+            "contacts": 8,
+            "constraints": 45,
+            "solver_iterations": 1
+          },
+          {
+            "contacts": 8,
+            "constraints": 45,
+            "solver_iterations": 1
+          },
+          {
+            "contacts": 8,
+            "constraints": 45,
+            "solver_iterations": 1
+          },
+          {
+            "contacts": 8,
+            "constraints": 45,
+            "solver_iterations": 1
+          },
+          {
+            "contacts": 8,
+            "constraints": 45,
+            "solver_iterations": 1
+          },
+          {
+            "contacts": 8,
+            "constraints": 45,
+            "solver_iterations": 1
+          }
+        ],
+        "step_warnings": 0,
+        "step_finite": true,
+        "diagnostic_ablation_not_admissible_for_delivery": {
+          "no_contact": {
+            "forward": {
+              "median_us": 8.9828,
+              "p95_us": 9.0358525,
+              "minimum_us": 8.928600000000001,
+              "repeats": 9,
+              "samples_us": [
+                8.989,
+                8.945200000000002,
+                9.0448125,
+                8.9962,
+                8.967,
+                8.930399999999999,
+                9.0224125,
+                8.9828,
+                8.928600000000001
+              ]
+            },
+            "contacts": 0,
+            "constraints": 21
+          },
+          "no_contact_no_equality": {
+            "forward": {
+              "median_us": 8.5214,
+              "p95_us": 8.58024,
+              "minimum_us": 8.491412500000001,
+              "repeats": 9,
+              "samples_us": [
+                8.6136,
+                8.5302,
+                8.523612499999999,
+                8.5214,
+                8.526200000000001,
+                8.491412500000001,
+                8.5124,
+                8.515799999999999,
+                8.495
+              ]
+            },
+            "contacts": 0,
+            "constraints": 18
+          }
+        }
+      },
+      {
+        "name": "standing_support",
+        "fixture": {
+          "qpos": [
+            0.0,
+            0.0,
+            -0.0009999992110952256,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "qvel": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "kinematic_terrain_placement": true,
+          "terrain_penetration_fixture_m": 0.0005,
+          "named_hinges": {
+            "neck_yaw": 0.0,
+            "neck_pitch": 0.0,
+            "neck_mid_pitch": 0.0,
+            "head_pitch": 0.0,
+            "head_roll": 0.0,
+            "beak_hinge": 0.0,
+            "beak_input_rotor": 0.0,
+            "beak_coupler_link": 0.0,
+            "right_hip_yaw": 0.0,
+            "right_hip_roll": 0.0,
+            "right_hip_pitch": 0.0,
+            "right_knee_pitch": 0.0,
+            "right_ankle_pitch": 0.0,
+            "right_ankle_roll": 0.0,
+            "left_hip_yaw": 0.0,
+            "left_hip_roll": 0.0,
+            "left_hip_pitch": 0.0,
+            "left_knee_pitch": 0.0,
+            "left_ankle_pitch": 0.0,
+            "left_ankle_roll": 0.0
+          }
+        },
+        "collision_query": {
+          "median_us": 4.123,
+          "p95_us": 4.169652500000001,
+          "minimum_us": 4.111800000000001,
+          "repeats": 9,
+          "samples_us": [
+            4.1652125,
+            4.122,
+            4.111800000000001,
+            4.150399999999999,
+            4.1206000000000005,
+            4.123,
+            4.147,
+            4.1726125000000005,
+            4.118600000000001
+          ]
+        },
+        "fixed_pose_forward": {
+          "median_us": 19.4620125,
+          "p95_us": 19.5082475,
+          "minimum_us": 19.4112125,
+          "repeats": 9,
+          "samples_us": [
+            19.484412499999998,
+            19.4972,
+            19.5156125,
+            19.4620125,
+            19.469,
+            19.4208125,
+            19.4364125,
+            19.417,
+            19.4112125
+          ]
+        },
+        "fixed_counts": {
+          "contacts": 8,
+          "constraints": 45,
+          "solver_iterations": 3,
+          "warnings": 0
+        },
+        "source_native_step": {
+          "median_us": 17.3208,
+          "p95_us": 17.3658125,
+          "minimum_us": 17.2682125,
+          "repeats": 9,
+          "samples_us": [
+            17.3786125,
+            17.3164,
+            17.315412499999997,
+            17.3328,
+            17.2970125,
+            17.3466125,
+            17.3298,
+            17.2682125,
+            17.3208
+          ]
+        },
+        "terminal_step_counts": [
+          {
+            "contacts": 8,
+            "constraints": 45,
+            "solver_iterations": 1
+          },
+          {
+            "contacts": 8,
+            "constraints": 45,
+            "solver_iterations": 1
+          },
+          {
+            "contacts": 8,
+            "constraints": 45,
+            "solver_iterations": 1
+          },
+          {
+            "contacts": 8,
+            "constraints": 45,
+            "solver_iterations": 1
+          },
+          {
+            "contacts": 8,
+            "constraints": 45,
+            "solver_iterations": 1
+          },
+          {
+            "contacts": 8,
+            "constraints": 45,
+            "solver_iterations": 1
+          },
+          {
+            "contacts": 8,
+            "constraints": 45,
+            "solver_iterations": 1
+          },
+          {
+            "contacts": 8,
+            "constraints": 45,
+            "solver_iterations": 1
+          },
+          {
+            "contacts": 8,
+            "constraints": 45,
+            "solver_iterations": 1
+          }
+        ],
+        "step_warnings": 0,
+        "step_finite": true,
+        "diagnostic_ablation_not_admissible_for_delivery": {
+          "no_contact": {
+            "forward": {
+              "median_us": 8.9208125,
+              "p95_us": 8.9492875,
+              "minimum_us": 8.9062,
+              "repeats": 9,
+              "samples_us": [
+                8.938,
+                8.9568125,
+                8.9354,
+                8.9062,
+                8.9196125,
+                8.9182,
+                8.9152,
+                8.9208125,
+                8.922600000000001
+              ]
+            },
+            "contacts": 0,
+            "constraints": 21
+          },
+          "no_contact_no_equality": {
+            "forward": {
+              "median_us": 8.487,
+              "p95_us": 8.500245,
+              "minimum_us": 8.4696,
+              "repeats": 9,
+              "samples_us": [
+                8.478200000000001,
+                8.4948125,
+                8.5016,
+                8.4734,
+                8.486012500000001,
+                8.4936,
+                8.4696,
+                8.487,
+                8.4982125
+              ]
+            },
+            "contacts": 0,
+            "constraints": 18
+          }
+        }
+      },
+      {
+        "name": "prone_front",
+        "fixture": {
+          "qpos": [
+            0.0,
+            0.0,
+            0.2624999966340095,
+            0.7071067811865476,
+            0.0,
+            0.7071067811865476,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "qvel": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "kinematic_terrain_placement": true,
+          "terrain_penetration_fixture_m": 0.0005,
+          "named_hinges": {
+            "neck_yaw": 0.0,
+            "neck_pitch": 0.0,
+            "neck_mid_pitch": 0.0,
+            "head_pitch": 0.0,
+            "head_roll": 0.0,
+            "beak_hinge": 0.0,
+            "beak_input_rotor": 0.0,
+            "beak_coupler_link": 0.0,
+            "right_hip_yaw": 0.0,
+            "right_hip_roll": 0.0,
+            "right_hip_pitch": 0.0,
+            "right_knee_pitch": 0.0,
+            "right_ankle_pitch": 0.0,
+            "right_ankle_roll": 0.0,
+            "left_hip_yaw": 0.0,
+            "left_hip_roll": 0.0,
+            "left_hip_pitch": 0.0,
+            "left_knee_pitch": 0.0,
+            "left_ankle_pitch": 0.0,
+            "left_ankle_roll": 0.0
+          }
+        },
+        "collision_query": {
+          "median_us": 3.764,
+          "p95_us": 3.80524,
+          "minimum_us": 3.7542,
+          "repeats": 9,
+          "samples_us": [
+            3.8002,
+            3.8085999999999998,
+            3.7542,
+            3.7796,
+            3.764,
+            3.7626,
+            3.7824,
+            3.7556125000000002,
+            3.761
+          ]
+        },
+        "fixed_pose_forward": {
+          "median_us": 22.275212500000002,
+          "p95_us": 22.5824525,
+          "minimum_us": 22.2530125,
+          "repeats": 9,
+          "samples_us": [
+            22.272012500000002,
+            22.2804,
+            22.275212500000002,
+            22.2548125,
+            22.2530125,
+            22.7802125,
+            22.2774,
+            22.2712125,
+            22.2858125
+          ]
+        },
+        "fixed_counts": {
+          "contacts": 1,
+          "constraints": 24,
+          "solver_iterations": 7,
+          "warnings": 0
+        },
+        "source_native_step": {
+          "median_us": 28.525212500000002,
+          "p95_us": 29.0061325,
+          "minimum_us": 28.2974125,
+          "repeats": 9,
+          "samples_us": [
+            29.1338125,
+            28.8146125,
+            28.6344125,
+            28.5378125,
+            28.525212500000002,
+            28.3962125,
+            28.3770125,
+            28.4124125,
+            28.2974125
+          ]
+        },
+        "terminal_step_counts": [
+          {
+            "contacts": 5,
+            "constraints": 39,
+            "solver_iterations": 1
+          },
+          {
+            "contacts": 5,
+            "constraints": 39,
+            "solver_iterations": 1
+          },
+          {
+            "contacts": 5,
+            "constraints": 39,
+            "solver_iterations": 1
+          },
+          {
+            "contacts": 5,
+            "constraints": 39,
+            "solver_iterations": 1
+          },
+          {
+            "contacts": 5,
+            "constraints": 39,
+            "solver_iterations": 1
+          },
+          {
+            "contacts": 5,
+            "constraints": 39,
+            "solver_iterations": 1
+          },
+          {
+            "contacts": 5,
+            "constraints": 39,
+            "solver_iterations": 1
+          },
+          {
+            "contacts": 5,
+            "constraints": 39,
+            "solver_iterations": 1
+          },
+          {
+            "contacts": 5,
+            "constraints": 39,
+            "solver_iterations": 1
+          }
+        ],
+        "step_warnings": 0,
+        "step_finite": true,
+        "diagnostic_ablation_not_admissible_for_delivery": {
+          "no_contact": {
+            "forward": {
+              "median_us": 9.046012500000002,
+              "p95_us": 9.2021275,
+              "minimum_us": 9.0022,
+              "repeats": 9,
+              "samples_us": [
+                9.0854,
+                9.0438125,
+                9.036,
+                9.0022,
+                9.2502125,
+                9.13,
+                9.0684,
+                9.046012500000002,
+                9.035200000000001
+              ]
+            },
+            "contacts": 0,
+            "constraints": 21
+          },
+          "no_contact_no_equality": {
+            "forward": {
+              "median_us": 8.553600000000001,
+              "p95_us": 8.572085000000001,
+              "minimum_us": 8.533,
+              "repeats": 9,
+              "samples_us": [
+                8.582,
+                8.552612499999999,
+                8.553799999999999,
+                8.5342,
+                8.555612499999999,
+                8.553600000000001,
+                8.533,
+                8.547799999999999,
+                8.5572125
+              ]
+            },
+            "contacts": 0,
+            "constraints": 18
+          }
+        }
+      },
+      {
+        "name": "supine_back",
+        "fixture": {
+          "qpos": [
+            0.0,
+            0.0,
+            0.1695800093954153,
+            0.7071067811865476,
+            0.0,
+            -0.7071067811865476,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "qvel": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "kinematic_terrain_placement": true,
+          "terrain_penetration_fixture_m": 0.0005,
+          "named_hinges": {
+            "neck_yaw": 0.0,
+            "neck_pitch": 0.0,
+            "neck_mid_pitch": 0.0,
+            "head_pitch": 0.0,
+            "head_roll": 0.0,
+            "beak_hinge": 0.0,
+            "beak_input_rotor": 0.0,
+            "beak_coupler_link": 0.0,
+            "right_hip_yaw": 0.0,
+            "right_hip_roll": 0.0,
+            "right_hip_pitch": 0.0,
+            "right_knee_pitch": 0.0,
+            "right_ankle_pitch": 0.0,
+            "right_ankle_roll": 0.0,
+            "left_hip_yaw": 0.0,
+            "left_hip_roll": 0.0,
+            "left_hip_pitch": 0.0,
+            "left_knee_pitch": 0.0,
+            "left_ankle_pitch": 0.0,
+            "left_ankle_roll": 0.0
+          }
+        },
+        "collision_query": {
+          "median_us": 4.2142,
+          "p95_us": 4.263325,
+          "minimum_us": 4.1958,
+          "repeats": 9,
+          "samples_us": [
+            4.2758,
+            4.2128000000000005,
+            4.244612500000001,
+            4.23,
+            4.2018,
+            4.228,
+            4.1978,
+            4.1958,
+            4.2142
+          ]
+        },
+        "fixed_pose_forward": {
+          "median_us": 18.705,
+          "p95_us": 18.7353725,
+          "minimum_us": 18.687,
+          "repeats": 9,
+          "samples_us": [
+            18.687,
+            18.7368125,
+            18.6984125,
+            18.728,
+            18.7332125,
+            18.7042,
+            18.6894125,
+            18.725012500000002,
+            18.705
+          ]
+        },
+        "fixed_counts": {
+          "contacts": 2,
+          "constraints": 27,
+          "solver_iterations": 4,
+          "warnings": 0
+        },
+        "source_native_step": {
+          "median_us": 20.1436,
+          "p95_us": 20.4677325,
+          "minimum_us": 20.020212500000003,
+          "repeats": 9,
+          "samples_us": [
+            20.5378125,
+            20.342212500000002,
+            20.3626125,
+            20.1436,
+            20.1066125,
+            20.075212500000003,
+            20.0308,
+            20.1846125,
+            20.020212500000003
+          ]
+        },
+        "terminal_step_counts": [
+          {
+            "contacts": 3,
+            "constraints": 31,
+            "solver_iterations": 9
+          },
+          {
+            "contacts": 3,
+            "constraints": 31,
+            "solver_iterations": 9
+          },
+          {
+            "contacts": 3,
+            "constraints": 31,
+            "solver_iterations": 9
+          },
+          {
+            "contacts": 3,
+            "constraints": 31,
+            "solver_iterations": 9
+          },
+          {
+            "contacts": 3,
+            "constraints": 31,
+            "solver_iterations": 9
+          },
+          {
+            "contacts": 3,
+            "constraints": 31,
+            "solver_iterations": 9
+          },
+          {
+            "contacts": 3,
+            "constraints": 31,
+            "solver_iterations": 9
+          },
+          {
+            "contacts": 3,
+            "constraints": 31,
+            "solver_iterations": 9
+          },
+          {
+            "contacts": 3,
+            "constraints": 31,
+            "solver_iterations": 9
+          }
+        ],
+        "step_warnings": 0,
+        "step_finite": true,
+        "diagnostic_ablation_not_admissible_for_delivery": {
+          "no_contact": {
+            "forward": {
+              "median_us": 9.021012500000001,
+              "p95_us": 9.040284999999999,
+              "minimum_us": 9.002600000000001,
+              "repeats": 9,
+              "samples_us": [
+                9.0438,
+                9.0116,
+                9.021012500000001,
+                9.0336,
+                9.0256,
+                9.002600000000001,
+                9.0350125,
+                9.019200000000001,
+                9.019200000000001
+              ]
+            },
+            "contacts": 0,
+            "constraints": 21
+          },
+          "no_contact_no_equality": {
+            "forward": {
+              "median_us": 8.553,
+              "p95_us": 8.57372,
+              "minimum_us": 8.5436,
+              "repeats": 9,
+              "samples_us": [
+                8.575,
+                8.553,
+                8.5512125,
+                8.5718,
+                8.562,
+                8.5438,
+                8.5498125,
+                8.5656,
+                8.5436
+              ]
+            },
+            "contacts": 0,
+            "constraints": 18
+          }
+        }
+      },
+      {
+        "name": "lying_left",
+        "fixture": {
+          "qpos": [
+            0.0,
+            0.0,
+            0.13103211566249906,
+            0.7071067811865476,
+            0.7071067811865476,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "qvel": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "kinematic_terrain_placement": true,
+          "terrain_penetration_fixture_m": 0.0005,
+          "named_hinges": {
+            "neck_yaw": 0.0,
+            "neck_pitch": 0.0,
+            "neck_mid_pitch": 0.0,
+            "head_pitch": 0.0,
+            "head_roll": 0.0,
+            "beak_hinge": 0.0,
+            "beak_input_rotor": 0.0,
+            "beak_coupler_link": 0.0,
+            "right_hip_yaw": 0.0,
+            "right_hip_roll": 0.0,
+            "right_hip_pitch": 0.0,
+            "right_knee_pitch": 0.0,
+            "right_ankle_pitch": 0.0,
+            "right_ankle_roll": 0.0,
+            "left_hip_yaw": 0.0,
+            "left_hip_roll": 0.0,
+            "left_hip_pitch": 0.0,
+            "left_knee_pitch": 0.0,
+            "left_ankle_pitch": 0.0,
+            "left_ankle_roll": 0.0
+          }
+        },
+        "collision_query": {
+          "median_us": 4.1526000000000005,
+          "p95_us": 4.22044,
+          "minimum_us": 4.098012499999999,
+          "repeats": 9,
+          "samples_us": [
+            4.2206,
+            4.144399999999999,
+            4.1526000000000005,
+            4.098012499999999,
+            4.1802,
+            4.148,
+            4.1058,
+            4.2202,
+            4.1552
+          ]
+        },
+        "fixed_pose_forward": {
+          "median_us": 20.2228,
+          "p95_us": 20.2570075,
+          "minimum_us": 20.182412499999998,
+          "repeats": 9,
+          "samples_us": [
+            20.1944125,
+            20.2430125,
+            20.2060125,
+            20.2228,
+            20.2638125,
+            20.182412499999998,
+            20.2468,
+            20.2392125,
+            20.2136125
+          ]
+        },
+        "fixed_counts": {
+          "contacts": 2,
+          "constraints": 27,
+          "solver_iterations": 5,
+          "warnings": 0
+        },
+        "source_native_step": {
+          "median_us": 20.4932,
+          "p95_us": 20.9624075,
+          "minimum_us": 20.346,
+          "repeats": 9,
+          "samples_us": [
+            21.0724125,
+            20.797400000000003,
+            20.6364125,
+            20.5388125,
+            20.4932,
+            20.4622125,
+            20.411012500000002,
+            20.3872125,
+            20.346
+          ]
+        },
+        "terminal_step_counts": [
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 1
+          },
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 1
+          },
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 1
+          },
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 1
+          },
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 1
+          },
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 1
+          },
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 1
+          },
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 1
+          },
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 1
+          }
+        ],
+        "step_warnings": 0,
+        "step_finite": true,
+        "diagnostic_ablation_not_admissible_for_delivery": {
+          "no_contact": {
+            "forward": {
+              "median_us": 9.0384125,
+              "p95_us": 9.0501275,
+              "minimum_us": 9.0274,
+              "repeats": 9,
+              "samples_us": [
+                9.0332,
+                9.0542125,
+                9.0434,
+                9.044,
+                9.0274,
+                9.0384125,
+                9.0428,
+                9.0314,
+                9.037012500000001
+              ]
+            },
+            "contacts": 0,
+            "constraints": 21
+          },
+          "no_contact_no_equality": {
+            "forward": {
+              "median_us": 8.5742125,
+              "p95_us": 8.592925,
+              "minimum_us": 8.546,
+              "repeats": 9,
+              "samples_us": [
+                8.5468,
+                8.5804125,
+                8.5804,
+                8.5998,
+                8.546,
+                8.5742125,
+                8.5716,
+                8.549,
+                8.5826125
+              ]
+            },
+            "contacts": 0,
+            "constraints": 18
+          }
+        }
+      },
+      {
+        "name": "lying_right",
+        "fixture": {
+          "qpos": [
+            0.0,
+            0.0,
+            0.1310321156624997,
+            0.7071067811865476,
+            -0.7071067811865476,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "qvel": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "kinematic_terrain_placement": true,
+          "terrain_penetration_fixture_m": 0.0005,
+          "named_hinges": {
+            "neck_yaw": 0.0,
+            "neck_pitch": 0.0,
+            "neck_mid_pitch": 0.0,
+            "head_pitch": 0.0,
+            "head_roll": 0.0,
+            "beak_hinge": 0.0,
+            "beak_input_rotor": 0.0,
+            "beak_coupler_link": 0.0,
+            "right_hip_yaw": 0.0,
+            "right_hip_roll": 0.0,
+            "right_hip_pitch": 0.0,
+            "right_knee_pitch": 0.0,
+            "right_ankle_pitch": 0.0,
+            "right_ankle_roll": 0.0,
+            "left_hip_yaw": 0.0,
+            "left_hip_roll": 0.0,
+            "left_hip_pitch": 0.0,
+            "left_knee_pitch": 0.0,
+            "left_ankle_pitch": 0.0,
+            "left_ankle_roll": 0.0
+          }
+        },
+        "collision_query": {
+          "median_us": 4.0686,
+          "p95_us": 4.10532,
+          "minimum_us": 3.9964,
+          "repeats": 9,
+          "samples_us": [
+            4.0010125,
+            4.0686,
+            4.0044,
+            4.1022,
+            4.0778,
+            4.0068,
+            3.9964,
+            4.0736125,
+            4.107399999999999
+          ]
+        },
+        "fixed_pose_forward": {
+          "median_us": 20.2452125,
+          "p95_us": 20.2782125,
+          "minimum_us": 20.2076,
+          "repeats": 9,
+          "samples_us": [
+            20.2704125,
+            20.268,
+            20.2378125,
+            20.283412499999997,
+            20.2438,
+            20.2264125,
+            20.2452125,
+            20.2076,
+            20.2624125
+          ]
+        },
+        "fixed_counts": {
+          "contacts": 2,
+          "constraints": 27,
+          "solver_iterations": 5,
+          "warnings": 0
+        },
+        "source_native_step": {
+          "median_us": 20.9866,
+          "p95_us": 21.3271725,
+          "minimum_us": 20.7302125,
+          "repeats": 9,
+          "samples_us": [
+            21.391012500000002,
+            21.231412499999998,
+            21.1248125,
+            20.9866,
+            20.9542125,
+            20.8668125,
+            20.7938,
+            21.0412125,
+            20.7302125
+          ]
+        },
+        "terminal_step_counts": [
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 5
+          },
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 5
+          },
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 5
+          },
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 5
+          },
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 5
+          },
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 5
+          },
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 5
+          },
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 5
+          },
+          {
+            "contacts": 2,
+            "constraints": 29,
+            "solver_iterations": 5
+          }
+        ],
+        "step_warnings": 0,
+        "step_finite": true,
+        "diagnostic_ablation_not_admissible_for_delivery": {
+          "no_contact": {
+            "forward": {
+              "median_us": 9.045612499999999,
+              "p95_us": 9.049885,
+              "minimum_us": 9.0146,
+              "repeats": 9,
+              "samples_us": [
+                9.0380125,
+                9.0492,
+                9.0472,
+                9.0494125,
+                9.0146,
+                9.0436,
+                9.045612499999999,
+                9.0298,
+                9.0502
+              ]
+            },
+            "contacts": 0,
+            "constraints": 21
+          },
+          "no_contact_no_equality": {
+            "forward": {
+              "median_us": 8.5804,
+              "p95_us": 8.601,
+              "minimum_us": 8.545612499999999,
+              "repeats": 9,
+              "samples_us": [
+                8.545612499999999,
+                8.601,
+                8.601,
+                8.5612125,
+                8.5822,
+                8.5804,
+                8.5742125,
+                8.5632,
+                8.587399999999999
+              ]
+            },
+            "contacts": 0,
+            "constraints": 18
+          }
+        }
+      },
+      {
+        "name": "finite_work_seed_0",
+        "fixture": {
+          "qpos": [
+            0.0,
+            0.0,
+            0.02461069985949388,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.2578984070558977,
+            0.0291464284276877,
+            0.374014744048047,
+            0.08645582571690501,
+            -0.033388616619664864,
+            0.08477221901968125,
+            0.08477221901968125,
+            -0.08477221901968125,
+            -0.014715011419451394,
+            0.006958700834352643,
+            -0.22188529551938907,
+            0.20302675794755012,
+            -0.17045346453935492,
+            -0.1081989659576693,
+            0.283835875830996,
+            -0.11366959368482732,
+            0.09581084982889988,
+            -0.01180487401318083,
+            0.15650392060727394,
+            -0.08719758775709645
+          ],
+          "qvel": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "kinematic_terrain_placement": true,
+          "terrain_penetration_fixture_m": 0.0005,
+          "named_hinges": {
+            "neck_yaw": 0.2578984070558977,
+            "neck_pitch": 0.0291464284276877,
+            "neck_mid_pitch": 0.374014744048047,
+            "head_pitch": 0.08645582571690501,
+            "head_roll": -0.033388616619664864,
+            "beak_hinge": 0.08477221901968125,
+            "beak_input_rotor": 0.08477221901968125,
+            "beak_coupler_link": -0.08477221901968125,
+            "right_hip_yaw": -0.014715011419451394,
+            "right_hip_roll": 0.006958700834352643,
+            "right_hip_pitch": -0.22188529551938907,
+            "right_knee_pitch": 0.20302675794755012,
+            "right_ankle_pitch": -0.17045346453935492,
+            "right_ankle_roll": -0.1081989659576693,
+            "left_hip_yaw": 0.283835875830996,
+            "left_hip_roll": -0.11366959368482732,
+            "left_hip_pitch": 0.09581084982889988,
+            "left_knee_pitch": -0.01180487401318083,
+            "left_ankle_pitch": 0.15650392060727394,
+            "left_ankle_roll": -0.08719758775709645
+          }
+        },
+        "collision_query": {
+          "median_us": 4.9538125,
+          "p95_us": 4.98952,
+          "minimum_us": 4.9288,
+          "repeats": 9,
+          "samples_us": [
+            4.9894,
+            4.9844,
+            4.9538125,
+            4.9318,
+            4.9288,
+            4.9476,
+            4.9896,
+            4.958399999999999,
+            4.9416125
+          ]
+        },
+        "fixed_pose_forward": {
+          "median_us": 34.6288125,
+          "p95_us": 34.7469775,
+          "minimum_us": 34.6000125,
+          "repeats": 9,
+          "samples_us": [
+            34.612612500000004,
+            34.6624125,
+            34.6288125,
+            34.744225,
+            34.617012499999994,
+            34.7488125,
+            34.7094125,
+            34.6000125,
+            34.627625
+          ]
+        },
+        "fixed_counts": {
+          "contacts": 1,
+          "constraints": 24,
+          "solver_iterations": 7,
+          "warnings": 0
+        },
+        "source_native_step": {
+          "median_us": 31.3736125,
+          "p95_us": 31.8995325,
+          "minimum_us": 31.1850125,
+          "repeats": 9,
+          "samples_us": [
+            32.0084125,
+            31.7362125,
+            31.648212500000003,
+            31.3736125,
+            31.3804125,
+            31.2490125,
+            31.2178125,
+            31.1850125,
+            31.2584125
+          ]
+        },
+        "terminal_step_counts": [
+          {
+            "contacts": 5,
+            "constraints": 36,
+            "solver_iterations": 2
+          },
+          {
+            "contacts": 5,
+            "constraints": 36,
+            "solver_iterations": 2
+          },
+          {
+            "contacts": 5,
+            "constraints": 36,
+            "solver_iterations": 2
+          },
+          {
+            "contacts": 5,
+            "constraints": 36,
+            "solver_iterations": 2
+          },
+          {
+            "contacts": 5,
+            "constraints": 36,
+            "solver_iterations": 2
+          },
+          {
+            "contacts": 5,
+            "constraints": 36,
+            "solver_iterations": 2
+          },
+          {
+            "contacts": 5,
+            "constraints": 36,
+            "solver_iterations": 2
+          },
+          {
+            "contacts": 5,
+            "constraints": 36,
+            "solver_iterations": 2
+          },
+          {
+            "contacts": 5,
+            "constraints": 36,
+            "solver_iterations": 2
+          }
+        ],
+        "step_warnings": 0,
+        "step_finite": true,
+        "diagnostic_ablation_not_admissible_for_delivery": {
+          "no_contact": {
+            "forward": {
+              "median_us": 13.9924125,
+              "p95_us": 14.008325,
+              "minimum_us": 13.98,
+              "repeats": 9,
+              "samples_us": [
+                13.9884,
+                13.984612499999999,
+                13.986799999999999,
+                13.9924125,
+                13.98,
+                13.9962125,
+                14.0012,
+                14.008212499999999,
+                14.0084
+              ]
+            },
+            "contacts": 0,
+            "constraints": 21
+          },
+          "no_contact_no_equality": {
+            "forward": {
+              "median_us": 8.6684125,
+              "p95_us": 8.7104875,
+              "minimum_us": 8.634,
+              "repeats": 9,
+              "samples_us": [
+                8.676,
+                8.648,
+                8.659799999999999,
+                8.7212125,
+                8.6782,
+                8.634,
+                8.6684125,
+                8.6944,
+                8.646
+              ]
+            },
+            "contacts": 0,
+            "constraints": 18
+          }
+        }
+      },
+      {
+        "name": "finite_work_seed_1",
+        "fixture": {
+          "qpos": [
+            0.0,
+            0.0,
+            0.007864879333557378,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.1810575037289496,
+            -0.02706183222037095,
+            0.1709340565943438,
+            -0.22816195153875654,
+            -0.038798044313309896,
+            0.06023674535311126,
+            0.06023674535311126,
+            -0.06023674535311126,
+            0.14458442506362432,
+            0.2881007406317078,
+            0.1960334344973431,
+            -0.199,
+            -0.005727804420687811,
+            -0.10842816398283496,
+            0.25960477050127123,
+            0.10325841205646437,
+            0.5353761162045302,
+            -0.046331313497655464,
+            -0.22655160548788153,
+            0.1916075322583558
+          ],
+          "qvel": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "kinematic_terrain_placement": true,
+          "terrain_penetration_fixture_m": 0.0005,
+          "named_hinges": {
+            "neck_yaw": 0.1810575037289496,
+            "neck_pitch": -0.02706183222037095,
+            "neck_mid_pitch": 0.1709340565943438,
+            "head_pitch": -0.22816195153875654,
+            "head_roll": -0.038798044313309896,
+            "beak_hinge": 0.06023674535311126,
+            "beak_input_rotor": 0.06023674535311126,
+            "beak_coupler_link": -0.06023674535311126,
+            "right_hip_yaw": 0.14458442506362432,
+            "right_hip_roll": 0.2881007406317078,
+            "right_hip_pitch": 0.1960334344973431,
+            "right_knee_pitch": -0.199,
+            "right_ankle_pitch": -0.005727804420687811,
+            "right_ankle_roll": -0.10842816398283496,
+            "left_hip_yaw": 0.25960477050127123,
+            "left_hip_roll": 0.10325841205646437,
+            "left_hip_pitch": 0.5353761162045302,
+            "left_knee_pitch": -0.046331313497655464,
+            "left_ankle_pitch": -0.22655160548788153,
+            "left_ankle_roll": 0.1916075322583558
+          }
+        },
+        "collision_query": {
+          "median_us": 6.4962,
+          "p95_us": 6.52864,
+          "minimum_us": 6.4692,
+          "repeats": 9,
+          "samples_us": [
+            6.5164,
+            6.5164,
+            6.4754,
+            6.4962,
+            6.469212499999999,
+            6.5368,
+            6.505199999999999,
+            6.4716000000000005,
+            6.4692
+          ]
+        },
+        "fixed_pose_forward": {
+          "median_us": 23.1472,
+          "p95_us": 23.3073325,
+          "minimum_us": 23.0994125,
+          "repeats": 9,
+          "samples_us": [
+            23.1240125,
+            23.1472,
+            23.0994125,
+            23.1466125,
+            23.1986125,
+            23.151400000000002,
+            23.159212500000002,
+            23.106012500000002,
+            23.3798125
+          ]
+        },
+        "fixed_counts": {
+          "contacts": 1,
+          "constraints": 24,
+          "solver_iterations": 3,
+          "warnings": 0
+        },
+        "source_native_step": {
+          "median_us": 26.5958125,
+          "p95_us": 26.9007725,
+          "minimum_us": 26.3902125,
+          "repeats": 9,
+          "samples_us": [
+            26.9698125,
+            26.7972125,
+            26.7264125,
+            26.5958125,
+            26.5970125,
+            26.495412499999997,
+            26.4874,
+            26.4178125,
+            26.3902125
+          ]
+        },
+        "terminal_step_counts": [
+          {
+            "contacts": 6,
+            "constraints": 39,
+            "solver_iterations": 6
+          },
+          {
+            "contacts": 6,
+            "constraints": 39,
+            "solver_iterations": 6
+          },
+          {
+            "contacts": 6,
+            "constraints": 39,
+            "solver_iterations": 6
+          },
+          {
+            "contacts": 6,
+            "constraints": 39,
+            "solver_iterations": 6
+          },
+          {
+            "contacts": 6,
+            "constraints": 39,
+            "solver_iterations": 6
+          },
+          {
+            "contacts": 6,
+            "constraints": 39,
+            "solver_iterations": 6
+          },
+          {
+            "contacts": 6,
+            "constraints": 39,
+            "solver_iterations": 6
+          },
+          {
+            "contacts": 6,
+            "constraints": 39,
+            "solver_iterations": 6
+          },
+          {
+            "contacts": 6,
+            "constraints": 39,
+            "solver_iterations": 6
+          }
+        ],
+        "step_warnings": 0,
+        "step_finite": true,
+        "diagnostic_ablation_not_admissible_for_delivery": {
+          "no_contact": {
+            "forward": {
+              "median_us": 15.535200000000001,
+              "p95_us": 15.700565,
+              "minimum_us": 15.5194,
+              "repeats": 9,
+              "samples_us": [
+                15.5706125,
+                15.5194,
+                15.5224125,
+                15.535200000000001,
+                15.5398125,
+                15.7704,
+                15.5958125,
+                15.5344,
+                15.5268125
+              ]
+            },
+            "contacts": 0,
+            "constraints": 21
+          },
+          "no_contact_no_equality": {
+            "forward": {
+              "median_us": 11.1004,
+              "p95_us": 11.1205275,
+              "minimum_us": 11.0756125,
+              "repeats": 9,
+              "samples_us": [
+                11.1238125,
+                11.1004,
+                11.1036,
+                11.1154125,
+                11.1156,
+                11.0756125,
+                11.086799999999998,
+                11.082,
+                11.0984125
+              ]
+            },
+            "contacts": 0,
+            "constraints": 18
+          }
+        }
+      },
+      {
+        "name": "finite_work_seed_2",
+        "fixture": {
+          "qpos": [
+            0.0,
+            0.0,
+            0.007142935460418338,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            -0.019043558796613985,
+            -0.016722757395955072,
+            -0.16924127431038796,
+            0.05387189174012309,
+            -0.1319410054900998,
+            0.001,
+            0.001,
+            -0.001,
+            0.01251370725267441,
+            0.10674105926300889,
+            -0.28526498928217947,
+            0.3060348900202505,
+            0.006008334759735805,
+            -0.056081837178545764,
+            0.24893213057250588,
+            -0.27384185044953335,
+            -0.09533189052980814,
+            0.16191539760444454,
+            -0.07439586313891446,
+            0.06570267691904527
+          ],
+          "qvel": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "kinematic_terrain_placement": true,
+          "terrain_penetration_fixture_m": 0.0005,
+          "named_hinges": {
+            "neck_yaw": -0.019043558796613985,
+            "neck_pitch": -0.016722757395955072,
+            "neck_mid_pitch": -0.16924127431038796,
+            "head_pitch": 0.05387189174012309,
+            "head_roll": -0.1319410054900998,
+            "beak_hinge": 0.001,
+            "beak_input_rotor": 0.001,
+            "beak_coupler_link": -0.001,
+            "right_hip_yaw": 0.01251370725267441,
+            "right_hip_roll": 0.10674105926300889,
+            "right_hip_pitch": -0.28526498928217947,
+            "right_knee_pitch": 0.3060348900202505,
+            "right_ankle_pitch": 0.006008334759735805,
+            "right_ankle_roll": -0.056081837178545764,
+            "left_hip_yaw": 0.24893213057250588,
+            "left_hip_roll": -0.27384185044953335,
+            "left_hip_pitch": -0.09533189052980814,
+            "left_knee_pitch": 0.16191539760444454,
+            "left_ankle_pitch": -0.07439586313891446,
+            "left_ankle_roll": 0.06570267691904527
+          }
+        },
+        "collision_query": {
+          "median_us": 13.7126,
+          "p95_us": 13.7908075,
+          "minimum_us": 13.6766125,
+          "repeats": 9,
+          "samples_us": [
+            13.7542,
+            13.704012500000001,
+            13.7126,
+            13.7836,
+            13.795612499999999,
+            13.7554,
+            13.6982125,
+            13.692200000000001,
+            13.6766125
+          ]
+        },
+        "fixed_pose_forward": {
+          "median_us": 74.921825,
+          "p95_us": 75.2265175,
+          "minimum_us": 74.8216375,
+          "repeats": 9,
+          "samples_us": [
+            74.88783749999999,
+            75.1150375,
+            74.921825,
+            75.3008375,
+            75.09502499999999,
+            74.9776375,
+            74.863025,
+            74.8556375,
+            74.8216375
+          ]
+        },
+        "fixed_counts": {
+          "contacts": 6,
+          "constraints": 39,
+          "solver_iterations": 9,
+          "warnings": 0
+        },
+        "source_native_step": {
+          "median_us": 29.2234125,
+          "p95_us": 29.5476525,
+          "minimum_us": 29.1648125,
+          "repeats": 9,
+          "samples_us": [
+            29.6082125,
+            29.4568125,
+            29.315412499999997,
+            29.3004125,
+            29.1648125,
+            29.2030125,
+            29.1666125,
+            29.2036125,
+            29.2234125
+          ]
+        },
+        "terminal_step_counts": [
+          {
+            "contacts": 5,
+            "constraints": 36,
+            "solver_iterations": 2
+          },
+          {
+            "contacts": 5,
+            "constraints": 36,
+            "solver_iterations": 2
+          },
+          {
+            "contacts": 5,
+            "constraints": 36,
+            "solver_iterations": 2
+          },
+          {
+            "contacts": 5,
+            "constraints": 36,
+            "solver_iterations": 2
+          },
+          {
+            "contacts": 5,
+            "constraints": 36,
+            "solver_iterations": 2
+          },
+          {
+            "contacts": 5,
+            "constraints": 36,
+            "solver_iterations": 2
+          },
+          {
+            "contacts": 5,
+            "constraints": 36,
+            "solver_iterations": 2
+          },
+          {
+            "contacts": 5,
+            "constraints": 36,
+            "solver_iterations": 2
+          },
+          {
+            "contacts": 5,
+            "constraints": 36,
+            "solver_iterations": 2
+          }
+        ],
+        "step_warnings": 0,
+        "step_finite": true,
+        "diagnostic_ablation_not_admissible_for_delivery": {
+          "no_contact": {
+            "forward": {
+              "median_us": 15.4632125,
+              "p95_us": 15.521320000000001,
+              "minimum_us": 15.4476,
+              "repeats": 9,
+              "samples_us": [
+                15.534600000000001,
+                15.4578125,
+                15.4532125,
+                15.4476,
+                15.4632125,
+                15.499,
+                15.4558125,
+                15.5014,
+                15.489212499999999
+              ]
+            },
+            "contacts": 0,
+            "constraints": 21
+          },
+          "no_contact_no_equality": {
+            "forward": {
+              "median_us": 9.896799999999999,
+              "p95_us": 9.929920000000001,
+              "minimum_us": 9.8744125,
+              "repeats": 9,
+              "samples_us": [
+                9.945200000000002,
+                9.8964125,
+                9.875200000000001,
+                9.9006,
+                9.8978125,
+                9.8958,
+                9.896799999999999,
+                9.8744125,
+                9.907
+              ]
+            },
+            "contacts": 0,
+            "constraints": 18
+          }
+        }
+      },
+      {
+        "name": "finite_work_seed_3",
+        "fixture": {
+          "qpos": [
+            0.0,
+            0.0,
+            0.033144596600495416,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            -0.18177177191755078,
+            0.10288217975383082,
+            -0.3477322880124054,
+            -0.003676570562259872,
+            0.02367647503718882,
+            0.001,
+            0.001,
+            -0.001,
+            -0.0113196244892561,
+            -0.10866443211672974,
+            -0.08025256920118669,
+            0.0652255567370368,
+            0.08614870300266839,
+            0.020162454430060973,
+            -0.15543780170523464,
+            -0.00793098482631066,
+            0.3596562554661098,
+            0.06765889069081796,
+            0.16411111139518092,
+            -0.09379777032699115
+          ],
+          "qvel": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "kinematic_terrain_placement": true,
+          "terrain_penetration_fixture_m": 0.0005,
+          "named_hinges": {
+            "neck_yaw": -0.18177177191755078,
+            "neck_pitch": 0.10288217975383082,
+            "neck_mid_pitch": -0.3477322880124054,
+            "head_pitch": -0.003676570562259872,
+            "head_roll": 0.02367647503718882,
+            "beak_hinge": 0.001,
+            "beak_input_rotor": 0.001,
+            "beak_coupler_link": -0.001,
+            "right_hip_yaw": -0.0113196244892561,
+            "right_hip_roll": -0.10866443211672974,
+            "right_hip_pitch": -0.08025256920118669,
+            "right_knee_pitch": 0.0652255567370368,
+            "right_ankle_pitch": 0.08614870300266839,
+            "right_ankle_roll": 0.020162454430060973,
+            "left_hip_yaw": -0.15543780170523464,
+            "left_hip_roll": -0.00793098482631066,
+            "left_hip_pitch": 0.3596562554661098,
+            "left_knee_pitch": 0.06765889069081796,
+            "left_ankle_pitch": 0.16411111139518092,
+            "left_ankle_roll": -0.09379777032699115
+          }
+        },
+        "collision_query": {
+          "median_us": 4.9204,
+          "p95_us": 4.998205,
+          "minimum_us": 4.9002,
+          "repeats": 9,
+          "samples_us": [
+            5.019399999999999,
+            4.9142,
+            4.9334,
+            4.966412500000001,
+            4.9002,
+            4.9204,
+            4.903,
+            4.9656,
+            4.903
+          ]
+        },
+        "fixed_pose_forward": {
+          "median_us": 34.4642125,
+          "p95_us": 34.5893725,
+          "minimum_us": 34.4272125,
+          "repeats": 9,
+          "samples_us": [
+            34.5992125,
+            34.5648125,
+            34.537012499999996,
+            34.5746125,
+            34.462625,
+            34.4642125,
+            34.4408125,
+            34.4272125,
+            34.445212500000004
+          ]
+        },
+        "fixed_counts": {
+          "contacts": 1,
+          "constraints": 24,
+          "solver_iterations": 7,
+          "warnings": 0
+        },
+        "source_native_step": {
+          "median_us": 35.2942125,
+          "p95_us": 35.6764125,
+          "minimum_us": 35.1030125,
+          "repeats": 9,
+          "samples_us": [
+            35.7368125,
+            35.5858125,
+            35.344612500000004,
+            35.2942125,
+            35.210212500000004,
+            35.148025000000004,
+            35.1424125,
+            35.3430125,
+            35.1030125
+          ]
+        },
+        "terminal_step_counts": [
+          {
+            "contacts": 5,
+            "constraints": 36,
+            "solver_iterations": 5
+          },
+          {
+            "contacts": 5,
+            "constraints": 36,
+            "solver_iterations": 5
+          },
+          {
+            "contacts": 5,
+            "constraints": 36,
+            "solver_iterations": 5
+          },
+          {
+            "contacts": 5,
+            "constraints": 36,
+            "solver_iterations": 5
+          },
+          {
+            "contacts": 5,
+            "constraints": 36,
+            "solver_iterations": 5
+          },
+          {
+            "contacts": 5,
+            "constraints": 36,
+            "solver_iterations": 5
+          },
+          {
+            "contacts": 5,
+            "constraints": 36,
+            "solver_iterations": 5
+          },
+          {
+            "contacts": 5,
+            "constraints": 36,
+            "solver_iterations": 5
+          },
+          {
+            "contacts": 5,
+            "constraints": 36,
+            "solver_iterations": 5
+          }
+        ],
+        "step_warnings": 0,
+        "step_finite": true,
+        "diagnostic_ablation_not_admissible_for_delivery": {
+          "no_contact": {
+            "forward": {
+              "median_us": 11.8088125,
+              "p95_us": 12.005,
+              "minimum_us": 11.788,
+              "repeats": 9,
+              "samples_us": [
+                12.1074,
+                11.8514,
+                11.8088125,
+                11.811,
+                11.843612499999999,
+                11.788,
+                11.7944,
+                11.8042125,
+                11.7996
+              ]
+            },
+            "contacts": 0,
+            "constraints": 21
+          },
+          "no_contact_no_equality": {
+            "forward": {
+              "median_us": 11.342600000000001,
+              "p95_us": 11.4392,
+              "minimum_us": 11.3216,
+              "repeats": 9,
+              "samples_us": [
+                11.486799999999999,
+                11.33,
+                11.325012500000001,
+                11.3216,
+                11.3532125,
+                11.3478,
+                11.367799999999999,
+                11.3348125,
+                11.342600000000001
+              ]
+            },
+            "contacts": 0,
+            "constraints": 18
+          }
+        }
+      }
+    ]
+  },
+  "performance_comparison": {
+    "scenarios": [
+      {
+        "name": "cold_saved_reset",
+        "collision_median_ratio": 1.9476367715290879,
+        "collision_p95_ratio": 1.9453588766573218,
+        "forward_median_ratio": 1.8058204841250103,
+        "whole_step_median_ratio": 2.211176099412981,
+        "contacts_reference": 0,
+        "contacts_candidate": 4
+      },
+      {
+        "name": "standing_support",
+        "collision_median_ratio": 1.8980354111084163,
+        "collision_p95_ratio": 1.8920713416765542,
+        "forward_median_ratio": 2.483238822295484,
+        "whole_step_median_ratio": 2.253477033393377,
+        "contacts_reference": 8,
+        "contacts_candidate": 9
+      },
+      {
+        "name": "prone_front",
+        "collision_median_ratio": 2.0490967056323064,
+        "collision_p95_ratio": 2.0465903596093806,
+        "forward_median_ratio": 1.157547318572157,
+        "whole_step_median_ratio": 1.3616243875483838,
+        "contacts_reference": 1,
+        "contacts_candidate": 5
+      },
+      {
+        "name": "supine_back",
+        "collision_median_ratio": 1.8560106307246929,
+        "collision_p95_ratio": 1.844084722605009,
+        "forward_median_ratio": 1.5126015771184178,
+        "whole_step_median_ratio": 1.584871249429099,
+        "contacts_reference": 2,
+        "contacts_candidate": 6
+      },
+      {
+        "name": "lying_left",
+        "collision_median_ratio": 1.9009777007176225,
+        "collision_p95_ratio": 1.877141956762802,
+        "forward_median_ratio": 1.850130174852147,
+        "whole_step_median_ratio": 1.921418446118712,
+        "contacts_reference": 2,
+        "contacts_candidate": 5
+      },
+      {
+        "name": "lying_right",
+        "collision_median_ratio": 1.9400285110357371,
+        "collision_p95_ratio": 1.927861287305253,
+        "forward_median_ratio": 2.538675501677248,
+        "whole_step_median_ratio": 1.7379476666063107,
+        "contacts_reference": 2,
+        "contacts_candidate": 7
+      },
+      {
+        "name": "finite_work_seed_0",
+        "collision_median_ratio": 1.6222656792117185,
+        "collision_p95_ratio": 1.6150331093972972,
+        "forward_median_ratio": 1.037171358388336,
+        "whole_step_median_ratio": 1.1502536566358115,
+        "contacts_reference": 1,
+        "contacts_candidate": 2
+      },
+      {
+        "name": "finite_work_seed_1",
+        "collision_median_ratio": 1.3969397493919522,
+        "collision_p95_ratio": 1.4001576132241937,
+        "forward_median_ratio": 1.7990863905785581,
+        "whole_step_median_ratio": 1.4485292562503966,
+        "contacts_reference": 1,
+        "contacts_candidate": 3
+      },
+      {
+        "name": "finite_work_seed_2",
+        "collision_median_ratio": 0.5867742076630252,
+        "collision_p95_ratio": 0.5852336783034642,
+        "forward_median_ratio": 0.4190716456786791,
+        "whole_step_median_ratio": 1.4273696646481655,
+        "contacts_reference": 6,
+        "contacts_candidate": 2
+      },
+      {
+        "name": "finite_work_seed_3",
+        "collision_median_ratio": 1.452361596618161,
+        "collision_p95_ratio": 1.444080925052094,
+        "forward_median_ratio": 0.9064362779216266,
+        "whole_step_median_ratio": 1.1442732997655067,
+        "contacts_reference": 1,
+        "contacts_candidate": 2
+      }
+    ],
+    "collision_specialty_target_max_ratio": 1.5,
+    "worst_collision_median_ratio": 2.0490967056323064,
+    "collision_specialty_gate": "REJECT",
+    "full_step_ratio_is_descriptive_not_geometry_causal_proof": true,
+    "gpu_or_parallel_training_throughput_measured": false
+  },
+  "scope": "Single pinned CPU collision queries, fixed forward, and bounded native integration only; no controller or training. Contact/equality ablations diagnose cost and are not admissible performance candidates."
+}

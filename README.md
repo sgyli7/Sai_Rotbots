@@ -7,12 +7,12 @@
 | Sai_Agent_001 | Original powered opposed pads and belt mechanism | [001](robots/Sai_Agent_001/README.md) |
 | Sai_Agent_002 | Continuous flat floor, no moving clamp mechanism | [002](robots/Sai_Agent_002/README.md) |
 | Goose_V0.1 | Long-neck biped with a gripping beak; initial training checkpoint | [Goose](robots/Goose_V0.1/README.md) |
-| goose_v0_2 | Versioned simulation design physics; hardware completion tracked separately | [Goose V0.2](robots/goose_v0_2/README.md) |
+| goose_v0_2 | 14 convex collision shapes; fixed hardware physics and separate manufacturing follow-up | [Goose V0.2](robots/goose_v0_2/README.md) |
 | gorilla_v0_1 | AA3 appearance; C15 segmented-foot stage, physical gates open | [Gorilla](robots/gorilla_v0_1/README.md) |
 
 ## Goose V0.2 仿真设计物理包
 
-[Goose V0.2](robots/goose_v0_2/README.md) 提供独立版本的模型资产、逐刚体质量／重心／完整惯量、执行器合同和运行适配器。运行与接触验收见包内记录；实体安装和制造另见硬件续办索引。Goose_V0.1 继续保留。
+[Goose V0.2](robots/goose_v0_2/README.md) 的04派生版使用实际14个凸碰撞块、547个凸支持顶点和1038个凸三角面，完整保留02的逐刚体质量／重心／惯量、轴系和驱动。关键夹持面直接对照原生CAD修正，有限接触和短时积分验证见独立记录；单CPU原生步进约32–42微秒，部分姿态对旧Move14的1.5倍成本目标未达，差异明确保留。02的291块模型只作历史与物理来源，不再推荐训练。实体安装和制造仍暂停，Goose_V0.1继续保留。
 
 ## Gorilla V0.1：AA3 外形与复合脚阶段
 

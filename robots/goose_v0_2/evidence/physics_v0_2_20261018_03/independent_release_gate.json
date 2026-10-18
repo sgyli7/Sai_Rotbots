@@ -1,0 +1,233 @@
+{
+  "schema": "goose_v02_low_leaf_independent_release_gate_v1",
+  "created_utc": "2026-10-18T06:47:00.312815+00:00",
+  "release_id": "physics_v0_2_20261018_03",
+  "status": "ACCEPTED_BOUNDED_TRAINING_PHYSICS_REFERENCE_WITH_DOCUMENTED_RELATIVE_PERFORMANCE_TARGET_MISS",
+  "manager_adoption": "Root explicitly accepts low-complexity functional physics reference despite internal1.5 target miss; this does not change that test result.",
+  "archive": {
+    "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/integration_release/packages/physics_v0_2_20261018_03.zip",
+    "sha256": "f5ab4baed6604f83b84e7ef7f1ee5c6f33b036932d94502b268703df60a8fa4e",
+    "bytes": 832412,
+    "file_count": 50
+  },
+  "model_sha256": "be30a247ecd234602cae0f7de758878ca08802897367847dc5a1dbab57f3e00c",
+  "manifest_sha256": "229799cc4d414e55572f7bad18e2c54a6e09868d135c4582c324e25989387b90",
+  "gates": {
+    "source_bound_mass_COM_full_inertia": "PASS",
+    "compiled_same_hardware_vs02": "PASS_EXACT",
+    "eighteen_actions_twenty_two_internal_axes_limits_drives": "PASS",
+    "continuous_only_voltage_torque_speed_positive350W_reference_adapter": "PASS",
+    "immutable_archive_manifest_and_independent_extraction": "PASS",
+    "actual_engine_fourteen_convex_leaves_max64_total896": "PASS",
+    "finite_functional_collision_and_nonadjacent_self_contact": "PASS",
+    "reset_eighteen_axes_linkage_short_gravity_step": "PASS_NUMERICAL",
+    "same_hardware291_to14_collision_cost_reduction": "PASS",
+    "old14_relative_collision_cost_target1_5": "REJECT_PRESERVED",
+    "GPU_or_multi_environment_training_throughput": "NOT_MEASURED",
+    "learned_getup_move_grasp_success": "NOT_CLAIMED",
+    "full_hardware_manufacturing_release": "NOT_CLAIMED"
+  },
+  "hardware": {
+    "rigid_bodies": 23,
+    "public_actions": 18,
+    "internal_hinges": 22,
+    "mass_kg": 16.970203928833527,
+    "COM_zero_m": [
+      -0.0046366953984154965,
+      0.00037756759231995343,
+      0.31543937952885764
+    ],
+    "fullI_at_whole_COM_zero_kg_m2": [
+      [
+        0.5858031967936665,
+        -0.0003550115929387911,
+        0.004620848142464095
+      ],
+      [
+        -0.0003550115929387911,
+        0.5363580901698566,
+        -0.0015650487557486736
+      ],
+      [
+        0.004620848142464095,
+        -0.0015650487557486736,
+        0.20231538412158226
+      ]
+    ],
+    "same23body_MCI_axis_drive_contract_bytes_as02": true,
+    "collision_geometry_never_used_to_derive_mass": true,
+    "physics_dt_s": 0.005,
+    "control_dt_s": 0.02
+  },
+  "actual_collision_complexity": {
+    "actual_collision_leaves": 14,
+    "actual_hull_vertices": 544,
+    "actual_maximum_hull_vertices": 63,
+    "actual_hull_triangles": 1032,
+    "loaded_mesh_vertices": 544,
+    "loaded_mesh_faces": 1032
+  },
+  "verified_six_external_adjacency_exceptions": [
+    {
+      "owners": [
+        "torso",
+        "neck_pitch"
+      ],
+      "child": "neck_pitch",
+      "nearest_external_parent": "torso",
+      "skipped_internal_axis_carriers": [
+        "neck_yaw"
+      ]
+    },
+    {
+      "owners": [
+        "torso",
+        "right_hip_roll"
+      ],
+      "child": "right_hip_roll",
+      "nearest_external_parent": "torso",
+      "skipped_internal_axis_carriers": [
+        "right_hip_yaw"
+      ]
+    },
+    {
+      "owners": [
+        "torso",
+        "left_hip_roll"
+      ],
+      "child": "left_hip_roll",
+      "nearest_external_parent": "torso",
+      "skipped_internal_axis_carriers": [
+        "left_hip_yaw"
+      ]
+    },
+    {
+      "owners": [
+        "neck_mid_pitch",
+        "head_roll"
+      ],
+      "child": "head_roll",
+      "nearest_external_parent": "neck_mid_pitch",
+      "skipped_internal_axis_carriers": [
+        "head_pitch"
+      ]
+    },
+    {
+      "owners": [
+        "right_knee_pitch",
+        "right_ankle_roll"
+      ],
+      "child": "right_ankle_roll",
+      "nearest_external_parent": "right_knee_pitch",
+      "skipped_internal_axis_carriers": [
+        "right_ankle_pitch"
+      ]
+    },
+    {
+      "owners": [
+        "left_knee_pitch",
+        "left_ankle_roll"
+      ],
+      "child": "left_ankle_roll",
+      "nearest_external_parent": "left_knee_pitch",
+      "skipped_internal_axis_carriers": [
+        "left_ankle_pitch"
+      ]
+    }
+  ],
+  "functional_scope": [
+    "zero and +.15/+.3/+.5 neck counterbalance do not produce forbidden contact",
+    "both HP+.7 actual torso-to-shin positive participation preserved",
+    "both sole-ground and deliberate crossed-feet positive contacts preserved",
+    "real50g20x20x16mm mouth object enters open mouth and contacts both grip sides",
+    "all other non-adjacent exterior roles remain collision-enabled"
+  ],
+  "runtime_short_step": {
+    "simulated_s": 1.9999999999999793,
+    "physics_steps": 400,
+    "policy_updates": 100,
+    "drive_updates": 400,
+    "mean_physics_step_ms": 0.18140181753551587,
+    "peak_equality_residual": {
+      "beak_distal_pin": 3.012158550141919e-06,
+      "left_yaw_input_rotor_belt_relation": 0.00012031934626365861,
+      "right_yaw_input_rotor_belt_relation": 6.45460091371593e-05
+    },
+    "peak_positive_power_w": 1.420191718176515,
+    "peak_passive_branch_angle_error_rad": {
+      "beak_input_rotor": 0.00010702533476056791,
+      "beak_coupler_link": 0.00018640174484017963,
+      "left_yaw_input_rotor": 0.00012031934626365861,
+      "right_yaw_input_rotor": 6.45460091371593e-05
+    }
+  },
+  "performance_scope": {
+    "new14_collision_pose_medians_us": {
+      "minimum_pose_median_us": 7.1244125,
+      "maximum_pose_median_us": 9.0896125,
+      "maximum_pose_repeat_average_p95_us": 9.15088
+    },
+    "new14_native_step_pose_medians_us": {
+      "minimum_pose_median_us": 32.021625,
+      "maximum_pose_median_us": 41.709824999999995,
+      "maximum_pose_repeat_average_p95_us": 42.152657500000004
+    },
+    "same_hardware291_to14_collision_speedup_range": [
+      42.7638209859298,
+      67.29363325444292
+    ],
+    "same_hardware_native_step_speedup_range": [
+      9.565193616893975,
+      13.474318526932972
+    ],
+    "worst_old14_collision_median_ratio": 2.0490967056323064,
+    "statistics_scope": "Each timing sample is a repeat average over80 calls/steps. Reported p95 is the percentile of nine repeat averages, not a per-step latency-tail estimate.",
+    "old_source_normalized_for_MuJoCo310_geometry_comparison_only": true,
+    "old_vs_new_hardware_differs": {
+      "old_rigid_bodies": 21,
+      "new_rigid_bodies": 23,
+      "old_loops": 1,
+      "new_loops": 3,
+      "old_mass_kg": 10.430690821363129,
+      "new_mass_kg": 16.970203928833527,
+      "whole_step_ratios_cannot_be_attributed_only_to_colliders": true
+    }
+  },
+  "limitations": [
+    "A simulation engineering prior with estimated friction/loss and source-derived physical parameters; real hardware weighing, actuator and contact calibration remain necessary.",
+    "Default capability limits require the shipped200Hz runtime adapter; directly using MJCF does not enforce the aggregate350W or voltage-speed curves.",
+    "Ordinary collision outlines approximate mechanisms and omit internal holes;14 leaves do not reproduce full CAD or certify the whole joint space.",
+    "Six disclosed role-adjacency exclusions include torso/lower neck, two torso/hip-roll, upper-neck/head-roll and two shin/sole; nearest exterior parent relationships independently verified.",
+    "No physical pose projection, hidden root support, task/reward/policy edits, or training was used to pass these gates.",
+    "No guarantee of old-policy compatibility, learned task success, GPU batch throughput, CAD exactness, manufacture readiness or all-ROM self-contact clearance."
+  ],
+  "selected_evidence": [
+    {
+      "path": "robots/goose_v0_2/evidence/physics_v0_2_20261018_03/independent_runtime.json",
+      "sha256": "dcd8c6b8963122bf5da03c1bdbe87471a2ffa151ebafddb0cb81921476bb1907"
+    },
+    {
+      "path": "robots/goose_v0_2/evidence/physics_v0_2_20261018_03/independent_contacts.json",
+      "sha256": "c867a2f2a53fc2169719dca7e8cc60f170dc100d099c5b0640266ad772bec4b5"
+    },
+    {
+      "path": "robots/goose_v0_2/evidence/physics_v0_2_20261018_03/independent_complexity.json",
+      "sha256": "1750d39c4627bcf8c3b312c4c4e16154bb9fd5720a7ad3e1c43de9b24a30c218"
+    },
+    {
+      "path": "robots/goose_v0_2/evidence/physics_v0_2_20261018_03/independent_archive_invariance.json",
+      "sha256": "27ec4eaa2c8117468e7cff48e4c2e02a9b7376f8fa30d30f8f33b12ca7dfe6fa"
+    },
+    {
+      "path": "robots/goose_v0_2/evidence/physics_v0_2_20261018_03/independent_collision_performance.json",
+      "sha256": "a30dccd6a6599774dbddd65626ba45d26cda25a3b2b26349a3854f7f845ad874"
+    }
+  ],
+  "reproduce_from_extracted_package": [
+    "python verify_physics.py --package . --output /tmp/goose_physics_audit",
+    "python verify_contacts.py --package . --output /tmp/goose_contacts_audit.json",
+    "python benchmark_collision_cost.py --candidate robot.xml --complexity-only --output /tmp/goose_complexity_audit.json"
+  ],
+  "owned_running_jobs": [],
+  "producer_sources_modified_by_auditor": false
+}

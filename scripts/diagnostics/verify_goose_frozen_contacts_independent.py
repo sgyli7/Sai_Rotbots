@@ -107,6 +107,69 @@ def mouth_object_fixtures(package, c):
     return rows
 
 
+def native_lower_face_fixture(package, m, d, c):
+    """Compare the actual compiled flat grip perimeter with adopted native CAD.
+
+    The small BREP's exact face extraction is audited separately using CAD.
+    This portable runtime check binds that BREP and the eight-edge reference,
+    then measures all1440 stated planar support directions without CAD modules.
+    """
+    reference = package / "source_inputs/native_contact/lower_pad_contact_face.json"
+    if not reference.is_file():
+        return None
+    ref = json.loads(reference.read_text())
+    brep = reference.parent / "lower_grip_cassette_pad.brep"
+    if identity(brep)["sha256"] != ref["source_brep_sha256"]:
+        raise AssertionError("Native lower pad BREP reference changed")
+    points = np.asarray(ref["contact_face_world_zero_vertices_mm"], dtype=float)
+    if points.shape != (8, 3) or np.ptp(points[:, 2]) > 1e-8:
+        raise AssertionError("Expected the exact eight-edge planar native pad reference")
+    area = abs(float(np.dot(points[:,0], np.roll(points[:,1], -1))
+                     - np.dot(points[:,1], np.roll(points[:,0], -1)))) / 2
+    if abs(area - float(ref["source_face_area_mm2"])) > 1e-6:
+        raise AssertionError("Native perimeter does not match the recorded full face area")
+    pose(m, d, c, {}, root_z=0.)
+    g = m.geom("lower_bill_envelope").id
+    mid = int(m.geom_dataid[g]); first = int(m.mesh_vertadr[mid]); n = int(m.mesh_vertnum[mid])
+    world = (m.mesh_vert[first:first+n] @ d.geom_xmat[g].reshape(3,3).T + d.geom_xpos[g]) * 1000
+    z = float(points[0, 2])
+    flat = world[np.abs(world[:,2] - z) < .01]
+    if len(flat) < 3:
+        raise AssertionError("Compiled lower jaw has no full planar contact face")
+    theta = np.linspace(0., 2*np.pi, 1440, endpoint=False)
+    directions = np.column_stack((np.cos(theta), np.sin(theta)))
+    native_support = np.max(points[:,:2] @ directions.T, axis=0)
+    proxy_support = np.max(flat[:,:2] @ directions.T, axis=0)
+    loss, excess = native_support-proxy_support, proxy_support-native_support
+    # Also test each exact native corner against every edge of the planar
+    # convex mesh support polygon; directions alone are not an area proof.
+    ordered = sorted(set(map(tuple, flat[:,:2])))
+    def cross(a,b,p): return (b[0]-a[0])*(p[1]-a[1])-(b[1]-a[1])*(p[0]-a[0])
+    lo, hi = [], []
+    for point in ordered:
+        while len(lo)>1 and cross(lo[-2],lo[-1],point)<=0: lo.pop()
+        lo.append(point)
+    for point in reversed(ordered):
+        while len(hi)>1 and cross(hi[-2],hi[-1],point)<=0: hi.pop()
+        hi.append(point)
+    hull = np.asarray(lo[:-1]+hi[:-1])
+    signed = []
+    for a,b in zip(hull, np.roll(hull,-1,axis=0)):
+        signed.extend(cross(a,b,p)/np.linalg.norm(b-a) for p in points[:,:2])
+    worst_outside = max(0., -min(signed))
+    error = max(float(loss.max()),float(excess.max()),worst_outside)
+    passed = bool(error <= .05 and float(np.max(np.abs(flat[:,2]-z))) <= .01)
+    return dict(reference=identity(reference), source_brep=identity(brep),
+                source_face_index=ref["native_contact_face_index"], native_face_area_mm2=area,
+                native_contact_vertices_mm=points.tolist(), loaded_coplanar_vertices_mm=flat.tolist(),
+                maximum_plane_error_mm=float(np.max(np.abs(flat[:,2]-z))),
+                directions=1440, max_support_loss_mm=float(loss.max()),
+                max_support_excess_mm=float(excess.max()),
+                maximum_native_corner_outside_proxy_edge_mm=worst_outside,
+                accepted_support_error_mm=.05, passed=passed,
+                scope="Full exact eight-edge zero-angle native contact face; finite1440 directional supports and exact corner-to-edge containment. CAD BREP face extraction independently audited separately; no full-jaw/whole-ROM or material-compliance claim.")
+
+
 def run(package):
     c = json.loads((package / "physical_contract.json").read_text())
     m = mujoco.MjModel.from_xml_path(str(package / "robot.xml"))
@@ -127,6 +190,42 @@ def run(package):
     for sig in m.exclude_signature:
         exclusions.append([name(m, mujoco.mjtObj.mjOBJ_BODY, int(sig) >> 16),
                            name(m, mujoco.mjtObj.mjOBJ_BODY, int(sig) & 65535)])
+    # The low-leaf model omits internal axis carriers as exterior roles. Its
+    # approved adjacency exceptions must be exact, mechanically adjacent after
+    # contracting only those empty carriers, and must not hide any other role.
+    role_adjacency = []
+    low_leaf_model = len(robot) == 14
+    if low_leaf_model:
+        approved = {frozenset(x) for x in (("torso", "neck_pitch"),
+                    ("torso", "left_hip_roll"), ("torso", "right_hip_roll"),
+                    ("neck_mid_pitch", "head_roll"),
+                    ("left_knee_pitch", "left_ankle_roll"),
+                    ("right_knee_pitch", "right_ankle_roll"))}
+        if {frozenset(x) for x in exclusions} != approved:
+            raise AssertionError("Low-leaf adjacency exclusions differ from approved six")
+        exterior = set(map(int, m.geom_bodyid[robot]))
+        for a, b in exclusions:
+            ia, ib = m.body(a).id, m.body(b).id
+            proven = False
+            for child, parent in ((ia, ib), (ib, ia)):
+                n = int(m.body_parentid[child]); skipped = []
+                while n and n not in exterior:
+                    skipped.append(m.body(n).name); n = int(m.body_parentid[n])
+                if n == parent:
+                    role_adjacency.append(dict(owners=[a, b], child=m.body(child).name,
+                                               nearest_external_parent=m.body(parent).name,
+                                               skipped_internal_axis_carriers=skipped))
+                    proven = True; break
+            if not proven:
+                raise AssertionError("Excluded role pair is not external adjacency: " + str((a,b)))
+        for i, ga in enumerate(robot):
+            for gb in robot[i+1:]:
+                a, b = owner(m, ga), owner(m, gb)
+                if a == b or frozenset((a,b)) in approved:
+                    continue
+                enabled, reason = pair_policy(m, ga, gb)
+                if not enabled and reason != "simulator_parent_filter":
+                    raise AssertionError("Non-adjacent exterior role hidden: " + a + "/" + b)
     critical = [("torso", "neck_pitch"), ("torso", "left_hip_pitch"),
                 ("torso", "right_hip_pitch"), ("left_ankle_roll", "right_ankle_roll")]
     critical_policy = []
@@ -136,7 +235,9 @@ def run(package):
         enabled = sum(pair_policy(m, ga, gb)[0] for ga in groups_a for gb in groups_b)
         critical_policy.append(dict(owners=[a, b], enabled_geom_pairs=enabled,
                                     total_geom_pairs=len(groups_a) * len(groups_b)))
-        if groups_a and groups_b and not enabled:
+        approved_adjacent = low_leaf_model and frozenset((a,b)) in approved
+        critical_policy[-1]["approved_external_adjacency_exception"] = approved_adjacent
+        if groups_a and groups_b and not enabled and not approved_adjacent:
             raise AssertionError("Critical entire role pair hidden: " + a + "/" + b)
     cases = dict(zero={}, neck_015=dict(neck_pitch=.15, neck_mid_pitch=-.15),
                  neck_030=dict(neck_pitch=.3, neck_mid_pitch=-.3),
@@ -218,6 +319,9 @@ def run(package):
         mouth.append(dict(beak_hinge_rad=q, pad_pairs=pad_pairs))
     object_fixtures = mouth_object_fixtures(package, c)
     failures += [x["name"] for x in object_fixtures if not x["passed"]]
+    native_face = native_lower_face_fixture(package, m, d, c)
+    if native_face is not None and not native_face["passed"]:
+        failures.append("Native lower-pad complete flat-face perimeter mismatch")
     return dict(schema="goose_independent_finite_training_contact_gate_v1",
                 model=identity(package / "robot.xml"), script=identity(__file__),
                 status="PASS_FINITE_FIXTURES" if not failures else "REJECT_FINITE_FIXTURES",
@@ -228,11 +332,13 @@ def run(package):
                 primitive_leaves=sum(m.geom_type[g] != mujoco.mjtGeom.mjGEOM_MESH for g in robot),
                 all_robot_colliders_environment_enabled=True,
                 bodywide_exclusions=exclusions,
+                independently_verified_external_adjacency_exceptions=role_adjacency,
                 owner_mask_groups=[dict(owner=k[0], contype=k[1], conaffinity=k[2], leaves=v)
                                    for k, v in mask_groups.items()], critical_pair_policy=critical_policy,
                 finite_poses=rows, actual_sole_ground_positive=sides,
                 loaded_sole_bounds_zero_m=sole_bounds, sole_positive_fixture_root_z_m=floor_root_z,
                 mouth_endpoint_distances=mouth, real_object_mouth_fixtures=object_fixtures,
+                native_lower_contact_face=native_face,
                 limitations=["Finite articulation gap and collision participation tests only.",
                              "No learned getup, movement, grasp success or manufacture qualification.",
                              "Positive HP probes are diagnostics until native-source contact is confirmed."])

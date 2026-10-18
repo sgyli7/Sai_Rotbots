@@ -1,0 +1,160 @@
+{
+  "schema": "goose_independent_final04_short_same_hardware_collision_cost_v1",
+  "status": "PASS_LOW_COMPLEXITY_SAME_HARDWARE_COST_GATE",
+  "final_archive_sha256": "1dd11b212697f2b0005c045e4874c9ae1657e0f97863ae0cfde57b09c2d2a9ba",
+  "final_14_mesh_asset_digest": "fdd6671068d571418bf104d0f2d10a5c6c939e3750089e0d0923116251685614",
+  "actual_assets_identical_to_cost_tested_candidate": true,
+  "host": {
+    "machine": "aarch64",
+    "platform": "Linux-6.17.0-1029-nvidia-aarch64-with-glibc2.39",
+    "pinned_cpu": 19,
+    "affinity": [
+      19
+    ],
+    "seed": 20261018,
+    "mujoco_version": "3.10.0",
+    "process_id": 2643618
+  },
+  "workload": {
+    "calls_per_repeat": 16,
+    "repeats": 5,
+    "warmup": 5,
+    "steps_per_rollout": 20
+  },
+  "effective_solver": {
+    "dt_s": 0.005,
+    "solver": 2,
+    "iterations": 100,
+    "ls_iterations": 50,
+    "tolerance": 1e-08,
+    "integrator": 3,
+    "cone": 1,
+    "jacobian": 0,
+    "enableflags": 0,
+    "disableflags": 65536,
+    "ccd_iterations": 35,
+    "ccd_tolerance": 1e-06
+  },
+  "both_effective_solver_options_equal": true,
+  "same_23bodies_3loops_18drives_and_frozen_MCI": true,
+  "absolute_cost": {
+    "final04": {
+      "collision_query": {
+        "minimum_pose_median_us": 7.709,
+        "maximum_pose_median_us": 7.991,
+        "maximum_repeat_average_p95_us": 8.91375
+      },
+      "fixed_pose_forward": {
+        "minimum_pose_median_us": 19.454,
+        "maximum_pose_median_us": 51.491,
+        "maximum_repeat_average_p95_us": 51.778937500000005
+      },
+      "source_native_step": {
+        "minimum_pose_median_us": 19.82,
+        "maximum_pose_median_us": 33.2768,
+        "maximum_repeat_average_p95_us": 35.20591
+      }
+    },
+    "withdrawn291": {
+      "collision_query": {
+        "minimum_pose_median_us": 340.79875,
+        "maximum_pose_median_us": 386.7816875,
+        "maximum_repeat_average_p95_us": 398.88513750000004
+      },
+      "fixed_pose_forward": {
+        "minimum_pose_median_us": 359.8676875,
+        "maximum_pose_median_us": 519.0725625,
+        "maximum_repeat_average_p95_us": 521.6128249999999
+      },
+      "source_native_step": {
+        "minimum_pose_median_us": 379.06695,
+        "maximum_pose_median_us": 478.81325,
+        "maximum_repeat_average_p95_us": 482.51132
+      }
+    }
+  },
+  "comparison": {
+    "scenarios": [
+      {
+        "name": "cold_saved_reset",
+        "collision_median_ratio": 0.022316934338159886,
+        "collision_p95_ratio": 0.023073908633341297,
+        "forward_median_ratio": 0.05405875735925861,
+        "whole_step_median_ratio": 0.08536336661576353,
+        "contacts_reference": 4,
+        "contacts_candidate": 4
+      },
+      {
+        "name": "standing_support",
+        "collision_median_ratio": 0.023083524758694483,
+        "collision_p95_ratio": 0.023655532645532475,
+        "forward_median_ratio": 0.11954692511751794,
+        "whole_step_median_ratio": 0.0778876444428922,
+        "contacts_reference": 10,
+        "contacts_candidate": 9
+      },
+      {
+        "name": "prone_front",
+        "collision_median_ratio": 0.022833022522823123,
+        "collision_p95_ratio": 0.022824170418110128,
+        "forward_median_ratio": 0.07162992173112022,
+        "whole_step_median_ratio": 0.05228627818911672,
+        "contacts_reference": 5,
+        "contacts_candidate": 5
+      },
+      {
+        "name": "supine_back",
+        "collision_median_ratio": 0.02284597338266933,
+        "collision_p95_ratio": 0.02288569131602284,
+        "forward_median_ratio": 0.07545316928267518,
+        "whole_step_median_ratio": 0.052726975411176435,
+        "contacts_reference": 10,
+        "contacts_candidate": 6
+      },
+      {
+        "name": "lying_left",
+        "collision_median_ratio": 0.023365696030281803,
+        "collision_p95_ratio": 0.02590262907144578,
+        "forward_median_ratio": 0.09523174072873862,
+        "whole_step_median_ratio": 0.060267098940036304,
+        "contacts_reference": 6,
+        "contacts_candidate": 5
+      },
+      {
+        "name": "lying_right",
+        "collision_median_ratio": 0.02322352015277166,
+        "collision_p95_ratio": 0.023097167655283614,
+        "forward_median_ratio": 0.1305355189178869,
+        "whole_step_median_ratio": 0.05927498773660775,
+        "contacts_reference": 6,
+        "contacts_candidate": 7
+      },
+      {
+        "name": "finite_work_seed_0",
+        "collision_median_ratio": 0.02066023355875658,
+        "collision_p95_ratio": 0.02052871674116963,
+        "forward_median_ratio": 0.06947198254193988,
+        "whole_step_median_ratio": 0.06435901679830289,
+        "contacts_reference": 29,
+        "contacts_candidate": 2
+      }
+    ],
+    "collision_specialty_target_max_ratio": 1.5,
+    "worst_collision_median_ratio": 0.023365696030281803,
+    "collision_specialty_gate": "PASS",
+    "full_step_ratio_is_descriptive_not_geometry_causal_proof": true,
+    "gpu_or_parallel_training_throughput_measured": false
+  },
+  "warning_count": 0,
+  "collision_speedup_range": [
+    42.7977834986814,
+    48.4021633712927
+  ],
+  "statistics_scope": "Five repeat averages over16 collision/forward calls or20 native steps for each of seven fixed finite poses; p95 describes repeat averages, not an individual-call latency tail. CPU19/MuJoCo3.10 only.",
+  "old14_relative1_5_target": "Not remeasured for04;03 missed the internal target and its original evidence remains. No claim of old14 equal throughput.",
+  "gpu_or_multi_environment_training_throughput_measured": false,
+  "full_source_report": {
+    "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physics_freeze_20261018_01/independent_whole_audit/final_04_archive_audit/short_04_vs_same_hardware291.json",
+    "sha256": "92b5f3a5cf99198b29c0b09df1d470c6dd0f6901a26f77f18b65d53434801d0f"
+  }
+}
