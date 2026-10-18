@@ -7,7 +7,12 @@
 | Sai_Agent_001 | Original powered opposed pads and belt mechanism | [001](robots/Sai_Agent_001/README.md) |
 | Sai_Agent_002 | Continuous flat floor, no moving clamp mechanism | [002](robots/Sai_Agent_002/README.md) |
 | Goose_V0.1 | Long-neck biped with a gripping beak; initial training checkpoint | [Goose](robots/Goose_V0.1/README.md) |
+| goose_v0_2 | Versioned simulation design physics; hardware completion tracked separately | [Goose V0.2](robots/goose_v0_2/README.md) |
 | gorilla_v0_1 | AA3 appearance; C15 segmented-foot stage, physical gates open | [Gorilla](robots/gorilla_v0_1/README.md) |
+
+## Goose V0.2 仿真设计物理包
+
+[Goose V0.2](robots/goose_v0_2/README.md) 提供独立版本的模型资产、逐刚体质量／重心／完整惯量、执行器合同和运行适配器。运行与接触验收见包内记录；实体安装和制造另见硬件续办索引。Goose_V0.1 继续保留。
 
 ## Gorilla V0.1：AA3 外形与复合脚阶段
 
