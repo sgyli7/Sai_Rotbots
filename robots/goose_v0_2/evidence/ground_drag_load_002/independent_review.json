@@ -1,0 +1,82 @@
+{
+  "schema": "goose_independent_experiment_review_v1",
+  "experiment_id": "ground_drag_load_002",
+  "reviewer": "/root/independent_whole_audit",
+  "review_type": "read_only_saved_data_and_model_review",
+  "lab_formal_return_pending_at_review": true,
+  "new_physics_integrations": 0,
+  "rows_independently_recomputed": 5548,
+  "decision": "ACCEPT_EXPLORATION_EVIDENCE_ONLY",
+  "qualifications_rejected": [
+    "maximum_drag_mass",
+    "free_whole_robot_grounded_drag",
+    "0.5_m_complete_backdrag",
+    "60_s_continuous_traction",
+    "hardware_or_cross_engine_qualification"
+  ],
+  "input_findings": {
+    "robot_mass_kg": 16.97020392883353,
+    "robot_collision_leaves": 14,
+    "hull_support_vertices": 547,
+    "hull_triangles": 1038,
+    "hardware_mci_axes_meshes_and_drive_unchanged": true,
+    "local_fixture": "stationary_torso_to_world_soft_weld_only; head_and_neck_actuated",
+    "free_case_added_fixtures_or_equalities": 0,
+    "payload_bindings": 0,
+    "mocap_or_external_applied_forces": 0,
+    "raw_incoming_and_npz_state_continuity_max_error": 0,
+    "actual_effective_sliding_friction": {
+      "payload_floor": 0.3,
+      "foot_floor": 0.65,
+      "mouth_payload": 0.65
+    }
+  },
+  "drive_findings": {
+    "independently_recomputed": [
+      "pd_requested_torque",
+      "continuous_voltage_and_speed_torque_curve",
+      "350_w_positive_mechanical_power_limit",
+      "actual_applied_torque"
+    ],
+    "max_recomputation_error": 0,
+    "free_case_first_posture_failure_s": 3.535,
+    "free_case_first_any_curve_limit_s": 3.545,
+    "free_case_first_neck_root_curve_limit_s": 3.635,
+    "free_case_power_before_failure_peak_w": 2.019,
+    "causal_limit": "Observed saturation follows posture failure; this run does not establish insufficient neck torque as the cause. Target slew is not an actual rotor speed hard projection."
+  },
+  "case_table": [
+    {"attempt": 1, "mode": "LOCAL_TORSO_FIXED_NECK_PULL", "mass_kg": 0.5, "sim_duration_s": 6, "handle_net_backwards_mm_approx": 73.34, "box_net_backwards_mm_approx": 54.01, "torso_net_backwards_mm_approx": 0, "loaded_force_contact_percent_approx": 97.8, "longest_gap_over_0p1mm_s": 0, "bilateral_loaded_force_percent": 100, "curve_limiting_observed": false, "peak_positive_mechanical_power_w_approx": 0.849, "assessment": "short_local_exploration_only"},
+    {"attempt": 2, "mode": "FREE_BASE_BACKDRAG", "mass_kg": 0.5, "sim_duration_s": 3.74, "handle_net_backwards_mm_approx": 281.25, "box_net_backwards_mm_approx": 417.07, "torso_net_backwards_mm_approx": 44.18, "loaded_force_contact_percent_approx": 70.6, "longest_gap_over_0p1mm_s": 0.545, "bilateral_loaded_force_percent": 100, "curve_limiting_observed": true, "peak_positive_mechanical_power_w_approx": 25.505, "assessment": "failed_ground_contact_and_posture; displacement_during_airborne_and_failure_is_not_drag_credit"},
+    {"attempt": 3, "mode": "LOCAL_TORSO_FIXED_NECK_PULL", "mass_kg": 1, "sim_duration_s": 6, "handle_net_backwards_mm_approx": 70.20, "box_net_backwards_mm_approx": 53.06, "torso_net_backwards_mm_approx": 0, "loaded_force_contact_percent_approx": 91.3, "longest_gap_over_0p1mm_s": 0, "bilateral_loaded_force_percent": 100, "curve_limiting_observed": false, "peak_positive_mechanical_power_w_approx": 0.852, "assessment": "local_exploration; below_95_percent_force_contact_gate"},
+    {"attempt": 4, "mode": "LOCAL_TORSO_FIXED_NECK_PULL", "mass_kg": 2, "sim_duration_s": 6, "handle_net_backwards_mm_approx": 61.92, "box_net_backwards_mm_approx": 47.17, "torso_net_backwards_mm_approx": 0, "loaded_force_contact_percent_approx": 92.7, "longest_gap_over_0p1mm_s": 0, "bilateral_loaded_force_percent": 100, "curve_limiting_observed": false, "peak_positive_mechanical_power_w_approx": 1.011, "assessment": "local_exploration; contact_gate_and_50mm_box_net_travel_not_met"},
+    {"attempt": 5, "mode": "LOCAL_TORSO_FIXED_NECK_PULL", "mass_kg": 4, "sim_duration_s": 6, "handle_net_backwards_mm_approx": 39.49, "box_net_backwards_mm_approx": 38.85, "torso_net_backwards_mm_approx": 0, "loaded_force_contact_percent_approx": 93.5, "longest_gap_over_0p1mm_s": 0, "bilateral_loaded_force_percent": 100, "curve_limiting_observed": false, "peak_positive_mechanical_power_w_approx": 1.321, "assessment": "local_exploration; contact_gate_and_50mm_box_net_travel_not_met"}
+  ],
+  "derivation": {
+    "net_displacement_reference": "saved_cold_state_to_final_record; separate_from_pull_entry_and_path_length",
+    "box_position": "payload_pose_transform_of_local_[0.08,0,-0.115]_m",
+    "force_contact_threshold": "ground_normal_above_1_percent_payload_weight",
+    "geometric_air_gap_threshold_m": 0.0001,
+    "sample_boundary_tolerance_s": 0.005,
+    "local_zero_force_intervals": "isolated_5_ms_intervals; max_geometric_gaps_approximately_24_to_35_micrometres",
+    "free_foot_contact_point_slip_integral_mm_approx": [12.37, 12.26],
+    "free_foot_center_excursion_mm_approx": [55.46, 55.61],
+    "free_max_geometric_air_gap_mm_approx": 69.6,
+    "local_mouth_soft_penetration_mm_range_approx": [0.437, 0.650],
+    "local_mechanical_closure_residual_mm_range_approx": [0.116, 0.172],
+    "free_mouth_soft_penetration_mm_approx": 1.131,
+    "free_mechanical_closure_residual_mm_approx": 0.433,
+    "numerical_scope": "Soft contact gaps, penetration and mechanism residuals do not establish material properties or manufacturing clearance. Average ground normal alone cannot qualify grounded drag."
+  },
+  "source_directory": "/home/ethan/ProjectBackups/2026-10-18/Sai_Lab/ground_drag_load_002",
+  "source_sha256": {
+    "drag_pilot.py": "aa753cd0dedec683ecdd6fba407138fd7ac548b34d9c0c1ae69ac7f89b6af025",
+    "frozen_helpers.py": "6076e38cb1b3bbc62c276e25c06750fc4810e49726ce1509f7ff3fa420b2c1b0",
+    "analysis_summary.json": "a102e7f1e471865f34a37de9c334b284522c2314df01e010435327faf3cf9218",
+    "attempt_001/actual_substeps.jsonl.gz": "a1bdf14b0afc79ffb03896605dd725e306858ef73742c098edd7be072858193e",
+    "attempt_002/actual_substeps.jsonl.gz": "9b8730270b733a4da2dd60e29d3bcde08301627ee305b94507b6fb6ba3f5a83f",
+    "attempt_003/actual_substeps.jsonl.gz": "2efaa2c94c1cba02ea993afb817de004e39ffc08daade8797052ce2de8c0af68",
+    "attempt_004/actual_substeps.jsonl.gz": "96f62a3fa0701ea8a9010c0a8725c096c91521d9422b1ca0e855afaf2bbdab1c",
+    "attempt_005/actual_substeps.jsonl.gz": "22f2c5fa6152df5b9d5c39ba15ed08ef7a4cd96f56621813ea3cde767762634c"
+  }
+}
