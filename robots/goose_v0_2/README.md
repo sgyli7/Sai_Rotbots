@@ -31,3 +31,9 @@
 [007整机后坐审核](evidence/cart_drag_whole_body_007/pm_review.md)：3次空载真自由根试验，有限实现腿驱动身体后移约20mm、双足保持2秒并返回；原5mm足滑资格线未过，末次仅作事前声明的完整诊断，未放行受载。当前未完成整机拖车或连续倒退，机体质量/惯量/驱动和14叶碰撞保持04原版。
 
 按用户“车呢、连续向后走做了吗”的纠正，[008带车审核](evidence/cart_drag_loaded_diagnostic_008/pm_review.md)已完成6次／6357步真自由根、完整车与20kg货物同场试跑。**连续倒退仍失败，真实后退步数0，未完成0.5m或保持3秒。** 最长车后移约39mm来自颈牵拉并随后脱嘴失稳，不算整机运输。当前关键路径为原能力内真实承重转换，不能把计划相位或咬持当完成；原04硬件与14叶代理不变，零GPU／训练，不恢复定时任务。
+
+当前[009硬件与整机执行](../../experiments/goose_v0_2/drag_hardware_sprint_009/order.json)由用户授权12小时推进：真实20kg货车后退≥0.1m/s／≥0.5m并停车留嘴3s，净增重≤1kg；允许内部承力与传动重排，保留鹅形。控制因果诊断、腿部真实减重和嘴部接口并行，主Agent负责整机取舍；[实际状态](../../experiments/goose_v0_2/drag_hardware_sprint_009/coordination.json)不以局部结果代替整机通过。旧04继续作不可热覆盖对照，零PPO/GPU，不恢复旧定时任务。
+
+[05原生硬件实验候选](models/physics_v0_2_20261020_05_candidate/README.md)已完成加载读回：16.6008308064kg、23刚体、18驱动、14凸体／547支持点／1038真实凸面；对照04轻369.373g。[源与集成交接](evidence/drag_hardware_integration_009/integration_handoff_current.json)保留完整MCI与有限验收边界。05尚未通过受载步行，未替换当前默认入口；主体避让凹面修正另存候选，不覆盖其物理数据。
+
+[009独立动作审核](evidence/drag_mouth_interface_009/control_admission_009/review.md)确认05一次真实63ms离地及44.624mm后落脚；足滑、侧倾和下沉仍失败，不授稳定一步或拖运资格。
