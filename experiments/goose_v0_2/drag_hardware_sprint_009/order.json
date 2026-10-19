@@ -15,14 +15,16 @@
     "backward_command_to_stop_s_max": 5,
     "actual_distance_over_elapsed_speed_m_s_min": 0.1,
     "first_motion_reference": "Cruise0.15m/s,acceleration/deceleration0.2m/s2 gives ideal0.5m start-stop4.083s; reference only, not verified capability.",
-    "actual_alternating_cycles_min": 4,
     "actual_step_event": "Normal<=2N and all-sole clearance>1mm for>=50ms, followed by actual backwards landing; planned phase never counts.",
     "stop_hold_s_min": 3,
     "stop_speed_each_m_s_max": 0.005,
     "hold_drift_each_m_max": 0.01,
     "start": "Aligned with handle but mouth actually open, unbound cart+cargo and free robot. Pregrip allowed only for labelled causal diagnostics.",
     "video": "One uninterrupted original-speed view of mouth, whole robot/both feet, full cart and visible20kg cargo from open-mouth capture through stop hold.",
-    "repeat": "First full task success is an experimental breakthrough, then5 independent cold full passes; preserve original formal50trial>=45success standard before reliability claim."
+    "repeat": "First full task success is an experimental breakthrough, then5 independent cold full passes; preserve original formal50trial>=45success standard before reliability claim.",
+    "continuous_backward_walking": "Actual alternating left/right air-backlanding-support exchanges throughout the >=0.5m transport; report actual step count, cadence and stride. Standing foot sliding or a single tug does not qualify.",
+    "alternating_cycles_reference_target": 4,
+    "cycle_count_rule": "Four full left-right cycles is an Owner planning reference, not a user-imposed minimum. Do not force a cadence/stride that contradicts >=0.1m/s and <=5s start-stop. User distance, true stepping, speed, stop and pure-physics requirements remain hard."
   },
   "baseline": {
     "robot": "physics_v0_2_20261018_04",
@@ -67,5 +69,12 @@
     "selected": "analysis/drag_hardware_sprint_009"
   },
   "publication": "User-authorized explicit-scope commits/publication; preserve unrelatedV0.1 dirty state and remoteLab subtree mechanism. Archive/publish at real milestones without displacing engineering.",
-  "owner_rule": "Review whole-robot critical path every30min and after every returned result. Deliver actual task outcome and source-bound video. If deadline expires without success, report unmet outcome and concrete remaining blocker; never label partial pull complete."
+  "owner_rule": "Review whole-robot critical path every30min and after every returned result. Deliver actual task outcome and source-bound video. If deadline expires without success, report unmet outcome and concrete remaining blocker; never label partial pull complete.",
+  "owner_clarifications": [
+    {
+      "utc": "2026-10-19T19:40:44.189552Z",
+      "scope": "Self-imposed cycle-count target only",
+      "reason": "The actual purpose is continuous loaded backward transport at user speed, not completing a chosen number of cycles. Genuine alternating walking remains required; no relaxation of distance, speed, stop, payload, grip or physics."
+    }
+  ]
 }

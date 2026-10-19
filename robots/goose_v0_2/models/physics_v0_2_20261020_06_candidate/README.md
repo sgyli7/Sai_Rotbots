@@ -1,0 +1,11 @@
+# Goose V0.2 physical hardware checkpoint06
+
+Design mass **16.59112492671003 kg**, native assembly1827 solids,23 robot bodies,18 controlled axes. Delta from05: **−0.009705879730614 kg**. Only torso and left/right ankle-roll full native mass/COM/inertia tuples change. The06 source replaces two AR PETG working-window covers and the owner-adopted feature-preserved front shell; prior AP metal/fasteners remain in05 parent.
+
+**This is a loadable hardware experiment checkpoint. Collision faithfulness and new08 mechanical path qualification FAIL. It is not a stable training default, manufacturing release or demonstrated cart-drag capability.** Inherited14 convex leaves remain byte-identical for honest comparison. The current proxy misses a native leftC45/front-shell collision at08 t2.13s and has known false blocking in another source-positive-gap domain. Rejected full source convex closures are not installed. Do not start new loaded gait/training based on this checkpoint. Read `collision_faithfulness.json` and `qualification_limits.json`.
+
+AR continuous±0.5rad source clearance has analytic conservative proof and actual-pose checks; a small free-edge lip reaches observed1.326mm, so the1.8mm manufacturing wall gate remainsFAIL. Five original sole/clip protected domains are unchanged. Shell finite341-pose and declared interpolation checks pass, but do not cover the new08 path. Healthy native sources are retained; STEP strict failures and unqualified wall/connection/fatigue/drop limits remain.
+
+Runtime entry: `robot.xml`, `physical_contract.json`, `actuator_contract.json` and `runtime_adapter.py`. All necessary collision meshes are package-relative. Mass/inertia are source-native full tensors and do not derive from collision volume. Original axes, drive limits, armature, PD, timestep, closure and contact substrate/friction remain. A Teacher control version named06 elsewhere still using05 hardware is a separate identity.
+
+Verify hashes with `python verify_package.py`. Compile/readback requires the declared MuJoCo environment. This checkpoint was compiled and forwarded without dynamics; zero physical steps, training updates orGPU use. Sources and actual whole-display are provenance references, not runtime dependencies. Original04/05/default entries remain intact.

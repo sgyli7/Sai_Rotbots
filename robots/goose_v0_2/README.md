@@ -37,3 +37,9 @@
 [05原生硬件实验候选](models/physics_v0_2_20261020_05_candidate/README.md)已完成加载读回：16.6008308064kg、23刚体、18驱动、14凸体／547支持点／1038真实凸面；对照04轻369.373g。[源与集成交接](evidence/drag_hardware_integration_009/integration_handoff_current.json)保留完整MCI与有限验收边界。05尚未通过受载步行，未替换当前默认入口；主体避让凹面修正另存候选，不覆盖其物理数据。
 
 [009独立动作审核](evidence/drag_mouth_interface_009/control_admission_009/review.md)确认05一次真实63ms离地及44.624mm后落脚；足滑、侧倾和下沉仍失败，不授稳定一步或拖运资格。
+
+[实际姿态原生机械复核](evidence/drag_actual_foot_clearance_009/attempt_001/report.md)进一步发现：该失败运行三处姿态中，右AR罩与铝支座接触，前壳与左右小腿钢内盖有5处实体穿入。此前有限角度的正间隙不能覆盖这些实际姿态；05仍为有已知机械问题的对照候选。修正须另发机体，并同步核对低复杂度碰撞代理，不能靠删除自碰规避。
+
+[06同版原生硬件检查点](evidence/drag_hardware_integration_009_06/integration_handoff_06.json)已封存，设计质量16.5911249267kg；[修复后的原生整机三视图](images/drag_hardware_integration_009_06/whole_source_review_01/whole_three_views.png)与该源、MCI对应。原14叶仍有凹腔误填和胫盖漏覆盖，完整新步态也暴露新的真实干涉，故06仅作可加载检查点，不作稳定训练或受载行走交付；下一07联合修正真实壳体与低复杂度碰撞，保持当前04默认入口。最新完整动作诊断仍未通过稳定换步或半米拖运，详见009协调记录。
+
+[07同版原生硬件原型](evidence/drag_hardware_integration_009_07/integration_handoff_07.json)已封存：**16.5838988627kg，23刚体、18驱动、28凸体／1565实际支持点／3018凸面，单体最多64点**；[当前原生三视图](images/drag_hardware_integration_009_07/whole_source_review_01/whole_three_views.png)。Owner核对包内70文件和实际加载接口。有限保存点最大欠覆盖2.1212mm仅按2.13mm原型例外接受，原2mm目标FAIL；薄边、STEP与制造资格未通过。动作09已做100ms左脚离地和约73mm后落脚，但足滑、落地后偏航侧倾仍失败；未实现稳定交替行走、半米拖运或停车验收。默认04入口保持，07独立用于有限硬件回归，完整执行状态见009协调记录。
