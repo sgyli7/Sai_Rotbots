@@ -1,0 +1,108 @@
+{
+  "scope": "Existing source native dimensions plus original FE, no new solve. Strength screening is not fatigue, wear, pretension or production release.",
+  "oldham_actual06_vs_FE_source_identity": {
+    "old_v_mm3": 396.22656158792466,
+    "actual06_v_mm3": 396.22656158792466,
+    "Common_v_mm3": 396.22656158792466,
+    "symmetric_difference_v_mm3": 0.0,
+    "source": {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/tangpa_mango_ankle_integration_34/whole_stage_01/mango_primary_form_reset_01/whole_body_architecture_05/upper_short_yaw_delivery_47_actual_drive_08/left_yaw_drive_oldham_FCD400_cross_slider.brep",
+      "sha256": "a1474434d28ce24af45793cb25dc22fd31452d89b1177019c1d9085b84b23389"
+    },
+    "FE_json_sha256": "ebc98f9c82e7a3cf258ddf51619c1859258b260c7974aa513d96b6f5a11d43e2"
+  },
+  "known_blocker": "Same actual thin FCD400 Oldham has preserved2NmFE screen failure. Upgrade motor-only packet is NOT a2Nm-safe drive-chain candidate. Do not issue new actual torque cap until explicit Owner decision and corrected coupler.",
+  "original_FE_cases": [
+    {
+      "nominal_mesh_size_mm": 0.45,
+      "status": "ACTUAL_SOLVER_OUTPUT_READ_NOT_MANUFACTURING_RELEASE",
+      "von_mises_MPa": {
+        "max": 437.76531150154915,
+        "p95": 70.24404702825863,
+        "p99": 109.90306264069841
+      },
+      "force_per_flank_N": 216.55293755040051,
+      "mean_pressure_per_flank_MPa": [
+        31.59145903081553,
+        31.69794252655741
+      ]
+    },
+    {
+      "nominal_mesh_size_mm": 0.3,
+      "status": "ACTUAL_SOLVER_OUTPUT_READ_NOT_MANUFACTURING_RELEASE",
+      "von_mises_MPa": {
+        "max": 476.9479650619215,
+        "p95": 61.60684374916766,
+        "p99": 98.2910105823513
+      },
+      "force_per_flank_N": 216.30309631425334,
+      "mean_pressure_per_flank_MPa": [
+        31.663344406421427,
+        31.679946644857917
+      ]
+    },
+    {
+      "nominal_mesh_size_mm": 0.2,
+      "status": "SOLVING",
+      "force_per_flank_N": 216.28167742159923,
+      "mean_pressure_per_flank_MPa": [
+        31.67308196466966,
+        31.673970910551883
+      ]
+    }
+  ],
+  "material_yield_screen_MPa": 250.0,
+  "chain_ideal_dimension_screens_at2Nm": {
+    "plain_8mm_shaft_nominal_torsion_MPa": 19.89436788648692,
+    "keyseat_depth_mm": 1.62,
+    "conservative_min_core_diameter_mm": 4.76,
+    "min_core_circle_nominal_torsion_MPa_not_a_notch_solution": 94.44506013491628,
+    "parallel_key_size_mm": [
+      3,
+      3,
+      12
+    ],
+    "effective_key_length_mm": 9,
+    "key_force_N": 500.0,
+    "key_nominal_shear_MPa": 18.51851851851852,
+    "pulley_key_bearing_MPa": 38.85003885003885,
+    "belt_pitch_radius_mm": 9.549296585513721,
+    "belt_tension_difference_N": 209.43951023931953,
+    "belt_width_mm": 9,
+    "pulley_teeth": 20,
+    "mesh_teeth": 10,
+    "mean_tooth_load_N_NOT_equal_share_strength": 20.94395102393195,
+    "output_three_M2p5_bolt_equal_share_force_N": 49.382716049382715,
+    "stator_three_M2p5_bolt_equal_share_force_N": 28.07017543859649,
+    "separate_SKF61901_catalog_C0_N": 1460,
+    "bearing_reaction_note": "Actual belt pretension and overhung span must be added;209N is tension difference, not total bearing load."
+  },
+  "belt_primary_table": {
+    "url": "https://www.gates.com/content/dam/documents-library/catalogs/light-power-and-precision-manual.pdf",
+    "PDF_page_index": 20,
+    "print_page": 19,
+    "belt": "3MGT20groove6mm base;9mm width factor1.64;165mm lengthfactor.80",
+    "raw_base_Nm_at10_40_100_200rpm": [
+      2.72,
+      2.35,
+      2.1,
+      1.91
+    ],
+    "corrected_Nm_before_service_factor": [
+      3.5686400000000003,
+      3.0832,
+      2.7552000000000003,
+      2.5059199999999997
+    ],
+    "service_factor_and_reversing_life_NOT_applied": true,
+    "finding": "No simple tabular less-than2Nm limit in the observed~0..32rpm speed range, but no reversing/life rating claimed. At new full design speed~111rpm gross corrected~2.73Nm gives modest margin before service factor."
+  },
+  "shortest_needed_hardware_change": "One custom Oldham slider/root/material correction, or documented stronger compatible coupling; source geometry+certified material and effective2Nm boundary recheck. Do not restart broad motor selection.",
+  "same_geometry_steel_material_mass_trade_only_NOT_adopted": {
+    "assumed_density_kg_m3": 7850,
+    "old_density": 7100,
+    "two_sliders_delta_kg": 0.000594339842381887,
+    "strength_note": "Material swap requires certified strength and sliding/wear/root-fatigue check; no steel grade or2Nmqualification invented."
+  },
+  "physics_steps": 0
+}
