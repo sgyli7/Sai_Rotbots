@@ -1,0 +1,314 @@
+{
+  "schema": "goose_controller14_live_path_incremental_audit_009",
+  "UTC": "2026-10-20T00:31:21.475520+00:00",
+  "reviewer": "F /root/cart_collision_handoff",
+  "decision": "PASS_FOR_OWNER_SINGLE_BOUNDED_NONREALTIME_ACTUAL_DECISION",
+  "actual_execution_authorized_by_F": false,
+  "candidate_checks": {
+    "manifest.json": {
+      "identity": {
+        "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_14/manifest.json",
+        "sha256": "87d167bc20a4048b127e7f3651c24ca37f8edabc45a41575633743cfc8a85367"
+      },
+      "checked": 387,
+      "candidate_and_stage_failures": [],
+      "stage_manifest_identical": true
+    },
+    "frozen_admission_manifest.json": {
+      "identity": {
+        "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_14/frozen_admission_manifest.json",
+        "sha256": "b3ddfae5ccaa1d2063d4d1978ce87f886887b0dd9ea9a730e8c8de2a099780ec"
+      },
+      "checked": 386,
+      "candidate_and_stage_failures": [],
+      "stage_manifest_identical": true
+    }
+  },
+  "declaration14": {
+    "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_14/declaration14.json",
+    "sha256": "217fb840462b1141f437b40c8761bc1ca5e2d40e3fac750ca04f1a66f110eca5"
+  },
+  "delta": {
+    "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_14/exact_delta14.diff",
+    "sha256": "06c495cf411d4e30417ca26be149e742535caed907eccd4f1ab9f9df7b5853ac"
+  },
+  "parent_precision_audit": {
+    "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/robots/goose_v0_2/evidence/controller13_live_path_audit_009/precision_addendum.json",
+    "sha256": "ed03d3aede97db0871f302de4e7ad7dc6b8be9d06a2b14ac45f746eb44be5782"
+  },
+  "G_frozen_basis": {
+    "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/robots/goose_v0_2/evidence/native_witness_error_budget_009/receipt.json",
+    "sha256": "1207065e591edbbfed64965d8581e08ae0104876db01bb92a34007cac3864035"
+  },
+  "F_formula_semantics": {
+    "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/robots/goose_v0_2/evidence/witness_force_balance_semantics_009/receipt.json",
+    "sha256": "5e92f48270e0a4d43b9a221b6dd2cc3c26e17b84ad8c5a995edaaa14d1ffe848"
+  },
+  "delta_scope": {
+    "runtime_changed": [
+      "native_dispatch_witness.py",
+      "native_coherent_motion.py",
+      "drive_ff200.py"
+    ],
+    "new_pure_math_helper": {
+      "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_14/native_error_certificate.py",
+      "sha256": "ae65092f276f876d097c62d87899bf879e7f4e68cce5946424f23e6cc2f4f7ed"
+    },
+    "all_changed_old_manifest_entries": [
+      "zero_step_fineguard_preflight.py",
+      "drive_ff200.py",
+      "driver_fullguard_zero13.py",
+      "native_coherent_motion.py",
+      "native_dispatch_witness.py",
+      "frozen_admission_manifest.json"
+    ],
+    "fixture_changes": "Only their isolated14 dryrun output names; no actual runner/guard edits.",
+    "old13_precision_all372_manifest_entries_unchanged": true
+  },
+  "formula": {
+    "canonical_residual": "r=M@qacc-qfrc_smooth-qfrc_constraint from the SAME native forward state",
+    "rho": "||L^-1 r||2 = sqrt(r^T M^-1 r), M=L L^T",
+    "coordinate_bound": "rho*sqrt((M^-1)_ii)",
+    "point_3D_bound": "rho*sqrt(lambda_max(Jp M^-1 Jp^T))",
+    "local_Taylor_conversion": ".5*h^2, h=.005 s gate and .001 s diagnostic",
+    "M_full_native_armature_once": true,
+    "finite_symmetric_positive_definite_check": "All source M/r/q/v finite, symmetric, Cholesky SPD; inverse/rho/point forms finite; negative quadratic-form eigenvalues reject rather than clamp.",
+    "not_finite_horizon_or_hardware_safety_certificate": true
+  },
+  "coverage": {
+    "tangent_DOF_count": 49,
+    "translation_count": 9,
+    "translation_budget_m": 1e-06,
+    "rotation_count": 40,
+    "rotation_budget_rad": 1e-05,
+    "classification": "Actual joint type and dof offset, includes robot/cart/cargo free joints and all internal/actuated hinges.",
+    "point_count": 130,
+    "points": [
+      "left_actual_sole all63 source vertices",
+      "right_actual_sole all63 source vertices",
+      "true head_roll mouthTCP local[.13750001972253326,0,-.03849996489687674]",
+      "beak_coupler_link proximal origin",
+      "beak_distal_pin true obj2 coupler anchor eq_data3:6",
+      "beak_coupler_link source body COM"
+    ],
+    "point_3D_budget_m": 1e-06,
+    "grouped_sole_max_covers_every_saved_vertex": true,
+    "budget_basis": "Owner-approved numerical allocation:1um is0.1% of the unchanged1mm true-air geometry criterion;10urad is2000 times smaller than the unchanged20mrad ROM margin. No physical gate was changed."
+  },
+  "retained_guards": {
+    "protected_runtime_files": {
+      "run_support.py": {
+        "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_14/run_support.py",
+        "sha256": "69946d6e4ca2f5d87deea5994488a40cbc46860998d9a48b24ccd2f80223bf56"
+      },
+      "soft_phase_model.py": {
+        "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_14/soft_phase_model.py",
+        "sha256": "75ce6ba293b9c1e1bbf81008534fcf4eca88d81cac9a41d0a5378d2f540dd878"
+      },
+      "runner_segment_dispatch.py": {
+        "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_14/runner_segment_dispatch.py",
+        "sha256": "15fe425ed5c5f9fc89170535d2b9ed10ed284e430afd8659c92640d89cc36d80"
+      },
+      "teacher_drive_segment.py": {
+        "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_14/teacher_drive_segment.py",
+        "sha256": "269252154f09431245349e5ac31b39f7c79e6288d9ed80bb956cc1579d4707cc"
+      },
+      "teacher_mit_profile.py": {
+        "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_14/teacher_mit_profile.py",
+        "sha256": "77f6c1ea49722376291e31d58d9320bb9cb65bb3db973693ade7c35ecf9c73a9"
+      },
+      "dynamic_support_teacher.py": {
+        "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_14/dynamic_support_teacher.py",
+        "sha256": "2629058febf341a1fbd4c43a7e973d40fda4bc42be97f3fcbee1606092a8c68a"
+      },
+      "world_neck_qonly.py": {
+        "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_14/world_neck_qonly.py",
+        "sha256": "6d3cc56ada84a65ecd6df112d4feae717e844de8ea064778eb163e6fdd9825e1"
+      },
+      "complete_cycle_plan.py": {
+        "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_14/complete_cycle_plan.py",
+        "sha256": "64bd73495b5723a679c424ce06a96d7eb74863e45d5136dd0917db9e1cf12fed"
+      },
+      "capture_plan_entry.py": {
+        "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_14/capture_plan_entry.py",
+        "sha256": "a5850fbeaa961860595f321560a456c0b3748743917a576e1d15696b48ff0b90"
+      },
+      "actual_centroidal_wrench.py": {
+        "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_14/actual_centroidal_wrench.py",
+        "sha256": "4f635bc615a6cf63c056dfbea7a09d7db990b7b8be7ddaeb2c692bf8ae414f55"
+      }
+    },
+    "immutable_source_subtrees": {
+      "robot_source": {
+        "checked": 80,
+        "changes": []
+      },
+      "parent_inputs/robot_source": {
+        "checked": 80,
+        "changes": []
+      },
+      "scene": {
+        "checked": 52,
+        "changes": []
+      },
+      "capture_prefix_source": {
+        "checked": 15,
+        "changes": []
+      }
+    },
+    "LP_original_hard_eq_ineq_circle_threshold_1e_6": true,
+    "strict_HiGHS_primal_dual_1e_9_unchanged": true,
+    "source_total_caps_and350W_unchanged": true,
+    "all_other_native_eq_KKT_circle_dry_thresholds_1e_6_unchanged": true,
+    "mapping_identity_check_keeps_1e_6": true,
+    "no_qacc_lambda_or_model_solver_option_edit": true,
+    "no_live_state_or_external_force_write": true,
+    "reference50_drive200_native1000_unchanged": true,
+    "FFonly_once_PDonly_once_actual_sourcecap_once": true,
+    "fallback_2drive10ms_unchanged": true,
+    "slip5mm_sticky_gross20mm_trueair_epoch_and_clock_inheritance_unchanged": true
+  },
+  "preservation": {
+    "old_force_balance_max_still_recorded": true,
+    "new_canonical_raw49_still_recorded": true,
+    "old_absolute1e_6_would_fail_flag_preserved": true,
+    "old_failed_actual": {
+      "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_13_precision_online1000/attempt_001/manifest.json",
+      "sha256": "12404945c0e9f2e0be17e4727721d0db69951eec94fb454fa76dce965a398361"
+    },
+    "old_failed_command_still_not_dispatched": true
+  },
+  "independent_math": {
+    "source": {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/drag_hardware_sprint_009/integration_audit/controller14_live_path/independent_certificate_math.py",
+      "sha256": "3eafc1ba9d76574939e7f4247aabd03cbf493cc6b2eb8068efb37ca4bde7354a"
+    },
+    "readback": {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/drag_hardware_sprint_009/integration_audit/controller14_live_path/independent_certificate_math_readback.json",
+      "sha256": "c1b4f232cc311c8232b775acbcc01cb56d2b0872ff0c98fa68b514accc4a7b68"
+    },
+    "new_LP": 0,
+    "new_forward": 0,
+    "physics_steps": 0,
+    "kinematics_queries": 1,
+    "source_options_q_v_time_unchanged": true,
+    "all49_and130_verified": true,
+    "three_negative_cases": {
+      "overbudget_1000x": {
+        "valid": false,
+        "reason": "local_numerical_motion_budget_exceeded"
+      },
+      "nonSPD": {
+        "valid": false,
+        "reason": "Matrix is not positive definite"
+      },
+      "nonfinite": {
+        "valid": false,
+        "reason": "nonfinite_mass_residual_or_state"
+      }
+    },
+    "same_failed_PRE_result": {
+      "max_point5ms_m": 6.9747663857212e-08,
+      "max_translation5ms_m": 2.9157322824255207e-09,
+      "max_rotation5ms_rad": 1.7543554210770343e-06
+    }
+  },
+  "B_preflight": {
+    "evidence": {
+      "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_14/preflight14_readback.json",
+      "sha256": "b6d3ae437b4a9a917d63f119f0a8da14ad0e79aaec1fbfd637fce3af26833e9b"
+    },
+    "producer": {
+      "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_14/preflight14.py",
+      "sha256": "30ec3c378bf8cd1beb1bc2f61f6910c437c0a1ab052fa999a906db68d965d50c"
+    },
+    "prefix_states": [
+      0,
+      0.8,
+      5.8
+    ],
+    "same_failed_candidate_time": 6.29,
+    "original_raw_still_fail": true,
+    "all_four_new_numerical_checks_pass": true,
+    "not_actual_trajectory_execution": true
+  },
+  "full_callback_zero_step": {
+    "reviewed_producers_and_outputs": [
+      {
+        "evidence": {
+          "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_14/fineguard_zero_step_readback.json",
+          "sha256": "b9df62e2ceecd071ce5d82947cb1ae729c3905fd18c96350fe7a649c3f3f5bdb"
+        },
+        "cases": [
+          "cold_open",
+          "saved_capture_hold",
+          "motion_0",
+          "motion_0p9",
+          "motion_STOP"
+        ],
+        "physical_steps": 0,
+        "producer": {
+          "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_14/zero_step_fineguard_preflight.py",
+          "sha256": "d4b9bd8bc7742e9fd85711ea9952c8d9fed32b0b9f8d01ba217c1470062982fd"
+        }
+      },
+      {
+        "evidence": {
+          "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_14/driver_fullguard_zero13_readback.json",
+          "sha256": "9b68533b19d5389dd707680ca17d495b56a9f3eee40115595a8d981ecfba65f7"
+        },
+        "cases": [
+          "motion_0",
+          "motion_0p9",
+          "motion_STOP"
+        ],
+        "physical_steps": 0,
+        "producer": {
+          "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_14/driver_fullguard_zero13.py",
+          "sha256": "309b4308bd385b42edab9f6e2e6d14a57db1d15700521b7fee69bc412c3875b1"
+        }
+      }
+    ],
+    "interpretation": "Actual14 producer paths load14 core/helper and real runner functions. Cold/hold and motion0/.9/STOP reach blocked integration only after complete original fineguard/JSON. Readback hashes can equal prior output because runner and logging-helper hashes/booleans are unchanged; reviewed producers explicitly point to14. STOP remains an offline capture-preserving translated scratch fixture, not a reached stop."
+  },
+  "launch": {
+    "stage": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_14_online1000",
+    "launch_readback": {
+      "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_14_launch_readback.json",
+      "sha256": "7d1fe39095ff9f3d0cf9ec57750b8869ff2fc93efc5629686006c6e921d2db43"
+    },
+    "runner": {
+      "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_14_online1000/run_support.py",
+      "sha256": "69946d6e4ca2f5d87deea5994488a40cbc46860998d9a48b24ccd2f80223bf56"
+    },
+    "program": {
+      "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_14_online1000/capture_prefix_source/baseline_capture/causal_program.json",
+      "sha256": "d92fae6e155878396e1e01a6c684f99d0f1a0a0f1f135313a6ee27ff59e4b455"
+    },
+    "num": 1,
+    "output": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_14_online1000/attempt_001",
+    "no_attempt_or_authorization": true,
+    "admission": {
+      "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_14_online1000/frozen_admission_manifest.json",
+      "sha256": "b3ddfae5ccaa1d2063d4d1978ce87f886887b0dd9ea9a730e8c8de2a099780ec"
+    },
+    "Owner_new_explicit_actual_authorization_required": true,
+    "one_actual_only_no_automatic_retry": true,
+    "max_fine_steps": 15000,
+    "max_simulated_s": 15
+  },
+  "limits": [
+    "Non-real-time CPU numerical Teacher only; no board timing admission.",
+    "Certificate is instantaneous fixed-state acceleration error converted to a local frozen-coefficient Taylor budget, not finite-time integration/contact-switching/trajectory stability proof.",
+    "All source08 native/proxy/manufacturing limitations remain. No achieved air, landing, loaded speed or distance is inferred from preflight.",
+    "F PASS only enables Owner decision for one separately authorized attempt; it does not overwrite any old failure or itself authorize dynamics."
+  ],
+  "resources": {
+    "F_new_LP": 0,
+    "F_physics_steps": 0,
+    "F_new_forward": 0,
+    "F_kinematics_only": 1,
+    "F_controller_source_edits": 0,
+    "F_background_jobs": 0
+  }
+}

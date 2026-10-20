@@ -1,0 +1,616 @@
+{
+  "source": {
+    "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/scripts/diagnostics/goose_ar_gain_inertia_consistency_009.py",
+    "sha256": "0b778a08f1bbc666246279b29b75af276ad04fa6b183667cbc208ed8e1029eb8"
+  },
+  "inputs": [
+    {
+      "path": "/home/ethan/ProjectBackups/2026-10-09/Sai_Lab/goose_move_200hz_fast_001/native_lateral_skill_106/model/robot.xml",
+      "sha256": "ea4fbce17add6c2cfa0fcaf1fe061b4f9c3bd46ef91cd3a3557c6b4d9790dbc6"
+    },
+    {
+      "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_12_dependencyfix_online1000/attempt_002/actual_scene.mjb",
+      "sha256": "3344e5a2dcf86f85640e9b4fda2ac0fd6a65b8b18802e5888f61824fa40c8528"
+    },
+    {
+      "path": "artifacts/goose_v0_2/drag_hardware_sprint_009/mouth/actual002_failure_mechanics_009/attempt_001/readback.json",
+      "sha256": "5baf0cce468ff2070238ce5c9bc7b93970ce18a2d12c6dd8488ce95fb183dc6a"
+    }
+  ],
+  "physics_steps": 0,
+  "LP_calls": 0,
+  "in_memory_algebra_compiler_only_changes": {
+    "integrator_before": "discrete",
+    "integrator_after": "implicitfast",
+    "meshdir_absolute": "/home/ethan/ProjectBackups/2026-10-09/Sai_Lab/goose_move_200hz_fast_001/native_lateral_skill_106/model",
+    "no_input_file_written": true
+  },
+  "queries": [
+    {
+      "actual12_time_s": 6.265000000000427,
+      "old_pose_scope": "Same shared logical/native hinge angles and root pose mapped into old source geometry; not old policy actual or an asserted ground-contact state.",
+      "mapped_hinges": [
+        "neck_yaw",
+        "neck_pitch",
+        "neck_mid_pitch",
+        "head_pitch",
+        "head_roll",
+        "beak_hinge",
+        "beak_input_rotor",
+        "beak_coupler_link",
+        "right_hip_yaw",
+        "right_hip_roll",
+        "right_hip_pitch",
+        "right_knee_pitch",
+        "right_ankle_pitch",
+        "right_ankle_roll",
+        "left_hip_yaw",
+        "left_hip_roll",
+        "left_hip_pitch",
+        "left_knee_pitch",
+        "left_ankle_pitch",
+        "left_ankle_roll"
+      ],
+      "old_source_Kp20": {
+        "right": {
+          "foot_body": "right_ankle_roll",
+          "distal_foot_mass_kg": 0.29298065203309476,
+          "foot_body_COM_local_m": [
+            -0.015929887580024237,
+            -7.502205121023883e-08,
+            -0.022237546734798774
+          ],
+          "foot_body_fullI_atCOM_kg_m2": [
+            [
+              0.00018492286717916484,
+              2.4534687128047003e-08,
+              -4.057991892163762e-05
+            ],
+            [
+              2.4534687128047003e-08,
+              0.0007942059949554937,
+              2.016858088010676e-11
+            ],
+            [
+              -4.0579918921637614e-05,
+              2.016858088010916e-11,
+              0.0008753337200253541
+            ]
+          ],
+          "principal_I_kg_m2": [
+            0.0008777106813440566,
+            0.0007942059959123814,
+            0.00018254590490355847
+          ],
+          "reflected_armature_kg_m2": 0.0015733,
+          "passive_damping": 0.01,
+          "frictionloss": 0.05,
+          "I_all_other_accelerations_ideal_locked_kg_m2": 0.001903104285488245,
+          "I_all_other_forces_zero_instantaneously_free_kg_m2": 0.0018622793457167377,
+          "kp": 20.0,
+          "kd": 0.175,
+          "isolated_damping_ratio_heuristic_with_passive": {
+            "locked": 0.47412782272638404,
+            "free": 0.4792965706157182
+          },
+          "not_contact_mode_or_closed_loop_effective_inertia": true
+        },
+        "left": {
+          "foot_body": "left_ankle_roll",
+          "distal_foot_mass_kg": 0.29298065203332774,
+          "foot_body_COM_local_m": [
+            -0.015929887579990462,
+            -7.502205218168315e-08,
+            -0.022237546734798302
+          ],
+          "foot_body_fullI_atCOM_kg_m2": [
+            [
+              0.00018492286717941103,
+              2.4534687128075174e-08,
+              -4.057991892169189e-05
+            ],
+            [
+              2.4534687128075174e-08,
+              0.0007942059949564356,
+              2.0168580877837736e-11
+            ],
+            [
+              -4.057991892169189e-05,
+              2.016858087783786e-11,
+              0.0008753337200265238
+            ]
+          ],
+          "principal_I_kg_m2": [
+            0.0008777106813452293,
+            0.0007942059959133232,
+            0.00018254590490380146
+          ],
+          "reflected_armature_kg_m2": 0.0015733,
+          "passive_damping": 0.01,
+          "frictionloss": 0.05,
+          "I_all_other_accelerations_ideal_locked_kg_m2": 0.0019031042854886042,
+          "I_all_other_forces_zero_instantaneously_free_kg_m2": 0.0018621321729936867,
+          "kp": 20.0,
+          "kd": 0.175,
+          "isolated_damping_ratio_heuristic_with_passive": {
+            "locked": 0.4741278227263393,
+            "free": 0.4793155107287679
+          },
+          "not_contact_mode_or_closed_loop_effective_inertia": true
+        }
+      },
+      "old_named_calibration_Kp10_heuristic_only": {
+        "right": {
+          "foot_body": "right_ankle_roll",
+          "distal_foot_mass_kg": 0.29298065203309476,
+          "foot_body_COM_local_m": [
+            -0.015929887580024237,
+            -7.502205121023883e-08,
+            -0.022237546734798774
+          ],
+          "foot_body_fullI_atCOM_kg_m2": [
+            [
+              0.00018492286717916484,
+              2.4534687128047003e-08,
+              -4.057991892163762e-05
+            ],
+            [
+              2.4534687128047003e-08,
+              0.0007942059949554937,
+              2.016858088010676e-11
+            ],
+            [
+              -4.0579918921637614e-05,
+              2.016858088010916e-11,
+              0.0008753337200253541
+            ]
+          ],
+          "principal_I_kg_m2": [
+            0.0008777106813440566,
+            0.0007942059959123814,
+            0.00018254590490355847
+          ],
+          "reflected_armature_kg_m2": 0.0015733,
+          "passive_damping": 0.01,
+          "frictionloss": 0.05,
+          "I_all_other_accelerations_ideal_locked_kg_m2": 0.001903104285488245,
+          "I_all_other_forces_zero_instantaneously_free_kg_m2": 0.0018622793457167377,
+          "kp": 10.0,
+          "kd": 0.175,
+          "isolated_damping_ratio_heuristic_with_passive": {
+            "locked": 0.6705179971980789,
+            "free": 0.6778277105636625
+          },
+          "not_contact_mode_or_closed_loop_effective_inertia": true
+        },
+        "left": {
+          "foot_body": "left_ankle_roll",
+          "distal_foot_mass_kg": 0.29298065203332774,
+          "foot_body_COM_local_m": [
+            -0.015929887579990462,
+            -7.502205218168315e-08,
+            -0.022237546734798302
+          ],
+          "foot_body_fullI_atCOM_kg_m2": [
+            [
+              0.00018492286717941103,
+              2.4534687128075174e-08,
+              -4.057991892169189e-05
+            ],
+            [
+              2.4534687128075174e-08,
+              0.0007942059949564356,
+              2.0168580877837736e-11
+            ],
+            [
+              -4.057991892169189e-05,
+              2.016858087783786e-11,
+              0.0008753337200265238
+            ]
+          ],
+          "principal_I_kg_m2": [
+            0.0008777106813452293,
+            0.0007942059959133232,
+            0.00018254590490380146
+          ],
+          "reflected_armature_kg_m2": 0.0015733,
+          "passive_damping": 0.01,
+          "frictionloss": 0.05,
+          "I_all_other_accelerations_ideal_locked_kg_m2": 0.0019031042854886042,
+          "I_all_other_forces_zero_instantaneously_free_kg_m2": 0.0018621321729936867,
+          "kp": 10.0,
+          "kd": 0.175,
+          "isolated_damping_ratio_heuristic_with_passive": {
+            "locked": 0.6705179971980156,
+            "free": 0.6778544959284103
+          },
+          "not_contact_mode_or_closed_loop_effective_inertia": true
+        }
+      },
+      "current08": {
+        "right": {
+          "foot_body": "right_ankle_roll",
+          "distal_foot_mass_kg": 0.3710953811304649,
+          "foot_body_COM_local_m": [
+            -0.021046013482092486,
+            0.0006092599482769162,
+            -0.027002872606474174
+          ],
+          "foot_body_fullI_atCOM_kg_m2": [
+            [
+              0.00022932858177234205,
+              -8.632439956927271e-07,
+              -1.5668480793912736e-05
+            ],
+            [
+              -8.632439956927262e-07,
+              0.0006797153777954242,
+              -7.076232232728779e-06
+            ],
+            [
+              -1.566848079391274e-05,
+              -7.0762322327287805e-06,
+              0.0006971471773680857
+            ]
+          ],
+          "principal_I_kg_m2": [
+            0.0007001047839322081,
+            0.0006772846436677736,
+            0.00022880170933585768
+          ],
+          "reflected_armature_kg_m2": 0.0015733,
+          "passive_damping": 0.01,
+          "frictionloss": 0.05,
+          "I_all_other_accelerations_ideal_locked_kg_m2": 0.0020733524320186133,
+          "I_all_other_forces_zero_instantaneously_free_kg_m2": 0.001990407571311506,
+          "kp": 20.0,
+          "kd": 0.175,
+          "isolated_damping_ratio_heuristic_with_passive": {
+            "locked": 0.45424501469884865,
+            "free": 0.46361313027989837
+          },
+          "not_contact_mode_or_closed_loop_effective_inertia": true
+        },
+        "left": {
+          "foot_body": "left_ankle_roll",
+          "distal_foot_mass_kg": 0.3711383050370359,
+          "foot_body_COM_local_m": [
+            -0.021042493692067114,
+            -0.0006057936775646644,
+            -0.02700264090782628
+          ],
+          "foot_body_fullI_atCOM_kg_m2": [
+            [
+              0.00022936852117843947,
+              8.247815317800104e-07,
+              -1.5671112264134905e-05
+            ],
+            [
+              8.247815317800104e-07,
+              0.0006797551772267693,
+              7.073519528929359e-06
+            ],
+            [
+              -1.5671112264134905e-05,
+              7.073519528929351e-06,
+              0.0006972269767790197
+            ]
+          ],
+          "principal_I_kg_m2": [
+            0.0007001795429717261,
+            0.0006773294302410749,
+            0.00022884170197141315
+          ],
+          "reflected_armature_kg_m2": 0.0015733,
+          "passive_damping": 0.01,
+          "frictionloss": 0.05,
+          "I_all_other_accelerations_ideal_locked_kg_m2": 0.002073417478364349,
+          "I_all_other_forces_zero_instantaneously_free_kg_m2": 0.001990883171765731,
+          "kp": 20.0,
+          "kd": 0.175,
+          "isolated_damping_ratio_heuristic_with_passive": {
+            "locked": 0.4542378894550613,
+            "free": 0.4635577508913711
+          },
+          "not_contact_mode_or_closed_loop_effective_inertia": true
+        }
+      }
+    },
+    {
+      "actual12_time_s": 6.433000000000483,
+      "old_pose_scope": "Same shared logical/native hinge angles and root pose mapped into old source geometry; not old policy actual or an asserted ground-contact state.",
+      "mapped_hinges": [
+        "neck_yaw",
+        "neck_pitch",
+        "neck_mid_pitch",
+        "head_pitch",
+        "head_roll",
+        "beak_hinge",
+        "beak_input_rotor",
+        "beak_coupler_link",
+        "right_hip_yaw",
+        "right_hip_roll",
+        "right_hip_pitch",
+        "right_knee_pitch",
+        "right_ankle_pitch",
+        "right_ankle_roll",
+        "left_hip_yaw",
+        "left_hip_roll",
+        "left_hip_pitch",
+        "left_knee_pitch",
+        "left_ankle_pitch",
+        "left_ankle_roll"
+      ],
+      "old_source_Kp20": {
+        "right": {
+          "foot_body": "right_ankle_roll",
+          "distal_foot_mass_kg": 0.29298065203309476,
+          "foot_body_COM_local_m": [
+            -0.015929887580024237,
+            -7.502205121023883e-08,
+            -0.022237546734798774
+          ],
+          "foot_body_fullI_atCOM_kg_m2": [
+            [
+              0.00018492286717916484,
+              2.4534687128047003e-08,
+              -4.057991892163762e-05
+            ],
+            [
+              2.4534687128047003e-08,
+              0.0007942059949554937,
+              2.016858088010676e-11
+            ],
+            [
+              -4.0579918921637614e-05,
+              2.016858088010916e-11,
+              0.0008753337200253541
+            ]
+          ],
+          "principal_I_kg_m2": [
+            0.0008777106813440566,
+            0.0007942059959123814,
+            0.00018254590490355847
+          ],
+          "reflected_armature_kg_m2": 0.0015733,
+          "passive_damping": 0.01,
+          "frictionloss": 0.05,
+          "I_all_other_accelerations_ideal_locked_kg_m2": 0.0019031042854882445,
+          "I_all_other_forces_zero_instantaneously_free_kg_m2": 0.0018622634946996238,
+          "kp": 20.0,
+          "kd": 0.175,
+          "isolated_damping_ratio_heuristic_with_passive": {
+            "locked": 0.4741278227263842,
+            "free": 0.47929861042426264
+          },
+          "not_contact_mode_or_closed_loop_effective_inertia": true
+        },
+        "left": {
+          "foot_body": "left_ankle_roll",
+          "distal_foot_mass_kg": 0.29298065203332774,
+          "foot_body_COM_local_m": [
+            -0.015929887579990462,
+            -7.502205218168315e-08,
+            -0.022237546734798302
+          ],
+          "foot_body_fullI_atCOM_kg_m2": [
+            [
+              0.00018492286717941103,
+              2.4534687128075174e-08,
+              -4.057991892169189e-05
+            ],
+            [
+              2.4534687128075174e-08,
+              0.0007942059949564356,
+              2.0168580877837736e-11
+            ],
+            [
+              -4.057991892169189e-05,
+              2.016858087783786e-11,
+              0.0008753337200265238
+            ]
+          ],
+          "principal_I_kg_m2": [
+            0.0008777106813452293,
+            0.0007942059959133232,
+            0.00018254590490380146
+          ],
+          "reflected_armature_kg_m2": 0.0015733,
+          "passive_damping": 0.01,
+          "frictionloss": 0.05,
+          "I_all_other_accelerations_ideal_locked_kg_m2": 0.0019031042854886048,
+          "I_all_other_forces_zero_instantaneously_free_kg_m2": 0.0018619182115279518,
+          "kp": 20.0,
+          "kd": 0.175,
+          "isolated_damping_ratio_heuristic_with_passive": {
+            "locked": 0.47412782272633924,
+            "free": 0.4793430500971711
+          },
+          "not_contact_mode_or_closed_loop_effective_inertia": true
+        }
+      },
+      "old_named_calibration_Kp10_heuristic_only": {
+        "right": {
+          "foot_body": "right_ankle_roll",
+          "distal_foot_mass_kg": 0.29298065203309476,
+          "foot_body_COM_local_m": [
+            -0.015929887580024237,
+            -7.502205121023883e-08,
+            -0.022237546734798774
+          ],
+          "foot_body_fullI_atCOM_kg_m2": [
+            [
+              0.00018492286717916484,
+              2.4534687128047003e-08,
+              -4.057991892163762e-05
+            ],
+            [
+              2.4534687128047003e-08,
+              0.0007942059949554937,
+              2.016858088010676e-11
+            ],
+            [
+              -4.0579918921637614e-05,
+              2.016858088010916e-11,
+              0.0008753337200253541
+            ]
+          ],
+          "principal_I_kg_m2": [
+            0.0008777106813440566,
+            0.0007942059959123814,
+            0.00018254590490355847
+          ],
+          "reflected_armature_kg_m2": 0.0015733,
+          "passive_damping": 0.01,
+          "frictionloss": 0.05,
+          "I_all_other_accelerations_ideal_locked_kg_m2": 0.0019031042854882445,
+          "I_all_other_forces_zero_instantaneously_free_kg_m2": 0.0018622634946996238,
+          "kp": 10.0,
+          "kd": 0.175,
+          "isolated_damping_ratio_heuristic_with_passive": {
+            "locked": 0.670517997198079,
+            "free": 0.6778305952885707
+          },
+          "not_contact_mode_or_closed_loop_effective_inertia": true
+        },
+        "left": {
+          "foot_body": "left_ankle_roll",
+          "distal_foot_mass_kg": 0.29298065203332774,
+          "foot_body_COM_local_m": [
+            -0.015929887579990462,
+            -7.502205218168315e-08,
+            -0.022237546734798302
+          ],
+          "foot_body_fullI_atCOM_kg_m2": [
+            [
+              0.00018492286717941103,
+              2.4534687128075174e-08,
+              -4.057991892169189e-05
+            ],
+            [
+              2.4534687128075174e-08,
+              0.0007942059949564356,
+              2.0168580877837736e-11
+            ],
+            [
+              -4.057991892169189e-05,
+              2.016858087783786e-11,
+              0.0008753337200265238
+            ]
+          ],
+          "principal_I_kg_m2": [
+            0.0008777106813452293,
+            0.0007942059959133232,
+            0.00018254590490380146
+          ],
+          "reflected_armature_kg_m2": 0.0015733,
+          "passive_damping": 0.01,
+          "frictionloss": 0.05,
+          "I_all_other_accelerations_ideal_locked_kg_m2": 0.0019031042854886048,
+          "I_all_other_forces_zero_instantaneously_free_kg_m2": 0.0018619182115279518,
+          "kp": 10.0,
+          "kd": 0.175,
+          "isolated_damping_ratio_heuristic_with_passive": {
+            "locked": 0.6705179971980156,
+            "free": 0.6778934424767054
+          },
+          "not_contact_mode_or_closed_loop_effective_inertia": true
+        }
+      },
+      "current08": {
+        "right": {
+          "foot_body": "right_ankle_roll",
+          "distal_foot_mass_kg": 0.3710953811304649,
+          "foot_body_COM_local_m": [
+            -0.021046013482092486,
+            0.0006092599482769162,
+            -0.027002872606474174
+          ],
+          "foot_body_fullI_atCOM_kg_m2": [
+            [
+              0.00022932858177234205,
+              -8.632439956927271e-07,
+              -1.5668480793912736e-05
+            ],
+            [
+              -8.632439956927262e-07,
+              0.0006797153777954242,
+              -7.076232232728779e-06
+            ],
+            [
+              -1.566848079391274e-05,
+              -7.0762322327287805e-06,
+              0.0006971471773680857
+            ]
+          ],
+          "principal_I_kg_m2": [
+            0.0007001047839322081,
+            0.0006772846436677736,
+            0.00022880170933585768
+          ],
+          "reflected_armature_kg_m2": 0.0015733,
+          "passive_damping": 0.01,
+          "frictionloss": 0.05,
+          "I_all_other_accelerations_ideal_locked_kg_m2": 0.0020733524320186106,
+          "I_all_other_forces_zero_instantaneously_free_kg_m2": 0.0019898538706118974,
+          "kp": 20.0,
+          "kd": 0.175,
+          "isolated_damping_ratio_heuristic_with_passive": {
+            "locked": 0.45424501469884887,
+            "free": 0.4636776287496586
+          },
+          "not_contact_mode_or_closed_loop_effective_inertia": true
+        },
+        "left": {
+          "foot_body": "left_ankle_roll",
+          "distal_foot_mass_kg": 0.3711383050370359,
+          "foot_body_COM_local_m": [
+            -0.021042493692067114,
+            -0.0006057936775646644,
+            -0.02700264090782628
+          ],
+          "foot_body_fullI_atCOM_kg_m2": [
+            [
+              0.00022936852117843947,
+              8.247815317800104e-07,
+              -1.5671112264134905e-05
+            ],
+            [
+              8.247815317800104e-07,
+              0.0006797551772267693,
+              7.073519528929359e-06
+            ],
+            [
+              -1.5671112264134905e-05,
+              7.073519528929351e-06,
+              0.0006972269767790197
+            ]
+          ],
+          "principal_I_kg_m2": [
+            0.0007001795429717261,
+            0.0006773294302410749,
+            0.00022884170197141315
+          ],
+          "reflected_armature_kg_m2": 0.0015733,
+          "passive_damping": 0.01,
+          "frictionloss": 0.05,
+          "I_all_other_accelerations_ideal_locked_kg_m2": 0.00207341747836435,
+          "I_all_other_forces_zero_instantaneously_free_kg_m2": 0.001990863473788774,
+          "kp": 20.0,
+          "kd": 0.175,
+          "isolated_damping_ratio_heuristic_with_passive": {
+            "locked": 0.4542378894550612,
+            "free": 0.4635600441494044
+          },
+          "not_contact_mode_or_closed_loop_effective_inertia": true
+        }
+      }
+    }
+  ],
+  "limitations": [
+    "M algebra only, no contacts/equalities/actuator clipping/digital delay in the inertia bounds or isolated damping ratio.",
+    "Old source XML compiled only for algebra using current MuJoCo; old accepted binary is version-incompatible and was not successfully loaded.",
+    "Kp10 is a separately named calibration-development source, not established as the accepted444 actuator gain.",
+    "No proposed replacement gains or source mutation."
+  ]
+}

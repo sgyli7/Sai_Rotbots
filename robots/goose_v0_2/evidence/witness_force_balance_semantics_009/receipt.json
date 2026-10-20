@@ -1,0 +1,168 @@
+{
+  "schema": "goose_v0_2_native_witness_force_balance_semantics_audit_009",
+  "reviewer": "F /root/cart_collision_handoff",
+  "UTC": "2026-10-20T00:23:04.169028+00:00",
+  "decision": "READ_ONLY_SEMANTIC_FINDING_NOT_NEW_EXECUTION_ADMISSION",
+  "old_failure_preserved": true,
+  "source_guard_or_physics_changed": false,
+  "input": {
+    "actual_manifest": {
+      "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_13_precision_online1000/attempt_001/manifest.json",
+      "sha256": "12404945c0e9f2e0be17e4727721d0db69951eec94fb454fa76dce965a398361"
+    },
+    "actual_model": {
+      "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_13_precision_online1000/attempt_001/actual_scene.mjb",
+      "sha256": "3344e5a2dcf86f85640e9b4fda2ac0fd6a65b8b18802e5888f61824fa40c8528"
+    },
+    "actual_terminal": {
+      "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_13_precision_online1000/attempt_001/true_terminal_poststate.json",
+      "sha256": "180bdaf900b1495f86581275ca9862a667cad89ab623828ef8470f984c10ad76"
+    },
+    "witness": {
+      "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_13_precision/native_dispatch_witness.py",
+      "sha256": "f9e91a4820082c8af9c9a31ed8366bf6cf9a3c3a8e3078a757f5bb6892c3fe36"
+    },
+    "callback": {
+      "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_13_precision/drive_ff200.py",
+      "sha256": "ed709d18f582d2a1118a1fbdfad214724d2addff44fd903e8f3f94cbcd3846c8"
+    },
+    "LP": {
+      "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_13_precision/soft_phase_model.py",
+      "sha256": "75ce6ba293b9c1e1bbf81008534fcf4eca88d81cac9a41d0a5378d2f540dd878"
+    },
+    "precision_F_audit": {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/robots/goose_v0_2/evidence/controller13_live_path_audit_009/precision_addendum.json",
+      "sha256": "ed03d3aede97db0871f302de4e7ad7dc6b8be9d06a2b14ac45f746eb44be5782"
+    },
+    "runtime_engine_version_checked": "3.10.0"
+  },
+  "actual_observation": {
+    "time_s": 6.290000000000435,
+    "actual_steps": 6290,
+    "failure": "blended_dispatch_native_hard_witness",
+    "candidate_command_dispatched": false,
+    "actual_air_or_landing_events": [],
+    "irreversible5mm_qualification_failure": null,
+    "LP_hard_equality": 7.435829729729448e-12,
+    "LP_hard_inequality": 2.4715491875326734e-09,
+    "LP_source_error": 0.0,
+    "candidate_native_witness": {
+      "force_balance_max": 1.3998060602204987e-05,
+      "equality_acceleration_max": 2.480654570646834e-16,
+      "contact_KKT_max": 8.881784197001252e-16,
+      "contact_circle_excess_max": 0.0,
+      "dry_friction_mode_max": 3.552713678800501e-15,
+      "source_total_difference": 0.0,
+      "source_legal": true
+    }
+  },
+  "formula_and_time": {
+    "existing": "M @ qacc + qfrc_bias - qfrc_passive - B @ actuator_force - J.T @ efc_force",
+    "complete_native": "M @ qacc - qfrc_smooth - qfrc_constraint",
+    "order": [
+      "new independent MjData",
+      "copy same actual qpos and qvel",
+      "set candidate blended total ctrl",
+      "one mj_forward: position/M/J, velocity/bias/passive, actuation, smooth acceleration, constraints/qacc",
+      "read M/qacc/bias/passive/actuator_force/J/force from that SAME returned MjData"
+    ],
+    "no_mixing_with_held_command_POST": true,
+    "not_actual_runtime_solver_history": "Scratch starts with default warmstart and time. It is the native forward response to this candidate state/command, not the actual trajectory held-command qacc/lambda. No dynamics integration occurs.",
+    "native_qfrc_smooth": "qfrc_passive - qfrc_bias + qfrc_applied + qfrc_actuator + projected xfrc_applied",
+    "current_general_formula_assumption": "Manual form omits externally-applied generalized/body force terms. They are zero in this recorded experiment; this is not its failing residual. Generic code should not silently presume they are always zero.",
+    "dry_friction": "DOF frictionloss is included through native constraint rows; no extra dry-friction subtraction occurs in the witness.",
+    "armature": "Native M already contains the real joint/input armature; witness uses it once and must not add reflected inertia a second time.",
+    "source": "Official versioned3.10.0 forward/solver/inertia source, matching installed version string. This is source semantics, not a claim that the local binary was rebuilt and bit-compared with GitHub."
+  },
+  "independent_G_shared_component_checks": {
+    "provenance": "G /root/cart_low_handle_geometry same-MJB zero-step reproduction communicated in this task; F did not repeat its forward/LP/projection. G will separately seal quantitative evidence.",
+    "candidate_qacc_and_lambda_reproduced_exactly": true,
+    "max_residual_dof": 1,
+    "max_residual_owner": "robot root translation Y",
+    "max_residual_value": -1.3998060602204987e-05,
+    "max_residual_unit": "N, not Nm",
+    "native_formula_max": 1.39980606013e-05,
+    "manual_minus_native_max": 1.42e-14,
+    "B_actuatorforce_minus_native_actuator_max": 0.0,
+    "JTlambda_minus_native_constraint_max": 1.42e-14,
+    "applied_and_body_external_force_max": 0.0
+  },
+  "solver_termination": {
+    "source": "https://github.com/google-deepmind/mujoco/blob/3.10.0/src/engine/engine_solver.c#L2020-L2118",
+    "observed_solver": "Newton",
+    "observed_iterations": 2,
+    "maximum_iterations": 100,
+    "configured_tolerance": 1e-08,
+    "residual_is_native_primal_objective_gradient": true,
+    "raw_gradient_norm2": 1.9044719883186746e-05,
+    "island_inertia_trace": 143.95768503028856,
+    "normalized_gradient_by_trace": 1.322938742671484e-07,
+    "stored_final_solver_gradient": 1.3229387427342358e-07,
+    "stored_improvements": [
+      0.46869602074495703,
+      3.7987269076129365e-09
+    ],
+    "interpretation": "The final normalized positive objective improvement is below1e-8, a valid stopping branch in official3.10.0, although normalized gradient remains above1e-8. The independent absolute1e-6 generalized-force stop is stricter in a different metric. No new Newton/HiGHS setting was tried."
+  },
+  "old_gate_assessment": {
+    "scalar_force_balance_units": "Free translation rows: N. Free rotation and hinge rows: Nm. The numerical infinity maximum across49 rows is not one force unit.",
+    "outer_aggregator": "drive_ff200 compares force balance, equality/contact acceleration residuals, contact force-cone excess and DOF-friction residuals against the same numeric1e-6. Without separate unit/scaling definitions, this is not a single physical precision contract.",
+    "provenance_search_scope": [
+      "current009 experiment order",
+      "frozen13/precision source and reports",
+      "F controller13 admission records"
+    ],
+    "found_unit_or_task_error_derivation_for_absolute1e_6": false,
+    "conclusion": "No current force bookkeeping, stale-data or duplicate-armature/friction bug was demonstrated. The observed event is a finite native-optimizer stationarity residual, not by itself evidence of hardware overload, an uncommanded external force or task failure. The original declared guard FAIL is retained, not retroactively relabelled PASS."
+  },
+  "single_proposal_NOT_implemented": {
+    "name": "Physical-unit local numerical-error budget for native force-balance residual only",
+    "method": "Define the residual with complete native same-state fields. Use the source-M strong-convexity residual certificate supplied by G, with separately stated joint(m/rad) and foot/TCP spatial error budgets over1ms and5ms. Keep raw residuals and the old1e-6 verdict as evidence; do not merely substitute an arbitrary larger raw tolerance.",
+    "budget_requirements": [
+      "Owner must approve explicit quantities, units, horizons and limits before implementation.",
+      "Use a true conservative strong-convexity certificate, not M^-1r first-order correction labelled as the true contact solution.",
+      "Local fixed-state numerical accuracy is not future contact/whole-trajectory stability; actual foot-slip, support, collision, force, source torque and power checks remain independently binding.",
+      "All unchanged numerical/physical gates retain their old values; only the purpose and quantitative definition of this native force-balance numerical stop would be reconsidered.",
+      "Keep the original native solver/contact/physical parameters. Do not modify returned qacc/lambda, polish the solution, alter M/friction/caps, inject forces or dispatch a previously rejected command.",
+      "Evaluate any approved certificate on each candidate where used; this single point is not a full-plan admission."
+    ],
+    "numeric_budget_selected": false,
+    "controller_implementation": false,
+    "actual_execution_authorized": false
+  },
+  "primary_sources": [
+    {
+      "url": "https://github.com/google-deepmind/mujoco/blob/3.10.0/src/engine/engine_forward.c#L688-L720",
+      "claim": "same-state smooth-force accumulation and acceleration"
+    },
+    {
+      "url": "https://github.com/google-deepmind/mujoco/blob/3.10.0/src/engine/engine_forward.c#L1772-L1824",
+      "claim": "complete forward call order"
+    },
+    {
+      "url": "https://github.com/google-deepmind/mujoco/blob/3.10.0/src/engine/engine_solver.c#L1146-L1187",
+      "claim": "constraint generalized force and primal gradient"
+    },
+    {
+      "url": "https://github.com/google-deepmind/mujoco/blob/3.10.0/src/engine/engine_solver.c#L2058-L2118",
+      "claim": "island scaling and improvement/gradient termination"
+    },
+    {
+      "url": "https://github.com/google-deepmind/mujoco/blob/3.10.0/src/engine/engine_core_smooth.c#L1651-L1728",
+      "claim": "native inertia includes armature"
+    },
+    {
+      "url": "https://mujoco.readthedocs.io/en/stable/XMLreference.html#option-tolerance",
+      "claim": "supporting documentation only; exact3.10.0 source controls version-specific interpretation"
+    }
+  ],
+  "resources": {
+    "F_new_forward_queries": 0,
+    "F_new_LP_solves": 0,
+    "F_physics_steps": 0,
+    "F_training": 0,
+    "F_GPU": 0,
+    "F_live_or_controller_source_edits": 0,
+    "F_background_jobs": 0
+  }
+}

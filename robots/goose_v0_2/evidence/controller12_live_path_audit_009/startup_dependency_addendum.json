@@ -1,0 +1,175 @@
+{
+  "status": "PASS_DEPENDENCY_RECOVERY_FOR_GLOBAL_ATTEMPT002_ONLY",
+  "UTC": "2026-10-19T23:35:25.048343+00:00",
+  "reviewer": "/root/cart_collision_handoff",
+  "prior_review": {
+    "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/robots/goose_v0_2/evidence/controller12_live_path_audit_009/receipt.json",
+    "sha256": "a595473510120bc6ce1a51781c0250ed63e4a9425904f8ba0d000e7a45c608b0",
+    "immutable_preserved": true,
+    "correction": "The prior F review missed a lazy logging dependency and had not exercised the complete first fineguard path; its startup-readiness claim was incomplete. This addendum supersedes that startup claim, while preserving earlier source/control checks."
+  },
+  "original_failed_attempt": {
+    "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_12_online1000/attempt_001",
+    "summary_sha256": "642d4b5d43dbf37f684f5d2783b11fdd8885da5478c37c17acbfdb59bd5968ad",
+    "error": {
+      "error": "ModuleNotFoundError(\"No module named 'actual_centroidal_wrench'\")",
+      "traceback": "Traceback (most recent call last):\n  File \"/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_12_online1000/run_support.py\", line 162, in <module>\n    cmd=currentmeta['motor_command'];qref=np.array(cmd['q_ref18_rad']);qdref=np.array(cmd['qd_ref18_rad_s']);ff=np.array(cmd['tau_ff18_Nm']);commands.append({'time_s':float(d.time),'metadata':currentmeta.copy()});env.step_motor(qref,qdref,ff)\n                                                                                                                                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_12_online1000/teacher_mit_profile.py\", line 31, in step_motor\n    mj.mj_step(e.model,e.data,nstep=e.substeps);e.controller_updates+=1;self.mit_ticks+=1\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_12_online1000/run_support.py\", line 139, in logged\n    for subindex in range(5):logged_one(model,data,nstep=1,drivefirst=subindex==0)\n                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_12_online1000/run_support.py\", line 87, in logged_one\n    from actual_centroidal_wrench import measure\nModuleNotFoundError: No module named 'actual_centroidal_wrench'\n"
+    },
+    "actual_physical_steps": 0,
+    "drive_updates": 0,
+    "command_updates": 0,
+    "original_scene_source_unchanged": true,
+    "not_a_physics_or_hardware_failure": true
+  },
+  "verified_new_inputs": {
+    "manifest.json": {
+      "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_12_dependency_fix/manifest.json",
+      "sha256": "d09c5d45ad86ee1dcfd3b42fc4c017d2bcd415e7355ccc8f4a42eba4394d258b",
+      "entries": 349,
+      "failed": []
+    },
+    "frozen_admission_manifest.json": {
+      "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_12_dependency_fix/frozen_admission_manifest.json",
+      "sha256": "fa30736fe2d69ef256fd1f968bbf770a5b1fece286fa937a03ac05d5637281de",
+      "entries": 348,
+      "failed": []
+    },
+    "actual_stage": {
+      "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_12_dependencyfix_online1000",
+      "entries": 348,
+      "failed": []
+    }
+  },
+  "original_candidate12_346_files_still_immutable": true,
+  "changes": {
+    "added_readonly_logging_helper": {
+      "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_12_dependency_fix/actual_centroidal_wrench.py",
+      "sha256": "4f635bc615a6cf63c056dfbea7a09d7db990b7b8be7ddaeb2c692bf8ae414f55",
+      "baseline_origin": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/physical08_active_capture_10_online1000/actual_centroidal_wrench.py",
+      "byte_identical_to_baseline09_and_capture10": true,
+      "reads": "Existing actual contact forces/qacc, Jacobians/JacDot and native MCI; derives centroidal contact/gravity/inertia wrench sums.",
+      "actuation_or_model_or_live_state_write": false,
+      "local_secondary_dependencies": []
+    },
+    "runner": {
+      "path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_12_dependency_fix/run_support.py",
+      "sha256": "6b9c2cb006876d30f5975f246929d87622be106a05cc949fc2dceba59666a5f6",
+      "diff_exactly_two_changes": true,
+      "changes": [
+        "Output/admission attempt number1 ->2; fresh directory and single-attempt assertion retained.",
+        "Read-only motion logging requires existing capture_context in addition to nonnull motion_start_time_s; prevents interpreting legacy capture metadata as new motion metadata."
+      ],
+      "actuation_solver_controller_source_guard_predicate_safety_qualifier_changes": false
+    }
+  },
+  "full_guard_smoke": {
+    "readback_path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_12_dependency_fix/fineguard_zero_step_readback.json",
+    "readback_sha256": "cee108c367c2f97a43968248f729e9c0d69117d876c99f28020ff47e145e67b8",
+    "harness_path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_12_dependency_fix/zero_step_fineguard_preflight.py",
+    "harness_sha256": "75046f888d0cca8a5c1a17049b9263d9277e6cd1ef8c3f958d65ae11417f587d",
+    "results": [
+      {
+        "case": "cold_open",
+        "complete_guard_and_json_reached_physical_step_stub": true,
+        "stub_calls": 1,
+        "actual_physical_steps": 0,
+        "actual_time_unchanged": true,
+        "qpos_unchanged": true,
+        "qvel_unchanged": true,
+        "error": null,
+        "all_guard_imports_including_centroidal_helper_resolved": true
+      },
+      {
+        "case": "saved_capture_hold",
+        "complete_guard_and_json_reached_physical_step_stub": true,
+        "stub_calls": 1,
+        "actual_physical_steps": 0,
+        "actual_time_unchanged": true,
+        "qpos_unchanged": true,
+        "qvel_unchanged": true,
+        "error": null,
+        "all_guard_imports_including_centroidal_helper_resolved": true
+      },
+      {
+        "case": "motion_0",
+        "complete_guard_and_json_reached_physical_step_stub": true,
+        "stub_calls": 1,
+        "actual_physical_steps": 0,
+        "actual_time_unchanged": true,
+        "qpos_unchanged": true,
+        "qvel_unchanged": true,
+        "error": null,
+        "all_guard_imports_including_centroidal_helper_resolved": true
+      },
+      {
+        "case": "motion_0p9",
+        "complete_guard_and_json_reached_physical_step_stub": true,
+        "stub_calls": 1,
+        "actual_physical_steps": 0,
+        "actual_time_unchanged": true,
+        "qpos_unchanged": true,
+        "qvel_unchanged": true,
+        "error": null,
+        "all_guard_imports_including_centroidal_helper_resolved": true
+      },
+      {
+        "case": "motion_STOP",
+        "complete_guard_and_json_reached_physical_step_stub": true,
+        "stub_calls": 1,
+        "actual_physical_steps": 0,
+        "actual_time_unchanged": true,
+        "qpos_unchanged": true,
+        "qvel_unchanged": true,
+        "error": null,
+        "all_guard_imports_including_centroidal_helper_resolved": true
+      }
+    ],
+    "method": "Executes the real runner initialization and complete logged_one body through all original checks, delayed imports, derived-force measurement and JSON serialization; source_step is hard-blocked by an exception stub. Only in-memory authorization/output-path instrumentation. Native q/v/time remain unchanged.",
+    "motion_cases_scope": "Existing successful capturehold scratch q/v with actual12 context/packet/witness field shapes; cases exercise motion0/.9 and STOP log branches, not physical motion or newly computed LP. Archived capture is never an actual restart state.",
+    "new_LP_or_physics_or_training": 0
+  },
+  "late_import_closure": {
+    "run_support": [
+      "actual_centroidal_wrench.measure",
+      "scipy.spatial.ConvexHull/QhullError",
+      "runner_segment_dispatch.dispatch_segment_20ms"
+    ],
+    "all_local_runtime_module_roots_resolved": 19,
+    "actual_execution_python": "/home/ethan/ProjectBackups/2026-10-03/Sai_Lab/goose_warp_replay_admission_001/environments/mjlab_cuda_py312/bin/python",
+    "external_import_specs_resolved": [
+      "mujoco",
+      "numpy",
+      "scipy.spatial",
+      "scipy.optimize",
+      "scipy.interpolate",
+      "scipy.spatial.transform"
+    ],
+    "helper_transitive_local_imports": 0
+  },
+  "actual_admission": {
+    "global_attempt_index": 2,
+    "only_physical_attempt": true,
+    "max_actual_physical_steps": 15000,
+    "max_sim_s": 15,
+    "deadline_UTC": "2026-10-19T23:52:00+00:00",
+    "no_automatic_physical_retry": true,
+    "max_threads": 4,
+    "max_memory_GiB": 8,
+    "GPU": 0,
+    "training": 0,
+    "actual_argv_program_path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_12_dependencyfix_online1000/capture_prefix_source/baseline_capture/causal_program.json",
+    "actual_argv_program_sha256": "d92fae6e155878396e1e01a6c684f99d0f1a0a0f1f135313a6ee27ff59e4b455",
+    "authorized_input_manifest_sha256": "fa30736fe2d69ef256fd1f968bbf770a5b1fece286fa937a03ac05d5637281de",
+    "actual_runner_path": "/home/ethan/ProjectBackups/2026-10-19/Sai_Lab/drag_hardware_sprint_009/control/coherent_native_soft_12_dependencyfix_online1000/run_support.py",
+    "actual_runner_sha256": "6b9c2cb006876d30f5975f246929d87622be106a05cc949fc2dceba59666a5f6",
+    "genuine_coldopen_capture_required": true,
+    "archived_hold_only_offline_fixture": true,
+    "original_actual_prefix_failure_preserved": true
+  },
+  "retained_limits": [
+    "Physical08/cart004/free20kg and existing numerical contact profile unchanged.",
+    "No controller/source array/gain/cap/friction/clock changes.",
+    "Original immediate fine guards, slip epochs/sticky qualification/lifetime history remain.",
+    "One bounded actual control diagnostic, not task success, stable training release, or hardware capability boundary."
+  ]
+}
