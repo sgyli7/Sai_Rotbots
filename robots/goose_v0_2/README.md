@@ -6,6 +6,8 @@
 
 [08独立运行ZIP](models/physics_v0_2_20261020_08_candidate.zip) · [SHA256](models/physics_v0_2_20261020_08_candidate.zip.sha256) · [解包加载核查](evidence/drag_hardware_integration_009_08/owner_archive_readback_08.json)。ZIP只含不可变08物理输入；1000Hz原生子步、脚底box数值适配及本轮Teacher控制器属于另行绑定的Sai_Lab实验配置，不能把独立包的默认时序当作整机拖运实证。
 
+[原四处飞面逐点对照](images/display_surface_audit_012/c01/whole_and_four_original_regions.png)及[源／网格核查](design/display_surface_audit_012/c01/engineering_review.md)：旧长飞片已从08显示网格中移除；髋口裁边、脚罩口沿与前壳风道边界仍是真实原生几何，未宣称完整外观或制造修复。同源细化显示只用于审核，没有改变08原生、质量或物理包。
+
 04只替换碰撞代理。物理合同、执行器合同、逐项质量账和运行适配器与02逐字相同；设计总质量16.970203929 kg、23个刚体、18个控制轴、4个内部机械坐标，驱动/物理200 Hz、策略接口50 Hz。代理不参与质量计算，完整惯量、轴系、闭环和连续扭矩/速度/电源降额仍来自硬件合同。原生CAD、硬件资料和02源文件未改。
 
 - [运行说明与唯一加载入口](models/physics_v0_2_20261018_04/README.md)
