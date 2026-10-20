@@ -4,6 +4,8 @@
 
 最新独立实验机体为[08原生硬件候选](models/physics_v0_2_20261020_08_candidate/README.md)：**16.728453580kg、23刚体、18驱动、28凸碰撞体**，实际加载1565支持点／3018凸面。[同版原生整机三视图](images/drag_hardware_integration_009_08/whole_source_review_01/whole_three_views.png)与[硬件交接](evidence/drag_hardware_integration_009_08/integration_handoff_08.json)对应。两枚真实AK45-10髋偏航电机与H900 Oldham件合计比07增144.555g，整条偏航链硬帽1.8Nm、禁峰，其余轴不变。08同控制器回归尚无合格迈步／半米拖运；从张嘴真实捕获并保持5秒取得有限观察证据，但0.5mm接触压入与严格内区接触门槛仍未通过。**08是探索候选，未替换04默认入口，未授稳定训练或制造资格。** 最新实验与执行决定以[009唯一协调记录](../../experiments/goose_v0_2/drag_hardware_sprint_009/coordination.json)为准。
 
+[08独立运行ZIP](models/physics_v0_2_20261020_08_candidate.zip) · [SHA256](models/physics_v0_2_20261020_08_candidate.zip.sha256) · [解包加载核查](evidence/drag_hardware_integration_009_08/owner_archive_readback_08.json)。ZIP只含不可变08物理输入；1000Hz原生子步、脚底box数值适配及本轮Teacher控制器属于另行绑定的Sai_Lab实验配置，不能把独立包的默认时序当作整机拖运实证。
+
 04只替换碰撞代理。物理合同、执行器合同、逐项质量账和运行适配器与02逐字相同；设计总质量16.970203929 kg、23个刚体、18个控制轴、4个内部机械坐标，驱动/物理200 Hz、策略接口50 Hz。代理不参与质量计算，完整惯量、轴系、闭环和连续扭矩/速度/电源降额仍来自硬件合同。原生CAD、硬件资料和02源文件未改。
 
 - [运行说明与唯一加载入口](models/physics_v0_2_20261018_04/README.md)
