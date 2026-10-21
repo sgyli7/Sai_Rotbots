@@ -1,18 +1,28 @@
 # Sai_Rotbots
 
-面向真实世界互动与任务的开源机器人工程。保留轮腿机器人 **Sai_Agent_001**、后备箱平整的 **Sai_Agent_002**，并开发 **Goose V0.1** 与大型双足双手机器人 **Gorilla V0.1**。仓库由 `Sai_Agent_001` 直接改名，提交历史和旧版本发布均保留。
+面向真实世界互动与任务的开源机器人工程。保留轮腿机器人 **Sai_Agent_001**、后备箱平整的 **Sai_Agent_002**，并开发 **Goose V0.2** 与大型双足双手机器人 **Gorilla V0.1**。仓库由 `Sai_Agent_001` 直接改名，提交历史、Goose V0.1 与旧版本发布均保留。
 
 | Robot | Cargo bay | Guide |
 |---|---|---|
 | Sai_Agent_001 | Original powered opposed pads and belt mechanism | [001](robots/Sai_Agent_001/README.md) |
 | Sai_Agent_002 | Continuous flat floor, no moving clamp mechanism | [002](robots/Sai_Agent_002/README.md) |
 | Goose_V0.1 | Long-neck biped with a gripping beak; initial training checkpoint | [Goose](robots/Goose_V0.1/README.md) |
-| goose_v0_2 | 14 convex collision shapes; fixed hardware physics and separate manufacturing follow-up | [Goose V0.2](robots/goose_v0_2/README.md) |
+| goose_v0_2 | Frozen15 hardware; 28 convex shapes, 18 drive axes, verified training I/O; four MicroDuck colorways | [Goose V0.2](robots/goose_v0_2/README.md) |
 | gorilla_v0_1 | AA3 appearance; C15 segmented-foot stage, physical gates open | [Gorilla](robots/gorilla_v0_1/README.md) |
 
-## Goose V0.2 仿真设计物理包
+## Goose V0.2：MicroDuck 四配色与冻结版15
 
-[Goose V0.2](robots/goose_v0_2/README.md) 的04派生版使用实际14个凸碰撞块、547个凸支持顶点和1038个凸三角面，完整保留02的逐刚体质量／重心／惯量、轴系和驱动。关键夹持面直接对照原生CAD修正，有限接触和短时积分验证见独立记录；最终04单CPU原生步进约20–33微秒；旧Move14的1.5倍相对成本目标未获放行，历史差异和未测范围明确保留。02的291块模型只作历史与物理来源，不再推荐训练。实体安装和制造仍暂停，Goose_V0.1继续保留。
+V0.2 沿用 V0.1 的完整 **MicroDuck 配色方案**：主壳与颈腿外罩、灰色检修面板、深色机构、嘴脚主辅色、镜圈和鞋边分别配色。以下四款使用同版实际装配、同一机位；源色号及公共材质直接读取 [V0.1 配色配置](robots/Goose_V0.1/configs/microduck_color_blocking_manual_wing_service.json)。
+
+| Cream 奶油白 | Graphite 石墨灰 |
+|---|---|
+| ![Goose V0.2 Cream 奶油白](robots/goose_v0_2/images/homepage_colorways_050/cream.png) | ![Goose V0.2 Graphite 石墨灰](robots/goose_v0_2/images/homepage_colorways_050/graphite.png) |
+| **Lavender 薰衣草紫** | **Sky 天空蓝** |
+| ![Goose V0.2 Lavender 薰衣草紫](robots/goose_v0_2/images/homepage_colorways_050/lavender.png) | ![Goose V0.2 Sky 天空蓝](robots/goose_v0_2/images/homepage_colorways_050/sky.png) |
+
+这些图由保留的机身与冻结版15的真实嘴部改件生成，保持完整鹅嘴和包覆颈腿；[图像与源身份](robots/goose_v0_2/evidence/homepage_colorways_050.json)记录各配色分区。鞋边色带为现有鞋底表面的配色，未增加零件或厚度，原生 CAD、质量、碰撞和驱动不因配色改变。
+
+**当前机体：[冻结版15](robots/goose_v0_2/models/physics_v0_2_20261021_15_candidate/manifest.json)，16.869881 kg、23刚体、18驱动、28外部凸碰撞体。** [运行包与CAD](robots/goose_v0_2/README.md)及[PPO／VLA物理与数据接口验收](robots/goose_v0_2/evidence/training_io_049/README.md)已交付：重置、连续步进、观测／动作、RGB与实际动作标签对齐均完成有限自验；未启动训练。固定头部增载试验在5.210367 kg触发结构条件筛查，尚非稳定吊重额定值。04的14凸体包保留为历史对照，制造和整机连续拖运验收另有明确未完成项。
 
 ## Gorilla V0.1：AA3 外形与复合脚阶段
 
