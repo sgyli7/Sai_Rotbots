@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "scope": "Goose physical-product appearance, CAD presentation and product delivery",
+  "scope": "Every Goose physical-product design recommendation, including concepts, work-in-progress views, CAD presentations and finished deliveries",
   "required_by": "Project owner, 2026-10-21",
   "sources": [
     {
@@ -24,7 +24,7 @@
     }
   ],
   "workflow": [
-    "State the user's end purpose and the exact maturity claimed before reviewing.",
+    "State the user end purpose, exact artifact revision and claimed maturity before reviewing. Apply aesthetic review before recommending a concept or draft as well as before claiming finished work.",
     "Read the linked design skills and applicable references. Review actual current artifacts, not the author's explanation.",
     "Inspect proportion and silhouette first; then complete enclosures, surface transitions, necessary splits, interfaces and detail hierarchy.",
     "Check rear, inboard, underside and motion states with the same care as the hero view. For a concept, list unseen or unverified views explicitly.",
@@ -32,7 +32,7 @@
     "Preserve goose identity, whole beak, side-mounted legs and the established form direction. Keep required motion and service functions when simplifying.",
     "If a promised scope fails, return it to its owning design source, correct and recreate affected views. A revised image closes only a concept-image issue.",
     "Record the review verdict, evidence, remaining failures and next concrete correction. Keep failed versions as regression evidence.",
-    "Present finished work only after the applicable design review passes; distinguish an interim draft from accepted CAD or hardware."
+    "Recommend a design only after the aesthetic checks applicable to its shown scope pass. A draft label cannot excuse visible aesthetic failures. Report incomplete or rejected work as diagnostic evidence, not as a recommended design."
   ],
   "release_checks": [
     {
@@ -60,7 +60,42 @@
       "required": "An enclosure change preserves the required motion, contacts, service and load paths within declared evidence."
     }
   ],
-  "decision_rule": "A major failed or unevaluated item blocks only the maturity that depends on it. Scores never override a hard failure. Pending design acceptance is explicit.",
+  "decision_rule": "A failed aesthetic requirement blocks a recommendation at every maturity, including a concept. Correct or redo the responsible source and re-review. Unevaluated engineering blocks claims that depend on it, while a clearly bounded form study may still be reviewed as a form study. Scores never override failures.",
   "scoring_note": "If the Jobs skill's seven-row score is used, label it as checklist evidence coverage, never an objective beauty or hardware-performance measurement.",
-  "frozen_physics_policy": "Appearance studies do not authorize changing the immutable physics package or mass/inertia/contact/actuator values."
+  "frozen_physics_policy": "Appearance studies do not authorize changing the immutable physics package or mass/inertia/contact/actuator values.",
+  "owner_responsibility": "The owner agent performs and records the review and continues routine revisions within the authorized design direction. Pending user feedback is an acceptance status, not an instruction to stop routine work or repeatedly seek confirmation.",
+  "review_record_required": [
+    "Exact artifact identity and content hash",
+    "One-sentence end purpose",
+    "Observed aesthetic strengths and failures tied to specific views or features",
+    "Actual removals and revisions, with before/after identity",
+    "Separate aesthetic disposition, engineering disposition and user feedback status",
+    "Ranked source corrections for every unresolved failure"
+  ],
+  "concept_aesthetic_checks": [
+    {
+      "id": "silhouette",
+      "required": "The horizontal mango body, goose neck/head/bill and side-mounted legs read as one coherent character; inspect the image itself."
+    },
+    {
+      "id": "surface_language",
+      "required": "Primary volumes and curved enclosure transitions agree; exposed slabs, jagged cutouts or accidental protrusions fail."
+    },
+    {
+      "id": "seam_logic",
+      "required": "Show only deliberate movement, assembly, material or service boundaries. Retain articulation while removing decorative fragmentation."
+    },
+    {
+      "id": "detail_hierarchy",
+      "required": "Head/bill, main body and limbs have clear hierarchy; repeated joints and grilles follow a regular visual grammar."
+    },
+    {
+      "id": "view_consistency",
+      "required": "All presented views describe the same form and interface logic; identify any unshown views rather than inventing proof."
+    },
+    {
+      "id": "unseen_surfaces",
+      "required": "A complete-exterior claim requires rear, inboard, underside and applicable motion-state review. Partial concepts declare their limited coverage."
+    }
+  ]
 }
