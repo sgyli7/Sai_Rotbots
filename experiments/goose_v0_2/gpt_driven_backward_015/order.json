@@ -1,0 +1,2491 @@
+{
+  "experiment": "gpt_driven_backward_015",
+  "state": "RUN006_ENDED_REAL_LOADED_PREPARATION_FALSE_LP_REACTION_DIAGNOSED_CANDIDATE11_PREPARED",
+  "authorization": "User explicitly resumed execution: GPT-6.1 Sol, continuous backward >=0.5m at >=0.1m/s then stable stop; progressively add 20kg cart; small slip may recover; no fake physics; full video.",
+  "owner": "/root",
+  "decision_model": "gpt-6.1-sol",
+  "physical_input": "robots/goose_v0_2/models/physics_v0_2_20261021_10_candidate",
+  "physical_input_status": "04 default and08 immutable.13 source-bound actual020 ended4.600 after first0.20s operation only.14 nativehardware frozen, runtime/core002 binding pending; no qualified backstep or0.5m transport.",
+  "immutable_source_manifest": "/home/ethan/Projects/TempWorktree/Sai_Lab/goose_v02_hardware_validation/experiments/goose_v0_2/hardware_validation/analysis/backward015_evidence/frozen_source_sha256.json",
+  "immutable_source_manifest_sha256": "b52a81e9d02d86a7fddc7334326ea917b82e8a414ed1084f08c6e6548606b12c",
+  "physics_hz": 2000,
+  "drive_hz": 200,
+  "reference_hz": 50,
+  "first_acceptance": {
+    "empty_free_root": true,
+    "net_backward_m_min": 0.5,
+    "average_backward_mps_min": 0.1,
+    "transport_clock_includes_acceleration": true,
+    "real_alternating_backward_footsteps": true,
+    "stop_hold_s_min": 3.0,
+    "stop_horizontal_speed_mps_max": 0.03,
+    "stop_horizontal_net_drift_m_max": 0.02,
+    "stop_roll_pitch_peak_to_peak_deg_max": 3,
+    "stop_absolute_roll_pitch_deg_max": 15,
+    "stop_root_height_peak_to_peak_m_max": 0.02,
+    "small_slip_is_diagnostic_not_automatic_failure": true,
+    "full_continuous_video_required": true
+  },
+  "next_stages": [
+    "Cold capture and sustained real20kg cargo cart traction",
+    "Loaded support transition and continuous backward≥0.5m at≥0.1mps",
+    "Brake then stable hold≥3s without mouth loss",
+    "Independent complete actual-state video, source/cap audit, hardware decision from failures"
+  ],
+  "prohibited": [
+    "Changing mass/COM/inertia/contact/friction/collision/actuator capability to pass",
+    "Live root or object pose/velocity writes",
+    "Root assistance or transport external force",
+    "Object weld/attachment/suction",
+    "Counting planned phase as actual step",
+    "Presenting cropped/retimed/held video as full success"
+  ],
+  "runtime": "One coordinated CPU physics process, source caps and power limits at every200Hz drive update",
+  "roles": {
+    "control": "/root/backward_evidence_015",
+    "runtime": "/root/backward_runtime_015",
+    "independent_evidence_video": "/root/backward_runtime_015 for A-authored033; Owner review preserves independent evidence requirement",
+    "internal_structural_candidate": "/root/backward_control_015"
+  },
+  "raw_evidence_root": "/home/ethan/ProjectBackups/2026-10-20/Sai_Lab/backward_015",
+  "old_009_pause_record": "Historical pause preserved; only this new execution is resumed",
+  "old_long_training_and_automations_resumed": false,
+  "whole_goal_passed": false,
+  "latest_verified_subresult": {
+    "candidate": "physics_v0_2_20261021_13_candidate",
+    "run": "candidate13_left_mass042_run_020",
+    "actual_boundary_s": 4.6,
+    "actual_operation_duration_s": 0.2,
+    "COM_left_m": 0.000252387,
+    "COM_vy_mps": 0.009947,
+    "left_right_foot_normal_N": [
+      74.977,
+      88.445
+    ],
+    "upper_lower_normal_N": [
+      34.557,
+      34.545
+    ],
+    "input_torque_Nm": 0.5013902397507857,
+    "actual_source_cap_peak_fraction": 0.684817,
+    "cap_or_recovery": false,
+    "hidden_forces": 0,
+    "actual_backward_steps": 0,
+    "whole_transport_passed": false,
+    "termination": "Normal seal before original600s wall budget expired; Root did not issue second0.20 continuation in time. This is a coordination stop, not evidence of control failure.",
+    "raw": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/candidate13_left_mass042_run_020"
+  },
+  "current_blocker": "No qualified rear support exchange or continuous loaded towing. Fixed-head 20kg retention has no qualified 5s result; same-hardware solver diagnostic and final14 local reinforcement are next, not new exterior slots.",
+  "current_action": "User-corrected047: onefreshgrip, continuouslyincreaseonlytestballastmassandconsistentinertia fromfixedfixture+.05kg; default14/impratio1/NoSlip0/GooseMCI/mu/capsunchanged. Ehelper/sourcesaudit, Funiquephysics; no separatefixed20kgprofilecontinuation.",
+  "native_pilot": {
+    "run": "/home/ethan/ProjectBackups/2026-10-20/Sai_Lab/backward_015/native_ppo_pilot_001",
+    "initial_wall_limit_s": 300,
+    "worlds": 16,
+    "cpu_threads_max": 4,
+    "memory_GiB_max": 8,
+    "task_sha256": "6bcb1414fe13c325102ea77c190e2a529810c99e1c8ad36e8e13865bfab872a1",
+    "native_runner_sha256": "dc455b9ab87481393f2f4c5b26959873592fb0dc080d61afc9fe266752979902",
+    "training_auto_reset_allowed": true,
+    "evaluation_auto_reset_allowed": false,
+    "use_warp": false,
+    "state": "STOPPED_AFTER_5MIN; FAILED_TASK; NO_FURTHER_TRAINING",
+    "actual_eval_backward_m": 0.009142217162019406
+  },
+  "purpose": "Improve real Goose beak hardware for reliable high-load retention and whole-body backward towing, while retaining goose-like exterior. Tests are decision inputs, not final deliverables.",
+  "execution_method": "GPT-6.1 Sol observes actual state/contact feedback, chooses the next bounded body/feet/neck action; local IK and original bounded motor drive execute. No PPO or automatic numerical policy optimizer.",
+  "loaded_stage": {
+    "cart": "low_profile_stock_cart_03_collision_004",
+    "empty_cart_kg": 7.81534244,
+    "cargo_kg": 20,
+    "total_cart_with_cargo_kg": 27.81534244,
+    "input_interfaces": "/home/ethan/Projects/TempWorktree/Sai_Lab/goose_v02_hardware_validation/experiments/goose_v0_2/backward_015/control/loaded_interface_existing_015.json",
+    "source_initial_state": "cold source; no archived pose initialization",
+    "grip": "physical bilateral contact only; no attachment or object writes",
+    "scene_variant_disclosure": "New full10 derived loaded world explicitly removes legacy invented20Nm/rad pitch spring because native/cart004 design specifies no balancing spring. Real free pitch k0. Keep legacy0.125Nm/wheel as unmeasured nominal rolling-resistance case (~8N); do not lower it to pass. Historical spring20 world retained separately."
+  },
+  "stage_order_correction": "Latest user explicitly requests biting handle and tugging loaded cart now; empty walking is no longer a gate before loaded trials. Final travel/speed/stop requirements unchanged.",
+  "initialization_scope": "Declared open-mouth no-contact pregrasp initial condition is allowed; it is not an autonomous approach result or archived pre-attached grasp. No state writes during trial.",
+  "first_force_experiment": {
+    "purpose": "Measure actual grip and traction while maintaining whole-body support, then use failure evidence for hardware changes",
+    "load_kg": 27.81534244275659,
+    "cargo_kg": 20,
+    "minimum_readback": [
+      "compiled source identity and actual cargo mass",
+      "bilateral jaw contacts and normal forces",
+      "bar force world vector and jaw-relative slip",
+      "actual input-rotor torque and jaw opening",
+      "foot ground forces/slip and COM/root motion",
+      "all actuator torque/speed/power saturation",
+      "full continuous actual-state video including cart, mouth and feet"
+    ],
+    "interpretation": "If legs, neck or balance limit the trial before mouth slips, report a supported lower bound of gripping traction, not measured beak maximum."
+  },
+  "acceptance_constraints_confirmed_by_user": {
+    "goose_like_exterior": "Preserve goose-like appearance and overall beak exterior; improve internal gripping, transmission and load-bearing structure.",
+    "physical_only": "No suction, object weld/attachment, hidden forces or live pose/velocity writes as grasp substitutes.",
+    "hardware_faithful": "Actual hardware continuous torque/power and structural capacity; model only supported real material, geometry, mass and actuator changes, never pass by numerical capability inflation.",
+    "mass_and_balance": "Avoid unnecessary mass; loaded whole-body towing must retain balance. Small slip may recover.",
+    "purpose": "Maximize reliable load retention and towing; actual hardware improvement is required, not a test report alone."
+  },
+  "v3_adoption_decision": {
+    "status": "WITHDRAWN_NOT_ADOPTED",
+    "reason": "User explicitly identifies historical heavy-object failures and asks redesign; limited old pass records do not justify adoption. Owner previously misinterpreted historical lookup as reuse authorization.",
+    "preserve_record": true,
+    "actual09_trial": "3.4s clamp-only, no tug; preserved as non-adopted trial, no publication/default change."
+  },
+  "bench_scope": {
+    "purpose": "Isolate beak hardware from body falling first; compare changes on the same load and actual original caps.",
+    "fixture": "Explicit fixed head structural mounting, not an assisted whole-robot result.",
+    "load": "Known test-device force on free12mm crossbar; horizontal tip-directed extraction separate from vertical suspension.",
+    "not_qualification": "20kg cart cargo is carried by deck/wheels;196.2N beak load must be measured independently. Bench force and support reactions must be disclosed.",
+    "baseline_status": "Initial original08 test has preload drift and3.506mm soft-contact penetration; no certified hardware pullout limit.",
+    "no_more_baseline_tuning": "No friction, solver or capability changes to make original08 pass.",
+    "current_decision": "Historical dedicated rod-latch direction withdrawn. Current intact internal drive retained; quantitative contact fidelity separates numerical creep from actual grip failure. Fixed head evidence remains separate from whole-cart goal.",
+    "first_candidate_scope": "Fixed real head mounting, original main jaw closure, free pins and actual springs/limits. No pin weld/equality substitute. Full Bowden/servo release/installed power are separate unresolved integration qualifications, not prerequisites for the first retention decision.",
+    "candidate_force_target_N": 196.2,
+    "whole_robot_capability_inferred": false,
+    "runtime_wall_limit_s": 600,
+    "CPU_processes_max": 1,
+    "CPU_threads_max": 4,
+    "training_updates_allowed": 0,
+    "vertical_loading_fixture": "During insertion only, declared fixed+mg force at rod COM. Zero before>=0.5s own-weight hold and subsequent downward load ramp. No XY/pose tracking; not autonomous capture.",
+    "window_status": "CLOSED_NO_RETRY",
+    "new_physics_trials": 1,
+    "actual_steps": 24,
+    "actual_loaded_N": 0
+  },
+  "test_decision_rule": "Tests are bounded subtasks of one current hardware decision. No independent PPO, control-training, solver-development or additional architecture work. After a decision-relevant result, integrate or reject the hardware candidate and return to the hardware objective.",
+  "owner_resource_assignment": {
+    "A": "Native contact-domain and actualworkfacegeometry expert; minimal realhardware improvement conditional on valid forces; no physics",
+    "E": "Single faithfulworkface collision implementation from native assets; no PPO/newIK or physics",
+    "F": "Only physics operator and candidate integrator;016 ended, awaiting collision corrected candidate",
+    "owner": "Wholehardware/collision/grip/support/travel decisions and finalsameversiondelivery; no testresult relabel"
+  },
+  "hardware_candidate_history": [
+    {
+      "candidate": "oldV3 / physics09",
+      "decision": "WITHDRAWN_NOT_ADOPTED",
+      "reason": "Historical heavy-object failures; limited earlier successes do not justify direct reuse."
+    },
+    {
+      "candidate": "grip_loadpath_redesign_017/c02_r9_fork_axial_02",
+      "decision": "REJECTED_PACKAGING",
+      "reason": "New bearing stack clears OEM flange but exceeds actual head exterior by7.42–8.99mm. Original exterior constraint is binding. No physics allowed for this candidate.",
+      "source": "robots/goose_v0_2/cad/exports/grip_loadpath_redesign_017/c02_r9_fork_axial_02/local_assembly.step",
+      "independent_evidence": "/home/ethan/Projects/TempWorktree/Sai_Lab/goose_v02_hardware_validation/experiments/goose_v0_2/hardware_validation/analysis/backward015_evidence/c02_authoritative_headskin_local_001.json"
+    },
+    {
+      "id": "grip_loadpath_017_c03_module_r03",
+      "handoff": "experiments/goose_v0_2/grip_loadpath_redesign_017/c03_module_r03/module_handoff.json",
+      "handoff_sha256": "460f8d546606e6a67ef6c1748fa517cf2b35772f8b2d048a5ae5ff5ebbf10b97",
+      "status": "R03_REJECTED_PIN_INSERTION_TPU_BLOCKS_PATH_NO_PHYSICS",
+      "partial_new_mass_kg": 0.12929983136457854,
+      "partial_retired_mass_kg": 0.09166856083991003,
+      "partial_delta_kg": 0.03763127052466851,
+      "mass_scope": "includes H900seat/gate,pins,spring nativewire,4throughbolts/nuts/washers; excludes remote23g servo/cable/fixture, originalheadframe retained; old OEM fasteners require integration dedup",
+      "owner_actual_CAD_review": "artifacts/goose_v0_2/grip_loadpath_redesign_017/c03_module_r03_owner/closed.png",
+      "whole_robot_integrated": false,
+      "force_196_2N_demonstrated": false,
+      "manufacturing_release": false,
+      "independent_review_agent": "/root/backward_evidence_015",
+      "next_decision": "R04 physical TPU clearance holes only, new MCI/hash and same finite bench deadline; no force/collision-only deletion.",
+      "one_bench_wall_deadline_utc": "2026-10-20T16:49:36Z",
+      "reason": "Uncut original TPU atZ552..553mm overlaps locked4mm pins atZ550.5mm; soft contact insertion is not permitted."
+    },
+    {
+      "id": "grip_loadpath_017_c03_module_r04",
+      "handoff": "experiments/goose_v0_2/grip_loadpath_redesign_017/c03_module_r04/module_handoff.json",
+      "handoff_sha256": "3dcf1c606f7cfa708cb454ebc8f6d41d6958ca9b229dc5df0f109707197c4f4b",
+      "status": "R04_REJECTED_NATIVE_GATE_BORE_OBSTRUCTED_NO_PHYSICS",
+      "partial_new_mass_kg": 0.12928241094560666,
+      "partial_retired_mass_kg": 0.09166856083991003,
+      "partial_delta_kg": 0.037613850105696636,
+      "mass_scope": "includes H900seat/gate,pins,spring nativewire,4throughbolts/nuts/washers; excludes remote23g servo/cable/fixture, originalheadframe retained; old OEM fasteners require integration dedup",
+      "owner_actual_CAD_review": "artifacts/goose_v0_2/grip_loadpath_redesign_017/c03_module_r04_owner/closed.png",
+      "whole_robot_integrated": false,
+      "force_196_2N_demonstrated": false,
+      "manufacturing_release": false,
+      "independent_review_agent": "/root/backward_evidence_015",
+      "one_bench_wall_deadline_utc": "2026-10-20T16:49:36Z",
+      "independent_review": "/home/ethan/Projects/TempWorktree/Sai_Lab/goose_v02_hardware_validation/experiments/goose_v0_2/hardware_validation/analysis/backward015_evidence/c03_r03_module_admission_001.json",
+      "independent_review_sha256": "87b59e4af9c93a5d9778cb5b14df89d23fe16c4947a0f7feca0867b26c4d5ff8",
+      "reason": "Original backbone fusion refilled final gate pin bore; actual locked-pin metal overlap5.12075469mm3. Correcting only collision would misrepresent hardware."
+    },
+    {
+      "id": "grip_loadpath_017_c03_module_r05",
+      "handoff": "experiments/goose_v0_2/grip_loadpath_redesign_017/c03_module_r05/module_handoff.json",
+      "handoff_sha256": "08bce7f447bd0850447ad334f545e48dc518c573d99511e077f4472235a9d067",
+      "status": "REJECTED_FOR_FULL_NATIVE_CONTACT_INTEGRATION",
+      "partial_new_mass_kg": 0.1289749884830926,
+      "partial_retired_mass_kg": 0.09166856083991003,
+      "partial_delta_kg": 0.03730642764318258,
+      "mass_scope": "includes H900seat/gate,pins,spring nativewire,4throughbolts/nuts/washers; excludes remote23g servo/cable/fixture, originalheadframe retained; old OEM fasteners require integration dedup",
+      "owner_actual_CAD_review": "artifacts/goose_v0_2/grip_loadpath_redesign_017/c03_module_r05_owner/closed.png",
+      "whole_robot_integrated": false,
+      "force_196_2N_demonstrated": false,
+      "manufacturing_release": false,
+      "independent_review_agent": "/root/backward_evidence_015",
+      "one_bench_wall_deadline_utc": "2026-10-20T16:49:36Z",
+      "independent_review": "/home/ethan/Projects/TempWorktree/Sai_Lab/goose_v02_hardware_validation/experiments/goose_v0_2/hardware_validation/analysis/backward015_evidence/c03_r03_module_admission_001.json",
+      "physical_test": {
+        "result_index": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/mouth_bench_017/c03_r05_hold_001/result_index.json",
+        "sha256": "f3b3a212649f66814438c8fb028e78e300618ac92c868ac62767a7250ba3b285",
+        "horizontal": {
+          "time_s": 0.12,
+          "steps": 24,
+          "loaded_N": 0,
+          "result": "contact penetration2.925851mm; pins negative6.462926mm outside physical domain"
+        },
+        "vertical": {
+          "steps": 0,
+          "result": "not executed after insertion/contact failure"
+        },
+        "interpretation": "Insertion physics untrusted before jaw closure/load; neither hardware strength failure nor retention pass.",
+        "first_step": {
+          "time_s": 0.005,
+          "manual_pin_force_N": 0,
+          "pin_mass_kg": 0.000704978946316026,
+          "pin_spring_preload_N": -0.04756912457142857,
+          "observed_pin_q_m": -0.001686898766,
+          "numeric_explanation": "Source 5ms step and soft boundary fail to resolve light pin returning against physical shoulder; no motor/rodload measurement at rated load."
+        },
+        "diagnostic_only_media": {
+          "horizontal/c03_actual_continuous_002.mp4": {
+            "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/mouth_bench_017/c03_r05_hold_001/horizontal/c03_actual_continuous_002.mp4",
+            "sha256": "7603a895e89343e3680e4257b9e8c5eec3fba35e1910c5e24b599ba78fe75375",
+            "bytes": 63850
+          },
+          "horizontal/c03_actual_slow8x_002.mp4": {
+            "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/mouth_bench_017/c03_r05_hold_001/horizontal/c03_actual_slow8x_002.mp4",
+            "sha256": "2fc6050ee775e3a72476f159872e69a526272b080e88de7b30afb6aca9c8acb8",
+            "bytes": 85231
+          },
+          "media_and_independent_index.json": {
+            "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/mouth_bench_017/c03_r05_hold_001/media_and_independent_index.json",
+            "sha256": "f85dd30af706a2ca3a5eaa099c5b42bdcc553874dadd54d45b5384b6ee2119ae",
+            "bytes": 1342
+          },
+          "horizontal/independent_first_instability_001.json": {
+            "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/mouth_bench_017/c03_r05_hold_001/horizontal/independent_first_instability_001.json",
+            "sha256": "625c26c1a6470ddef98bde73d80edf5d49729ffc6578e6dd62d9a976df18f819",
+            "bytes": 2211
+          }
+        }
+      },
+      "rejection": "Rod intersects retained upper shell and fixed rail ends; incomplete contact omitted rails. Bare numerical196N result not full-native qualification."
+    },
+    {
+      "id": "grip_loadpath_017_c03_module_r07",
+      "status": "R07_CONTACT_R01_ZERO_STEP_REJECTED_NATIVE_TAIL_CLEARANCE_BLOCKED",
+      "handoff": "experiments/goose_v0_2/grip_loadpath_redesign_017/c03_module_r07/module_handoff.json",
+      "handoff_sha256": "5377866f1e9413bce077c30be3d3ca19531862479b9d2db4dffd67a68a70515f",
+      "nominal_robot_mass_kg": 16.757755361011736,
+      "delta_from08_kg": 0.029301781108621583,
+      "mass_excludes": "Additional23g remote unlock actuator and cables are not installed. Manual assembly experiment has no such active unit.",
+      "native_changes": "Same bite pose,pins,gate and levers. Actual fixed rail downward-openR6.3 clearance and upper shellR6.8 clearance. Lower shell preserved and contact included.",
+      "owner_actual_appearance_review": {
+        "accepted_experimental_shape": true,
+        "images": {
+          "full_head_closed": {
+            "path": "robots/goose_v0_2/images/grip_loadpath_redesign_017/r07_full_head_closed.png",
+            "sha256": "a60f67f1b7b0b77055872e5903537395b5a502752b2f2f6dc0a30caefd30236f"
+          },
+          "full_head_closed_side": {
+            "path": "robots/goose_v0_2/images/grip_loadpath_redesign_017/r07_full_head_closed_side.png",
+            "sha256": "50e9050e2411ffa26ccd96b2b1d986e3041e23bb162223b73ec90e9748cf0b4c"
+          },
+          "full_head_open": {
+            "path": "robots/goose_v0_2/images/grip_loadpath_redesign_017/r07_full_head_open.png",
+            "sha256": "a277dae128e8984ce255bce9324a1727de24bcac58cf9d32beabf1d81dbc6b31"
+          }
+        },
+        "review": "Actual native full-head closed/side/open inspected; goose bill tip/top envelope retained with functional side opening. Not manufacturing/globalROM approval."
+      },
+      "contact_parts_scope": "738 diagnostic parts; includes real remaining rails and upper/lower shells. Not whole-robot training collision model or default-package replacement.",
+      "whole_robot_integrated": false,
+      "force_196_2N_demonstrated": false,
+      "manufacturing_release": false,
+      "next": "One same-source full-shell manual-closed vertical load regression after independent zero-step admission; no parameter/control search.",
+      "full_shell_zero_step": {
+        "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/mouth_bench_018/r07_full_shell_prepare_001",
+        "physics_steps": 0,
+        "ncon": 285,
+        "max_proxy_penetration_mm": 2.577555,
+        "cause_separation": {
+          "guide_lower_shell": "Native Common0 and0.2mm clearance; coarse rear convex hull fills real cavity.",
+          "pin_lower_shell": "Real Ø2 tail interference0.74852mm3 each locked, about10.4mm3 retracted; must change native clearance."
+        },
+        "decision": "No contact deletion or capability tuning. New r08 minimal tail clearance and contact decomposition correction; original r07 preserved."
+      }
+    },
+    {
+      "id": "grip_loadpath_017_c03_module_r08",
+      "status": "RIGID_CONTACT_LOAD_HELD_STRUCTURAL_RISK_IDENTIFIED",
+      "handoff": "experiments/goose_v0_2/grip_loadpath_redesign_017/c03_module_r08/module_handoff.json",
+      "handoff_sha256": "8d506b401744c605aba9216c5d3da5075e6d9124b77d0997dadd332c8df1d2a1",
+      "nominal_robot_mass_kg": 16.75770007409847,
+      "delta_from08_kg": 0.02924649419535541,
+      "mass_excludes": {
+        "remote_XC330_mass_kg": 0.023,
+        "body_COM_I_and_mount": "notdefined/notincluded",
+        "cables_brackets_power": "notincluded; no fabricatedCOM/I",
+        "qualifiedwholeGoose": false
+      },
+      "native_changes": "r07 U/rail and upper-shell real clearance retained. Additional minimal Ø2 pin-tail travel relief in lower shell,36 sampled pose combinations clear by>=0.2mm. Original Ø4 load-bearing section,bore,lever and outer bill envelope preserved.",
+      "owner_actual_appearance_review": {
+        "accepted_experimental_shape": true,
+        "images": {
+          "full_head_closed": {
+            "path": "robots/goose_v0_2/images/grip_loadpath_redesign_017/r08_full_head_closed.png",
+            "sha256": "f3c605a5205dd68f558807bf9fcd7d513dff194d37f8a0db7d3c145633bb127f"
+          },
+          "full_head_open": {
+            "path": "robots/goose_v0_2/images/grip_loadpath_redesign_017/r08_full_head_open.png",
+            "sha256": "2825ed9d50bb6965248c02300c67732d4ef9b2fc7dbd8aa605b2c748ec0a7c09"
+          }
+        }
+      },
+      "contact_parts_scope": "1532 high-resolution head diagnostic parts; real shell/remaining-rail surfaces, no pair deletion. Not runtime training collision release.",
+      "whole_robot_integrated": false,
+      "force_196_2N_demonstrated": false,
+      "manufacturing_release": false,
+      "next": "Conditional single full-shell manual-Z test only after independent zero-step and local source/contact admission.",
+      "physical_test": {
+        "record": "robots/goose_v0_2/evidence/grip_loadpath_redesign_017/full_shell_loadpath_018.json",
+        "actual_added_load_N": 196.2,
+        "hold_s": 2,
+        "PETG_shell_mean_reaction_N": 99.9633876258,
+        "material_release": false
+      }
+    },
+    {
+      "id": "grip_loadpath_017_c03_module_r09",
+      "status": "BOUNDED_RIGID_CONTACT_LOAD_PATH_IMPROVED_NOT_WHOLE_ROBOT_QUALIFIED",
+      "handoff": "experiments/goose_v0_2/grip_loadpath_redesign_017/c03_module_r09/module_handoff.json",
+      "handoff_sha256": "07e2b0c5d22b93264a09f91ed62362116b7825db4b15c3d57e0a5746f7b0ad91",
+      "nominal_robot_mass_kg": 16.760468546099943,
+      "delta_from08_kg": 0.03201496619682942,
+      "mass_excludes": {
+        "remote_XC330_mass_kg": 0.023,
+        "body_COM_I_and_mount": "notdefined/notincluded",
+        "cables_brackets_power": "notincluded; no fabricatedCOM/I",
+        "qualifiedwholeGoose": false
+      },
+      "owner_actual_appearance_review": {
+        "accepted_experimental_shape": true,
+        "images": {
+          "full_head_closed": {
+            "path": "robots/goose_v0_2/images/grip_loadpath_redesign_017/r09_full_head_closed.png",
+            "sha256": "a58414d7b6826d3144a3602850fbc59426fb3ffd21500c3abf45a476fbc90e71"
+          },
+          "full_head_closed_side": {
+            "path": "robots/goose_v0_2/images/grip_loadpath_redesign_017/r09_full_head_closed_side.png",
+            "sha256": "fbd760dced30847b771c83620a03fd4bc2f9761c73b5639d8ac4de7e2a0d871e"
+          },
+          "full_head_open": {
+            "path": "robots/goose_v0_2/images/grip_loadpath_redesign_017/r09_full_head_open.png",
+            "sha256": "61278a1d82bb2858490439cbf1a95c41a12a021e896135b61483ff3f0e6debb6"
+          }
+        }
+      },
+      "physical_test": {
+        "candidate": "grip_loadpath_017_c03_module_r09",
+        "scope": "Bounded fixed-head manually assembled same-load hardware comparison only",
+        "actual_added_force_N": 196.2,
+        "hold_s": 2,
+        "PETG_full_load_mean_Fz_N": 0,
+        "metal_full_load_mean_Fz_N": 143.2468084534463,
+        "TPU_full_load_mean_Fz_N": 53.77375901555234,
+        "mass_delta_from_r08_kg": 0.002768472001473,
+        "record": "robots/goose_v0_2/evidence/grip_loadpath_redesign_017/full_shell_loadpath_018.json",
+        "whole_transport_passed": false
+      },
+      "whole_robot_integrated": false,
+      "manufacturing_release": false,
+      "contact_parts_scope": "1592 high-resolution head diagnostic parts; not a training collision release.",
+      "adoption": "WITHDRAWN_BY_OWNER_AFTER_USER_REJECTION",
+      "rejection_reason": "Cuts damaged goose bill appearance and produced a rod-specific capture tool. Finite fixed-head retention cannot satisfy general grasping objective."
+    },
+    {
+      "id": "full_native_head_integration_026_r05",
+      "status": "R05_RIGID_FIXTURE_EVIDENCE_RETAINED__ARM_3D_SCREEN_WITHDRAWN_C04_REAL_SECTION_REPAIR",
+      "source_A_handoff": "experiments/goose_v0_2/continuous_bill_loadpath_024/integration_handoff_r05.json",
+      "source_A_sha256": "b95f02a3590111208bf9a81d2a3470b121e8569e3f17c88f578c99ebc73046b5",
+      "native_closed": "robots/goose_v0_2/cad/exports/full_native_head_integration_026/r05_native_review/full_head_closed.step",
+      "mass_audit": "experiments/goose_v0_2/full_native_head_integration_026/merged_mass_and_skin_audit_r05.json",
+      "mass_audit_sha256": "281f9ea1be74eec2433b7b57d9dcde2116d6027103cec0e748fb8e9c85e30bdd",
+      "estimated_net_delta_from08_kg": 0.12742662500482316,
+      "nominal_robot_mass_kg": 16.85588020490793,
+      "mass_scope": "Declared native material geometry plus rounded bearing catalogue masses/annulusI, not measured physical mass",
+      "part_occurrences": 134,
+      "retained": 110,
+      "new": 24,
+      "retired_union": 41,
+      "skin_identity": "experiments/goose_v0_2/full_native_head_integration_026/retained_skin_identity_r05.json",
+      "original_exterior_and_continuous_TPU_unchanged": true,
+      "rod_specific_latch_adopted": false,
+      "owner_viewed_actual_r05": [
+        "closed_iso.png",
+        "open_side.png"
+      ],
+      "local_independent_targeted": "artifacts/goose_v0_2/continuous_bill_loadpath_024/independent_r05_targeted_review.json",
+      "scope": "Real intact native complete head; finite fixed-head025 comparison shows true load support, no global/manufacturing/grip qualification.",
+      "physics_admitted": false,
+      "force_196_2N_demonstrated": true,
+      "whole_robot_integrated": false,
+      "manufacturing_release": false,
+      "finite_fixture_admission": false,
+      "physics_admitted_scope": "Historical025 finite test only; no fresh admission after actual offset-load screen omission found.",
+      "force_196_2N_demonstrated_scope": "Fixed actual head frame, manufactured20.206863kg pendular fixture,2.732s clear of table, new bush hinges ideal. Not full-Goose suspension/cart or general-object qualification.",
+      "stable_high_load_grip_qualified": false,
+      "structural_screen_withdrawn": {
+        "part": "external_output_drive_arm",
+        "reason": "Original arm screen omitted3.25mm axial offset causing weak-axis bending and torsion. R05/c03 cannot inherit a complete3D strength pass.",
+        "not_deleted": "Actual rigid-body full-table-unloaded2.732s observation stays valid within ideal rigidity; it does not qualify actual material/part."
+      }
+    }
+  ],
+  "aux_unlock_candidate": {
+    "status": "WITHDRAWN_WITH_ROD_SPECIFIC_LATCH_DESIGN_NOT_INSTALLED",
+    "actuator": "XC330-M288-T existing hardware type; additional physical unit, not an unmodified08 claim",
+    "source_design_envelope": "Use exact existing source contract/mass/geometry. Selected .14Nm/3rad/s is engineering derating, not measured new continuous rating.",
+    "purpose": "Unload then retract real locking pins; actuator does not carry object holding force.",
+    "scope": "body/head actual fit and wire routing must be checked; no exterior enlargement or unaccounted supply upgrade",
+    "version_rule": "New hardware candidate and true mass/COM/I/actuator identity required;04/08 unchanged, no training package hot overwrite.",
+    "latest_install_candidate": {
+      "id": "grip_release_install_020/c01",
+      "sealed_index": "experiments/goose_v0_2/grip_release_install_020/c01/sealed_index.json",
+      "installed": false,
+      "mass_frozen": false,
+      "known_component_mass_kg": 0.030339,
+      "blocking_reason": "Proposed mounting holes fall in empty space; actual metal plate-to-base separation6.139251mm. Outer-shell clearance is not a structural mounting proof.",
+      "unresolved": [
+        "true mechanical attachment",
+        "fasteners/end anchors/cables",
+        "Bowden routing/friction",
+        "installed5V supply headroom"
+      ],
+      "next": "Preserve candidate; prioritize real cart-mouth fit and loaded body support before a new release-install revision."
+    }
+  },
+  "current_hardware_candidate": {
+    "id": "physics_v0_2_20261021_14_candidate",
+    "status": "FROZEN_NATIVE_AND_MCI_PENDING_FINITE_HANGING_RESULTS_NOT_STABLE_TOWING",
+    "model": "robots/goose_v0_2/models/physics_v0_2_20261021_14_candidate",
+    "manifest_sha256": "992f1fd56774635443fa1d801e195eac92b2c6a870700e57792e3d8671befba9",
+    "mass_kg": 16.869652296380703,
+    "delta_vs13_g": 0.253894697847,
+    "geometry_handoff": "experiments/goose_v0_2/bill_lower_local_patch_043/c01/module_handoff_core_revision_002.json",
+    "geometry_handoff_sha256": "7b97009b1b84431d0a62ff18b96f005ff6d9c74dada7230704cc2a114e5a4ec8",
+    "core002_sha256": "32c6afc80b49f2a55f1f599ef8f37c87794d492efe1dbc5e2aeef460d4180238",
+    "native_closed": "robots/goose_v0_2/cad/exports/full_native_head_integration_026/r11_lower043_review/full_head_closed.step",
+    "native_open": "robots/goose_v0_2/cad/exports/full_native_head_integration_026/r11_lower043_review/full_head_open.step",
+    "native_137parts": true,
+    "original_bill_exterior_TPU_axes_contacts_caps_retained": true,
+    "actual_source_4p4Nm_cap": true,
+    "native14_comparison_owner_viewed": true,
+    "whole_backsteps_qualified": 0,
+    "whole_transport_passed": false,
+    "stable_hanging_5s_max_kg": null,
+    "default04_unchanged": true,
+    "manufacturing_release": false
+  },
+  "user_flagged_geometry": {
+    "image": "robots/goose_v0_2/images/grip_loadpath_redesign_017/owner_mark_actual_skin_local_001.png",
+    "xy_percent": [
+      34.9,
+      54.6
+    ],
+    "image_dimensions": [
+      1600,
+      1200
+    ],
+    "xy_pixel": [
+      558.4,
+      655.2
+    ],
+    "status": "REAL_INTERNAL_LIPS_NO_CLOSED_STATE_CLASH_FOUND_TOLERANCE_AND_FULL_ROM_UNQUALIFIED",
+    "owner": "root; A geometry, E independent actual envelope",
+    "report": "robots/goose_v0_2/evidence/grip_loadpath_redesign_017/owner_mark_frame_skin_001.json",
+    "report_sha256": "7da3508ec01152748219b55d88d22b618ed41cfd8635b576c6a3356938482df6",
+    "local_headskin_transverse_clearance_lower_bound_mm": 6.0276,
+    "minimum_known_nominal_rotating_spacer_clearance_mm": 0.198515,
+    "native_modified": false
+  },
+  "mci_integration_input": {
+    "path": "experiments/goose_v0_2/grip_loadpath_redesign_017/c03_module_r09/mass_patch.json",
+    "sha256": "bd7002c7a2b3ce58002a850bdae87aa5c7ad2f173643d2ce7f9956bac014415d",
+    "mass_kg": 16.760468546099943,
+    "status": "R09_DIAGNOSTIC_INPUT_NOT_APPLIED_TO_DEFAULT04_OR_SOURCE08"
+  },
+  "finite_018_diagnostics": {
+    "scope": "New explicitly bounded experiments; historical017 window remains closed. No training/GPU; original08 immutable.",
+    "normal_pin_stop": {
+      "raw": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/mouth_bench_018/normal_operation_prepare_004",
+      "physics_dt_s": [
+        0.00025,
+        0.000125
+      ],
+      "stop_position_um": [
+        6.607,
+        5.618
+      ],
+      "steady_zero_tension_reaction_N": 0.047568483,
+      "path_timing_convergence": "FAIL:30ms zero-tension timing difference vs1ms requirement, max path difference40.533um; not dynamic insertion qualification"
+    },
+    "insertion_002": {
+      "raw": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/mouth_bench_018/head_feedback_insertion_002",
+      "time_s": 2.40675,
+      "reason": "actual input speed guard>1rad/s",
+      "loaded_N": 0,
+      "pin_q_mm": [
+        3.447245,
+        3.447245
+      ],
+      "actual_hole_error_mm": 12.2788,
+      "contact_count": 0,
+      "locked": false,
+      "interpretation": "Successful physical retraction only, no holding failure or success"
+    },
+    "PI_control": {
+      "status": "ZERO_STEP_PREPARED_NOT_RUN",
+      "source": "/home/ethan/Projects/TempWorktree/Sai_Lab/goose_v02_hardware_validation/experiments/goose_v0_2/hardware_validation/analysis/gpt_loop_016/control_source/head_feedback_pi_018.py",
+      "reason_not_run": "Prioritize direct mechanical holding diagnosis rather than control tuning."
+    },
+    "manual_closed_hold": {
+      "state": "FINITE_NUMERIC_RETENTION_OBSERVED_NATIVE_CONTACT_RECONCILIATION_PENDING",
+      "purpose": "Decide whether to retain real U/gate/pin holding architecture, not replace hardware work with controller development.",
+      "fixture": "Fixed actual frame, original shell omitted; initial manual physical closure and rod loading explicitly disclosed. Free pins, return springs, physical stops and original beak linkage; no live state writes or pin support.",
+      "load": "Rod own weight0.5s, additional -Z known test-machine force ramp0→196.2N1s,hold2s. No rod +mg support.",
+      "budget": {
+        "CPU_processes": 1,
+        "CPU_threads_max": 4,
+        "wall_s_max": 120,
+        "sim_s_max": 5,
+        "training_updates": 0
+      },
+      "guards": {
+        "initial_insertion_hole_error_um_max": 25,
+        "loaded_hole_error_um_max": 75,
+        "loaded_hole_guard_basis": "Actual Ø4.1/Ø4 radial clearance50um+existing numerical metal penetration25um; insertion alignment gate is not a zero-play loaded bearing condition.",
+        "metal_penetration_um_max": 25,
+        "pin_stroke_mm": [
+          0,
+          3.5
+        ]
+      },
+      "whole_hardware_qualification": false,
+      "record": "robots/goose_v0_2/evidence/grip_loadpath_redesign_017/manual_closed_hold_018.json",
+      "actual_sim_time_s": 3.5,
+      "actual_added_load_N": 196.2,
+      "actual_hold_s": 2,
+      "native_contact_discrepancy_pending": true,
+      "no_retries": true
+    }
+  },
+  "shell_interference": {
+    "source": "experiments/goose_v0_2/grip_loadpath_redesign_017/mci_handoff_018/core_capture_geometry.json",
+    "rod_core_common_mm3": 403.2824665809278,
+    "rod_outer_common_mm3": 848.8366630212412,
+    "decision": "Reject full-head installation at declared bite pose; A measures minimal real-shell clearance alternative. Never use solid overlap as retention."
+  },
+  "whole_control_evidence_decision": {
+    "source_actual": "/home/ethan/ProjectBackups/2026-10-20/Sai_Lab/gpt_loop_016/loaded_staggered_torque_live_003",
+    "reviewer": "/root/backward_evidence_015, read-only actual trajectory/contact/geometry review",
+    "scope": "Historical original08 only; not r09 measured result",
+    "observations": {
+      "at_1p4s_COM_m": [
+        0.003535,
+        0.000916,
+        0.306603
+      ],
+      "at_1p4s_left_right_normal_N": [
+        86.78,
+        82.26
+      ],
+      "COM_projection_outside_either_single_foot_about_m": 0.09,
+      "true_unloaded_foot_or_support_exchange_observed": false,
+      "first_saturation": {
+        "time_s": 1.685,
+        "axis": "left_knee",
+        "cap_Nm": 6.4
+      },
+      "at_peak_tug_force_on_robot_N": [
+        38.375,
+        4.789,
+        -0.991
+      ],
+      "at_peak_tug_moment_about_COM_y_Nm": 4.69,
+      "later_failure": "COM projection exits double-support geometry, followed by neck/ankle saturation; geometric projection alone is not external-wrench ZMP qualification"
+    },
+    "controller_limits": [
+      "Support weights only redistribute feedforward; they do not prove actual unloading.",
+      "Old03/04 commands omitted explicit worldneckTCP update; actual neck was q-hold.",
+      "Old mouth force names must be generalized to all real robot-owned versus new rod contacts."
+    ],
+    "next_finite_action": "Admitted full08+r09, disclosed manual latch initial condition, true20kg cargo: first lateral load transfer with actual N/CoP/COM/cap feedback and worldneckTCP; only after true unloading swing a foot backward. No simultaneous longitudinal tug/posture escalation.",
+    "small_slip": "recover with feedback unless an actual numerical/physical safety bound is crossed",
+    "whole_goal_passed": false
+  },
+  "owner_design_reset": {
+    "time_utc": "2026-10-20T18:49:43.978620+00:00",
+    "trigger": "User explicitly rejects carved-out bill, horror-like exterior, and single-bar specialization.",
+    "owner_error": "Accepted a narrow196.2N rod-fixture endpoint as a sufficient reason to continue a design violating the main exterior/general-function constraints.",
+    "first_principles": [
+      "Preserve complete goose bill outline and normal closing/opening shape; no large notches through outer bill.",
+      "Grasp multiple representative object geometries, not only a rated rod.",
+      "Improve real internal contact/transmission/structure within measured actuator continuous torque/power and mass limits.",
+      "Pure physical grasp; no suction, attachment, object writes or inflated material/friction/torque assumptions.",
+      "Tests answer hardware decisions; no PPO or long training detour."
+    ],
+    "retained_evidence": "All historical r09 force/numerical observations retained with their original limited scope. They do not authorize this design.",
+    "halted": [
+      "full08+r09 integration execution",
+      "further rod pose/offset variants",
+      "c01 auxiliary latch actuator installation",
+      "additional r09 head force tests"
+    ],
+    "next_reviewable_deliverable": "Actual complete native bill closed/open/side baseline and source-derived internal interface constraints, followed by a selected generic internal transmission redesign.",
+    "independent_rejection_gates": [
+      "Complete actual bill closed/open/side shapes; no transverse external notch or exposed rod lock.",
+      "Continuous opposed general contact work domain; no fixed-diameter/fixed-site capture groove substitute.",
+      "Real connected transmission/load backing/release; shell not assumed steel, native and contacts consistent.",
+      "Force/mass/capability evidence appropriate to task, not fixed-head rod test generalized to full robot."
+    ],
+    "source_basis": [
+      "scripts/cad/build_goose_bill_shells.py",
+      "scripts/cad/build_goose_tip_grip_candidate.py:27",
+      "scripts/cad/goose_grip_loadpath_redesign_017.py"
+    ]
+  },
+  "whole_021_status": {
+    "index": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full08_r09_integration_021/integration_index_021.json",
+    "physics_steps": 0,
+    "source_default_overwrite": false,
+    "status": "STOPPED_WITH_C03_DESIGN_WITHDRAWAL",
+    "retained_failures": [
+      "center manual IK upper shell versus central shaft4.491mm proxy overlap",
+      "single35mm eccentric IK upperfront versus yoke12.794mm and bar versus shell2.576mm/core0.575mm overlap"
+    ],
+    "no_pose_search_or_new_step_authorized": true
+  },
+  "original_transmission_decision": {
+    "source_paper": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/intact_bill_rebaseline_022/transmission_paper_001/source_transmission_calculation.json",
+    "sha256": "0cd12d41cdae51234b1a8871a5a405e91381dfe23cfc768fdda357d1cab300b2",
+    "scope": "Source-end geometry/statics only, no simulation or new CAD capability proved.",
+    "original_ratio": 1,
+    "actual_input_cap_Nm": 4.4,
+    "at60mm_ideal_parallel_total_friction_N": 95.33333333333334,
+    "mu_declared_not_measured": 0.65,
+    "candidate_rin6_rout12": "NOT_ADOPTED: does not remove geometric tip-directed component, carrier/bearing/inputROM unqualified; nominal698 reaction1002N > sourceC0 910N.",
+    "candidate_coaxial_reducer": "NOT_ADOPTED: no real selected component and no certified native space.",
+    "current_hardware_decision": "One bounded internal contact-direction candidate first, retain full outer bill and source cap. Higher clamp force only after a real metal load path and generic stable contact are demonstrated."
+  },
+  "contact_direction_evidence": {
+    "source": "/home/ethan/ProjectBackups/2026-10-20/Sai_Lab/gpt_loop_016/loaded_pregrasp_live_001/independent_direction_mechanism_022.json",
+    "reviewer": "/root/backward_evidence_015",
+    "original_fulltorque_actual_window_s": [
+      3.4,
+      4.4
+    ],
+    "original_normal_tip_N": 8.173,
+    "original_actual_friction_inward_N": 6.562,
+    "original_net_tip_N": 1.611,
+    "material_tip_slip_mm_s_approx": [
+      1.9,
+      2.1
+    ],
+    "important_limits": [
+      "Actual mobilized force/finite creep, not the Coulomb upper bound.",
+      "Working angle~8deg below atan(.65); does not prove original mouth mathematically incapable.",
+      "Measured contact normals agree with true flat TPU in reviewed window; not a demonstrated sign error.",
+      "An adaptive pad must satisfy actual pivot/spring/stop/contact equilibrium, not just look parallel."
+    ]
+  },
+  "original08_balance_subtask": {
+    "raw": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/intact08_unloaded_balance_022/run_001",
+    "agent_owned_PTY": 72184,
+    "source": "unchanged08 complete bill/canonical driver, not C03/r09",
+    "scope": "Empty robot, 20kg cargo cart parked and ungrasped; does not count as loaded towing.",
+    "resource_limit": {
+      "cpu_processes": 1,
+      "threads_max": 4,
+      "wall_s": 600,
+      "sim_s": 10,
+      "training_updates": 0
+    },
+    "execution": "Single continuous env, GPT finite actual-feedback action segments, original caps/μ/mass, no live state writes or added force",
+    "acceptance": "Actual unloading/footstep/support change and then movement; support reference weights are not actual support.",
+    "new_mouth_simulation_authorized": false,
+    "run001": {
+      "raw": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/intact08_unloaded_balance_022/run_001",
+      "status": "TERMINATED_PHYSICAL_FALL_NO_RESTART",
+      "sim_s": 1.8,
+      "supported_backward_steps": 0,
+      "reason": "Unreachable root-foot reference with near-extended right knee; FF unsupported moment allocation also independently identified.",
+      "video": "intact08_continuous_support_transfer_failure.mp4",
+      "physics_and_caps_unchanged": true,
+      "hidden_forces_zero": true
+    },
+    "run002": {
+      "raw": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/intact08_unloaded_balance_022/run_002",
+      "agent_owned_PTY": 94525,
+      "status": "TERMINATED_DIAGNOSTIC_CROUCH_AND_LATERAL_TRANSFER_NO_STEP",
+      "changes": "Controller scratch full-interpolation IK gate, then symmetric incremental20mm crouch before lateral shift; no hardware parameter changes.",
+      "observed_at_s": 1.0,
+      "left_right_normal_N": [
+        71.83,
+        86.18
+      ],
+      "roll_pitch_yaw_deg": [
+        -0.006,
+        -0.914,
+        0.057
+      ],
+      "cap_saturation_observed": false,
+      "observation_scope": "Reachable crouch/lateral double-support only; no supported backward step or towing qualification.",
+      "same_resource_limits": true,
+      "sim_s": 3.8
+    },
+    "FF_evidence": {
+      "scope": "Independent same-state static force projection, no physics",
+      "actual_at_p5_s_nom618_382_rollFF_Nm": [
+        1.866,
+        1.726
+      ],
+      "hypothetical_70_30_at_p4_s_rollFF_Nm": [
+        3.85,
+        3.722
+      ],
+      "original_roll_cap_Nm": 2,
+      "hypothetical_right_CoP_mm": [
+        -47.34,
+        -200.69
+      ],
+      "right_sole_xy_bbox_mm": [
+        [
+          -29.81,
+          -161.01
+        ],
+        [
+          126.66,
+          -88.32
+        ]
+      ],
+      "decision": "Do not treat nominalsupport as attainable. Require current-state N/CoP/contact/cap feasibility before further action; never raisecaps/μ to carry infeasible reference."
+    },
+    "run003": {
+      "raw": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/intact08_unloaded_balance_022/run_003",
+      "status": "TERMINATED_UNSTABLE_ABORT_NOT_FALL_OR_STABLE_STOP",
+      "sim_s": 5.4,
+      "wall_s": 549.9,
+      "actual_supported_backward_steps": 0,
+      "source_params_unchanged": true,
+      "hidden_forces_zero": true,
+      "meaning": "Reachable crouch/lateral transfer and improvedMy allocation; posterior body reference caused unbraked backward drift. Static CoP infeasibility is not identical to measured contact CoP or proof of no recovery.",
+      "video": "intact08_run003_continuous_transfer_diagnostic.mp4"
+    },
+    "My_control_revision": {
+      "source": "gpt_execution_bridge_022_v3.py",
+      "change": "Only redistribute world foot pitch moments proportional to predictedpositiveFz; feetforce/totalMy/floatingbase equilibrium preserved.",
+      "independent_static_readback": "run_002/independent_My_proportional_static_audit.json",
+      "not_proved": "All friction/Mx/dynamic feasibility and walking remain unproved."
+    },
+    "run004_authorized": {
+      "state": "TERMINATED_ONE_ACTIVE_STEP_ATTEMPT_RECOVERED_NO_BACKSTEP",
+      "resource_limits": {
+        "cpu_processes": 1,
+        "threads_max": 4,
+        "wall_s": 600,
+        "sim_s": 10,
+        "training_updates": 0
+      },
+      "method": "Original08/v3/IKgate; no savedstate. First active rightfoot unload/back30mm/in20mm with reachable crouch and stance adjustment, plus bounded actual recovery.",
+      "new_goal_or_training": false,
+      "no_physics_cap_mass_mu_change": true,
+      "scope": "First true step is only a critical-path subtask; full>=.5m/.1mps/stop20kg target unchanged."
+    },
+    "recovery_gate_correction": "Do not require swing foot alreadyN0 before active physical unloading. Predicted static CoP small excess rejects that staticreference, not all dynamic recovery; allow finite original-cap body braking/step/recovery with true contact feedback and no assist. Real irrecoverable nonfoot support/fall/numerical or FK failure/wallbudget remain stops.",
+    "run004": {
+      "raw": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/intact08_unloaded_balance_022/run_004",
+      "receipt": "stop_receipt_022.json",
+      "status": "TERMINATED_ONE_ACTIVE_STEP_ATTEMPT_RECOVERED_NO_BACKSTEP",
+      "sim_s": 2.88,
+      "wall_s": 271.928,
+      "actual_supported_backward_steps": 0,
+      "right_unloaded_continuous_s": 0.055,
+      "right_sole_max_clearance_mm": 3.926,
+      "right_foot_at_2p04_s_backward_mm": 1.323,
+      "final_right_foot_forward_mm": 7.861,
+      "left_ankle_roll_peak_request_Nm": 21.004,
+      "left_ankle_roll_cap_Nm": 2,
+      "left_ankle_roll_peak_components_Nm": {
+        "FF": 18.511,
+        "PD": 2.493
+      },
+      "right_hip_pitch_peak_request_Nm": -18.43,
+      "right_hip_pitch_cap_Nm": 6.4,
+      "right_hip_pitch_peak_components_Nm": {
+        "FF": -0.54,
+        "PD": -17.89
+      },
+      "recovery": "Physical early landing and actual-reference capture restored double support; no fall/nonfoot support.",
+      "final_left_right_normal_N": [
+        100.171772576,
+        64.3943506676
+      ],
+      "final_COM_velocity_m_s": [
+        0.0028469033,
+        0.004884635,
+        0.0015870408
+      ],
+      "source_unchanged": true,
+      "hidden_forces_zero": true,
+      "warnings_zero": true,
+      "video": "intact08_run004_continuous_transfer_diagnostic.mp4",
+      "task_pass": false,
+      "not_proved": "No effective backstep, no 3s stopping qualification, no grasped20kg cart."
+    },
+    "next": "No automatic new walking env; fixed-foot static solution absent. Preserve all failures, complete actual mouth/load-path candidate and finite hardware comparison. Whole20kg/0.5m/0.1mps/3s target remains unmet.",
+    "same_state_005": {
+      "raw": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/intact08_unloaded_balance_022/same_state_diagnosis_005",
+      "physics_steps": 0,
+      "single_support_at_2p020_s": {
+        "actual_COM_y_mm": 9.8625,
+        "left_sole_y_mm": 119.2597,
+        "COM_minus_left_sole_y_mm": -109.397,
+        "W_N": 164.106,
+        "required_static_Mx_Nm": -17.9527,
+        "left_ankle_roll_FF_Nm": 18.5114,
+        "conclusion": "FF coordinates/sign are consistent; commanded single-support on a COM still between feet is infeasible, not all body postures require18Nm."
+      },
+      "swing_hip_pitch_at_2p005_s": {
+        "q_ref_minus_actual_rad": -0.175218,
+        "P_Nm": -17.52185,
+        "D_Nm": -0.36793,
+        "conclusion": "Position tracking error dominates; former30mm/.14s quintic requested peak .402m/s."
+      },
+      "fixed_negative_roll_path": "Rejected: greater lateral target drives right knee to straight branch / IK error, then left knee beyond source cap.",
+      "next": "One bounded constrained static posture IK only; no extra physics, training or automatic gait search."
+    },
+    "static_pose_006": {
+      "state": "BOUNDED_LOCAL_CONSTRAINT_SOLVE_NO_FEASIBLE_POSE_FOUND",
+      "raw": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/intact08_unloaded_balance_022/constrained_preparation_006_final/result.json",
+      "physics_steps": 0,
+      "not_proof_of_global_infeasibility": true,
+      "final_candidate_left_hip_roll_knee_ankle_roll_Nm": [
+        9.628,
+        8.053,
+        2.635
+      ],
+      "original_corresponding_caps_Nm": [
+        6.4,
+        6.4,
+        2.0
+      ],
+      "final_foot_position_error_mm": [
+        2.289,
+        2.295
+      ],
+      "final_foot_angle_error_deg": [
+        1.338,
+        8.024
+      ],
+      "decision": "Not executable. No new walking trial under these references. Runtime expert temporarily prepares bounded hardware comparison; whole loaded walking goal remains open."
+    }
+  },
+  "hardware_contact_candidate_status": {
+    "c02": "REJECTED_AS_FIX: contactX193..211 does not overlap old actual226..237; spring anchor/axial retention incomplete. Space concept retained.",
+    "c03": "NOT_ADOPTED_AS_GENERAL_FIX: actual old4.4Nm contact line offset3.86..5.79mm cannot be balanced by tiny return spring/available friction; freeplate may return to stop. Full geometry/source retained; not entered physics.",
+    "independent_force_limits": "Pressure center necessary bound only, not stable equilibrium proof. ±.18rad does not cover fulljaw.55. No specific-diameter capture slot.",
+    "constrained_parallel_contact": "NOT_ADOPTED_THIS_ROUND: two bounded layouts fail complete native assembly; no third wrap route. Continuous original workface retained; compare actual force/loadpath improvement first."
+  },
+  "hardware_architecture_decision": {
+    "basis": "Independent actual contact-frame moment calculation rejects free hinge as general original-contact fix.",
+    "proposal": "Original rotating continuous workfaces with real variable-gain crank-rocker drive; no separate parallel contact-pad mechanism adopted",
+    "paper_verified_only": {
+      "DOF": 1,
+      "link_length_mm": 76.249656,
+      "q_range_rad": [
+        0,
+        0.55
+      ],
+      "theoretical_max_opening_mm": 33.932,
+      "tie_axial_force_for_N60_e5mm_d6to8_N_range": [
+        39.7,
+        79.0
+      ],
+      "ideal_vertical_face_N_at_input4p4Nm_range": [
+        61.1,
+        91.2
+      ]
+    },
+    "required_before_adoption": [
+      "actual metal fixed anchor clear of original shaft/bearing/frame",
+      "all real joints/axial retention and branch stops",
+      "outer intact bill and object-space full-cycle clearance",
+      "metal load path/compression buckling/fasteners/true mass",
+      "continuous generic opposed workface and real normal release"
+    ],
+    "not_allowed": [
+      "pad orientation weld without actual mechanism",
+      "object binding or pose writes",
+      "mouth external cuts",
+      "special rated-rod capture",
+      "original torque/mu inflation"
+    ],
+    "owner": "root; A nativefit, E independent kinematics/force",
+    "central_d6_native_failures_mm3": {
+      "straight_tie_upper_TPU": 11.452,
+      "lower_routed_link_lower_shell": 622.514,
+      "lower_routed_link_backbone": 20.854,
+      "central_pad_P2_link_backbone": 18.81
+    },
+    "next": "Complete one bounded real r05 section/clearance repair and same-version full-head audit, then finite fixed-head hardware comparison",
+    "retained_force_gap": {
+      "scope": "Fixed-head20kg vertical suspension along parallel face normal, not wheeled cart pullout.",
+      "required_load_N": 196.2,
+      "q0p14_to_0p16_original4p4_ideal_normal_N": [
+        64.9,
+        65.59
+      ],
+      "required_output_Nm": [
+        13.301,
+        13.161
+      ],
+      "eta0p85_input_Nm_sensitivity": [
+        15.648,
+        15.484
+      ],
+      "warning": "eta.85 is only a paper sensitivity, not frozen driver modification. Preload/dynamics/strength add requirements. Parallel face alone cannot meet target."
+    },
+    "selected_priority": "Preserve complete original rotating bill and continuous general contact face; actual variable-gain drive plus necessary internal metal carrier/backbone and shaft/bearing reinforcement.",
+    "explicit_tradeoff": "Additional real reduction changes input travel and closing/opening speed. Do not retain old .55rad input ROM while claiming extra mechanical gain; original08 immutable.",
+    "active_parallel_work": {
+      "hardware_design": "E=/root/backward_evidence_015: one bounded higher-preload real crank-rocker source/native fit; intact bill and workface, same motor cap",
+      "independent_review": "A=/root/backward_control_015: new actual load envelope/X226..240/shaft/key/pin and native fit, no new physics;027 query closed",
+      "integration_and_bench": "F=/root/backward_runtime_015: unique native/MCI merge and bounded feedback macro zero-step preparation; no new physical run without concrete candidate admission",
+      "owner": "Adopt only actual hardware improvement with intact general mouth, monitor whole-goal gap; no unchanged repeat to obtain target duration",
+      "long_training": "PROHIBITED_THIS_ROUND"
+    },
+    "two_stage_gear_envelope_decision": {
+      "state": "REJECTED_NATIVE_HEAD_ENVELOPE_AND_PRELIMINARY_STRENGTH",
+      "scope": "Single .8module/20-40tooth two-stage concept, no full tooth manufacturing CAD or physical model.",
+      "actual_intermediate_axis_native_xz_mm": [
+        152.910477,
+        598.928992
+      ],
+      "axial_stage_ranges_mm": [
+        [
+          33,
+          37
+        ],
+        [
+          38,
+          42
+        ]
+      ],
+      "reason": "First stage outer radius enters native headskin; output root radius extends beyond intact original bill/head outer envelope before any new supports/covers.",
+      "raw_load_case_input_Nm": 4.4,
+      "stage_tooth_resultant_N": [
+        585.3,
+        1170.6
+      ],
+      "preliminary_Lewis_root_MPa": [
+        559,
+        1117
+      ],
+      "not_a_torque_upgrade": true,
+      "no_source_modified": true
+    },
+    "drive_next": "One bounded real dimensional revision to improve working-angle preload reserve; no new architecture/gait/controller search.",
+    "constrained_contact_architecture_final_decision": {
+      "status": "NOT_ADOPTED_THIS_ROUND",
+      "central_route": "Native shell/backbone interference and weak local section.",
+      "side_route": "Five representative shell poses clear, but hits actual8mm shaft; original backbone replacement/joint retention/offset-plane bending not closed.",
+      "reason": "Original~8deg normal lies inside declared mu.65 cone; observed finite creep does not prove a separate parallel contact mechanism is necessary. Prioritize real force/load-path improvement and same-condition comparison.",
+      "evidence": "experiments/goose_v0_2/constrained_pad_fourbar_023/c02_side/bounded_fit_result.json",
+      "original_failed_V3_rib_reused": false
+    },
+    "new_variable_drive": {
+      "status": "FIVE_POSE_NATIVE_FIT_AFTER_ONE_AXIAL_CORRECTION_LOAD_PATH_INCOMPLETE",
+      "r_input_mm": 6.45,
+      "r_output_mm": 22,
+      "coupler_mm": 25,
+      "output_closed_phase_rad": 2.15,
+      "q_jaw_range_rad": [
+        0,
+        0.55
+      ],
+      "gain_at_jaw_0p14_0p15_0p16": [
+        3.6797,
+        3.6462,
+        3.61463
+      ],
+      "input_XZ_theta_rad": [
+        -2.67713,
+        -0.588719
+      ],
+      "input_travel_rad": 2.08841,
+      "minimum_input_output_transmission_angle_deg": [
+        35.04,
+        48.31
+      ],
+      "q0p55_sample_headskin_y_inner_clearance_mm": 0.49867,
+      "clearance_scope": "Native five-pose Common and sampled inner skin; STL chord .06mm; not exact shortest distance/full sweep or tolerance release.",
+      "native_drive_estimated_net_mass_delta_g": 22.75,
+      "old_input_axis_8mm_shaft_assumption": "WITHDRAWN: actualA is a solid motor flange; source8mm D shaft is outputB.",
+      "original_source_unchanged": true,
+      "physics_admitted": false
+    },
+    "compact_support_candidate": {
+      "status": "ACTUAL_R04_NATIVE_SUPPORT_MERGED; INDEPENDENT_COMBINED_SHAFT_AND_FULL_ASSEMBLY_AUDIT_PENDING",
+      "selected_candidate": "SKF NK12/12, no inner ring; true12mm shaft/journals, separate axial retention",
+      "bearing_envelope_Fw_D_B_mm": [
+        12,
+        19,
+        12
+      ],
+      "SKF_basic_static_load_rating_N": 8150,
+      "catalog": "https://cdn.skfmediahub.skf.com/api/public/0901d196807026e8/pdf_preview_medium/0901d196807026e8_pdf_preview_medium.pdf",
+      "shaft_raceway_requirement": "58..64HRC, Ra<=.2um; actual material/core strength/heat treatment/grinding verification required",
+      "design_reference": "https://www.skf.com/binaries/pub12/Images/0901d196803e7d9e-Catalogue---Needle-roller-bearings-06003-EN_tcm_12-271146.pdf",
+      "bearing_rating_not_assembly_qualification": true
+    },
+    "new_variable_drive_final_source": {
+      "candidate_id": "variable_gain_drive_024_double_d12_hub7_composite_bush",
+      "path": "experiments/goose_v0_2/variable_gain_drive_024/double_d12_hub7_composite_bush/module_handoff.json",
+      "sha256": "981f7d83b6a577e092ebf47884b4064ac5af6cf9a01bc67431c29a771518498f",
+      "shared_interface_id": "o160_z576_dd12_flat5_hub7_frontneedle15_27",
+      "status": "MERGED_R04_NATIVE_ONLY_PENDING_ACTUAL_SECTION_AND_INTERFERENCE_REPAIR",
+      "body_mci_parts": 15,
+      "mass_kg": 0.05509526329655266,
+      "whole_head_not_yet_merged": false,
+      "physics_admitted": false,
+      "full_head_r04": "experiments/goose_v0_2/full_native_head_integration_026/delivery_receipt_r04.json"
+    },
+    "loadpath_current_status": {
+      "local_four_part_candidate_net_delta_g": 8.716,
+      "upper_lower_original_shell_TPU_unchanged": true,
+      "selected_196N_source_contact_x_mm": [
+        226,
+        237
+      ],
+      "tip_258_full_196N_not_qualified": true,
+      "final_keyed_root": "Actual wide integral U fork and through DD12 bore merged; this is internal structural support, not withdrawn object-capture U latch",
+      "force_cases": "maxdrive blocking <=26.13684Nm and196.2N suspension(15.1074Nm max atq0 workx237) separate; no double-counting reaction as41.244Nm mandatory load.",
+      "r04_actual_full_force_screen": "Not passed: old196N-only longitudinal table does not cover actual new-drive clamping force; E independently recomputed actual sections and full force envelope"
+    },
+    "integration_owner": "F unique full-head/MCI/runtime integrator; A independent reviewer; E designer, not own approver; Root owner.",
+    "preload_revision_001": {
+      "status": "SINGLE_PLATE_ROUTE_REJECTED_STRENGTH_SPACE_CONFLICT__DOUBLE_SUPPORT_PRECHECK_ONLY",
+      "r_input_mm": 7.72963,
+      "r_output_mm": 29.87029,
+      "coupler_mm": 15.0,
+      "phase_rad": 2.45307645,
+      "work_q_range_rad": [
+        0.1,
+        0.2
+      ],
+      "work_gain_range": [
+        4.527,
+        4.694
+      ],
+      "full_range_gain_max": 6.0,
+      "pin_peak_N_estimated": 949.0,
+      "input_travel_rad_estimated": 2.349,
+      "purpose": "Raise actual upper preload reserve at20kg without modifying exterior/workfaces, contact friction, motor capability or hidden object support; real native space and structural audit required.",
+      "output_arm_repair": {
+        "width_mm": 16,
+        "thickness_mm": 2.5,
+        "five_sample_native_fit": "ZERO_TARGETED_COMMON",
+        "c02_drive_mass_kg": 0.0576067,
+        "c02_delta_vs_r05_g": 2.51145,
+        "weakest_design_screen_MPa": 1119.64,
+        "conditional_H900_min_yield_MPa": 1170,
+        "not_manufacturing_or_fatigue_qualification": true
+      },
+      "input_M8_decision": {
+        "status": "REJECTED_FOR_FINITE_BENCH_ADMISSION",
+        "real_major_to_M3_net_web_mm": 0.188444,
+        "nearest_hole_direction_load_N": 733.47,
+        "two_load_local_tear_screen_VM_MPa": 1498,
+        "conditional_yield_MPa": 1170,
+        "next": "Same actual flange with integral6mm shoulder pin removes tap hole and separate stud; one c03 source/native fit/real root and axial retention review before merge.",
+        "scope": "Conservative actual load-line screen, not proof whole plate necessarily fractures."
+      },
+      "c03_independent_rejection": {
+        "axial_pin_arm_offset_mm": 3.25,
+        "q_rad": 0.01575,
+        "r_section_mm": 9,
+        "strong_axis_section_Z_mm3": 106.6667,
+        "weak_axis_section_Z_mm3": 16.6667,
+        "radial_force_N": 784.61,
+        "tangential_force_N": 522.98,
+        "strong_moment_Nmm": 10914.51,
+        "weak_moment_Nmm": 2549.99,
+        "two_load_Kt3_corner_normal_MPa": 1649.63,
+        "conditional_yield_MPa": 1170,
+        "torsion_and_direct_shear_not_yet_included_in_rejection_value": true,
+        "decision": "No c03/F build or actual window; input integral pin fixes M8 hole risk only, not this arm failure."
+      },
+      "c04_authorized_scope": "One complete3D-informed XZ width/root correction<=28mm, originalY2.5/axes/full outer skin/continuous TPU/input cap unchanged; one native candidate then independent audit. Stop this route if strength/space still infeasible.",
+      "c04_result": {
+        "status": "REJECTED_ACTUAL_ROOT_3D_SCREEN",
+        "E_conservative_VM_MPa": 1705.6,
+        "A_signed_actual_section_VM_MPa": 1574.03,
+        "conditional_min_yield_MPa": 1170,
+        "independent_verdict": "experiments/goose_v0_2/variable_gain_drive_028/independent_review_c01/independent_final_verdict.json",
+        "verdict_sha256": "f59d1b9d32e8094003f81c0e0b6851a325046d5f3cf1a0fc58b3d66a5cfc130a"
+      },
+      "c05_result": {
+        "status": "REJECTED_ACTUAL_DISTAL_PIN_INTERFERENCE",
+        "root_3d_screen_max_VM_MPa": 1047.99,
+        "drive_mass_kg": 0.06829891,
+        "input_pin_vs_output_arm_Common_q0p30_mm3": 6.196858,
+        "input_pin_vs_output_arm_Common_q0p55_mm3": 14.34385,
+        "intersection_Y_mm": [
+          31.25,
+          33.75
+        ],
+        "cause": "Distal28mm arm abdomen vs input6mm pin, not rear shoulder vs input flange. Short15mm pin separation permits width<=~23.94mm whereas the chosen conservative torsion screen needs more.",
+        "physics_steps": 0,
+        "decision": "No clipping or further single-plate width variants; preserve useful3D root source but change actual radial support/load center."
+      }
+    },
+    "double_support_output_precheck": {
+      "status": "ACTUAL_C02_CONDITIONALLY_REVIEWED_FOR_FINITE025_ONLY",
+      "inner_arm_Y_mm": [
+        31.25,
+        33.75
+      ],
+      "coupler_Y_mm": [
+        34,
+        36
+      ],
+      "outer_arm_Y_mm": [
+        36.25,
+        38.55
+      ],
+      "initial_arm_width_mm": [
+        16,
+        18
+      ],
+      "pin": "Independent6mm free pin with actual two radial support bores and recessed axial retention; not original cantilever pin plus nonengaging loose bore.",
+      "requirements": [
+        "Real root bridge to existing12DDhub",
+        "Actual reaction centers and bearing lengths/clearance manufacture assumptions",
+        "Full pin bending/shear and both arm/root3D load path",
+        "Native fullheadskin/inputpin/frame/shafthead fit before adoption",
+        "True mass/COM/full inertia union; original exterior/TPU/caps unchanged"
+      ],
+      "resource_boundary": "E designer+A independent15min necessary-condition/space precheck, one concrete stack only; no physics/training.",
+      "actual_arm_width_mm": 16,
+      "recess_required_mm": 0.9,
+      "retainer": "Custom two-piece headed6mm freepin with M3x.5 shallow slotted thinhead; true.2 total float, not DIN471",
+      "actual_radial_lands_Y_mm": [
+        [
+          32.15,
+          33.75
+        ],
+        [
+          36.25,
+          37.65
+        ]
+      ],
+      "force_centroid_domain_Y_mm": [
+        34.8,
+        35.2
+      ],
+      "reaction_share_max_over_full_lands": 0.7439,
+      "single_arm_screen_fraction": 0.75,
+      "conditional_rectangular_arm_VM_MPa": [
+        1043.354,
+        1134.081
+      ],
+      "actual_root_and_pocket_not_yet_passed": false,
+      "end_cap_correction": "Only outputC round cap radius8->7.5 after exact q.55 surface sampling: skin minimum−.020704mm becomes+.170460mm. Originalw16arm and allaxes/Y/bill/headskin unchanged. Real holeedge/root/source audit required.",
+      "frozen_source_available": true,
+      "physics_steps": 0,
+      "fork_c01_source": {
+        "path": "experiments/goose_v0_2/variable_gain_drive_029/fork_c01/module_handoff.json",
+        "sha256": "cbf4b2c3b69f857b9a5b56351bf4edb2c9fc9fdaabc193f2eb8a2db173ce5cbb"
+      },
+      "fork_c01_actual_3d_screen": {
+        "root_and_main_arms": "Finite conservative sections within conditional H900 yield",
+        "local_pocket_inner_outer_VM_MPa": [
+          1448.8,
+          1615.6
+        ],
+        "conditional_yield_MPa": 1170,
+        "scope": "Conservative actual-floor local torsion bound, not a fracture observation. No physical execution admitted.",
+        "physics_steps": 0
+      },
+      "fork_c02_repair": {
+        "status": "ACTUAL_SOURCE_FROZEN_FULL_HEAD_ZERO_STEP_A_REVIEW_PENDING",
+        "retention": "Custom two-piece headed6mm free pin andM3x.5 retaining screw; not stock/DIN471",
+        "head_OD_thickness_mm": [
+          8,
+          0.8
+        ],
+        "real_driver_slot_width_depth_mm": [
+          0.6,
+          0.2
+        ],
+        "counterbore_OD_depth_mm": [
+          8.5,
+          0.9
+        ],
+        "radial_lands_Y_mm": [
+          [
+            32.15,
+            33.75
+          ],
+          [
+            36.25,
+            37.65
+          ]
+        ],
+        "total_axial_float_mm": 0.2,
+        "native_five_pose_and_float_extreme_check_required": true,
+        "bilateral_load_share_screen": 0.75,
+        "small_motion_allowed": true,
+        "external_bill_workfaces_unchanged": true,
+        "physics_steps": 0,
+        "source": {
+          "path": "experiments/goose_v0_2/variable_gain_drive_029/fork_c02_headed_pin/module_handoff.json",
+          "sha256": "95db4f2e5d622d37817e6ba4b0e7489ca4bc87560d9d512c8a32b84579513e0d"
+        },
+        "drive_mass_kg": 0.06573958566284198,
+        "delta_vs_r05_drive_kg": 0.010644322366289309
+      },
+      "independent_verdict": {
+        "path": "experiments/goose_v0_2/variable_gain_drive_029/independent_c02_verdict.json",
+        "sha256": "64331d7f9c450633a13ee16169524e89e5dd6360d4996e1ce18f6f65b93057b7"
+      }
+    },
+    "custom_bush_basis": {
+      "official_source": "https://cdn.skfmediahub.skf.com/api/public/0901d19680229dfc/pdf_preview_medium/0901d19680229dfc_pdf_preview_medium.pdf",
+      "purchase_parent": "SKF PCM060806E6x8x6mm",
+      "actual_candidate": "Custom composite sleeve/thrust-lip construction with catalog material-layer reference; not a straight trimmed stock sleeve represented as factory flanged part. Manufacturing process and real friction/life unqualified.",
+      "max_mean_pressure_MPa": 79.07494,
+      "two_load_static_screen_MPa": 158.14988,
+      "family_static_MPa": 250,
+      "family_dynamic_MPa": 80,
+      "input_max_PV_MPa_m_s": 0.312256,
+      "output_max_PV_MPa_m_s": 0.298499,
+      "single_PV_allowable_claim": false,
+      "scope": "Catalog p-v regions/consultation and unmeasured actual friction/edge pressure; no life or manufacturing qualification. Slow finite fixture screening only.",
+      "loss_readonly": {
+        "path": "experiments/goose_v0_2/variable_gain_drive_029/fork_c02_headed_pin/bush_loss_decision_readonly_001.json",
+        "sha256": "e7962cc0d1ccf1c8ea207e17ccc1c542a664ff0fc12aca52a4376d8856f68ba8",
+        "scope": "Motion-loss family sensitivity only; original.08 once; free pin spin and bareH900 hole dissipation not bounded. No static constant loss deduction or hardware qualification."
+      }
+    }
+  },
+  "physics_goal_status": "UNMET: no qualified5s hanging mass yet; fixedhead support and shortloaded COM-transfer evidence only. No>=0.5m/>=0.1mps loaded backward transport/stop pass.",
+  "withdrawn_historical_force_subresult": {
+    "candidate": "grip_loadpath_017_c03_module_r09",
+    "scope": "Bounded fixed-head manually assembled same-load hardware comparison only",
+    "actual_added_force_N": 196.2,
+    "hold_s": 2,
+    "PETG_full_load_mean_Fz_N": 0,
+    "metal_full_load_mean_Fz_N": 143.2468084534463,
+    "TPU_full_load_mean_Fz_N": 53.77375901555234,
+    "mass_delta_from_r08_kg": 0.002768472001473,
+    "record": "robots/goose_v0_2/evidence/grip_loadpath_redesign_017/full_shell_loadpath_018.json",
+    "whole_transport_passed": false,
+    "current_adoption": "WITHDRAWN_BY_USER; historical fixed-fixture observation only"
+  },
+  "finite_025_hardware_comparison": {
+    "purpose": "Decide if real intact-bill internal transmission/loadpath redesign improves actual physical retention; tests subordinate to hardware decision",
+    "baseline_source": "physics_v0_2_20261020_08_candidate immutable; fixed headframe fixture only",
+    "baseline_status": "FINEPIN_BASELINE_COMPLETED_TRUSTED_PARTIAL_LOAD_ONLY",
+    "control_source_sha256": "532d573ca687471646652b89448a876bce3e0373541a9993cc227f6b41965e02",
+    "independent_admission": "/home/ethan/Projects/TempWorktree/Sai_Lab/goose_v02_hardware_validation/experiments/goose_v0_2/hardware_validation/analysis/mouth_hardware_bench_025/compile_baseline_002/independent_baseline_admission_532d.json",
+    "independent_admission_sha256": "c3a22e1026c0f97c5bc66f0e92dfdec3aa7e47870d2af5f18e584313b81cc285",
+    "limits": {
+      "sim_s": 12,
+      "wall_s_including_waits": 600,
+      "cpu_processes": 1,
+      "max_threads": 4,
+      "gpu": 0,
+      "training_updates": 0,
+      "resets_or_automatic_new_windows": 0
+    },
+    "object_mass_kg": 20.20686300140577,
+    "object_breakdown": "20kg real-dimension testweight +0.083641762809kg rod +0.123221238597kg hangers; one free6DoF manufactured fixture assembly",
+    "table": "8kg real-slide test device, one actuator15000(qref-q)-500v+28.206863g N,totalcap±600N; no object force/constraint; source001 sag repaired only in disclosed external device",
+    "load_interpretation": "Full suspension window only on actual table reaction0 and positive object-table separation; not a rolling20kg cart result or whole-Goose lift",
+    "numerical_domain": "Original08 outer mouth proxies; conservative core25um/coat2.025mm/loop25um and finite/cap guards; domain exit is not structural failure",
+    "new_candidate_status": "R07_WINDOW003_COMPLETED_WITH_MAX_TORQUE_PRELOAD_WORKZONE_EXIT_NO_STABLE_QUALIFICATION",
+    "original_source_changed": false,
+    "PPO": false,
+    "baseline_result": {
+      "raw": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/mouth_hardware_bench_025/baseline_original08_001",
+      "steps": 46,
+      "sim_s": 0.23,
+      "max_input_torque_Nm": 0.231753,
+      "max_input_speed_rad_s": 0.095621,
+      "actual_connect_residual_um": 40.532,
+      "guard_um": 25,
+      "mouth_contact_N": 0,
+      "table_lowered": false,
+      "full_load_transferred": false,
+      "real_20kg_capability_measured": false,
+      "hardware_failure_concluded": false
+    },
+    "numerical_followup": {
+      "purpose": "Represent ideal internal metal pin closure accurately, without editing physical actuator/contact/mass parameters",
+      "owner_authorized": "E same46 recordedcontrols/initialMJB only: original, exact-constraint-diagonal flag, if needed one eq-only constantd.9999; <=.3s percase/600wall total, no capacity claim/no search",
+      "new_actual_baseline_window_authorized": false
+    },
+    "finepin_baseline_result": {
+      "raw": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/mouth_hardware_bench_025/baseline_original08_finepin_002",
+      "status": "COMPLETED_LIMITED_MATCHED_BASELINE_NO_FULL_LOAD_TRANSFER",
+      "sim_s": 3.48,
+      "physics_steps": 6960,
+      "input_torque_cap_Nm": 4.4,
+      "actual_full_cap_duration_s": 1.235,
+      "mouth_vertical_support_2p4_to_2p6_s_N": 57.1445,
+      "table_vertical_support_N": 141.08406,
+      "upper_contact_N": 0,
+      "force_balance_Z_error_N": 0.0008,
+      "mouth_tipward_Fx_N": 8.7547,
+      "table_counterfriction_Fx_N": -8.75537,
+      "table_and_object_actual_descent_mm": [
+        4.223,
+        4.221
+      ],
+      "jaw_backdriven_open": true,
+      "full_20kg_mouth_suspension": false,
+      "max_eq_error_um": 6.59,
+      "hardcore_penetration_mm": 0,
+      "max_coatproxy_penetration_mm": 0.197,
+      "warnings": 0,
+      "external_assist_forces": 0,
+      "independent_force_audit": "independent_force_audit_001.json",
+      "complete_video": "baseline025_finepin_complete_realtime.mp4",
+      "whole_transport_passed": false
+    },
+    "candidate_input": {
+      "controller_sha256": "640bc9457e7ff1e16f85f5a97aafbb254fe65852e1b9f0098cbad626583be064",
+      "candidate_config_sha256": "d1e923300dae75fec2b69c00a55dad2c0a760c8d486374f055d4c5017a2364ad",
+      "scene_sha256": "748502a6c397b8e7865b666f0d0132d21d8689f8cdb4d978b55cbe3ff087bbc7",
+      "mjb_sha256": "61355bd38000866e48831debf75c48eb3e8289f6fcf4aefde87c25292e383384",
+      "independent_admission_sha256": "35874b46e26c9476262b65f4e9f2f34c73d63d50e65f00df143aeeac076efd12"
+    },
+    "r05_first_window": {
+      "raw": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/mouth_hardware_bench_025/candidate_r05_finepin_001",
+      "sim_s": 0.286,
+      "steps": 572,
+      "stop": "physical input1.00160157rad/s > original1rad/s; overly large80mrad input reference",
+      "mouth_contact_N": 0,
+      "max_torque_Nm": 0.509664,
+      "load_transferred": false,
+      "hardware_failure_concluded": false,
+      "guard_relaxed": false
+    },
+    "r05_second_operation_window": {
+      "raw": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/mouth_hardware_bench_025/candidate_r05_finepin_002",
+      "status": "COMPLETED_WALL_BUDGET_600S_NO_RESUME",
+      "correction": "Physicalinput <=20mrad/.2s before contact, then actual-feedback existing torque mode as appropriate; no motor/mu/PD/physics/code change",
+      "same_source_and_limits": true,
+      "full_load_count_requires": [
+        "actualtableN0",
+        "positive object-table gap",
+        "real bilateral upper/lower mouth contacts"
+      ],
+      "small_recoverable_motion_allowed": true,
+      "not_a_new_training_task": true,
+      "sim_s": 7.88,
+      "physics_steps": 15760,
+      "full_table_unloaded_longest_s": 2.732,
+      "strict_bilateral_longest_s": 0.448,
+      "post6p36_mean_mouth_Fz_N": 198.1096624850915,
+      "post6p36_mean_table_force_N": [
+        0,
+        0,
+        0
+      ],
+      "post6p36_mean_upper_lower_normal_N": [
+        9.299649070948844,
+        205.56536922771326
+      ],
+      "upper_active_friction_cone_utilization": 1.0,
+      "upper_lower_mean_material_slip_mm_s": [
+        1.5302364324318178,
+        1.601721444356855
+      ],
+      "native_rod_final_X_mm": 238.299,
+      "prior_section_working_domain_X_mm": [
+        226,
+        237
+      ],
+      "max_eq_residual_um": 10.816,
+      "max_input_speed_rad_s": 0.4963,
+      "max_actual_input_torque_Nm": 4.4,
+      "complete_video": "candidate_r05_complete_realtime.mp4",
+      "video_sha256": "04f7aaf30db0bb378d51409d1856b78790f2e72c48acb1ddc6f20f2b5a0819b2",
+      "independent_audit": "independent_full_load_audit_001.json",
+      "decision": "True hardware support improvement over original57N baseline; not a robust closed-grip pass. Small motion itself is allowed; upper-pressure loss plus continuous tipward drift requires hardware preload reserve. No physical parameters changed/no repeat unchanged candidate."
+    },
+    "r07_compiled_input": {
+      "scene.xml": {
+        "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/mouth_hardware_bench_025/compile_candidate_r07_fork_c02_001/scene.xml",
+        "sha256": "3ead86dd4c8beebbf096b1178b651dd96774add256847d744a67cfea81082903"
+      },
+      "actual_scene.mjb": {
+        "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/mouth_hardware_bench_025/compile_candidate_r07_fork_c02_001/actual_scene.mjb",
+        "sha256": "752ff07a892093405d01a30a60da52d4f4427653fb331ba9d968e4f126c39319"
+      },
+      "initial_state.npz": {
+        "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/mouth_hardware_bench_025/compile_candidate_r07_fork_c02_001/initial_state.npz",
+        "sha256": "7edc7d902f1cadb983ecc3c256566ae6efd31153b9e4217bf4b46fe6bc986c93"
+      },
+      "five_q_and_identity_readback_001.json": {
+        "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/mouth_hardware_bench_025/compile_candidate_r07_fork_c02_001/five_q_and_identity_readback_001.json",
+        "sha256": "5280c1f21fc3eac836d4b6d864fb6276a32a804c7fc2d27017c2ea99947a3d4a"
+      }
+    },
+    "r07_controller": {
+      "path": "/home/ethan/Projects/TempWorktree/Sai_Lab/goose_v02_hardware_validation/experiments/goose_v0_2/hardware_validation/analysis/mouth_hardware_bench_025/control_source/mouth_bench_025_frozen_geometry_002.py",
+      "sha256": "907972b804c88d5cfc5336d6d38e640642c5cd6c0ef879eab663fda47ec72bee"
+    },
+    "r07_macro003": {
+      "path": "/home/ethan/Projects/TempWorktree/Sai_Lab/goose_v02_hardware_validation/experiments/goose_v0_2/hardware_validation/analysis/mouth_hardware_bench_025/control_source/mouth_bench_025_finite_macro_003.py",
+      "sha256": "f5512cda7962f00128a51fbf3ce30a340f9a23fec0641f70dbeaeba02112e18b"
+    },
+    "r07_window": {
+      "raw": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/mouth_hardware_bench_025/candidate_r07_fork_c02_001",
+      "authorization_sha256": "36aff1edc8e9becfdbbadaffc7a1b239ffdc34891ba47543869471c32fa8e875",
+      "macro_authorization_sha256": "bccc175eb7b86bcba667a269297d2a4a2d28b9853408085b80268626ca64cbd9",
+      "max_sim_s": 12,
+      "max_wall_s": 600,
+      "new_bush_loss": "ideal engineering necessary-condition comparison only; not physical performance qualification",
+      "all_substep_material_force_domain_postaudit_required": true,
+      "result": {
+        "sim_s": 2.56,
+        "physics_substeps": 5120,
+        "actual_input_tau_end_Nm": 0.090413,
+        "actual_input_tau_peak_Nm": 0.2136915,
+        "lower_normal_end_N": 6.81997,
+        "upper_normal_N": 0,
+        "table_support_end_N": 190.59868,
+        "table_lowered": false,
+        "full_load_transferred": false,
+        "actual_material_points_inside_XYZ": true,
+        "centroid_Y_mm": -0.798166,
+        "maximum_actual_O_transverse_Mx_Nm": 0.0125154,
+        "original_numerical_guards_failed": false,
+        "capacity_failure_concluded": false,
+        "decision": "Preserve returned operation; narrow centroid monitor needs actual force-dependent structural domain review, not a physical parameter change or blind rerun."
+      }
+    },
+    "r07_window002": {
+      "raw": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/mouth_hardware_bench_025/candidate_r07_fork_c02_002",
+      "authorization_sha256": "76e5a5cc48536ffc3f52eb19b380fec13eab878f92aeeec56699438ba06d0469",
+      "macro_authorization_sha256": "5dde1766bf3d341b3a5d46a44cdb2b1f402ab826c75df678624d2cb5341075e0",
+      "macro_sha256": "2ea9f299e3a6dca9674b39f1c3875d62f3c74b07d4c4186996f3268963b3bb4c",
+      "same_frozen_physics": true,
+      "sim_s": 4.4,
+      "physics_substeps": 8800,
+      "reported_true_offtable_longest_s": 0.5245,
+      "reported_strict_bilateral_longest_s": 0.07,
+      "input_tau_end_Nm": 3.815413,
+      "upper_lower_normal_end_N": [
+        41.21594,
+        239.17181
+      ],
+      "actual_gap_end_mm": 0.874265,
+      "max_eq_um": 12.5097,
+      "hardcore_mm": 0,
+      "coat_max_mm": 0.282615,
+      "hidden_force_max": 0,
+      "warnings": 0,
+      "returned_screen": "Lower x238.3, actual outboard3 contacts/Mx-.828271Nm; global contained6x2 bound1806MPa, pending actual local metal torsion recheck, not observed damage",
+      "new_physics_authorized_after_return": false,
+      "full_cap_hold_passed": false,
+      "complete_video": "candidate_r07_complete_diagnostic.mp4",
+      "video_sha256": "3226214c9c0982a24d7bfb09c193186f7937afc4a7f91ad3a545fe6fe1e41bb9"
+    },
+    "real_section_geometry_support": {
+      "path": "experiments/goose_v0_2/variable_gain_drive_029/actual_beam_contained_width_geometry_001.json",
+      "sha256": "3ad8c2753985fc54d70fb969bcbcd8c15d1949a137d40f2e174a8854f79739d6",
+      "scope": "All30 existing cuts checked same unchanged native; E geometry support, A independent verdict pending"
+    },
+    "r07_window003": {
+      "raw": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/mouth_hardware_bench_025/candidate_r07_fork_c02_003",
+      "authorization_sha256": "ce5fc8c18b4cf0bdcad8fb7ab3bc098b9528508463329a1614c42582a20c7fab",
+      "macro_authorization_sha256": "857bb29207873bb683e467baacb67ee6949afaf556f6e711baeee30c111dc13c",
+      "macro_sha256": "6d59518bd84fdac004a8bf7179e7e80de6a07f54b1d67bbf0a2930eaf54e2f2d",
+      "physics_controller_sha256": "907972b804c88d5cfc5336d6d38e640642c5cd6c0ef879eab663fda47ec72bee",
+      "same_frozen_physics_as_previous": true,
+      "sim_s": 6.0,
+      "physics_substeps": 12000,
+      "reported_actual4p4_duration_s": 1.485,
+      "reported_true_offtable_longest_s": 2.1245,
+      "reported_strict_bilateral_longest_s": 1.67,
+      "upper_lower_normal_end_N": [
+        64.7383,
+        262.9057
+      ],
+      "upper_tail_halfsecond_mean_N": 73.914,
+      "actual_gap_end_mm": 8.270565,
+      "rod_tipward_from_initial_mm": 5.05899,
+      "exit": "Only lower material contactX240.028942/240.016531 exceeds declaredX240; realY/Z, strength and original numerical guards did not stop it",
+      "max_eq_um": 15.5421,
+      "hardcore_mm": 0,
+      "coat_max_mm": 0.326162,
+      "warnings": 0,
+      "hidden_forces": 0,
+      "whole_body_or_3s_qualification": false,
+      "physics_stopped_no_resume": true,
+      "complete_video": "candidate_r07_complete_diagnostic.mp4",
+      "video_sha256": "5bd8988cd206556821169ad5589c1711c151a593474b8ebc207addf8add4155b",
+      "owner_visual_review": "Actual final video frame viewed; full native open/closed r07 CAD images viewed. No claim whole video watched.",
+      "final_independent_audit": {
+        "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/experiments/goose_v0_2/variable_gain_drive_029/actual_r07_window003_diagnosis_001.json",
+        "sha256": "966ad55d109335afd84b80eb9e3bb256467ec892e1bfacd2619963545f48aebf"
+      },
+      "audited_material_domain_valid_until_s": 5.9724999999994095
+    },
+    "actual_wrench_screen": {
+      "source_sha256": "3213c771395868c8b0dd7923ea36a8a24902cffe7ddd18eb6bda1fa3ab6d6d8d",
+      "table002_sha256": "e403b52dda68364dd1268156bec041d91e909d970ccdb356dde0bbd3c1e3cda6",
+      "scope": "Independent all30 real local material widths; no forces removed/averaged, source physics/geometry/yield unchanged. Old bounds and stopped windows preserved."
+    }
+  },
+  "single_support_mechanical_followup": {
+    "source": "experiments/goose_v0_2/single_support_gravity_027/gravity_readback.json",
+    "status": "READONLY_NECESSARY_CONDITION_STUDY_NO_EXECUTABLE_POSE_FOUND",
+    "scope": "005/006 scratch IK/solver states, not actual running states. Larger-body-roll FK changes necessary gravity moments but does not prove feasible trajectory.",
+    "pose_bodyroll_minus0p43_rad": {
+      "hip_roll_Nm": 6.0398,
+      "ankle_roll_Nm": -1.53,
+      "stance_ankle_q_limit_margin_rad": 0.000236,
+      "runtime_proxy_contacts_positive": true,
+      "native_contact_not_verified": false,
+      "execution_admitted": false,
+      "actual_native_left_shin_collision": true
+    },
+    "decision": "Do not declare actuator insufficiency or raise caps from restricted±.15rad and fixedfarfoot failures. Next whole-body reference needs coupled reachability/contact/real geometry check; no extra training.",
+    "native_three_pair_source": "experiments/goose_v0_2/single_support_gravity_027/native_three_pair_decision.json",
+    "native_three_pair_sha256": "612dbe0e97271f7b2ed5c3ba3debd2d762191738dad35808257a694898d780b9",
+    "native_three_pair_result": {
+      "right_shin_torso_common_mm3": 619.014,
+      "right_shin_scope": "Inherited005 scratch far-leg pose, relative-SE3 invariant under studied bodyroll",
+      "right_thigh_primary_front_common_mm3": 0,
+      "right_thigh_primary_front_gap_mm": 2.81631,
+      "right_thigh_rearcap": "UNKNOWN_BOUNDED_QUERY_STOPPED",
+      "left_shin_torso_common_mm3": 194.7504,
+      "decision": "Selected-.43rad scratch pose is not executable; no native/physics changes or global impossibility conclusion."
+    },
+    "hip_roll_reduction_readonly": {
+      "path": "experiments/goose_v0_2/intact08_lateral_transfer_029/hip_roll_reduction_readonly_001.json",
+      "sha256": "2237b118b22e3b5ad330aadb5c00481863219f58eb0af9baf8d6005861814fe9",
+      "decision": "Do not adopt existing010 2:1 candidate: actual interference and+1.14943kg, speed/inertia/efficiency trade. Does not prove original6.4Nm pose/control infeasible; no source edits."
+    }
+  },
+  "immutable_source_postbuild_check": {
+    "files": 80,
+    "changed_or_missing": [],
+    "manifest_sha256": "b52a81e9d02d86a7fddc7334326ea917b82e8a414ed1084f08c6e6548606b12c",
+    "scope": "All registered08 files checked afterr07 build; no default source edits"
+  },
+  "owner_intact_bill_decision": {
+    "rod_specific_carved_latch": "WITHDRAWN",
+    "bill_and_contact_faces": "Original complete outer bill and continuous generic workfaces retained",
+    "adopted_for_review": "Actual r07 internal transmission/support candidate only, not stable physical/manufacturing release",
+    "force_upgrade": "Mechanical ratio and real loadpath, original4.4Nm/1rad_s motor capability preserved",
+    "new_bush_unknown": "Recorded family motion sensitivity; free pin spin/bare hole and real process loss unknown",
+    "soft_friction_evidence": "FinalA all12000substeps and3zero-step force replays: last-state within-cone tangent creep predicted by -R*Ft/b within0.36percent; no real hardware capacity failure concluded. Do not carve bill or add cap to compensate.",
+    "no_new_physics_or_automatic_retry": false,
+    "whole_goal_passed": false,
+    "user_reaffirmation": "Natural complete goose bill and ability to grasp different ordinary objects are binding design constraints. Reject rod-specific carved mouths, retention slots or exposed piercing hardware. One rod grasp cannot certify generality.",
+    "current_native_source_and_output_hashes_owner_checked": true,
+    "preserved_parts": [
+      "head_integral_print_shell",
+      "upper_grip_shell",
+      "lower_grip_shell",
+      "upper_grip_cassette_pad",
+      "lower_grip_cassette_pad"
+    ],
+    "runtime_upper_lower_bill_meshes_identical_to08": true,
+    "independent_integrity_receipt": {
+      "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/thrust033_zero_review_001/r07_original_outer_integrity_readonly_001.json",
+      "sha256": "acbd0efcb7cd7577c878c10b13ed7ff4b8399d78d00023173dd53dbbae1fa378"
+    },
+    "visible_limit": "Original mouth-root open/service region still exposes some gray shafts/linkage; not fully enclosed or all-ROM/manufacturing certified.",
+    "generic_object_grip_qualified": false,
+    "pending033_external_changes_allowed": false,
+    "execution_scope": "Only one explicit finite03411preload authorization007; no automatic retry or other new physics authority",
+    "current_shortcheck": {
+      "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/candidate11_preload_prepare_002_screen034/intact_mouth_shortcheck_001.json",
+      "sha256": "ff5e07b150fbee15c4017fac7b15f0fd51ea868291bc7c4c233e24d5ac3032be"
+    },
+    "shortcheck_scope": "Five original sources and continuous workfaces retained; closed-pose ownworkface20mm extrusion not occupied by addedmetal, other-axisparts behind footprint. Not fullROM/manufacturing proof; old clicked internalframe family still partly retained, not falsely declared retired."
+  },
+  "whole_r07_integration": {
+    "candidate": "physics_v0_2_20261021_10_candidate",
+    "manifest": {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/robots/goose_v0_2/models/physics_v0_2_20261021_10_candidate/manifest.json",
+      "sha256": "6822842f2cc4f84b40227a61fcd3a4a76636f67a4079f8ca5b6f038a34931910"
+    },
+    "owner_manifest_readback": {
+      "files": 94,
+      "bad": []
+    },
+    "loaded_scene_manifest": {
+      "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/loaded_zero_step_001/manifest.json",
+      "sha256": "eee9854c8e2e28c0940af0d2900d1846e2eb59e2bbc64ca52ef7c0cf9377828e"
+    },
+    "loaded_readback": {
+      "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/loaded_zero_step_001/final_interface_readback_001.json",
+      "sha256": "5eddec2136586654c5e07741f320d03c6d9e03e112697d2c673b250bf42266b4"
+    },
+    "initialization": {
+      "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/loaded_zero_step_001/initialization_recipe.json",
+      "sha256": "c19e612ebe256694faba9d98d5439fef98e2edf0be30a34440381cb820d721b7"
+    },
+    "cart_source_audit": {
+      "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/loaded_zero_step_001/cart_source_audit_001.json",
+      "sha256": "ba78b1454d06963baade8fe03ad51d9762834e35a88122d4d3df3173ca812cf9"
+    },
+    "physics_steps": 0,
+    "robot_mass_kg": 16.86652452727422,
+    "cart_empty_kg": 7.81534244275659,
+    "free_cargo_kg": 20,
+    "root_count": 3,
+    "object_attachment": false,
+    "axis5_owner_decision": "Actual input motor coordinate replaces logical jaw axis for this candidate only. Range[-2.348770025,0],positive closes, original4.4Nm/1rad_s;17other axes unchanged. Passive jaw q/qd and map exposed,08policy incompatible.",
+    "clock": "physics0.5ms/drive5ms/reference20ms; source effective normal tau10ms preserved explicitly; internal pin2ms",
+    "qualification": "No wholebody step or travel qualification; no stable/model default replacement",
+    "independent_zero_step_audit": {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/experiments/goose_v0_2/variable_gain_drive_029/full10_loaded_zero_step_independent_audit_001.json",
+      "sha256": "8e92432bdde06526c750090d051056a27b1497d06454db31a1c159bdead0cdb2"
+    },
+    "independent_admission": "Limited<=4s cold capture/freebody standing window only, not whole-goal pass",
+    "capture_authorization": {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/experiments/goose_v0_2/gpt_driven_backward_015/candidate10_capture_authorization_001.json",
+      "sha256": "4cbb2d470d79a5fe0b39c5c03fe3f51fc4ca421e6f48f3c4c40db20d158bcafa"
+    },
+    "capture_realign_amendment": {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/experiments/goose_v0_2/gpt_driven_backward_015/candidate10_capture_realign_authorization_001.json",
+      "sha256": "788bfe467e3d8cd3f757a0e47818767fee9a2e92aee0a1e9cb7dddb817f79953"
+    },
+    "capture_run001": {
+      "raw": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/capture_run_001",
+      "status": "software_exception_first_contact",
+      "actual_sim_s": 1.273,
+      "fully_recorded_through_s": 1.2725,
+      "lower_N_terminal_PTY": 4.593,
+      "upper_N_terminal_PTY": 0,
+      "qualified": false,
+      "control_observation": "Foot support remains stable; true rod drop/head gravity sag corrected by actual low-head route; first lowercontact reached, no bilateralcapture"
+    },
+    "replay_authorization": {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/experiments/goose_v0_2/gpt_driven_backward_015/candidate10_capture_replay_authorization_002.json",
+      "sha256": "bb8eeae5914e1643dda375d717c6873d1c018fe9f8335fc3bc42696ac1258345"
+    },
+    "capture_run002": {
+      "raw": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/capture_run_002",
+      "duration_s": 4,
+      "full_substeps": 8000,
+      "old_prefix_match": "2545states bit-identical q/qvel/ctrl/force",
+      "grip_final_N": [
+        0,
+        0.36418154
+      ],
+      "bilateral_over5N_s": 0,
+      "peak_actual_input_tau_Nm": 0.2808184293,
+      "upper_gap_final_um": 15.454,
+      "feet_final_N": [
+        82.8564,
+        82.8291
+      ],
+      "root_pitch_final_rad": -0.0011704,
+      "independent_A_sha256": "0de4c1579c76914f4440d5e313d49bb3784b5f5f89d3439d78db0d9a83c2f07c",
+      "scope": "Actual approach now brings rod into intact continuous workfaces and maintains freebody support; preload not yet performed, not hardware failure or captured/towingpass"
+    },
+    "torque_preload_authorization": {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/experiments/goose_v0_2/gpt_driven_backward_015/candidate10_capture_torque_authorization_003.json",
+      "sha256": "070680310c4435a212dd6cc56e73c67f7c260162560fd831acb3cfabeb7203f4"
+    },
+    "capture_run003_torque": {
+      "raw": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/capture_run_003_torque",
+      "result": {
+        "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/capture_run_003_torque/result_001.json",
+        "sha256": "ce4518eb2edad1a1a615b09e7e9087d4c81db08b5c7299ede3a9e2d537b035e5"
+      },
+      "sealed_index": {
+        "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/capture_run_003_torque/sealed_index_001.json",
+        "sha256": "bddca87e28cb2ef09ad7070c3bc3221ca041ca4a59df5923dac4bc193901ee42"
+      },
+      "independent_A_audit": {
+        "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/capture_run_003_torque/independent_audit_A_001.json",
+        "sha256": "124ddc792aaca13b0da5bb6b9b7807f46e5495bd9eff2e58894971630adc7dcd"
+      },
+      "duration_s": 4.1155,
+      "full_substeps": 8231,
+      "replay_prefix_match": "first8000states matchrun002 q/qvel/ctrl/force bit-identical",
+      "actual_dual_over5N_s": 0.088,
+      "actual_input_peak_Nm": 0.50139,
+      "actual_lower_upper_Fy_N": [
+        2.144643785,
+        -1.941536047
+      ],
+      "unique_exit": "old per-mouth lowerfinitefixture absFy2N applicability bound, not measured strength failure",
+      "actual_material_beam_util_max": 0.2043104,
+      "actual_headroll_peak_Nm": 0.010585,
+      "O_axis_axial_N_approx": 2.146,
+      "C_pin_axial_N_approx": 0.002,
+      "C_retainer_axial100N_not_O_rating": true,
+      "full_cap_or_1s_hold_or_towing_pass": false,
+      "new_physics_authorized_after_return": false,
+      "complete_saved_video": {
+        "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/capture_run_003_torque/capture031_complete_saved_diagnostic.mp4",
+        "sha256": "a657923f74faca21fdb8d7c8e5708746e30abba4c2486f4077c7e418f658f65c"
+      },
+      "owner_visual_review": "Actual terminal frame personally viewed; original external collision proxies only, new internal mechanism not displayed. No claim whole video personally watched."
+    },
+    "O_thrust_path_screen": {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/experiments/goose_v0_2/variable_gain_drive_029/output_axial_thrust_path_screen_001.json",
+      "sha256": "74784889f0e6cac4ddf86f66fced270aceac5a734132a0c5cd11de325e657f5d",
+      "source_geometry": "OD22 steel washers directly bridge external frame R9.5..11; not all load necessarily on unsupported Al lip",
+      "conditional_min_steel_yield_MPa": 200,
+      "conditional_min_E_GPa": 200,
+      "conditional_conservative_front_N": 8.62,
+      "conditional_conservative_rear_N": 4.227,
+      "procurement_material_not_yet_fully_specified": false,
+      "not_a_Cpin100N_rating": true,
+      "no_source_geometry_or_physics_changed": true,
+      "procurement_condition_selected_not_certified": true
+    },
+    "axial_preload_authorization": {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/experiments/goose_v0_2/gpt_driven_backward_015/candidate10_capture_axial_authorization_004.json",
+      "sha256": "9245037fc0df8b87453e745486ddba89343ead52ab2a75f60eb864664732979f"
+    },
+    "washer_procurement_requirement": "Select traceable S355J2+AR Ø25mm stock or equivalent certified Sy>=200MPa/E>=200GPa for actual thrust washers. Official16..40mm stock givesSy345/E210; guard conservatively uses200/200. This is a procurement design requirement, not retroactive hardware certification. Geometry and nominalrho7800/MCI unchanged.",
+    "capture_run004_axial": {
+      "raw": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/capture_run_004_axial",
+      "result": {
+        "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/capture_run_004_axial/result_001.json",
+        "sha256": "a4982587a407bf7878ae5cecdc492e03527489fef177c5abcd9380cf015f6ffe"
+      },
+      "sealed_index": {
+        "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/capture_run_004_axial/sealed_index_001.json",
+        "sha256": "5f7b062f9d335d0fef44e37f578ab5f49634d64cf9cb8f10d67c9e2264285e9a"
+      },
+      "independent_A_audit": {
+        "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/capture_run_004_axial/independent_audit_A_001.json",
+        "sha256": "2f1fe1a17ef130878fe2ecbf9b62291035e19b378fdba3746203ae8c074734e2"
+      },
+      "duration_s": 4.521,
+      "full_substeps": 9042,
+      "prefix_through4p1155_bit_identical_to003": true,
+      "steady_lowpreload_boundary_s": 4.38,
+      "actual_input_tau_exit_Nm": 1.22639,
+      "upper_lower_normal_exit_N": [
+        72.93,
+        73.588
+      ],
+      "actual_O_axial_exit_N": -5.505734,
+      "conditional_O_screen_N": 4.226969282,
+      "exit": "Actual O axial reaction exceeded conservative current washer/lip strength-screen applicability; not observed plastic failure. Real internal local upgrade033 candidate under independent review.",
+      "full_cap_or_1s_hold_or_towing_pass": false,
+      "new_physics_authorized_after_return": false
+    },
+    "capture_reference_run005": {
+      "raw": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/loaded_reference_run_005",
+      "receipt": {
+        "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/loaded_reference_run_005/actual/software_transport_stop_receipt_001.json",
+        "sha256": "f012b621bc8802992c41be0c786ef0b4fc7d136af92f9a7be0c946d4c2278a0d"
+      },
+      "cold_prefix_s": 4.38,
+      "reference_physics_steps": 0,
+      "status": "Actual prefix complete,28816bytePTYline truncated before reference; terminal software error, retained not hardware fail",
+      "remedy": "Sixteen-argument unchanged primitive, separate single-knot compactJSON lines max<4000bytes, allphysics retained"
+    },
+    "loaded_reference_run006": {
+      "raw": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/loaded_reference_run_006",
+      "result": {
+        "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/loaded_reference_run_006/result_001.json",
+        "sha256": "d93657128b948483f3800fc0617cd9f41113c7937ad808d2275d796773e619ad"
+      },
+      "sealed_index": {
+        "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/loaded_reference_run_006/sealed_index_001.json",
+        "sha256": "9efde8199d9290688b67e1e3a9ae2809a4f21c8f3a7eadb2baaad98dcbb7f47d"
+      },
+      "boundary": {
+        "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/loaded_reference_run_006/loaded_reference_boundary_4920.json",
+        "sha256": "3166f773860117b4d789e6e323ff979648e850206ef78f44245c243bbf7c9efa"
+      },
+      "video": {
+        "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/loaded_reference_run_006/loaded_reference006_complete_saved_diagnostic.mp4",
+        "sha256": "7823832200f42934ecbf92a8521fbb0437e161953d34e76c48b53677d439f805"
+      },
+      "duration_s": 4.92,
+      "full_substeps": 9840,
+      "wall_s": 592.323,
+      "reference_drive_ticks": 108,
+      "cold_prefix_matches004": true,
+      "controller_transfer_s": 0.24,
+      "loaded_preparation_s": 0.3,
+      "actual_backward_steps": 0,
+      "transport_or_stop_qualified": false,
+      "new_physics_authorized_after_return": false
+    },
+    "original_LP_FF_withdrawal": {
+      "evidence": {
+        "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/experiments/goose_v0_2/intact08_lateral_transfer_029/actual_reference006_ff_independent_audit_003.json",
+        "sha256": "95679169ce64952fbe8be068633c58b4db3ac8426a5d4af2cf6df64e0f76b8ec"
+      },
+      "reason": "Unbounded equality multiplier≈−291590N exploited≈1.6e−6 numerical loop Jacobian residual and produced≈−.467Nm phantom neckyaw generalized force. Actual bounded forward simulation remained truthful; oldplanned FF not trustworthy for newexecution.",
+      "new_method": "Analytic fourbar and two yaw linked-coordinate S(28x24), virtual-work projection removes internal constraint multipliers; scratch computation only, no live state projection.",
+      "actual_head5_torque_prediction_max_error_Nm_at4620": 3.83e-08,
+      "actual_head5_torque_prediction_max_error_Nm_at4920": 1.86e-06,
+      "no_hardware_insufficiency_inferred": true,
+      "corrected_physical_tangent_source": {
+        "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/scripts/diagnostics/goose_supported_contact_motor_ff_032.py",
+        "sha256": "d0bac2bade37bb2f075b0628d4aba30fec043561830f1cb236d7aa8bf88556fb"
+      }
+    }
+  },
+  "contact_static_fidelity_coupon": {
+    "source": {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/scripts/diagnostics/goose_contact_coupon_fidelity_029.py",
+      "sha256": "180d6523e6d46bc70a00cb2b418da2e7e86543bc41c0d6624cc06ef48929fc28"
+    },
+    "review": {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/experiments/goose_v0_2/variable_gain_drive_029/contact_coupon_execution_review_001.json",
+      "sha256": "8413f97f73340b8e7daab72a4e07e2c9b7ea470e01e0fcf519435a3dd293c74a"
+    },
+    "completed_cases": 6,
+    "total_sim_s": 12,
+    "wall_s": 6.6,
+    "status": "Six completed finite coupon comparisons support limited numerical fidelity; no Goose solver/profile applied",
+    "preliminary": "NoSlip3 reduces under-cone creep; overcone still slides and unloaded body separates. No Goose physics/profile changed.",
+    "final_independent_audit": {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/experiments/goose_v0_2/variable_gain_drive_029/contact_coupon_fidelity_result_001.json",
+      "sha256": "124000bc8894f5fd1ba9fa1111bd3d1323186484689d61f1fbab1ffddbf3cb1e"
+    },
+    "energy": "Time-aligned translational/rotational kinetic impulse-work residual<=6.02e-5J. Earlier mismatched-postforward14.26J discrepancy retained and resolved; no claimed real-material calibration."
+  },
+  "previous_goal_turn_classification": "progress: intactmouth source/workface check completed; real033 hardware11 coldpreload007 reached199Nnormalperjaw at2.501Nm without changedphysicalparameters, oldupper conditionalstop preserved; identified omittedexistingrib not instantactualdamage. Badstartup and incompatible IKderivatives rejected beforeexecution; nextaction changes to realcontactfeedback rather than anotherpose-template. Fulltowinggoal remains unmet.",
+  "internal_thrust_upgrade_033": {
+    "candidate": "physics_v0_2_20261021_11_candidate",
+    "status": "FINITE_007_ACTUALLY_EXECUTED_NOT_STABLE_OR_MANUFACTURING_QUALIFIED",
+    "manifest": {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/robots/goose_v0_2/models/physics_v0_2_20261021_11_candidate/manifest.json",
+      "sha256": "1951d81ff38cccbe55f904a09f7840d95b6a49f054b15ba2d4eb240b8b6def3d"
+    },
+    "model_files_owner_verified": 99,
+    "parent10_files_owner_verified_unchanged": 94,
+    "handoff": {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/experiments/goose_v0_2/output_thrust_upgrade_033/c01/integration_handoff_identity_r02.json",
+      "sha256": "b69cadb8178a6b26aaa5e4d3772483778cd27f5c3b9597b3bc9b4a1ff7677b39"
+    },
+    "mass_kg": 16.869137216279874,
+    "delta_mass_kg": 0.0026126890056547974,
+    "changed_bodies": [
+      "head_roll",
+      "beak_hinge"
+    ],
+    "outer_meshes_and_adapter_identical10": true,
+    "owner_viewed_actual_closed_and_open_native_images": true,
+    "O_axial_static_conditional_screen_N": 26.418558013586036,
+    "not_grip_force_or_traction_rating": true,
+    "manufacturing_limits": "Material procurement,nominal.1mm fork gap/journalfinish/M6thread and inherited camera screw envelopes unresolved; SE3-noninvariant Boolean reports retained, no blanket fullheadfit claim",
+    "loaded_zero_world": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/candidate11_loaded_zero_step_001",
+    "preparation_receipt": {
+      "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/candidate11_preload_prepare_002_screen034/handoff_receipt_001.json",
+      "sha256": "0d2d3dcc4fec51e7704e39a9c353c8c45c8e880e234f1c8ee6f1f425c52ee31f"
+    },
+    "front_needle_plane_changed_mm": [
+      21.0,
+      20.6
+    ],
+    "screen_034_delta": "Four supportgeometry expressions only, span48.5→48.1mm; original900/8150/Kt/beamtable/material/contact/caps unchanged; independentA readback approvedconditional wiring.",
+    "physics_steps": 9597,
+    "preload_authorization": {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/experiments/goose_v0_2/gpt_driven_backward_015/candidate11_preload_authorization_007.json",
+      "sha256": "80306c37b024e84a8c6004840e71c9b7b0be946340b93e7f6f6a2c0bf6733c11"
+    },
+    "preload_run_status": "COMPLETED_GUARD_STOP; no retry or fullcap hold",
+    "preload007_preliminary_actual": {
+      "raw": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/candidate11_preload_run_007",
+      "sim_s": 4.7985,
+      "input_actual_Nm": 2.50139,
+      "upper_lower_normal_N": [
+        199.827,
+        199.192
+      ],
+      "O_axial_N": -8.333,
+      "C_axial_N": 0.02673,
+      "beam_utilization_max": 1.189505,
+      "stop": "upper_actual_wrench_section_strength_domain_exited",
+      "scope": "Verified result and full raw arrays; per-jaw normal, not traction or suspendedcargo capacity. Old screen stop preserved. Existing highrib omission is under geometric independent review; no measured damage implied."
+    },
+    "preload007_sealed": {
+      "result": {
+        "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/candidate11_preload_run_007/result_001.json",
+        "sha256": "080818d48648e102e054ac2b9e95e26684a9c9f74c3e0193d19a6c12f632848e"
+      },
+      "sealed_index": {
+        "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/candidate11_preload_run_007/sealed_index_001.json",
+        "sha256": "dcb8f2f815e91de6f390c5224a7c6aaff36c3f053d5b1837365847994016b616"
+      },
+      "video": {
+        "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/candidate11_preload_run_007/candidate11_preload007_complete_saved_diagnostic.mp4",
+        "sha256": "3b680b0eb23031c88577226351d381c528d6562e80f725393314caf4d5b10c65"
+      },
+      "independent_upper_rib_crosscheck": {
+        "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/candidate11_preload_run_007/independent_upper_rib_crosscheck_001.json",
+        "sha256": "b2df9484b454e92c01839882ecafcb0bf5176d2013ff3202a8ae5ce4d274fd7d"
+      },
+      "owner_readback": {
+        "sealed_files": 26,
+        "hash_mismatches": 0,
+        "substeps": 9597,
+        "hidden_force_absmax": 0,
+        "input_tau_absmax_Nm": 2.501390239750781,
+        "last_grip_normal_N": [
+          199.82653533606154,
+          199.19219431970356
+        ],
+        "whole_video_personally_watched": false
+      }
+    },
+    "upper_rib_review_status": "COMPLETE_CONDITIONAL_SCREEN_REVIEW_PASS: both actual upper/lower native30cuts tensors and continuouscores independently reconstructed; full9597actualpoint replay. Existing hardware/MCI unchanged. New035 execution wrapper preparation only; no newphysics authorization.",
+    "native_section_screen_035": {
+      "table": {
+        "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/experiments/goose_v0_2/upper_loadpath_readback_035/actual_beam_screen_table_035_001.json",
+        "sha256": "28a294ee2c2c146abceb943e23dd5d94696fe134ff8f67fe94630daf07f63d42"
+      },
+      "function": {
+        "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/scripts/diagnostics/goose_mouth_actual_beam_screen_035.py",
+        "sha256": "ef48647a9fbac68b701b4030321dcd90ef0208f34f288880517a22f58b427347"
+      },
+      "shadow_all007": {
+        "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/experiments/goose_v0_2/upper_loadpath_readback_035/actual007_native_section_shadow_001.json",
+        "sha256": "2ca53af813fb0bc847993216ac651b6c3d9bce9d43aa53cba482357d3bc4b8e9"
+      },
+      "independent_native_tensor_recut": {
+        "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/candidate11_preload_run_007/independent035_native_tensor_recut_001.json",
+        "sha256": "932930e61390344c64db599dbf60df4b8d3a8c52baf5752ae74b89d54ffb2521"
+      },
+      "independent_continuous_core_recut": {
+        "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/candidate11_preload_run_007/independent035_continuous_core_recut_001.json",
+        "sha256": "abbdaa9e9a25c7930683c908a09e15faff41707a981f68b76919c307391c69f4"
+      },
+      "independent_actual_replay": {
+        "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/candidate11_preload_run_007/independent035_actual_replay_001.json",
+        "sha256": "5aa6397870bec299b6e044a20a6606e0b5925842ff8d1d5dd483814e1a481dad"
+      },
+      "actual007_max_conditional_utilization": 0.5266466830227813,
+      "predicted_same_shape4p4_utilization": 0.926383,
+      "not_actual_fullinput_result": true,
+      "geometry_mass_material_or_actuator_change": false,
+      "old034_and007_preserved": true,
+      "owner_read_function_and_independent_recut_receipts": true
+    },
+    "preload008_authorization": {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/experiments/goose_v0_2/gpt_driven_backward_015/candidate11_preload_authorization_008.json",
+      "sha256": "45cfe4c7833f61df76f2c831d30a19fc62c1d283446c35af1e677e9bd92ea174"
+    },
+    "preload008_state": "TERMINAL_ACTUAL_O_AXIAL_CONDITIONAL_SCREEN_STOP_NOT_FULLCAP",
+    "preload008_result": {
+      "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/candidate11_preload_run_008/result_001.json",
+      "sha256": "662b4d3f1fafd1d0118cfcccfb944afdac436b4d3f7943a8bce5fb668b5c174c"
+    }
+  },
+  "control_intent_current": "Retire further pressure-target-only iterations: full ground+mouth centroidal data show spikes changed angular momentum while COM shifted only~.045mm. Next039 explicitly migrates actual COM/hip left via original physical joint reference and feedback, then actual unloading/backstep; no Fn-command-as-success or root servo.",
+  "owner_closeout_window": {
+    "user_requested_hours": 5,
+    "start_utc": "2026-10-21T01:54:39+00:00",
+    "deadline_utc": "2026-10-21T06:54:39+00:00",
+    "deadline_local_chongqing": "2026-10-21 14:54:39 +08:00",
+    "full_goal_unchanged": true,
+    "checkpoints": [
+      {
+        "due_utc": "2026-10-21T02:24:39+00:00",
+        "result": "Actual bounded pressure redistribution/recovery evidence; originalfullinput strength decision in parallel",
+        "actual_status": "PARTIAL_NOT_PASSED: real037/12 hardware integrated; pressure010 peak6.216N but no bounded recovery/10N50ms. New004 heading+recovery awaiting sameversion12 single actual window."
+      },
+      {
+        "due_utc": "2026-10-21T03:54:39+00:00",
+        "result": "Actual loaded rearfoot reposition/supporttransition and sustained rearward coupled motion",
+        "actual_status": "NOT_MET: validrearfoot/supportexchange notachieved. Currentreal196Nheadbench exposes pairedthin-tailconditionalstrengthlimit; realgeometryreinforcement042 inprogress, notrelease. 041wholebodyref independentlyrejected nativecommon4.558/252.715mm3; revisedleanreference inprogress."
+      },
+      {
+        "due_utc": "2026-10-21T05:24:39+00:00",
+        "result": "Fullhalfmetre/.1mps/stop3s actual cart/cargo run and completecontinuousvideo"
+      },
+      {
+        "due_utc": "2026-10-21T06:54:39+00:00",
+        "result": "Sameversion physicalpackage/CAD/MCI/contact/actuator identity,evidence,limits andsourcehandoff. Unmetgates remain explicitlyunmet; no stable relabel."
+      }
+    ],
+    "not_resumed": [
+      "PPO",
+      "GPUtraining",
+      "old longtraining",
+      "automations"
+    ],
+    "priority": "Finish actual hardware and wholebody towing; do not expand into newplanners or solvers.",
+    "latest_at_utc": "2026-10-21T04:31:47.484449+00:00",
+    "current_blocker": "No five-second mass pass yet: 017/018 sustainedsoftconeinsidecreep;019 tableSVdidnotcreditrealnewupperrib. Actualexistingcore-readback correction pending;14local lowerreinforcement ready. 02013loadedfrozen042 first.20actualreference now active, notfootstep/transportpass."
+  },
+  "pressure_transfer_036": {
+    "candidate_freeze": {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/experiments/goose_v0_2/pressure_transfer_036/candidate_freeze_002.json",
+      "sha256": "48a109809e9c90515f9c366f78c45fdf3616a5e30a9eac07481533394c5877ac"
+    },
+    "source": {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/scripts/diagnostics/goose_pressure_transfer_candidate_036.py",
+      "sha256": "ab5148fa5b6c8cba120e6fb749ef3693d5e0f5e17347d5b5f30180aa789700bb"
+    },
+    "runtime": {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/scripts/diagnostics/goose_candidate11_pressure_transfer_036.py",
+      "sha256": "db90d2b16ef5ba8f043f6d3174f622a61c416a3c73094dcc4f9a55643e62ba1c"
+    },
+    "authorization": {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/experiments/goose_v0_2/gpt_driven_backward_015/candidate11_pressure_authorization_009.json",
+      "sha256": "521a620a89ab4d3fce179cf18cd1c962130e426f5f8b9bd71fead6365dd6aaa4"
+    },
+    "state": "012_BOUNDED_RECOVERY_ACTUAL_COMPLETED_NO_WEIGHT_TRANSFER_SUCCESS",
+    "full_goal_not_redefined": true,
+    "actual009": {
+      "result": {
+        "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/candidate11_pressure_run_009/result_001.json",
+        "sha256": "0dd48157a6e6a52e9237c1df65cd3fc64952083754c289d3163c5cb1213789fe"
+      },
+      "sealed_index": {
+        "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/candidate11_pressure_run_009/sealed_index_001.json",
+        "sha256": "fd22a1518847c865f3a86762d3e53659f8640580ecf147282e2ff900c700f26f"
+      },
+      "physics_substeps": 9000,
+      "actual_pulse_s": 0.1,
+      "right_normal_drop_N": 3.6629887622618043,
+      "grip_normal_N": [
+        35.18017086125745,
+        35.61516585100607
+      ],
+      "recovery_performed": false,
+      "active_handle": null,
+      "no_original_physical_guard_triggered": true,
+      "owner_verified_sealed_files": 30,
+      "sourceprefix_8800_bitwise_match007": true,
+      "not10N50ms_pass": true,
+      "not_step_or_transport": true
+    },
+    "observed_model_cause": "E sameactualstate controlledcounterfactual: vt1.027516mmps, actualFt4.290N vsμFn47.509N(cone.0903), actualpower−4.408mW; oldspeed-onlyfullCoulombclassification forced43.219N jump andLPfailure. Dissipativeunsaturatedconstraint makesidenticalstatefeasible; no physicalmu/capschanged. Final003minimalpatchpending.",
+    "contact003": {
+      "source": {
+        "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/scripts/diagnostics/goose_pressure_transfer_candidate_036_contact003.py",
+        "sha256": "85f34203eb9157dec60937e34477fe15399d0cb05f90fdecf430f66ac52e0e3f"
+      },
+      "freeze": {
+        "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/experiments/goose_v0_2/pressure_transfer_036/candidate_contact003_freeze.json",
+        "sha256": "0dca024edaab28ce9e46e3885e05e0b75f72c31a62b79ce1c7ac136d2af0bfbe"
+      },
+      "runtime": {
+        "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/scripts/diagnostics/goose_candidate11_pressure_transfer_contact003_036.py",
+        "sha256": "37bac686b24a58e4241126caa220a78e4ab986edc4c87ed3206207879e68e086"
+      },
+      "authorization": {
+        "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/experiments/goose_v0_2/gpt_driven_backward_015/candidate11_pressure_authorization_010.json",
+        "sha256": "c18c72ce02bdbc009ccaf87d72c92a7988178bc0ee1f6b81c55b3cc9827bd162"
+      },
+      "state": "010_TERMINAL_PRESSURE_MODEL_SELF_CONFLICT_NO_RECOVERY_NO_STEP"
+    },
+    "actual010": {
+      "result": {
+        "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/candidate11_pressure_run_010/result_001.json",
+        "sha256": "d1fc6a3a13a9127b2ea0e04a4cb0c781b6d4f456765c2f7166998ec21b61261f"
+      },
+      "actual_duration_s": 4.54,
+      "actual_pulse_s": 0.14,
+      "right_unload_max_N": 6.215692827488681,
+      "right_unload_last_N": 2.2747174614172536,
+      "grip_last_upper_lower_N": [
+        32.89820599569762,
+        32.81024785266611
+      ],
+      "recovery_actual_steps": 0,
+      "physical_guard_triggered": false,
+      "hiddenforces_zero": true,
+      "warning_zero": true,
+      "no_step_or_towing_qualification": true,
+      "active_handle": null,
+      "cause": "100ms yaw-rate extrapolation demanded delta yaw acceleration <=-2.2612 while the local box allowed only +/-1; not source actuator infeasibility or saturated friction."
+    },
+    "heading004": {
+      "state": "FROZEN_INDEPENDENT_ZERO_STEP_BRIDGE_REVIEWED_PENDING_12_IDENTITY_BINDING",
+      "source_sha256": "ca3b9fc57c91bf648f4657616d9307912d2115d4a423ca1b084a2251e8c4f5e6",
+      "freeze_sha256": "08a730347765d09f1cb3abbdd1b66fd3ece018a2096e3a53f6d988b654f50574",
+      "review_sha256": "f592cf9539fb5d1229e3f49a21bcf9d262fd3a302b0465bfee275f540b3b4813",
+      "explicit_control_changes": [
+        "lexicographic absolute heading braking priority",
+        "expanded angular acceleration prediction trust, original hardware caps retained",
+        "LP-independent bounded withdrawal of pressure offsets with persistent recovery latch",
+        ".12s ramp+.18s hold+.30s recovery, <=.60s pilot"
+      ],
+      "physical_model_changed_by_controller": false,
+      "actual_success": false
+    },
+    "actual012": {
+      "result_path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/candidate12_pressure_run_012/result_001.json",
+      "result_sha256": "359e822742eae26aa4060b8488a5c03555267521c9ec3a2be58fe2c9169cb62c",
+      "state": "COMPLETED_BOUNDED_RECOVERY_NOT_CONTINUOUS_UNLOADING",
+      "duration_s": 5,
+      "operation_s": 0.6,
+      "unload10N50ms": false,
+      "max_unload_N": 26.15530070031268,
+      "unload_ge10N_longest_s": 0.0015,
+      "offset_recovery_completed": true,
+      "offset_zero_time_s": 4.76,
+      "yaw_rate_final_rad_s": 0.002224114706184456,
+      "grip_min_after_entry_N": [
+        25.025316766391057,
+        25.560699603779817
+      ],
+      "grip_final_N": [
+        29.541755735635427,
+        29.564573902671984
+      ],
+      "original_guards_passed": true,
+      "hiddenforces_and_warnings_zero": true,
+      "qualification": "Recovery only, not footstep/support transfer or transport",
+      "active_handle": null
+    }
+  },
+  "internal_thrust_upgrade_037": {
+    "state": "REAL_NATIVE_DESIGN_INDEPENDENTLY_INTEGRATED_CANDIDATE12_ZERO_PHYSICS",
+    "model_path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/robots/goose_v0_2/models/physics_v0_2_20261021_12_candidate",
+    "manifest_sha256": "3d1f0f74b2de8cbc5ab719334735ca43807d20783196c8627d75a5ae527a386a",
+    "mass_kg": 16.86769816711352,
+    "delta_vs11_kg": -0.0014390491663538538,
+    "only_changed_MCI_body": "beak_hinge",
+    "receipt_path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/thrust037_independent_zero_001/integration_receipt_001.json",
+    "receipt_sha256": "d52e6e860b5da0431be2095446c453f1c54ee874b3a3a6ee9cf76e8e7ab066ee",
+    "O_conditional_nominal_guard_N": 40,
+    "tolerance_operating_guard_pending": false,
+    "native_closed_open_owner_viewed": true,
+    "intact_bill_retained": true,
+    "qualification_limits": [
+      "conditional original material/factor6 screen, not manufactured or measured capacity",
+      "fullinput/loaded transition/continuous towing not yet qualified"
+    ],
+    "O_conservative_operating_guard_N": 38,
+    "actual011": {
+      "result_path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/full_goose_r07_030/candidate12_preload_run_011/result_001.json",
+      "result_sha256": "51ae3c45932a92e7dde5d7e649150ebe812c62ac9658d72b46d705052ae916a4",
+      "state": "TERMINAL_OUTERBAR_PROXY_VALIDITY_EXIT_NOT_HARDWARE_FAILURE",
+      "duration_s": 4.985,
+      "input_torque_Nm": 3.4263902397507775,
+      "clamp_normal_per_jaw_N": [
+        202.002812527333,
+        202.723502132447
+      ],
+      "full4p4_hold_s": 0,
+      "proxy_indent_mm": 2.0250630708793587,
+      "O_abs_peak_N": 0.5797738982462135,
+      "original_guard_unchanged": true,
+      "not_suspension_or_towing": true
+    }
+  },
+  "portable_zero_step_load040": {
+    "result_path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/physical_package_portability_040/candidate12_zero_step_relocation_001.json",
+    "sha256": "8dba0daff37c8f126c06a2b461e690fcd83a6ca4fc0dfc768aeccb73beb976b0",
+    "status": "PASS_RELOCATED_ZERO_STEP_MODEL_ONLY",
+    "verified_files": 102,
+    "not_dynamics_qualification": true
+  },
+  "actual_left_mass_013_015": {
+    "013": "Software protocol blankline, zero operationsteps; not physicalfailure",
+    "014": {
+      "COM_left_m": 0.002830575,
+      "operation_s": 0.2,
+      "end_reason": "missingreason protocol failure",
+      "no_physical_guard": true
+    },
+    "015": {
+      "COM_left_m": 0.005134913,
+      "operation_s": 0.265,
+      "end_reason": "preapply request−2.046535Nm exceeds2Nm leftankle physicalcap; no actual cap increase",
+      "interpretation": "Positionreference footrotation scale wrong; not hardwarebreakage. New ordinaryactualsaturation recovery adopted for future sourcevariant, originalcaps unchanged."
+    },
+    "qualified_support_exchange": false,
+    "qualified_transport": false
+  },
+  "normalized_left_mass_041": {
+    "status": "REJECTED_TRUE_NATIVE_INTERFERENCE_NO_PHYSICS",
+    "foot_reference_rotation_error_deg_old": 13.486,
+    "foot_reference_rotation_error_deg_new": 0.565,
+    "first_native_common_mm3": 4.558352,
+    "endpoint_native_common_mm3": 252.715103,
+    "native_witness": "experiments/goose_v0_2/pressure_transfer_036/left_mass041_native_pair_witness_result_001.json",
+    "not_proxy_tolerance_excuse": true
+  },
+  "downward_pull_016": {
+    "status": "SEALED_UNQUALIFIED_STRENGTH_STOP_ACTUAL_SELECTED_PAD_CONTACT_CONFIRMED",
+    "fixed_head_not_wholerobot": true,
+    "actual_payload_kg": 20,
+    "actual_input_Nm": 3,
+    "actual_mouth_support_Z_at_terminal_N": 196.201154,
+    "table_N_at_terminal": 0,
+    "nonmouth_object_support_N": 0,
+    "first_no_table_plus_analytic_gap500um_s": 5.078,
+    "last_sim_s": 5.398,
+    "continuous_free_support_s": 0.3205,
+    "trigger_lower_cut_VM_MPa": 1174.331,
+    "conditional_screen_MPa": 1170,
+    "interpretation": "ExactselectednativeTPU andbacking confirm realmaterialworkingface at016contact; oldgrip_cassettes/source238.7 conclusion withdrawn. Originalactual035conditionalstrengthstop at lower239.05 remains. Reinforce pairedinternal thin-tailsections under same material/caps, then same231.5pregrasp regression; no196N5s qualification yet.",
+    "audit_sha256": "fe5d112798011cfee1267379ace45fdfc139d17814c086d66bd3481cb79ce888",
+    "geometry_gap_observer_issue": "mj_geomDistance returned0 for separatedboxes in3samples; independent savedstate boxseparation witnesses .3205s, originalholdclock0 preserved. Next observer uses explicitboxsupport extrema plusmaterialdomain.",
+    "superseded_domain_claims": {
+      "native_TPU_contact_limit_X_mm": 238.7,
+      "first_lower_contact_domain_exit_s": 4.566,
+      "unsupported_contact_X_mm_upper_lower": [
+        244.52,
+        247.51
+      ]
+    },
+    "actual_selected_TPU_X_mm": [
+      179.3,
+      257.7
+    ],
+    "actual_selected_TPU_sources": [
+      {
+        "part": "upper",
+        "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/robots/Goose_V0.1/cad/exports/tip_grip_candidate/upper_grip_cassette_pad.step",
+        "sha256": "755c9712f22dd17faa0ef3a6a474c5c26c5f62a18762e28dab87dbf42c3809d0"
+      },
+      {
+        "part": "lower",
+        "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/robots/Goose_V0.1/cad/exports/tip_grip_candidate/lower_grip_cassette_pad.step",
+        "sha256": "349a389c16101cd953b3050e0c67cba6c3fcb07c8c3652f162d543e382815130"
+      }
+    ],
+    "selected_native_workface_witness": {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/experiments/goose_v0_2/downward_pull_fixture_041_near_hangers/actual016_selected_workface_witness_002.json",
+      "sha256": "6a1d4c1b143512e3e505c4b1c3e9997780a2082eafe8e03a698dad6cdb6f63bc"
+    },
+    "actual_native_rod_TPU_Common_mm3": [
+      13.324452668542108,
+      13.824897171387729
+    ],
+    "actual_backing_metal_maxX_mm": 258.0,
+    "actual_rod_metal_gap_mm": [
+      0.7879405431581052,
+      0.84138
+    ],
+    "selected_TPU_source_independent_QA": {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/experiments/goose_v0_2/downward_pull_fixture_041_near_hangers/selected_workface_source_identity_QA_003.json",
+      "sha256": "0bc2d8e3adb173e038b10568a69757df95cf01bc1b7398ddbdd17d50d6dae2c7",
+      "actual_convex8vertex_workface_matches_selected_STEP": true,
+      "collision_mu_solver_MCI_changed": false
+    }
+  },
+  "current_hardware_13": {
+    "model": "robots/goose_v0_2/models/physics_v0_2_20261021_13_candidate",
+    "manifest_sha256": "64ff83f5b02d0a83b6ae04eec3939649d36f162b774b8fd6b4fcf56b30fe4b3d",
+    "mass_kg": 16.869398401682858,
+    "source_delta_vs12_g": 1.700234569,
+    "runtime_23bodies_18drives_28convex": true,
+    "source_joint_caps_contacts_coldstate_same": true,
+    "native_complete_head_r10_owner_viewed": true,
+    "default04_unchanged": true,
+    "portable_zero_step_receipt_sha256": "dae9758b794d273aa96ae342c51f402bd19aca046203808182757392264e11ad"
+  },
+  "hanging_mass_ceiling_043": {
+    "user_requested_explicitly": true,
+    "purpose": "fixedhead picturedfixture five-second retention boundary; notwholeGoose lifting and nottruehardwarecapacity fromnumericalcreep",
+    "trial_budget_total": 8,
+    "trial_budget_wall_s": 3600,
+    "trials_used": 3,
+    "candidate13_017": {
+      "mass_kg": 20,
+      "input_target_Nm": 3,
+      "qualified_5s": false,
+      "max_driver_hold_s": 0.0845,
+      "end_s": 7.6805,
+      "source_guard": "uppercut254 VM421.2587/420.58",
+      "late_actual_TPU_domain_exit": true
+    },
+    "candidate13_018": {
+      "mass_kg": 20,
+      "input_target_Nm": 4.4,
+      "actual4p4_continuous_s": 1.875,
+      "qualified_5s": false,
+      "max_driver_hold_s": 0.0955,
+      "max_actual_eligibility_s": 0.124,
+      "end_s": 5.95,
+      "source_guard": "lower237 VM1199.187/1170",
+      "actual_TPU_domain_valid": true,
+      "cone_utilization_free_support": [
+        0.538,
+        0.718
+      ],
+      "slip_median_mm_s": 11.0,
+      "soft_regularization_velocity_prediction_error_max_fraction": 0.0014493
+    },
+    "candidate13_019": {
+      "mass_kg": 10,
+      "input_target_Nm": 4.4,
+      "qualified_5s": false,
+      "end_s": 4.93,
+      "max_driver_hold_s": 0.05,
+      "actual_eligibility_s": 0.0705,
+      "source_guard": "upper238.3 VM437.7258/420.58; oneoutboardpointSVdominant",
+      "actual_TPU_domain_valid": true,
+      "mouth_Z_N": 100.687,
+      "gravity_N": 98.1,
+      "last_outward_speed_mm_s": 5.678,
+      "interpretation": "Guardstop is not measuredmasscapacity; newupperrib torsioncontribution omittedfromconservativecore table, independentactualreadback pending."
+    },
+    "maximum_qualified_5s_mass_kg": null,
+    "stronger_50kg_test_fixture": "DORMANT_NOT_ADOPTED; no>20run beforevalid20",
+    "physical_model_changes_allowed_for_ladder": false,
+    "real_testload_geometry_mass_inertia_changes_allowed": true,
+    "saturation_mu_or_mass_cheats": false
+  },
+  "hardware_lower_patch_14": {
+    "status": "REAL_GEOMETRY_FROZEN_PENDING_INDEPENDENT_INTEGRATION_AND_CONSISTENT_UPPER_CORE_READBACK",
+    "handoff_sha256": "5f23823b44b5ce5aadaacb4740b1c09406dfc9dd0e4e7903eb066e8bf7c95e70",
+    "source_delta_vs13_g": 0.253895,
+    "lower_rib_depth_add_mm": 0.5,
+    "upper_geometry_unchanged": true,
+    "actual018_wrench_max_utilization": 0.79056542,
+    "same_Sy_and_factors": true,
+    "outer_TPU_caps_unchanged": true,
+    "actual_testing_passed": false
+  },
+  "current_hardware_candidate_previous_11": {
+    "id": "full_native_head_integration_026_r08_thrust033_identity_r02",
+    "status": "ACTUAL_INTACT_11_INTERNAL_THRUST_UPGRADE_FINITE_PRELOAD_ONLY_NOT_STABLE",
+    "source_carrier_handoff": {
+      "path": "experiments/goose_v0_2/continuous_bill_loadpath_024/integration_handoff_r05.json",
+      "sha256": "b95f02a3590111208bf9a81d2a3470b121e8569e3f17c88f578c99ebc73046b5"
+    },
+    "source_drive_handoff": {
+      "path": "experiments/goose_v0_2/variable_gain_drive_029/fork_c02_headed_pin/module_handoff.json",
+      "sha256": "95db4f2e5d622d37817e6ba4b0e7489ca4bc87560d9d512c8a32b84579513e0d"
+    },
+    "native_closed": "robots/goose_v0_2/cad/exports/full_native_head_integration_026/r08_thrust033_identity_r02_review/full_head_closed.step",
+    "native_open": "robots/goose_v0_2/cad/exports/full_native_head_integration_026/r08_thrust033_identity_r02_review/full_head_open.step",
+    "mass_audit": {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/experiments/goose_v0_2/full_native_head_integration_026/merged_mass_and_skin_audit_r07_fork_c02.json",
+      "sha256": "fea0f4e1fc10c579213e8e30fa66f6932384b05e70793c0d0bdd955c3a73daf8"
+    },
+    "nominal_robot_mass_kg": 16.869137216279874,
+    "estimated_net_delta_from08_kg": 0.1406836363767674,
+    "mass_scope": "Native design material geometry; catalogue bearing annulusI and customM3 machining-envelope MCI approximations, not measured mass",
+    "part_occurrences": 136,
+    "retained": 110,
+    "new": 26,
+    "retired_union": 41,
+    "original_exterior_and_continuous_TPU_unchanged": true,
+    "rod_specific_latch_adopted": false,
+    "owner_viewed_actual_r07": [
+      "closed_iso.png",
+      "open_iso.png"
+    ],
+    "owner_CAD_viewer_current": "r08_thrust033_identity_r02_review/full_head_open.step",
+    "integration_receipt": {
+      "path": "/home/ethan/ProjectBackups/2026-10-21/Sai_Lab/mouth_hardware_bench_025/compile_candidate_r07_fork_c02_001/integration_receipt_001.json",
+      "sha256": "8857a53eb71c6fb247652f1297a3eff2b9ae0ed2bd74671cb4e60052bf39770b"
+    },
+    "scope": "Actual complete intact native head plus full10 integration. Three finite025fixture windows are historical completed evidence, not qualified holding or whole towing.",
+    "physics_admitted": false,
+    "finite_fixture_admission": false,
+    "force_196_2N_demonstrated": false,
+    "stable_high_load_grip_qualified": false,
+    "whole_robot_integrated": true,
+    "manufacturing_release": false,
+    "limitations": [
+      "Ideal internal pin model omits axial float/retainer contact and new bush losses",
+      "Original external contact proxies retained; exact native fullROM contact and generic objects unqualified",
+      "M3 machining semantics with engineering MCI bounds; no thread-gauge/actual assembly certificate"
+    ],
+    "physics_admitted_scope": "Finite034 sourcebound authorization007 only. All earlier025/030 runs retained separately; no blanket stable version admission.",
+    "independent_gate": {
+      "path": "experiments/goose_v0_2/variable_gain_drive_029/independent_c02_verdict.json",
+      "sha256": "64331d7f9c450633a13ee16169524e89e5dd6360d4996e1ce18f6f65b93057b7"
+    },
+    "whole_robot_integration_scope": "New11 compiled with real033 MCI and no exterior/contact/caps changes. Single finite034 cold preload authorization007 issued; awaiting actual return; no11 gait executed.",
+    "runtime_model_manifest": {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/robots/goose_v0_2/models/physics_v0_2_20261021_11_candidate/manifest.json",
+      "sha256": "1951d81ff38cccbe55f904a09f7840d95b6a49f054b15ba2d4eb240b8b6def3d"
+    },
+    "superseded_parent_candidate": {
+      "id": "full_native_head_integration_026_r07_fork_c02",
+      "runtime_model_manifest": {
+        "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/robots/goose_v0_2/models/physics_v0_2_20261021_10_candidate/manifest.json",
+        "sha256": "6822842f2cc4f84b40227a61fcd3a4a76636f67a4079f8ca5b6f038a34931910"
+      },
+      "native_closed": "robots/goose_v0_2/cad/exports/full_native_head_integration_026/r07_fork_c02_review/full_head_closed.step",
+      "native_open": "robots/goose_v0_2/cad/exports/full_native_head_integration_026/r07_fork_c02_review/full_head_open.step"
+    },
+    "source_thrust_handoff": {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/experiments/goose_v0_2/output_thrust_upgrade_033/c01/integration_handoff_identity_r02.json",
+      "sha256": "b69cadb8178a6b26aaa5e4d3772483778cd27f5c3b9597b3bc9b4a1ff7677b39"
+    }
+  },
+  "hanging_final14_batch_044": {
+    "status": "ALL021_025_SEALED_NO_5S_PASS_NO_MASS_CEILING",
+    "source_model_manifest_sha256": "992f1fd56774635443fa1d801e195eac92b2c6a870700e57792e3d8671befba9",
+    "cases": [
+      {
+        "mass_kg": 20,
+        "input_Nm": 4.4,
+        "noslip_iterations": 0
+      },
+      {
+        "mass_kg": 20,
+        "input_Nm": 4.4,
+        "noslip_iterations": 2
+      },
+      {
+        "mass_kg": 20,
+        "input_Nm": 4.4,
+        "noslip_iterations": 8
+      }
+    ],
+    "resource": "3freshcoldcases,total<=30wallmin,oneCPUthread,GPU0,noautotry",
+    "acceptance": "Actual5s tableN<.05N + signedgap>.5mm + upwardmouthforce>mass*g*190/196.2 + bilateral>5N + sourceguards/nativeworkfacedomain; terminal1s |netoutwardslip|<=1mm, OLSoutwardrate<=1mm/s and axialvelocityRMS<=2mm/s reportedseparately.",
+    "Root_delegation": "E may rebind only exactguardidentity to14MJB/core002 withnumericvaluesidentical and generate sourceboundfiniteauthors forF; no physicalsetting changes beyond declaredNoSlip0/2/8profiles.",
+    "remaining_mass_localization_cases_after_batch": 2,
+    "highmass_fixture": "Original<=20kgfixture notused>20. Strong50conditionalfixture dormant untilA/Ereview andRootadoption.",
+    "numerical_vs_hardware_scope": "NoSlip2/8results never promoted to default0 or realhardwarecertification.",
+    "actual_review": {
+      "path": "experiments/goose_v0_2/noslip_bench_diagnostic_044/actual021_025_finite_closeout_001.json",
+      "sha256": "d0a1fd087ae4cebb07477e0315862cc50e1dcc72af75f1581829badea60c185c"
+    }
+  },
+  "owner_last_update_utc": "2026-10-21T05:09:50.291702+00:00",
+  "continuous_hanging_load_047": {
+    "status": "IMPLEMENTING_NO_NEW_PHYSICS_YET",
+    "user_method": "Samegrip/samerod; startlightandincreaseloadcontinuouslytofailureortrueloadpathboundary, notmanyregraspfixedmasscases",
+    "base_fixture_kg": 0.11665981561628,
+    "base_ballast_kg": 0.05,
+    "mass_step_kg": 1,
+    "mass_smooth_ramp_s": 0.5,
+    "per_level_hold_s": 5,
+    "persistent_slip": "Outward>2mm/sfor.5s: pauseincrease2sforrecovery; donotfailmerebriefslip",
+    "maximum_total_mass_kg": 20,
+    "fixture_scope": "Originalfixtureconditional20kgonly; largertruefixturevariantpreparationseparate, nohotfixturechange",
+    "resources": {
+      "max_sim_s": 130,
+      "max_wall_s": 600,
+      "CPU_threads": 1,
+      "GPU": 0,
+      "cold_runs": 1
+    },
+    "state_safety": "Onlyballastm/Ichange; mj_setConstusesdedicatedscratchMjData, liveq/v/ctrl/timeunchanged; noobjectposewrite/regrasp/massrollback",
+    "mass_scope": "Declaredvirtualvariableballast, notnewGoosehardwaredataorclaimofmanufactured304geometry. Parameterchangeenergy/momentumbudgetseparatefrommotorwork.",
+    "qualification": "Ifinitialcapture/withdrawfails, noascendingloadtestachievedandinitialmassisnotaceiling."
+  }
+}

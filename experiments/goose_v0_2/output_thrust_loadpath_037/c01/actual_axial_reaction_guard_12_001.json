@@ -1,0 +1,100 @@
+{
+  "mujoco_version": "3.10.0",
+  "source": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/scripts/diagnostics/goose_mouth_actual_axial_reaction_031.py",
+  "source_sha256": "3aeb35820503a01f98b2c8403a8022c0afe4f72f7bc8f2dede440ba37810bbd6",
+  "C_pin_axial_limit_N": 100.0,
+  "O_thrust_symmetric_limit_N": 38.0,
+  "material_procurement_condition": "Both actual steel thrust washers require traceable material/process certificate Sy>=200MPa and E>=200GPa; not retroactive qualification of original unspecified steel. Density7800 remains nominal engineering MCI only. Flatness, thickness, running gap and contact finish require manufacturing acceptance.",
+  "procurement_candidate": {
+    "producer": "Ovako",
+    "grade": "S355J2 EN10025-2 +AR, round bar diameter25mm (16<dimension<40mm table row)",
+    "minimum_yield_MPa": 345,
+    "Young_modulus_GPa": 210,
+    "product_form": "Certified diameter25mm round bar, machine OD22mm thin washers; source stock dimension is25mm, not finished washer thickness. Existing washers are not retrospectively certified.",
+    "primary_sources": [
+      "https://steelnavigator.ovako.com/steel-grades/s355j2",
+      "https://steelnavigator.ovako.com/steel-grades/s355j2/pdf?variantIDs=143"
+    ]
+  },
+  "bound_actual_scene_mjb_sha256": "ff52d589e83d6a0c4ad16f050a4fe2a5ec3bf5b324d1b98a4785d58a97b33a3c",
+  "retained_screen_source_sha256": "d837deff6d8277f28c311d044bd888a1e58d5868e0276922cccc6a6c83cb6421",
+  "retained_table_sha256": "28a294ee2c2c146abceb943e23dd5d94696fe134ff8f67fe94630daf07f63d42",
+  "replacement_scope": "Candidate12 actual037 washers/nuts MCI; conditional O38 dimensions accepted byRoot. Retain C100, corrected035beams, shaft900/needle8150, same20.6mm support, source physical clock/caps/mu/PD unchanged. No hot11 change.",
+  "api": "screen_actual_axial_reactions(model,data,config); caller mj_forward already current, function RNE-derived arrays only, no integration/state or parameter writes.",
+  "limitations": [
+    "C axial constraint force is read from actual three connect rows; O force from actual postconstraint cfrc_int, never substitute mouth Fy.",
+    "Ideal pin/hinge model still omits axialfloat/retainer contact dynamics/bushloss.",
+    "Symmetric O bound intentionally uses smaller side. Axisymmetric washer/lip conditional engineering screen, not fatigue/life/temperature qualification.",
+    "No new physics authorization, no automatic runtime/profile changes.",
+    "Front needle journal nowY14.6..26.6 exactly at existing DD end14.6, finished12mm rolling diameter. No DD/chamfer/runout may intrude into actual roller contact; tolerance/ground length require drawing and inspection.",
+    "Movingfork nearestY14.5 vs needleY14.6 nominal.1mm gap, not a tolerance stack guarantee.",
+    "Front counterboreR11.2/Y27.1..27.9 removes old27.1..27.25 false outer interference; actualbackingR9.5..11 existsY26.6..27.1.",
+    "Bothwashers actual outer annulus contacts fixed backing at27.1 and-34. Needle endfaces do not take thrust.",
+    "Material procurementSy>=200/E>=200GPa required; traceable diameter25 S355J2 +AR Sy>=345/E210 supports intended route, no existingwashercertification.",
+    "Nominal mass+2.612689g includesframe/washers/nuttranslation; frontneedle10g unchanged but COM/inertia shift. Bearing internalvendorinertia remains engineeringannulus estimate.",
+    "Fullretainedheadskin/motor/hardware directreview byF/Root remains necessary; local5q excludes retiredfrontneedle and declares only threaded-envelope overlap.",
+    "No public08/run10/MCI/guard changes and no physics authorized by candidate generation.",
+    "Candidate11 runtime still has ideal internal hinge/body bookkeeping, not physical washer axial contact or float; thisguard is a conditional static screening limit, not measured dynamic capacity.",
+    "Zero-step preparation only; Root specific sourcehash authorization required before any physicaltime step.",
+    "Current037 geometry/source replaces old033 washer radialstrip assumptions; governing finite_guard_tolerance_decision_001 controls current O38 applicability",
+    "H900 near flangednut/M6 manufacturedthreads not simulated; exact omittedtooth mass unknown <=.225g upperaddition",
+    "Any prior033 geometry/capacity text is parent provenance, not the governing037 calculation"
+  ],
+  "hardware_handoff": {
+    "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/experiments/goose_v0_2/output_thrust_loadpath_037/c01/module_handoff.json",
+    "sha256": "fb53ad06cedf381757c8581402aad623ba0d2ca82913469658c915d47f6abbbe"
+  },
+  "parent_guard_config": {
+    "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/experiments/goose_v0_2/variable_gain_drive_029/actual_axial_reaction_guard_001.json",
+    "sha256": "a5d3f8d7c27c8c89162c40c50f04106822f55a6b202353105cb0da9bf5a328e3"
+  },
+  "model_package_manifest": {
+    "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/robots/goose_v0_2/models/physics_v0_2_20261021_12_candidate/manifest.json",
+    "sha256": "3d1f0f74b2de8cbc5ab719334735ca43807d20783196c8627d75a5ae527a386a"
+  },
+  "conditional_geometry": {
+    "front_lip_mm": 0.5,
+    "front_washer_mm": 0.65,
+    "rear_lip_mm": 0.5,
+    "rear_washer_mm": 1.25,
+    "front_needle_Y_mm": [
+      14.6,
+      26.6
+    ],
+    "rear_needle_Y_mm": [
+      -33.5,
+      -21.5
+    ],
+    "screen_factor": 6,
+    "source": "Same prior radial strip bound, actual outer supported annulusR9.5..11, sigma6FL/(2*pi*a*t\u00b2), delta4FL\u00b3/(2*pi*a*E*t\u00b3). FullF independently to both lip/washer for conservative parallel path. Factor6=2load*Kt3. Coaxial contact/flatness and no assembly preload assumptions. Not FEA."
+  },
+  "shaft_needle_support_geometry": {
+    "rear_Y_m": -0.0275,
+    "front_Y_m": 0.0206,
+    "span_m": 0.0481,
+    "shaft_screen_source": {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/scripts/diagnostics/goose_mouth_actual_wrench_screen_034.py",
+      "sha256": "6109d5d9439c3639bbbb6049b4efaf3e7aed34e4596422167958ae95319604b4"
+    },
+    "parent_guard_config11": {
+      "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/experiments/goose_v0_2/output_thrust_upgrade_033/c01/actual_axial_reaction_guard_11_001.json",
+      "sha256": "4e19f1468bc1d345ada1ed04fd28cb836fa500c294970757062239dbdfe197e5"
+    },
+    "change": "Only actual bearing plane/span/cut positions align033;900/8150/Kt/beam table/cap/mu/time unchanged"
+  },
+  "parent_screen034_config": {
+    "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/experiments/goose_v0_2/output_thrust_upgrade_033/c01/actual_axial_reaction_guard_11_002_screen034.json",
+    "sha256": "1dbdec62aaf6b25c68e14563d61e240f11f6c8f16743c345bc2e3e9144a91cf6"
+  },
+  "retained_radial_screen_source_sha256": "6109d5d9439c3639bbbb6049b4efaf3e7aed34e4596422167958ae95319604b4",
+  "parent_candidate11_guard": {
+    "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/experiments/goose_v0_2/upper_loadpath_readback_035/actual_axial_reaction_guard_11_screen035_001.json",
+    "sha256": "eed7094c0c286ef5eb3b99b22d045ff62d00be2a02f7aee360d49e19fb484e52"
+  },
+  "finite_manufacturing_dimension_condition": {
+    "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/experiments/goose_v0_2/output_thrust_loadpath_037/c01/finite_guard_tolerance_decision_001.json",
+    "sha256": "96deb01e5878fdc366ece246f56000b28299583f902c982f0b3fade4d8453ba3"
+  },
+  "nominal_CAD_capacity_only_N": 40.0,
+  "runtime_limit_is_tolerance_screen_not_physical_actuator_cap": true
+}
