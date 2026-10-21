@@ -2,9 +2,11 @@
 
 **本轮交付与训练接入冻结机体：[15](models/physics_v0_2_20261021_15_candidate/manifest.json)，设计质量16.869881kg，23刚体、18驱动、28外部凸碰撞体。** [同版头部闭合](cad/exports/hardware_closeout_040/candidate15/full_head_closed.step.gz)／[张开CAD](cad/exports/hardware_closeout_040/candidate15/full_head_open.step.gz)为137件原生装配；相对14仅替换下嘴内部承力筋和配合内腔两件，净增0.229g，完整鹅嘴、连续TPU、轴系、摩擦与原4.4N·m输入上限保持。[实际开闭与内部对照](images/bill_lower_preload_patch_048/native_head15_external_internal_comparison.png)已审查。仅按真实零件更新质量、重心与完整惯量。
 
-沿用V0.1完整MicroDuck四配色：**Cream奶油白、Graphite石墨灰、Lavender薰衣草紫、Sky天空蓝**。主壳／颈腿罩、灰面板、深色机构、嘴脚、镜圈、关节饰色与鞋边均保留独立分区；色号直接使用[同一份V0.1配置](../Goose_V0.1/configs/microduck_color_blocking_manual_wing_service.json)。[源与渲染记录](evidence/homepage_colorways_050.json)绑定当前装配，鞋边为已有鞋底表面配色，未增几何厚度或改动物理包。
+保留V0.1的MicroDuck四配色：**Cream奶油白、Graphite石墨灰、Lavender薰衣草紫、Sky天空蓝**。本轮重排分色：彩色头身、深色颈背与腿、灰色颈前／腹部／翼形区域、亮色嘴脚，镜圈／关节细边／鞋边用辅色呼应；颈腿不再整片沿用主壳色。色号直接使用[同一份V0.1配置](../Goose_V0.1/configs/microduck_color_blocking_manual_wing_service.json)。[分色配置](configs/appearance_color_blocking_051.json)与[源记录](evidence/appearance_color_blocking_051.json)绑定当前装配；腹翼和鞋边均为原表面涂装提案，没有新增检修门或几何厚度，不改冻结物理包。
 
-![Goose V0.2 MicroDuck四配色：奶油白、石墨灰、薰衣草紫、天空蓝](images/homepage_colorways_050/four_colorways.png)
+![Goose V0.2 MicroDuck四配色：奶油白、石墨灰、薰衣草紫、天空蓝](images/appearance_color_blocking_051/four_colorways.png)
+
+[前后分色对照](images/appearance_color_blocking_051/sky_before_after.png) · [正、侧、斜三视图](images/appearance_color_blocking_051/sky_three_views.png)。旧050图保留为历史记录，不再作为当前配色。
 
 **当前没有通过连续5秒的可吊重量结论。** 016的20kg曾真实离台0.3205s；13的3N·m／4.4N·m试验仍滑回托台，10kg也被旧上嘴扭转筛查截停。14采用真实下嘴局部补强，并计入已存在的连续上嘴筋，原材料许用值不变。上述失败完整保留，不能把旧载荷回放筛查或瞬间约196N支撑冒充14已通过。同14机体下021默认NoSlip0最长实际全载仅0.133s，022／023未完成捕获，024／025在捕获中触发原25µm闭环门；均未获5s资格。另行026／027改变切向有效柔度的敏感性试验先触发原38N止推条件门，也未完成保载；它们不能冒充原物性或实机通过。按用户纠正后的032已真正一次咬合连续增重0.167→5.260kg，托台撤离；随后滑出真实工作面域。末输入仅1.520N·m，尚未达到4.4N·m；5.260kg是本次增载协议的域退出点，不是硬件额定或5s保持上限。[独立实际审计](../../experiments/goose_v0_2/continuous_hanging_load_047/actual032_independent_virtual_ramp_audit_001.json)记录524次质量／惯量更新及零姿态改写。033同协议已实际达到原4.4N·m，并连续使用0.7985s；总挂载增至4.217kg时，下嘴237mm截面的原条件强度筛查先触发（利用率1.00504），尚未脱嘴。夹持预紧法向约254.6／250.5N不能当作悬挂重量；4.217kg也不是额定或5s保持上限。[实际032／033对照](../../experiments/goose_v0_2/continuous_hanging_load_047/actual032033_fullinput_comparison_001.json)与[完整视频及曲线索引](evidence/hardware_closeout_040/candidate14/continuous_virtual_load_047/actual_video_curve_index_032_033.json)保留。15已完成独立几何／物性审核及同协议034回归：原4.4N·m保持1.293s，连续增载至5.210367kg，下梁254mm截面原条件强度筛查先触发（利用率1.00360）；托台已撤离、接触仍在工作面内，但持续滑移。停止载荷比14／033提高约23.55%，不能将其签为额定或连续5s悬挂能力。本轮按用户接受的约5kg级增载实验结果收尾，不再追加改型；全开度满输出的已知薄尾边界仍保留。
 

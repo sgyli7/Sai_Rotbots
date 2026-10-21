@@ -12,15 +12,15 @@
 
 ## Goose V0.2：MicroDuck 四配色与冻结版15
 
-V0.2 沿用 V0.1 的完整 **MicroDuck 配色方案**：主壳与颈腿外罩、灰色检修面板、深色机构、嘴脚主辅色、镜圈和鞋边分别配色。以下四款使用同版实际装配、同一机位；源色号及公共材质直接读取 [V0.1 配色配置](robots/Goose_V0.1/configs/microduck_color_blocking_manual_wing_service.json)。
+V0.2 保留 V0.1 的四套 **MicroDuck 色系**，重新分配色块：彩色头部和机身、深色颈背与腿部、灰色颈前／腹部／翼形区域、亮色嘴脚，再由镜圈、关节细边和鞋边呼应。以下为同一实际装配的分色提案；源色号及公共材质直接读取 [V0.1 配色配置](robots/Goose_V0.1/configs/microduck_color_blocking_manual_wing_service.json)，不把整套颈腿护罩铺成机身主色。
 
 | Cream 奶油白 | Graphite 石墨灰 |
 |---|---|
-| ![Goose V0.2 Cream 奶油白](robots/goose_v0_2/images/homepage_colorways_050/cream.png) | ![Goose V0.2 Graphite 石墨灰](robots/goose_v0_2/images/homepage_colorways_050/graphite.png) |
+| ![Goose V0.2 Cream 奶油白](robots/goose_v0_2/images/appearance_color_blocking_051/cream.png) | ![Goose V0.2 Graphite 石墨灰](robots/goose_v0_2/images/appearance_color_blocking_051/graphite.png) |
 | **Lavender 薰衣草紫** | **Sky 天空蓝** |
-| ![Goose V0.2 Lavender 薰衣草紫](robots/goose_v0_2/images/homepage_colorways_050/lavender.png) | ![Goose V0.2 Sky 天空蓝](robots/goose_v0_2/images/homepage_colorways_050/sky.png) |
+| ![Goose V0.2 Lavender 薰衣草紫](robots/goose_v0_2/images/appearance_color_blocking_051/lavender.png) | ![Goose V0.2 Sky 天空蓝](robots/goose_v0_2/images/appearance_color_blocking_051/sky.png) |
 
-这些图由保留的机身与冻结版15的真实嘴部改件生成，保持完整鹅嘴和包覆颈腿；[图像与源身份](robots/goose_v0_2/evidence/homepage_colorways_050.json)记录各配色分区。鞋边色带为现有鞋底表面的配色，未增加零件或厚度，原生 CAD、质量、碰撞和驱动不因配色改变。
+这些图由保留的机身与冻结版15的真实嘴部改件生成，保持完整鹅嘴和包覆颈腿。[前后对照](robots/goose_v0_2/images/appearance_color_blocking_051/sky_before_after.png)／[正、侧、斜三视图](robots/goose_v0_2/images/appearance_color_blocking_051/sky_three_views.png)／[分色配置](robots/goose_v0_2/configs/appearance_color_blocking_051.json)／[源与渲染记录](robots/goose_v0_2/evidence/appearance_color_blocking_051.json)。翼形与腹部色块是原壳表面的涂装分界，未新增检修门、切口或零件；鞋边也仅为现有表面分色。CAD、质量、碰撞和驱动保持冻结版本。
 
 **当前机体：[冻结版15](robots/goose_v0_2/models/physics_v0_2_20261021_15_candidate/manifest.json)，16.869881 kg、23刚体、18驱动、28外部凸碰撞体。** [运行包与CAD](robots/goose_v0_2/README.md)及[PPO／VLA物理与数据接口验收](robots/goose_v0_2/evidence/training_io_049/README.md)已交付：重置、连续步进、观测／动作、RGB与实际动作标签对齐均完成有限自验；未启动训练。固定头部增载试验在5.210367 kg触发结构条件筛查，尚非稳定吊重额定值。04的14凸体包保留为历史对照，制造和整机连续拖运验收另有明确未完成项。
 
