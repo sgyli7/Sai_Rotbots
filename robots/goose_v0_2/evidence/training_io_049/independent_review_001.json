@@ -1,0 +1,71 @@
+{
+  "decision": "PASS_PHYSICAL_TRAINING_IO_ONLY_NOT_PPO_VLA_TRAINER",
+  "reviewer": "E independentread-only;Fsolephysics",
+  "new_physics_steps_by_review": 0,
+  "source": {
+    "path": "src/sai_agent/goose_training_io.py",
+    "sha256": "01e3adaf0c4ce7cc0de7fe1da4f5a77309eba2852252baa52c083416bd415c55"
+  },
+  "smoke_source": {
+    "path": "scripts/evaluation/check_goose_training_io_049.py",
+    "sha256": "9f005360515966da01901ecb69a16b7153d412ac15d18849daca9a17f8582235"
+  },
+  "receipt_sha256": "283476c5af55c77edda560f5eef0579868449f85be3d2c83169a4a71e80e9143",
+  "contract_sha256": "fd4c1bb5d73268b00f8a714bf40d5db5a846a6ad2ca5a57bedd3e06d6e092762",
+  "sample_schema_sha256": "ca2923a52bb8e04b7dc43e1138603b79c0a51883abe9f6ebf89691722e318e7a",
+  "verification": {
+    "verified_files": 108,
+    "manifest_sha256": "41ee30e7eeb004986daa9ee55d67c4ae74b638615bb2c29f6dcc3c314197df89",
+    "release_id": "physics_v0_2_20261021_15_candidate"
+  },
+  "actual_rows": 100,
+  "episode_counts": [
+    50,
+    50
+  ],
+  "actual_total_sim_s": 2.0,
+  "obs_shape_dtype": [
+    [
+      100,
+      65
+    ],
+    "float32"
+  ],
+  "action_shape_dtype": [
+    [
+      100,
+      18
+    ],
+    "float64"
+  ],
+  "max_dt_error_s": 2.203098814490545e-15,
+  "loop_max_m": 8.705102860826341e-08,
+  "raw_trajectory_sha256": "843077eb2f1f04994da2718bccb2b8afff832277a2cefd45e40ae44e7d18b615",
+  "sample_npz_sha256": "332c9ec92afc8c263dc8a1880c2c7f459769323583728adcd147f7d403233635",
+  "sample_metadata_sha256": "973da43eddbadbb9642a2d2893993a20494bd898d5d63dc6f2ae3324d3e28ad6",
+  "sample_state_matches_final_actual_trajectory_exact": true,
+  "action_chunk_shape": [
+    4,
+    18
+  ],
+  "action_chunk_times_s": [
+    0.9999999999999453,
+    1.0199999999999452,
+    1.0399999999999452,
+    1.0599999999999452
+  ],
+  "sample_semantics": "proposed normalized motor-target actions; not already executed",
+  "version": "goose_training_io_v1",
+  "language_present": true,
+  "axis5": "physicalinputmotor,notpassivejaw;08policyincompatible",
+  "camera": "ActualdebugRGBreviewed;explicitfixedMuJoCofreecamera,notphysicalcalibration/nativevisual/domainrandomization. sample_schemahasGLposeandfovy45.",
+  "exception_handling": "Invalidshape/NaNrejectedbeforestep;sourcephysicsguardexception propagates,savesfailuretime,nowrapperautoreset/retry. Explicitresetonly.",
+  "physics_unchanged": "Wrapperloadscontenthash-bound15archive,delegatesalltiming/caps/resettoFrozenPhysics.No physicalparameterupdates,externalforces,reward,optimizerorpolicy.",
+  "limitations": [
+    "No completePPO/VLAalgorithmsorSaiLabexistingtrainersintegrated",
+    "No task/reward/done orsuccesscriterion supplied",
+    "No learningupdate/GPUtraining;onlyFbounded2reset\u00d750actionsmoke",
+    "Sourcecamerauncalibrateddebugandcollisionproxyappearance;notnativeCADorrealonboardRGB",
+    "Hardware15hanging/towingqualification remainsseparate andnotpassed"
+  ]
+}

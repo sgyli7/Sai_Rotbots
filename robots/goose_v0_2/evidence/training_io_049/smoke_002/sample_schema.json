@@ -1,0 +1,155 @@
+{
+  "interface_version": "goose_training_io_v1",
+  "record_files": [
+    "sample.json",
+    "sample.npz"
+  ],
+  "metadata_readback": {
+    "interface_version": "goose_training_io_v1",
+    "model": {
+      "verified_files": 108,
+      "manifest_sha256": "41ee30e7eeb004986daa9ee55d67c4ae74b638615bb2c29f6dcc3c314197df89",
+      "release_id": "physics_v0_2_20261021_15_candidate"
+    },
+    "language": "Hold the current posture with the following four diagnostic motor actions.",
+    "actual_state_time_s": 0.9199999999999541,
+    "action_dt_s": 0.02,
+    "chunk_semantics": "proposed normalized motor-target actions; not already executed",
+    "camera": {
+      "kind": "explicit simulator free debug camera, not real camera calibration",
+      "world_lookat_m": [
+        0,
+        0,
+        0.42
+      ],
+      "distance_m": 1.65,
+      "azimuth_deg": 135,
+      "elevation_deg": -18,
+      "projection": "MuJoCo perspective free camera; vertical fovy from model.vis.global_.fovy"
+    }
+  },
+  "arrays": {
+    "rgb": {
+      "shape": [
+        240,
+        320,
+        3
+      ],
+      "dtype": "uint8"
+    },
+    "proprio": {
+      "shape": [
+        65
+      ],
+      "dtype": "float32"
+    },
+    "action_chunk": {
+      "shape": [
+        4,
+        18
+      ],
+      "dtype": "float64"
+    },
+    "qpos": {
+      "shape": [
+        29
+      ],
+      "dtype": "float64"
+    },
+    "qvel": {
+      "shape": [
+        28
+      ],
+      "dtype": "float64"
+    },
+    "action_time_s": {
+      "shape": [
+        4
+      ],
+      "dtype": "float64"
+    }
+  },
+  "camera": {
+    "kind": "uncalibrated simulator debug freecamera, not physical onboard camera",
+    "render_size_wh": [
+      320,
+      240
+    ],
+    "vertical_fovy_deg": 45.0,
+    "MuJoCo_GL_camera_eyes": [
+      {
+        "position_world_m": [
+          1.0855809450149536,
+          -1.1336641311645508,
+          0.9298780560493469
+        ],
+        "forward_world": [
+          -0.6724985241889954,
+          0.6724985241889954,
+          -0.30901700258255005
+        ],
+        "up_world": [
+          -0.21850800514221191,
+          0.21850800514221191,
+          0.9510565400123596
+        ],
+        "frustum_near_m": 0.010076496750116348,
+        "frustum_far_m": 50.38248825073242,
+        "frustum_top": 0.004173821769654751,
+        "frustum_bottom": -0.004173821769654751
+      },
+      {
+        "position_world_m": [
+          1.1336641311645508,
+          -1.0855809450149536,
+          0.9298780560493469
+        ],
+        "forward_world": [
+          -0.6724985241889954,
+          0.6724985241889954,
+          -0.30901700258255005
+        ],
+        "up_world": [
+          -0.21850800514221191,
+          0.21850800514221191,
+          0.9510565400123596
+        ],
+        "frustum_near_m": 0.010076496750116348,
+        "frustum_far_m": 50.38248825073242,
+        "frustum_top": 0.004173821769654751,
+        "frustum_bottom": -0.004173821769654751
+      }
+    ]
+  },
+  "proprio_layout": [
+    {
+      "indices": "0:3",
+      "quantity": "torso local angular velocity x.25"
+    },
+    {
+      "indices": "3:6",
+      "quantity": "gravity direction in torso frame"
+    },
+    {
+      "indices": "6:9",
+      "quantity": "external commands3"
+    },
+    {
+      "indices": "9:27",
+      "quantity": "public motor q-neutral18"
+    },
+    {
+      "indices": "27:45",
+      "quantity": "public motor qd x.1"
+    },
+    {
+      "indices": "45:63",
+      "quantity": "last clipped action18"
+    },
+    {
+      "indices": "63:65",
+      "quantity": "sin/cos phase"
+    }
+  ],
+  "trajectory_semantics": "Each row: observation_before/time_before/qpos_before/qvel_before \u2192 applied action18 \u2192 observation_after/time_after/qpos/qvel. Legacy observation/time are explicit poststep aliases. Last4 sample RGB/proprio/q/v is actual pre-action time.92, with chunk exactly executed at.92/.94/.96/.98 and resulting states.94/.96/.98/1.00; execution_receipt proves pairing. No human demonstration or task success claimed."
+}
