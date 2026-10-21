@@ -7,12 +7,16 @@
 | Sai_Agent_001 | Original powered opposed pads and belt mechanism | [001](robots/Sai_Agent_001/README.md) |
 | Sai_Agent_002 | Continuous flat floor, no moving clamp mechanism | [002](robots/Sai_Agent_002/README.md) |
 | Goose_V0.1 | Long-neck biped with a gripping beak; initial training checkpoint | [Goose](robots/Goose_V0.1/README.md) |
-| goose_v0_2 | Frozen15 hardware; 28 convex shapes, 18 drive axes, verified training I/O; four MicroDuck colorways | [Goose V0.2](robots/goose_v0_2/README.md) |
+| goose_v0_2 | Frozen15 hardware and training I/O; monochrome enclosure concept under review | [Goose V0.2](robots/goose_v0_2/README.md) |
 | gorilla_v0_1 | AA3 appearance; C15 segmented-foot stage, physical gates open | [Gorilla](robots/gorilla_v0_1/README.md) |
 
-## Goose V0.2：MicroDuck 四配色与冻结版15
+## Goose V0.2：单色造型草案与冻结版15
 
 **051 配色展示已撤下，未通过外观验收。** 任意腹翼色块及颈前撞色不再作为设计方案；先核对单色设计、真实分件与标出的疑似穿插，再制作配色。保留 V0.1 的 MicroDuck 四套色系要求，历史图片仅作问题记录。当前训练机体身份与能力范围见下文。
+
+**054单色造型草案，非实际CAD渲染。** 以连贯的鹅形轮廓、完整罩面和必要的活动接口收敛外观；本图尚未获最终外观确认，真实CAD仍待落实。[草案与审查记录](robots/goose_v0_2/README.md)明确区分造型提案和冻结训练机体。
+
+![Goose V0.2 单色造型草案，非CAD验收](robots/goose_v0_2/design/concepts/enclosure_form_054/monochrome_study_joint_review.png)
 
 **当前机体：[冻结版15](robots/goose_v0_2/models/physics_v0_2_20261021_15_candidate/manifest.json)，16.869881 kg、23刚体、18驱动、28外部凸碰撞体。** [运行包与CAD](robots/goose_v0_2/README.md)及[PPO／VLA物理与数据接口验收](robots/goose_v0_2/evidence/training_io_049/README.md)已交付：重置、连续步进、观测／动作、RGB与实际动作标签对齐均完成有限自验；未启动训练。固定头部增载试验在5.210367 kg触发结构条件筛查，尚非稳定吊重额定值。04的14凸体包保留为历史对照，制造和整机连续拖运验收另有明确未完成项。
 
