@@ -7,18 +7,22 @@
 | Sai_Agent_001 | Original powered opposed pads and belt mechanism | [001](robots/Sai_Agent_001/README.md) |
 | Sai_Agent_002 | Continuous flat floor, no moving clamp mechanism | [002](robots/Sai_Agent_002/README.md) |
 | Goose_V0.1 | Long-neck biped with a gripping beak; initial training checkpoint | [Goose](robots/Goose_V0.1/README.md) |
-| goose_v0_2 | Frozen15 hardware and training I/O; monochrome enclosure concept under review | [Goose V0.2](robots/goose_v0_2/README.md) |
+| goose_v0_2 | Frozen15 training I/O; 056 native enclosure CAD and four MicroDuck colourways | [Goose V0.2](robots/goose_v0_2/README.md) |
 | gorilla_v0_1 | AA3 appearance; C15 segmented-foot stage, physical gates open | [Gorilla](robots/gorilla_v0_1/README.md) |
 
-## Goose V0.2：单色造型草案与冻结版15
+## Goose V0.2：连续包覆原生 CAD
 
-**051 配色展示已撤下，未通过外观验收。** 任意腹翼色块及颈前撞色不再作为设计方案；先核对单色设计、真实分件与标出的疑似穿插，再制作配色。保留 V0.1 的 MicroDuck 四套色系要求，历史图片仅作问题记录。当前训练机体身份与能力范围见下文。
+056 外观修订已落到真实源装配：横向芒果机身、侧置圆髋、连贯颈罩、完整膝袖与整鞋上罩。前后壳承担整机检修，机尾维护复位件移入尾盖内；保留实际内部硬件和原脚底。以下为保存后原生面生成的整机图。
 
-**054单色造型草案，非实际CAD渲染。** 以连贯的鹅形轮廓、完整罩面和必要的活动接口收敛外观；本图尚未获最终外观确认，真实CAD仍待落实。[草案与审查记录](robots/goose_v0_2/README.md)明确区分造型提案和冻结训练机体。
+**脚罩活动范围尚未放行。** 原轴系20°姿态检查发现未变形鞋罩进入踝部硬件，需要重新安排随动接口；当前图片展示静态外观。[实际动作证据与范围](robots/goose_v0_2/evidence/enclosure_refinement_056/ankle_motion/ankle_motion_review_056.json)单独保留，未改变冻结训练包。
 
-![Goose V0.2 单色造型草案，非CAD验收](robots/goose_v0_2/design/concepts/enclosure_form_054/monochrome_study_joint_review.png)
+![Goose V0.2 056 Sky，同版原生CAD](robots/goose_v0_2/images/enclosure_refinement_056/sky_oblique.png)
 
-**当前机体：[冻结版15](robots/goose_v0_2/models/physics_v0_2_20261021_15_candidate/manifest.json)，16.869881 kg、23刚体、18驱动、28外部凸碰撞体。** [运行包与CAD](robots/goose_v0_2/README.md)及[PPO／VLA物理与数据接口验收](robots/goose_v0_2/evidence/training_io_049/README.md)已交付：重置、连续步进、观测／动作、RGB与实际动作标签对齐均完成有限自验；未启动训练。固定头部增载试验在5.210367 kg触发结构条件筛查，尚非稳定吊重额定值。04的14凸体包保留为历史对照，制造和整机连续拖运验收另有明确未完成项。
+![Goose V0.2 四套MicroDuck整件配色](robots/goose_v0_2/images/enclosure_refinement_056/four_colorways.png)
+
+[单色三视图](robots/goose_v0_2/images/enclosure_refinement_056/clay_three_views.png) · [颈部／脚部／后跟](robots/goose_v0_2/images/enclosure_refinement_056/clay_interface_details.png) · [四套MicroDuck配色](robots/goose_v0_2/images/enclosure_refinement_056/four_colorways.png) · [原生CAD、重建与验收范围](robots/goose_v0_2/design/enclosure_refinement_056.md)
+
+**训练机体仍为[冻结版15](robots/goose_v0_2/models/physics_v0_2_20261021_15_candidate/manifest.json)：16.869881 kg、23刚体、18驱动、28外部凸碰撞体。** [PPO／VLA物理与数据接口](robots/goose_v0_2/evidence/training_io_049/README.md)保持原有有限自验范围；056是独立CAD工程修订，没有覆盖其质量、惯量、碰撞或执行器数据。软罩变形与寿命、完整运动范围和制造仍须后续验证，具体边界随同版证据交付。固定头部5.210367 kg增载停止点仍不作为稳定吊重额定值，整机连续重载拖运尚未通过。
 
 ## Gorilla V0.1：AA3 外形与复合脚阶段
 

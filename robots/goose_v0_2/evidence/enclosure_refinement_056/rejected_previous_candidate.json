@@ -1,0 +1,72 @@
+{
+  "schema": "goose_056_prior_candidate_rejection/1",
+  "disposition": "REJECTED_FOR_EXTERIOR_FORM",
+  "assembly_manifest_identity": {
+    "path": "artifacts/goose_v0_2/enclosure_refinement_056/rejected_boot_form_602cbc/assembly_manifest.json",
+    "sha256": "3bb3ec145157cd5d683b66625f7b103751690bb6b0085c07043153ae746fe99d"
+  },
+  "native_builder": {
+    "path": "scripts/cad/assemble_goose_enclosure_refinement_056.py",
+    "sha256": "cf1e350b4b35c60a98687afefcd7cbb66c86a8058472cedade22672020a2c0cd"
+  },
+  "module_sources": [
+    {
+      "path": "scripts/cad/goose_enclosure_body_056.py",
+      "sha256": "b95b2b2803b9cadd471c793f60de654f988288a6233670c6944a1daca4d2f659"
+    },
+    {
+      "path": "scripts/cad/goose_enclosure_neck_056.py",
+      "sha256": "56e95b84b63134d5c85e0d4a8e5d6c9130c3749b863679dbeb6c6e7d7834cd43"
+    },
+    {
+      "path": "scripts/cad/goose_enclosure_limbs_056.py",
+      "sha256": "602cbc1c87fdec8324e2968a1a8fc85c55ce5937a9579f6515625385101fea5e"
+    },
+    {
+      "path": "scripts/cad/goose_ankle_interface_056.py",
+      "sha256": "c325fd21245527238ee7b2413647f6d00209f6ea8580b4ad57360a29da7b40b4"
+    },
+    {
+      "path": "scripts/cad/goose_enclosure_service_056.py",
+      "sha256": "f6ba89a8b1bb07478d7725d2ca273cdd206337ec1e58843d847f73b2a06e4fd2"
+    }
+  ],
+  "images": [
+    {
+      "path": "robots/goose_v0_2/images/enclosure_refinement_056/rejected_602_c06/clay_side.png",
+      "sha256": "aa6fd600af7cd84726577f2f028adac630dc5966d375b6108afad170b596fe4d"
+    },
+    {
+      "path": "robots/goose_v0_2/images/enclosure_refinement_056/rejected_602_c06/clay_neck.png",
+      "sha256": "088ec2267dd24180adbb5930bd3e2f3740d9ebe557f92753067c715ad828dc8b"
+    },
+    {
+      "path": "robots/goose_v0_2/images/enclosure_refinement_056/rejected_602_c06/clay_feet.png",
+      "sha256": "d9c481c0cae6d9e7125fbeffe128616aca24474bdc3e9e1463c0a0e2f4388e9b"
+    },
+    {
+      "path": "robots/goose_v0_2/images/enclosure_refinement_056/rejected_602_c06/clay_heel.png",
+      "sha256": "fdc51a789c011c112f9342f5a3559660f1c5e6089cf35d4bf41f58e0a5a13243"
+    }
+  ],
+  "failures": [
+    {
+      "feature": "shoe crown",
+      "observed": "High square shoulder and upright heel read as a boot. Topological validity and coverage did not establish the accepted shoe form.",
+      "source_correction": "Lower middle crown over the actual ankle hardware; use a continuous rounded surface; retain original sole and load members."
+    },
+    {
+      "feature": "head-rear transition",
+      "observed": "Raised cup rim and broad dark crescent persist in actual neck/top views despite a metadata opening-width value of zero.",
+      "source_correction": "Replace the exposed receiver rim with a continuous native outer transition, retaining actual head, axes and internal guard clearance."
+    },
+    {
+      "feature": "review coverage",
+      "observed": "Existing shoe/heel views did not show both inboard limb faces clearly.",
+      "source_correction": "Add both inboard actual views without omitting hardware."
+    }
+  ],
+  "passing_geometry_checks_do_not_override_form_rejection": true,
+  "failed_native_trials_preserved_in_local_artifacts": true,
+  "runtime_modified": false
+}

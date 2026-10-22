@@ -1,0 +1,229 @@
+{
+  "started_at_utc": "2026-10-22T02:03:52.233070+00:00",
+  "cpu_affinity": [
+    0
+  ],
+  "wall_budget_seconds": 1200,
+  "native_calculation_target_seconds": 1020,
+  "assembly_manifest": {
+    "path": "robots/goose_v0_2/cad/source/enclosure_refinement_056/assembly_manifest.json",
+    "sha256": "b5a64754fc862940e18ec30a502903f2be46ec8211074fe6419245ef83488408"
+  },
+  "contract": {
+    "path": "robots/goose_v0_2/models/physics_v0_2_20261021_15_candidate/physical_contract.json",
+    "sha256": "ebd5b41fe6cad0aa413f2114ca3769671cf403c93085f0adb5a25ce034cc943a"
+  },
+  "frozen_manifest": {
+    "path": "robots/goose_v0_2/models/physics_v0_2_20261021_15_candidate/manifest.json",
+    "sha256": "41ee30e7eeb004986daa9ee55d67c4ae74b638615bb2c29f6dcc3c314197df89"
+  },
+  "limbs_source": {
+    "path": "scripts/cad/goose_enclosure_limbs_056.py",
+    "sha256": "187fecfcd90af9e1fe8bc5d1bf78244a42f6d24e923c594815d989eecf3f0372"
+  },
+  "shoe_native": {
+    "path": "robots/goose_v0_2/cad/source/enclosure_refinement_056/left_one_piece_shoe_upper_056.brep",
+    "sha256": "812a19e325fac7b84704681aeb38c618429cf1a9f42886db26895b06eb9a0514"
+  },
+  "shin_native": {
+    "path": "robots/goose_v0_2/cad/source/enclosure_refinement_056/left_shin_continuous_protective_skin_056.brep",
+    "sha256": "a0bc61832fcbf5b44bbfd03d67a29fcaaee415d9ed0d86cd377204220b7ac04c"
+  },
+  "AP_joint": {
+    "name": "left_ankle_pitch",
+    "parent": "left_knee_pitch",
+    "pivot_world_at_zero_m": [
+      0.009576627833366786,
+      0.125,
+      0.09100664866719005
+    ],
+    "axis_parent": [
+      0.0,
+      1.0,
+      0.0
+    ],
+    "range_rad": [
+      -1.1,
+      1.1
+    ],
+    "q_neutral_rad": 0.0,
+    "action_scale_rad": 1.1,
+    "kp_nm_rad": 100.0,
+    "kd_nm_s_rad": 0.875,
+    "torque_peak_limit_nm": 12.0,
+    "continuous_design_limit_nm": 6.4,
+    "speed_limit_rad_s": 4.1887902047863905,
+    "armature_kg_m2": 0.02357424,
+    "frictionloss_nm": 0.4,
+    "damping_nm_s_rad": 0.01,
+    "actuator": "ak45_36_v3",
+    "limits_status": "source design range retained; continuous current hardware sweep not qualified"
+  },
+  "AR_joint": {
+    "name": "left_ankle_roll",
+    "parent": "left_ankle_pitch",
+    "pivot_world_at_zero_m": [
+      0.07014999999999999,
+      0.125,
+      0.040655
+    ],
+    "axis_parent": [
+      1.0,
+      0.0,
+      0.0
+    ],
+    "range_rad": [
+      -0.5,
+      0.5
+    ],
+    "q_neutral_rad": 0.0,
+    "action_scale_rad": 0.5,
+    "kp_nm_rad": 20.0,
+    "kd_nm_s_rad": 0.175,
+    "torque_peak_limit_nm": 4.0,
+    "continuous_design_limit_nm": 2.0,
+    "speed_limit_rad_s": 12.56637061435917,
+    "armature_kg_m2": 0.0015733,
+    "frictionloss_nm": 0.05,
+    "damping_nm_s_rad": 0.01,
+    "actuator": "ak45_10_v3",
+    "limits_status": "source design range retained; continuous current hardware sweep not qualified"
+  },
+  "shoe_attachment_declared_body": "left_ankle_roll",
+  "shoe_assumptions": [
+    "Original sole, load plate, saddles, clips and fasteners remain actual load-bearing hardware.",
+    "TPU95A 1200kg/m3 and 1.2mm main skin are design estimates; upper shin tongue locally follows 1.8mm source cavity.",
+    "Upper lip nests at the shin edge and spans AP/AR; flexible mounting, deformation, fatigue and pinching remain unqualified.",
+    "Outer volumes share one cavity; no hollow-volume internal membrane is retained.",
+    "Zero-pose native fit is not a flexible-life or full-motion qualification."
+  ],
+  "attachment_audit": "One zero-pose TPU shell is declared AR-owned, while its upper tongue must remain nested at the shin. It spans AP and AR. The following rigid transport is a conservative kinematic incompatibility diagnostic, not a validated TPU deformation solution.",
+  "method": "T_shoe=T_AP(zero-world AP pivot/axis,q_AP) @ T_AR(zero-world AR pivot/axis,q_AR). Shin fixed at knee body. Exact native minimum set distance, then single-thread Common when distance<=1e-5mm. GK span-aware Common volume is numerical diagnostic, not force/strain/fatigue.",
+  "poses": [
+    {
+      "id": "zero",
+      "AP_rad": 0.0,
+      "AR_rad": 0.0
+    },
+    {
+      "id": "ap_pos_mid",
+      "AP_rad": 0.55,
+      "AR_rad": 0.0
+    },
+    {
+      "id": "ap_neg_mid",
+      "AP_rad": -0.55,
+      "AR_rad": 0.0
+    },
+    {
+      "id": "ar_pos_mid",
+      "AP_rad": 0.0,
+      "AR_rad": 0.25
+    },
+    {
+      "id": "ar_neg_mid",
+      "AP_rad": 0.0,
+      "AR_rad": -0.25
+    },
+    {
+      "id": "ap_pos_end",
+      "AP_rad": 1.1,
+      "AR_rad": 0.0
+    },
+    {
+      "id": "ap_neg_end",
+      "AP_rad": -1.1,
+      "AR_rad": 0.0
+    },
+    {
+      "id": "ar_pos_end",
+      "AP_rad": 0.0,
+      "AR_rad": 0.5
+    },
+    {
+      "id": "ar_neg_end",
+      "AP_rad": 0.0,
+      "AR_rad": -0.5
+    },
+    {
+      "id": "combo_pp_mid",
+      "AP_rad": 0.55,
+      "AR_rad": 0.25
+    },
+    {
+      "id": "combo_pm_mid",
+      "AP_rad": 0.55,
+      "AR_rad": -0.25
+    },
+    {
+      "id": "combo_np_mid",
+      "AP_rad": -0.55,
+      "AR_rad": 0.25
+    },
+    {
+      "id": "combo_nn_mid",
+      "AP_rad": -0.55,
+      "AR_rad": -0.25
+    },
+    {
+      "id": "combo_pp_end",
+      "AP_rad": 1.1,
+      "AR_rad": 0.5
+    },
+    {
+      "id": "combo_pm_end",
+      "AP_rad": 1.1,
+      "AR_rad": -0.5
+    },
+    {
+      "id": "combo_np_end",
+      "AP_rad": -1.1,
+      "AR_rad": 0.5
+    },
+    {
+      "id": "combo_nn_end",
+      "AP_rad": -1.1,
+      "AR_rad": -0.5
+    }
+  ],
+  "upper_lip_zero_points_mm": [
+    [
+      -11.245585046708584,
+      82.87037163972855,
+      125.04258751869202
+    ],
+    [
+      2.1953305695205927,
+      82.12769031524658,
+      130.21795451641083
+    ],
+    [
+      2.4135413113981485,
+      160.84228456020355,
+      130.25839626789093
+    ],
+    [
+      9.576627984642982,
+      82.35494792461395,
+      130.90664148330688
+    ],
+    [
+      24.173012003302574,
+      86.04852110147476,
+      125.01320242881775
+    ],
+    [
+      27.90626510977745,
+      89.62960541248322,
+      125.75124204158783
+    ]
+  ],
+  "unqualified": [
+    "Full-ROM continuous sweep",
+    "Flexible constitutive response",
+    "Attachment/retention/slip",
+    "Fatigue",
+    "Forces/contact pressure",
+    "Whole-robot motion"
+  ]
+}

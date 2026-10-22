@@ -45,10 +45,32 @@ binary bundle must carry the licenses of the components it actually contains.
 
 ## Goose and MicroDuck references
 
-Goose source geometry in this milestone is independently generated. Vendor servo
-and electronics bodies are dimensional proxies, not redistributed vendor CAD.
-The user-supplied handoff images, documents and procurement sheets are preserved
-as reference material and do not establish manufacturing or performance claims.
+Goose packages combine project-authored geometry, independent dimensional
+envelopes, and retained third-party CAD. Project-authored code, enclosures and
+custom fixtures follow the repository license; that license does not relicense
+the retained supplier geometry. Per-part provenance identifies the representation.
+
+The 056 M3x12 button-head screw, M3 hex nut and M3 flat washer come from
+[earthtojake/step.parts](https://github.com/earthtojake/step.parts/tree/c6113328a5695b976a010a203a90fe86191769bf),
+commit `c6113328a5695b976a010a203a90fe86191769bf`. Their catalogue records and
+[MIT notice](robots/goose_v0_2/cad/source/enclosure_refinement_056/ankle_receiver_setback_056/STEP_PARTS_LICENSE.txt)
+are included with the pinned inputs. This notice applies to those catalogue
+assets, not to every purchased component in the assembly.
+
+The 056 maintenance-reset assembly retains three actual IDEC AB6M family CAD
+solids from `AB6M-M-AB6M-A.STEP`, split into native BReps and rigidly positioned;
+the lock ring is positioned separately for the receiver. They are supplier CAD,
+not project-authored proxies, and no MIT or Apache license is asserted for them.
+IDEC retains the relevant intellectual-property rights. Its
+[Japanese website terms](https://www.idec.com/ja-jp/content/terms-conditions),
+sections 1-2 and 1-3, give individual download conditions priority and restrict
+other copying or transmission without prior consent. Source identities, the
+official product page and the bounded terms review are recorded in
+[the AB6M provenance record](robots/goose_v0_2/cad/source/enclosure_refinement_056/service_inputs/ab6m_oem_source_terms.json).
+This attribution does not grant permission for external redistribution.
+
+The user-supplied handoff images, documents and procurement sheets remain
+reference material and do not establish manufacturing or performance claims.
 
 [Pollen Robotics MicroDuck](https://github.com/pollen-robotics/microduck) and
 [MicroDuck RL](https://github.com/pollen-robotics/microduck_rl) are engineering

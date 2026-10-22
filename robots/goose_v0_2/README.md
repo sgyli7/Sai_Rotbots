@@ -2,9 +2,17 @@
 
 **本轮交付与训练接入冻结机体：[15](models/physics_v0_2_20261021_15_candidate/manifest.json)，设计质量16.869881kg，23刚体、18驱动、28外部凸碰撞体。** [同版头部闭合](cad/exports/hardware_closeout_040/candidate15/full_head_closed.step.gz)／[张开CAD](cad/exports/hardware_closeout_040/candidate15/full_head_open.step.gz)为137件原生装配；相对14仅替换下嘴内部承力筋和配合内腔两件，净增0.229g，完整鹅嘴、连续TPU、轴系、摩擦与原4.4N·m输入上限保持。[实际开闭与内部对照](images/bill_lower_preload_patch_048/native_head15_external_internal_comparison.png)已审查。仅按真实零件更新质量、重心与完整惯量。
 
-**051配色展示已撤下，外观验收不通过。** 任意翼形斑块、腹部色带及颈前撞色已撤回；先完成单色设计和真实分件检查，再配色。MicroDuck四套色系要求保持：Cream奶油白、Graphite石墨灰、Lavender薰衣草紫、Sky天空蓝。050／051图片保留为历史问题证据，不作为当前获准外观。
+**最新外观工程：[056连续包覆原生CAD](design/enclosure_refinement_056.md)。** 054造型方向已落实到真实装配：保留横向芒果母面与完整鹅嘴，收口圆髋、头颈接收边、膝部和整鞋上罩；机尾维护复位件移入可拆尾盖内部。原承力件和脚底继续保留，实际踝前承座干涉另以真实零件修正。单色设计先经过同版多视图检查，再按完整真实分件配色。
 
-**当前外观工作：[054单色造型草案](design/concepts/enclosure_form_054/monochrome_study_joint_review.png)。** 鞋面、侧围与后跟采用连续罩面，去掉颈根装饰分割，保留活动接口并统一颈部关节的多视图表达。这是AI造型提案，尚未获最终外观确认；真实CAD尚未按此重建。图稿不替换上面的冻结15机体。[生成记录](design/concepts/enclosure_form_054/prompt.json)与[本版审查](design/concepts/enclosure_form_054/design_review.json)分别记录已修订和未完成项，后续交付执行[设计审查门槛](design/delivery_review_gate.json)。
+**056脚罩不能宣称不影响活动范围。** 有界原生动作复核已在10°／20°姿态检出软鞋皮穿入刚性小腿罩与AP电机包络的运动路径。现结构需要未验证的滑移或变形，随动接口正在改型；本页图片是静态外观。[实际复核](evidence/enclosure_refinement_056/ankle_motion/ankle_motion_review_056.json)与[侧摆−20°近景](images/enclosure_refinement_056/ankle_diagnostic_ar_neg20.png)保留。原金属、脚底、关节范围及冻结15未改。
+
+![Goose V0.2 056 Sky实际原生装配](images/enclosure_refinement_056/sky_oblique.png)
+
+![Cream、Graphite、Lavender、Sky同版整件配色](images/enclosure_refinement_056/four_colorways.png)
+
+[单色三视图](images/enclosure_refinement_056/clay_three_views.png) · [头颈／踝鞋／后跟](images/enclosure_refinement_056/clay_interface_details.png) · [Cream／Graphite／Lavender／Sky](images/enclosure_refinement_056/four_colorways.png) · [完整原生STEP压缩包](cad/exports/enclosure_refinement_056/goose_enclosure_refinement_056.step.gz) · [逐件源与装配清单](cad/source/enclosure_refinement_056/assembly_manifest.json) · [验收证据](evidence/enclosure_refinement_056/delivery_review.json)
+
+056与上面的冻结运行包15分别保存，未改变训练物理。柔性罩的变形、固定与寿命，完整运动范围和制造资格均按[同版边界](design/enclosure_refinement_056.md)报告。051零碎配色与052未闭合外壳保留作历史拒绝记录；当前配色使用既有MicroDuck色值及完整零件，不再增加任意翼斑、腹带或颈前色块。交付遵循[设计审查门槛](design/delivery_review_gate.json)。
 
 **当前没有通过连续5秒的可吊重量结论。** 016的20kg曾真实离台0.3205s；13的3N·m／4.4N·m试验仍滑回托台，10kg也被旧上嘴扭转筛查截停。14采用真实下嘴局部补强，并计入已存在的连续上嘴筋，原材料许用值不变。上述失败完整保留，不能把旧载荷回放筛查或瞬间约196N支撑冒充14已通过。同14机体下021默认NoSlip0最长实际全载仅0.133s，022／023未完成捕获，024／025在捕获中触发原25µm闭环门；均未获5s资格。另行026／027改变切向有效柔度的敏感性试验先触发原38N止推条件门，也未完成保载；它们不能冒充原物性或实机通过。按用户纠正后的032已真正一次咬合连续增重0.167→5.260kg，托台撤离；随后滑出真实工作面域。末输入仅1.520N·m，尚未达到4.4N·m；5.260kg是本次增载协议的域退出点，不是硬件额定或5s保持上限。[独立实际审计](../../experiments/goose_v0_2/continuous_hanging_load_047/actual032_independent_virtual_ramp_audit_001.json)记录524次质量／惯量更新及零姿态改写。033同协议已实际达到原4.4N·m，并连续使用0.7985s；总挂载增至4.217kg时，下嘴237mm截面的原条件强度筛查先触发（利用率1.00504），尚未脱嘴。夹持预紧法向约254.6／250.5N不能当作悬挂重量；4.217kg也不是额定或5s保持上限。[实际032／033对照](../../experiments/goose_v0_2/continuous_hanging_load_047/actual032033_fullinput_comparison_001.json)与[完整视频及曲线索引](evidence/hardware_closeout_040/candidate14/continuous_virtual_load_047/actual_video_curve_index_032_033.json)保留。15已完成独立几何／物性审核及同协议034回归：原4.4N·m保持1.293s，连续增载至5.210367kg，下梁254mm截面原条件强度筛查先触发（利用率1.00360）；托台已撤离、接触仍在工作面内，但持续滑移。停止载荷比14／033提高约23.55%，不能将其签为额定或连续5s悬挂能力。本轮按用户接受的约5kg级增载实验结果收尾，不再追加改型；全开度满输出的已知薄尾边界仍保留。
 
