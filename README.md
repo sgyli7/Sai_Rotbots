@@ -16,6 +16,8 @@
 
 **脚罩活动范围尚未放行。** 原轴系20°姿态检查发现未变形鞋罩进入踝部硬件，需要重新安排随动接口；当前图片展示静态外观。[实际动作证据与范围](robots/goose_v0_2/evidence/enclosure_refinement_056/ankle_motion/ankle_motion_review_056.json)单独保留，未改变冻结训练包。
 
+独立排除鞋罩后的[原机构端点检查](robots/goose_v0_2/evidence/enclosure_refinement_056/ankle_motion/baseline_endpoint_review_008.json)还发现：左前后踝在合同±1.1 rad处，原7075承力件与原小腿承力壳相交。已核对零位和轴系；这不是TPU变形问题，不能靠修饰鞋罩或缩小限位放行。结构与护罩修正另留候选，056图片不代表整机运动范围通过。
+
 ![Goose V0.2 056 Sky，同版原生CAD](robots/goose_v0_2/images/enclosure_refinement_056/sky_oblique.png)
 
 ![Goose V0.2 四套MicroDuck整件配色](robots/goose_v0_2/images/enclosure_refinement_056/four_colorways.png)

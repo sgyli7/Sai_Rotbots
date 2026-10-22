@@ -4,6 +4,8 @@
 
 **当前脚罩的活动资格不通过。** 它的上鞋口跨踝pitch／roll与固定小腿罩，零位相减只形成零位贴合；在原轴系10°／20°姿态已有明确材料穿入证据。现版依赖未经验证的滑移和柔变，不能保证原关节范围自由通过。见[有界动作复核](../evidence/enclosure_refinement_056/ankle_motion/ankle_motion_review_056.json)与[−20°原生动作近景](../images/enclosure_refinement_056/ankle_diagnostic_ar_neg20.png)。正在独立评估分轴随动及隐藏搭接候选；未改公共b5a装配、原关节限位或冻结训练物理。
 
+独立排除所有新脚罩后，左AP原7075承力件与原小腿承力壳在合同+1.1／−1.1 rad端点分别存在约274.576／1155.931 mm³的有效实体交集。合同、XML和原生CAD的零角度相同；XML仅将整机统一抬高5.5 mm，不改变两件相交关系。[四项原硬件检查](../evidence/enclosure_refinement_056/ankle_motion/baseline_endpoint_review_008.json)与[零位依据](../evidence/enclosure_refinement_056/ankle_motion/baseline_zero_reference_check_008.json)另存。指定的AR底板／钢集流件在±0.5 rad均有2.08 mm间隙，不能推广成全部机构通过。后续需同时解决真实承力结构与随动护罩；不得用缩限位、删除碰撞或仅修鞋面来替代。
+
 ## 查看与编辑
 
 - [整机单色三视图](../images/enclosure_refinement_056/clay_three_views.png)

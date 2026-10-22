@@ -1,6 +1,6 @@
 {
   "schema": "goose056_owner_delivery_review/1",
-  "reviewed_utc": "2026-10-22T02:30:35.150742+00:00",
+  "reviewed_utc": "2026-10-22T03:44:46.326992+00:00",
   "end_purpose": "在完整鹅形、横向芒果机身与侧置腿的方向下，落实整机连续包覆的真实原生CAD；保留硬件功能，并如实区分静态外观、运动资格和冻结训练物理。",
   "owner": "Sai_Rotbots / root",
   "artifact": {
@@ -57,7 +57,8 @@
     "flexible_material_retention_fatigue_pinching": "NOT_QUALIFIED",
     "manufacturing_release": "NOT_GRANTED",
     "new_physics_release": "NOT_GRANTED; FROZEN15_UNCHANGED",
-    "user_final_appearance_acceptance": "NOT_ASSUMED"
+    "user_final_appearance_acceptance": "NOT_ASSUMED",
+    "original_AP_hardware_endpoint_mobility": "NOT_RELEASED; RETAINED_7075_LOAD_BODY_INTERSECTS_RETAINED_SHIN_PRIMARY_AT_BOTH_FROZEN15_AP_ENDPOINTS"
   },
   "observed_form": {
     "proportions": "Horizontal mango body with rising tapered tail, whole camera head/bill, S-neck and side-mounted hips are consistent across the actual views. No metrology-based 1:1 Tangpa claim.",
@@ -136,7 +137,7 @@
   "boundaries_requiring_followup": [
     {
       "priority": 1,
-      "item": "Shoe upper lip spans ankle pitch/roll and shin; static fit alone cannot certify free movement. Original AP +/-1.1rad and AR +/-0.5rad remain unchanged. Bounded ankle-motion review is active."
+      "item": "Shoe upper lip spans ankle pitch/roll and shin; undeformed cover overlap is observed at finite poses, with unqualified TPU sliding/deformation. Independent original-hardware checks also found AP load-body/shin overlap at both +/-1.1rad endpoints; no angular-zero offset was found. Original limits remain unchanged; neither new cover nor whole hardware ROM is released."
     },
     {
       "priority": 1,
@@ -196,7 +197,7 @@
     "automations_resumed": false,
     "Sai_Lab_contacted_or_modified": false
   },
-  "publication_status": "PREPARED_ENGINEERING_CHECKPOINT; STATIC_EXTERIOR_ACCEPTED; FOOT_MOBILITY_NOT_RELEASED; NO_NEW_PHYSICS_RELEASE",
+  "publication_status": "PUBLISHED_STATIC_ENGINEERING_CHECKPOINT; FOOT_MOBILITY_NOT_RELEASED; NO_NEW_PHYSICS_RELEASE",
   "ankle_motion_review": {
     "report": {
       "path": "robots/goose_v0_2/evidence/enclosure_refinement_056/ankle_motion/ankle_motion_review_056.json",
@@ -204,9 +205,9 @@
     },
     "archive_index": {
       "path": "robots/goose_v0_2/evidence/enclosure_refinement_056/ankle_motion/archive_index.json",
-      "sha256": "529f35848e7d3982f1f647affb853f5dca8ad0ebb91b976bbb450ef8fe25278f"
+      "sha256": "6d3326f559137234156113b1bba0ac5581db16a7083d207ee09ed615c73f49eb"
     },
-    "required_design_correction": "Replace unqualified spanning shoe lip with an explicit AP/AR-following interface; private local candidate evaluation active, b5a source unchanged",
+    "required_design_correction": "Separate AP/AR-following cover geometry and correct retained AP load-body/shin interference with substantiated structure. Private 057 candidates are under review; b5a CAD and Frozen15 unchanged.",
     "qualification": "Positive undeformed skin/material overlap, not proven real TPU lockup; limits/metal/sole/physics unchanged",
     "ownership_clarification": {
       "path": "robots/goose_v0_2/evidence/enclosure_refinement_056/ankle_motion/ankle_motion_ownership_errata.json",
@@ -217,7 +218,23 @@
       "AP_7075_load_body": "left_ankle_pitch",
       "sole_receiver_shoe": "left_ankle_roll"
     },
-    "ownership_calculation_error_found": false
+    "ownership_calculation_error_found": false,
+    "original_hardware_endpoint_review": {
+      "report": {
+        "path": "robots/goose_v0_2/evidence/enclosure_refinement_056/ankle_motion/baseline_endpoint_review_008.json",
+        "sha256": "b28b115df657633ac1091f2a5fca49ea00b166a45608605d09fe5742944484d8"
+      },
+      "zero_reference": {
+        "path": "robots/goose_v0_2/evidence/enclosure_refinement_056/ankle_motion/baseline_zero_reference_check_008.json",
+        "sha256": "12ead581ea43d6e9e22cd18d1eba4cd26d1cd7fc49c7ff814c7ca5e7193d6466"
+      },
+      "scope": "Two original hardware pairs, four poses, left ankle only; no new shoe covers; independent strict native intersection checks. No all-hardware or continuous-ROM pass.",
+      "AP_plus_1_1_rad_intersection_mm3": 274.5755401269152,
+      "AP_minus_1_1_rad_intersection_mm3": 1155.9305801750193,
+      "AR_plate_collector_at_plus_minus_0_5_rad_min_gap_mm": 2.079999999999983,
+      "angular_offset_found": false,
+      "note": "Native positive intersection is a local geometric diagnostic; uniform XML Z+5.5mm placement does not change relative interference. No limit or physical contract was changed."
+    }
   },
   "independent_colour_review": {
     "path": "robots/goose_v0_2/evidence/enclosure_refinement_056/integrated/independent_colour_review_006.json",
