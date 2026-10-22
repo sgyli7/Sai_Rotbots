@@ -11,7 +11,8 @@
 - [整机单色三视图](../images/enclosure_refinement_056/clay_three_views.png)
 - [头颈、踝鞋与后跟细节](../images/enclosure_refinement_056/clay_interface_details.png)
 - [双腿内侧、顶部与腹底](../images/enclosure_refinement_056/clay_hidden_surfaces.png)
-- [MicroDuck 四套配色](../images/enclosure_refinement_056/four_colorways.png)
+- [058主题色外罩四套配色试案](../images/theme_enclosure_study_058/theme_enclosure_comparison.png)
+- [原056深色外罩四套配色](../images/enclosure_refinement_056/four_colorways.png)
 - [完整原生 STEP 压缩包](../cad/exports/enclosure_refinement_056/goose_enclosure_refinement_056.step.gz)：解压为同目录的 `.step` 后打开。
 - [本轮修改件 STEP](../cad/exports/enclosure_refinement_056/enclosures_056.step)
 - [装配身份与逐件来源](../cad/source/enclosure_refinement_056/assembly_manifest.json)
@@ -42,6 +43,8 @@
 | 黑色脚底边界 | 原地面接触材料与可维护脚底 |
 
 鞋面不增加装饰斜缝，机身不增加翼形涂色、腹部色带或零碎色块。Cream、Graphite、Lavender、Sky延续已有MicroDuck色值，主壳、头壳、深色颈腿、嘴鞋和小面积眼圈按真实完整零件分配表面处理。
+
+058是用户提出的后续配色试案：11件原深色颈部、腿部与关节外罩统一改为主题色，其他1933件的表面分配、全部1944件几何和机位保持。嘴与鞋保留同组副色，眼圈点缀。新配置[单独保存](../configs/enclosure_theme_finish_058.json)，[渲染扩展](../../../scripts/models/render_goose_theme_enclosures_058.py)绑定原056渲染入口和b5a装配的哈希，原056图与入口未覆盖。058仅比较表面颜色，不表示脚部改型、运动、质量或制造资格发生变化。
 
 ## 验收范围与保留边界
 

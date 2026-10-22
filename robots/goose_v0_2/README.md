@@ -4,15 +4,17 @@
 
 **最新外观工程：[056连续包覆原生CAD](design/enclosure_refinement_056.md)。** 054造型方向已落实到真实装配：保留横向芒果母面与完整鹅嘴，收口圆髋、头颈接收边、膝部和整鞋上罩；机尾维护复位件移入可拆尾盖内部。原承力件和脚底继续保留，实际踝前承座干涉另以真实零件修正。单色设计先经过同版多视图检查，再按完整真实分件配色。
 
+**最新配色试案058：颈腿外罩跟随主题色。** 按用户建议，将11件原深色颈部、腿部与关节外罩整件改为主题色；嘴和鞋沿用同组副色，眼圈保留小面积点缀。其他零件与表面分配保持，图像仍来自同一份056静态装配。[配色配置](configs/enclosure_theme_finish_058.json)与[渲染、审核记录](evidence/theme_enclosure_study_058/manifest.json)随图保留。
+
 **056脚罩不能宣称不影响活动范围。** 有界原生动作复核已在10°／20°姿态检出软鞋皮穿入刚性小腿罩与AP电机包络的运动路径。现结构需要未验证的滑移或变形，随动接口正在改型；本页图片是静态外观。[实际复核](evidence/enclosure_refinement_056/ankle_motion/ankle_motion_review_056.json)与[侧摆−20°近景](images/enclosure_refinement_056/ankle_diagnostic_ar_neg20.png)保留。原金属、脚底、关节范围及冻结15未改。
 
 [排除鞋罩的原硬件端点独审](evidence/enclosure_refinement_056/ankle_motion/baseline_endpoint_review_008.json)发现，左AP在+1.1／−1.1 rad时，原7075承力件与原小腿承力壳分别相交约274.576／1155.931 mm³；[零位核对](evidence/enclosure_refinement_056/ankle_motion/baseline_zero_reference_check_008.json)排除了角度偏置。另查的AR底板／钢集流件在±0.5 rad均有2.08 mm间隙，仅适用于这一对零件。这些结果分别归因，不豁免新鞋罩的冲突，也不构成全部原硬件ROM验收。修正另留候选，原冻结包不热覆盖。
 
-![Goose V0.2 056 Sky实际原生装配](images/enclosure_refinement_056/sky_oblique.png)
+![Goose V0.2 058 Sky，主题色外罩静态试案](images/theme_enclosure_study_058/sky_oblique.png)
 
-![Cream、Graphite、Lavender、Sky同版整件配色](images/enclosure_refinement_056/four_colorways.png)
+![Cream、Sky、Lavender、Graphite同版主题色外罩](images/theme_enclosure_study_058/theme_enclosure_comparison.png)
 
-[单色三视图](images/enclosure_refinement_056/clay_three_views.png) · [头颈／踝鞋／后跟](images/enclosure_refinement_056/clay_interface_details.png) · [Cream／Graphite／Lavender／Sky](images/enclosure_refinement_056/four_colorways.png) · [完整原生STEP压缩包](cad/exports/enclosure_refinement_056/goose_enclosure_refinement_056.step.gz) · [逐件源与装配清单](cad/source/enclosure_refinement_056/assembly_manifest.json) · [验收证据](evidence/enclosure_refinement_056/delivery_review.json)
+[单色三视图](images/enclosure_refinement_056/clay_three_views.png) · [头颈／踝鞋／后跟](images/enclosure_refinement_056/clay_interface_details.png) · [058主题色外罩配色](images/theme_enclosure_study_058/theme_enclosure_comparison.png) · [原056深色外罩配色](images/enclosure_refinement_056/four_colorways.png) · [完整原生STEP压缩包](cad/exports/enclosure_refinement_056/goose_enclosure_refinement_056.step.gz) · [逐件源与装配清单](cad/source/enclosure_refinement_056/assembly_manifest.json) · [验收证据](evidence/enclosure_refinement_056/delivery_review.json)
 
 056与上面的冻结运行包15分别保存，未改变训练物理。柔性罩的变形、固定与寿命，完整运动范围和制造资格均按[同版边界](design/enclosure_refinement_056.md)报告。051零碎配色与052未闭合外壳保留作历史拒绝记录；当前配色使用既有MicroDuck色值及完整零件，不再增加任意翼斑、腹带或颈前色块。交付遵循[设计审查门槛](design/delivery_review_gate.json)。
 
