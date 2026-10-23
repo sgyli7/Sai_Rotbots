@@ -2,7 +2,15 @@
 
 **本轮交付与训练接入冻结机体：[15](models/physics_v0_2_20261021_15_candidate/manifest.json)，设计质量16.869881kg，23刚体、18驱动、28外部凸碰撞体。** [同版头部闭合](cad/exports/hardware_closeout_040/candidate15/full_head_closed.step.gz)／[张开CAD](cad/exports/hardware_closeout_040/candidate15/full_head_open.step.gz)为137件原生装配；相对14仅替换下嘴内部承力筋和配合内腔两件，净增0.229g，完整鹅嘴、连续TPU、轴系、摩擦与原4.4N·m输入上限保持。[实际开闭与内部对照](images/bill_lower_preload_patch_048/native_head15_external_internal_comparison.png)已审查。仅按真实零件更新质量、重心与完整惯量。
 
-**当前外观工程：061，整机尚未放行。** 已发布[六件上半身原生补丁](cad/source/tangpa_form_rebaseline_061/accepted_upper_patch_001/patch_manifest.json)：连续头颊、四件颈部过渡和芒果形主体。补丁提供保存的世界毫米坐标 BREP、逐件身份及有限验证，供受控装配接入；不包含完整基础装配、腿脚或完整参数再生依赖。[主干提交](https://github.com/sgyli7/Sai_Rotbots/commit/9c32b9af6d0667cbf57cec8ff2ca9a2fa2bb5f9c)。腿脚的新运动分区、包覆与安装仍在整机复核，未用局部健康结果替代整机验收，冻结运行包15保持不变。
+**当前外观工程：061 完整原生整机候选，验收退回。** 同版包含2008个具名几何 occurrence，逐件原生输入、安装归属、表面角色与来源哈希随包保存。主体芒果形、连续头颈与侧置腿方向保留，但髋膝尖缺口、K/AP开放带、踝鞋盒阶与后跟开口仍不符合完整一体外观；HP护罩和后AP罩安装仍有实际阻断。最新浅盘改型在K −1.8 rad仍相交13.926779 mm³，已拒绝，未混入整机。**这不是硬件收尾通过或制造放行。**
+
+![061 同源整机实际外观，未通过](images/tangpa_form_rebaseline_061/whole_checkpoint_001/whole_061_oblique.png)
+
+[侧视](images/tangpa_form_rebaseline_061/whole_checkpoint_001/whole_061_side.png) · [后视](images/tangpa_form_rebaseline_061/whole_checkpoint_001/whole_061_rear.png) · [内侧](images/tangpa_form_rebaseline_061/whole_checkpoint_001/whole_061_inner.png) · [逐项审查与返工原因](evidence/tangpa_form_rebaseline_061/whole_checkpoint_001/owner_closeout_review.json)
+
+[完整原生BREP（XZ）](cad/exports/tangpa_form_rebaseline_061/whole_checkpoint_001/goose_061_complete_native.brep.xz) · [全部原生输入与独立重建包](cad/source/tangpa_form_rebaseline_061/whole_checkpoint_001/goose_061_native_sources.tar.xz) · [逐件源清单](cad/source/tangpa_form_rebaseline_061/whole_checkpoint_001/assembly_source.json) · [命名STEP（XZ）](cad/exports/tangpa_form_rebaseline_061/whole_checkpoint_001/goose_061_complete_named.step.xz) · [文件身份与资格](evidence/tangpa_form_rebaseline_061/whole_checkpoint_001/package_manifest.json)。解压后可由OpenCascade兼容工具打开。原生源包含可编辑BREP与几何装配重建程序，历史参数特征树不完整；STEP是几何组件树，不是运动约束树，两个保留源的转移边界仍待核实。不能把导出或有限端点无干涉称为完整ROM、结构强度或制造通过。
+
+061与冻结训练15分别保存。[108文件哈希核对](evidence/tangpa_form_rebaseline_061/five_hour_frozen15_integrity_001.json)未发现训练包改变。此CAD候选没有新增训练资格；配色保持MicroDuck主题规则，尚未用新配色掩盖未完成的造型。已验收的[六件上半身补丁](cad/source/tangpa_form_rebaseline_061/accepted_upper_patch_001/patch_manifest.json)仍可独立追溯。
 
 **历史外观工程：[056原生CAD](design/enclosure_refinement_056.md)。** 以下056／058图片保留为历史静态试案，不能代表061完成或当前推荐。056曾把054造型方向落实到实际装配，保留横向芒果母面与完整鹅嘴，机尾维护复位件移入可拆尾盖内部；后续运动复核发现的冲突见下文。
 
