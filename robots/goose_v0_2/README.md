@@ -2,9 +2,11 @@
 
 **本轮交付与训练接入冻结机体：[15](models/physics_v0_2_20261021_15_candidate/manifest.json)，设计质量16.869881kg，23刚体、18驱动、28外部凸碰撞体。** [同版头部闭合](cad/exports/hardware_closeout_040/candidate15/full_head_closed.step.gz)／[张开CAD](cad/exports/hardware_closeout_040/candidate15/full_head_open.step.gz)为137件原生装配；相对14仅替换下嘴内部承力筋和配合内腔两件，净增0.229g，完整鹅嘴、连续TPU、轴系、摩擦与原4.4N·m输入上限保持。[实际开闭与内部对照](images/bill_lower_preload_patch_048/native_head15_external_internal_comparison.png)已审查。仅按真实零件更新质量、重心与完整惯量。
 
-**最新外观工程：[056连续包覆原生CAD](design/enclosure_refinement_056.md)。** 054造型方向已落实到真实装配：保留横向芒果母面与完整鹅嘴，收口圆髋、头颈接收边、膝部和整鞋上罩；机尾维护复位件移入可拆尾盖内部。原承力件和脚底继续保留，实际踝前承座干涉另以真实零件修正。单色设计先经过同版多视图检查，再按完整真实分件配色。
+**当前外观工程：061，整机尚未放行。** 已发布[六件上半身原生补丁](cad/source/tangpa_form_rebaseline_061/accepted_upper_patch_001/patch_manifest.json)：连续头颊、四件颈部过渡和芒果形主体。补丁提供保存的世界毫米坐标 BREP、逐件身份及有限验证，供受控装配接入；不包含完整基础装配、腿脚或完整参数再生依赖。[主干提交](https://github.com/sgyli7/Sai_Rotbots/commit/9c32b9af6d0667cbf57cec8ff2ca9a2fa2bb5f9c)。腿脚的新运动分区、包覆与安装仍在整机复核，未用局部健康结果替代整机验收，冻结运行包15保持不变。
 
-**最新配色试案058：颈腿外罩跟随主题色。** 按用户建议，将11件原深色颈部、腿部与关节外罩整件改为主题色；嘴和鞋沿用同组副色，眼圈保留小面积点缀。其他零件与表面分配保持，图像仍来自同一份056静态装配。[配色配置](configs/enclosure_theme_finish_058.json)与[渲染、审核记录](evidence/theme_enclosure_study_058/manifest.json)随图保留。
+**历史外观工程：[056原生CAD](design/enclosure_refinement_056.md)。** 以下056／058图片保留为历史静态试案，不能代表061完成或当前推荐。056曾把054造型方向落实到实际装配，保留横向芒果母面与完整鹅嘴，机尾维护复位件移入可拆尾盖内部；后续运动复核发现的冲突见下文。
+
+**历史配色试案058：颈腿外罩跟随主题色。** 按用户建议，将11件原深色颈部、腿部与关节外罩整件改为主题色；嘴和鞋沿用同组副色，眼圈保留小面积点缀。其他零件与表面分配保持，图像仍来自同一份056静态装配。[配色配置](configs/enclosure_theme_finish_058.json)与[渲染、审核记录](evidence/theme_enclosure_study_058/manifest.json)随图保留。
 
 **056脚罩不能宣称不影响活动范围。** 有界原生动作复核已在10°／20°姿态检出软鞋皮穿入刚性小腿罩与AP电机包络的运动路径。现结构需要未验证的滑移或变形，随动接口正在改型；本页图片是静态外观。[实际复核](evidence/enclosure_refinement_056/ankle_motion/ankle_motion_review_056.json)与[侧摆−20°近景](images/enclosure_refinement_056/ankle_diagnostic_ar_neg20.png)保留。原金属、脚底、关节范围及冻结15未改。
 
