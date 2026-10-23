@@ -10,13 +10,15 @@
 | goose_v0_2 | Frozen15 training I/O; 061 complete native CAD candidate, appearance and assembly rejected | [Goose V0.2](robots/goose_v0_2/README.md) |
 | gorilla_v0_1 | AA3 appearance; C15 segmented-foot stage, physical gates open | [Gorilla](robots/gorilla_v0_1/README.md) |
 
-## Goose V0.2：061 整机 CAD 候选，尚未通过外观与装配验收
+## Goose V0.2：061 接口修正，017 整机仍未通过
 
-061 已归档完整原生几何、逐件来源、命名 STEP 与同源四视图。主体芒果形、连续头颈和侧置腿的方向保留；**腿罩尖缺口、K/AP 开放带、踝鞋盒阶和后跟开口仍未解决，整机明确退回。** 最新浅盘修正仍有真实运动干涉，未混入此候选。图片展示实际问题，不代表成品。
+**017同版整机仍未通过。** 本轮修正圆盖重复重叠、机箱与腿罩的静态干涉，以及HP护罩错误内返侵入真实承力颈的问题，保存了8件原生罩体的受控几何修正。膝根矩形开层、踝部横肩仍不合格；脚部动态避让与固定未闭合。仅发布局部修正及实际审查证据，不作为完整硬件、安装或制造放行。
 
-![Goose V0.2 061 实际整机候选，外观未通过](robots/goose_v0_2/images/tangpa_form_rebaseline_061/whole_checkpoint_001/whole_061_oblique.png)
+[8件原生接口修正与资格](robots/goose_v0_2/cad/source/tangpa_form_rebaseline_061/interface_correction_002/README.md) · [017独立整机审查](robots/goose_v0_2/evidence/tangpa_form_rebaseline_061/whole_checkpoint_017/independent_whole017_review.json)
 
-[完整原生 BREP](robots/goose_v0_2/cad/exports/tangpa_form_rebaseline_061/whole_checkpoint_001/goose_061_complete_native.brep.xz) · [原生源与重建包](robots/goose_v0_2/cad/source/tangpa_form_rebaseline_061/whole_checkpoint_001/goose_061_native_sources.tar.xz) · [命名 STEP（有未决转移边界）](robots/goose_v0_2/cad/exports/tangpa_form_rebaseline_061/whole_checkpoint_001/goose_061_complete_named.step.xz) · [同版验收与未完成项](robots/goose_v0_2/evidence/tangpa_form_rebaseline_061/whole_checkpoint_001/owner_closeout_review.json) · [机器人完整导航](robots/goose_v0_2/README.md)
+![Goose V0.2 061 实际整机候选，外观未通过](robots/goose_v0_2/images/tangpa_form_rebaseline_061/whole_checkpoint_017/whole_061_oblique.png)
+
+**历史002拒绝归档：** [完整原生 BREP](robots/goose_v0_2/cad/exports/tangpa_form_rebaseline_061/whole_checkpoint_001/goose_061_complete_native.brep.xz) · [原生源与重建包](robots/goose_v0_2/cad/source/tangpa_form_rebaseline_061/whole_checkpoint_001/goose_061_native_sources.tar.xz) · [命名 STEP（有未决转移边界）](robots/goose_v0_2/cad/exports/tangpa_form_rebaseline_061/whole_checkpoint_001/goose_061_complete_named.step.xz) · [同版验收与未完成项](robots/goose_v0_2/evidence/tangpa_form_rebaseline_061/whole_checkpoint_001/owner_closeout_review.json) · [机器人完整导航](robots/goose_v0_2/README.md)
 
 训练仍显式使用[冻结版15](robots/goose_v0_2/models/physics_v0_2_20261021_15_candidate/manifest.json)：16.869881 kg、23刚体、18驱动、28凸碰撞体；[PPO／VLA接口自验范围](robots/goose_v0_2/evidence/training_io_049/README.md)与物理文件保持不变。061未覆盖其质量、惯量、碰撞、执行器或策略，也未启动训练。
 

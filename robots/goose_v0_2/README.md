@@ -2,13 +2,15 @@
 
 **本轮交付与训练接入冻结机体：[15](models/physics_v0_2_20261021_15_candidate/manifest.json)，设计质量16.869881kg，23刚体、18驱动、28外部凸碰撞体。** [同版头部闭合](cad/exports/hardware_closeout_040/candidate15/full_head_closed.step.gz)／[张开CAD](cad/exports/hardware_closeout_040/candidate15/full_head_open.step.gz)为137件原生装配；相对14仅替换下嘴内部承力筋和配合内腔两件，净增0.229g，完整鹅嘴、连续TPU、轴系、摩擦与原4.4N·m输入上限保持。[实际开闭与内部对照](images/bill_lower_preload_patch_048/native_head15_external_internal_comparison.png)已审查。仅按真实零件更新质量、重心与完整惯量。
 
-**当前外观工程：061 完整原生整机候选，验收退回。** 同版包含2008个具名几何 occurrence，逐件原生输入、安装归属、表面角色与来源哈希随包保存。主体芒果形、连续头颈与侧置腿方向保留，但髋膝尖缺口、K/AP开放带、踝鞋盒阶与后跟开口仍不符合完整一体外观；HP护罩和后AP罩安装仍有实际阻断。最新浅盘改型在K −1.8 rad仍相交13.926779 mm³，已拒绝，未混入整机。**这不是硬件收尾通过或制造放行。**
+**当前外观工程：061 接口修正与017整机，整机仍未通过。** 本轮8件原生髋/膝罩体修正消除了圆盖重复、机箱静态干涉以及HP错误内返侵入真实承力颈的问题；按明确有限几何范围接收。新脚来自同源真实空心分件，未以实心造型坯替代，但动态避让和安装固定仍失败。膝根矩形开层、踝部横肩与叠阶仍不符合完整圆润外观。**这是局部几何改良，不是完整硬件、安装、制造或新增训练资格。**
 
-![061 同源整机实际外观，未通过](images/tangpa_form_rebaseline_061/whole_checkpoint_001/whole_061_oblique.png)
+[8件原生接口修正与资格](cad/source/tangpa_form_rebaseline_061/interface_correction_002/README.md) · [017独立整机审查](evidence/tangpa_form_rebaseline_061/whole_checkpoint_017/independent_whole017_review.json)
 
-[侧视](images/tangpa_form_rebaseline_061/whole_checkpoint_001/whole_061_side.png) · [后视](images/tangpa_form_rebaseline_061/whole_checkpoint_001/whole_061_rear.png) · [内侧](images/tangpa_form_rebaseline_061/whole_checkpoint_001/whole_061_inner.png) · [逐项审查与返工原因](evidence/tangpa_form_rebaseline_061/whole_checkpoint_001/owner_closeout_review.json)
+![061 同源整机实际外观，未通过](images/tangpa_form_rebaseline_061/whole_checkpoint_017/whole_061_oblique.png)
 
-[完整原生BREP（XZ）](cad/exports/tangpa_form_rebaseline_061/whole_checkpoint_001/goose_061_complete_native.brep.xz) · [全部原生输入与独立重建包](cad/source/tangpa_form_rebaseline_061/whole_checkpoint_001/goose_061_native_sources.tar.xz) · [逐件源清单](cad/source/tangpa_form_rebaseline_061/whole_checkpoint_001/assembly_source.json) · [命名STEP（XZ）](cad/exports/tangpa_form_rebaseline_061/whole_checkpoint_001/goose_061_complete_named.step.xz) · [文件身份与资格](evidence/tangpa_form_rebaseline_061/whole_checkpoint_001/package_manifest.json)。解压后可由OpenCascade兼容工具打开。原生源包含可编辑BREP与几何装配重建程序，历史参数特征树不完整；STEP是几何组件树，不是运动约束树，两个保留源的转移边界仍待核实。不能把导出或有限端点无干涉称为完整ROM、结构强度或制造通过。
+[侧视](images/tangpa_form_rebaseline_061/whole_checkpoint_017/whole_061_side.png) · [后视](images/tangpa_form_rebaseline_061/whole_checkpoint_017/whole_061_rear.png) · [内侧](images/tangpa_form_rebaseline_061/whole_checkpoint_017/whole_061_inner.png) · [017同版整机独审](evidence/tangpa_form_rebaseline_061/whole_checkpoint_017/independent_whole017_review.json)
+
+**历史002拒绝归档：** [完整原生BREP（XZ）](cad/exports/tangpa_form_rebaseline_061/whole_checkpoint_001/goose_061_complete_native.brep.xz) · [全部原生输入与独立重建包](cad/source/tangpa_form_rebaseline_061/whole_checkpoint_001/goose_061_native_sources.tar.xz) · [逐件源清单](cad/source/tangpa_form_rebaseline_061/whole_checkpoint_001/assembly_source.json) · [命名STEP（XZ）](cad/exports/tangpa_form_rebaseline_061/whole_checkpoint_001/goose_061_complete_named.step.xz) · [文件身份与资格](evidence/tangpa_form_rebaseline_061/whole_checkpoint_001/package_manifest.json)。解压后可由OpenCascade兼容工具打开。原生源包含可编辑BREP与几何装配重建程序，历史参数特征树不完整；STEP是几何组件树，不是运动约束树，两个保留源的转移边界仍待核实。不能把导出或有限端点无干涉称为完整ROM、结构强度或制造通过。
 
 061与冻结训练15分别保存。[108文件哈希核对](evidence/tangpa_form_rebaseline_061/five_hour_frozen15_integrity_001.json)未发现训练包改变。此CAD候选没有新增训练资格；配色保持MicroDuck主题规则，尚未用新配色掩盖未完成的造型。已验收的[六件上半身补丁](cad/source/tangpa_form_rebaseline_061/accepted_upper_patch_001/patch_manifest.json)仍可独立追溯。
 
