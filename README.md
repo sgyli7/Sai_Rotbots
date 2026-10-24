@@ -10,17 +10,15 @@
 | goose_v0_2 | Frozen15 training I/O; 061 complete native CAD candidate, appearance and assembly rejected | [Goose V0.2](robots/goose_v0_2/README.md) |
 | gorilla_v0_1 | AA3 appearance; C15 segmented-foot stage, physical gates open | [Gorilla](robots/gorilla_v0_1/README.md) |
 
-## Goose V0.2：061 接口修正，017 整机仍未通过
+## Goose V0.2：038 原生检查点，整机仍未通过
 
-**017同版整机仍未通过。** 本轮修正圆盖重复重叠、机箱与腿罩的静态干涉，以及HP护罩错误内返侵入真实承力颈的问题，保存了8件原生罩体的受控几何修正。膝根矩形开层、踝部横肩仍不合格；脚部动态避让与固定未闭合。仅发布局部修正及实际审查证据，不作为完整硬件、安装或制造放行。
+本轮将最大圆冠限定在真实关节所需的40毫米轴段，前后收回低鞋轮廓，并重排小腿接管分界、退役两组旧罩专用紧固栈。**整机没有完成验收：踝侧摆两端各仍相交约4.8201 mm³，小腿横阶和工作口、原髋部及颈部活动问题仍未闭合。** 不作为完成外观、制造或新训练机体发布。
 
-[8件原生接口修正与资格](robots/goose_v0_2/cad/source/tangpa_form_rebaseline_061/interface_correction_002/README.md) · [017独立整机审查](robots/goose_v0_2/evidence/tangpa_form_rebaseline_061/whole_checkpoint_017/independent_whole017_review.json)
+[完整原生BREP（XZ）](robots/goose_v0_2/cad/exports/tangpa_form_rebaseline_061/whole_checkpoint_038/goose_061_complete_native.brep.xz) · [全部输入与相对重建源包](robots/goose_v0_2/cad/source/tangpa_form_rebaseline_061/whole_checkpoint_038/archive_download.md) · [实际验收与未决](robots/goose_v0_2/evidence/tangpa_form_rebaseline_061/whole_checkpoint_038/owner_closeout_review.json) · [文件哈希](robots/goose_v0_2/evidence/tangpa_form_rebaseline_061/whole_checkpoint_038/package_manifest.json)
 
-![Goose V0.2 061 实际整机候选，外观未通过](robots/goose_v0_2/images/tangpa_form_rebaseline_061/whole_checkpoint_017/whole_061_oblique.png)
+原生包已独立重导入核对1982实体、54,918面，171份输入SHA一致。该结果只证明制品可重建。冻结15的108个文件哈希保持；本轮未覆盖其质量、惯量、碰撞和执行器，也未启动训练。
 
-**历史002拒绝归档：** [完整原生 BREP](robots/goose_v0_2/cad/exports/tangpa_form_rebaseline_061/whole_checkpoint_001/goose_061_complete_native.brep.xz) · [原生源与重建包](robots/goose_v0_2/cad/source/tangpa_form_rebaseline_061/whole_checkpoint_001/goose_061_native_sources.tar.xz) · [命名 STEP（有未决转移边界）](robots/goose_v0_2/cad/exports/tangpa_form_rebaseline_061/whole_checkpoint_001/goose_061_complete_named.step.xz) · [同版验收与未完成项](robots/goose_v0_2/evidence/tangpa_form_rebaseline_061/whole_checkpoint_001/owner_closeout_review.json) · [机器人完整导航](robots/goose_v0_2/README.md)
-
-训练仍显式使用[冻结版15](robots/goose_v0_2/models/physics_v0_2_20261021_15_candidate/manifest.json)：16.869881 kg、23刚体、18驱动、28凸碰撞体；[PPO／VLA接口自验范围](robots/goose_v0_2/evidence/training_io_049/README.md)与物理文件保持不变。061未覆盖其质量、惯量、碰撞、执行器或策略，也未启动训练。
+[038实际斜视，拒绝记录](robots/goose_v0_2/images/tangpa_form_rebaseline_061/whole_checkpoint_038/whole_oblique.png) · [内侧近景](robots/goose_v0_2/images/tangpa_form_rebaseline_061/whole_checkpoint_038/whole_inner_leg_detail.png) · [机器人导航](robots/goose_v0_2/README.md)
 
 ## Gorilla V0.1：AA3 外形与复合脚阶段
 
