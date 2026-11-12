@@ -1,0 +1,29 @@
+name: R10 reproducible engineering runtime
+on:
+  push:
+    branches: [work/r10-runtime-20261113]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  bundle:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Download pinned public scientific runtime wheels
+        run: |
+          mkdir -p runtime/wheels
+          python -m pip download --only-binary=:all: --dest runtime/wheels mujoco==3.3.7 gmsh==4.14.1 scikit-fem==11.0.0 pyamg==5.3.0 meshio==5.3.5
+          python -m pip install --no-index --find-links runtime/wheels mujoco==3.3.7 scikit-fem==11.0.0 pyamg==5.3.0 meshio==5.3.5
+          python -c "import mujoco,skfem,pyamg; print('mujoco',mujoco.__version__,'skfem',skfem.__version__,'pyamg',pyamg.__version__)" | tee runtime/versions.txt
+          sha256sum runtime/wheels/* > runtime/SHA256SUMS.txt
+          python -m pip freeze > runtime/resolved-packages.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r10-cp313-linux-engineering-runtime
+          path: runtime
+          if-no-files-found: error
+          retention-days: 7
