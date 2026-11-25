@@ -43,6 +43,8 @@
 
 [![Goose V0.2 Flagship Technical Overview Poster](robots/goose_v0_2/images/closeout_20261125/goose_v02_flagship_poster.png)](robots/goose_v0_2/images/closeout_20261125/goose_v02_flagship_poster.png)
 
+> **Interactive 3D Edition (Single-File Offline HTML)**: Open [`robots/goose_v0_2/design/goose_v02_interactive_poster.html`](robots/goose_v0_2/design/goose_v02_interactive_poster.html) locally in any modern browser to orbit/zoom the real `assembly_finish_005` 3D Goose 360°, toggle Half-Cutaway vs. Full Exterior, switch live across all 4 colorways with Rolls-Royce twin torso coachlines, hover/focus all 9 highlighted electromechanical subsystems, and watch real SaiLab 43-collider locomotion & 4-bar beak grasp replays.
+
 ### Inside & Out — Half-Cutaway Architecture (`Warm Cream` Flagship Edition)
 
 | Half-Cutaway / Half-Exterior Studio Hero | Internal Hip Bridge (`opt_b2_r2`) & Core Packaging |
@@ -71,6 +73,7 @@
 
 **Direct Goose V0.2 Links:**
 [Goose V0.2 Dedicated Page](robots/goose_v0_2/README.md) ·
+[Interactive 3D HTML Poster](robots/goose_v0_2/design/goose_v02_interactive_poster.html) ·
 [Closeout Engineering Spec](robots/goose_v0_2/design/hardware_closeout_20261125.md) ·
 [43-Collider SaiLab Model](robots/goose_v0_2/models/full/goose_v02_005_exterior_roles_v1/) ·
 [Frozen CAD STEP](robots/goose_v0_2/cad/exports/closeout_20261125/) ·

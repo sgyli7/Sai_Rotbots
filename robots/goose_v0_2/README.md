@@ -26,6 +26,8 @@
 
 [![Goose V0.2 Flagship Technical Overview Poster](images/closeout_20261125/goose_v02_flagship_poster.png)](images/closeout_20261125/goose_v02_flagship_poster.png)
 
+> **Interactive 3D Offline HTML Poster**: [`design/goose_v02_interactive_poster.html`](design/goose_v02_interactive_poster.html) — standalone single-file Three.js PBR WebGL poster embedding the dual-half `assembly_finish_005` 3D model (360° orbit & zoom, Half-Cutaway / Full Exterior toggle, live 4-colorway & Rolls-Royce coachline switching, hover-revealed 9-subsystem 3D callout highlights, ENIG 6-layer PCB panel, and steady SaiLab 43-collider locomotion & 4-bar beak grasp GIFs).
+
 ---
 
 <a id="half-cutaway-hero"></a>
@@ -94,6 +96,7 @@ Full specification: **[`design/hardware_closeout_20261125.md`](design/hardware_c
 | **6L Environment PCB Fab** | KiCad 7.0.11 `.kicad_pcb`/`.kicad_pro`, `ENV_MAIN.pretty/`, 13 Gerbers, Excellon drill, BOM, CPL, cold DRC receipt | [`hardware/closeout_20261125/environment_board_eda_fab_release_003/`](hardware/closeout_20261125/environment_board_eda_fab_release_003/) |
 | **24 V Fan & Serviceable Fuse** | Decision summary, OVP/clamp 50k Monte Carlo receipt, rear-cover fuse pocket clearance receipt | [`hardware/closeout_20261125/sanyo24_direct_fan/`](hardware/closeout_20261125/sanyo24_direct_fan/) |
 | **Verification Receipts** | A1/A2/A3 verdicts & JSON receipts, `opt_b2_r2_mass_ledger.json`, yoke relief receipt, `assembly_finish_005_mci.json`, SaiLab receipt, showcase design review | [`evidence/closeout_20261125/`](evidence/closeout_20261125/) |
+| **Interactive 3D HTML Poster** | Self-contained offline WebGL flagship poster (dual-half `005` 3D model, 4 live colorways, 9 hover highlights, steady SaiLab 43-collider GIFs) | [`design/goose_v02_interactive_poster.html`](design/goose_v02_interactive_poster.html) |
 | **Closeout Engineering Spec** | Complete technical write-up of Tracks A, B, C and Step-2 physical boundaries | [`design/hardware_closeout_20261125.md`](design/hardware_closeout_20261125.md) |
 | **Reproducible Scripts** | CAD relief, bridge FEA/A3, KiCad DRC/fab, Sanyo24 OVP/fuse, MCI/SaiLab43 builder & verifier, Blender renderers & poster composer | [`../../scripts/`](../../scripts/) |
 
