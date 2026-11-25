@@ -1,0 +1,71 @@
+{
+  "schema": "goose_owner_explicit_simulation_validation_protocol_v2",
+  "protocol_id": "goose_source007_ap_pitch_feedback_validation_v3",
+  "created_utc": "2026-11-09T18:33:33.673326+00:00",
+  "status": "OWNER_SELECTED_VALIDATION_PROTOCOL_NOT_FULL_ADMISSION_PASS",
+  "basis": "The identical007 plant has passed300 realCPU steps under one analytically parameterized external pitch feedback reference:standing100,drop50mm100,reinitialize100. Ieff_y=2.6784877164kgm2,h=.33709975m,wn3,zeta1.2 yieldK83.8666128008,D19.2851115583. Only twoAP action inputs add body-pitch feedback through realkp; no plant/control-limit/geometry/filter change. Zero-input and constant-reference drop failures stay preserved. This protocol qualifies simulation and an explicit reference controller, not learned skills or manufactured hardware.",
+  "source_assembly": {
+    "path": "sources/assembly/assembly_registry.json",
+    "sha256": "b6a5367d9278a072d6f67f2c52fc0f5dcbf9d57466ca8eeae874f4895d84d799"
+  },
+  "source_mci": {
+    "path": "sources/mci/ledger.json",
+    "sha256": "f9b80170015dd61bd03f53e25ac6e6c3772432c65bbf538c770d639759c05381"
+  },
+  "source_fk": {
+    "path": "sources/fk_receipt/receipt.json",
+    "sha256": "bd8562357d826ef690dbd10fa024e36209d9aa98a5e825ce450d2482b0e91f82"
+  },
+  "plant_model_sha256": "5e48fe29f92e901fc887b3a0f5d13bac4c0b26c3b9e6e3831cbd0c54cee20bab",
+  "plant_contract_sha256": "0a6f9869d22c2a7c2da321e2438f0e646ed3ebe26abaf45050c034e191df7d98",
+  "reference": {
+    "path": "reference_inputs/reference_action.json",
+    "sha256": "2d0a05b9667b9642f5087bdf3cd6c206101cb0fe358cadbbe5f88dd2f0ba4c20"
+  },
+  "reference_controller_source": {
+    "path": "scripts/evaluation/goose_pitch_feedback_reference_007_20261110.py",
+    "sha256": "5571a8789f0258f77fe4caf4783bbf02fcbeded525f0afc549d50c9a9c61742e"
+  },
+  "first_standing_evidence": {
+    "path": "artifacts/goose_v0_2/closeout_delivery_20261108/active_standing_pitch007_001/receipt.json",
+    "sha256": "c5957195b3dcc3dc54029c17197d69445f543e9befa1757ab55a4db49d00feea"
+  },
+  "preserved_zero_action_failure": {
+    "path": "artifacts/goose_v0_2/closeout_delivery_20261108/native50_full_admission_007_001/receipt.json",
+    "sha256": "70a3cc94781fdcbab225b4fa63f7298d2da144213ff61a366032e307410475b9"
+  },
+  "required": [
+    "Identical007 model bytes and physical drive/MCI/contact/20ms step; no gain/range/filter/root-force or geometry edit",
+    "CPU standing100,50mm drop100,reinitialization100 actual steps using the frozen explicit feedback controller, with original finite/posture/closure/force/temperature checks",
+    "GPU2world100 actual steps in uncaptured and graph-captured modes. For numerical precision/control comparison replay the exactCPU standing action sequence on both modes; declare replay mode and bind its actual trace hash. Same-input means identical normalized actions, not merely the same policy label. Retain original measured error/clock/capacity checks.",
+    "Package includes frozen controller,params,constant reference and action order. Actual make_entity/reset/step entry can read and execute this externalreference; defaultpublic18-action semantics are unchanged. GPUreplay qualification is distinguished from a learned policy or generalcontroller proof.",
+    "Portable export, physicalrename, source/model/reference reload and actualstep, then actualSaiLab training-environment initialization and bounded rollout with zerooptimizer/PPOupdates",
+    "All original zero-action and constant-drop failures remain actualevidence; production adoption requires six same-object evidence classes and exactOwner protocol/reference binding"
+  ],
+  "public_action_semantics_changed": false,
+  "reference_is_external_policy_input": true,
+  "new_optimizer_or_PPO_updates": 0,
+  "old_zero_action_standing_passed": false,
+  "hardware_structural_qualification_granted": false,
+  "manufacturing_ready": false,
+  "skills_passed": false,
+  "training_ready": false,
+  "reference_kind": "ap_pitch_feedback_v1",
+  "constant_reference": {
+    "path": "reference_inputs/constant_reference.json",
+    "sha256": "79ee87ad3299c58a5f37332b8f819b0e7311e69ba8466450331afba3c37d023e"
+  },
+  "first_cpu_evidence": {
+    "path": "artifacts/goose_v0_2/closeout_delivery_20261108/active_standing_pitch007_001/receipt.json",
+    "sha256": "c5957195b3dcc3dc54029c17197d69445f543e9befa1757ab55a4db49d00feea"
+  },
+  "preserved_constant_drop_failure": {
+    "path": "artifacts/goose_v0_2/closeout_delivery_20261108/native50_full_admission_007_002/receipt.json",
+    "sha256": "3a4624a0a597eb743b1bd728ba618b346769228289d59f5156f47d85667b8f23"
+  },
+  "previous_protocol": {
+    "path": "robots/goose_v0_2/cad/source/closeout_delivery_20261108/operating_limits/simulation_validation_protocol_002.json",
+    "sha256": "b3048c7cd934928b163fa6e8ef07098fc6d91f04fcd2e647ca111dc7881b5242"
+  },
+  "GPU_reference_validation_mode": "exact_CPU_standing_action_trace_replay_for_same_input_numerical_comparison"
+}

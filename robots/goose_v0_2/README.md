@@ -1,4 +1,113 @@
-# Goose V0.2
+<div align="center">
+
+# Goose V0.2 (`assembly_finish_005`)
+
+**Interactive Long-Neck Biped with Parallel Four-Bar Gripping Beak · 310 mm Widened Stance · 18 Active DOF**
+
+[![Digital Closeout](https://img.shields.io/badge/Closeout-assembly__finish__005_PASS-845EC2?style=for-the-badge)](design/hardware_closeout_20261125.md)
+[![Mass](https://img.shields.io/badge/21--Body_MCI-18.768_kg-454952?style=for-the-badge)](evidence/closeout_20261125/assembly_finish_005_mci.json)
+[![SaiLab GPU](https://img.shields.io/badge/SaiLab_43--Collider-1,330.2_steps%2Fs-F5C724?style=for-the-badge&logoColor=black)](models/full/goose_v02_005_exterior_roles_v1/)
+[![6L PCB](https://img.shields.io/badge/Env_PCB-0_DRC_Violations-2ECC71?style=for-the-badge)](hardware/closeout_20261125/environment_board_eda_fab_release_003/)
+
+[Technical Poster](#technical-poster) ·
+[Half-Cutaway Hero](#half-cutaway-hero) ·
+[4-Colorway Themes](#four-colorway-themes) ·
+[Engineering Closeout](#engineering-closeout) ·
+[Proof Figures](#proof-figures) ·
+[Asset Map](#asset-map) ·
+[Historical Lineage](#historical-lineage)
+
+</div>
+
+---
+
+<a id="technical-poster"></a>
+## 🖼️ One-Glance Technical Poster
+
+[![Goose V0.2 Flagship Technical Overview Poster](images/closeout_20261125/goose_v02_flagship_poster.png)](images/closeout_20261125/goose_v02_flagship_poster.png)
+
+---
+
+<a id="half-cutaway-hero"></a>
+## ⚙️ Inside & Out — Half-Cutaway Architecture (`Warm Cream` Flagship Edition)
+
+Real `assembly_finish_005` CAD geometry split along the sagittal plane: the exterior half showcases the flagship **Warm Cream (`#F2E5CF`) + Tangerine Orange (`#FF6A13`) + Golden Amber (`#FFC32B`)** theme, while the cutaway half reveals the real internal electromechanical stack — `opt_b2_r2` Al 7075-T6 anchored hip bridge & stator tie columns, relieved machined steel yokes, 6-layer green environment mainboard, 24 V direct cooling fan + rear serviceable fuse pocket, copper coldplate, AK45 actuators, and 6S LiPo power bay.
+
+| Dark Studio Half-Cutaway Hero | Clean Light Studio Cutaway | Internal Hip Bridge & Electronics Close-Up |
+|---|---|---|
+| ![Half-Cutaway Hero Dark](images/closeout_20261125/goose_v02_cutaway_hero_dark.png) | ![Half-Cutaway Hero Light](images/closeout_20261125/goose_v02_cutaway_hero_light.png) | ![Hip Bridge Cutaway Close-Up](images/closeout_20261125/goose_v02_cutaway_hip_closeup.png) |
+
+---
+
+<a id="four-colorway-themes"></a>
+## 🎨 MicroDuck-Style 4-Colorway Studio Themes
+
+Four matched studio themes built directly on identical `assembly_finish_005` geometry (`2,529` CAD solids, Cycles AgX-Punchy), keeping neutral shell-grey / matte-black joint caps and adding a bespoke Rolls-Royce-inspired twin torso coachline on Sky, Graphite, and Lavender while keeping Warm Cream pure ivory — documented in [`configs/microduck_four_colorways_005.json`](configs/microduck_four_colorways_005.json) and reviewed under [`design/delivery_review_gate.json`](design/delivery_review_gate.json) ([review record](evidence/closeout_20261125/showcase_design_review_20261126.json)).
+
+![Goose V0.2 Four-Colorway Squad Banner](images/closeout_20261125/goose_v02_four_colorways_squad.png)
+
+| Sky Blue (`#6BC4E8`) | Graphite · Purple · Yellow (`#454952`) | Warm Cream (`#F2E5CF`) | Lavender (`#B69CE2`) |
+|---|---|---|---|
+| ![Sky Blue](images/closeout_20261125/goose_v02_theme_sky.png) | ![Graphite Purple Yellow](images/closeout_20261125/goose_v02_theme_graphite.png) | ![Warm Cream](images/closeout_20261125/goose_v02_theme_cream.png) | ![Lavender](images/closeout_20261125/goose_v02_theme_lavender.png) |
+| Tangerine `#FF6A13` beak/shoes · Yellow `#FFB81C` eye/sole & twin torso coachline · neutral joint caps | Canary `#F5C724` beak/shoes · Electric Purple `#845EC2` eye/sole & twin torso coachline · neutral grey/black caps | Tangerine `#FF6A13` beak/shoes · Amber `#FFC32B` eye/sole · pure unstriped ivory *(Flagship Poster Edition)* | Canary `#F5C724` beak/shoes · Cyan `#55C4E8` eye & twin torso coachline · Violet `#8B6BC7` sole · neutral caps |
+
+[View 2×2 High-Res Comparison Grid →](images/closeout_20261125/goose_v02_four_colorways_grid.png)
+
+---
+
+<a id="engineering-closeout"></a>
+## 📊 Digital Hardware Closeout Scorecard (2026-11-25)
+
+Full specification: **[`design/hardware_closeout_20261125.md`](design/hardware_closeout_20261125.md)**.
+
+| Subsystem | Design Architecture | Cold-Verified Quantitative Result | Gate |
+|---|---|---|---|
+| **Hip Lower Support (`opt_b2_r2`)** | Al 7075-T6 anchored lower cross-bridge + symmetric vertical stator tie columns + `clamp_underfoot` shear cheeks + `R=3.0–3.5 mm` fillets (`141.19 g`; K1/K2/cassette untouched) | Evaluated on real 16-part `004` chassis (`457,341` DOFs). Net structural Δ `+198.30 g <= 200 g` (total **`18.7676 kg < 18.80 kg`**); 3-level C3D10 mesh (`min SJ = 0.0615`, `0` bad tets, `ΔDisp = 0.08%`, `ΔVM = 1.40%`); `121/121` static `<= 0.1893 mm` (`59.4 MPa`); `4.670 s` turn `48.7 MPa (SF=10.3)`, `SF_slip=7.98`, `1.232 mrad`; Stage A3 legal closed-loop MuJoCo single-support (`min_margin=+0.0299 rad`, `0.208 s` SS, `+36.4 mm` lift, `FL_z=312.1 N`) **`92.9 MPa (SF=5.4)`**, `SF_slip=5.73`, **`2.096 mrad`**; `0.000 mm³` interference | **8/8 PASS** |
+| **Front Shell (`body016_front`) Clearance** | Zero-cut PA12 front shell (`2.12–2.27 mm` wall 100% preserved) + low-stress (`< 21 MPa`) steel outer-lip relief on left/right yokes (`>= 5.58 mm` steel wall left, `-10.66 g/pair`) | 162-pose unloaded gap **`0.0823 → 1.5869 mm`** (19.3×); loaded gap with `-0.30 mm` tolerance **`1.110 / 1.248 mm`** (turn) & **`1.012 / 1.212 mm`** (single-support), well above `0.50 mm` | **PASS** |
+| **Environment Mainboard 6L PCB** | `eda_fab_release_003` self-contained KiCad 7.0.11 (`ENV_MAIN.pretty/` + `fp-lib-table` + refilled GND/`ENV_V5` planes) | Cold native DRC: **`0` violations** (`106/106` nets, `0` dangling copper `40→11→0`, `0` lib issues `142→0`, min `0.1500 mm`); cold-verified **13 Gerbers**, Excellon (`419` PTH, min `0.20 mm`), BOM (`142` parts) & CPL | **FAB READY** |
+| **24 V Direct Cooling Fan & Fuse** | Input precision OVP (`LM4040A25` + `TLV1811` + `0.1%` thin-film) + shifted backfeed clamp + rear-cover direct-access `UMT-H 1 A` fuse pocket (`(-112.5, 52.5, 366.5) mm`) | Strict worst-case (`-40..+85 °C / ±0.30%`) non-overlapping bands with **`+186.1 mV`** guardband (`<= 27.581 V <= 27.60 V`); **`50,000/50,000` (100%)** Monte Carlo; 26 parts in unchanged guard (`0` overlaps); `0.000 mm³` fuse/cover/pull collision (`36.7 mm` pull clearance) + `98.04 mm` breakout harness; net **`+9.60 g`** | **DIGITAL PASS** |
+| **21-Body MCI & SaiLab 43-Collider Bundle** | `goose_v02_005_exterior_roles_v1` fast RL/VLA bundle (43 colliders, 18 active DOF, fixed `0.628305 m` beak neutral plane, `0` self-contacts) | **`18.767646 kg`** (Steiner `1.11e-15 kg·m²`, MuJoCo readback `0.0 kg` / `4.86e-17 kg·m²`); CPU `3×100` + `200 Hz` `100 g` `1.0 s` hold PASS; CUDA MuJoCo 3.15.0 32-env **`1,330.2 world-steps/s`** (`p95 = 26.29 ms`, `0` NaNs); 32-env `2+1` PPO save/resume bit-identical; pytest `6+3` PASS | **8/8 PASS** |
+
+> **Honest Step-2 Physical Hardware Scope (Deferred)**: Physical fabrication, real-chassis thermocouple thermal soak (`54.996 °C` sim margin vs `55.0 °C`), trimming the known `10.207 mm³` native BMS envelope overlap against the upper aluminum rail, and real hardware weighing / TPU friction / actuator bench identification are intentionally deferred to Step 2 while we validate virtual Goose locomotion, interaction, and community engagement first.
+
+---
+
+<a id="proof-figures"></a>
+## 🔬 Verified Engineering Proof Figures
+
+| A1: Hip Bridge K1/K2 Clearance & Screening | A2: `opt_b2_r2` Converged C3D10 FEA & Closed-Loop SS | A3: Zero-Cut Front Shell Yoke Relief Envelope |
+|---|---|---|
+| ![A1 Hip Bridge Sections](images/closeout_20261125/fig_a1_bridge_k1_harness_sections.png) | ![A2 Converged FEA and Closed-Loop](images/closeout_20261125/fig_a2_b2r2_converged_fea_and_closed_loop.png) | ![A3 Front Shell Yoke Relief](images/closeout_20261125/fig_a3_body016_yoke_relief_envelope.png) |
+| **B1: 6-Layer Environment PCB (`0` DRC)** | **B2: 24 V Fan OVP/Clamp & Rear Fuse Pocket** | **C1: `005` 21-Body MCI & 32-Env GPU Throughput** |
+| ![B1 6L PCB 0 DRC](images/closeout_20261125/fig_b1_env_pcb_fab_6layers_drc0.png) | ![B2 Sanyo24 OVP and Fuse](images/closeout_20261125/fig_b2_sanyo24_voltage_window_and_fuse_access.png) | ![C1 SaiLab 005 MCI and GPU](images/closeout_20261125/fig_c1_sailab005_43_mci_and_gpu_bench.png) |
+
+---
+
+<a id="asset-map"></a>
+## 📁 Complete Asset & Provenance Index
+
+| Category | Contents | Path |
+|---|---|---|
+| **SaiLab 43-Collider Model** | Full `assembly_finish_005` MuJoCo 3.15.0 / GPU RL & VLA bundle (`459` non-bytecode files SHA-verified) | [`models/full/goose_v02_005_exterior_roles_v1/`](models/full/goose_v02_005_exterior_roles_v1/) |
+| **4-Colorway Theme Config** | MicroDuck-style studio palette definitions, Rolls-Royce coachline spec & asset hashes | [`configs/microduck_four_colorways_005.json`](configs/microduck_four_colorways_005.json) |
+| **Frozen CAD STEP Exports** | `opt_b2_r2_anchored_bridge.step`, `{left,right}_yoke_shell_relieved.step`, direct-power placement, fuse guard & harness | [`cad/exports/closeout_20261125/`](cad/exports/closeout_20261125/) |
+| **6L Environment PCB Fab** | KiCad 7.0.11 `.kicad_pcb`/`.kicad_pro`, `ENV_MAIN.pretty/`, 13 Gerbers, Excellon drill, BOM, CPL, cold DRC receipt | [`hardware/closeout_20261125/environment_board_eda_fab_release_003/`](hardware/closeout_20261125/environment_board_eda_fab_release_003/) |
+| **24 V Fan & Serviceable Fuse** | Decision summary, OVP/clamp 50k Monte Carlo receipt, rear-cover fuse pocket clearance receipt | [`hardware/closeout_20261125/sanyo24_direct_fan/`](hardware/closeout_20261125/sanyo24_direct_fan/) |
+| **Verification Receipts** | A1/A2/A3 verdicts & JSON receipts, `opt_b2_r2_mass_ledger.json`, yoke relief receipt, `assembly_finish_005_mci.json`, SaiLab receipt, showcase design review | [`evidence/closeout_20261125/`](evidence/closeout_20261125/) |
+| **Closeout Engineering Spec** | Complete technical write-up of Tracks A, B, C and Step-2 physical boundaries | [`design/hardware_closeout_20261125.md`](design/hardware_closeout_20261125.md) |
+| **Reproducible Scripts** | CAD relief, bridge FEA/A3, KiCad DRC/fab, Sanyo24 OVP/fuse, MCI/SaiLab43 builder & verifier, Blender renderers & poster composer | [`../../scripts/`](../../scripts/) |
+
+---
+
+<a id="historical-lineage"></a>
+## 📚 Historical Engineering Lineage Archive
+
+<details>
+<summary>📂 展开历史工程演进记录（Candidate 15 / 038·061 原生检查点 / 056–058 外观试案 / 047–049 嘴部与 I/O / 004–015 拖拽硬件与小车研究 — 全部原链接完整保留）</summary>
+
+<br>
+
+> 以下完整保留 `assembly_finish_005` 之前的历代检查点、失败案例与不可覆盖对照模型（`04`、`08`、`15`、`038/061` 等）记录与路径链接，以便完整追溯，不覆盖任何历史基线。
 
 **本轮交付与训练接入冻结机体：[15](models/physics_v0_2_20261021_15_candidate/manifest.json)，设计质量16.869881kg，23刚体、18驱动、28外部凸碰撞体。** [同版头部闭合](cad/exports/hardware_closeout_040/candidate15/full_head_closed.step.gz)／[张开CAD](cad/exports/hardware_closeout_040/candidate15/full_head_open.step.gz)为137件原生装配；相对14仅替换下嘴内部承力筋和配合内腔两件，净增0.229g，完整鹅嘴、连续TPU、轴系、摩擦与原4.4N·m输入上限保持。[实际开闭与内部对照](images/bill_lower_preload_patch_048/native_head15_external_internal_comparison.png)已审查。仅按真实零件更新质量、重心与完整惯量。
 
@@ -99,3 +208,5 @@
 [06同版原生硬件检查点](evidence/drag_hardware_integration_009_06/integration_handoff_06.json)已封存，设计质量16.5911249267kg；[修复后的原生整机三视图](images/drag_hardware_integration_009_06/whole_source_review_01/whole_three_views.png)与该源、MCI对应。原14叶仍有凹腔误填和胫盖漏覆盖，完整新步态也暴露新的真实干涉，故06仅作可加载检查点，不作稳定训练或受载行走交付；下一07联合修正真实壳体与低复杂度碰撞，保持当前04默认入口。最新完整动作诊断仍未通过稳定换步或半米拖运，详见009协调记录。
 
 [07同版原生硬件原型](evidence/drag_hardware_integration_009_07/integration_handoff_07.json)已封存：**16.5838988627kg，23刚体、18驱动、28凸体／1565实际支持点／3018凸面，单体最多64点**；[当前原生三视图](images/drag_hardware_integration_009_07/whole_source_review_01/whole_three_views.png)。Owner核对包内70文件和实际加载接口。有限保存点最大欠覆盖2.1212mm仅按2.13mm原型例外接受，原2mm目标FAIL；薄边、STEP与制造资格未通过。动作09已做100ms左脚离地和约73mm后落脚，但足滑、落地后偏航侧倾仍失败；未实现稳定交替行走、半米拖运或停车验收。默认04入口保持，07独立用于有限硬件回归，完整执行状态见009协调记录。
+
+</details>

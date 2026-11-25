@@ -1,0 +1,6552 @@
+{
+  "schema": "goose_v0_2_a1_architecture_decision_20261125",
+  "elapsed_s": 0.0,
+  "verdict": "KEEP BRIDGE (GO TO STAGE A2 WITH OPTION B2: ANCHORED LOWER CROSS-BRIDGE + SYMMETRIC STATOR TIE COLUMNS)",
+  "binary_gate": "KEEP_BRIDGE",
+  "recommended_architecture": "Option B2 (opt_b2_anchored_bridge_stator_ties, 7075-T6 + Hybrid 7075/Steel-Pin Rotating Tridents)",
+  "rejected_options": {
+    "option_a_bare_bridge": "HARD NO-GO \u2014 unanchored cross-bridge acts as 1D Y-rod (Fx=0, zero common-mode sway stiffness); 1.049 mm stuck / 3.245 mm unbonded.",
+    "option_c_independent_brackets": "HARD NO-GO \u2014 right side severely pinched by K2 + swept yoke (0.144 mm running gap), stress FAILS (117.6 MPa stuck / 154.6 MPa unbonded), AND unbridged 004 sideplates roll -12.7 mrad (open-book splay -> 1.749 mm stuck / 2.708 mm unbonded).",
+    "option_b1_lower_anchored_only": "INCOMPLETE \u2014 closes open-book sideplate roll (2.7x stiffer than Option C), but leaves cantilevered 004 upper split clamps unbraced (0.638 mm stuck / 1.549 mm unbonded)."
+  },
+  "rigid_carrier_limit_benchmarks_0um_k30": {
+    "option_a_bare_bridge_mm": {
+      "stuck": 0.9904,
+      "unbonded": 3.2211
+    },
+    "option_c_indep_3roots_mm": {
+      "stuck": 1.3202,
+      "unbonded": 1.9418
+    },
+    "option_b1_lower_6roots_plus_neck_mm": {
+      "stuck": 0.3272,
+      "unbonded": 0.9547
+    },
+    "option_b2_plus_stator_ties_mm": {
+      "stuck": 0.1865,
+      "unbonded": 0.189
+    }
+  },
+  "gate_summary_opt_b2_7075_hybrid": {
+    "zero_hard_cad_collision": true,
+    "zero_k1_k2_cassette_modification": true,
+    "net_structural_mass_delta_g": 195.04,
+    "pass_200g_mass_cap": true,
+    "total_robot_mass_with_track_b_kg": 18.76432,
+    "pass_18p80kg_cap": true,
+    "pass_all_static_bilateral_0p20mm": true,
+    "peak_static_13um_stuck_mm": 0.1673,
+    "peak_abs_disp_0um_stuck_mm": 0.37,
+    "peak_abs_disp_5um_stuck_mm": 0.3748,
+    "peak_abs_disp_13um_stuck_mm": 0.3825,
+    "peak_abs_disp_13um_unbonded_mm": 0.5336,
+    "steel_tri_peak_rel_0um_stuck_mm": 0.1979,
+    "steel_tri_peak_abs_0um_stuck_mm": 0.3176,
+    "steel_tri_peak_abs_13um_stuck_mm": 0.3299,
+    "peak_vm_stress_13um_stuck_MPa": 72.08,
+    "peak_vm_stress_13um_unbonded_MPa": 97.75,
+    "pass_80MPa_stress_stuck": true,
+    "pass_0p20mm_dynamic_first_pass_elastic": false,
+    "stage_a2_closing_action": "Rigid-carrier limit of Option B2 already passes (<0.200 mm: 0.1865 mm stuck / 0.1890 mm unbonded). First-pass elastic 7075-T6 solid (0.318-0.383 mm stuck, 72-73 MPa stuck / 98 MPa unbonded) has its localized compliance & stress hotspot at the 4.5 mm step corner (-37.1, +/-32.7, 340.7) plus +0.134 mm vertical clamp lift. Stage A2 will deepen/fillet the column-to-bridge gusset and tie into the verified zero-collision clamp-underfoot cheek (X[-12,0], |Y|[47,55], Z[320,335.2]) while staying <= 200 g."
+  },
+  "coupled_3d_fea_results": {
+    "baseline_004": {
+      "stuck_peak_abs_mm": 2.3358,
+      "unbonded_peak_abs_mm": 5.8831,
+      "fixed_upper_peak_rel_mm": 0.7148
+    },
+    "opt_a_al7075": {
+      "stuck": {
+        "k_lower_neck_L_N_mm": [
+          0.0,
+          0.0
+        ],
+        "k_closed_loop_L_N_mm": [
+          0.0,
+          0.0
+        ],
+        "dynamic_4p670s": {
+          "gap_0um_k30": {
+            "radial_play_um": 0.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 1.0343,
+            "peak_abs_node_mm": [
+              -26.5,
+              47.4,
+              264.6
+            ],
+            "peak_rel_yoke_disp_mm": 0.37,
+            "left_lower_reaction_N": [
+              0.0,
+              104.84
+            ],
+            "right_lower_reaction_N": [
+              -0.0,
+              -104.84
+            ],
+            "left_upper_SKF_u_mm": [
+              0.2099,
+              0.2949,
+              0.3467
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -6.478,
+              3.924,
+              -1.746
+            ],
+            "right_upper_SKF_u_mm": [
+              0.0218,
+              -0.5007,
+              -0.3052
+            ],
+            "right_upper_SKF_rot_mrad": [
+              4.193,
+              -0.702,
+              3.935
+            ],
+            "left_lower_608_u_mm": [
+              -0.1093,
+              -0.3172
+            ],
+            "right_lower_608_u_mm": [
+              0.2031,
+              -0.3056
+            ],
+            "stress": {
+              "max_vm_MPa": 13.84,
+              "parts": [
+                {
+                  "part": "opt_a_bare_bridge",
+                  "max_vm_MPa": 13.842743628904907,
+                  "element_index": 2777,
+                  "quadrature_index": 3,
+                  "tet_corner_center_mm": [
+                    -63.412762715707004,
+                    -51.01224264627478,
+                    316.5
+                  ],
+                  "stress_xyz_xy_xz_yz_MPa": [
+                    13.117928903640962,
+                    2.286221888738851,
+                    1.635070456838434,
+                    4.415165443816604,
+                    1.4622077659440842,
+                    0.8007043269905509
+                  ]
+                }
+              ]
+            }
+          },
+          "gap_5um_k30": {
+            "radial_play_um": 5.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 1.04,
+            "peak_abs_node_mm": [
+              -26.5,
+              47.4,
+              264.6
+            ],
+            "peak_rel_yoke_disp_mm": 0.3717,
+            "left_lower_reaction_N": [
+              0.0,
+              104.32
+            ],
+            "right_lower_reaction_N": [
+              -0.0,
+              -104.32
+            ],
+            "left_upper_SKF_u_mm": [
+              0.2094,
+              0.2946,
+              0.3453
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -6.525,
+              3.92,
+              -1.728
+            ],
+            "right_upper_SKF_u_mm": [
+              0.0213,
+              -0.5004,
+              -0.3066
+            ],
+            "right_upper_SKF_rot_mrad": [
+              4.241,
+              -0.703,
+              3.917
+            ],
+            "left_lower_608_u_mm": [
+              -0.1098,
+              -0.3172
+            ],
+            "right_lower_608_u_mm": [
+              0.2024,
+              -0.3056
+            ],
+            "stress": null
+          },
+          "gap_13um_k30": {
+            "radial_play_um": 13.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 1.0493,
+            "peak_abs_node_mm": [
+              -26.5,
+              47.4,
+              264.6
+            ],
+            "peak_rel_yoke_disp_mm": 0.3744,
+            "left_lower_reaction_N": [
+              0.0,
+              103.48
+            ],
+            "right_lower_reaction_N": [
+              -0.0,
+              -103.48
+            ],
+            "left_upper_SKF_u_mm": [
+              0.2087,
+              0.2943,
+              0.3431
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -6.6,
+              3.913,
+              -1.698
+            ],
+            "right_upper_SKF_u_mm": [
+              0.0206,
+              -0.5001,
+              -0.3088
+            ],
+            "right_upper_SKF_rot_mrad": [
+              4.316,
+              -0.706,
+              3.887
+            ],
+            "left_lower_608_u_mm": [
+              -0.1107,
+              -0.3171
+            ],
+            "right_lower_608_u_mm": [
+              0.2013,
+              -0.3057
+            ],
+            "stress": {
+              "max_vm_MPa": 13.66,
+              "parts": [
+                {
+                  "part": "opt_a_bare_bridge",
+                  "max_vm_MPa": 13.66353485255133,
+                  "element_index": 2777,
+                  "quadrature_index": 3,
+                  "tet_corner_center_mm": [
+                    -63.412762715707004,
+                    -51.01224264627478,
+                    316.5
+                  ],
+                  "stress_xyz_xy_xz_yz_MPa": [
+                    12.948100639467794,
+                    2.2566201147104525,
+                    1.6139006344215923,
+                    4.358006438957372,
+                    1.4432778518211655,
+                    0.7903384254507189
+                  ]
+                }
+              ]
+            }
+          },
+          "gap_13um_k15": {
+            "radial_play_um": 13.0,
+            "bearing_k_N_mm": 15000.0,
+            "peak_abs_yoke_disp_mm": 1.0533,
+            "peak_abs_node_mm": [
+              -26.5,
+              47.4,
+              264.6
+            ],
+            "peak_rel_yoke_disp_mm": 0.3756,
+            "left_lower_reaction_N": [
+              0.0,
+              103.13
+            ],
+            "right_lower_reaction_N": [
+              -0.0,
+              -103.13
+            ],
+            "left_upper_SKF_u_mm": [
+              0.2083,
+              0.2942,
+              0.3421
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -6.632,
+              3.91,
+              -1.686
+            ],
+            "right_upper_SKF_u_mm": [
+              0.0202,
+              -0.4999,
+              -0.3097
+            ],
+            "right_upper_SKF_rot_mrad": [
+              4.348,
+              -0.708,
+              3.874
+            ],
+            "left_lower_608_u_mm": [
+              -0.111,
+              -0.3171
+            ],
+            "right_lower_608_u_mm": [
+              0.2008,
+              -0.3057
+            ],
+            "stress": null
+          }
+        },
+        "extra_load_cases": {
+          "static_tow_s30_max_sq": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.2943,
+              "est_peak_disp_R_mm": 0.2539,
+              "est_peak_disp_max_mm": 0.2943,
+              "FL_N": [
+                -0.0,
+                78.8
+              ],
+              "FR_N": [
+                -0.0,
+                -78.8
+              ],
+              "common_mode_sway_Y_mm": 0.0019,
+              "chassis_yaw_twist_mrad": 0.003,
+              "left_RX_mrad": -3.764,
+              "right_RX_mrad": 3.487
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.3103,
+              "est_peak_disp_R_mm": 0.2699,
+              "est_peak_disp_max_mm": 0.3103,
+              "FL_N": [
+                -0.0,
+                77.5
+              ],
+              "FR_N": [
+                -0.0,
+                -77.5
+              ],
+              "common_mode_sway_Y_mm": 0.002,
+              "chassis_yaw_twist_mrad": 0.003,
+              "left_RX_mrad": -3.886,
+              "right_RX_mrad": 3.609
+            }
+          },
+          "static_tow_s30_min_sq": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.5457,
+              "est_peak_disp_R_mm": 0.6042,
+              "est_peak_disp_max_mm": 0.6042,
+              "FL_N": [
+                -0.0,
+                -72.8
+              ],
+              "FR_N": [
+                0.0,
+                72.8
+              ],
+              "common_mode_sway_Y_mm": -0.0332,
+              "chassis_yaw_twist_mrad": -1.724,
+              "left_RX_mrad": 8.483,
+              "right_RX_mrad": -8.244
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.5608,
+              "est_peak_disp_R_mm": 0.6174,
+              "est_peak_disp_max_mm": 0.6174,
+              "FL_N": [
+                -0.0,
+                -71.4
+              ],
+              "FR_N": [
+                0.0,
+                71.4
+              ],
+              "common_mode_sway_Y_mm": -0.0332,
+              "chassis_yaw_twist_mrad": -1.724,
+              "left_RX_mrad": 8.605,
+              "right_RX_mrad": -8.366
+            }
+          },
+          "static_grasp_s30_peakFx": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.1497,
+              "est_peak_disp_R_mm": 0.1681,
+              "est_peak_disp_max_mm": 0.1681,
+              "FL_N": [
+                -0.0,
+                18.4
+              ],
+              "FR_N": [
+                -0.0,
+                -18.4
+              ],
+              "common_mode_sway_Y_mm": 0.0007,
+              "chassis_yaw_twist_mrad": 0.046,
+              "left_RX_mrad": 1.323,
+              "right_RX_mrad": -1.451
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.1427,
+              "est_peak_disp_R_mm": 0.1599,
+              "est_peak_disp_max_mm": 0.1599,
+              "FL_N": [
+                -0.0,
+                17.0
+              ],
+              "FR_N": [
+                -0.0,
+                -17.0
+              ],
+              "common_mode_sway_Y_mm": 0.0007,
+              "chassis_yaw_twist_mrad": 0.045,
+              "left_RX_mrad": 1.201,
+              "right_RX_mrad": -1.329
+            }
+          },
+          "diag_common_mode_lateral_sway": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.9162,
+              "est_peak_disp_R_mm": 1.203,
+              "est_peak_disp_max_mm": 1.203,
+              "FL_N": [
+                0.0,
+                -24.9
+              ],
+              "FR_N": [
+                -0.0,
+                24.9
+              ],
+              "common_mode_sway_Y_mm": -0.0505,
+              "chassis_yaw_twist_mrad": -1.12,
+              "left_RX_mrad": -2.321,
+              "right_RX_mrad": -10.059
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.9009,
+              "est_peak_disp_R_mm": 1.2195,
+              "est_peak_disp_max_mm": 1.2195,
+              "FL_N": [
+                0.0,
+                -23.6
+              ],
+              "FR_N": [
+                -0.0,
+                23.6
+              ],
+              "common_mode_sway_Y_mm": -0.0505,
+              "chassis_yaw_twist_mrad": -1.119,
+              "left_RX_mrad": -2.199,
+              "right_RX_mrad": -10.181
+            }
+          },
+          "diag_chassis_torsion_diff_X": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.1139,
+              "est_peak_disp_R_mm": 0.9002,
+              "est_peak_disp_max_mm": 0.9002,
+              "FL_N": [
+                -0.0,
+                15.2
+              ],
+              "FR_N": [
+                0.0,
+                -15.2
+              ],
+              "common_mode_sway_Y_mm": 0.0032,
+              "chassis_yaw_twist_mrad": -1.865,
+              "left_RX_mrad": 2.189,
+              "right_RX_mrad": -2.252
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.1029,
+              "est_peak_disp_R_mm": 0.8994,
+              "est_peak_disp_max_mm": 0.8994,
+              "FL_N": [
+                -0.0,
+                13.8
+              ],
+              "FR_N": [
+                0.0,
+                -13.8
+              ],
+              "common_mode_sway_Y_mm": 0.0032,
+              "chassis_yaw_twist_mrad": -1.865,
+              "left_RX_mrad": 2.067,
+              "right_RX_mrad": -2.13
+            }
+          }
+        }
+      },
+      "unbonded": {
+        "k_lower_neck_L_N_mm": [
+          0.0,
+          0.0
+        ],
+        "k_closed_loop_L_N_mm": [
+          0.0,
+          0.0
+        ],
+        "dynamic_4p670s": {
+          "gap_0um_k30": {
+            "radial_play_um": 0.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 3.2354,
+            "peak_abs_node_mm": [
+              -26.5,
+              55.8,
+              262.6
+            ],
+            "peak_rel_yoke_disp_mm": 0.537,
+            "left_lower_reaction_N": [
+              0.0,
+              54.03
+            ],
+            "right_lower_reaction_N": [
+              -0.0,
+              -54.03
+            ],
+            "left_upper_SKF_u_mm": [
+              0.1582,
+              0.2288,
+              0.2968
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -24.969,
+              2.854,
+              3.448
+            ],
+            "right_upper_SKF_u_mm": [
+              0.341,
+              -2.7949,
+              -0.5298
+            ],
+            "right_upper_SKF_rot_mrad": [
+              12.876,
+              -1.395,
+              31.873
+            ],
+            "left_lower_608_u_mm": [
+              -0.1167,
+              -1.8475
+            ],
+            "right_lower_608_u_mm": [
+              0.5395,
+              -1.8415
+            ],
+            "stress": {
+              "max_vm_MPa": 7.13,
+              "parts": [
+                {
+                  "part": "opt_a_bare_bridge",
+                  "max_vm_MPa": 7.134109966698141,
+                  "element_index": 2777,
+                  "quadrature_index": 3,
+                  "tet_corner_center_mm": [
+                    -63.412762715707004,
+                    -51.01224264627478,
+                    316.5
+                  ],
+                  "stress_xyz_xy_xz_yz_MPa": [
+                    6.760561596459926,
+                    1.1782432300595487,
+                    0.8426619272627061,
+                    2.2754358173260205,
+                    0.7535753833111525,
+                    0.41265729969411197
+                  ]
+                }
+              ]
+            }
+          },
+          "gap_5um_k30": {
+            "radial_play_um": 5.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 3.2391,
+            "peak_abs_node_mm": [
+              -26.5,
+              55.8,
+              262.6
+            ],
+            "peak_rel_yoke_disp_mm": 0.5373,
+            "left_lower_reaction_N": [
+              0.0,
+              53.96
+            ],
+            "right_lower_reaction_N": [
+              -0.0,
+              -53.95
+            ],
+            "left_upper_SKF_u_mm": [
+              0.1575,
+              0.2249,
+              0.2966
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -24.982,
+              2.853,
+              3.504
+            ],
+            "right_upper_SKF_u_mm": [
+              0.3403,
+              -2.791,
+              -0.53
+            ],
+            "right_upper_SKF_rot_mrad": [
+              12.889,
+              -1.396,
+              31.817
+            ],
+            "left_lower_608_u_mm": [
+              -0.1174,
+              -1.8474
+            ],
+            "right_lower_608_u_mm": [
+              0.5388,
+              -1.8415
+            ],
+            "stress": null
+          },
+          "gap_13um_k30": {
+            "radial_play_um": 13.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 3.2451,
+            "peak_abs_node_mm": [
+              -26.5,
+              55.8,
+              262.6
+            ],
+            "peak_rel_yoke_disp_mm": 0.5377,
+            "left_lower_reaction_N": [
+              0.0,
+              53.83
+            ],
+            "right_lower_reaction_N": [
+              -0.0,
+              -53.83
+            ],
+            "left_upper_SKF_u_mm": [
+              0.1563,
+              0.2187,
+              0.2963
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -25.002,
+              2.851,
+              3.595
+            ],
+            "right_upper_SKF_u_mm": [
+              0.3391,
+              -2.7848,
+              -0.5302
+            ],
+            "right_upper_SKF_rot_mrad": [
+              12.909,
+              -1.397,
+              31.727
+            ],
+            "left_lower_608_u_mm": [
+              -0.1185,
+              -1.8474
+            ],
+            "right_lower_608_u_mm": [
+              0.5377,
+              -1.8415
+            ],
+            "stress": {
+              "max_vm_MPa": 7.11,
+              "parts": [
+                {
+                  "part": "opt_a_bare_bridge",
+                  "max_vm_MPa": 7.10767630619374,
+                  "element_index": 2777,
+                  "quadrature_index": 3,
+                  "tet_corner_center_mm": [
+                    -63.412762715707004,
+                    -51.01224264627478,
+                    316.5
+                  ],
+                  "stress_xyz_xy_xz_yz_MPa": [
+                    6.735512502601997,
+                    1.1738783060444749,
+                    0.8395400337250987,
+                    2.2670047678803704,
+                    0.7507832107738628,
+                    0.41112858771363703
+                  ]
+                }
+              ]
+            }
+          },
+          "gap_13um_k15": {
+            "radial_play_um": 13.0,
+            "bearing_k_N_mm": 15000.0,
+            "peak_abs_yoke_disp_mm": 3.2465,
+            "peak_abs_node_mm": [
+              -26.5,
+              55.8,
+              262.6
+            ],
+            "peak_rel_yoke_disp_mm": 0.5378,
+            "left_lower_reaction_N": [
+              0.0,
+              53.81
+            ],
+            "right_lower_reaction_N": [
+              -0.0,
+              -53.8
+            ],
+            "left_upper_SKF_u_mm": [
+              0.1561,
+              0.2173,
+              0.2962
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -25.006,
+              2.851,
+              3.615
+            ],
+            "right_upper_SKF_u_mm": [
+              0.3389,
+              -2.7834,
+              -0.5303
+            ],
+            "right_upper_SKF_rot_mrad": [
+              12.913,
+              -1.397,
+              31.706
+            ],
+            "left_lower_608_u_mm": [
+              -0.1187,
+              -1.8474
+            ],
+            "right_lower_608_u_mm": [
+              0.5374,
+              -1.8415
+            ],
+            "stress": null
+          }
+        },
+        "extra_load_cases": {
+          "static_tow_s30_max_sq": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 1.1746,
+              "est_peak_disp_R_mm": 1.1759,
+              "est_peak_disp_max_mm": 1.1759,
+              "FL_N": [
+                -0.0,
+                38.2
+              ],
+              "FR_N": [
+                -0.0,
+                -38.2
+              ],
+              "common_mode_sway_Y_mm": 0.0001,
+              "chassis_yaw_twist_mrad": -0.033,
+              "left_RX_mrad": -15.392,
+              "right_RX_mrad": 15.343
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 1.1842,
+              "est_peak_disp_R_mm": 1.1856,
+              "est_peak_disp_max_mm": 1.1856,
+              "FL_N": [
+                -0.0,
+                38.0
+              ],
+              "FR_N": [
+                -0.0,
+                -38.0
+              ],
+              "common_mode_sway_Y_mm": 0.0001,
+              "chassis_yaw_twist_mrad": -0.033,
+              "left_RX_mrad": -15.425,
+              "right_RX_mrad": 15.375
+            }
+          },
+          "static_tow_s30_min_sq": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 1.1345,
+              "est_peak_disp_R_mm": 1.7983,
+              "est_peak_disp_max_mm": 1.7983,
+              "FL_N": [
+                0.0,
+                -14.8
+              ],
+              "FR_N": [
+                0.0,
+                14.8
+              ],
+              "common_mode_sway_Y_mm": -0.6315,
+              "chassis_yaw_twist_mrad": -3.59,
+              "left_RX_mrad": 20.354,
+              "right_RX_mrad": -20.773
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 1.1427,
+              "est_peak_disp_R_mm": 1.8077,
+              "est_peak_disp_max_mm": 1.8077,
+              "FL_N": [
+                0.0,
+                -14.6
+              ],
+              "FR_N": [
+                0.0,
+                14.6
+              ],
+              "common_mode_sway_Y_mm": -0.6315,
+              "chassis_yaw_twist_mrad": -3.59,
+              "left_RX_mrad": 20.387,
+              "right_RX_mrad": -20.806
+            }
+          },
+          "static_grasp_s30_peakFx": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.2181,
+              "est_peak_disp_R_mm": 0.2612,
+              "est_peak_disp_max_mm": 0.2612,
+              "FL_N": [
+                -0.0,
+                24.4
+              ],
+              "FR_N": [
+                -0.0,
+                -24.4
+              ],
+              "common_mode_sway_Y_mm": 0.0033,
+              "chassis_yaw_twist_mrad": 0.057,
+              "left_RX_mrad": 1.447,
+              "right_RX_mrad": -1.228
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.2156,
+              "est_peak_disp_R_mm": 0.2605,
+              "est_peak_disp_max_mm": 0.2605,
+              "FL_N": [
+                -0.0,
+                24.2
+              ],
+              "FR_N": [
+                -0.0,
+                -24.2
+              ],
+              "common_mode_sway_Y_mm": 0.0033,
+              "chassis_yaw_twist_mrad": 0.057,
+              "left_RX_mrad": 1.414,
+              "right_RX_mrad": -1.196
+            }
+          },
+          "diag_common_mode_lateral_sway": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 2.9155,
+              "est_peak_disp_R_mm": 3.8801,
+              "est_peak_disp_max_mm": 3.8801,
+              "FL_N": [
+                0.0,
+                -3.4
+              ],
+              "FR_N": [
+                -0.0,
+                3.4
+              ],
+              "common_mode_sway_Y_mm": -2.9769,
+              "chassis_yaw_twist_mrad": -9.481,
+              "left_RX_mrad": -6.102,
+              "right_RX_mrad": -20.717
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 2.9061,
+              "est_peak_disp_R_mm": 3.8896,
+              "est_peak_disp_max_mm": 3.8896,
+              "FL_N": [
+                0.0,
+                -3.2
+              ],
+              "FR_N": [
+                -0.0,
+                3.2
+              ],
+              "common_mode_sway_Y_mm": -2.9769,
+              "chassis_yaw_twist_mrad": -9.481,
+              "left_RX_mrad": -6.069,
+              "right_RX_mrad": -20.749
+            }
+          },
+          "diag_chassis_torsion_diff_X": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.2657,
+              "est_peak_disp_R_mm": 1.4917,
+              "est_peak_disp_max_mm": 1.4917,
+              "FL_N": [
+                0.0,
+                25.2
+              ],
+              "FR_N": [
+                0.0,
+                -25.2
+              ],
+              "common_mode_sway_Y_mm": -0.2834,
+              "chassis_yaw_twist_mrad": -2.927,
+              "left_RX_mrad": 1.531,
+              "right_RX_mrad": -4.31
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.2717,
+              "est_peak_disp_R_mm": 1.4882,
+              "est_peak_disp_max_mm": 1.4882,
+              "FL_N": [
+                0.0,
+                25.0
+              ],
+              "FR_N": [
+                0.0,
+                -25.0
+              ],
+              "common_mode_sway_Y_mm": -0.2834,
+              "chassis_yaw_twist_mrad": -2.927,
+              "left_RX_mrad": 1.499,
+              "right_RX_mrad": -4.278
+            }
+          }
+        }
+      }
+    },
+    "opt_c_al7075": {
+      "stuck": {
+        "k_lower_neck_L_N_mm": [
+          300.9,
+          133.7
+        ],
+        "k_closed_loop_L_N_mm": [
+          226.5,
+          182.3
+        ],
+        "dynamic_4p670s": {
+          "gap_0um_k30": {
+            "radial_play_um": 0.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 1.7424,
+            "peak_abs_node_mm": [
+              -26.5,
+              55.8,
+              262.6
+            ],
+            "peak_rel_yoke_disp_mm": 0.4351,
+            "left_lower_reaction_N": [
+              -48.85,
+              110.62
+            ],
+            "right_lower_reaction_N": [
+              -15.92,
+              -29.88
+            ],
+            "left_upper_SKF_u_mm": [
+              0.1409,
+              0.2986,
+              0.1512
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -12.663,
+              5.454,
+              0.895
+            ],
+            "right_upper_SKF_u_mm": [
+              -0.0657,
+              -0.4687,
+              -0.5524
+            ],
+            "right_upper_SKF_rot_mrad": [
+              12.786,
+              -0.467,
+              0.546
+            ],
+            "left_lower_608_u_mm": [
+              -0.3592,
+              -0.7747
+            ],
+            "right_lower_608_u_mm": [
+              0.0263,
+              0.5521
+            ],
+            "stress": {
+              "max_vm_MPa": 122.35,
+              "parts": [
+                {
+                  "part": "opt_c_left_bracket",
+                  "max_vm_MPa": 84.42971877960022,
+                  "element_index": 3196,
+                  "quadrature_index": 4,
+                  "tet_corner_center_mm": [
+                    -0.0125,
+                    29.8125,
+                    333.59375
+                  ],
+                  "stress_xyz_xy_xz_yz_MPa": [
+                    -72.41341391335581,
+                    -57.16878920320973,
+                    -31.044933593313196,
+                    41.68519575323027,
+                    -13.201890959954929,
+                    5.145814294373769
+                  ]
+                },
+                {
+                  "part": "opt_c_right_bracket",
+                  "max_vm_MPa": 122.34781412951862,
+                  "element_index": 9394,
+                  "quadrature_index": 1,
+                  "tet_corner_center_mm": [
+                    -4.021791269780783,
+                    -52.24694605578072,
+                    327.7648651460382
+                  ],
+                  "stress_xyz_xy_xz_yz_MPa": [
+                    76.7827822986703,
+                    49.781929341592075,
+                    26.318297643071716,
+                    -45.26943285425361,
+                    -33.264196889880665,
+                    34.58504707251054
+                  ]
+                }
+              ]
+            }
+          },
+          "gap_5um_k30": {
+            "radial_play_um": 5.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 1.745,
+            "peak_abs_node_mm": [
+              -26.5,
+              55.8,
+              262.6
+            ],
+            "peak_rel_yoke_disp_mm": 0.4363,
+            "left_lower_reaction_N": [
+              -48.23,
+              109.88
+            ],
+            "right_lower_reaction_N": [
+              -15.27,
+              -29.28
+            ],
+            "left_upper_SKF_u_mm": [
+              0.1407,
+              0.2983,
+              0.1504
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -12.685,
+              5.428,
+              0.901
+            ],
+            "right_upper_SKF_u_mm": [
+              -0.0659,
+              -0.4684,
+              -0.5532
+            ],
+            "right_upper_SKF_rot_mrad": [
+              12.802,
+              -0.491,
+              0.54
+            ],
+            "left_lower_608_u_mm": [
+              -0.3591,
+              -0.7735
+            ],
+            "right_lower_608_u_mm": [
+              0.0261,
+              0.5502
+            ],
+            "stress": null
+          },
+          "gap_13um_k30": {
+            "radial_play_um": 13.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 1.7493,
+            "peak_abs_node_mm": [
+              -26.5,
+              55.8,
+              262.6
+            ],
+            "peak_rel_yoke_disp_mm": 0.4383,
+            "left_lower_reaction_N": [
+              -47.25,
+              108.7
+            ],
+            "right_lower_reaction_N": [
+              -14.24,
+              -28.34
+            ],
+            "left_upper_SKF_u_mm": [
+              0.1403,
+              0.2979,
+              0.149
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -12.721,
+              5.386,
+              0.909
+            ],
+            "right_upper_SKF_u_mm": [
+              -0.0662,
+              -0.468,
+              -0.5544
+            ],
+            "right_upper_SKF_rot_mrad": [
+              12.826,
+              -0.528,
+              0.529
+            ],
+            "left_lower_608_u_mm": [
+              -0.3588,
+              -0.7716
+            ],
+            "right_lower_608_u_mm": [
+              0.0258,
+              0.547
+            ],
+            "stress": {
+              "max_vm_MPa": 117.58,
+              "parts": [
+                {
+                  "part": "opt_c_left_bracket",
+                  "max_vm_MPa": 83.48901129954409,
+                  "element_index": 3196,
+                  "quadrature_index": 4,
+                  "tet_corner_center_mm": [
+                    -0.0125,
+                    29.8125,
+                    333.59375
+                  ],
+                  "stress_xyz_xy_xz_yz_MPa": [
+                    -71.56827010778653,
+                    -56.54200227186318,
+                    -30.696414749505617,
+                    41.21351490497237,
+                    -13.089715898698824,
+                    5.118129490410299
+                  ]
+                },
+                {
+                  "part": "opt_c_right_bracket",
+                  "max_vm_MPa": 117.58317675718241,
+                  "element_index": 9394,
+                  "quadrature_index": 1,
+                  "tet_corner_center_mm": [
+                    -4.021791269780783,
+                    -52.24694605578072,
+                    327.7648651460382
+                  ],
+                  "stress_xyz_xy_xz_yz_MPa": [
+                    73.79984525276504,
+                    47.85041748135842,
+                    25.294393601542744,
+                    -43.50457024093495,
+                    -31.96576718439269,
+                    33.24137391011098
+                  ]
+                }
+              ]
+            }
+          },
+          "gap_13um_k15": {
+            "radial_play_um": 13.0,
+            "bearing_k_N_mm": 15000.0,
+            "peak_abs_yoke_disp_mm": 1.7514,
+            "peak_abs_node_mm": [
+              -26.5,
+              55.8,
+              262.6
+            ],
+            "peak_rel_yoke_disp_mm": 0.4393,
+            "left_lower_reaction_N": [
+              -46.77,
+              108.12
+            ],
+            "right_lower_reaction_N": [
+              -14.11,
+              -28.21
+            ],
+            "left_upper_SKF_u_mm": [
+              0.1401,
+              0.2977,
+              0.1483
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -12.738,
+              5.365,
+              0.914
+            ],
+            "right_upper_SKF_u_mm": [
+              -0.0663,
+              -0.4679,
+              -0.5546
+            ],
+            "right_upper_SKF_rot_mrad": [
+              12.83,
+              -0.532,
+              0.528
+            ],
+            "left_lower_608_u_mm": [
+              -0.3587,
+              -0.7706
+            ],
+            "right_lower_608_u_mm": [
+              0.0258,
+              0.5466
+            ],
+            "stress": null
+          }
+        },
+        "extra_load_cases": {
+          "static_tow_s30_max_sq": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.8833,
+              "est_peak_disp_R_mm": 1.0101,
+              "est_peak_disp_max_mm": 1.0101,
+              "FL_N": [
+                -36.1,
+                64.0
+              ],
+              "FR_N": [
+                -32.2,
+                -44.2
+              ],
+              "common_mode_sway_Y_mm": 0.0034,
+              "chassis_yaw_twist_mrad": 0.022,
+              "left_RX_mrad": -8.906,
+              "right_RX_mrad": 9.381
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.8946,
+              "est_peak_disp_R_mm": 1.0178,
+              "est_peak_disp_max_mm": 1.0178,
+              "FL_N": [
+                -34.3,
+                62.1
+              ],
+              "FR_N": [
+                -30.3,
+                -42.6
+              ],
+              "common_mode_sway_Y_mm": 0.0035,
+              "chassis_yaw_twist_mrad": 0.022,
+              "left_RX_mrad": -8.964,
+              "right_RX_mrad": 9.422
+            }
+          },
+          "static_tow_s30_min_sq": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 1.2353,
+              "est_peak_disp_R_mm": 1.2723,
+              "est_peak_disp_max_mm": 1.2723,
+              "FL_N": [
+                2.0,
+                -32.1
+              ],
+              "FR_N": [
+                23.3,
+                30.0
+              ],
+              "common_mode_sway_Y_mm": -0.0294,
+              "chassis_yaw_twist_mrad": -1.675,
+              "left_RX_mrad": 14.007,
+              "right_RX_mrad": -13.945
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 1.2459,
+              "est_peak_disp_R_mm": 1.2819,
+              "est_peak_disp_max_mm": 1.2819,
+              "FL_N": [
+                1.2,
+                -30.3
+              ],
+              "FR_N": [
+                21.4,
+                28.4
+              ],
+              "common_mode_sway_Y_mm": -0.0294,
+              "chassis_yaw_twist_mrad": -1.676,
+              "left_RX_mrad": 14.058,
+              "right_RX_mrad": -13.986
+            }
+          },
+          "static_grasp_s30_peakFx": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.0716,
+              "est_peak_disp_R_mm": 0.107,
+              "est_peak_disp_max_mm": 0.107,
+              "FL_N": [
+                -14.9,
+                19.1
+              ],
+              "FR_N": [
+                -13.8,
+                -14.3
+              ],
+              "common_mode_sway_Y_mm": 0.0025,
+              "chassis_yaw_twist_mrad": 0.056,
+              "left_RX_mrad": 0.232,
+              "right_RX_mrad": -0.17
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.088,
+              "est_peak_disp_R_mm": 0.1203,
+              "est_peak_disp_max_mm": 0.1203,
+              "FL_N": [
+                -12.9,
+                17.3
+              ],
+              "FR_N": [
+                -11.8,
+                -12.8
+              ],
+              "common_mode_sway_Y_mm": 0.0025,
+              "chassis_yaw_twist_mrad": 0.055,
+              "left_RX_mrad": 0.173,
+              "right_RX_mrad": -0.13
+            }
+          },
+          "diag_common_mode_lateral_sway": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.5083,
+              "est_peak_disp_R_mm": 1.2051,
+              "est_peak_disp_max_mm": 1.2051,
+              "FL_N": [
+                -4.9,
+                43.2
+              ],
+              "FR_N": [
+                39.9,
+                45.2
+              ],
+              "common_mode_sway_Y_mm": -0.0257,
+              "chassis_yaw_twist_mrad": -0.899,
+              "left_RX_mrad": 1.074,
+              "right_RX_mrad": -11.055
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.5084,
+              "est_peak_disp_R_mm": 1.2149,
+              "est_peak_disp_max_mm": 1.2149,
+              "FL_N": [
+                -4.0,
+                41.4
+              ],
+              "FR_N": [
+                37.9,
+                43.7
+              ],
+              "common_mode_sway_Y_mm": -0.0264,
+              "chassis_yaw_twist_mrad": -0.908,
+              "left_RX_mrad": 1.021,
+              "right_RX_mrad": -11.095
+            }
+          },
+          "diag_chassis_torsion_diff_X": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.0842,
+              "est_peak_disp_R_mm": 0.813,
+              "est_peak_disp_max_mm": 0.813,
+              "FL_N": [
+                -10.2,
+                25.5
+              ],
+              "FR_N": [
+                17.5,
+                -3.6
+              ],
+              "common_mode_sway_Y_mm": 0.0085,
+              "chassis_yaw_twist_mrad": -1.793,
+              "left_RX_mrad": 1.518,
+              "right_RX_mrad": -0.974
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.0762,
+              "est_peak_disp_R_mm": 0.8214,
+              "est_peak_disp_max_mm": 0.8214,
+              "FL_N": [
+                -8.7,
+                23.6
+              ],
+              "FR_N": [
+                15.8,
+                -4.1
+              ],
+              "common_mode_sway_Y_mm": 0.0081,
+              "chassis_yaw_twist_mrad": -1.801,
+              "left_RX_mrad": 1.461,
+              "right_RX_mrad": -0.987
+            }
+          }
+        }
+      },
+      "unbonded": {
+        "k_lower_neck_L_N_mm": [
+          229.4,
+          77.2
+        ],
+        "k_closed_loop_L_N_mm": [
+          152.4,
+          30.1
+        ],
+        "dynamic_4p670s": {
+          "gap_0um_k30": {
+            "radial_play_um": 0.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 2.7003,
+            "peak_abs_node_mm": [
+              -22.5,
+              55.8,
+              262.6
+            ],
+            "peak_rel_yoke_disp_mm": 0.5195,
+            "left_lower_reaction_N": [
+              -68.12,
+              95.65
+            ],
+            "right_lower_reaction_N": [
+              -20.54,
+              -26.86
+            ],
+            "left_upper_SKF_u_mm": [
+              0.1842,
+              0.6355,
+              0.318
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -21.152,
+              7.296,
+              -3.48
+            ],
+            "right_upper_SKF_u_mm": [
+              -0.0274,
+              -0.8351,
+              -0.5805
+            ],
+            "right_upper_SKF_rot_mrad": [
+              18.173,
+              -0.086,
+              3.87
+            ],
+            "left_lower_608_u_mm": [
+              -0.4874,
+              -1.1004
+            ],
+            "right_lower_608_u_mm": [
+              0.0282,
+              0.5841
+            ],
+            "stress": {
+              "max_vm_MPa": 154.63,
+              "parts": [
+                {
+                  "part": "opt_c_left_bracket",
+                  "max_vm_MPa": 154.63100893496605,
+                  "element_index": 2519,
+                  "quadrature_index": 1,
+                  "tet_corner_center_mm": [
+                    29.00506871665792,
+                    27.22216616732488,
+                    341.36878554317383
+                  ],
+                  "stress_xyz_xy_xz_yz_MPa": [
+                    -171.6020571546505,
+                    -46.513072378666195,
+                    -36.93032235436796,
+                    -46.35756507806614,
+                    -12.630712446173126,
+                    -3.970433705708269
+                  ]
+                },
+                {
+                  "part": "opt_c_right_bracket",
+                  "max_vm_MPa": 101.71819797940431,
+                  "element_index": 9394,
+                  "quadrature_index": 1,
+                  "tet_corner_center_mm": [
+                    -4.021791269780783,
+                    -52.24694605578072,
+                    327.7648651460382
+                  ],
+                  "stress_xyz_xy_xz_yz_MPa": [
+                    65.28727641721332,
+                    41.54924580715256,
+                    21.518995323975737,
+                    -37.28712299509546,
+                    -27.32125421967249,
+                    28.84479530900635
+                  ]
+                }
+              ]
+            }
+          },
+          "gap_5um_k30": {
+            "radial_play_um": 5.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 2.7032,
+            "peak_abs_node_mm": [
+              -22.5,
+              55.8,
+              262.6
+            ],
+            "peak_rel_yoke_disp_mm": 0.5192,
+            "left_lower_reaction_N": [
+              -67.65,
+              95.47
+            ],
+            "right_lower_reaction_N": [
+              -20.16,
+              -26.7
+            ],
+            "left_upper_SKF_u_mm": [
+              0.1837,
+              0.6334,
+              0.3169
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -21.183,
+              7.266,
+              -3.446
+            ],
+            "right_upper_SKF_u_mm": [
+              -0.028,
+              -0.8324,
+              -0.5816
+            ],
+            "right_upper_SKF_rot_mrad": [
+              18.2,
+              -0.113,
+              3.829
+            ],
+            "left_lower_608_u_mm": [
+              -0.4881,
+              -1.1008
+            ],
+            "right_lower_608_u_mm": [
+              0.027,
+              0.585
+            ],
+            "stress": null
+          },
+          "gap_13um_k30": {
+            "radial_play_um": 13.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 2.7078,
+            "peak_abs_node_mm": [
+              -22.5,
+              55.8,
+              262.6
+            ],
+            "peak_rel_yoke_disp_mm": 0.5187,
+            "left_lower_reaction_N": [
+              -66.92,
+              95.19
+            ],
+            "right_lower_reaction_N": [
+              -19.55,
+              -26.43
+            ],
+            "left_upper_SKF_u_mm": [
+              0.1829,
+              0.6301,
+              0.3152
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -21.233,
+              7.219,
+              -3.391
+            ],
+            "right_upper_SKF_u_mm": [
+              -0.0289,
+              -0.8281,
+              -0.5832
+            ],
+            "right_upper_SKF_rot_mrad": [
+              18.244,
+              -0.156,
+              3.762
+            ],
+            "left_lower_608_u_mm": [
+              -0.4891,
+              -1.1014
+            ],
+            "right_lower_608_u_mm": [
+              0.0252,
+              0.5863
+            ],
+            "stress": {
+              "max_vm_MPa": 154.62,
+              "parts": [
+                {
+                  "part": "opt_c_left_bracket",
+                  "max_vm_MPa": 154.6156840067344,
+                  "element_index": 2519,
+                  "quadrature_index": 1,
+                  "tet_corner_center_mm": [
+                    29.00506871665792,
+                    27.22216616732488,
+                    341.36878554317383
+                  ],
+                  "stress_xyz_xy_xz_yz_MPa": [
+                    -171.59300751116012,
+                    -46.510061134769515,
+                    -36.91762740381854,
+                    -46.34987581458106,
+                    -12.600920795034353,
+                    -3.9631228878070828
+                  ]
+                },
+                {
+                  "part": "opt_c_right_bracket",
+                  "max_vm_MPa": 100.71133912072665,
+                  "element_index": 9394,
+                  "quadrature_index": 1,
+                  "tet_corner_center_mm": [
+                    -4.021791269780783,
+                    -52.24694605578072,
+                    327.7648651460382
+                  ],
+                  "stress_xyz_xy_xz_yz_MPa": [
+                    64.65022078793892,
+                    41.14698219464996,
+                    21.306839344009973,
+                    -36.91558751524361,
+                    -27.046827918218522,
+                    28.563136017949216
+                  ]
+                }
+              ]
+            }
+          },
+          "gap_13um_k15": {
+            "radial_play_um": 13.0,
+            "bearing_k_N_mm": 15000.0,
+            "peak_abs_yoke_disp_mm": 2.7101,
+            "peak_abs_node_mm": [
+              -22.5,
+              55.8,
+              262.6
+            ],
+            "peak_rel_yoke_disp_mm": 0.5185,
+            "left_lower_reaction_N": [
+              -66.56,
+              95.05
+            ],
+            "right_lower_reaction_N": [
+              -19.47,
+              -26.4
+            ],
+            "left_upper_SKF_u_mm": [
+              0.1825,
+              0.6285,
+              0.3143
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -21.257,
+              7.196,
+              -3.364
+            ],
+            "right_upper_SKF_u_mm": [
+              -0.029,
+              -0.8275,
+              -0.5834
+            ],
+            "right_upper_SKF_rot_mrad": [
+              18.25,
+              -0.162,
+              3.753
+            ],
+            "left_lower_608_u_mm": [
+              -0.4896,
+              -1.1016
+            ],
+            "right_lower_608_u_mm": [
+              0.025,
+              0.5865
+            ],
+            "stress": null
+          }
+        },
+        "extra_load_cases": {
+          "static_tow_s30_max_sq": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 1.4001,
+              "est_peak_disp_R_mm": 1.5285,
+              "est_peak_disp_max_mm": 1.5285,
+              "FL_N": [
+                -51.1,
+                48.9
+              ],
+              "FR_N": [
+                -49.2,
+                -45.9
+              ],
+              "common_mode_sway_Y_mm": 0.0362,
+              "chassis_yaw_twist_mrad": 0.011,
+              "left_RX_mrad": -14.573,
+              "right_RX_mrad": 15.341
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 1.4101,
+              "est_peak_disp_R_mm": 1.5388,
+              "est_peak_disp_max_mm": 1.5388,
+              "FL_N": [
+                -49.7,
+                48.5
+              ],
+              "FR_N": [
+                -48.1,
+                -45.5
+              ],
+              "common_mode_sway_Y_mm": 0.0372,
+              "chassis_yaw_twist_mrad": 0.013,
+              "left_RX_mrad": -14.658,
+              "right_RX_mrad": 15.415
+            }
+          },
+          "static_tow_s30_min_sq": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 1.713,
+              "est_peak_disp_R_mm": 1.5385,
+              "est_peak_disp_max_mm": 1.713,
+              "FL_N": [
+                6.7,
+                -7.7
+              ],
+              "FR_N": [
+                32.8,
+                29.4
+              ],
+              "common_mode_sway_Y_mm": -0.1118,
+              "chassis_yaw_twist_mrad": -2.007,
+              "left_RX_mrad": 20.517,
+              "right_RX_mrad": -19.128
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 1.7217,
+              "est_peak_disp_R_mm": 1.5512,
+              "est_peak_disp_max_mm": 1.7217,
+              "FL_N": [
+                5.5,
+                -7.2
+              ],
+              "FR_N": [
+                31.7,
+                28.9
+              ],
+              "common_mode_sway_Y_mm": -0.1123,
+              "chassis_yaw_twist_mrad": -2.009,
+              "left_RX_mrad": 20.598,
+              "right_RX_mrad": -19.202
+            }
+          },
+          "static_grasp_s30_peakFx": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.1251,
+              "est_peak_disp_R_mm": 0.207,
+              "est_peak_disp_max_mm": 0.207,
+              "FL_N": [
+                -18.4,
+                25.1
+              ],
+              "FR_N": [
+                -22.8,
+                -25.5
+              ],
+              "common_mode_sway_Y_mm": 0.08,
+              "chassis_yaw_twist_mrad": 0.241,
+              "left_RX_mrad": 0.307,
+              "right_RX_mrad": -0.461
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.1402,
+              "est_peak_disp_R_mm": 0.221,
+              "est_peak_disp_max_mm": 0.221,
+              "FL_N": [
+                -17.2,
+                24.6
+              ],
+              "FR_N": [
+                -21.7,
+                -25.1
+              ],
+              "common_mode_sway_Y_mm": 0.0806,
+              "chassis_yaw_twist_mrad": 0.243,
+              "left_RX_mrad": 0.226,
+              "right_RX_mrad": -0.388
+            }
+          },
+          "diag_common_mode_lateral_sway": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.8469,
+              "est_peak_disp_R_mm": 1.5477,
+              "est_peak_disp_max_mm": 1.5477,
+              "FL_N": [
+                -3.0,
+                57.4
+              ],
+              "FR_N": [
+                60.1,
+                67.4
+              ],
+              "common_mode_sway_Y_mm": -0.4442,
+              "chassis_yaw_twist_mrad": -2.206,
+              "left_RX_mrad": 0.321,
+              "right_RX_mrad": -12.728
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.8493,
+              "est_peak_disp_R_mm": 1.5605,
+              "est_peak_disp_max_mm": 1.5605,
+              "FL_N": [
+                -2.7,
+                57.0
+              ],
+              "FR_N": [
+                59.1,
+                67.0
+              ],
+              "common_mode_sway_Y_mm": -0.4513,
+              "chassis_yaw_twist_mrad": -2.228,
+              "left_RX_mrad": 0.268,
+              "right_RX_mrad": -12.801
+            }
+          },
+          "diag_chassis_torsion_diff_X": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.2124,
+              "est_peak_disp_R_mm": 1.2267,
+              "est_peak_disp_max_mm": 1.2267,
+              "FL_N": [
+                -12.0,
+                35.3
+              ],
+              "FR_N": [
+                26.2,
+                -8.6
+              ],
+              "common_mode_sway_Y_mm": 0.1375,
+              "chassis_yaw_twist_mrad": -1.713,
+              "left_RX_mrad": 1.351,
+              "right_RX_mrad": -0.527
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.212,
+              "est_peak_disp_R_mm": 1.2336,
+              "est_peak_disp_max_mm": 1.2336,
+              "FL_N": [
+                -11.3,
+                34.8
+              ],
+              "FR_N": [
+                25.1,
+                -8.8
+              ],
+              "common_mode_sway_Y_mm": 0.1347,
+              "chassis_yaw_twist_mrad": -1.725,
+              "left_RX_mrad": 1.283,
+              "right_RX_mrad": -0.57
+            }
+          }
+        }
+      }
+    },
+    "opt_b1_al7075": {
+      "stuck": {
+        "k_lower_neck_L_N_mm": [
+          434.8,
+          652.2
+        ],
+        "k_closed_loop_L_N_mm": [
+          240.2,
+          260.0
+        ],
+        "dynamic_4p670s": {
+          "gap_0um_k30": {
+            "radial_play_um": 0.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 0.6281,
+            "peak_abs_node_mm": [
+              -26.5,
+              43.5,
+              266.6
+            ],
+            "peak_rel_yoke_disp_mm": 0.3058,
+            "left_lower_reaction_N": [
+              -20.67,
+              134.9
+            ],
+            "right_lower_reaction_N": [
+              -6.19,
+              -69.06
+            ],
+            "left_upper_SKF_u_mm": [
+              0.127,
+              0.1339,
+              0.2704
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -2.312,
+              2.553,
+              -1.428
+            ],
+            "right_upper_SKF_u_mm": [
+              0.0318,
+              -0.336,
+              -0.1521
+            ],
+            "right_upper_SKF_rot_mrad": [
+              3.366,
+              0.579,
+              2.655
+            ],
+            "left_lower_608_u_mm": [
+              -0.1059,
+              -0.1126
+            ],
+            "right_lower_608_u_mm": [
+              0.0885,
+              -0.1024
+            ],
+            "stress": {
+              "max_vm_MPa": 72.25,
+              "parts": [
+                {
+                  "part": "opt_b1_anchored_lower_bridge",
+                  "max_vm_MPa": 72.2486373919869,
+                  "element_index": 7904,
+                  "quadrature_index": 4,
+                  "tet_corner_center_mm": [
+                    -4.694505620243637,
+                    -50.13289325348589,
+                    323.93804212272175
+                  ],
+                  "stress_xyz_xy_xz_yz_MPa": [
+                    35.948355807090294,
+                    33.0873542219978,
+                    11.632220426408018,
+                    -31.62307125749381,
+                    -16.336368175865463,
+                    17.217119911518417
+                  ]
+                }
+              ]
+            }
+          },
+          "gap_5um_k30": {
+            "radial_play_um": 5.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 0.632,
+            "peak_abs_node_mm": [
+              -26.5,
+              43.5,
+              266.6
+            ],
+            "peak_rel_yoke_disp_mm": 0.3081,
+            "left_lower_reaction_N": [
+              -20.42,
+              134.06
+            ],
+            "right_lower_reaction_N": [
+              -6.07,
+              -68.28
+            ],
+            "left_upper_SKF_u_mm": [
+              0.1266,
+              0.1333,
+              0.2696
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -2.339,
+              2.538,
+              -1.415
+            ],
+            "right_upper_SKF_u_mm": [
+              0.0314,
+              -0.3349,
+              -0.1526
+            ],
+            "right_upper_SKF_rot_mrad": [
+              3.396,
+              0.574,
+              2.635
+            ],
+            "left_lower_608_u_mm": [
+              -0.106,
+              -0.1123
+            ],
+            "right_lower_608_u_mm": [
+              0.0877,
+              -0.1021
+            ],
+            "stress": null
+          },
+          "gap_13um_k30": {
+            "radial_play_um": 13.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 0.6383,
+            "peak_abs_node_mm": [
+              -26.5,
+              43.5,
+              266.6
+            ],
+            "peak_rel_yoke_disp_mm": 0.3118,
+            "left_lower_reaction_N": [
+              -20.01,
+              132.72
+            ],
+            "right_lower_reaction_N": [
+              -5.88,
+              -67.02
+            ],
+            "left_upper_SKF_u_mm": [
+              0.126,
+              0.1323,
+              0.2684
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -2.382,
+              2.513,
+              -1.394
+            ],
+            "right_upper_SKF_u_mm": [
+              0.0307,
+              -0.3331,
+              -0.1534
+            ],
+            "right_upper_SKF_rot_mrad": [
+              3.443,
+              0.567,
+              2.602
+            ],
+            "left_lower_608_u_mm": [
+              -0.1063,
+              -0.1118
+            ],
+            "right_lower_608_u_mm": [
+              0.0863,
+              -0.1017
+            ],
+            "stress": {
+              "max_vm_MPa": 71.66,
+              "parts": [
+                {
+                  "part": "opt_b1_anchored_lower_bridge",
+                  "max_vm_MPa": 71.65710389672466,
+                  "element_index": 7904,
+                  "quadrature_index": 4,
+                  "tet_corner_center_mm": [
+                    -4.694505620243637,
+                    -50.13289325348589,
+                    323.93804212272175
+                  ],
+                  "stress_xyz_xy_xz_yz_MPa": [
+                    35.648075179474795,
+                    32.823585701629796,
+                    11.532744793891307,
+                    -31.361505546136826,
+                    -16.21240357056714,
+                    17.07013919502513
+                  ]
+                }
+              ]
+            }
+          },
+          "gap_13um_k15": {
+            "radial_play_um": 13.0,
+            "bearing_k_N_mm": 15000.0,
+            "peak_abs_yoke_disp_mm": 0.6417,
+            "peak_abs_node_mm": [
+              -26.5,
+              43.5,
+              266.6
+            ],
+            "peak_rel_yoke_disp_mm": 0.3138,
+            "left_lower_reaction_N": [
+              -19.79,
+              131.99
+            ],
+            "right_lower_reaction_N": [
+              -5.85,
+              -66.65
+            ],
+            "left_upper_SKF_u_mm": [
+              0.1257,
+              0.1317,
+              0.2677
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -2.405,
+              2.5,
+              -1.384
+            ],
+            "right_upper_SKF_u_mm": [
+              0.0304,
+              -0.3324,
+              -0.1535
+            ],
+            "right_upper_SKF_rot_mrad": [
+              3.457,
+              0.567,
+              2.591
+            ],
+            "left_lower_608_u_mm": [
+              -0.1064,
+              -0.1113
+            ],
+            "right_lower_608_u_mm": [
+              0.0857,
+              -0.1013
+            ],
+            "stress": null
+          }
+        },
+        "extra_load_cases": {
+          "static_tow_s30_max_sq": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.1839,
+              "est_peak_disp_R_mm": 0.137,
+              "est_peak_disp_max_mm": 0.1839,
+              "FL_N": [
+                -21.7,
+                80.9
+              ],
+              "FR_N": [
+                -11.1,
+                -79.9
+              ],
+              "common_mode_sway_Y_mm": -0.0168,
+              "chassis_yaw_twist_mrad": -0.105,
+              "left_RX_mrad": -2.057,
+              "right_RX_mrad": 1.811
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.2002,
+              "est_peak_disp_R_mm": 0.1533,
+              "est_peak_disp_max_mm": 0.2002,
+              "FL_N": [
+                -20.8,
+                78.7
+              ],
+              "FR_N": [
+                -10.7,
+                -77.8
+              ],
+              "common_mode_sway_Y_mm": -0.0161,
+              "chassis_yaw_twist_mrad": -0.103,
+              "left_RX_mrad": -2.128,
+              "right_RX_mrad": 1.888
+            }
+          },
+          "static_tow_s30_min_sq": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.3002,
+              "est_peak_disp_R_mm": 0.2177,
+              "est_peak_disp_max_mm": 0.3002,
+              "FL_N": [
+                -5.1,
+                -42.5
+              ],
+              "FR_N": [
+                16.7,
+                58.4
+              ],
+              "common_mode_sway_Y_mm": 0.0192,
+              "chassis_yaw_twist_mrad": -0.673,
+              "left_RX_mrad": 3.121,
+              "right_RX_mrad": -3.459
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.3135,
+              "est_peak_disp_R_mm": 0.2328,
+              "est_peak_disp_max_mm": 0.3135,
+              "FL_N": [
+                -5.1,
+                -40.5
+              ],
+              "FR_N": [
+                16.0,
+                56.4
+              ],
+              "common_mode_sway_Y_mm": 0.0187,
+              "chassis_yaw_twist_mrad": -0.678,
+              "left_RX_mrad": 3.184,
+              "right_RX_mrad": -3.536
+            }
+          },
+          "static_grasp_s30_peakFx": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.0838,
+              "est_peak_disp_R_mm": 0.0963,
+              "est_peak_disp_max_mm": 0.0963,
+              "FL_N": [
+                -8.9,
+                25.3
+              ],
+              "FR_N": [
+                -8.6,
+                -24.1
+              ],
+              "common_mode_sway_Y_mm": 0.0029,
+              "chassis_yaw_twist_mrad": 0.017,
+              "left_RX_mrad": 0.366,
+              "right_RX_mrad": -0.517
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.0864,
+              "est_peak_disp_R_mm": 0.0957,
+              "est_peak_disp_max_mm": 0.0957,
+              "FL_N": [
+                -7.9,
+                23.2
+              ],
+              "FR_N": [
+                -7.8,
+                -22.1
+              ],
+              "common_mode_sway_Y_mm": 0.0035,
+              "chassis_yaw_twist_mrad": 0.021,
+              "left_RX_mrad": 0.296,
+              "right_RX_mrad": -0.44
+            }
+          },
+          "diag_common_mode_lateral_sway": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.3421,
+              "est_peak_disp_R_mm": 0.3519,
+              "est_peak_disp_max_mm": 0.3519,
+              "FL_N": [
+                6.7,
+                50.0
+              ],
+              "FR_N": [
+                30.4,
+                76.0
+              ],
+              "common_mode_sway_Y_mm": -0.0091,
+              "chassis_yaw_twist_mrad": -0.432,
+              "left_RX_mrad": -0.904,
+              "right_RX_mrad": -2.813
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.3506,
+              "est_peak_disp_R_mm": 0.3657,
+              "est_peak_disp_max_mm": 0.3657,
+              "FL_N": [
+                6.7,
+                48.0
+              ],
+              "FR_N": [
+                29.3,
+                74.2
+              ],
+              "common_mode_sway_Y_mm": -0.0108,
+              "chassis_yaw_twist_mrad": -0.451,
+              "left_RX_mrad": -0.956,
+              "right_RX_mrad": -2.879
+            }
+          },
+          "diag_chassis_torsion_diff_X": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.0914,
+              "est_peak_disp_R_mm": 0.4236,
+              "est_peak_disp_max_mm": 0.4236,
+              "FL_N": [
+                -6.4,
+                37.5
+              ],
+              "FR_N": [
+                32.0,
+                -21.4
+              ],
+              "common_mode_sway_Y_mm": 0.0276,
+              "chassis_yaw_twist_mrad": -0.754,
+              "left_RX_mrad": 0.099,
+              "right_RX_mrad": -0.554
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.0868,
+              "est_peak_disp_R_mm": 0.4351,
+              "est_peak_disp_max_mm": 0.4351,
+              "FL_N": [
+                -5.7,
+                35.3
+              ],
+              "FR_N": [
+                30.3,
+                -20.5
+              ],
+              "common_mode_sway_Y_mm": 0.028,
+              "chassis_yaw_twist_mrad": -0.767,
+              "left_RX_mrad": 0.023,
+              "right_RX_mrad": -0.523
+            }
+          }
+        }
+      },
+      "unbonded": {
+        "k_lower_neck_L_N_mm": [
+          351.2,
+          398.1
+        ],
+        "k_closed_loop_L_N_mm": [
+          151.9,
+          29.8
+        ],
+        "dynamic_4p670s": {
+          "gap_0um_k30": {
+            "radial_play_um": 0.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 1.5426,
+            "peak_abs_node_mm": [
+              -22.5,
+              43.3,
+              266.7
+            ],
+            "peak_rel_yoke_disp_mm": 0.4809,
+            "left_lower_reaction_N": [
+              -48.92,
+              96.49
+            ],
+            "right_lower_reaction_N": [
+              -12.97,
+              -28.03
+            ],
+            "left_upper_SKF_u_mm": [
+              0.2301,
+              0.8328,
+              0.3776
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -11.607,
+              3.659,
+              -10.108
+            ],
+            "right_upper_SKF_u_mm": [
+              0.1181,
+              -1.0472,
+              -0.2335
+            ],
+            "right_upper_SKF_rot_mrad": [
+              10.366,
+              0.434,
+              10.067
+            ],
+            "left_lower_608_u_mm": [
+              -0.1501,
+              -0.2017
+            ],
+            "right_lower_608_u_mm": [
+              0.1486,
+              -0.1976
+            ],
+            "stress": {
+              "max_vm_MPa": 113.7,
+              "parts": [
+                {
+                  "part": "opt_b1_anchored_lower_bridge",
+                  "max_vm_MPa": 113.70106590437834,
+                  "element_index": 6354,
+                  "quadrature_index": 3,
+                  "tet_corner_center_mm": [
+                    -0.48124999999999996,
+                    45.723422808564294,
+                    321.04310737027714
+                  ],
+                  "stress_xyz_xy_xz_yz_MPa": [
+                    3.109917277891185,
+                    -109.06162339837991,
+                    2.1689361825779017,
+                    -7.195168321988837,
+                    -3.5388867338499455,
+                    -9.260331246773907
+                  ]
+                }
+              ]
+            }
+          },
+          "gap_5um_k30": {
+            "radial_play_um": 5.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 1.5449,
+            "peak_abs_node_mm": [
+              -22.5,
+              43.3,
+              266.7
+            ],
+            "peak_rel_yoke_disp_mm": 0.4808,
+            "left_lower_reaction_N": [
+              -48.56,
+              96.33
+            ],
+            "right_lower_reaction_N": [
+              -12.72,
+              -27.87
+            ],
+            "left_upper_SKF_u_mm": [
+              0.2297,
+              0.8308,
+              0.3767
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -11.634,
+              3.636,
+              -10.075
+            ],
+            "right_upper_SKF_u_mm": [
+              0.1175,
+              -1.0443,
+              -0.2343
+            ],
+            "right_upper_SKF_rot_mrad": [
+              10.392,
+              0.416,
+              10.023
+            ],
+            "left_lower_608_u_mm": [
+              -0.1506,
+              -0.2013
+            ],
+            "right_lower_608_u_mm": [
+              0.1475,
+              -0.1972
+            ],
+            "stress": null
+          },
+          "gap_13um_k30": {
+            "radial_play_um": 13.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 1.5487,
+            "peak_abs_node_mm": [
+              -22.5,
+              43.3,
+              266.7
+            ],
+            "peak_rel_yoke_disp_mm": 0.4805,
+            "left_lower_reaction_N": [
+              -47.98,
+              96.08
+            ],
+            "right_lower_reaction_N": [
+              -12.34,
+              -27.63
+            ],
+            "left_upper_SKF_u_mm": [
+              0.229,
+              0.8277,
+              0.3752
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -11.677,
+              3.598,
+              -10.021
+            ],
+            "right_upper_SKF_u_mm": [
+              0.1166,
+              -1.0397,
+              -0.2355
+            ],
+            "right_upper_SKF_rot_mrad": [
+              10.432,
+              0.387,
+              9.95
+            ],
+            "left_lower_608_u_mm": [
+              -0.1514,
+              -0.2007
+            ],
+            "right_lower_608_u_mm": [
+              0.1458,
+              -0.1965
+            ],
+            "stress": {
+              "max_vm_MPa": 113.16,
+              "parts": [
+                {
+                  "part": "opt_b1_anchored_lower_bridge",
+                  "max_vm_MPa": 113.15902451058388,
+                  "element_index": 6354,
+                  "quadrature_index": 3,
+                  "tet_corner_center_mm": [
+                    -0.48124999999999996,
+                    45.723422808564294,
+                    321.04310737027714
+                  ],
+                  "stress_xyz_xy_xz_yz_MPa": [
+                    3.0920835891402803,
+                    -108.5590830418798,
+                    2.1769674554498373,
+                    -7.106067793081888,
+                    -3.5206305062816425,
+                    -9.158694386309753
+                  ]
+                }
+              ]
+            }
+          },
+          "gap_13um_k15": {
+            "radial_play_um": 13.0,
+            "bearing_k_N_mm": 15000.0,
+            "peak_abs_yoke_disp_mm": 1.5505,
+            "peak_abs_node_mm": [
+              -22.5,
+              43.3,
+              266.7
+            ],
+            "peak_rel_yoke_disp_mm": 0.4805,
+            "left_lower_reaction_N": [
+              -47.73,
+              95.96
+            ],
+            "right_lower_reaction_N": [
+              -12.3,
+              -27.59
+            ],
+            "left_upper_SKF_u_mm": [
+              0.2287,
+              0.8261,
+              0.3746
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -11.697,
+              3.581,
+              -9.996
+            ],
+            "right_upper_SKF_u_mm": [
+              0.1165,
+              -1.0391,
+              -0.2356
+            ],
+            "right_upper_SKF_rot_mrad": [
+              10.437,
+              0.384,
+              9.94
+            ],
+            "left_lower_608_u_mm": [
+              -0.1517,
+              -0.2006
+            ],
+            "right_lower_608_u_mm": [
+              0.1456,
+              -0.1964
+            ],
+            "stress": null
+          }
+        },
+        "extra_load_cases": {
+          "static_tow_s30_max_sq": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.7748,
+              "est_peak_disp_R_mm": 0.7194,
+              "est_peak_disp_max_mm": 0.7748,
+              "FL_N": [
+                -43.7,
+                48.6
+              ],
+              "FR_N": [
+                -32.1,
+                -49.4
+              ],
+              "common_mode_sway_Y_mm": -0.0918,
+              "chassis_yaw_twist_mrad": -0.34,
+              "left_RX_mrad": -8.409,
+              "right_RX_mrad": 9.004
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.7835,
+              "est_peak_disp_R_mm": 0.7304,
+              "est_peak_disp_max_mm": 0.7835,
+              "FL_N": [
+                -42.4,
+                48.2
+              ],
+              "FR_N": [
+                -31.3,
+                -49.0
+              ],
+              "common_mode_sway_Y_mm": -0.0901,
+              "chassis_yaw_twist_mrad": -0.335,
+              "left_RX_mrad": -8.486,
+              "right_RX_mrad": 9.074
+            }
+          },
+          "static_tow_s30_min_sq": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.9134,
+              "est_peak_disp_R_mm": 0.5974,
+              "est_peak_disp_max_mm": 0.9134,
+              "FL_N": [
+                8.7,
+                -6.8
+              ],
+              "FR_N": [
+                26.1,
+                32.2
+              ],
+              "common_mode_sway_Y_mm": 0.0418,
+              "chassis_yaw_twist_mrad": -0.728,
+              "left_RX_mrad": 9.761,
+              "right_RX_mrad": -9.361
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.9181,
+              "est_peak_disp_R_mm": 0.6097,
+              "est_peak_disp_max_mm": 0.9181,
+              "FL_N": [
+                7.3,
+                -6.4
+              ],
+              "FR_N": [
+                25.2,
+                31.8
+              ],
+              "common_mode_sway_Y_mm": 0.04,
+              "chassis_yaw_twist_mrad": -0.734,
+              "left_RX_mrad": 9.839,
+              "right_RX_mrad": -9.433
+            }
+          },
+          "static_grasp_s30_peakFx": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.1086,
+              "est_peak_disp_R_mm": 0.1233,
+              "est_peak_disp_max_mm": 0.1233,
+              "FL_N": [
+                -11.3,
+                26.4
+              ],
+              "FR_N": [
+                -13.3,
+                -26.6
+              ],
+              "common_mode_sway_Y_mm": 0.0022,
+              "chassis_yaw_twist_mrad": -0.016,
+              "left_RX_mrad": 0.26,
+              "right_RX_mrad": -0.347
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.1156,
+              "est_peak_disp_R_mm": 0.1296,
+              "est_peak_disp_max_mm": 0.1296,
+              "FL_N": [
+                -10.5,
+                26.0
+              ],
+              "FR_N": [
+                -12.7,
+                -26.2
+              ],
+              "common_mode_sway_Y_mm": 0.0031,
+              "chassis_yaw_twist_mrad": -0.012,
+              "left_RX_mrad": 0.193,
+              "right_RX_mrad": -0.281
+            }
+          },
+          "diag_common_mode_lateral_sway": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.565,
+              "est_peak_disp_R_mm": 0.5464,
+              "est_peak_disp_max_mm": 0.565,
+              "FL_N": [
+                11.0,
+                59.2
+              ],
+              "FR_N": [
+                40.0,
+                77.3
+              ],
+              "common_mode_sway_Y_mm": 0.0197,
+              "chassis_yaw_twist_mrad": -0.521,
+              "left_RX_mrad": -2.077,
+              "right_RX_mrad": -4.658
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.5698,
+              "est_peak_disp_R_mm": 0.5592,
+              "est_peak_disp_max_mm": 0.5698,
+              "FL_N": [
+                10.9,
+                58.9
+              ],
+              "FR_N": [
+                39.2,
+                76.9
+              ],
+              "common_mode_sway_Y_mm": 0.0117,
+              "chassis_yaw_twist_mrad": -0.546,
+              "left_RX_mrad": -2.115,
+              "right_RX_mrad": -4.727
+            }
+          },
+          "diag_chassis_torsion_diff_X": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.2189,
+              "est_peak_disp_R_mm": 0.7521,
+              "est_peak_disp_max_mm": 0.7521,
+              "FL_N": [
+                -5.5,
+                37.7
+              ],
+              "FR_N": [
+                40.5,
+                -15.9
+              ],
+              "common_mode_sway_Y_mm": 0.0716,
+              "chassis_yaw_twist_mrad": -0.725,
+              "left_RX_mrad": -0.397,
+              "right_RX_mrad": 0.085
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.2137,
+              "est_peak_disp_R_mm": 0.7622,
+              "est_peak_disp_max_mm": 0.7622,
+              "FL_N": [
+                -5.0,
+                37.3
+              ],
+              "FR_N": [
+                39.2,
+                -15.9
+              ],
+              "common_mode_sway_Y_mm": 0.0705,
+              "chassis_yaw_twist_mrad": -0.741,
+              "left_RX_mrad": -0.46,
+              "right_RX_mrad": 0.056
+            }
+          }
+        }
+      }
+    },
+    "opt_b2_al7075_hybrid_tri": {
+      "stuck": {
+        "k_lower_neck_L_N_mm": [
+          706.4,
+          960.0
+        ],
+        "k_closed_loop_L_N_mm": [
+          436.6,
+          556.8
+        ],
+        "dynamic_4p670s": {
+          "gap_0um_k30": {
+            "radial_play_um": 0.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 0.37,
+            "peak_abs_node_mm": [
+              -22.5,
+              43.3,
+              266.7
+            ],
+            "peak_rel_yoke_disp_mm": 0.2342,
+            "left_lower_reaction_N": [
+              -32.39,
+              163.43
+            ],
+            "right_lower_reaction_N": [
+              -26.46,
+              -75.15
+            ],
+            "left_upper_SKF_u_mm": [
+              0.0524,
+              0.0307,
+              0.1335
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -0.731,
+              1.028,
+              -0.534
+            ],
+            "right_upper_SKF_u_mm": [
+              0.0519,
+              -0.2064,
+              -0.0233
+            ],
+            "right_upper_SKF_rot_mrad": [
+              2.675,
+              1.437,
+              1.325
+            ],
+            "left_lower_608_u_mm": [
+              -0.0703,
+              -0.0345
+            ],
+            "right_lower_608_u_mm": [
+              0.0199,
+              -0.0255
+            ],
+            "stress": {
+              "max_vm_MPa": 72.54,
+              "parts": [
+                {
+                  "part": "opt_b2_al7075",
+                  "max_vm_MPa": 72.54264138107749,
+                  "element_index": 9244,
+                  "quadrature_index": 2,
+                  "tet_corner_center_mm": [
+                    -37.11664443968404,
+                    32.699258078352514,
+                    340.65850223426935
+                  ],
+                  "stress_xyz_xy_xz_yz_MPa": [
+                    21.668226781968926,
+                    57.084693703524714,
+                    56.17046905183632,
+                    -5.240096998653492,
+                    -8.13799728063641,
+                    35.39583139709519
+                  ]
+                }
+              ]
+            }
+          },
+          "gap_5um_k30": {
+            "radial_play_um": 5.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 0.3748,
+            "peak_abs_node_mm": [
+              -22.5,
+              43.3,
+              266.7
+            ],
+            "peak_rel_yoke_disp_mm": 0.2373,
+            "left_lower_reaction_N": [
+              -31.84,
+              162.16
+            ],
+            "right_lower_reaction_N": [
+              -25.92,
+              -73.94
+            ],
+            "left_upper_SKF_u_mm": [
+              0.0523,
+              0.0311,
+              0.1329
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -0.761,
+              1.02,
+              -0.532
+            ],
+            "right_upper_SKF_u_mm": [
+              0.0518,
+              -0.2069,
+              -0.0241
+            ],
+            "right_upper_SKF_rot_mrad": [
+              2.709,
+              1.428,
+              1.319
+            ],
+            "left_lower_608_u_mm": [
+              -0.0707,
+              -0.0343
+            ],
+            "right_lower_608_u_mm": [
+              0.0188,
+              -0.0254
+            ],
+            "stress": null
+          },
+          "gap_13um_k30": {
+            "radial_play_um": 13.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 0.3825,
+            "peak_abs_node_mm": [
+              -22.5,
+              43.3,
+              266.7
+            ],
+            "peak_rel_yoke_disp_mm": 0.2422,
+            "left_lower_reaction_N": [
+              -30.98,
+              160.11
+            ],
+            "right_lower_reaction_N": [
+              -25.08,
+              -71.99
+            ],
+            "left_upper_SKF_u_mm": [
+              0.0522,
+              0.0319,
+              0.132
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -0.809,
+              1.005,
+              -0.528
+            ],
+            "right_upper_SKF_u_mm": [
+              0.0515,
+              -0.2075,
+              -0.0255
+            ],
+            "right_upper_SKF_rot_mrad": [
+              2.763,
+              1.412,
+              1.31
+            ],
+            "left_lower_608_u_mm": [
+              -0.0712,
+              -0.034
+            ],
+            "right_lower_608_u_mm": [
+              0.0171,
+              -0.0252
+            ],
+            "stress": {
+              "max_vm_MPa": 72.08,
+              "parts": [
+                {
+                  "part": "opt_b2_al7075",
+                  "max_vm_MPa": 72.08044642665497,
+                  "element_index": 9244,
+                  "quadrature_index": 2,
+                  "tet_corner_center_mm": [
+                    -37.11664443968404,
+                    32.699258078352514,
+                    340.65850223426935
+                  ],
+                  "stress_xyz_xy_xz_yz_MPa": [
+                    21.512363939891145,
+                    56.75803050850866,
+                    55.80930324475736,
+                    -5.218638151654129,
+                    -8.075142753218342,
+                    35.15937922590595
+                  ]
+                }
+              ]
+            }
+          },
+          "gap_13um_k15": {
+            "radial_play_um": 13.0,
+            "bearing_k_N_mm": 15000.0,
+            "peak_abs_yoke_disp_mm": 0.3877,
+            "peak_abs_node_mm": [
+              -22.5,
+              43.3,
+              266.7
+            ],
+            "peak_rel_yoke_disp_mm": 0.2455,
+            "left_lower_reaction_N": [
+              -30.4,
+              158.76
+            ],
+            "right_lower_reaction_N": [
+              -24.84,
+              -71.35
+            ],
+            "left_upper_SKF_u_mm": [
+              0.0522,
+              0.0322,
+              0.1315
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -0.84,
+              0.997,
+              -0.524
+            ],
+            "right_upper_SKF_u_mm": [
+              0.0513,
+              -0.2079,
+              -0.0262
+            ],
+            "right_upper_SKF_rot_mrad": [
+              2.782,
+              1.406,
+              1.307
+            ],
+            "left_lower_608_u_mm": [
+              -0.0717,
+              -0.0337
+            ],
+            "right_lower_608_u_mm": [
+              0.0164,
+              -0.025
+            ],
+            "stress": null
+          }
+        },
+        "extra_load_cases": {
+          "static_tow_s30_max_sq": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.1136,
+              "est_peak_disp_R_mm": 0.0825,
+              "est_peak_disp_max_mm": 0.1136,
+              "FL_N": [
+                -26.7,
+                90.2
+              ],
+              "FR_N": [
+                -17.5,
+                -91.8
+              ],
+              "common_mode_sway_Y_mm": -0.0069,
+              "chassis_yaw_twist_mrad": -0.107,
+              "left_RX_mrad": -1.338,
+              "right_RX_mrad": 1.185
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.1326,
+              "est_peak_disp_R_mm": 0.1004,
+              "est_peak_disp_max_mm": 0.1326,
+              "FL_N": [
+                -25.0,
+                86.8
+              ],
+              "FR_N": [
+                -16.5,
+                -88.6
+              ],
+              "common_mode_sway_Y_mm": -0.0065,
+              "chassis_yaw_twist_mrad": -0.106,
+              "left_RX_mrad": -1.42,
+              "right_RX_mrad": 1.271
+            }
+          },
+          "static_tow_s30_min_sq": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.118,
+              "est_peak_disp_R_mm": 0.1494,
+              "est_peak_disp_max_mm": 0.1494,
+              "FL_N": [
+                23.6,
+                -74.1
+              ],
+              "FR_N": [
+                24.0,
+                70.8
+              ],
+              "common_mode_sway_Y_mm": 0.0293,
+              "chassis_yaw_twist_mrad": -0.248,
+              "left_RX_mrad": 1.92,
+              "right_RX_mrad": -2.742
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.132,
+              "est_peak_disp_R_mm": 0.1673,
+              "est_peak_disp_max_mm": 0.1673,
+              "FL_N": [
+                21.8,
+                -70.8
+              ],
+              "FR_N": [
+                22.6,
+                67.6
+              ],
+              "common_mode_sway_Y_mm": 0.0292,
+              "chassis_yaw_twist_mrad": -0.25,
+              "left_RX_mrad": 2.001,
+              "right_RX_mrad": -2.83
+            }
+          },
+          "static_grasp_s30_peakFx": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.0538,
+              "est_peak_disp_R_mm": 0.0619,
+              "est_peak_disp_max_mm": 0.0619,
+              "FL_N": [
+                -3.0,
+                19.8
+              ],
+              "FR_N": [
+                -1.8,
+                -20.1
+              ],
+              "common_mode_sway_Y_mm": -0.0007,
+              "chassis_yaw_twist_mrad": 0.013,
+              "left_RX_mrad": 0.301,
+              "right_RX_mrad": -0.219
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.0545,
+              "est_peak_disp_R_mm": 0.0637,
+              "est_peak_disp_max_mm": 0.0637,
+              "FL_N": [
+                -1.8,
+                16.4
+              ],
+              "FR_N": [
+                -1.2,
+                -17.0
+              ],
+              "common_mode_sway_Y_mm": -0.0004,
+              "chassis_yaw_twist_mrad": 0.014,
+              "left_RX_mrad": 0.222,
+              "right_RX_mrad": -0.136
+            }
+          },
+          "diag_common_mode_lateral_sway": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.2269,
+              "est_peak_disp_R_mm": 0.3614,
+              "est_peak_disp_max_mm": 0.3614,
+              "FL_N": [
+                -4.2,
+                60.1
+              ],
+              "FR_N": [
+                29.3,
+                83.1
+              ],
+              "common_mode_sway_Y_mm": -0.0104,
+              "chassis_yaw_twist_mrad": -0.857,
+              "left_RX_mrad": -0.579,
+              "right_RX_mrad": -2.35
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.2381,
+              "est_peak_disp_R_mm": 0.3721,
+              "est_peak_disp_max_mm": 0.3721,
+              "FL_N": [
+                -3.3,
+                57.0
+              ],
+              "FR_N": [
+                27.6,
+                80.3
+              ],
+              "common_mode_sway_Y_mm": -0.0106,
+              "chassis_yaw_twist_mrad": -0.856,
+              "left_RX_mrad": -0.631,
+              "right_RX_mrad": -2.42
+            }
+          },
+          "diag_chassis_torsion_diff_X": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.1673,
+              "est_peak_disp_R_mm": 0.3088,
+              "est_peak_disp_max_mm": 0.3088,
+              "FL_N": [
+                -1.3,
+                27.9
+              ],
+              "FR_N": [
+                9.3,
+                -30.7
+              ],
+              "common_mode_sway_Y_mm": 0.0554,
+              "chassis_yaw_twist_mrad": -0.313,
+              "left_RX_mrad": -0.203,
+              "right_RX_mrad": -1.368
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.1727,
+              "est_peak_disp_R_mm": 0.3092,
+              "est_peak_disp_max_mm": 0.3092,
+              "FL_N": [
+                -0.5,
+                24.5
+              ],
+              "FR_N": [
+                8.9,
+                -27.9
+              ],
+              "common_mode_sway_Y_mm": 0.0559,
+              "chassis_yaw_twist_mrad": -0.314,
+              "left_RX_mrad": -0.281,
+              "right_RX_mrad": -1.299
+            }
+          }
+        }
+      },
+      "unbonded": {
+        "k_lower_neck_L_N_mm": [
+          567.0,
+          594.4
+        ],
+        "k_closed_loop_L_N_mm": [
+          293.0,
+          300.1
+        ],
+        "dynamic_4p670s": {
+          "gap_0um_k30": {
+            "radial_play_um": 0.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 0.5205,
+            "peak_abs_node_mm": [
+              -22.5,
+              39.8,
+              269.4
+            ],
+            "peak_rel_yoke_disp_mm": 0.27,
+            "left_lower_reaction_N": [
+              -53.33,
+              164.77
+            ],
+            "right_lower_reaction_N": [
+              -32.44,
+              -81.15
+            ],
+            "left_upper_SKF_u_mm": [
+              0.0677,
+              0.0912,
+              0.18
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -1.63,
+              1.133,
+              -2.094
+            ],
+            "right_upper_SKF_u_mm": [
+              0.078,
+              -0.3436,
+              -0.0116
+            ],
+            "right_upper_SKF_rot_mrad": [
+              4.533,
+              1.894,
+              2.153
+            ],
+            "left_lower_608_u_mm": [
+              -0.0935,
+              -0.0486
+            ],
+            "right_lower_608_u_mm": [
+              0.0078,
+              -0.0409
+            ],
+            "stress": {
+              "max_vm_MPa": 97.61,
+              "parts": [
+                {
+                  "part": "opt_b2_al7075",
+                  "max_vm_MPa": 97.61148346198235,
+                  "element_index": 9319,
+                  "quadrature_index": 3,
+                  "tet_corner_center_mm": [
+                    -37.01682356253011,
+                    32.1587941939962,
+                    340.1499879424948
+                  ],
+                  "stress_xyz_xy_xz_yz_MPa": [
+                    27.635901294902276,
+                    106.48544348329006,
+                    40.504596637748804,
+                    -15.39553023595708,
+                    -12.770599194800324,
+                    31.408635499000834
+                  ]
+                }
+              ]
+            }
+          },
+          "gap_5um_k30": {
+            "radial_play_um": 5.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 0.5255,
+            "peak_abs_node_mm": [
+              -22.5,
+              39.8,
+              269.4
+            ],
+            "peak_rel_yoke_disp_mm": 0.272,
+            "left_lower_reaction_N": [
+              -52.84,
+              163.82
+            ],
+            "right_lower_reaction_N": [
+              -32.0,
+              -80.25
+            ],
+            "left_upper_SKF_u_mm": [
+              0.0677,
+              0.0921,
+              0.1794
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -1.677,
+              1.122,
+              -2.088
+            ],
+            "right_upper_SKF_u_mm": [
+              0.0779,
+              -0.3446,
+              -0.0126
+            ],
+            "right_upper_SKF_rot_mrad": [
+              4.583,
+              1.88,
+              2.147
+            ],
+            "left_lower_608_u_mm": [
+              -0.0942,
+              -0.0486
+            ],
+            "right_lower_608_u_mm": [
+              0.007,
+              -0.0409
+            ],
+            "stress": null
+          },
+          "gap_13um_k30": {
+            "radial_play_um": 13.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 0.5336,
+            "peak_abs_node_mm": [
+              -22.5,
+              39.8,
+              269.4
+            ],
+            "peak_rel_yoke_disp_mm": 0.2753,
+            "left_lower_reaction_N": [
+              -52.05,
+              162.31
+            ],
+            "right_lower_reaction_N": [
+              -31.3,
+              -78.81
+            ],
+            "left_upper_SKF_u_mm": [
+              0.0676,
+              0.0934,
+              0.1783
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -1.753,
+              1.104,
+              -2.078
+            ],
+            "right_upper_SKF_u_mm": [
+              0.0778,
+              -0.3463,
+              -0.0142
+            ],
+            "right_upper_SKF_rot_mrad": [
+              4.663,
+              1.857,
+              2.138
+            ],
+            "left_lower_608_u_mm": [
+              -0.0952,
+              -0.0486
+            ],
+            "right_lower_608_u_mm": [
+              0.0058,
+              -0.041
+            ],
+            "stress": {
+              "max_vm_MPa": 97.75,
+              "parts": [
+                {
+                  "part": "opt_b2_al7075",
+                  "max_vm_MPa": 97.74593412603647,
+                  "element_index": 9319,
+                  "quadrature_index": 3,
+                  "tet_corner_center_mm": [
+                    -37.01682356253011,
+                    32.1587941939962,
+                    340.1499879424948
+                  ],
+                  "stress_xyz_xy_xz_yz_MPa": [
+                    27.652335572492177,
+                    106.69701212281149,
+                    40.46773211871983,
+                    -15.436776991770172,
+                    -12.774530373009712,
+                    31.360873196902883
+                  ]
+                }
+              ]
+            }
+          },
+          "gap_13um_k15": {
+            "radial_play_um": 13.0,
+            "bearing_k_N_mm": 15000.0,
+            "peak_abs_yoke_disp_mm": 0.5391,
+            "peak_abs_node_mm": [
+              -22.5,
+              39.8,
+              269.4
+            ],
+            "peak_rel_yoke_disp_mm": 0.2775,
+            "left_lower_reaction_N": [
+              -51.49,
+              161.26
+            ],
+            "right_lower_reaction_N": [
+              -31.08,
+              -78.28
+            ],
+            "left_upper_SKF_u_mm": [
+              0.0675,
+              0.0942,
+              0.1776
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -1.804,
+              1.091,
+              -2.072
+            ],
+            "right_upper_SKF_u_mm": [
+              0.0778,
+              -0.347,
+              -0.0149
+            ],
+            "right_upper_SKF_rot_mrad": [
+              4.693,
+              1.849,
+              2.134
+            ],
+            "left_lower_608_u_mm": [
+              -0.0958,
+              -0.0484
+            ],
+            "right_lower_608_u_mm": [
+              0.0053,
+              -0.0409
+            ],
+            "stress": null
+          }
+        },
+        "extra_load_cases": {
+          "static_tow_s30_max_sq": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.2325,
+              "est_peak_disp_R_mm": 0.2209,
+              "est_peak_disp_max_mm": 0.2325,
+              "FL_N": [
+                -45.4,
+                90.1
+              ],
+              "FR_N": [
+                -37.2,
+                -95.1
+              ],
+              "common_mode_sway_Y_mm": -0.0061,
+              "chassis_yaw_twist_mrad": -0.139,
+              "left_RX_mrad": -2.691,
+              "right_RX_mrad": 2.725
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.252,
+              "est_peak_disp_R_mm": 0.24,
+              "est_peak_disp_max_mm": 0.252,
+              "FL_N": [
+                -43.8,
+                87.7
+              ],
+              "FR_N": [
+                -36.1,
+                -92.8
+              ],
+              "common_mode_sway_Y_mm": -0.006,
+              "chassis_yaw_twist_mrad": -0.14,
+              "left_RX_mrad": -2.82,
+              "right_RX_mrad": 2.854
+            }
+          },
+          "static_tow_s30_min_sq": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.1899,
+              "est_peak_disp_R_mm": 0.2352,
+              "est_peak_disp_max_mm": 0.2352,
+              "FL_N": [
+                22.4,
+                -74.3
+              ],
+              "FR_N": [
+                31.2,
+                78.2
+              ],
+              "common_mode_sway_Y_mm": 0.0733,
+              "chassis_yaw_twist_mrad": -0.343,
+              "left_RX_mrad": 2.661,
+              "right_RX_mrad": -4.415
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.2052,
+              "est_peak_disp_R_mm": 0.2539,
+              "est_peak_disp_max_mm": 0.2539,
+              "FL_N": [
+                21.2,
+                -71.8
+              ],
+              "FR_N": [
+                30.1,
+                75.8
+              ],
+              "common_mode_sway_Y_mm": 0.0736,
+              "chassis_yaw_twist_mrad": -0.343,
+              "left_RX_mrad": 2.784,
+              "right_RX_mrad": -4.545
+            }
+          },
+          "static_grasp_s30_peakFx": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.0755,
+              "est_peak_disp_R_mm": 0.0898,
+              "est_peak_disp_max_mm": 0.0898,
+              "FL_N": [
+                -8.3,
+                20.2
+              ],
+              "FR_N": [
+                -7.8,
+                -21.8
+              ],
+              "common_mode_sway_Y_mm": -0.0025,
+              "chassis_yaw_twist_mrad": -0.026,
+              "left_RX_mrad": 0.147,
+              "right_RX_mrad": -0.009
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.083,
+              "est_peak_disp_R_mm": 0.099,
+              "est_peak_disp_max_mm": 0.099,
+              "FL_N": [
+                -6.9,
+                17.8
+              ],
+              "FR_N": [
+                -6.8,
+                -19.4
+              ],
+              "common_mode_sway_Y_mm": -0.0025,
+              "chassis_yaw_twist_mrad": -0.027,
+              "left_RX_mrad": 0.02,
+              "right_RX_mrad": 0.119
+            }
+          },
+          "diag_common_mode_lateral_sway": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.3598,
+              "est_peak_disp_R_mm": 0.5231,
+              "est_peak_disp_max_mm": 0.5231,
+              "FL_N": [
+                -1.7,
+                62.5
+              ],
+              "FR_N": [
+                36.2,
+                80.7
+              ],
+              "common_mode_sway_Y_mm": -0.0348,
+              "chassis_yaw_twist_mrad": -1.138,
+              "left_RX_mrad": -0.573,
+              "right_RX_mrad": -3.211
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.3673,
+              "est_peak_disp_R_mm": 0.5358,
+              "est_peak_disp_max_mm": 0.5358,
+              "FL_N": [
+                -1.1,
+                60.3
+              ],
+              "FR_N": [
+                34.7,
+                78.7
+              ],
+              "common_mode_sway_Y_mm": -0.0343,
+              "chassis_yaw_twist_mrad": -1.14,
+              "left_RX_mrad": -0.653,
+              "right_RX_mrad": -3.321
+            }
+          },
+          "diag_chassis_torsion_diff_X": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.2756,
+              "est_peak_disp_R_mm": 0.548,
+              "est_peak_disp_max_mm": 0.548,
+              "FL_N": [
+                -8.8,
+                31.3
+              ],
+              "FR_N": [
+                18.2,
+                -25.5
+              ],
+              "common_mode_sway_Y_mm": 0.1396,
+              "chassis_yaw_twist_mrad": -0.189,
+              "left_RX_mrad": -0.63,
+              "right_RX_mrad": -2.257
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.2763,
+              "est_peak_disp_R_mm": 0.5524,
+              "est_peak_disp_max_mm": 0.5524,
+              "FL_N": [
+                -7.6,
+                28.8
+              ],
+              "FR_N": [
+                17.2,
+                -23.8
+              ],
+              "common_mode_sway_Y_mm": 0.1411,
+              "chassis_yaw_twist_mrad": -0.197,
+              "left_RX_mrad": -0.757,
+              "right_RX_mrad": -2.202
+            }
+          }
+        }
+      }
+    },
+    "opt_b2_al7075_steel_tri": {
+      "stuck": {
+        "k_lower_neck_L_N_mm": [
+          706.4,
+          960.0
+        ],
+        "k_closed_loop_L_N_mm": [
+          436.6,
+          556.8
+        ],
+        "dynamic_4p670s": {
+          "gap_0um_k30": {
+            "radial_play_um": 0.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 0.3176,
+            "peak_abs_node_mm": [
+              -26.5,
+              40.0,
+              269.2
+            ],
+            "peak_rel_yoke_disp_mm": 0.1979,
+            "left_lower_reaction_N": [
+              -33.49,
+              175.39
+            ],
+            "right_lower_reaction_N": [
+              -26.66,
+              -80.81
+            ],
+            "left_upper_SKF_u_mm": [
+              0.0531,
+              0.0298,
+              0.136
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -0.483,
+              1.031,
+              -0.595
+            ],
+            "right_upper_SKF_u_mm": [
+              0.0532,
+              -0.2045,
+              -0.0188
+            ],
+            "right_upper_SKF_rot_mrad": [
+              2.521,
+              1.451,
+              1.357
+            ],
+            "left_lower_608_u_mm": [
+              -0.0703,
+              -0.0369
+            ],
+            "right_lower_608_u_mm": [
+              0.022,
+              -0.0271
+            ],
+            "stress": {
+              "max_vm_MPa": 73.64,
+              "parts": [
+                {
+                  "part": "opt_b2_al7075",
+                  "max_vm_MPa": 73.64477606958503,
+                  "element_index": 9244,
+                  "quadrature_index": 2,
+                  "tet_corner_center_mm": [
+                    -37.11664443968404,
+                    32.699258078352514,
+                    340.65850223426935
+                  ],
+                  "stress_xyz_xy_xz_yz_MPa": [
+                    22.0395489809967,
+                    58.095467273370495,
+                    56.66851206473393,
+                    -5.469320365703962,
+                    -8.450873633403452,
+                    35.91167677503441
+                  ]
+                }
+              ]
+            }
+          },
+          "gap_5um_k30": {
+            "radial_play_um": 5.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 0.3222,
+            "peak_abs_node_mm": [
+              -26.5,
+              40.0,
+              269.2
+            ],
+            "peak_rel_yoke_disp_mm": 0.2013,
+            "left_lower_reaction_N": [
+              -32.93,
+              174.02
+            ],
+            "right_lower_reaction_N": [
+              -26.14,
+              -79.51
+            ],
+            "left_upper_SKF_u_mm": [
+              0.053,
+              0.0303,
+              0.1353
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -0.515,
+              1.021,
+              -0.592
+            ],
+            "right_upper_SKF_u_mm": [
+              0.053,
+              -0.2049,
+              -0.0197
+            ],
+            "right_upper_SKF_rot_mrad": [
+              2.556,
+              1.442,
+              1.351
+            ],
+            "left_lower_608_u_mm": [
+              -0.0707,
+              -0.0367
+            ],
+            "right_lower_608_u_mm": [
+              0.0209,
+              -0.0269
+            ],
+            "stress": null
+          },
+          "gap_13um_k30": {
+            "radial_play_um": 13.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 0.3299,
+            "peak_abs_node_mm": [
+              -24.4,
+              41.5,
+              268.0
+            ],
+            "peak_rel_yoke_disp_mm": 0.2066,
+            "left_lower_reaction_N": [
+              -32.05,
+              171.82
+            ],
+            "right_lower_reaction_N": [
+              -25.3,
+              -77.43
+            ],
+            "left_upper_SKF_u_mm": [
+              0.0529,
+              0.0311,
+              0.1343
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -0.567,
+              1.007,
+              -0.587
+            ],
+            "right_upper_SKF_u_mm": [
+              0.0527,
+              -0.2056,
+              -0.0211
+            ],
+            "right_upper_SKF_rot_mrad": [
+              2.614,
+              1.427,
+              1.34
+            ],
+            "left_lower_608_u_mm": [
+              -0.0712,
+              -0.0364
+            ],
+            "right_lower_608_u_mm": [
+              0.0191,
+              -0.0267
+            ],
+            "stress": {
+              "max_vm_MPa": 73.15,
+              "parts": [
+                {
+                  "part": "opt_b2_al7075",
+                  "max_vm_MPa": 73.14768517297644,
+                  "element_index": 9244,
+                  "quadrature_index": 2,
+                  "tet_corner_center_mm": [
+                    -37.11664443968404,
+                    32.699258078352514,
+                    340.65850223426935
+                  ],
+                  "stress_xyz_xy_xz_yz_MPa": [
+                    21.87320236097549,
+                    57.73683557414516,
+                    56.28952968506687,
+                    -5.44068172234559,
+                    -8.379168246710451,
+                    35.659314714863655
+                  ]
+                }
+              ]
+            }
+          },
+          "gap_13um_k15": {
+            "radial_play_um": 13.0,
+            "bearing_k_N_mm": 15000.0,
+            "peak_abs_yoke_disp_mm": 0.3355,
+            "peak_abs_node_mm": [
+              -24.4,
+              41.5,
+              268.0
+            ],
+            "peak_rel_yoke_disp_mm": 0.2104,
+            "left_lower_reaction_N": [
+              -31.41,
+              170.27
+            ],
+            "right_lower_reaction_N": [
+              -25.06,
+              -76.68
+            ],
+            "left_upper_SKF_u_mm": [
+              0.0528,
+              0.0314,
+              0.1339
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -0.601,
+              0.998,
+              -0.583
+            ],
+            "right_upper_SKF_u_mm": [
+              0.0525,
+              -0.206,
+              -0.0219
+            ],
+            "right_upper_SKF_rot_mrad": [
+              2.636,
+              1.421,
+              1.337
+            ],
+            "left_lower_608_u_mm": [
+              -0.0717,
+              -0.0361
+            ],
+            "right_lower_608_u_mm": [
+              0.0185,
+              -0.0265
+            ],
+            "stress": null
+          }
+        },
+        "extra_load_cases": {
+          "static_tow_s30_max_sq": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.1131,
+              "est_peak_disp_R_mm": 0.0822,
+              "est_peak_disp_max_mm": 0.1131,
+              "FL_N": [
+                -27.6,
+                97.0
+              ],
+              "FR_N": [
+                -17.7,
+                -98.3
+              ],
+              "common_mode_sway_Y_mm": -0.0073,
+              "chassis_yaw_twist_mrad": -0.106,
+              "left_RX_mrad": -1.183,
+              "right_RX_mrad": 1.018
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.1321,
+              "est_peak_disp_R_mm": 0.1001,
+              "est_peak_disp_max_mm": 0.1321,
+              "FL_N": [
+                -25.9,
+                93.4
+              ],
+              "FR_N": [
+                -16.7,
+                -94.9
+              ],
+              "common_mode_sway_Y_mm": -0.007,
+              "chassis_yaw_twist_mrad": -0.105,
+              "left_RX_mrad": -1.27,
+              "right_RX_mrad": 1.11
+            }
+          },
+          "static_tow_s30_min_sq": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.1185,
+              "est_peak_disp_R_mm": 0.1493,
+              "est_peak_disp_max_mm": 0.1493,
+              "FL_N": [
+                24.4,
+                -79.6
+              ],
+              "FR_N": [
+                24.4,
+                75.7
+              ],
+              "common_mode_sway_Y_mm": 0.0296,
+              "chassis_yaw_twist_mrad": -0.247,
+              "left_RX_mrad": 1.795,
+              "right_RX_mrad": -2.613
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.1326,
+              "est_peak_disp_R_mm": 0.1672,
+              "est_peak_disp_max_mm": 0.1672,
+              "FL_N": [
+                22.6,
+                -76.1
+              ],
+              "FR_N": [
+                23.1,
+                72.4
+              ],
+              "common_mode_sway_Y_mm": 0.0294,
+              "chassis_yaw_twist_mrad": -0.25,
+              "left_RX_mrad": 1.882,
+              "right_RX_mrad": -2.707
+            }
+          },
+          "static_grasp_s30_peakFx": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.0534,
+              "est_peak_disp_R_mm": 0.0619,
+              "est_peak_disp_max_mm": 0.0619,
+              "FL_N": [
+                -3.1,
+                21.3
+              ],
+              "FR_N": [
+                -1.8,
+                -21.6
+              ],
+              "common_mode_sway_Y_mm": -0.0008,
+              "chassis_yaw_twist_mrad": 0.013,
+              "left_RX_mrad": 0.335,
+              "right_RX_mrad": -0.256
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.054,
+              "est_peak_disp_R_mm": 0.0636,
+              "est_peak_disp_max_mm": 0.0636,
+              "FL_N": [
+                -1.9,
+                17.7
+              ],
+              "FR_N": [
+                -1.2,
+                -18.2
+              ],
+              "common_mode_sway_Y_mm": -0.0005,
+              "chassis_yaw_twist_mrad": 0.014,
+              "left_RX_mrad": 0.251,
+              "right_RX_mrad": -0.167
+            }
+          },
+          "diag_common_mode_lateral_sway": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.2285,
+              "est_peak_disp_R_mm": 0.3652,
+              "est_peak_disp_max_mm": 0.3652,
+              "FL_N": [
+                -4.3,
+                64.0
+              ],
+              "FR_N": [
+                30.3,
+                88.3
+              ],
+              "common_mode_sway_Y_mm": -0.0091,
+              "chassis_yaw_twist_mrad": -0.864,
+              "left_RX_mrad": -0.524,
+              "right_RX_mrad": -2.228
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.2399,
+              "est_peak_disp_R_mm": 0.3758,
+              "est_peak_disp_max_mm": 0.3758,
+              "FL_N": [
+                -3.4,
+                60.8
+              ],
+              "FR_N": [
+                28.6,
+                85.3
+              ],
+              "common_mode_sway_Y_mm": -0.0093,
+              "chassis_yaw_twist_mrad": -0.863,
+              "left_RX_mrad": -0.58,
+              "right_RX_mrad": -2.303
+            }
+          },
+          "diag_chassis_torsion_diff_X": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.1681,
+              "est_peak_disp_R_mm": 0.3093,
+              "est_peak_disp_max_mm": 0.3093,
+              "FL_N": [
+                -1.4,
+                30.1
+              ],
+              "FR_N": [
+                9.6,
+                -33.0
+              ],
+              "common_mode_sway_Y_mm": 0.0552,
+              "chassis_yaw_twist_mrad": -0.311,
+              "left_RX_mrad": -0.153,
+              "right_RX_mrad": -1.424
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.1735,
+              "est_peak_disp_R_mm": 0.3096,
+              "est_peak_disp_max_mm": 0.3096,
+              "FL_N": [
+                -0.5,
+                26.5
+              ],
+              "FR_N": [
+                9.2,
+                -30.0
+              ],
+              "common_mode_sway_Y_mm": 0.0556,
+              "chassis_yaw_twist_mrad": -0.313,
+              "left_RX_mrad": -0.236,
+              "right_RX_mrad": -1.349
+            }
+          }
+        }
+      },
+      "unbonded": {
+        "k_lower_neck_L_N_mm": [
+          567.0,
+          594.4
+        ],
+        "k_closed_loop_L_N_mm": [
+          293.0,
+          300.1
+        ],
+        "dynamic_4p670s": {
+          "gap_0um_k30": {
+            "radial_play_um": 0.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 0.4702,
+            "peak_abs_node_mm": [
+              -22.5,
+              39.8,
+              269.4
+            ],
+            "peak_rel_yoke_disp_mm": 0.2449,
+            "left_lower_reaction_N": [
+              -54.39,
+              173.49
+            ],
+            "right_lower_reaction_N": [
+              -32.67,
+              -85.68
+            ],
+            "left_upper_SKF_u_mm": [
+              0.069,
+              0.091,
+              0.1828
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -1.275,
+              1.129,
+              -2.258
+            ],
+            "right_upper_SKF_u_mm": [
+              0.0786,
+              -0.3394,
+              -0.007
+            ],
+            "right_upper_SKF_rot_mrad": [
+              4.313,
+              1.913,
+              2.219
+            ],
+            "left_lower_608_u_mm": [
+              -0.0916,
+              -0.0493
+            ],
+            "right_lower_608_u_mm": [
+              0.0086,
+              -0.0409
+            ],
+            "stress": {
+              "max_vm_MPa": 98.44,
+              "parts": [
+                {
+                  "part": "opt_b2_al7075",
+                  "max_vm_MPa": 98.44059055705708,
+                  "element_index": 9319,
+                  "quadrature_index": 3,
+                  "tet_corner_center_mm": [
+                    -37.01682356253011,
+                    32.1587941939962,
+                    340.1499879424948
+                  ],
+                  "stress_xyz_xy_xz_yz_MPa": [
+                    27.663354251396328,
+                    106.8136183107766,
+                    40.24738475545843,
+                    -15.940201268184127,
+                    -13.155313404515157,
+                    31.527766706135246
+                  ]
+                }
+              ]
+            }
+          },
+          "gap_5um_k30": {
+            "radial_play_um": 5.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 0.4752,
+            "peak_abs_node_mm": [
+              -22.5,
+              39.8,
+              269.4
+            ],
+            "peak_rel_yoke_disp_mm": 0.247,
+            "left_lower_reaction_N": [
+              -53.9,
+              172.49
+            ],
+            "right_lower_reaction_N": [
+              -32.23,
+              -84.73
+            ],
+            "left_upper_SKF_u_mm": [
+              0.0689,
+              0.0918,
+              0.1821
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -1.325,
+              1.118,
+              -2.251
+            ],
+            "right_upper_SKF_u_mm": [
+              0.0785,
+              -0.3405,
+              -0.008
+            ],
+            "right_upper_SKF_rot_mrad": [
+              4.365,
+              1.899,
+              2.212
+            ],
+            "left_lower_608_u_mm": [
+              -0.0922,
+              -0.0493
+            ],
+            "right_lower_608_u_mm": [
+              0.0078,
+              -0.041
+            ],
+            "stress": null
+          },
+          "gap_13um_k30": {
+            "radial_play_um": 13.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 0.4833,
+            "peak_abs_node_mm": [
+              -22.5,
+              39.8,
+              269.4
+            ],
+            "peak_rel_yoke_disp_mm": 0.2504,
+            "left_lower_reaction_N": [
+              -53.12,
+              170.89
+            ],
+            "right_lower_reaction_N": [
+              -31.54,
+              -83.22
+            ],
+            "left_upper_SKF_u_mm": [
+              0.0688,
+              0.0932,
+              0.1809
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -1.404,
+              1.1,
+              -2.24
+            ],
+            "right_upper_SKF_u_mm": [
+              0.0784,
+              -0.3422,
+              -0.0096
+            ],
+            "right_upper_SKF_rot_mrad": [
+              4.448,
+              1.877,
+              2.201
+            ],
+            "left_lower_608_u_mm": [
+              -0.0933,
+              -0.0493
+            ],
+            "right_lower_608_u_mm": [
+              0.0066,
+              -0.0411
+            ],
+            "stress": {
+              "max_vm_MPa": 98.55,
+              "parts": [
+                {
+                  "part": "opt_b2_al7075",
+                  "max_vm_MPa": 98.54849454433565,
+                  "element_index": 9319,
+                  "quadrature_index": 3,
+                  "tet_corner_center_mm": [
+                    -37.01682356253011,
+                    32.1587941939962,
+                    340.1499879424948
+                  ],
+                  "stress_xyz_xy_xz_yz_MPa": [
+                    27.676373740996628,
+                    107.00398560034463,
+                    40.21127896215305,
+                    -15.97049115774168,
+                    -13.151468300591803,
+                    31.475508478703947
+                  ]
+                }
+              ]
+            }
+          },
+          "gap_13um_k15": {
+            "radial_play_um": 13.0,
+            "bearing_k_N_mm": 15000.0,
+            "peak_abs_yoke_disp_mm": 0.4891,
+            "peak_abs_node_mm": [
+              -22.5,
+              39.8,
+              269.4
+            ],
+            "peak_rel_yoke_disp_mm": 0.2528,
+            "left_lower_reaction_N": [
+              -52.52,
+              169.73
+            ],
+            "right_lower_reaction_N": [
+              -31.32,
+              -82.62
+            ],
+            "left_upper_SKF_u_mm": [
+              0.0687,
+              0.094,
+              0.1802
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -1.46,
+              1.086,
+              -2.231
+            ],
+            "right_upper_SKF_u_mm": [
+              0.0784,
+              -0.343,
+              -0.0103
+            ],
+            "right_upper_SKF_rot_mrad": [
+              4.481,
+              1.869,
+              2.197
+            ],
+            "left_lower_608_u_mm": [
+              -0.094,
+              -0.0492
+            ],
+            "right_lower_608_u_mm": [
+              0.0061,
+              -0.041
+            ],
+            "stress": null
+          }
+        },
+        "extra_load_cases": {
+          "static_tow_s30_max_sq": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.2309,
+              "est_peak_disp_R_mm": 0.2212,
+              "est_peak_disp_max_mm": 0.2309,
+              "FL_N": [
+                -46.3,
+                95.0
+              ],
+              "FR_N": [
+                -37.8,
+                -100.0
+              ],
+              "common_mode_sway_Y_mm": -0.0056,
+              "chassis_yaw_twist_mrad": -0.133,
+              "left_RX_mrad": -2.471,
+              "right_RX_mrad": 2.494
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.2505,
+              "est_peak_disp_R_mm": 0.2403,
+              "est_peak_disp_max_mm": 0.2505,
+              "FL_N": [
+                -44.7,
+                92.4
+              ],
+              "FR_N": [
+                -36.6,
+                -97.5
+              ],
+              "common_mode_sway_Y_mm": -0.0055,
+              "chassis_yaw_twist_mrad": -0.134,
+              "left_RX_mrad": -2.606,
+              "right_RX_mrad": 2.628
+            }
+          },
+          "static_tow_s30_min_sq": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.1901,
+              "est_peak_disp_R_mm": 0.2357,
+              "est_peak_disp_max_mm": 0.2357,
+              "FL_N": [
+                22.8,
+                -78.4
+              ],
+              "FR_N": [
+                31.7,
+                82.2
+              ],
+              "common_mode_sway_Y_mm": 0.0724,
+              "chassis_yaw_twist_mrad": -0.348,
+              "left_RX_mrad": 2.485,
+              "right_RX_mrad": -4.224
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.2055,
+              "est_peak_disp_R_mm": 0.2544,
+              "est_peak_disp_max_mm": 0.2544,
+              "FL_N": [
+                21.6,
+                -75.7
+              ],
+              "FR_N": [
+                30.5,
+                79.8
+              ],
+              "common_mode_sway_Y_mm": 0.0727,
+              "chassis_yaw_twist_mrad": -0.347,
+              "left_RX_mrad": 2.613,
+              "right_RX_mrad": -4.359
+            }
+          },
+          "static_grasp_s30_peakFx": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.0755,
+              "est_peak_disp_R_mm": 0.0894,
+              "est_peak_disp_max_mm": 0.0894,
+              "FL_N": [
+                -8.5,
+                21.3
+              ],
+              "FR_N": [
+                -7.9,
+                -22.9
+              ],
+              "common_mode_sway_Y_mm": -0.0023,
+              "chassis_yaw_twist_mrad": -0.025,
+              "left_RX_mrad": 0.196,
+              "right_RX_mrad": -0.062
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.0828,
+              "est_peak_disp_R_mm": 0.0986,
+              "est_peak_disp_max_mm": 0.0986,
+              "FL_N": [
+                -7.1,
+                18.7
+              ],
+              "FR_N": [
+                -6.9,
+                -20.4
+              ],
+              "common_mode_sway_Y_mm": -0.0024,
+              "chassis_yaw_twist_mrad": -0.026,
+              "left_RX_mrad": 0.064,
+              "right_RX_mrad": 0.072
+            }
+          },
+          "diag_common_mode_lateral_sway": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.363,
+              "est_peak_disp_R_mm": 0.5265,
+              "est_peak_disp_max_mm": 0.5265,
+              "FL_N": [
+                -1.8,
+                65.5
+              ],
+              "FR_N": [
+                37.1,
+                84.3
+              ],
+              "common_mode_sway_Y_mm": -0.0335,
+              "chassis_yaw_twist_mrad": -1.142,
+              "left_RX_mrad": -0.489,
+              "right_RX_mrad": -3.048
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.3706,
+              "est_peak_disp_R_mm": 0.5392,
+              "est_peak_disp_max_mm": 0.5392,
+              "FL_N": [
+                -1.2,
+                63.2
+              ],
+              "FR_N": [
+                35.7,
+                82.2
+              ],
+              "common_mode_sway_Y_mm": -0.033,
+              "chassis_yaw_twist_mrad": -1.144,
+              "left_RX_mrad": -0.572,
+              "right_RX_mrad": -3.162
+            }
+          },
+          "diag_chassis_torsion_diff_X": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.2758,
+              "est_peak_disp_R_mm": 0.5497,
+              "est_peak_disp_max_mm": 0.5497,
+              "FL_N": [
+                -8.9,
+                33.1
+              ],
+              "FR_N": [
+                18.7,
+                -27.0
+              ],
+              "common_mode_sway_Y_mm": 0.1393,
+              "chassis_yaw_twist_mrad": -0.185,
+              "left_RX_mrad": -0.554,
+              "right_RX_mrad": -2.316
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.2766,
+              "est_peak_disp_R_mm": 0.5539,
+              "est_peak_disp_max_mm": 0.5539,
+              "FL_N": [
+                -7.8,
+                30.4
+              ],
+              "FR_N": [
+                17.7,
+                -25.2
+              ],
+              "common_mode_sway_Y_mm": 0.1408,
+              "chassis_yaw_twist_mrad": -0.192,
+              "left_RX_mrad": -0.686,
+              "right_RX_mrad": -2.256
+            }
+          }
+        }
+      }
+    },
+    "opt_b2_ti64_hybrid_tri": {
+      "stuck": {
+        "k_lower_neck_L_N_mm": [
+          947.6,
+          1191.5
+        ],
+        "k_closed_loop_L_N_mm": [
+          545.0,
+          662.1
+        ],
+        "dynamic_4p670s": {
+          "gap_0um_k30": {
+            "radial_play_um": 0.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 0.3441,
+            "peak_abs_node_mm": [
+              -22.5,
+              43.3,
+              266.7
+            ],
+            "peak_rel_yoke_disp_mm": 0.2327,
+            "left_lower_reaction_N": [
+              -33.0,
+              164.24
+            ],
+            "right_lower_reaction_N": [
+              -29.55,
+              -76.25
+            ],
+            "left_upper_SKF_u_mm": [
+              0.0456,
+              0.0176,
+              0.1242
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -0.478,
+              0.887,
+              -0.43
+            ],
+            "right_upper_SKF_u_mm": [
+              0.0487,
+              -0.1732,
+              -0.0095
+            ],
+            "right_upper_SKF_rot_mrad": [
+              2.272,
+              1.468,
+              1.091
+            ],
+            "left_lower_608_u_mm": [
+              -0.0673,
+              -0.0276
+            ],
+            "right_lower_608_u_mm": [
+              0.0105,
+              -0.0222
+            ],
+            "stress": {
+              "max_vm_MPa": 82.07,
+              "parts": [
+                {
+                  "part": "opt_b2_ti64",
+                  "max_vm_MPa": 82.06604928202997,
+                  "element_index": 9244,
+                  "quadrature_index": 2,
+                  "tet_corner_center_mm": [
+                    -37.11664443968404,
+                    32.699258078352514,
+                    340.65850223426935
+                  ],
+                  "stress_xyz_xy_xz_yz_MPa": [
+                    25.4650514278134,
+                    65.59197776892059,
+                    62.92908814342862,
+                    -7.364250327668564,
+                    -10.587471961730339,
+                    39.68815350365065
+                  ]
+                }
+              ]
+            }
+          },
+          "gap_5um_k30": {
+            "radial_play_um": 5.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 0.3487,
+            "peak_abs_node_mm": [
+              -22.5,
+              43.3,
+              266.7
+            ],
+            "peak_rel_yoke_disp_mm": 0.2358,
+            "left_lower_reaction_N": [
+              -32.37,
+              162.9
+            ],
+            "right_lower_reaction_N": [
+              -28.86,
+              -74.97
+            ],
+            "left_upper_SKF_u_mm": [
+              0.0456,
+              0.018,
+              0.1237
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -0.506,
+              0.878,
+              -0.428
+            ],
+            "right_upper_SKF_u_mm": [
+              0.0485,
+              -0.1736,
+              -0.0104
+            ],
+            "right_upper_SKF_rot_mrad": [
+              2.304,
+              1.456,
+              1.086
+            ],
+            "left_lower_608_u_mm": [
+              -0.0676,
+              -0.0275
+            ],
+            "right_lower_608_u_mm": [
+              0.0096,
+              -0.0221
+            ],
+            "stress": null
+          },
+          "gap_13um_k30": {
+            "radial_play_um": 13.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 0.3564,
+            "peak_abs_node_mm": [
+              -22.5,
+              43.3,
+              266.7
+            ],
+            "peak_rel_yoke_disp_mm": 0.241,
+            "left_lower_reaction_N": [
+              -31.37,
+              160.74
+            ],
+            "right_lower_reaction_N": [
+              -27.77,
+              -72.92
+            ],
+            "left_upper_SKF_u_mm": [
+              0.0455,
+              0.0187,
+              0.1228
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -0.551,
+              0.864,
+              -0.424
+            ],
+            "right_upper_SKF_u_mm": [
+              0.0483,
+              -0.1744,
+              -0.0117
+            ],
+            "right_upper_SKF_rot_mrad": [
+              2.356,
+              1.438,
+              1.079
+            ],
+            "left_lower_608_u_mm": [
+              -0.068,
+              -0.0272
+            ],
+            "right_lower_608_u_mm": [
+              0.0081,
+              -0.0219
+            ],
+            "stress": {
+              "max_vm_MPa": 81.68,
+              "parts": [
+                {
+                  "part": "opt_b2_ti64",
+                  "max_vm_MPa": 81.68304408910579,
+                  "element_index": 9244,
+                  "quadrature_index": 2,
+                  "tet_corner_center_mm": [
+                    -37.11664443968404,
+                    32.699258078352514,
+                    340.65850223426935
+                  ],
+                  "stress_xyz_xy_xz_yz_MPa": [
+                    25.3160914652574,
+                    65.34101815722339,
+                    62.6018764923364,
+                    -7.3618297080202995,
+                    -10.536973504912368,
+                    39.482413554906074
+                  ]
+                }
+              ]
+            }
+          },
+          "gap_13um_k15": {
+            "radial_play_um": 13.0,
+            "bearing_k_N_mm": 15000.0,
+            "peak_abs_yoke_disp_mm": 0.3615,
+            "peak_abs_node_mm": [
+              -22.5,
+              43.3,
+              266.7
+            ],
+            "peak_rel_yoke_disp_mm": 0.2444,
+            "left_lower_reaction_N": [
+              -30.71,
+              159.29
+            ],
+            "right_lower_reaction_N": [
+              -27.44,
+              -72.23
+            ],
+            "left_upper_SKF_u_mm": [
+              0.0454,
+              0.019,
+              0.1224
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -0.58,
+              0.855,
+              -0.422
+            ],
+            "right_upper_SKF_u_mm": [
+              0.0482,
+              -0.1747,
+              -0.0123
+            ],
+            "right_upper_SKF_rot_mrad": [
+              2.374,
+              1.432,
+              1.077
+            ],
+            "left_lower_608_u_mm": [
+              -0.0684,
+              -0.027
+            ],
+            "right_lower_608_u_mm": [
+              0.0076,
+              -0.0217
+            ],
+            "stress": null
+          }
+        },
+        "extra_load_cases": {
+          "static_tow_s30_max_sq": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.094,
+              "est_peak_disp_R_mm": 0.0678,
+              "est_peak_disp_max_mm": 0.094,
+              "FL_N": [
+                -26.7,
+                90.8
+              ],
+              "FR_N": [
+                -19.1,
+                -92.6
+              ],
+              "common_mode_sway_Y_mm": -0.0054,
+              "chassis_yaw_twist_mrad": -0.089,
+              "left_RX_mrad": -1.091,
+              "right_RX_mrad": 0.977
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.1131,
+              "est_peak_disp_R_mm": 0.0862,
+              "est_peak_disp_max_mm": 0.1131,
+              "FL_N": [
+                -24.7,
+                87.3
+              ],
+              "FR_N": [
+                -17.8,
+                -89.2
+              ],
+              "common_mode_sway_Y_mm": -0.0052,
+              "chassis_yaw_twist_mrad": -0.088,
+              "left_RX_mrad": -1.168,
+              "right_RX_mrad": 1.059
+            }
+          },
+          "static_tow_s30_min_sq": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.0938,
+              "est_peak_disp_R_mm": 0.1176,
+              "est_peak_disp_max_mm": 0.1176,
+              "FL_N": [
+                27.2,
+                -74.2
+              ],
+              "FR_N": [
+                26.0,
+                70.7
+              ],
+              "common_mode_sway_Y_mm": 0.0291,
+              "chassis_yaw_twist_mrad": -0.19,
+              "left_RX_mrad": 1.489,
+              "right_RX_mrad": -2.277
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.1067,
+              "est_peak_disp_R_mm": 0.1358,
+              "est_peak_disp_max_mm": 0.1358,
+              "FL_N": [
+                25.1,
+                -70.7
+              ],
+              "FR_N": [
+                24.2,
+                67.3
+              ],
+              "common_mode_sway_Y_mm": 0.029,
+              "chassis_yaw_twist_mrad": -0.192,
+              "left_RX_mrad": 1.565,
+              "right_RX_mrad": -2.36
+            }
+          },
+          "static_grasp_s30_peakFx": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.051,
+              "est_peak_disp_R_mm": 0.057,
+              "est_peak_disp_max_mm": 0.057,
+              "FL_N": [
+                -2.2,
+                19.7
+              ],
+              "FR_N": [
+                -1.2,
+                -20.4
+              ],
+              "common_mode_sway_Y_mm": -0.0007,
+              "chassis_yaw_twist_mrad": 0.007,
+              "left_RX_mrad": 0.223,
+              "right_RX_mrad": -0.158
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.0528,
+              "est_peak_disp_R_mm": 0.0594,
+              "est_peak_disp_max_mm": 0.0594,
+              "FL_N": [
+                -1.0,
+                16.2
+              ],
+              "FR_N": [
+                -0.5,
+                -17.1
+              ],
+              "common_mode_sway_Y_mm": -0.0005,
+              "chassis_yaw_twist_mrad": 0.007,
+              "left_RX_mrad": 0.15,
+              "right_RX_mrad": -0.081
+            }
+          },
+          "diag_common_mode_lateral_sway": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.2139,
+              "est_peak_disp_R_mm": 0.3096,
+              "est_peak_disp_max_mm": 0.3096,
+              "FL_N": [
+                -6.2,
+                63.7
+              ],
+              "FR_N": [
+                32.1,
+                84.1
+              ],
+              "common_mode_sway_Y_mm": -0.0089,
+              "chassis_yaw_twist_mrad": -0.723,
+              "left_RX_mrad": -0.491,
+              "right_RX_mrad": -1.964
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.2234,
+              "est_peak_disp_R_mm": 0.3211,
+              "est_peak_disp_max_mm": 0.3211,
+              "FL_N": [
+                -4.9,
+                60.4
+              ],
+              "FR_N": [
+                30.1,
+                81.0
+              ],
+              "common_mode_sway_Y_mm": -0.0089,
+              "chassis_yaw_twist_mrad": -0.724,
+              "left_RX_mrad": -0.544,
+              "right_RX_mrad": -2.035
+            }
+          },
+          "diag_chassis_torsion_diff_X": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.1692,
+              "est_peak_disp_R_mm": 0.2743,
+              "est_peak_disp_max_mm": 0.2743,
+              "FL_N": [
+                -0.1,
+                29.1
+              ],
+              "FR_N": [
+                7.0,
+                -31.3
+              ],
+              "common_mode_sway_Y_mm": 0.0544,
+              "chassis_yaw_twist_mrad": -0.218,
+              "left_RX_mrad": -0.214,
+              "right_RX_mrad": -1.199
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.1743,
+              "est_peak_disp_R_mm": 0.2745,
+              "est_peak_disp_max_mm": 0.2745,
+              "FL_N": [
+                0.7,
+                25.6
+              ],
+              "FR_N": [
+                6.8,
+                -28.3
+              ],
+              "common_mode_sway_Y_mm": 0.0547,
+              "chassis_yaw_twist_mrad": -0.219,
+              "left_RX_mrad": -0.285,
+              "right_RX_mrad": -1.133
+            }
+          }
+        }
+      },
+      "unbonded": {
+        "k_lower_neck_L_N_mm": [
+          739.7,
+          731.5
+        ],
+        "k_closed_loop_L_N_mm": [
+          363.3,
+          362.8
+        ],
+        "dynamic_4p670s": {
+          "gap_0um_k30": {
+            "radial_play_um": 0.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 0.4591,
+            "peak_abs_node_mm": [
+              -22.5,
+              39.8,
+              269.4
+            ],
+            "peak_rel_yoke_disp_mm": 0.2653,
+            "left_lower_reaction_N": [
+              -51.09,
+              164.88
+            ],
+            "right_lower_reaction_N": [
+              -32.66,
+              -81.71
+            ],
+            "left_upper_SKF_u_mm": [
+              0.0604,
+              0.0601,
+              0.1685
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -1.021,
+              1.027,
+              -1.647
+            ],
+            "right_upper_SKF_u_mm": [
+              0.0692,
+              -0.2682,
+              0.0036
+            ],
+            "right_upper_SKF_rot_mrad": [
+              3.665,
+              1.954,
+              1.526
+            ],
+            "left_lower_608_u_mm": [
+              -0.0898,
+              -0.0341
+            ],
+            "right_lower_608_u_mm": [
+              -0.0052,
+              -0.0293
+            ],
+            "stress": {
+              "max_vm_MPa": 107.18,
+              "parts": [
+                {
+                  "part": "opt_b2_ti64",
+                  "max_vm_MPa": 107.18210314090555,
+                  "element_index": 9319,
+                  "quadrature_index": 3,
+                  "tet_corner_center_mm": [
+                    -37.01682356253011,
+                    32.1587941939962,
+                    340.1499879424948
+                  ],
+                  "stress_xyz_xy_xz_yz_MPa": [
+                    30.91745048676137,
+                    116.93863123405158,
+                    42.33664970854479,
+                    -18.61742855191283,
+                    -14.955276507292385,
+                    32.809794076585625
+                  ]
+                }
+              ]
+            }
+          },
+          "gap_5um_k30": {
+            "radial_play_um": 5.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 0.4638,
+            "peak_abs_node_mm": [
+              -22.5,
+              39.8,
+              269.4
+            ],
+            "peak_rel_yoke_disp_mm": 0.2674,
+            "left_lower_reaction_N": [
+              -50.53,
+              163.85
+            ],
+            "right_lower_reaction_N": [
+              -32.13,
+              -80.73
+            ],
+            "left_upper_SKF_u_mm": [
+              0.0603,
+              0.0608,
+              0.1679
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -1.065,
+              1.015,
+              -1.642
+            ],
+            "right_upper_SKF_u_mm": [
+              0.0692,
+              -0.2692,
+              0.0026
+            ],
+            "right_upper_SKF_rot_mrad": [
+              3.712,
+              1.938,
+              1.523
+            ],
+            "left_lower_608_u_mm": [
+              -0.0903,
+              -0.0342
+            ],
+            "right_lower_608_u_mm": [
+              -0.0058,
+              -0.0294
+            ],
+            "stress": null
+          },
+          "gap_13um_k30": {
+            "radial_play_um": 13.0,
+            "bearing_k_N_mm": 30000.0,
+            "peak_abs_yoke_disp_mm": 0.4714,
+            "peak_abs_node_mm": [
+              -22.5,
+              39.8,
+              269.4
+            ],
+            "peak_rel_yoke_disp_mm": 0.2709,
+            "left_lower_reaction_N": [
+              -49.64,
+              162.21
+            ],
+            "right_lower_reaction_N": [
+              -31.29,
+              -79.17
+            ],
+            "left_upper_SKF_u_mm": [
+              0.0602,
+              0.062,
+              0.1669
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -1.135,
+              0.996,
+              -1.633
+            ],
+            "right_upper_SKF_u_mm": [
+              0.0691,
+              -0.2709,
+              0.0011
+            ],
+            "right_upper_SKF_rot_mrad": [
+              3.788,
+              1.913,
+              1.516
+            ],
+            "left_lower_608_u_mm": [
+              -0.0911,
+              -0.0342
+            ],
+            "right_lower_608_u_mm": [
+              -0.0068,
+              -0.0294
+            ],
+            "stress": {
+              "max_vm_MPa": 107.54,
+              "parts": [
+                {
+                  "part": "opt_b2_ti64",
+                  "max_vm_MPa": 107.53629341681221,
+                  "element_index": 9319,
+                  "quadrature_index": 3,
+                  "tet_corner_center_mm": [
+                    -37.01682356253011,
+                    32.1587941939962,
+                    340.1499879424948
+                  ],
+                  "stress_xyz_xy_xz_yz_MPa": [
+                    30.99708416027462,
+                    117.41574147445507,
+                    42.361277002227446,
+                    -18.691060072570068,
+                    -14.979382897453258,
+                    32.80035854416865
+                  ]
+                }
+              ]
+            }
+          },
+          "gap_13um_k15": {
+            "radial_play_um": 13.0,
+            "bearing_k_N_mm": 15000.0,
+            "peak_abs_yoke_disp_mm": 0.4767,
+            "peak_abs_node_mm": [
+              -22.5,
+              39.8,
+              269.4
+            ],
+            "peak_rel_yoke_disp_mm": 0.2732,
+            "left_lower_reaction_N": [
+              -49.01,
+              161.06
+            ],
+            "right_lower_reaction_N": [
+              -31.01,
+              -78.6
+            ],
+            "left_upper_SKF_u_mm": [
+              0.06,
+              0.0627,
+              0.1662
+            ],
+            "left_upper_SKF_rot_mrad": [
+              -1.182,
+              0.982,
+              -1.627
+            ],
+            "right_upper_SKF_u_mm": [
+              0.069,
+              -0.2715,
+              0.0005
+            ],
+            "right_upper_SKF_rot_mrad": [
+              3.817,
+              1.905,
+              1.514
+            ],
+            "left_lower_608_u_mm": [
+              -0.0916,
+              -0.0341
+            ],
+            "right_lower_608_u_mm": [
+              -0.0072,
+              -0.0293
+            ],
+            "stress": null
+          }
+        },
+        "extra_load_cases": {
+          "static_tow_s30_max_sq": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.1838,
+              "est_peak_disp_R_mm": 0.1706,
+              "est_peak_disp_max_mm": 0.1838,
+              "FL_N": [
+                -43.5,
+                91.0
+              ],
+              "FR_N": [
+                -37.3,
+                -95.7
+              ],
+              "common_mode_sway_Y_mm": 0.002,
+              "chassis_yaw_twist_mrad": -0.09,
+              "left_RX_mrad": -2.103,
+              "right_RX_mrad": 2.036
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.2031,
+              "est_peak_disp_R_mm": 0.1895,
+              "est_peak_disp_max_mm": 0.2031,
+              "FL_N": [
+                -41.7,
+                88.4
+              ],
+              "FR_N": [
+                -36.0,
+                -93.1
+              ],
+              "common_mode_sway_Y_mm": 0.0019,
+              "chassis_yaw_twist_mrad": -0.091,
+              "left_RX_mrad": -2.222,
+              "right_RX_mrad": 2.159
+            }
+          },
+          "static_tow_s30_min_sq": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.147,
+              "est_peak_disp_R_mm": 0.1819,
+              "est_peak_disp_max_mm": 0.1819,
+              "FL_N": [
+                23.1,
+                -73.3
+              ],
+              "FR_N": [
+                31.5,
+                77.3
+              ],
+              "common_mode_sway_Y_mm": 0.0636,
+              "chassis_yaw_twist_mrad": -0.308,
+              "left_RX_mrad": 1.967,
+              "right_RX_mrad": -3.559
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.161,
+              "est_peak_disp_R_mm": 0.2006,
+              "est_peak_disp_max_mm": 0.2006,
+              "FL_N": [
+                21.6,
+                -70.6
+              ],
+              "FR_N": [
+                30.1,
+                74.7
+              ],
+              "common_mode_sway_Y_mm": 0.0641,
+              "chassis_yaw_twist_mrad": -0.307,
+              "left_RX_mrad": 2.081,
+              "right_RX_mrad": -3.683
+            }
+          },
+          "static_grasp_s30_peakFx": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.0729,
+              "est_peak_disp_R_mm": 0.081,
+              "est_peak_disp_max_mm": 0.081,
+              "FL_N": [
+                -7.8,
+                20.6
+              ],
+              "FR_N": [
+                -7.7,
+                -22.0
+              ],
+              "common_mode_sway_Y_mm": -0.0013,
+              "chassis_yaw_twist_mrad": -0.027,
+              "left_RX_mrad": 0.089,
+              "right_RX_mrad": -0.006
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.0808,
+              "est_peak_disp_R_mm": 0.0904,
+              "est_peak_disp_max_mm": 0.0904,
+              "FL_N": [
+                -6.2,
+                17.9
+              ],
+              "FR_N": [
+                -6.4,
+                -19.5
+              ],
+              "common_mode_sway_Y_mm": -0.0015,
+              "chassis_yaw_twist_mrad": -0.028,
+              "left_RX_mrad": -0.027,
+              "right_RX_mrad": 0.115
+            }
+          },
+          "diag_common_mode_lateral_sway": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.3397,
+              "est_peak_disp_R_mm": 0.4553,
+              "est_peak_disp_max_mm": 0.4553,
+              "FL_N": [
+                -3.1,
+                64.2
+              ],
+              "FR_N": [
+                38.6,
+                81.5
+              ],
+              "common_mode_sway_Y_mm": -0.0243,
+              "chassis_yaw_twist_mrad": -0.968,
+              "left_RX_mrad": -0.506,
+              "right_RX_mrad": -2.751
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.346,
+              "est_peak_disp_R_mm": 0.4687,
+              "est_peak_disp_max_mm": 0.4687,
+              "FL_N": [
+                -2.3,
+                61.7
+              ],
+              "FR_N": [
+                36.9,
+                79.2
+              ],
+              "common_mode_sway_Y_mm": -0.0234,
+              "chassis_yaw_twist_mrad": -0.973,
+              "left_RX_mrad": -0.586,
+              "right_RX_mrad": -2.859
+            }
+          },
+          "diag_chassis_torsion_diff_X": {
+            "gap_0um": {
+              "est_peak_disp_L_mm": 0.271,
+              "est_peak_disp_R_mm": 0.4854,
+              "est_peak_disp_max_mm": 0.4854,
+              "FL_N": [
+                -7.5,
+                32.1
+              ],
+              "FR_N": [
+                17.3,
+                -25.9
+              ],
+              "common_mode_sway_Y_mm": 0.1257,
+              "chassis_yaw_twist_mrad": -0.101,
+              "left_RX_mrad": -0.549,
+              "right_RX_mrad": -1.978
+            },
+            "gap_13um": {
+              "est_peak_disp_L_mm": 0.2713,
+              "est_peak_disp_R_mm": 0.4902,
+              "est_peak_disp_max_mm": 0.4902,
+              "FL_N": [
+                -6.3,
+                29.3
+              ],
+              "FR_N": [
+                16.1,
+                -24.1
+              ],
+              "common_mode_sway_Y_mm": 0.127,
+              "chassis_yaw_twist_mrad": -0.109,
+              "left_RX_mrad": -0.667,
+              "right_RX_mrad": -1.925
+            }
+          }
+        }
+      }
+    }
+  },
+  "mass_ledger": {
+    "baseline_004_mass_kg": 18.559677440703208,
+    "structural_delta_cap_g": 200.0,
+    "total_robot_mass_cap_kg": 18.8,
+    "rejected_t40_aluminum_delta_g": 494.0,
+    "track_b_sanyo24_delta_g": 9.6,
+    "configurations": {
+      "opt_a_7075_steel_tri": {
+        "label": "Option A (Bare Bridge, 7075 + Steel Tri)",
+        "fixed_carrier_g": 54.57,
+        "rotating_tridents_pair_g": 69.01,
+        "bearings_2x608_g": 24.0,
+        "net_fasteners_and_circlips_g": 0.8,
+        "net_structural_delta_g": 148.38,
+        "pass_200g_cap": true,
+        "total_robot_mass_kg": 18.70806,
+        "total_robot_mass_with_track_b_9p6g_kg": 18.71766,
+        "pass_18p80kg_cap": true
+      },
+      "opt_a_7075_hybrid_tri": {
+        "label": "Option A (Bare Bridge, 7075 + Hybrid Tri)",
+        "fixed_carrier_g": 54.57,
+        "rotating_tridents_pair_g": 33.24,
+        "bearings_2x608_g": 24.0,
+        "net_fasteners_and_circlips_g": 0.8,
+        "net_structural_delta_g": 112.61,
+        "pass_200g_cap": true,
+        "total_robot_mass_kg": 18.67229,
+        "total_robot_mass_with_track_b_9p6g_kg": 18.68189,
+        "pass_18p80kg_cap": true
+      },
+      "opt_b1_7075_steel_tri": {
+        "label": "Option B1 (Anchored Lower Bridge, 7075 + Steel Tri)",
+        "fixed_carrier_g": 112.43,
+        "rotating_tridents_pair_g": 69.01,
+        "bearings_2x608_g": 24.0,
+        "net_fasteners_and_circlips_g": 6.04,
+        "net_structural_delta_g": 211.48,
+        "pass_200g_cap": false,
+        "total_robot_mass_kg": 18.77116,
+        "total_robot_mass_with_track_b_9p6g_kg": 18.78076,
+        "pass_18p80kg_cap": true
+      },
+      "opt_b1_7075_hybrid_tri": {
+        "label": "Option B1 (Anchored Lower Bridge, 7075 + Hybrid Tri)",
+        "fixed_carrier_g": 112.43,
+        "rotating_tridents_pair_g": 33.24,
+        "bearings_2x608_g": 24.0,
+        "net_fasteners_and_circlips_g": 6.04,
+        "net_structural_delta_g": 175.71,
+        "pass_200g_cap": true,
+        "total_robot_mass_kg": 18.73539,
+        "total_robot_mass_with_track_b_9p6g_kg": 18.74499,
+        "pass_18p80kg_cap": true
+      },
+      "opt_b2_7075_steel_tri": {
+        "label": "Option B2 (Bridge + Stator Ties, 7075 + Steel Tri)",
+        "fixed_carrier_g": 123.56,
+        "rotating_tridents_pair_g": 69.01,
+        "bearings_2x608_g": 24.0,
+        "net_fasteners_and_circlips_g": 14.24,
+        "net_structural_delta_g": 230.81,
+        "pass_200g_cap": false,
+        "total_robot_mass_kg": 18.79049,
+        "total_robot_mass_with_track_b_9p6g_kg": 18.80009,
+        "pass_18p80kg_cap": false
+      },
+      "opt_b2_7075_pocket_steel_tri": {
+        "label": "Option B2 (Bridge + Stator Ties, 7075 + Pocket Steel Tri)",
+        "fixed_carrier_g": 123.56,
+        "rotating_tridents_pair_g": 53.83,
+        "bearings_2x608_g": 24.0,
+        "net_fasteners_and_circlips_g": 10.64,
+        "net_structural_delta_g": 212.03,
+        "pass_200g_cap": false,
+        "total_robot_mass_kg": 18.77171,
+        "total_robot_mass_with_track_b_9p6g_kg": 18.78131,
+        "pass_18p80kg_cap": true
+      },
+      "opt_b2_7075_hybrid_tri": {
+        "label": "Option B2 (Bridge + Stator Ties, 7075 + Hybrid Tri)",
+        "fixed_carrier_g": 123.56,
+        "rotating_tridents_pair_g": 33.24,
+        "bearings_2x608_g": 24.0,
+        "net_fasteners_and_circlips_g": 14.24,
+        "net_structural_delta_g": 195.04,
+        "pass_200g_cap": true,
+        "total_robot_mass_kg": 18.75472,
+        "total_robot_mass_with_track_b_9p6g_kg": 18.76432,
+        "pass_18p80kg_cap": true
+      },
+      "opt_b2_ti64_hybrid_tri": {
+        "label": "Option B2 (Bridge + Stator Ties, Ti-6Al-4V + Hybrid Tri)",
+        "fixed_carrier_g": 194.8,
+        "rotating_tridents_pair_g": 33.24,
+        "bearings_2x608_g": 24.0,
+        "net_fasteners_and_circlips_g": 10.64,
+        "net_structural_delta_g": 262.68,
+        "pass_200g_cap": false,
+        "total_robot_mass_kg": 18.82236,
+        "total_robot_mass_with_track_b_9p6g_kg": 18.83196,
+        "pass_18p80kg_cap": false
+      },
+      "opt_c_7075_steel_tri": {
+        "label": "Option C (Indep. Short Brackets, 7075 + Steel Tri)",
+        "fixed_carrier_g": 88.21,
+        "rotating_tridents_pair_g": 69.01,
+        "bearings_2x608_g": 24.0,
+        "net_fasteners_and_circlips_g": 3.74,
+        "net_structural_delta_g": 184.96,
+        "pass_200g_cap": true,
+        "total_robot_mass_kg": 18.74464,
+        "total_robot_mass_with_track_b_9p6g_kg": 18.75424,
+        "pass_18p80kg_cap": true
+      },
+      "opt_c_7075_hybrid_tri": {
+        "label": "Option C (Indep. Short Brackets, 7075 + Hybrid Tri)",
+        "fixed_carrier_g": 88.21,
+        "rotating_tridents_pair_g": 33.24,
+        "bearings_2x608_g": 24.0,
+        "net_fasteners_and_circlips_g": 3.74,
+        "net_structural_delta_g": 149.19,
+        "pass_200g_cap": true,
+        "total_robot_mass_kg": 18.70887,
+        "total_robot_mass_with_track_b_9p6g_kg": 18.71847,
+        "pass_18p80kg_cap": true
+      }
+    }
+  },
+  "cad_summary": {
+    "candidates": {
+      "opt_a_bare_bridge": {
+        "tag": "opt_a_bare_bridge",
+        "step": {
+          "path": "artifacts/goose_v0_2/hardware_closeout_20261125/hip_bridge_a1/cad/opt_a_bare_bridge.step",
+          "sha256": "1cb2817eacf2e1de6835a1250ff9f617d2325579578f9600aa6cc1bfa97a1201",
+          "bytes": 80312
+        },
+        "brep": {
+          "path": "artifacts/goose_v0_2/hardware_closeout_20261125/hip_bridge_a1/cad/opt_a_bare_bridge.brep",
+          "sha256": "dc3130dfdc7dcd2283d00c0f90889a87cff3c9cb93dd270df235b865f194e428",
+          "bytes": 44909
+        },
+        "cold_solid_count": 1,
+        "cold_valid": true,
+        "volume_mm3": 19418.203219061983,
+        "warm_cold_vol_diff_mm3": 4.6202330850064754e-10,
+        "mass_7075_g": 54.56515104556417,
+        "mass_ti_g": 86.02264026044459,
+        "mass_steel_g": 151.46198510868345,
+        "bbox_mm": [
+          -74.0,
+          -74.0,
+          308.0,
+          -46.0,
+          74.0,
+          340.0
+        ],
+        "com_mm": [
+          -56.363,
+          0.0,
+          321.889
+        ]
+      },
+      "opt_b1_anchored_lower_bridge": {
+        "tag": "opt_b1_anchored_lower_bridge",
+        "step": {
+          "path": "artifacts/goose_v0_2/hardware_closeout_20261125/hip_bridge_a1/cad/opt_b1_anchored_lower_bridge.step",
+          "sha256": "e9361edf3b1a3f5f5285f1e0908da2529d4dd9d433ff1c0accd7d3179b69d363",
+          "bytes": 263169
+        },
+        "brep": {
+          "path": "artifacts/goose_v0_2/hardware_closeout_20261125/hip_bridge_a1/cad/opt_b1_anchored_lower_bridge.brep",
+          "sha256": "7cb4a14d4bdee79f7566002d9eab89a947ebf351466c15a4730f7b0a8a4dab57",
+          "bytes": 256260
+        },
+        "cold_solid_count": 1,
+        "cold_valid": true,
+        "volume_mm3": 40011.51934264187,
+        "warm_cold_vol_diff_mm3": 0.023096602628356777,
+        "mass_7075_g": 112.43236935282366,
+        "mass_ti_g": 177.2510306879035,
+        "mass_steel_g": 312.0898508726066,
+        "bbox_mm": [
+          -74.0,
+          -74.0,
+          308.0,
+          34.5,
+          74.0,
+          345.2
+        ],
+        "com_mm": [
+          -32.912,
+          3.788,
+          327.536
+        ]
+      },
+      "opt_b2_anchored_bridge_stator_ties": {
+        "tag": "opt_b2_anchored_bridge_stator_ties",
+        "step": {
+          "path": "artifacts/goose_v0_2/hardware_closeout_20261125/hip_bridge_a1/cad/opt_b2_anchored_bridge_stator_ties.step",
+          "sha256": "28ca1940c448b3789c6e65c76cb93bc7e81105c6cb58b2ebc445a68361058407",
+          "bytes": 301800
+        },
+        "brep": {
+          "path": "artifacts/goose_v0_2/hardware_closeout_20261125/hip_bridge_a1/cad/opt_b2_anchored_bridge_stator_ties.brep",
+          "sha256": "306bdc22621f6cb77829acb3114c4db05709423c0aa18348c69268074e2b72ca",
+          "bytes": 284044
+        },
+        "cold_solid_count": 1,
+        "cold_valid": true,
+        "volume_mm3": 43972.04916980537,
+        "warm_cold_vol_diff_mm3": 0.0113672716615838,
+        "mass_7075_g": 123.56145816715308,
+        "mass_ti_g": 194.79617782223778,
+        "mass_steel_g": 342.98198352448185,
+        "bbox_mm": [
+          -74.0,
+          -74.0,
+          308.0,
+          34.5,
+          74.0,
+          367.05
+        ],
+        "com_mm": [
+          -33.142,
+          3.66,
+          329.533
+        ]
+      },
+      "opt_c_left_bracket": {
+        "tag": "opt_c_left_bracket",
+        "step": {
+          "path": "artifacts/goose_v0_2/hardware_closeout_20261125/hip_bridge_a1/cad/opt_c_left_bracket.step",
+          "sha256": "fad2000614496ca38800cb12e340689d9f8c684e9d3d077f7efc8d35862bb583",
+          "bytes": 72371
+        },
+        "brep": {
+          "path": "artifacts/goose_v0_2/hardware_closeout_20261125/hip_bridge_a1/cad/opt_c_left_bracket.brep",
+          "sha256": "f2d606604133f7f3ca0d38aec7aee9e8442acad452111b846947d2549788ce3b",
+          "bytes": 43930
+        },
+        "cold_solid_count": 1,
+        "cold_valid": true,
+        "volume_mm3": 20879.03405940265,
+        "warm_cold_vol_diff_mm3": 8.731149137020111e-11,
+        "mass_7075_g": 58.67008570692145,
+        "mass_ti_g": 92.49412088315374,
+        "mass_steel_g": 162.85646566334066,
+        "bbox_mm": [
+          -74.0,
+          19.8,
+          308.0,
+          35.0,
+          74.0,
+          344.2
+        ],
+        "com_mm": [
+          -28.401,
+          31.119,
+          325.903
+        ]
+      },
+      "opt_c_right_bracket": {
+        "tag": "opt_c_right_bracket",
+        "step": {
+          "path": "artifacts/goose_v0_2/hardware_closeout_20261125/hip_bridge_a1/cad/opt_c_right_bracket.step",
+          "sha256": "fa5df7c2c55e047a6ed20bb3a3df560456f3cc5cde8dcda1a5e1823d59b9ad40",
+          "bytes": 284757
+        },
+        "brep": {
+          "path": "artifacts/goose_v0_2/hardware_closeout_20261125/hip_bridge_a1/cad/opt_c_right_bracket.brep",
+          "sha256": "cb2d437395e07aaf6d1269998ce285f3daf4c9ffd0b122bfabccd58888a14964",
+          "bytes": 424143
+        },
+        "cold_solid_count": 1,
+        "cold_valid": true,
+        "volume_mm3": 10514.177870040006,
+        "warm_cold_vol_diff_mm3": 0.0886618204840488,
+        "mass_7075_g": 29.544839814812416,
+        "mass_ti_g": 46.57780796427723,
+        "mass_steel_g": 82.01058738631204,
+        "bbox_mm": [
+          -74.0,
+          -74.0,
+          298.5,
+          35.0,
+          -16.5,
+          344.2
+        ],
+        "com_mm": [
+          -23.579,
+          -37.294,
+          318.624
+        ]
+      }
+    },
+    "corridor_audit": {
+      "astra_x53_z315_6x6": {
+        "bbox_mm": [
+          -56.0,
+          -45.0,
+          312.0,
+          -50.0,
+          45.0,
+          318.0
+        ],
+        "zero_hard_collision": true,
+        "hard_fixed_collisions": [],
+        "moving_collisions": [],
+        "min_non_mating_fixed_gap": {
+          "gap_mm": 1.015,
+          "part": "k1_main_load_contactor"
+        },
+        "min_swept_moving_gap": {
+          "gap_mm": 3.427,
+          "part": "left_rotating_trident",
+          "yaw_rad": -0.06
+        },
+        "k1_gap_mm": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 1.015
+        },
+        "k2_gap_mm": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 19.885
+        },
+        "k2_ear_m3_gap_mm": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 6.0
+        }
+      },
+      "astra_x53_z315_10x10": {
+        "bbox_mm": [
+          -58.0,
+          -45.0,
+          310.0,
+          -48.0,
+          45.0,
+          320.0
+        ],
+        "zero_hard_collision": false,
+        "hard_fixed_collisions": [
+          {
+            "part": "k1_main_load_contactor",
+            "overlap_mm3": 164.037
+          }
+        ],
+        "moving_collisions": [],
+        "min_non_mating_fixed_gap": {
+          "gap_mm": 2.9,
+          "part": "left_hip_yaw_ak45_10_case_009_c01"
+        },
+        "min_swept_moving_gap": {
+          "gap_mm": 0.607,
+          "part": "right_rotating_trident",
+          "yaw_rad": 0.06
+        },
+        "k1_gap_mm": {
+          "overlap_mm3": 164.0371,
+          "gap_mm": 0.0
+        },
+        "k2_gap_mm": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 17.885
+        },
+        "k2_ear_m3_gap_mm": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 4.0
+        }
+      },
+      "shifted_under_ak45_11x9": {
+        "bbox_mm": [
+          -63.5,
+          -48.0,
+          312.5,
+          -52.5,
+          48.0,
+          321.5
+        ],
+        "zero_hard_collision": true,
+        "hard_fixed_collisions": [],
+        "moving_collisions": [],
+        "min_non_mating_fixed_gap": {
+          "gap_mm": 1.4,
+          "part": "left_hip_yaw_ak45_10_case_009_c01"
+        },
+        "min_swept_moving_gap": {
+          "gap_mm": 5.563,
+          "part": "left_rotating_trident",
+          "yaw_rad": -0.06
+        },
+        "k1_gap_mm": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 1.515
+        },
+        "k2_gap_mm": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 22.385
+        },
+        "k2_ear_m3_gap_mm": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 8.5
+        }
+      },
+      "central_bay_deep_web": {
+        "bbox_mm": [
+          -63.5,
+          -30.5,
+          312.5,
+          -46.0,
+          30.5,
+          340.5
+        ],
+        "zero_hard_collision": true,
+        "hard_fixed_collisions": [],
+        "moving_collisions": [],
+        "min_non_mating_fixed_gap": {
+          "gap_mm": 1.515,
+          "part": "k1_main_load_contactor"
+        },
+        "min_swept_moving_gap": {
+          "gap_mm": 10.206,
+          "part": "right_rotating_trident",
+          "yaw_rad": 0.06
+        },
+        "k1_gap_mm": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 1.515
+        },
+        "k2_gap_mm": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 15.885
+        },
+        "k2_ear_m3_gap_mm": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 2.0
+        }
+      },
+      "left_of_k2_fwd_highway": {
+        "bbox_mm": [
+          -45.5,
+          19.8,
+          314.5,
+          0.0,
+          30.5,
+          340.5
+        ],
+        "zero_hard_collision": true,
+        "hard_fixed_collisions": [],
+        "moving_collisions": [],
+        "min_non_mating_fixed_gap": {
+          "gap_mm": 1.815,
+          "part": "k2_precharge_contactor"
+        },
+        "min_swept_moving_gap": {
+          "gap_mm": 2.642,
+          "part": "left_parent_yoke_003",
+          "yaw_rad": -0.06
+        },
+        "k1_gap_mm": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 10.964
+        },
+        "k2_gap_mm": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 1.815
+        },
+        "k2_ear_m3_gap_mm": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 37.45
+        }
+      },
+      "right_straight_fwd_pinch_test": {
+        "bbox_mm": [
+          -45.5,
+          -30.5,
+          314.5,
+          0.0,
+          -19.8,
+          340.5
+        ],
+        "zero_hard_collision": false,
+        "hard_fixed_collisions": [
+          {
+            "part": "k2_precharge_contactor",
+            "overlap_mm3": 6272.835
+          },
+          {
+            "part": "k2_narrow_mount_ear_0",
+            "overlap_mm3": 571.894
+          },
+          {
+            "part": "k2_narrow_mount_ear_0_m4x16",
+            "overlap_mm3": 143.916
+          },
+          {
+            "part": "k2_narrow_mount_ear_0_m4_nut_washer",
+            "overlap_mm3": 0.444
+          },
+          {
+            "part": "k2_narrow_mount_ear_0_frame_m3x10",
+            "overlap_mm3": 68.333
+          }
+        ],
+        "moving_collisions": [],
+        "min_non_mating_fixed_gap": {
+          "gap_mm": 0.785,
+          "part": "k2_narrow_mount_ear_0_m4_nut"
+        },
+        "min_swept_moving_gap": {
+          "gap_mm": 2.642,
+          "part": "right_parent_yoke_003",
+          "yaw_rad": 0.06
+        },
+        "k1_gap_mm": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 10.964
+        },
+        "k2_gap_mm": {
+          "overlap_mm3": 6272.8353,
+          "gap_mm": 0.0
+        },
+        "k2_ear_m3_gap_mm": {
+          "overlap_mm3": 68.3325,
+          "gap_mm": 0.0
+        }
+      },
+      "left_front_inb_vertical_col": {
+        "bbox_mm": [
+          -39.0,
+          32.5,
+          336.0,
+          -31.5,
+          41.0,
+          367.0
+        ],
+        "zero_hard_collision": true,
+        "hard_fixed_collisions": [],
+        "moving_collisions": [],
+        "min_non_mating_fixed_gap": {
+          "gap_mm": 1.82,
+          "part": "left_hip_yaw_ak45_10_case_009_c01"
+        },
+        "min_swept_moving_gap": {
+          "gap_mm": 3.0,
+          "part": "left_parent_yoke_003",
+          "yaw_rad": -0.06
+        },
+        "k1_gap_mm": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 30.18
+        },
+        "k2_gap_mm": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 14.581
+        },
+        "k2_ear_m3_gap_mm": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 53.923
+        }
+      },
+      "right_front_inb_vertical_col": {
+        "bbox_mm": [
+          -39.0,
+          -41.0,
+          336.0,
+          -31.5,
+          -32.5,
+          367.0
+        ],
+        "zero_hard_collision": true,
+        "hard_fixed_collisions": [],
+        "moving_collisions": [],
+        "min_non_mating_fixed_gap": {
+          "gap_mm": 1.82,
+          "part": "right_hip_yaw_ak45_10_case_009_c01"
+        },
+        "min_swept_moving_gap": {
+          "gap_mm": 3.0,
+          "part": "right_parent_yoke_003",
+          "yaw_rad": 0.06
+        },
+        "k1_gap_mm": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 30.18
+        },
+        "k2_gap_mm": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 4.723
+        },
+        "k2_ear_m3_gap_mm": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 20.775
+        }
+      },
+      "fwd_bay_cross_box": {
+        "bbox_mm": [
+          8.5,
+          -30.5,
+          333.5,
+          28.5,
+          30.5,
+          345.0
+        ],
+        "zero_hard_collision": true,
+        "hard_fixed_collisions": [],
+        "moving_collisions": [],
+        "min_non_mating_fixed_gap": {
+          "gap_mm": 0.88,
+          "part": "audio_buck_d36v6alv_oem_000"
+        },
+        "min_swept_moving_gap": {
+          "gap_mm": 999.0,
+          "part": null,
+          "yaw_rad": null
+        },
+        "k1_gap_mm": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 68.208
+        },
+        "k2_gap_mm": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 8.385
+        },
+        "k2_ear_m3_gap_mm": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 43.517
+        }
+      }
+    },
+    "serviceability_tool_access": {
+      "left_608_minus_z_drop_10mm": {
+        "clear_of_fixed_obstacles": true,
+        "fixed_obstructions": [],
+        "self_opt_b2_overlap_mm3": 2.78
+      },
+      "right_608_minus_z_drop_10mm": {
+        "clear_of_fixed_obstacles": false,
+        "fixed_obstructions": [
+          {
+            "part": "k1_main_load_contactor_A2_local_power_lead",
+            "overlap_mm3": 38.3
+          }
+        ],
+        "self_opt_b2_overlap_mm3": 2.78
+      },
+      "left_corner_low_x_hex_access": {
+        "clear_of_fixed_obstacles": true,
+        "fixed_obstructions": [],
+        "self_opt_b2_overlap_mm3": 0.0
+      },
+      "right_corner_low_x_hex_access": {
+        "clear_of_fixed_obstacles": true,
+        "fixed_obstructions": [],
+        "self_opt_b2_overlap_mm3": 18.98
+      },
+      "left_panel_30_326_hex_access": {
+        "clear_of_fixed_obstacles": false,
+        "fixed_obstructions": [
+          {
+            "part": "l1_body_side_cradle_g10",
+            "overlap_mm3": 12.9
+          },
+          {
+            "part": "l1_positive_keeper_g10",
+            "overlap_mm3": 15.0
+          }
+        ],
+        "self_opt_b2_overlap_mm3": 0.0
+      },
+      "right_panel_30_326_hex_access": {
+        "clear_of_fixed_obstacles": false,
+        "fixed_obstructions": [
+          {
+            "part": "l1_body_side_cradle_g10",
+            "overlap_mm3": 12.9
+          },
+          {
+            "part": "l1_positive_keeper_g10",
+            "overlap_mm3": 15.0
+          }
+        ],
+        "self_opt_b2_overlap_mm3": 0.0
+      },
+      "left_panel_30_339_hex_access": {
+        "clear_of_fixed_obstacles": true,
+        "fixed_obstructions": [],
+        "self_opt_b2_overlap_mm3": 0.0
+      },
+      "right_panel_30_339_hex_access": {
+        "clear_of_fixed_obstacles": true,
+        "fixed_obstructions": [],
+        "self_opt_b2_overlap_mm3": 0.0
+      },
+      "left_neck_root_m3_hex_access": {
+        "clear_of_fixed_obstacles": true,
+        "fixed_obstructions": [],
+        "self_opt_b2_overlap_mm3": 0.0
+      },
+      "right_neck_root_m3_hex_access": {
+        "clear_of_fixed_obstacles": true,
+        "fixed_obstructions": [],
+        "self_opt_b2_overlap_mm3": 0.0
+      },
+      "left_stator_tie_bottom_hex_access": {
+        "clear_of_fixed_obstacles": true,
+        "fixed_obstructions": [],
+        "self_opt_b2_overlap_mm3": 0.0
+      },
+      "right_stator_tie_bottom_hex_access": {
+        "clear_of_fixed_obstacles": true,
+        "fixed_obstructions": [],
+        "self_opt_b2_overlap_mm3": 0.0
+      }
+    },
+    "opt_b2_clearances": {
+      "label": "opt_b2_anchored_bridge_stator_ties",
+      "hard_fixed_collisions": [],
+      "moving_collisions": [],
+      "zero_hard_collision": true,
+      "replaced_fastener_overlaps": [
+        {
+          "part": "left_corner_x_0_bolt",
+          "overlap_mm3": 64.7
+        },
+        {
+          "part": "left_corner_x_0_head_washer",
+          "overlap_mm3": 36.82
+        },
+        {
+          "part": "left_corner_y_0_bolt",
+          "overlap_mm3": 65.9
+        },
+        {
+          "part": "left_corner_y_0_head_washer",
+          "overlap_mm3": 36.82
+        },
+        {
+          "part": "left_corner_y_1_bolt",
+          "overlap_mm3": 65.9
+        },
+        {
+          "part": "left_corner_y_1_head_washer",
+          "overlap_mm3": 36.82
+        },
+        {
+          "part": "right_corner_x_0_bolt",
+          "overlap_mm3": 81.23
+        },
+        {
+          "part": "right_corner_x_0_head_washer",
+          "overlap_mm3": 36.87
+        },
+        {
+          "part": "right_corner_y_0_bolt",
+          "overlap_mm3": 65.9
+        },
+        {
+          "part": "right_corner_y_0_head_washer",
+          "overlap_mm3": 36.82
+        },
+        {
+          "part": "right_corner_y_1_bolt",
+          "overlap_mm3": 65.9
+        },
+        {
+          "part": "right_corner_y_1_head_washer",
+          "overlap_mm3": 36.82
+        }
+      ],
+      "legacy_wt901_reserve_overlaps": [
+        {
+          "part": "imu_wt901c_ttl_installation_reserve",
+          "overlap_mm3": 406.73
+        }
+      ],
+      "mating_contacts": [
+        {
+          "part": "neck_root_base",
+          "gap_mm": 0.005
+        },
+        {
+          "part": "left_front_bulkhead",
+          "gap_mm": 0.0
+        },
+        {
+          "part": "left_longitudinal_sideplate",
+          "gap_mm": 0.05
+        },
+        {
+          "part": "right_front_bulkhead",
+          "gap_mm": 0.0
+        },
+        {
+          "part": "right_longitudinal_sideplate",
+          "gap_mm": 0.05
+        },
+        {
+          "part": "left_stator_base",
+          "gap_mm": 0.05
+        },
+        {
+          "part": "right_stator_base",
+          "gap_mm": 0.05
+        }
+      ],
+      "min_non_mating_fixed_gap": {
+        "gap_mm": 1.385,
+        "part": "k2_precharge_contactor"
+      },
+      "min_swept_moving_gap": {
+        "gap_mm": 1.408,
+        "part": "right_rotating_trident",
+        "yaw_rad": -0.57
+      },
+      "key_clearances": {
+        "left_hip_yaw_ak45_10_case_009_c01": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 1.4
+        },
+        "right_hip_yaw_ak45_10_case_009_c01": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 1.4
+        },
+        "audio_buck_d36v6alv_oem_000": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 4.38
+        },
+        "k1_main_load_contactor": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 1.515
+        },
+        "k2_precharge_contactor": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 1.385
+        },
+        "l1_inductive_turnoff_tvs": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 2.0
+        },
+        "k1_main_load_contactor_A1_lug": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 16.708
+        },
+        "k1_main_load_contactor_A2_lug": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 10.776
+        },
+        "electrical_cassette_front_yoke_and_forearm": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 2.0
+        },
+        "electrical_cassette_BMS_bypass_rear_spine": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 4.5
+        },
+        "l1_body_side_cradle_g10": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 9.181
+        },
+        "k1_narrow_mount_ear_0": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 25.699
+        },
+        "k1_narrow_mount_ear_1": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 26.5
+        },
+        "k2_narrow_mount_ear_0": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 9.0
+        },
+        "k2_narrow_mount_ear_0_m4x16": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 12.212
+        },
+        "k2_narrow_mount_ear_0_frame_m3x10": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 2.0
+        },
+        "neck_root_base": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 0.005
+        },
+        "left_front_bulkhead": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 0.0
+        },
+        "left_longitudinal_sideplate": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 0.05
+        },
+        "right_front_bulkhead": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 0.0
+        },
+        "right_longitudinal_sideplate": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 0.05
+        },
+        "left_stator_base": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 0.05
+        },
+        "right_stator_base": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 0.05
+        }
+      },
+      "overlay_audit": {
+        "installed_env_106": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 22.422
+        },
+        "first_bend_reservation": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 23.52
+        },
+        "electrical_forearm_relief": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 2.0
+        },
+        "can_a_nominal_parts_001": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 50.638
+        },
+        "wt901_split_clamp_candidate": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 31.254
+        }
+      },
+      "bearing_envelope_check": {
+        "left": {
+          "bearing_overlap_mm3": 0.0
+        },
+        "right": {
+          "bearing_overlap_mm3": 0.0
+        }
+      }
+    },
+    "opt_c_right_clearances": {
+      "label": "opt_c_right_bracket",
+      "hard_fixed_collisions": [],
+      "moving_collisions": [],
+      "zero_hard_collision": true,
+      "replaced_fastener_overlaps": [
+        {
+          "part": "right_corner_x_0_bolt",
+          "overlap_mm3": 86.93
+        },
+        {
+          "part": "right_corner_x_0_head_washer",
+          "overlap_mm3": 37.02
+        },
+        {
+          "part": "right_corner_y_0_bolt",
+          "overlap_mm3": 83.75
+        },
+        {
+          "part": "right_corner_y_0_head_washer",
+          "overlap_mm3": 37.28
+        },
+        {
+          "part": "right_corner_y_1_bolt",
+          "overlap_mm3": 76.68
+        },
+        {
+          "part": "right_corner_y_1_head_washer",
+          "overlap_mm3": 36.82
+        }
+      ],
+      "legacy_wt901_reserve_overlaps": [],
+      "mating_contacts": [
+        {
+          "part": "right_front_bulkhead",
+          "gap_mm": 0.0
+        },
+        {
+          "part": "right_longitudinal_sideplate",
+          "gap_mm": 0.0
+        }
+      ],
+      "min_non_mating_fixed_gap": {
+        "gap_mm": 0.544,
+        "part": "k2_narrow_mount_ear_0"
+      },
+      "min_swept_moving_gap": {
+        "gap_mm": 0.144,
+        "part": "right_parent_yoke_003",
+        "yaw_rad": 0.06
+      },
+      "key_clearances": {
+        "left_hip_yaw_ak45_10_case_009_c01": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 59.586
+        },
+        "right_hip_yaw_ak45_10_case_009_c01": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 1.769
+        },
+        "audio_buck_d36v6alv_oem_000": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 21.793
+        },
+        "k1_main_load_contactor": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 1.023
+        },
+        "k2_precharge_contactor": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 1.561
+        },
+        "l1_inductive_turnoff_tvs": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 13.05
+        },
+        "k1_main_load_contactor_A1_lug": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 20.035
+        },
+        "k1_main_load_contactor_A2_lug": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 15.662
+        },
+        "electrical_cassette_front_yoke_and_forearm": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 9.798
+        },
+        "electrical_cassette_BMS_bypass_rear_spine": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 56.0
+        },
+        "l1_body_side_cradle_g10": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 6.103
+        },
+        "k1_narrow_mount_ear_0": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 25.699
+        },
+        "k1_narrow_mount_ear_1": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 64.432
+        },
+        "k2_narrow_mount_ear_0": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 0.544
+        },
+        "k2_narrow_mount_ear_0_m4x16": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 4.636
+        },
+        "k2_narrow_mount_ear_0_frame_m3x10": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 6.125
+        },
+        "neck_root_base": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 1.005
+        },
+        "left_front_bulkhead": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 42.9
+        },
+        "left_longitudinal_sideplate": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 47.5
+        },
+        "right_front_bulkhead": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 0.0
+        },
+        "right_longitudinal_sideplate": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 0.0
+        },
+        "left_stator_base": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 65.267
+        },
+        "right_stator_base": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 23.93
+        }
+      },
+      "overlay_audit": {
+        "installed_env_106": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 22.422
+        },
+        "first_bend_reservation": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 23.52
+        },
+        "electrical_forearm_relief": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 9.798
+        },
+        "can_a_nominal_parts_001": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 111.058
+        },
+        "wt901_split_clamp_candidate": {
+          "overlap_mm3": 0.0,
+          "gap_mm": 88.126
+        }
+      },
+      "bearing_envelope_check": {
+        "left": {
+          "bearing_overlap_mm3": 0.0
+        },
+        "right": {
+          "bearing_overlap_mm3": 0.0
+        }
+      }
+    }
+  },
+  "inputs": {
+    "assembly_registry_004": {
+      "path": "artifacts/goose_v0_2/appearance_finish_execution_20261118_001/assembly_finish_004/assembly_registry.json",
+      "sha256": "b6a5367d9278a072d6f67f2c52fc0f5dcbf9d57466ca8eeae874f4895d84d799",
+      "bytes": 15539753
+    },
+    "turn_structural_boundary": {
+      "path": "artifacts/goose_v0_2/hardware_closeout_20261122/hip/support_routes/architecture_screen_002/two_ended_solid_003/turn_structural_boundary.json",
+      "sha256": "fbabdd20b5061b9fdb9248000c8fa1db06e08fe8f23a969c59075235c29ffde9",
+      "bytes": 171332
+    },
+    "controlling_wrenches": {
+      "path": "artifacts/goose_v0_2/hardware_closeout_20261122/hip/loads/controlling_wrenches.json",
+      "sha256": "3bba94bbd3610af9bd7bdce80f9748495a034e9201e83d0f9faaf5fa80c5b929",
+      "bytes": 49753
+    },
+    "real004_16part_neck_compliance_stuck": {
+      "path": "artifacts/goose_v0_2/hardware_closeout_20261125/hip_bridge_a1/real004_16part_neck_compliance_stuck.json",
+      "sha256": "abab92309a2814af12818e5834eb749efb0620423cd9aba181cce18692a86739",
+      "bytes": 269441
+    },
+    "real004_16part_neck_compliance_unbonded": {
+      "path": "artifacts/goose_v0_2/hardware_closeout_20261125/hip_bridge_a1/real004_16part_neck_compliance_unbonded.json",
+      "sha256": "5968b9476a131149598e84ce036cae937b22504c28d1be585852adcbd6da7adf",
+      "bytes": 265827
+    },
+    "cad_anchor_study_receipt": {
+      "path": "artifacts/goose_v0_2/hardware_closeout_20261125/hip_bridge_a1/cad_anchor_study_receipt.json",
+      "sha256": "c3dc07d00459dface67732f2f5d038878a9021ee9d85004dcba330c96f5b9978",
+      "bytes": 42392
+    },
+    "cad_sections_a1": {
+      "path": "artifacts/goose_v0_2/hardware_closeout_20261125/hip_bridge_a1/cad_sections_a1.json",
+      "sha256": "d23f5082fca92febabcc5dc2dfffda9c2cc88ecc5488d186dff8b05d3b48562c",
+      "bytes": 520774
+    }
+  },
+  "outputs": {
+    "meshes": {
+      "opt_a_bare_bridge": {
+        "path": "artifacts/goose_v0_2/hardware_closeout_20261125/hip_bridge_a1/meshes/opt_a_bare_bridge.msh",
+        "sha256": "6efd3709f9b395588944704d761805cf39eced92cba92de1e93966a7dca468b8",
+        "bytes": 583031
+      },
+      "opt_b1_anchored_lower_bridge": {
+        "path": "artifacts/goose_v0_2/hardware_closeout_20261125/hip_bridge_a1/meshes/opt_b1_anchored_lower_bridge.msh",
+        "sha256": "b50f4c18d204796e7f4f00cac74e28699c0f927539ca15695299269a00fecd43",
+        "bytes": 1934161
+      },
+      "opt_b2_anchored_bridge_stator_ties": {
+        "path": "artifacts/goose_v0_2/hardware_closeout_20261125/hip_bridge_a1/meshes/opt_b2_anchored_bridge_stator_ties.msh",
+        "sha256": "537cbb86b44b2b3970d13ed04639edc17c628923edc66bc0b303a668606efe2b",
+        "bytes": 2383556
+      },
+      "opt_c_left_bracket": {
+        "path": "artifacts/goose_v0_2/hardware_closeout_20261125/hip_bridge_a1/meshes/opt_c_left_bracket.msh",
+        "sha256": "fef982d20b85201bb935cb052bc1bbfc80473b582910479f85587b12d325a021",
+        "bytes": 660881
+      },
+      "opt_c_right_bracket": {
+        "path": "artifacts/goose_v0_2/hardware_closeout_20261125/hip_bridge_a1/meshes/opt_c_right_bracket.msh",
+        "sha256": "bf46e8f6fe8b030651c33392a2a6c0634a3e9ba83f2e34e88d7de7e0aa28c50d",
+        "bytes": 2058474
+      }
+    },
+    "fig_a1_bridge_k1_harness_sections": {
+      "path": "artifacts/goose_v0_2/hardware_closeout_20261125/hip_bridge_a1/fig_a1_bridge_k1_harness_sections.png",
+      "sha256": "f15898493671c7626dc4514fd5861bb63cb7bf45e9229c16be0d3da9d2b5ad64",
+      "bytes": 883058
+    },
+    "a1_decision_summary_md": {
+      "path": "artifacts/goose_v0_2/hardware_closeout_20261125/hip_bridge_a1/a1_decision_summary.md",
+      "sha256": "d9495cc3870a7762f23020941adce45db4b835de22e76710d0e6bc64e2f2eb77",
+      "bytes": 8515
+    },
+    "cad_steps": {
+      "opt_a_bare_bridge": {
+        "path": "artifacts/goose_v0_2/hardware_closeout_20261125/hip_bridge_a1/cad/opt_a_bare_bridge.step",
+        "sha256": "1cb2817eacf2e1de6835a1250ff9f617d2325579578f9600aa6cc1bfa97a1201",
+        "bytes": 80312
+      },
+      "opt_b1_anchored_lower_bridge": {
+        "path": "artifacts/goose_v0_2/hardware_closeout_20261125/hip_bridge_a1/cad/opt_b1_anchored_lower_bridge.step",
+        "sha256": "e9361edf3b1a3f5f5285f1e0908da2529d4dd9d433ff1c0accd7d3179b69d363",
+        "bytes": 263169
+      },
+      "opt_b2_anchored_bridge_stator_ties": {
+        "path": "artifacts/goose_v0_2/hardware_closeout_20261125/hip_bridge_a1/cad/opt_b2_anchored_bridge_stator_ties.step",
+        "sha256": "28ca1940c448b3789c6e65c76cb93bc7e81105c6cb58b2ebc445a68361058407",
+        "bytes": 301800
+      },
+      "opt_c_left_bracket": {
+        "path": "artifacts/goose_v0_2/hardware_closeout_20261125/hip_bridge_a1/cad/opt_c_left_bracket.step",
+        "sha256": "fad2000614496ca38800cb12e340689d9f8c684e9d3d077f7efc8d35862bb583",
+        "bytes": 72371
+      },
+      "opt_c_right_bracket": {
+        "path": "artifacts/goose_v0_2/hardware_closeout_20261125/hip_bridge_a1/cad/opt_c_right_bracket.step",
+        "sha256": "fa5df7c2c55e047a6ed20bb3a3df560456f3cc5cde8dcda1a5e1823d59b9ad40",
+        "bytes": 284757
+      }
+    }
+  }
+}

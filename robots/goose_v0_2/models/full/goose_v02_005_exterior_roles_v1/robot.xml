@@ -1,0 +1,214 @@
+<mujoco model="goose_v02_005_exterior_roles_v1">
+  <compiler angle="radian" inertiafromgeom="false" meshdir="." balanceinertia="false" />
+  <option timestep="0.02" gravity="0 0 -9.81" integrator="discrete" iterations="100" cone="elliptic">
+    <flag eulerdamp="enable" multiccd="disable" filterparent="enable" />
+  </option>
+  <custom>
+    <text name="usage" data="COLLISION_REJECTION_CANDIDATE_NOT_TRAINING_OR_HARDWARE_RELEASE" />
+  </custom>
+  <worldbody>
+    <light pos="0 -2 3" dir="0 0 -1" />
+    <body name="torso" pos="0 0 0.015">
+      <inertial mass="5.9892578936035559" pos="-0.076849617630391581 -0.00042475206614936921 0.3563972721167375" fullinertia="0.020157045737440673 0.050761910895900257 0.051344830749672776 -0.00085700006144395009 0.0043475282864732364 9.4135651052604154e-05" />
+      <freejoint name="root" />
+      <body name="neck_yaw" pos="0.029449999999999997 0 0.37430499999999994">
+        <inertial mass="0.52851869807581553" pos="-0.0046275486772372025 -0.00034381577066466124 0.052372626213031293" fullinertia="0.00052903368223065688 0.00065212072107521826 0.0003586218660350418 2.6610389572428005e-06 -0.00015959676781547984 1.5047941192450755e-05" />
+        <joint name="neck_yaw" type="hinge" armature="0.0009734999999999999" frictionloss="0.03" damping="0.01" axis="0 0 1" range="-0.14999999999999999 0.14999999999999999" limited="true" />
+        <body name="neck_pitch" pos="0 0 0.065999999999999948">
+          <inertial mass="1.1056932242210886" pos="-0.048948942213068294 -0.00090554593429359399 0.070084179140630865" fullinertia="0.0031013878443546454 0.0031972315835420112 0.002368085061562684 -0.00013496897066564792 0.0012323263359964296 0.00018767768465137582" />
+          <joint name="neck_pitch" type="hinge" armature="0.02357424" frictionloss="0.4" damping="0.01" axis="0 1 0" range="-0.37 1" limited="true" />
+          <body name="neck_mid_pitch" pos="-0.073000000000000009 0 0.10400000000000015">
+            <inertial mass="0.8449926517369446" pos="0.039196659343420932 0.0022424334493878354 0.066301988039430104" fullinertia="0.0033588477007076988 0.0035640309228208511 0.0018592856966550056 0.00015601867621806205 -0.0014523955297487158 0.00026302002311486298" />
+            <joint name="neck_mid_pitch" type="hinge" armature="0.02357424" frictionloss="0.4" damping="0.01" axis="0 1 0" range="-0.45000000000000001 0.20000000000000001" limited="true" />
+            <body name="head_pitch" pos="0.072000000000000008 0 0.121">
+              <inertial mass="0.23623561420027914" pos="0.012734197296614215 0.016042502785747217 -0.0074119980892156656" fullinertia="0.0003502179082488302 0.00025457425863579841 0.00041968616909890334 3.5391679304175818e-05 3.3042063727761661e-05 -6.6245583265549538e-06" />
+              <joint name="head_pitch" type="hinge" armature="0.0015733" frictionloss="0.05" damping="0.01" axis="0 1 0" range="-1.6000000000000001 0.5" limited="true" />
+              <body name="head_roll" pos="0.039 0 -0.019499999999999962">
+                <inertial mass="0.66180691224594534" pos="0.066908302073412765 -0.0013631647386985243 0.0071833055870162976" fullinertia="0.00048283926515360409 0.0011669000966280946 0.0010900495710137775 -1.5832337527390335e-05 0.00021746694988106213 4.7154648730152745e-06" />
+                <joint name="head_roll" type="hinge" armature="2e-05" frictionloss="0.006" damping="0.01" axis="1 0 0" range="-0.59999999999999998 0.40000000000000002" limited="true" />
+                <body name="beak_hinge" pos="0.079000000000000001 0 -0.0094999999999998419">
+                  <inertial mass="0.22677271054795423" pos="0.015869737079113683 0.0036219623044934936 -0.010869870560160089" fullinertia="0.0001269482032496408 0.00020269615069603506 0.00022715082719316593 2.4116452986283701e-05 6.9331825138173667e-05 -1.8631497407963734e-05" />
+                  <joint name="beak_hinge" type="hinge" armature="0.0" frictionloss="0.0" damping="0.01" axis="0 1 0" range="0 .35" limited="true" />
+                  <geom contype="2" conaffinity="3" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" name="lower_grip_cassette_pad__grip_plane" pos="0 0 0" mesh="closeout_mesh_0" />
+                  <geom contype="2" conaffinity="3" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="lower_bill_shell" name="lower_bill_shell" />
+                </body>
+                <body name="beak_input_rotor" pos="0.048000000000000001 0 0.015499999999999958">
+                  <inertial mass="0.053244132504090776" pos="-0.00031114489228964426 0.02758547225056936 -0.00016115902286140127" fullinertia="4.2965972167131642e-06 7.9194017178487949e-06 4.3768140366093731e-06 1.1805759996957709e-07 -5.6283392813576715e-08 6.1117036894732763e-08" />
+                  <joint name="beak_input_rotor" type="hinge" armature="0.02357424" frictionloss="0.08" damping="0.001" axis="0 1 0" range="-1.4982586645399691 0" limited="true" />
+                  <body name="beak_coupler_link" pos="-0.006862186584374444 0 -0.0035585524137253799">
+                    <inertial mass="0.0034205712755305479" pos="0.0073982172850287631 0.034963353630973068 -0.0012314142290259511" fullinertia="4.3280168447526961e-08 2.2232260218597348e-07 1.8150583289265905e-07 6.1227652466717603e-22 2.3662880228965155e-08 1.9012817566339428e-22" />
+                    <joint name="beak_coupler_link" type="hinge" armature="0" frictionloss="0" damping="0.001" axis="0 1 0" limited="false" />
+                  </body>
+                </body>
+                <geom contype="2" conaffinity="3" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" name="upper_grip_cassette_pad__grip_plane" pos="0 0 0" mesh="closeout_mesh_1" />
+                <site name="grip" pos="0.13092778114301967 2.0868202634363283e-19 -0.032500000000000084" size=".003" />
+                <site name="beak_tip" pos="0.17670000000000002 0 -0.032500000000000084" size=".003" />
+                <geom contype="2" conaffinity="3" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="head_shell" name="head_shell" />
+                <geom contype="2" conaffinity="3" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="upper_bill_shell" name="upper_bill_shell" />
+              </body>
+              <geom contype="2" conaffinity="3" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="pitch_housing" name="pitch_housing" />
+            </body>
+            <geom contype="2" conaffinity="3" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="upper_neck_shell" name="upper_neck_shell" />
+          </body>
+          <geom contype="2" conaffinity="3" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="lower_neck_shell" name="lower_neck_shell" />
+          <geom contype="32" conaffinity="32" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="neck_pitch_contact_limit_2" name="neck_pitch_contact_limit_2" />
+        </body>
+        <geom contype="2" conaffinity="3" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="root_housing" name="root_housing" />
+      </body>
+      <body name="right_hip_yaw" pos="-0.059999999999999998 -0.059999999999999998 0.35167500000000002">
+        <inertial mass="0.88573931312530485" pos="0.036519285822240719 -0.0057505516476688279 -0.019303905078436989" fullinertia="0.0018726546996347584 0.00223700893821211 0.00083256974216146262 -0.00014116202295952728 0.00080363770234207431 0.00027179197799627274" />
+        <joint name="right_hip_yaw" type="hinge" armature="0.0009734999999999999" frictionloss="0.03" damping="0.01" axis="0 0 1" range="-0.56999999999999995 0.059999999999999998" limited="true" />
+        <body name="right_hip_roll" pos="0.072756074709086488 0.0019999999999999948 -0.061675000000000035">
+          <inertial mass="0.72757649781653211" pos="-0.016663241520162481 -0.056259713040971222 0.022281590037016963" fullinertia="0.0013000576708455604 0.00062180620319015939 0.0014583824641467486 0.00049111471141394833 -0.00017514326470264896 0.00031832458430916847" />
+          <joint name="right_hip_roll" type="hinge" armature="0.02357424" frictionloss="0.4" damping="0.01" axis="1 0 0" range="-0.20000000000000001 0.20000000000000001" limited="true" />
+          <body name="right_hip_pitch" pos="0 -0.097000000000000017 0.030645481405230102">
+            <inertial mass="0.93249902103671467" pos="-0.018417332481071903 0.0032720771594436093 -0.066013217392108026" fullinertia="0.0028040973945955474 0.002724563831741039 0.0009520231736287433 2.8940076683390043e-05 -0.00061007423238715883 0.00013915375429210646" />
+            <joint name="right_hip_pitch" type="hinge" armature="0.02357424" frictionloss="0.4" damping="0.01" axis="0 -1 0" range="-0.80000000000000004 0.80000000000000004" limited="true" />
+            <body name="right_knee_pitch" pos="-0.029930904602660416 0 -0.10432071957671868">
+              <inertial mass="1.0808663207260443" pos="0.014767035322554446 0.0051267015351962042 -0.075595229789372775" fullinertia="0.0046589678487523063 0.0042480039574182438 0.0012579639384109034 -5.6681922088987916e-06 0.00068092531782261662 2.8840160575667178e-05" />
+              <joint name="right_knee_pitch" type="hinge" armature="0.02357424" frictionloss="0.4" damping="0.01" axis="0 -1 0" range="0 0.80000000000000004" limited="true" />
+              <body name="right_ankle_pitch" pos="0.026751457726940712 0 -0.13531811316132136">
+                <inertial mass="0.54682991546192039" pos="0.027385888477425135 -0.001504771264925292 -0.030872196593957818" fullinertia="0.00065441760624183041 0.00077106037456190618 0.00060648296437508108 -1.9611034950001219e-05 0.00026329495991818071 2.3200243008795549e-05" />
+                <joint name="right_ankle_pitch" type="hinge" armature="0.02357424" frictionloss="0.4" damping="0.01" axis="0 -1 0" range="-0.59999999999999998 0.59999999999999998" limited="true" />
+                <body name="right_ankle_roll" pos="0.060573372166633208 0 -0.050351648667190052">
+                  <inertial mass="0.43043810029617885" pos="-0.018999317084815344 2.3987699225319625e-05 -0.026132500059059142" fullinertia="0.00032637748955396603 0.00089193590008938568 0.00093811010765844209 4.1661398838989004e-07 -3.8041254272790964e-05 -4.1989608566200705e-07" />
+                  <joint name="right_ankle_roll" type="hinge" armature="0.0015733" frictionloss="0.05" damping="0.01" axis="1 0 0" range="-0.25 0.25" limited="true" />
+                  <geom contype="2" conaffinity="3" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" priority="0" group="3" name="right_flat_rounded_sole__support" pos="0 0 0" mesh="closeout_mesh_4" />
+                  <geom contype="2" conaffinity="3" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" priority="0" group="3" name="right_flat_rounded_sole__upper_support" pos="0 0 0" mesh="closeout_mesh_5" />
+                  <geom contype="2" conaffinity="3" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="right_shoe_shell_forefoot" name="right_shoe_shell_forefoot" />
+                  <geom contype="2" conaffinity="3" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="right_shoe_shell_heel" name="right_shoe_shell_heel" />
+                  <geom contype="64" conaffinity="64" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="right_ankle_roll_contact_limit_3" name="right_ankle_roll_contact_limit_3" />
+                </body>
+                <geom contype="2" conaffinity="3" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="right_ankle_housing" name="right_ankle_housing" />
+              </body>
+              <geom contype="2" conaffinity="3" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="right_knee_pitch_exterior_0" name="right_knee_pitch_exterior_0" />
+              <geom contype="2" conaffinity="3" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="right_knee_pitch_exterior_1" name="right_knee_pitch_exterior_1" />
+              <geom contype="64" conaffinity="64" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="right_knee_pitch_contact_limit_3" name="right_knee_pitch_contact_limit_3" />
+              <geom contype="128" conaffinity="128" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="right_knee_pitch_contact_limit_4" name="right_knee_pitch_contact_limit_4" />
+              <geom contype="256" conaffinity="256" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="right_knee_pitch_contact_limit_5" name="right_knee_pitch_contact_limit_5" />
+            </body>
+            <geom contype="2" conaffinity="3" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="right_hip_pitch_exterior_0" name="right_hip_pitch_exterior_0" />
+            <geom contype="2" conaffinity="3" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="right_hip_pitch_exterior_1" name="right_hip_pitch_exterior_1" />
+          </body>
+          <geom contype="2" conaffinity="3" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="right_hip_housing" name="right_hip_housing" />
+        </body>
+      </body>
+      <body name="left_hip_yaw" pos="-0.059999999999999998 0.059999999999999998 0.35167500000000002">
+        <inertial mass="0.88573945094355533" pos="0.036519501301647286 0.0057437887105701718 -0.019304260231195747" fullinertia="0.0018727991029760178 0.0022370024664446092 0.00083272739584104333 0.00014131424416478835 0.00080363760172210699 -0.00027202410422568683" />
+        <joint name="left_hip_yaw" type="hinge" armature="0.0009734999999999999" frictionloss="0.03" damping="0.01" axis="0 0 1" range="-0.059999999999999998 0.56999999999999995" limited="true" />
+        <body name="left_hip_roll" pos="0.072756074709086488 -0.0019999999999999948 -0.061675000000000035">
+          <inertial mass="0.72758449755372667" pos="-0.016671195015686351 0.056259002711621008 0.022281751295186336" fullinertia="0.0013001001294753276 0.0006216866964381967 0.001458301901598801 -0.00049097012718282652 -0.00017509435770271889 -0.0003183251041043361" />
+          <joint name="left_hip_roll" type="hinge" armature="0.02357424" frictionloss="0.4" damping="0.01" axis="1 0 0" range="-0.20000000000000001 0.20000000000000001" limited="true" />
+          <body name="left_hip_pitch" pos="0 0.097000000000000017 0.030645481405230102">
+            <inertial mass="0.89135067079320363" pos="-0.01887200974850833 -0.004125613797844957 -0.067627137594523934" fullinertia="0.0026847373874289283 0.002601726332419303 0.00091927258439689151 -1.7549332560882069e-05 -0.00058453690505850067 -9.7256834878602834e-05" />
+            <joint name="left_hip_pitch" type="hinge" armature="0.02357424" frictionloss="0.4" damping="0.01" axis="0 1 0" range="-0.80000000000000004 0.80000000000000004" limited="true" />
+            <body name="left_knee_pitch" pos="-0.029930904602660416 0 -0.10432071957671868">
+              <inertial mass="1.0318480757123414" pos="0.014580354651986469 -0.0047624386918350414 -0.073854238008806694" fullinertia="0.0045695220622486597 0.0040631654377724499 0.0012828438027641543 1.3298808891074018e-05 0.00067158151964221899 -7.0437335973629441e-05" />
+              <joint name="left_knee_pitch" type="hinge" armature="0.02357424" frictionloss="0.4" damping="0.01" axis="0 1 0" range="-0.80000000000000004 0" limited="true" />
+              <body name="left_ankle_pitch" pos="0.026751457726940712 0 -0.13531811316132136">
+                <inertial mass="0.54561988968977448" pos="0.027443063624369265 0.0014460829833631006 -0.030906698912165381" fullinertia="0.00065287840388826958 0.00076926011977244946 0.00060454114163927919 1.8783311353751605e-05 0.00026270029601191359 -2.2263814793771678e-05" />
+                <joint name="left_ankle_pitch" type="hinge" armature="0.02357424" frictionloss="0.4" damping="0.01" axis="0 1 0" range="-0.59999999999999998 0.59999999999999998" limited="true" />
+                <body name="left_ankle_roll" pos="0.060573372166633208 0 -0.050351648667190052">
+                  <inertial mass="0.43161142094137989" pos="-0.019096446337639843 -1.0889354826182363e-06 -0.026007114220895876" fullinertia="0.00032942390463468012 0.00089651591962947551 0.00094062545646325245 1.8162061477251974e-09 -3.6161402851106215e-05 -2.1148305548084861e-09" />
+                  <joint name="left_ankle_roll" type="hinge" armature="0.0015733" frictionloss="0.05" damping="0.01" axis="1 0 0" range="-0.25 0.25" limited="true" />
+                  <geom contype="2" conaffinity="3" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" priority="0" group="3" name="left_flat_rounded_sole__support" pos="0 0 0" mesh="closeout_mesh_2" />
+                  <geom contype="2" conaffinity="3" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" priority="0" group="3" name="left_flat_rounded_sole__upper_support" pos="0 0 0" mesh="closeout_mesh_3" />
+                  <geom contype="2" conaffinity="3" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="left_shoe_shell_forefoot" name="left_shoe_shell_forefoot" />
+                  <geom contype="2" conaffinity="3" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="left_shoe_shell_heel" name="left_shoe_shell_heel" />
+                  <geom contype="8" conaffinity="8" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="left_ankle_roll_contact_limit_0" name="left_ankle_roll_contact_limit_0" />
+                </body>
+                <geom contype="2" conaffinity="3" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="left_ankle_housing" name="left_ankle_housing" />
+              </body>
+              <geom contype="2" conaffinity="3" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="left_knee_pitch_exterior_0" name="left_knee_pitch_exterior_0" />
+              <geom contype="2" conaffinity="3" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="left_knee_pitch_exterior_1" name="left_knee_pitch_exterior_1" />
+              <geom contype="8" conaffinity="8" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="left_knee_pitch_contact_limit_0" name="left_knee_pitch_contact_limit_0" />
+              <geom contype="16" conaffinity="16" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="left_knee_pitch_contact_limit_1" name="left_knee_pitch_contact_limit_1" />
+            </body>
+            <geom contype="2" conaffinity="3" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="left_hip_pitch_exterior_0" name="left_hip_pitch_exterior_0" />
+            <geom contype="2" conaffinity="3" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="left_hip_pitch_exterior_1" name="left_hip_pitch_exterior_1" />
+          </body>
+          <geom contype="2" conaffinity="3" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="left_hip_housing" name="left_hip_housing" />
+        </body>
+      </body>
+      <geom contype="2" conaffinity="3" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="rear_shell" name="rear_shell" />
+      <geom contype="2" conaffinity="3" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="front_shell" name="front_shell" />
+      <geom contype="16" conaffinity="16" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="torso_contact_limit_1" name="torso_contact_limit_1" />
+      <geom contype="32" conaffinity="32" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="torso_contact_limit_2" name="torso_contact_limit_2" />
+      <geom contype="128" conaffinity="128" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="torso_contact_limit_4" name="torso_contact_limit_4" />
+      <geom contype="256" conaffinity="256" friction=".65 .01 .002" solref=".005 1" solimp=".95 .99 .001" density="0" type="mesh" margin="0" group="3" mesh="torso_contact_limit_5" name="torso_contact_limit_5" />
+    </body>
+    <geom name="ground" type="plane" size="2 2 .01" contype="1" conaffinity="2" friction=".65 .01 .002" solref=".005 1" />
+  </worldbody>
+  <actuator>
+    <position name="neck_yaw_motor" joint="neck_yaw" gear="1" ctrllimited="false" kp="12.0" kv="0.175" forcelimited="true" forcerange="-2.0 2.0" />
+    <position name="neck_pitch_motor" joint="neck_pitch" gear="1" ctrllimited="false" kp="100.0" kv="0.875" forcelimited="true" forcerange="-12.0 12.0" />
+    <position name="neck_mid_pitch_motor" joint="neck_mid_pitch" gear="1" ctrllimited="false" kp="100.0" kv="0.875" forcelimited="true" forcerange="-12.0 12.0" />
+    <position name="head_pitch_motor" joint="head_pitch" gear="1" ctrllimited="false" kp="20.0" kv="0.175" forcelimited="true" forcerange="-4.0 4.0" />
+    <position name="head_roll_motor" joint="head_roll" gear="1" ctrllimited="false" kp="2.0" kv="0.025" forcelimited="true" forcerange="-0.18 0.18" />
+    <motor name="beak_hinge_motor" joint="beak_input_rotor" gear="1" ctrllimited="true" ctrlrange="-4.5 4.5" />
+    <position name="right_hip_yaw_motor" joint="right_hip_yaw" gear="1" ctrllimited="false" kp="12.0" kv="0.175" forcelimited="true" forcerange="-1.8 1.8" />
+    <position name="right_hip_roll_motor" joint="right_hip_roll" gear="1" ctrllimited="false" kp="100.0" kv="0.875" forcelimited="true" forcerange="-12.0 12.0" />
+    <position name="right_hip_pitch_motor" joint="right_hip_pitch" gear="1" ctrllimited="false" kp="100.0" kv="0.875" forcelimited="true" forcerange="-12.0 12.0" />
+    <position name="right_knee_pitch_motor" joint="right_knee_pitch" gear="1" ctrllimited="false" kp="100.0" kv="0.875" forcelimited="true" forcerange="-12.0 12.0" />
+    <position name="right_ankle_pitch_motor" joint="right_ankle_pitch" gear="1" ctrllimited="false" kp="100.0" kv="0.875" forcelimited="true" forcerange="-12.0 12.0" />
+    <position name="right_ankle_roll_motor" joint="right_ankle_roll" gear="1" ctrllimited="false" kp="20.0" kv="0.175" forcelimited="true" forcerange="-4.0 4.0" />
+    <position name="left_hip_yaw_motor" joint="left_hip_yaw" gear="1" ctrllimited="false" kp="12.0" kv="0.175" forcelimited="true" forcerange="-1.8 1.8" />
+    <position name="left_hip_roll_motor" joint="left_hip_roll" gear="1" ctrllimited="false" kp="100.0" kv="0.875" forcelimited="true" forcerange="-12.0 12.0" />
+    <position name="left_hip_pitch_motor" joint="left_hip_pitch" gear="1" ctrllimited="false" kp="100.0" kv="0.875" forcelimited="true" forcerange="-12.0 12.0" />
+    <position name="left_knee_pitch_motor" joint="left_knee_pitch" gear="1" ctrllimited="false" kp="100.0" kv="0.875" forcelimited="true" forcerange="-12.0 12.0" />
+    <position name="left_ankle_pitch_motor" joint="left_ankle_pitch" gear="1" ctrllimited="false" kp="100.0" kv="0.875" forcelimited="true" forcerange="-12.0 12.0" />
+    <position name="left_ankle_roll_motor" joint="left_ankle_roll" gear="1" ctrllimited="false" kp="20.0" kv="0.175" forcelimited="true" forcerange="-4.0 4.0" />
+  </actuator>
+  <equality>
+    <connect name="beak_distal_pin" body1="beak_hinge" body2="beak_coupler_link" anchor="-0.023065752014308289 0.035000000000000003 0.018978619128230435" solref=".002 1" solimp=".9999 .9999 .0001" />
+  </equality>
+  <contact>
+    <exclude body1="beak_hinge" body2="beak_coupler_link" />
+  </contact>
+  <asset>
+    <mesh name="closeout_mesh_0" file="meshes/contact_000.obj" maxhullvert="-1" />
+    <mesh name="closeout_mesh_1" file="meshes/contact_001.obj" maxhullvert="-1" />
+    <mesh name="closeout_mesh_2" file="meshes/contact_002.obj" maxhullvert="-1" />
+    <mesh name="closeout_mesh_3" file="meshes/contact_003.obj" maxhullvert="-1" />
+    <mesh name="closeout_mesh_4" file="meshes/contact_004.obj" maxhullvert="-1" />
+    <mesh name="closeout_mesh_5" file="meshes/contact_005.obj" maxhullvert="-1" />
+    <mesh name="rear_shell" file="meshes/rear_shell.obj" maxhullvert="-1" />
+    <mesh name="front_shell" file="meshes/front_shell.obj" maxhullvert="-1" />
+    <mesh name="root_housing" file="meshes/root_housing.obj" maxhullvert="-1" />
+    <mesh name="lower_neck_shell" file="meshes/lower_neck_shell.obj" maxhullvert="-1" />
+    <mesh name="upper_neck_shell" file="meshes/upper_neck_shell.obj" maxhullvert="-1" />
+    <mesh name="pitch_housing" file="meshes/pitch_housing.obj" maxhullvert="-1" />
+    <mesh name="head_shell" file="meshes/head_shell.obj" maxhullvert="-1" />
+    <mesh name="upper_bill_shell" file="meshes/upper_bill_shell.obj" maxhullvert="-1" />
+    <mesh name="lower_bill_shell" file="meshes/lower_bill_shell.obj" maxhullvert="-1" />
+    <mesh name="left_hip_housing" file="meshes/left_hip_housing.obj" maxhullvert="-1" />
+    <mesh name="left_ankle_housing" file="meshes/left_ankle_housing.obj" maxhullvert="-1" />
+    <mesh name="left_shoe_shell_forefoot" file="meshes/left_shoe_shell_forefoot.obj" maxhullvert="-1" />
+    <mesh name="left_shoe_shell_heel" file="meshes/left_shoe_shell_heel.obj" maxhullvert="-1" />
+    <mesh name="right_hip_housing" file="meshes/right_hip_housing.obj" maxhullvert="-1" />
+    <mesh name="right_ankle_housing" file="meshes/right_ankle_housing.obj" maxhullvert="-1" />
+    <mesh name="right_shoe_shell_forefoot" file="meshes/right_shoe_shell_forefoot.obj" maxhullvert="-1" />
+    <mesh name="right_shoe_shell_heel" file="meshes/right_shoe_shell_heel.obj" maxhullvert="-1" />
+    <mesh name="left_hip_pitch_exterior_0" file="meshes/left_hip_pitch_exterior_0.obj" maxhullvert="-1" />
+    <mesh name="left_hip_pitch_exterior_1" file="meshes/left_hip_pitch_exterior_1.obj" maxhullvert="-1" />
+    <mesh name="right_hip_pitch_exterior_0" file="meshes/right_hip_pitch_exterior_0.obj" maxhullvert="-1" />
+    <mesh name="right_hip_pitch_exterior_1" file="meshes/right_hip_pitch_exterior_1.obj" maxhullvert="-1" />
+    <mesh name="left_knee_pitch_exterior_0" file="meshes/left_knee_pitch_exterior_0.obj" maxhullvert="-1" />
+    <mesh name="left_knee_pitch_exterior_1" file="meshes/left_knee_pitch_exterior_1.obj" maxhullvert="-1" />
+    <mesh name="right_knee_pitch_exterior_0" file="meshes/right_knee_pitch_exterior_0.obj" maxhullvert="-1" />
+    <mesh name="right_knee_pitch_exterior_1" file="meshes/right_knee_pitch_exterior_1.obj" maxhullvert="-1" />
+    <mesh name="left_knee_pitch_contact_limit_0" file="meshes/left_knee_pitch_contact_limit_0.obj" maxhullvert="-1" />
+    <mesh name="left_ankle_roll_contact_limit_0" file="meshes/left_ankle_roll_contact_limit_0.obj" maxhullvert="-1" />
+    <mesh name="torso_contact_limit_1" file="meshes/torso_contact_limit_1.obj" maxhullvert="-1" />
+    <mesh name="left_knee_pitch_contact_limit_1" file="meshes/left_knee_pitch_contact_limit_1.obj" maxhullvert="-1" />
+    <mesh name="torso_contact_limit_2" file="meshes/torso_contact_limit_2.obj" maxhullvert="-1" />
+    <mesh name="neck_pitch_contact_limit_2" file="meshes/neck_pitch_contact_limit_2.obj" maxhullvert="-1" />
+    <mesh name="right_knee_pitch_contact_limit_3" file="meshes/right_knee_pitch_contact_limit_3.obj" maxhullvert="-1" />
+    <mesh name="right_ankle_roll_contact_limit_3" file="meshes/right_ankle_roll_contact_limit_3.obj" maxhullvert="-1" />
+    <mesh name="right_knee_pitch_contact_limit_4" file="meshes/right_knee_pitch_contact_limit_4.obj" maxhullvert="-1" />
+    <mesh name="torso_contact_limit_4" file="meshes/torso_contact_limit_4.obj" maxhullvert="-1" />
+    <mesh name="right_knee_pitch_contact_limit_5" file="meshes/right_knee_pitch_contact_limit_5.obj" maxhullvert="-1" />
+    <mesh name="torso_contact_limit_5" file="meshes/torso_contact_limit_5.obj" maxhullvert="-1" />
+  </asset>
+  <size memory="256M" />
+</mujoco>

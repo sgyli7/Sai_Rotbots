@@ -1,0 +1,364 @@
+{
+  "status": "OVP_CLAMP_COORDINATION_VERIFIED_DIGITAL_FREEZE",
+  "generator": {
+    "path": "scripts/diagnostics/goose004_sanyo24_ovp_clamp_coord_20261125.py",
+    "sha256": "e82efb25e76ea4747d99842601a5c4b2e0b984d25508187759ac8ac70284606c"
+  },
+  "baseline_source": {
+    "path": "artifacts/goose_v0_2/hardware_closeout_20261122/internal_layout/sanyo24_direct_power_001/electrical_receipt.json",
+    "sha256": "00c519197b443235c52c65d20441a10d7fb1f73a6f48665ef1c80fc8fa61a105"
+  },
+  "baseline_astra_catch": {
+    "old_max17608_ovlo_trip_V": [
+      25.246557017964072,
+      27.260571010020044
+    ],
+    "old_max17608_ovlo_reset_low_V": 24.413420636371256,
+    "old_ov_margin_above_25p20_V": 0.0465570179640693,
+    "old_clamp_turnon_V": [
+      25.827844041116656,
+      26.87383833925777
+    ],
+    "old_clamp_turnoff_V": [
+      25.58510575250762,
+      26.62189226119414
+    ],
+    "old_max17608_ilim_A": [
+      0.3180119336436955,
+      0.34450464914041073
+    ],
+    "hypothetical_raised_ovp_V": 26.6,
+    "hypothetical_clamp_sink_at_26p6V_A": 0.40923076923076923,
+    "failure_mechanism": "Legacy MAX17608 OVLO (25.247-27.261 V, reset 24.413 V) is only 46.6 mV above 6S max (25.20 V) and latches off fan cooling after transient; simply raising internal OVLO to 26.6 V overlaps the output active clamp (25.828-26.874 V), sinking 0.409 A > 0.318-0.345 A ILIM and tripping CLMODE 36-44 ms latch-off."
+  },
+  "redesigned_circuit_architecture": {
+    "input_ovp_stage": {
+      "supply": "Input rail IN via 470 ohm (0603, 1%) + 33 V zener (MM3Z33VB/BZT52C33) + 100 nF/50V cap (decoupled from OUT backfeed and tolerant to 45.4 V SMAJ28A pulse)",
+      "reference": "Dedicated input-side LM4040A25IDBZR (2.500 V Grade A, 0.1% @ 25C, <=100 ppm/C), fed via 100 kOhm (1%) from IN (155 uA @ 18.0 V >> 75 uA min)",
+      "comparator": "TLV1811DCKR (40 V push-pull, Vos +/-4 mV max, Ibias +/-1.5 nA max, t_pd ~0.9 us @ 10mV OD)",
+      "divider": "Rt = 75.0 kOhm (0.1%, 25 ppm/C), Rb = 8.06 kOhm (0.1%, 25 ppm/C), Rfb = 12.0 MOhm (1%, 100 ppm/C)",
+      "efuse_interface": "Drives MAX17608 OVLO pin (-0.3 V to max(VIN,VOUT)+0.3 V abs max) with 100 kOhm pulldown to GND; keeps EN pin purely for VOS618A-8T command and preserves CLMODE fault latch; t_OFF_OVP <= 1.5 us",
+      "tvs_surge_zener_check": {
+        "tvs_clamp_V": 45.4,
+        "zener_V": 33.0,
+        "series_ohm": 470.0,
+        "pulse_current_A": 0.02664947345798409,
+        "zener_pulse_W": 0.879432624113475,
+        "resistor_pulse_W": 0.33712929857352797
+      }
+    },
+    "output_active_clamp_stage": {
+      "supply": "Switched output rail OUT (active even when MAX17608 is open or EN low)",
+      "reference": "Existing output-side LM4040A25IDBZR (17.4 kOhm feed from OUT, shared with FG 4.7 kOhm pullup)",
+      "comparator": "Existing TLV1811DCKR driving Si2308BDS + 2x130 ohm 2512 HP pulse resistors (65 ohm total)",
+      "divider_upgrade": "Rt = 84.5 kOhm (0.1%, 25 ppm/C), Rb = 8.66 kOhm (0.1%, 25 ppm/C), Rfb = 15.0 MOhm (1%, 100 ppm/C)",
+      "minimum_sink_at_turnoff_A": 0.3993043541464248,
+      "pulse_power_each_130r_at_27p6V_W": 5.91888111888112,
+      "pulse_power_each_130r_at_peak10us_W": 5.910593117062762
+    },
+    "unchanged_protections": {
+      "uvlo_divider_ohm": [
+        191000,
+        20000
+      ],
+      "uvlo_corners_V": [
+        15.223158758882235,
+        16.43096685731463
+      ],
+      "fan_steady_at_18V_corner_V": 17.62086151,
+      "fan_steady_margin_to_17p5V_V": 0.120861510000001,
+      "fan_start_at_18V_corner_V": 17.4796253514108,
+      "seti_ohm": 4530,
+      "ilim_corners_A": [
+        0.3180119336436955,
+        0.34450464914041073
+      ],
+      "clmode_ohm": 150000,
+      "blanking_ms": [
+        36.0,
+        44.0
+      ],
+      "cap_charge_25p2V_max_ms": 26.98319342232147,
+      "no_backdrive_bleed_to_1V_s": 1.8245491752515988
+    }
+  },
+  "worst_case_corners": {
+    "nominal_env_0p25pct_full_temp_ref": {
+      "description": "0.1% init + 25 ppm/C*60K (0.25%), LM4040A25 -40..+85C (+/-20 mV)",
+      "tol_r_divider": 0.0025,
+      "tol_r_hyst": 0.02,
+      "vref_bounds_V": [
+        2.48,
+        2.52
+      ],
+      "ovp": {
+        "r_top_ohm": 75000.0,
+        "r_bot_ohm": 8060.0,
+        "r_fb_ohm": 12000000.0,
+        "reset_V": [
+          25.25576287917234,
+          25.98530239416343
+        ],
+        "trip_V": [
+          25.415201207887662,
+          26.1443283966716
+        ],
+        "same_unit_hyst_V": [
+          0.1525748760174075,
+          0.1660917236270869
+        ],
+        "nominal_trip_V": 25.778527295285357,
+        "nominal_reset_V": 25.61884700152582
+      },
+      "clamp": {
+        "r_top_ohm": 84500.0,
+        "r_bot_ohm": 8660.0,
+        "r_fb_ohm": 15000000.0,
+        "reset_V": [
+          26.377909341821628,
+          27.140334479153687
+        ],
+        "trip_V": [
+          26.52805072976722,
+          27.290064962598017
+        ],
+        "same_unit_hyst_V": [
+          0.14370047565238764,
+          0.15636257458615432
+        ],
+        "nominal_trip_V": 26.90773510084681,
+        "nominal_reset_V": 26.757396102801028,
+        "overshoot_10us_V": 0.26583333333333337,
+        "overshoot_3us_V": 0.2075,
+        "peak_max_10us_V": 27.55589829593135,
+        "peak_max_3us_V": 27.497564962598016
+      },
+      "margins_V": {
+        "ovp_reset_min_above_25p20_V": 0.05576287917233813,
+        "clamp_off_min_above_ovp_trip_max_V": 0.23358094515002747,
+        "clamp_on_min_above_ovp_trip_max_V": 0.3837223330956192,
+        "fan_max_27p60_above_clamp_peak_10us_V": 0.04410170406865177,
+        "fan_max_27p60_above_clamp_peak_3us_V": 0.10243503740198534
+      },
+      "strict_non_overlapping_pass": true
+    },
+    "conservative_0p30pct_full_temp_ref": {
+      "description": "0.1% init + drift + 0.05% solder/aging (0.30%), LM4040A25 -40..+85C (+/-20 mV)",
+      "tol_r_divider": 0.003,
+      "tol_r_hyst": 0.02,
+      "vref_bounds_V": [
+        2.48,
+        2.52
+      ],
+      "ovp": {
+        "r_top_ohm": 75000.0,
+        "r_bot_ohm": 8060.0,
+        "r_fb_ohm": 12000000.0,
+        "reset_V": [
+          25.233066382694005,
+          26.008703428895622
+        ],
+        "trip_V": [
+          25.39228047862748,
+          26.16795256497755
+        ],
+        "same_unit_hyst_V": [
+          0.1523596876751192,
+          0.16632419169896906
+        ],
+        "nominal_trip_V": 25.778527295285357,
+        "nominal_reset_V": 25.61884700152582
+      },
+      "clamp": {
+        "r_top_ohm": 84500.0,
+        "r_bot_ohm": 8660.0,
+        "r_fb_ohm": 15000000.0,
+        "reset_V": [
+          26.354087373664036,
+          27.164895027172285
+        ],
+        "trip_V": [
+          26.504016977772608,
+          27.314836240953245
+        ],
+        "same_unit_hyst_V": [
+          0.1434972272654349,
+          0.15658211503814456
+        ],
+        "nominal_trip_V": 26.90773510084681,
+        "nominal_reset_V": 26.757396102801028,
+        "overshoot_10us_V": 0.26583333333333337,
+        "overshoot_3us_V": 0.2075,
+        "peak_max_10us_V": 27.580669574286578,
+        "peak_max_3us_V": 27.522336240953244
+      },
+      "margins_V": {
+        "ovp_reset_min_above_25p20_V": 0.03306638269400253,
+        "clamp_off_min_above_ovp_trip_max_V": 0.1861348086864858,
+        "clamp_on_min_above_ovp_trip_max_V": 0.33606441279505717,
+        "fan_max_27p60_above_clamp_peak_10us_V": 0.019330425713423693,
+        "fan_max_27p60_above_clamp_peak_3us_V": 0.07766375904675726
+      },
+      "strict_non_overlapping_pass": true
+    },
+    "operating_0_70C_0p2125pct": {
+      "description": "0.1% init + 25 ppm/C*45K (0.2125%), LM4040A25 0..+70C (+/-15 mV)",
+      "tol_r_divider": 0.002125,
+      "tol_r_hyst": 0.02,
+      "vref_bounds_V": [
+        2.485,
+        2.515
+      ],
+      "ovp": {
+        "r_top_ohm": 75000.0,
+        "r_bot_ohm": 8060.0,
+        "r_fb_ohm": 12000000.0,
+        "reset_V": [
+          25.32383583395091,
+          25.916327907143547
+        ],
+        "trip_V": [
+          25.483766070242048,
+          26.074869634564937
+        ],
+        "same_unit_hyst_V": [
+          0.15304857366359315,
+          0.16558889008965139
+        ],
+        "nominal_trip_V": 25.778527295285357,
+        "nominal_reset_V": 25.61884700152582
+      },
+      "clamp": {
+        "r_top_ohm": 84500.0,
+        "r_bot_ohm": 8660.0,
+        "r_fb_ohm": 15000000.0,
+        "reset_V": [
+          26.44909492162785,
+          27.068204536020396
+        ],
+        "trip_V": [
+          26.599699955460288,
+          27.21747866979943
+        ],
+        "same_unit_hyst_V": [
+          0.14414690693504184,
+          0.15588868033078995
+        ],
+        "nominal_trip_V": 26.90773510084681,
+        "nominal_reset_V": 26.757396102801028,
+        "overshoot_10us_V": 0.26583333333333337,
+        "overshoot_3us_V": 0.2075,
+        "peak_max_10us_V": 27.483312003132763,
+        "peak_max_3us_V": 27.42497866979943
+      },
+      "margins_V": {
+        "ovp_reset_min_above_25p20_V": 0.12383583395090625,
+        "clamp_off_min_above_ovp_trip_max_V": 0.374225287062913,
+        "clamp_on_min_above_ovp_trip_max_V": 0.5248303208953509,
+        "fan_max_27p60_above_clamp_peak_10us_V": 0.1166879968672383,
+        "fan_max_27p60_above_clamp_peak_3us_V": 0.17502133020057187
+      },
+      "strict_non_overlapping_pass": true
+    }
+  },
+  "monte_carlo_50k": {
+    "n_trials": 50000,
+    "seed": 20261125,
+    "temperature_range_C": [
+      -20.0,
+      85.0
+    ],
+    "pass_count": 50000,
+    "fail_count": 0,
+    "pass_rate": 1.0,
+    "ovp_reset_V": {
+      "min": 25.40033989579035,
+      "p001": 25.439703106886057,
+      "mean": 25.619107515708407,
+      "p999": 25.793889013797735,
+      "max": 25.84585876378709,
+      "std": 0.0521560821243108
+    },
+    "ovp_trip_V": {
+      "min": 25.556543796611603,
+      "p001": 25.5983402243597,
+      "mean": 25.778385310946643,
+      "p999": 25.954447073457505,
+      "max": 26.00513341815459,
+      "std": 0.05249758671917443
+    },
+    "clamp_off_V": {
+      "min": 26.535842577781445,
+      "p001": 26.577741367632054,
+      "mean": 26.75762665195873,
+      "p999": 26.942566486665378,
+      "max": 26.974233443276,
+      "std": 0.05441919233560872
+    },
+    "clamp_on_V": {
+      "min": 26.684880378282017,
+      "p001": 26.726156518056857,
+      "mean": 26.90759888614873,
+      "p999": 27.093390217082575,
+      "max": 27.12552280916915,
+      "std": 0.0547408882878699
+    },
+    "clamp_peak_V": {
+      "min": 26.82285950007689,
+      "p001": 26.86033645493013,
+      "mean": 27.06441263787232,
+      "p999": 27.27407301386968,
+      "max": 27.33874917090993,
+      "std": 0.06375895625243681
+    },
+    "margins_V": {
+      "ovp_reset_minus_25p20": {
+        "min": 0.2003398957903464,
+        "p001": 0.23970310688605515,
+        "mean": 0.41910751570840477,
+        "p999": 0.5938890137977324,
+        "max": 0.6458587637870856,
+        "std": 0.0521560821243108
+      },
+      "clamp_off_minus_ovp_trip": {
+        "min": 0.5831288356993625,
+        "p001": 0.7034608835117717,
+        "mean": 0.9792413410120847,
+        "p999": 1.2592525789310935,
+        "max": 1.3636617924708325,
+        "std": 0.07567308540485687
+      },
+      "clamp_on_minus_ovp_trip": {
+        "min": 0.7314362705422717,
+        "p001": 0.8523313727640698,
+        "mean": 1.1292135752020858,
+        "p999": 1.40970959138066,
+        "max": 1.5147731407120517,
+        "std": 0.07590930251755854
+      },
+      "27p60_minus_clamp_peak": {
+        "min": 0.2612508290900699,
+        "p001": 0.3259269861303258,
+        "mean": 0.5355873621276837,
+        "p999": 0.739663545069872,
+        "max": 0.7771404999231102,
+        "std": 0.06375895625243681
+      }
+    }
+  },
+  "thermal_and_interlock": {
+    "baseline_aux_W": 0.297526481020784,
+    "added_ovp_and_divider_W": 0.014618090889875882,
+    "updated_aux_W": 0.31214457191065986,
+    "updated_full_mix_W": 5.81214457191066,
+    "allowed_full_mix_W": 6.017,
+    "remaining_headroom_W": 0.2048554280893402,
+    "adiabatic_single_580J_fan_only_C": 54.92311390847472,
+    "adiabatic_single_580J_baseline_aux_C": 54.996260952076696,
+    "adiabatic_single_580J_updated_aux_C": 54.999854817496775,
+    "margin_to_55C_baseline_C": 0.0037390479233039287,
+    "margin_to_55C_updated_C": 0.00014518250322481663,
+    "double_580J_violation_C": 59.797,
+    "interlock_rule": "Any fan loss (Sservice open, 1 A fuse open, MAX17608 UVOV/FLAG latch, V_fan < 17.5 V, FG=0, or FLOW drop) triggers immediate drive inhibit (no-next-brake lockout) so at most one residual 580 J brake event occurs (~54.9963-54.9997 C adiabatic FE peak); Step-2 bench thermal verification required due to sub-0.01 C digital margin to 55 C."
+  }
+}

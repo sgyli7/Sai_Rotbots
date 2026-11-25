@@ -1,0 +1,135 @@
+{
+  "schema": "goose005_sailab43_verification_receipt_v1",
+  "passed": true,
+  "bundle_dir": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/hardware_closeout_20261125/sailab_005_43_delivery/goose_v02_005_exterior_roles_v1",
+  "model_sha256": "5e48fe29f92e901fc887b3a0f5d13bac4c0b26c3b9e6e3831cbd0c54cee20bab",
+  "contract_sha256": "0a6f9869d22c2a7c2da321e2438f0e646ed3ebe26abaf45050c034e191df7d98",
+  "manifest_sha256": "a41bddee9899fb8d13fc35bea419343bd875adb01b0940c8d7c975b8a6f30cde",
+  "checks": {
+    "manifest_and_mci_readback": true,
+    "beak_plane_and_4bar": true,
+    "protected_and_q0_contacts": true,
+    "cpu_3x100_standing_drop_reinit": true,
+    "cpu_200hz_100g_beak_grasp_hold": true,
+    "gpu_32env_throughput": true,
+    "checkpoint_save_resume_determinism": true,
+    "existing_mci_and_wrench_tests": true
+  },
+  "manifest_and_mci": {
+    "passed": true,
+    "manifest_files_checked": 479,
+    "compiled_nbody": 22,
+    "compiled_ngeom": 44,
+    "compiled_nu": 18,
+    "compiled_mass_kg": 18.767645582507882,
+    "max_body_mass_readback_err_kg": 0.0,
+    "max_body_com_readback_err_m": 0.0,
+    "max_body_principal_inertia_err_kg_m2": 4.85722573273506e-17,
+    "total_mass_readback_err_kg": 0.0
+  },
+  "beak_and_protected": {
+    "passed": true,
+    "neutral_beak_plane_z_m": 0.628305,
+    "grip_site_z_m": 0.628305,
+    "cold_birth_passed": true,
+    "cold_birth_blocked_count": 0,
+    "four_bar_max_pin_residual_m": 2.618455766672135e-16,
+    "four_bar_max_jaw_open_rad": 0.34999999999999987,
+    "protected_geoms_verified": [
+      "left_flat_rounded_sole__support",
+      "left_flat_rounded_sole__upper_support",
+      "lower_grip_cassette_pad__grip_plane",
+      "right_flat_rounded_sole__support",
+      "right_flat_rounded_sole__upper_support",
+      "upper_grip_cassette_pad__grip_plane"
+    ],
+    "side_getup_exterior_checks": [
+      {
+        "side": "left",
+        "ground_geoms_touched": [
+          "pitch_housing",
+          "left_hip_pitch_exterior_0",
+          "left_hip_pitch_exterior_1",
+          "left_knee_pitch_exterior_0"
+        ]
+      },
+      {
+        "side": "right",
+        "ground_geoms_touched": [
+          "head_shell",
+          "right_hip_pitch_exterior_0",
+          "right_knee_pitch_exterior_0"
+        ]
+      }
+    ]
+  },
+  "cpu_bench": {
+    "passed": true,
+    "cpu_3x100": {
+      "standing": {
+        "passed": true,
+        "ticks": 100,
+        "final_com_z_m": 0.33759426286097244,
+        "max_abs_pitch_deg": 0.43246893153719707,
+        "max_abs_roll_deg": 0.02724888759435394
+      },
+      "drop_50mm": {
+        "passed": true,
+        "ticks": 100,
+        "final_com_z_m": 0.3373685465611773,
+        "max_abs_pitch_deg": 2.302357442125212,
+        "max_abs_roll_deg": 0.15236691088370083
+      },
+      "reinitialize": {
+        "passed": true,
+        "ticks": 100,
+        "final_com_z_m": 0.33759426286097244,
+        "max_abs_pitch_deg": 0.43246893153719707,
+        "max_abs_roll_deg": 0.02724888759435394
+      }
+    },
+    "beak_grasp_200hz_100g_1s": {
+      "passed": true,
+      "steps": 200,
+      "dt_s": 0.005,
+      "final_cargo_dz_mm": -1.992755642214239,
+      "mean_hold_pad_force_upper_N": 4.643221013658273,
+      "mean_hold_pad_force_lower_N": 7.026162882863377,
+      "final_pad_force_upper_N": 0.0,
+      "final_pad_force_lower_N": 4.32287998799005,
+      "final_beak_hinge_deg": -0.0042953532338646455
+    }
+  },
+  "gpu_and_checkpoint": {
+    "passed": true,
+    "gpu_32env_bench": {
+      "num_envs": 32,
+      "ticks": 240,
+      "total_world_steps": 7680,
+      "total_wall_s": 5.773422650061548,
+      "world_steps_per_s": 1330.2334621072869,
+      "p95_step_ms": 26.291989791207012,
+      "peak_active_contacts_all_worlds": 256,
+      "peak_constraint_rows_per_world": 47,
+      "zero_nans": true
+    },
+    "checkpoint_save_resume_determinism": {
+      "passed": true,
+      "initial_ppo_updates": 2,
+      "resumed_ppo_updates": 1,
+      "saved_params_sha256": "ecc335838e2f5fe076e6f5d7c35cdea0f4e2ff0489a53e797440c3e148cbddcd",
+      "resumed_initial_params_sha256": "ecc335838e2f5fe076e6f5d7c35cdea0f4e2ff0489a53e797440c3e148cbddcd",
+      "param_sha_exact_match": true,
+      "checkpoint_tensor_bit_identical": true
+    }
+  },
+  "regression_tests": {
+    "passed": true,
+    "test_goose_source003_mci_and_hr_wrenches": "6 passed in 1.65s",
+    "test_goose_mass_properties": "OK"
+  },
+  "figure_c1": {
+    "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/artifacts/goose_v0_2/hardware_closeout_20261125/sailab_005_43_delivery/fig_c1_sailab005_43_mci_and_gpu_bench.png",
+    "sha256": "3341ca2cec2314509239dea82e438e88778336b044ce40bc12d247d143d6ad02"
+  }
+}

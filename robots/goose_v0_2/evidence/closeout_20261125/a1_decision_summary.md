@@ -1,0 +1,42 @@
+# Goose V0.2 Track A1 Mechanical Architecture Gate Decision (`hardware_closeout_20261125`)
+
+**Verdict:** `KEEP BRIDGE (GO TO STAGE A2 WITH OPTION B2: ANCHORED LOWER CROSS-BRIDGE + SYMMETRIC STATOR TIE COLUMNS)` — **Option B2 (opt_b2_anchored_bridge_stator_ties, 7075-T6 + Hybrid 7075/Steel-Pin Rotating Tridents)**
+
+## 1. Executive Summary
+- Evaluated on the **real 16-part `assembly_finish_004` C3D10 chassis** (`457,341 DOFs`, strictly referenced to `neck_parent_interface`, matching archived 42×42 chassis compliance to `3.02e-11`, **not** the rejected `+494 g` `t40` block) under the governing `4.670 s` single-support dynamic turn (`197.7 N / 8.42 N·m`), worst-case bilateral static loads, pure common-mode lateral sway, and differential chassis torsion.
+- **Why Option A (bare cross-bridge, no frame anchor) FAILS (`HARD NO-GO`)**: Because SKF 608-2RSH bearings react only radial `(Fx, Fy)` forces, any unanchored cross-bridge — even infinitely stiff in 6 DOFs — is mechanically a two-force Y-rod (`Fx = 0`, zero common-mode sway stiffness). Peak yoke displacement is **`1.049 mm`** (`stuck`, `13 µm` play) / **`3.245 mm`** (`unbonded`).
+- **Why Option C (bilateral independent short brackets, no cross-bridge) FAILS (`HARD NO-GO`)**: (1) **Geometrically pinched on the right side** by `K2` (`Y=[-28,+18]`, ear M4 bolt to `Y=-37.6`) and swept `right_parent_yoke_003`, forcing cranked over/under-K2 detours with razor-thin **`0.144 mm`** unloaded running clearance; (2) **Structurally defeated by `004` open-book sideplate roll (`RX = -11.1 mrad`)**, because `left/right_longitudinal_sideplate` hang unbridged beneath `neck_root_base`, giving **`1.749 mm`** (`stuck`, `13 µm`) / **`2.708 mm`** (`unbonded`) — **`> 6.5×` over the `0.200 mm` gate**.
+- **Why Option B1 (anchored lower cross-bridge only) is INSUFFICIENT ALONE**: Bridging Left↔Right through the discovered **Left-of-K2 straight highway (`Y=[+19.8,+30.5]`)** + **forward bay cross-box (`X=[8.5,25.0], Z=[333.5,345.2]`)** into all 6 preexisting lower M4 roots + `neck_root_base` closes the open-book chassis box and cuts displacement **`~3.5×`** vs Option C (`0.638 mm` `stuck`), **but leaves the cantilevered `004` upper split clamps unbraced** (`1.549 mm` `unbonded`).
+- **Why Option B2 (KEEP BRIDGE + Symmetric Front-Inboard Vertical Stator Tie Columns) WINS THE ARCHITECTURE GATE**: Adding two `7.5×8.5 mm` symmetric vertical C-frame columns (`X[-39.0,-31.5], |Y|[32.5,41.0], Z[336.0,367.05]`, `0.000 mm³` fixed & moving collision, `3.00 mm` swept yoke gap, `>= 1.5 mm` AK45 gap, `ZERO` K1/K2/cassette modification) bolts the anchored cross-bridge straight into `left/right_stator_base` (`Z=367.1`). In the rigid-carrier limit on real `004`, **Option B2 is the ONLY topology that beats `< 0.200 mm` in BOTH `stuck` (`0.1865 mm`) AND `unbonded` (`0.1890 mm`)** without replacing the chassis (`t40`, `+494 g`).
+- **Honest 2h First-Pass Elastic C3D10 Status & Exact Stage A2 Action**: The first-pass lightweighted 7075-T6 C3D10 solid (`123.6 g` fixed carrier; **`+195.0 g <= 200 g`** with hybrid 7075/steel-pin tridents -> **`18.764 kg < 18.80 kg`** including Track B `+9.6 g` fan delta) **PASSES** zero-collision (`min_fix=1.385 mm`, `min_mov=1.408 mm`), **PASSES** all worst-case static bilateral loads (`0.064–0.167 mm < 0.200 mm`), and **PASSES** `stuck` Von Mises stress (`72.1–73.2 MPa <= 80 MPa`), cutting dynamic `4.670 s` displacement **`7.1×`** vs baseline `004` (`2.336 -> 0.318–0.330 mm` steel tri; `0.370–0.383 mm` hybrid tri at `0–13 µm` play, `REL = 0.198–0.207 mm`). The remaining **`~0.13 mm`** elastic gap above `0.200 mm` (and `73/98 MPa` local stress peak) is pinpointed to the `4.5 mm` step corner at `(-37.1, ±32.7, 340.7)` plus `+0.134 mm` vertical clamp lift under `Fz=165.9 N` — providing an exact, localized Stage A2 gusset + `clamp_underfoot` shear-cheek stiffening target (keeping `<= 200 g`) rather than pivoting architectures.
+
+## 2. Real-004 3D C3D10 Coupled FEA Comparison (`4.670 s` Turn + Radial Play Sensitivity)
+| Architecture | Material + Tridents | Net Mass Δ (g) | Total Mass (+Track B) | 0 µm Stuck (mm) | 5 µm Stuck (mm) | 13 µm Stuck (mm) | 13 µm Unbonded (mm) | Peak VM (MPa) | Verdict |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---|
+| Baseline `004` (no lower) | Stock 004 | +0.0 | 18.569 kg | 2.3358 | 2.3358 | 2.3358 | 5.8831 | — | FAIL (2.34 mm) |
+| Option A (Bare Bridge) | 7075 + Hyb Tri | +112.6 | 18.682 kg | 1.0343 | 1.0400 | 1.0493 | 3.2451 | 13.7 | NO-GO (1D Y-rod limit) |
+| Option C (Indep. Brackets) | 7075 + Hyb Tri | +149.2 | 18.718 kg | 1.7424 | 1.7450 | 1.7493 | 2.7078 | 117.6 | NO-GO (K2 pinch + 118 MPa) |
+| Option B1 (Lower Anchored) | 7075 + Hyb Tri | +175.7 | 18.745 kg | 0.6281 | 0.6320 | 0.6383 | 1.5487 | 71.7 | INCOMPLETE (unbraced upper) |
+| **Option B2 (SELECTED)** | **7075 + Hyb Tri** | +195.0 | 18.764 kg | 0.3700 | 0.3748 | 0.3825 | 0.5336 | 72.1 | **GO TO A2 (<=200g; stiffen junction)** |
+| Option B2 (Steel Tri) | 7075 + Steel Tri | +230.8 | 18.800 kg | 0.3176 | 0.3222 | 0.3299 | 0.4833 | 73.2 | REL=0.198mm; trim 31g in A2 |
+| Option B2 (Ti-6Al-4V) | Ti-6Al-4V + Hyb | +262.7 | 18.832 kg | 0.3441 | 0.3487 | 0.3564 | 0.4714 | 81.7 | Backup (over 200g cap) |
+| Ref: Opt B2 Rigid Ceiling | Ideal Rigid Link | +195.0 | 18.764 kg | 0.1865 | 0.1912 | 0.1988 | 0.2015 | — | Proves B2 topology <0.20mm |
+
+## 3. Common-Mode Sway, Chassis Torsion & Worst-Case Static Bilateral Cases (`13 µm` play, `stuck`)
+| Load Case | Opt A Max (mm) | Opt C Max (mm) | Opt B1 Max (mm) | **Opt B2 (7075+Hyb) Max (mm)** | Opt B2 Sway Y (mm) | Opt B2 Twist (mrad) |
+|---|---:|---:|---:|---:|---:|---:|
+| `static_tow_s30_max_sq` | 0.3103 | 1.0178 | 0.2002 | **0.1326** | -0.0065 | -0.106 |
+| `static_tow_s30_min_sq` | 0.6174 | 1.2819 | 0.3135 | **0.1673** | +0.0292 | -0.250 |
+| `static_grasp_s30_peakFx` | 0.1599 | 0.1203 | 0.0957 | **0.0637** | -0.0004 | +0.014 |
+| `diag_common_mode_lateral_sway` | 1.2195 | 1.2149 | 0.3657 | **0.3721** | -0.0106 | -0.856 |
+| `diag_chassis_torsion_diff_X` | 0.8994 | 0.8214 | 0.4351 | **0.3092** | +0.0559 | -0.314 |
+
+## 4. Spatial, K1/K2/Cassette & Serviceability Audit on `assembly_finish_004`
+- **Astra's `X=-53, Z=315` corridor**: Fits `6×6 mm` (`1.02 mm` K1 gap), but `10×10 mm` hits K1 (`164.0 mm³`). Shifting rearward/upward to **`X[-63.5,-52.5], Z[312.5,321.5]`** opens an **`11×9 mm`** zero-collision full span (`1.52 mm` K1 gap, `1.40 mm` AK45 gap, `5.56 mm` swept trident gap), expanding to **`17.5×28 mm`** in the central bay (`Y[-30.5,+30.5]`, `2.00 mm` clear of K2 ear M3x10).
+- **Zero K1/K2/Cassette Modification**: Option B2 maintains **`>= 1.52 mm`** to K1, **`>= 1.39 mm`** to K2, **`>= 2.00 mm`** to K2 ear M3x10, **`>= 2.00 mm`** to electrical cassette forearm, **`>= 4.4 mm`** to `audio_buck`, **`>= 1.5 mm`** to both AK45 cases, **`0.000 mm³`** collision against ALL 5 active closeout overlays (`installed_env_106`, `first_bend_reservation`, `electrical_forearm_relief`, `can_a_nominal_parts_001`, `wt901_split_clamp_candidate`), and **`0.000 mm³`** swept moving collision (`min_mov >= 1.41 mm` to trident, `3.00 mm` to swept yoke).
+- **Legacy WT901 Reserve Note**: The Ø22 `608-2RSH` bearing envelope itself (`X=-71`) overlaps the superseded legacy `imu_wt901c_ttl_installation_reserve` (`X=-65.7`), already relocated in active closeout to `wt901_split_clamp_candidate.step` (`Z=397.7..424.7`, `31.25 mm` clear).
+- **Fastener Stack & Tool Access**: Reuses all 6 preexisting lower M4 roots (`left/right_corner_low_x` M4x25→M4x30, `left/right_panel_30_326/339.2` M4x20→M4x25) + adds 2× M3x12 into `neck_root_base` at `(14.5, ±13.5)` + 2× M4x38 upward through vertical tie columns into `left/right_stator_base` at `(-35.5, ±37.0)`. Open `-Z` 608 bore enables straight bearing insertion/extraction with front shell removed.
+
+## 5. Downstream Action for `assembly_finish_005` & SaiLab 43
+- **Promote Option B2 (`opt_b2_anchored_bridge_stator_ties.step`)** directly into `assembly_finish_005` with hybrid 7075-T6 + Ø8 hardened steel pin rotating tridents (or pocketed steel tridents if extra `~10 µm` stiffness margin is preferred over `~17 g` mass).
+- **Open Physical-Hardware Step-2 Gate**: Confirm tapped M4 engagement in `left/right_stator_base` front-inboard lobe (`(-35.5, ±37.0, Z=367.1..378.1)`, `11 mm` aluminum thickness), H7/js6 608 bearing radial fit tolerance (target `<= 5–8 µm` installed radial play), and full bilateral NLGEOM contact re-equilibration.

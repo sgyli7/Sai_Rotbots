@@ -1,0 +1,49 @@
+{
+  "schema": "goose_closeout_actual20ms_probe_v1",
+  "model_sha256": "9f4687b5245bfb1c3d1103d8065f8371d10e6b1e6d7a087722e13a5759e1220c",
+  "contract_sha256": "25133749c65bd693e4d2d34e8855134bce338ee78c0a016b734d7080784da9fc",
+  "actual_tested_model_sha256": "9f4687b5245bfb1c3d1103d8065f8371d10e6b1e6d7a087722e13a5759e1220c",
+  "actual_tested_contract_sha256": "a7f8143588da7caba10635ba73639ed15a8a6a41d84dbc5cf3c0198772ad93cf",
+  "external_reference": {
+    "baseline_id": "goose_source007_constant_leg_gravity_standing_v1",
+    "protocol_id": "goose_source007_constant_leg_reference_validation_v2",
+    "reference_action_sha256": "46b81967bf255b21cd1c221ee06aec2e3264c364504f5b496b791f0a20a61917",
+    "validation_protocol_sha256": "b3048c7cd934928b163fa6e8ef07098fc6d91f04fcd2e647ca111dc7881b5242",
+    "controller_source_sha256": "57466797632f0a512ba3ce7a7904d2cdbc87d76a53bca5d21c245267c383446c",
+    "joint_order": [
+      "neck_yaw",
+      "neck_pitch",
+      "neck_mid_pitch",
+      "head_pitch",
+      "head_roll",
+      "beak_input_rotor",
+      "right_hip_yaw",
+      "right_hip_roll",
+      "right_hip_pitch",
+      "right_knee_pitch",
+      "right_ankle_pitch",
+      "right_ankle_roll",
+      "left_hip_yaw",
+      "left_hip_roll",
+      "left_hip_pitch",
+      "left_knee_pitch",
+      "left_ankle_pitch",
+      "left_ankle_roll"
+    ],
+    "external_policy_input": true
+  },
+  "backend": "both",
+  "steps_per_case": 100,
+  "CPU_integrations": 181,
+  "GPU_integrations": 0,
+  "optimizer_updates": 0,
+  "checks": {
+    "portable_source_exported": true,
+    "portable_relocated_before_load": true
+  },
+  "failure": "Traceback (most recent call last):\n  File \"/home/ethan/Projects/Sai_Lab/Bevy_Sim2Sim/crates/dev_tools/python/src/bevy_microduck_tools/goose/closeout_admission.py\", line 284, in main\n    checks[backend] = (run_cpu if backend == 'cpu' else run_gpu)(\n                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ethan/Projects/Sai_Lab/Bevy_Sim2Sim/crates/dev_tools/python/src/bevy_microduck_tools/goose/closeout_admission.py\", line 117, in run_cpu\n    raise RuntimeError('CPU bounded standing/drop posture failed; preserve actual state')\nRuntimeError: CPU bounded standing/drop posture failed; preserve actual state\n",
+  "elapsed_s": 8.002078048069961,
+  "training_ready": false,
+  "qualification": "none",
+  "status": "FAILED_PRESERVED"
+}

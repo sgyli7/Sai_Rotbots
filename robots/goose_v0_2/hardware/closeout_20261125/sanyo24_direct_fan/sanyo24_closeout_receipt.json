@@ -1,0 +1,259 @@
+{
+  "status": "SANYO24_TRACK_B_DIGITAL_DESIGN_FREEZE_COMPLETE_WITH_STEP2_BENCH_GATES",
+  "generator_electrical": {
+    "path": "scripts/diagnostics/goose004_sanyo24_ovp_clamp_coord_20261125.py",
+    "sha256": "e82efb25e76ea4747d99842601a5c4b2e0b984d25508187759ac8ac70284606c"
+  },
+  "generator_cad": {
+    "path": "scripts/cad/goose004_sanyo24_fuse_access_20261125.py",
+    "sha256": "c7512d98d97211a2cc2ed239c7a1168450e9fa38e085215fcb438b3585d42628"
+  },
+  "artifacts": {
+    "ovp_clamp_coordination": {
+      "path": "artifacts/goose_v0_2/hardware_closeout_20261125/sanyo24_fan_b1/ovp_clamp_coordination.json",
+      "sha256": "ca424bd0470893bf6d38a8492185c1381349dbd37c0f4e81c957168701d4e1f5"
+    },
+    "fuse_access_cad_receipt": {
+      "path": "artifacts/goose_v0_2/hardware_closeout_20261125/sanyo24_fan_b1/fuse_access_cad_receipt.json",
+      "sha256": "6a4f1a07a198c4e72ac06e78afa38cd8f025856f32213ed2a2ca2a157f5e63e4"
+    },
+    "updated_mini_board_step": {
+      "path": "artifacts/goose_v0_2/hardware_closeout_20261125/sanyo24_fan_b1/updated_direct_power_component_placement.step",
+      "sha256": "d419c2278a252e09abd21a46c91c812f6d761e33741d50c25fabab367fd537f4"
+    },
+    "serviceable_fuse_pocket_brep": {
+      "path": "artifacts/goose_v0_2/hardware_closeout_20261125/sanyo24_fan_b1/serviceable_fuse_pocket_guard.brep",
+      "sha256": "2170f261b0d5b3e0d51372097c3185c86ad05c3301c7ae122f6b25bc89c01d8b"
+    },
+    "serviceable_fuse_pocket_step": {
+      "path": "artifacts/goose_v0_2/hardware_closeout_20261125/sanyo24_fan_b1/serviceable_fuse_pocket_guard.step",
+      "sha256": "c5e963d37dd37d0c3d870825416524c777d75635ca7e85beb748a804e04014c3"
+    },
+    "serviceable_fuse_breakout_harness_step": {
+      "path": "artifacts/goose_v0_2/hardware_closeout_20261125/sanyo24_fan_b1/serviceable_fuse_breakout_harness.step",
+      "sha256": "44f51f870d9c047fb8a000ded0cc46daf93bc1a141fe5342e97f1156d662497f"
+    },
+    "figure_b2": {
+      "path": "artifacts/goose_v0_2/hardware_closeout_20261125/sanyo24_fan_b1/fig_b2_sanyo24_voltage_window_and_fuse_access.png",
+      "sha256": "75be0b1e47bc74d09dcc5090a82585f23bcb29ee386d52ae2b21d784af2df45c"
+    }
+  },
+  "pillar_1_ovp_clamp_coordination": {
+    "strict_non_overlapping_worst_case": true,
+    "conservative_0p30pct_corners": {
+      "description": "0.1% init + drift + 0.05% solder/aging (0.30%), LM4040A25 -40..+85C (+/-20 mV)",
+      "tol_r_divider": 0.003,
+      "tol_r_hyst": 0.02,
+      "vref_bounds_V": [
+        2.48,
+        2.52
+      ],
+      "ovp": {
+        "r_top_ohm": 75000.0,
+        "r_bot_ohm": 8060.0,
+        "r_fb_ohm": 12000000.0,
+        "reset_V": [
+          25.233066382694005,
+          26.008703428895622
+        ],
+        "trip_V": [
+          25.39228047862748,
+          26.16795256497755
+        ],
+        "same_unit_hyst_V": [
+          0.1523596876751192,
+          0.16632419169896906
+        ],
+        "nominal_trip_V": 25.778527295285357,
+        "nominal_reset_V": 25.61884700152582
+      },
+      "clamp": {
+        "r_top_ohm": 84500.0,
+        "r_bot_ohm": 8660.0,
+        "r_fb_ohm": 15000000.0,
+        "reset_V": [
+          26.354087373664036,
+          27.164895027172285
+        ],
+        "trip_V": [
+          26.504016977772608,
+          27.314836240953245
+        ],
+        "same_unit_hyst_V": [
+          0.1434972272654349,
+          0.15658211503814456
+        ],
+        "nominal_trip_V": 26.90773510084681,
+        "nominal_reset_V": 26.757396102801028,
+        "overshoot_10us_V": 0.26583333333333337,
+        "overshoot_3us_V": 0.2075,
+        "peak_max_10us_V": 27.580669574286578,
+        "peak_max_3us_V": 27.522336240953244
+      },
+      "margins_V": {
+        "ovp_reset_min_above_25p20_V": 0.03306638269400253,
+        "clamp_off_min_above_ovp_trip_max_V": 0.1861348086864858,
+        "clamp_on_min_above_ovp_trip_max_V": 0.33606441279505717,
+        "fan_max_27p60_above_clamp_peak_10us_V": 0.019330425713423693,
+        "fan_max_27p60_above_clamp_peak_3us_V": 0.07766375904675726
+      },
+      "strict_non_overlapping_pass": true
+    },
+    "nominal_0p25pct_corners": {
+      "description": "0.1% init + 25 ppm/C*60K (0.25%), LM4040A25 -40..+85C (+/-20 mV)",
+      "tol_r_divider": 0.0025,
+      "tol_r_hyst": 0.02,
+      "vref_bounds_V": [
+        2.48,
+        2.52
+      ],
+      "ovp": {
+        "r_top_ohm": 75000.0,
+        "r_bot_ohm": 8060.0,
+        "r_fb_ohm": 12000000.0,
+        "reset_V": [
+          25.25576287917234,
+          25.98530239416343
+        ],
+        "trip_V": [
+          25.415201207887662,
+          26.1443283966716
+        ],
+        "same_unit_hyst_V": [
+          0.1525748760174075,
+          0.1660917236270869
+        ],
+        "nominal_trip_V": 25.778527295285357,
+        "nominal_reset_V": 25.61884700152582
+      },
+      "clamp": {
+        "r_top_ohm": 84500.0,
+        "r_bot_ohm": 8660.0,
+        "r_fb_ohm": 15000000.0,
+        "reset_V": [
+          26.377909341821628,
+          27.140334479153687
+        ],
+        "trip_V": [
+          26.52805072976722,
+          27.290064962598017
+        ],
+        "same_unit_hyst_V": [
+          0.14370047565238764,
+          0.15636257458615432
+        ],
+        "nominal_trip_V": 26.90773510084681,
+        "nominal_reset_V": 26.757396102801028,
+        "overshoot_10us_V": 0.26583333333333337,
+        "overshoot_3us_V": 0.2075,
+        "peak_max_10us_V": 27.55589829593135,
+        "peak_max_3us_V": 27.497564962598016
+      },
+      "margins_V": {
+        "ovp_reset_min_above_25p20_V": 0.05576287917233813,
+        "clamp_off_min_above_ovp_trip_max_V": 0.23358094515002747,
+        "clamp_on_min_above_ovp_trip_max_V": 0.3837223330956192,
+        "fan_max_27p60_above_clamp_peak_10us_V": 0.04410170406865177,
+        "fan_max_27p60_above_clamp_peak_3us_V": 0.10243503740198534
+      },
+      "strict_non_overlapping_pass": true
+    },
+    "monte_carlo_50k_pass_count": 50000,
+    "monte_carlo_50k_trials": 50000,
+    "updated_mini_board_26_parts_fit_inside_13x9p6x18p7mm": true,
+    "uvp_and_17p5V_floor": {
+      "uvlo_divider_ohm": [
+        191000,
+        20000
+      ],
+      "uvlo_corners_V": [
+        15.223158758882235,
+        16.43096685731463
+      ],
+      "fan_steady_at_18V_corner_V": 17.62086151,
+      "fan_steady_margin_to_17p5V_V": 0.120861510000001,
+      "fan_start_at_18V_corner_V": 17.4796253514108,
+      "seti_ohm": 4530,
+      "ilim_corners_A": [
+        0.3180119336436955,
+        0.34450464914041073
+      ],
+      "clmode_ohm": 150000,
+      "blanking_ms": [
+        36.0,
+        44.0
+      ],
+      "cap_charge_25p2V_max_ms": 26.98319342232147,
+      "no_backdrive_bleed_to_1V_s": 1.8245491752515988
+    },
+    "clamp_pulse_each_130r_W": 5.91888111888112
+  },
+  "pillar_2_serviceable_fuse_cad": {
+    "selected_option": "Option (a) Rear-cover direct-access fuse pocket in 13 mm portal + clean removable 6P pin-1 breakout",
+    "pocket_center_mm": [
+      -112.5,
+      52.5,
+      366.5
+    ],
+    "pocket_world_bounds_mm": [
+      [
+        -116.0,
+        49.0,
+        357.5
+      ],
+      [
+        -109.0,
+        56.0,
+        375.5
+      ]
+    ],
+    "static_and_0p5mm_probe_overlaps": 0,
+    "plus_y_extraction_and_gripper_overlaps": 0,
+    "cover_15pose_hits": 0,
+    "continuous_cover_clear": true,
+    "breakout_total_length_mm": 98.04381356981736,
+    "rejected_sites_count": 5
+  },
+  "pillar_3_thermal_lockout_and_bms_hold": {
+    "thermal_and_interlock": {
+      "baseline_aux_W": 0.297526481020784,
+      "added_ovp_and_divider_W": 0.014618090889875882,
+      "updated_aux_W": 0.31214457191065986,
+      "updated_full_mix_W": 5.81214457191066,
+      "allowed_full_mix_W": 6.017,
+      "remaining_headroom_W": 0.2048554280893402,
+      "adiabatic_single_580J_fan_only_C": 54.92311390847472,
+      "adiabatic_single_580J_baseline_aux_C": 54.996260952076696,
+      "adiabatic_single_580J_updated_aux_C": 54.999854817496775,
+      "margin_to_55C_baseline_C": 0.0037390479233039287,
+      "margin_to_55C_updated_C": 0.00014518250322481663,
+      "double_580J_violation_C": 59.797,
+      "interlock_rule": "Any fan loss (Sservice open, 1 A fuse open, MAX17608 UVOV/FLAG latch, V_fan < 17.5 V, FG=0, or FLOW drop) triggers immediate drive inhibit (no-next-brake lockout) so at most one residual 580 J brake event occurs (~54.9963-54.9997 C adiabatic FE peak); Step-2 bench thermal verification required due to sub-0.01 C digital margin to 55 C."
+    },
+    "bms_physical_sample_hold": {
+      "source": {
+        "path": "artifacts/goose_v0_2/hardware_closeout_20261122/power_harness/charge_architecture/shared_corridor_003/bms_service_001/manufacturer_envelope_assessment.json",
+        "sha256": "7db3a1fd46dcce4f1af3e9a939f94921c1ea7352005fc775eb744c0ada5a5649"
+      },
+      "sku": "TinyBMS v2.1 high power with cooling plate",
+      "status": "OPEN_STEP2_PHYSICAL_SAMPLE_HOLD",
+      "upper_rail_overlap_mm3": 10.207124999999719,
+      "right_rail_overlap_mm3": 6.170007667499769,
+      "two_solid_nominal_upper_rail_overlap_mm3": 9.020249999999734,
+      "note": "Zero fabricated clearance; physical v2.1 unit contour & rail datum check deferred to Step-2 hardware procurement."
+    }
+  },
+  "assembly_finish_005_mass_delta_g": {
+    "mini_board_fr4_1p2mm_26parts_g": 4.2,
+    "umt_h_1a_fuse_and_pocket_carrier_g": 2.8,
+    "breakout_harness_awg22_98mm_and_microfit_tap_g": 2.6,
+    "subtotal_protection_and_fuse_assembly_g": 9.6,
+    "note": "Digital design mass estimate for assembly_finish_005 electrical overlay (excludes San Ace 9WPA0424H30011 fan body, which remains a separate mechanical/OEM item)."
+  },
+  "deferred_step2_hardware_and_bench_gates": [
+    "Bench verify loss-of-fan single-580J adiabatic temperature rise (54.9963-54.9999 C digital FE peak vs 55.0 C ceiling) and hard no-next-brake drive inhibit latency.",
+    "Acquire physical TinyBMS v2.1 high-power cooling-plate sample and verify actual contour/datum against 10.207 mm3 upper-rail and 6.170 mm3 right-rail digital overlap.",
+    "Bench verify San Ace 9WPA0424H30011 startup inrush, 17.5 V terminal voltage/7.353 CFM airflow, active backdrive regen (<0.25 A/100 ms), and 1 A UMT-H clearing coordination.",
+    "Complete Step-2 mini-board EDA copper routing, creepage/clearance, and retention bracket detail for the 26-part layout and rear-cover fuse pocket."
+  ]
+}

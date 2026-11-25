@@ -1,0 +1,2382 @@
+{
+  "schema": "goose_current_motion_candidate_v1",
+  "status": "SOURCE003_310MM_STANCE_AND_DECLARED_RANGES_CANDIDATE",
+  "updated_utc": "2026-11-20T17:00:03.389816+00:00",
+  "frame": "native CAD mm at source q0; runtime020 adds [0,0,15]mm world translation once",
+  "joint_units": "rad",
+  "input_refs": {
+    "historical_creation_contract": {
+      "path": "robots/goose_v0_2/cad/source/closeout_delivery_20261108/shared_contract.json",
+      "sha256": "abfd3f743294e77a0e0582f716ea56ecd70ef010224c6c295ef4bc27d450180e"
+    },
+    "current_owner_layout_overlay": {
+      "path": "robots/goose_v0_2/cad/source/closeout_delivery_20261108/unified_layout_decision.json",
+      "sha256": "5dbec61a498051976f391fe4b738264d3212df9c1de37a3cd6b6205df9402635"
+    },
+    "current_legs": {
+      "path": "robots/goose_v0_2/cad/source/closeout_delivery_20261108/legs/current_source_handoff.json",
+      "sha256": "68678f80806a9f2fd6ca2619e8943dc8f3167bc240f5df340699074e15dceb23"
+    },
+    "reference020_physical": {
+      "path": "artifacts/goose_v0_2/enclosure_closeout_20261105/runtime_001/package_020_rom007_baseline_rehearsal/physical_contract.json",
+      "sha256": "4e1ac7270f7b7aa787598ff9fb3fef02772b7750881dab9c6bee58a0585679bf"
+    },
+    "reference020_actuator": {
+      "path": "artifacts/goose_v0_2/enclosure_closeout_20261105/runtime_001/package_020_rom007_baseline_rehearsal/actuator_contract.json",
+      "sha256": "a38f973192d67f934d1fd47c532efb93d5026b2371bae1440cce37e4579edbf1"
+    },
+    "reference020_interface": {
+      "path": "artifacts/goose_v0_2/enclosure_closeout_20261105/runtime_001/package_020_rom007_baseline_rehearsal/runtime_interface.json",
+      "sha256": "a5f6a7e8ef74d8d89b6b6572c773309ebf3ce6fcb6cdfb45203d97f3005e6bb2"
+    },
+    "current_MCI": {
+      "path": "artifacts/goose_v0_2/closeout_delivery_20261108/current_mass_001/ledger.json",
+      "sha256": "fd4558afd5b50f4e7ffe7cc610c06e3086fbf27e62516c796a6d26d52f2fb9dc"
+    },
+    "current_assembly": {
+      "path": "artifacts/goose_v0_2/closeout_delivery_20261108/assembly_004/assembly_registry.json",
+      "sha256": "1b4c57796ef4d3ebc220c2cc9378c43319db290f8bff4e0521351616275aaa9b"
+    }
+  },
+  "authority_resolution": {
+    "owner_instruction": "Current shared_contract narrow candidate ranges plus selected K override. Prior root pi/2 and head1.08 are historical allowed maxima, not a requirement to expand current ranges. No arbitrary safe combined box is claimed.",
+    "K_source": "unified_layout_decision/decisions/knee_working_domain_rad + legs/current_source_handoff/owner_selected_K_task_domain_rad",
+    "hardware": "020 current hardware drive rows; actual AK45-10 bilateral HY, hardcap1.8Nm all modes; beak motor-input coordinate withKd1.5. Old50Hz AK40-HY and jaw1:1 fields not adopted."
+  },
+  "active_joint_count": 18,
+  "active_joints": [
+    {
+      "name": "neck_yaw",
+      "parent": "torso",
+      "pivot_world_at_zero_m": [
+        0.029449999999999997,
+        0.0,
+        0.37430499999999994
+      ],
+      "axis_parent": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "range_rad": [
+        -0.15,
+        0.15
+      ],
+      "q_neutral_rad": 0.0,
+      "kp_nm_rad": 12.0,
+      "kd_nm_s_rad": 0.175,
+      "torque_peak_limit_nm": 2.0,
+      "continuous_design_limit_nm": 1.04,
+      "speed_limit_rad_s": 38.746309394274114,
+      "armature_kg_m2": 0.0009734999999999999,
+      "frictionloss_nm": 0.03,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak40_10_v3",
+      "limits_status": "OWNER_SELECTED_DEVELOPMENT_CANDIDATE_NOT_CONTINUOUS_MOTION_ADMITTED",
+      "actuation_joint": "neck_yaw",
+      "reference_range_020_rad": [
+        -0.5,
+        0.5
+      ],
+      "reference_axis": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "owner": "neck_yaw",
+      "axis_origin_world_mm": [
+        29.449999999999996,
+        0.0,
+        374.30499999999995
+      ],
+      "axis_world": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "actual_sku": "AK40-10 V3.0 KV170",
+      "drive_current_hardware": {
+        "name": "neck_yaw",
+        "model": "AK40-10 V3.0 KV170",
+        "actuated_joint": "neck_yaw",
+        "selected_continuous_design_limit_nm": 1.04,
+        "selected_peak_design_limit_nm": 2.0,
+        "selected_speed_limit_rad_s": 38.746309394274114,
+        "kp_nm_rad": 12.0,
+        "kd_nm_s_rad": 0.175,
+        "manufacturer_rated_torque_nm": 1.3,
+        "manufacturer_peak_or_stall_nm": 4.1,
+        "reference_voltage_v": 24.0,
+        "simulation_voltage_window_v": [
+          20,
+          25.2
+        ],
+        "selected_torque_speed_curve_rad_s_nm": [
+          [
+            0.0,
+            4.1
+          ],
+          [
+            38.746309394274114,
+            1.3
+          ],
+          [
+            45.553093477052,
+            0
+          ]
+        ],
+        "gear_ratio": 10,
+        "xml_actuator_gear": 1.0,
+        "reflected_gear_inertia_already_in_joint_armature": true,
+        "damping_nm_s_rad": 0.01,
+        "logical_joint_frictionloss_nm": 0.03,
+        "actual_drive_joint_frictionloss_nm": 0.03,
+        "armature_at_logical_joint_kg_m2": 0.0009734999999999999,
+        "electrical_encoder_sign": 1.0,
+        "source_url": "https://www.cubemars.com/product/ak40-10-v3-0-kv170-robotic-actuator.html",
+        "source_basis": "Manufacturer rated workpoint and no-load endpoint; interpolated conservative simulation envelope, not a measured bench curve.",
+        "runtime_default_enforcement": "Continuous effort force/ctrl clamps inXML; 200Hz adapter additionally torque-speed/slew andaggregatepower. Peak disabled; no hidden duration or thermalmodel."
+      },
+      "mass_owner_binding": {
+        "owner": "neck_yaw",
+        "current_owner_mass_kg": 0.576339843967227,
+        "note": "mass owning body aggregate; purchased actuator stator/output portions may belong to different bodies, never multiply full OEM mass per source leaf"
+      }
+    },
+    {
+      "name": "neck_pitch",
+      "parent": "neck_yaw",
+      "pivot_world_at_zero_m": [
+        0.029449999999999997,
+        0.0,
+        0.4403049999999999
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.37,
+        1.0
+      ],
+      "q_neutral_rad": 0.0,
+      "kp_nm_rad": 100.0,
+      "kd_nm_s_rad": 0.875,
+      "torque_peak_limit_nm": 12.0,
+      "continuous_design_limit_nm": 6.4,
+      "speed_limit_rad_s": 4.1887902047863905,
+      "armature_kg_m2": 0.02357424,
+      "frictionloss_nm": 0.4,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_36_v3",
+      "limits_status": "OWNER_SELECTED_DEVELOPMENT_CANDIDATE_NOT_CONTINUOUS_MOTION_ADMITTED",
+      "actuation_joint": "neck_pitch",
+      "reference_range_020_rad": [
+        -0.52,
+        1.0
+      ],
+      "reference_axis": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "owner": "neck_pitch",
+      "axis_origin_world_mm": [
+        29.449999999999996,
+        0.0,
+        440.3049999999999
+      ],
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "actual_sku": "AK45-36 V3.0 KV80",
+      "drive_current_hardware": {
+        "name": "neck_pitch",
+        "model": "AK45-36 V3.0 KV80",
+        "actuated_joint": "neck_pitch",
+        "selected_continuous_design_limit_nm": 6.4,
+        "selected_peak_design_limit_nm": 12.0,
+        "selected_speed_limit_rad_s": 4.1887902047863905,
+        "kp_nm_rad": 100.0,
+        "kd_nm_s_rad": 0.875,
+        "manufacturer_rated_torque_nm": 8.0,
+        "manufacturer_peak_or_stall_nm": 24.0,
+        "reference_voltage_v": 24.0,
+        "simulation_voltage_window_v": [
+          20,
+          25.2
+        ],
+        "selected_torque_speed_curve_rad_s_nm": [
+          [
+            0.0,
+            12
+          ],
+          [
+            3.3510321638291125,
+            12
+          ],
+          [
+            3.7699111843077517,
+            10
+          ],
+          [
+            4.1887902047863905,
+            8
+          ],
+          [
+            4.607669225265029,
+            6
+          ],
+          [
+            5.445427266222309,
+            0
+          ]
+        ],
+        "gear_ratio": 36,
+        "xml_actuator_gear": 1.0,
+        "reflected_gear_inertia_already_in_joint_armature": true,
+        "damping_nm_s_rad": 0.01,
+        "logical_joint_frictionloss_nm": 0.4,
+        "actual_drive_joint_frictionloss_nm": 0.4,
+        "armature_at_logical_joint_kg_m2": 0.02357424,
+        "electrical_encoder_sign": 1.0,
+        "source_url": "https://www.cubemars.com/product/ak45-36-v3-0-kv80-robotic-actuator.html",
+        "source_basis": "Manufacturer24V loaded6Nm/44rpm,8Nm/40rpm,10Nm/36rpm workpoints; 12Nm/32rpm is conservative chart interpolation, not a continuous rating.",
+        "runtime_default_enforcement": "Continuous effort force/ctrl clamps inXML; 200Hz adapter additionally torque-speed/slew andaggregatepower. Peak disabled; no hidden duration or thermalmodel."
+      },
+      "mass_owner_binding": {
+        "owner": "neck_pitch",
+        "current_owner_mass_kg": 1.0188008972240568,
+        "note": "mass owning body aggregate; purchased actuator stator/output portions may belong to different bodies, never multiply full OEM mass per source leaf"
+      }
+    },
+    {
+      "name": "neck_mid_pitch",
+      "parent": "neck_pitch",
+      "pivot_world_at_zero_m": [
+        -0.04355000000000001,
+        0.0,
+        0.544305
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.45,
+        0.2
+      ],
+      "q_neutral_rad": 0.0,
+      "kp_nm_rad": 100.0,
+      "kd_nm_s_rad": 0.875,
+      "torque_peak_limit_nm": 12.0,
+      "continuous_design_limit_nm": 6.4,
+      "speed_limit_rad_s": 4.1887902047863905,
+      "armature_kg_m2": 0.02357424,
+      "frictionloss_nm": 0.4,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_36_v3",
+      "limits_status": "OWNER_SELECTED_DEVELOPMENT_CANDIDATE_NOT_CONTINUOUS_MOTION_ADMITTED",
+      "actuation_joint": "neck_mid_pitch",
+      "reference_range_020_rad": [
+        -1.4,
+        0.2
+      ],
+      "reference_axis": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "owner": "neck_mid_pitch",
+      "axis_origin_world_mm": [
+        -43.55000000000001,
+        0.0,
+        544.3050000000001
+      ],
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "actual_sku": "AK45-36 V3.0 KV80",
+      "drive_current_hardware": {
+        "name": "neck_mid_pitch",
+        "model": "AK45-36 V3.0 KV80",
+        "actuated_joint": "neck_mid_pitch",
+        "selected_continuous_design_limit_nm": 6.4,
+        "selected_peak_design_limit_nm": 12.0,
+        "selected_speed_limit_rad_s": 4.1887902047863905,
+        "kp_nm_rad": 100.0,
+        "kd_nm_s_rad": 0.875,
+        "manufacturer_rated_torque_nm": 8.0,
+        "manufacturer_peak_or_stall_nm": 24.0,
+        "reference_voltage_v": 24.0,
+        "simulation_voltage_window_v": [
+          20,
+          25.2
+        ],
+        "selected_torque_speed_curve_rad_s_nm": [
+          [
+            0.0,
+            12
+          ],
+          [
+            3.3510321638291125,
+            12
+          ],
+          [
+            3.7699111843077517,
+            10
+          ],
+          [
+            4.1887902047863905,
+            8
+          ],
+          [
+            4.607669225265029,
+            6
+          ],
+          [
+            5.445427266222309,
+            0
+          ]
+        ],
+        "gear_ratio": 36,
+        "xml_actuator_gear": 1.0,
+        "reflected_gear_inertia_already_in_joint_armature": true,
+        "damping_nm_s_rad": 0.01,
+        "logical_joint_frictionloss_nm": 0.4,
+        "actual_drive_joint_frictionloss_nm": 0.4,
+        "armature_at_logical_joint_kg_m2": 0.02357424,
+        "electrical_encoder_sign": 1.0,
+        "source_url": "https://www.cubemars.com/product/ak45-36-v3-0-kv80-robotic-actuator.html",
+        "source_basis": "Manufacturer24V loaded6Nm/44rpm,8Nm/40rpm,10Nm/36rpm workpoints; 12Nm/32rpm is conservative chart interpolation, not a continuous rating.",
+        "runtime_default_enforcement": "Continuous effort force/ctrl clamps inXML; 200Hz adapter additionally torque-speed/slew andaggregatepower. Peak disabled; no hidden duration or thermalmodel."
+      },
+      "mass_owner_binding": {
+        "owner": "neck_mid_pitch",
+        "current_owner_mass_kg": 0.8817601931894002,
+        "note": "mass owning body aggregate; purchased actuator stator/output portions may belong to different bodies, never multiply full OEM mass per source leaf"
+      }
+    },
+    {
+      "name": "head_pitch",
+      "parent": "neck_mid_pitch",
+      "pivot_world_at_zero_m": [
+        0.028449999999999996,
+        0.0,
+        0.665305
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        -1.6,
+        0.5
+      ],
+      "q_neutral_rad": 0.0,
+      "kp_nm_rad": 20.0,
+      "kd_nm_s_rad": 0.175,
+      "torque_peak_limit_nm": 4.0,
+      "continuous_design_limit_nm": 2.0,
+      "speed_limit_rad_s": 12.56637061435917,
+      "armature_kg_m2": 0.0015733,
+      "frictionloss_nm": 0.05,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_10_v3",
+      "limits_status": "OWNER_SELECTED_DEVELOPMENT_CANDIDATE_NOT_CONTINUOUS_MOTION_ADMITTED",
+      "actuation_joint": "head_pitch",
+      "reference_range_020_rad": [
+        -1.6,
+        0.5
+      ],
+      "reference_axis": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "owner": "head_pitch",
+      "axis_origin_world_mm": [
+        28.449999999999996,
+        0.0,
+        665.3050000000001
+      ],
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "actual_sku": "AK45-10 V3.0 KV75",
+      "drive_current_hardware": {
+        "name": "head_pitch",
+        "model": "AK45-10 V3.0 KV75",
+        "actuated_joint": "head_pitch",
+        "selected_continuous_design_limit_nm": 2.0,
+        "selected_peak_design_limit_nm": 4.0,
+        "selected_speed_limit_rad_s": 12.56637061435917,
+        "kp_nm_rad": 20.0,
+        "kd_nm_s_rad": 0.175,
+        "manufacturer_rated_torque_nm": 2.5,
+        "manufacturer_peak_or_stall_nm": 7.0,
+        "reference_voltage_v": 24.0,
+        "simulation_voltage_window_v": [
+          20,
+          25.2
+        ],
+        "selected_torque_speed_curve_rad_s_nm": [
+          [
+            0.0,
+            7
+          ],
+          [
+            12.56637061435917,
+            2.5
+          ],
+          [
+            18.84955592153876,
+            0
+          ]
+        ],
+        "gear_ratio": 10,
+        "xml_actuator_gear": 1.0,
+        "reflected_gear_inertia_already_in_joint_armature": true,
+        "damping_nm_s_rad": 0.01,
+        "logical_joint_frictionloss_nm": 0.05,
+        "actual_drive_joint_frictionloss_nm": 0.05,
+        "armature_at_logical_joint_kg_m2": 0.0015733,
+        "electrical_encoder_sign": 1.0,
+        "source_url": "https://www.cubemars.com/product/ak45-10-v3-0-kv75-robotic-actuator.html",
+        "source_basis": "Conservative chord from manufacturer rated2.5Nm/120rpm to no-load180rpm; chart is higher. Peak remains separately capped.",
+        "runtime_default_enforcement": "Continuous effort force/ctrl clamps inXML; 200Hz adapter additionally torque-speed/slew andaggregatepower. Peak disabled; no hidden duration or thermalmodel."
+      },
+      "mass_owner_binding": {
+        "owner": "head_pitch",
+        "current_owner_mass_kg": 0.15803988643645922,
+        "note": "mass owning body aggregate; purchased actuator stator/output portions may belong to different bodies, never multiply full OEM mass per source leaf"
+      }
+    },
+    {
+      "name": "head_roll",
+      "parent": "head_pitch",
+      "pivot_world_at_zero_m": [
+        0.06745,
+        0.0,
+        0.6458050000000001
+      ],
+      "axis_parent": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.6,
+        0.4
+      ],
+      "q_neutral_rad": 0.0,
+      "kp_nm_rad": 2.0,
+      "kd_nm_s_rad": 0.025,
+      "torque_peak_limit_nm": 0.18,
+      "continuous_design_limit_nm": 0.14,
+      "speed_limit_rad_s": 3.0,
+      "armature_kg_m2": 2e-05,
+      "frictionloss_nm": 0.036,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "xc330_m288_t",
+      "limits_status": "OWNER_SELECTED_DEVELOPMENT_CANDIDATE_NOT_CONTINUOUS_MOTION_ADMITTED",
+      "actuation_joint": "head_roll",
+      "reference_range_020_rad": [
+        -0.6,
+        0.6
+      ],
+      "reference_axis": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "owner": "head_roll",
+      "axis_origin_world_mm": [
+        67.45,
+        0.0,
+        645.8050000000001
+      ],
+      "axis_world": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "actual_sku": "XC330-M288-T",
+      "drive_current_hardware": {
+        "name": "head_roll",
+        "model": "XC330-M288-T",
+        "actuated_joint": "head_roll",
+        "selected_continuous_design_limit_nm": 0.14,
+        "selected_peak_design_limit_nm": 0.18,
+        "selected_speed_limit_rad_s": 3.0,
+        "kp_nm_rad": 2.0,
+        "kd_nm_s_rad": 0.025,
+        "manufacturer_rated_torque_nm": null,
+        "manufacturer_peak_or_stall_nm": 0.93,
+        "reference_voltage_v": 5.0,
+        "simulation_voltage_window_v": [
+          5,
+          5
+        ],
+        "selected_torque_speed_curve_rad_s_nm": [
+          [
+            0.0,
+            0.18
+          ],
+          [
+            3.9000000000000004,
+            0
+          ]
+        ],
+        "gear_ratio": 288.35,
+        "xml_actuator_gear": 1.0,
+        "reflected_gear_inertia_already_in_joint_armature": true,
+        "damping_nm_s_rad": 0.01,
+        "logical_joint_frictionloss_nm": 0.036,
+        "actual_drive_joint_frictionloss_nm": 0.036,
+        "armature_at_logical_joint_kg_m2": 2e-05,
+        "electrical_encoder_sign": 1.0,
+        "source_url": "https://emanual.robotis.com/docs/en/dxl/x/xc330-m288/",
+        "source_basis": "ManufacturerM28823g/288.35/5V; selected .14/.18Nm and3rad/s deliberatelyretained design derating, not measured continuous manufacturer rating",
+        "runtime_default_enforcement": "Continuous effort force/ctrl clamps inXML; 200Hz adapter additionally torque-speed/slew andaggregatepower. Peak disabled; no hidden duration or thermalmodel."
+      },
+      "mass_owner_binding": {
+        "owner": "head_roll",
+        "current_owner_mass_kg": 0.6618069122459453,
+        "note": "mass owning body aggregate; purchased actuator stator/output portions may belong to different bodies, never multiply full OEM mass per source leaf"
+      }
+    },
+    {
+      "name": "beak_input_rotor",
+      "parent": "head_roll",
+      "pivot_world_at_zero_m": [
+        0.11545,
+        0.0,
+        0.661305
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        -1.4982586645399691,
+        0.0
+      ],
+      "q_neutral_rad": 0.0,
+      "kp_nm_rad": 12.0,
+      "kd_nm_s_rad": 1.5,
+      "torque_peak_limit_nm": 4.5,
+      "continuous_design_limit_nm": 4.4,
+      "speed_limit_rad_s": 1.0,
+      "armature_kg_m2": 0.02357424,
+      "frictionloss_nm": 0.08,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "AK45_36_original_motor_variable_gain029_input",
+      "limits_status": "OWNER_SELECTED_DEVELOPMENT_CANDIDATE_NOT_CONTINUOUS_MOTION_ADMITTED",
+      "actuation_joint": "beak_input_rotor",
+      "reference_range_020_rad": [
+        -1.4982586645399691,
+        0.0
+      ],
+      "reference_axis": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "owner": "beak_input_rotor",
+      "axis_origin_world_mm": [
+        115.45,
+        0.0,
+        661.3050000000001
+      ],
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "actual_sku": "AK45-36 V3.0 KV80",
+      "drive_current_hardware": {
+        "name": "beak_input_rotor",
+        "model": "AK45-36 V3.0 KV80",
+        "actuated_joint": "beak_input_rotor",
+        "selected_continuous_design_limit_nm": 4.4,
+        "selected_peak_design_limit_nm": 4.5,
+        "selected_speed_limit_rad_s": 1.0,
+        "kp_nm_rad": 12.0,
+        "kd_nm_s_rad": 1.5,
+        "manufacturer_rated_torque_nm": 8.0,
+        "manufacturer_peak_or_stall_nm": 24.0,
+        "reference_voltage_v": 24.0,
+        "simulation_voltage_window_v": [
+          20,
+          25.2
+        ],
+        "selected_torque_speed_curve_rad_s_nm": [
+          [
+            0.0,
+            12
+          ],
+          [
+            3.3510321638291125,
+            12
+          ],
+          [
+            3.7699111843077517,
+            10
+          ],
+          [
+            4.1887902047863905,
+            8
+          ],
+          [
+            4.607669225265029,
+            6
+          ],
+          [
+            5.445427266222309,
+            0
+          ]
+        ],
+        "gear_ratio": 36,
+        "xml_actuator_gear": 1.0,
+        "reflected_gear_inertia_already_in_joint_armature": true,
+        "damping_nm_s_rad": 0.01,
+        "logical_joint_frictionloss_nm": 0.08,
+        "actual_drive_joint_frictionloss_nm": 0.08,
+        "armature_at_logical_joint_kg_m2": 0.02357424,
+        "electrical_encoder_sign": 1.0,
+        "source_url": "https://www.cubemars.com/product/ak45-36-v3-0-kv80-robotic-actuator.html",
+        "source_basis": "Manufacturer24V loaded6Nm/44rpm,8Nm/40rpm,10Nm/36rpm workpoints; 12Nm/32rpm is conservative chart interpolation, not a continuous rating.",
+        "runtime_default_enforcement": "Continuous effort force/ctrl clamps inXML; 200Hz adapter additionally torque-speed/slew andaggregatepower. Peak disabled; no hidden duration or thermalmodel.",
+        "coordinate_semantics": "Physical motor input, positive torque closes; not jaw-output angle",
+        "reference_slew_speed_factor": 0.6
+      },
+      "mass_owner_binding": {
+        "owner": "beak_input_rotor",
+        "current_owner_mass_kg": 0.053244132504090776,
+        "note": "mass owning body aggregate; purchased actuator stator/output portions may belong to different bodies, never multiply full OEM mass per source leaf"
+      }
+    },
+    {
+      "name": "right_hip_yaw",
+      "parent": "torso",
+      "pivot_world_at_zero_m": [
+        -0.06,
+        -0.06,
+        0.351675
+      ],
+      "axis_parent": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "range_rad": [
+        -0.57,
+        0.06
+      ],
+      "q_neutral_rad": 0.0,
+      "kp_nm_rad": 12.0,
+      "kd_nm_s_rad": 0.175,
+      "torque_peak_limit_nm": 1.8,
+      "continuous_design_limit_nm": 1.8,
+      "speed_limit_rad_s": 12.56637061435917,
+      "armature_kg_m2": 0.0015733,
+      "frictionloss_nm": 0.05,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_10_v3",
+      "limits_status": "OWNER_SELECTED_DEVELOPMENT_CANDIDATE_NOT_CONTINUOUS_MOTION_ADMITTED",
+      "actual_motor_electrical_angle_sign": -1.0,
+      "actuation_joint": "right_hip_yaw",
+      "manufacturer_rated_torque_nm": 2.5,
+      "motor_selected_continuous_limit_nm": 2.0,
+      "chain_hard_limit_all_modes_nm": 1.8,
+      "source_upgrade_packet": {
+        "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/robots/goose_v0_2/evidence/hip_yaw_oldham_steel_009/c01/integration_handoff.json",
+        "sha256": "276f17da73e447c513ace550f2ce1d6d201c116ab7a8ed9a7df58ca963ec8614",
+        "bytes": 67895
+      },
+      "armature_basis": "157.33 g cm2 x internal 10 squared, external 1:1; lumped rotor cross terms omitted",
+      "frictionloss_basis": "0.05 Nm engineering proxy; not measured",
+      "reference_range_020_rad": [
+        -0.57,
+        0.14
+      ],
+      "reference_axis": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "owner": "right_hip_yaw",
+      "axis_origin_world_mm": [
+        -60.0,
+        -60.0,
+        351.675
+      ],
+      "axis_world": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "actual_sku": "AK45-10 V3.0 KV75",
+      "drive_current_hardware": {
+        "name": "right_hip_yaw",
+        "model": "AK45-10 V3.0 KV75",
+        "actuated_joint": "right_hip_yaw",
+        "selected_continuous_design_limit_nm": 1.8,
+        "selected_peak_design_limit_nm": 1.8,
+        "selected_speed_limit_rad_s": 12.56637061435917,
+        "kp_nm_rad": 12.0,
+        "kd_nm_s_rad": 0.175,
+        "manufacturer_rated_torque_nm": 2.5,
+        "manufacturer_peak_or_stall_nm": 7.0,
+        "reference_voltage_v": 24.0,
+        "simulation_voltage_window_v": [
+          20,
+          25.2
+        ],
+        "selected_torque_speed_curve_rad_s_nm": [
+          [
+            0.0,
+            7.0
+          ],
+          [
+            12.56637061435917,
+            2.5
+          ],
+          [
+            18.84955592153876,
+            0.0
+          ]
+        ],
+        "gear_ratio": 10,
+        "xml_actuator_gear": 1.0,
+        "reflected_gear_inertia_already_in_joint_armature": true,
+        "damping_nm_s_rad": 0.01,
+        "logical_joint_frictionloss_nm": 0.05,
+        "actual_drive_joint_frictionloss_nm": 0.05,
+        "armature_at_logical_joint_kg_m2": 0.0015733,
+        "electrical_encoder_sign": -1.0,
+        "source_url": "https://www.cubemars.com/product/ak45-10-v3-0-kv75-robotic-actuator.html",
+        "source_basis": "Manufacturer24V2.5Nm/120rpm andno-load180rpm; project chord interpolation,22.2/24 speed scaling engineering assumption. Motor80% cap2Nm separated fromOwner1.8Nm chain cap; no measured22.2V curve.",
+        "runtime_default_enforcement": "XMLctrl/forcerange ±1.8Nm allmodes; referenceadapter continuous/torque-speed/slew/aggregate350W; peakdisabled andcannot bypasschaincap.",
+        "armature_at_actual_drive_joint_kg_m2": 0.0015733,
+        "manufacturer_rotor_inertia_g_cm2": 157.33,
+        "manufacturer_rotor_inertia_kg_m2": 1.5733e-05,
+        "actual_drive_armature_source": "internal 10:1 reflected once at direct hip yaw; rotor cross inertia omitted",
+        "manufacturer_backdrive_nm": 0.1,
+        "motor_selected_continuous_design_limit_nm": 2.0,
+        "drive_chain_continuous_hard_limit_nm": 1.8,
+        "all_actual_execution_modes_chain_hard_limit_nm": 1.8,
+        "source_upgrade_packet": {
+          "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/robots/goose_v0_2/evidence/hip_yaw_oldham_steel_009/c01/integration_handoff.json",
+          "sha256": "276f17da73e447c513ace550f2ce1d6d201c116ab7a8ed9a7df58ca963ec8614",
+          "bytes": 67895
+        }
+      },
+      "mass_owner_binding": {
+        "owner": "right_hip_yaw",
+        "current_owner_mass_kg": 0.6982895961324385,
+        "note": "mass owning body aggregate; purchased actuator stator/output portions may belong to different bodies, never multiply full OEM mass per source leaf"
+      }
+    },
+    {
+      "name": "right_hip_roll",
+      "parent": "right_hip_yaw",
+      "pivot_world_at_zero_m": [
+        0.01275607470908649,
+        -0.058,
+        0.29
+      ],
+      "axis_parent": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.2,
+        0.2
+      ],
+      "q_neutral_rad": 0.0,
+      "kp_nm_rad": 100.0,
+      "kd_nm_s_rad": 0.875,
+      "torque_peak_limit_nm": 12.0,
+      "continuous_design_limit_nm": 6.4,
+      "speed_limit_rad_s": 4.1887902047863905,
+      "armature_kg_m2": 0.02357424,
+      "frictionloss_nm": 0.4,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_36_v3",
+      "limits_status": "OWNER_SELECTED_DEVELOPMENT_CANDIDATE_NOT_CONTINUOUS_MOTION_ADMITTED",
+      "actual_motor_electrical_angle_sign": -1.0,
+      "actuation_joint": "right_hip_roll",
+      "reference_range_020_rad": [
+        -0.2,
+        0.2
+      ],
+      "reference_axis": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "owner": "right_hip_roll",
+      "axis_origin_world_mm": [
+        12.75607470908649,
+        -58.0,
+        290.0
+      ],
+      "axis_world": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "actual_sku": "AK45-36 V3.0 KV80",
+      "drive_current_hardware": {
+        "name": "right_hip_roll",
+        "model": "AK45-36 V3.0 KV80",
+        "actuated_joint": "right_hip_roll",
+        "selected_continuous_design_limit_nm": 6.4,
+        "selected_peak_design_limit_nm": 12.0,
+        "selected_speed_limit_rad_s": 4.1887902047863905,
+        "kp_nm_rad": 100.0,
+        "kd_nm_s_rad": 0.875,
+        "manufacturer_rated_torque_nm": 8.0,
+        "manufacturer_peak_or_stall_nm": 24.0,
+        "reference_voltage_v": 24.0,
+        "simulation_voltage_window_v": [
+          20,
+          25.2
+        ],
+        "selected_torque_speed_curve_rad_s_nm": [
+          [
+            0.0,
+            12
+          ],
+          [
+            3.3510321638291125,
+            12
+          ],
+          [
+            3.7699111843077517,
+            10
+          ],
+          [
+            4.1887902047863905,
+            8
+          ],
+          [
+            4.607669225265029,
+            6
+          ],
+          [
+            5.445427266222309,
+            0
+          ]
+        ],
+        "gear_ratio": 36,
+        "xml_actuator_gear": 1.0,
+        "reflected_gear_inertia_already_in_joint_armature": true,
+        "damping_nm_s_rad": 0.01,
+        "logical_joint_frictionloss_nm": 0.4,
+        "actual_drive_joint_frictionloss_nm": 0.4,
+        "armature_at_logical_joint_kg_m2": 0.02357424,
+        "electrical_encoder_sign": -1.0,
+        "source_url": "https://www.cubemars.com/product/ak45-36-v3-0-kv80-robotic-actuator.html",
+        "source_basis": "Manufacturer24V loaded6Nm/44rpm,8Nm/40rpm,10Nm/36rpm workpoints; 12Nm/32rpm is conservative chart interpolation, not a continuous rating.",
+        "runtime_default_enforcement": "Continuous effort force/ctrl clamps inXML; 200Hz adapter additionally torque-speed/slew andaggregatepower. Peak disabled; no hidden duration or thermalmodel."
+      },
+      "mass_owner_binding": {
+        "owner": "right_hip_roll",
+        "current_owner_mass_kg": 0.7031126287511588,
+        "note": "mass owning body aggregate; purchased actuator stator/output portions may belong to different bodies, never multiply full OEM mass per source leaf"
+      }
+    },
+    {
+      "name": "right_hip_pitch",
+      "parent": "right_hip_roll",
+      "pivot_world_at_zero_m": [
+        0.01275607470908649,
+        -0.155,
+        0.3206454814052301
+      ],
+      "axis_parent": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.8,
+        0.8
+      ],
+      "q_neutral_rad": 0.0,
+      "kp_nm_rad": 100.0,
+      "kd_nm_s_rad": 0.875,
+      "torque_peak_limit_nm": 12.0,
+      "continuous_design_limit_nm": 6.4,
+      "speed_limit_rad_s": 4.1887902047863905,
+      "armature_kg_m2": 0.02357424,
+      "frictionloss_nm": 0.4,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_36_v3",
+      "limits_status": "OWNER_SELECTED_DEVELOPMENT_CANDIDATE_NOT_CONTINUOUS_MOTION_ADMITTED",
+      "actuation_joint": "right_hip_pitch",
+      "reference_range_020_rad": [
+        -0.8,
+        0.8
+      ],
+      "reference_axis": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "owner": "right_hip_pitch",
+      "axis_origin_world_mm": [
+        12.75607470908649,
+        -155.0,
+        320.6454814052301
+      ],
+      "axis_world": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "actual_sku": "AK45-36 V3.0 KV80",
+      "drive_current_hardware": {
+        "name": "right_hip_pitch",
+        "model": "AK45-36 V3.0 KV80",
+        "actuated_joint": "right_hip_pitch",
+        "selected_continuous_design_limit_nm": 6.4,
+        "selected_peak_design_limit_nm": 12.0,
+        "selected_speed_limit_rad_s": 4.1887902047863905,
+        "kp_nm_rad": 100.0,
+        "kd_nm_s_rad": 0.875,
+        "manufacturer_rated_torque_nm": 8.0,
+        "manufacturer_peak_or_stall_nm": 24.0,
+        "reference_voltage_v": 24.0,
+        "simulation_voltage_window_v": [
+          20,
+          25.2
+        ],
+        "selected_torque_speed_curve_rad_s_nm": [
+          [
+            0.0,
+            12
+          ],
+          [
+            3.3510321638291125,
+            12
+          ],
+          [
+            3.7699111843077517,
+            10
+          ],
+          [
+            4.1887902047863905,
+            8
+          ],
+          [
+            4.607669225265029,
+            6
+          ],
+          [
+            5.445427266222309,
+            0
+          ]
+        ],
+        "gear_ratio": 36,
+        "xml_actuator_gear": 1.0,
+        "reflected_gear_inertia_already_in_joint_armature": true,
+        "damping_nm_s_rad": 0.01,
+        "logical_joint_frictionloss_nm": 0.4,
+        "actual_drive_joint_frictionloss_nm": 0.4,
+        "armature_at_logical_joint_kg_m2": 0.02357424,
+        "electrical_encoder_sign": 1.0,
+        "source_url": "https://www.cubemars.com/product/ak45-36-v3-0-kv80-robotic-actuator.html",
+        "source_basis": "Manufacturer24V loaded6Nm/44rpm,8Nm/40rpm,10Nm/36rpm workpoints; 12Nm/32rpm is conservative chart interpolation, not a continuous rating.",
+        "runtime_default_enforcement": "Continuous effort force/ctrl clamps inXML; 200Hz adapter additionally torque-speed/slew andaggregatepower. Peak disabled; no hidden duration or thermalmodel."
+      },
+      "mass_owner_binding": {
+        "owner": "right_hip_pitch",
+        "current_owner_mass_kg": 0.953848695213636,
+        "note": "mass owning body aggregate; purchased actuator stator/output portions may belong to different bodies, never multiply full OEM mass per source leaf"
+      }
+    },
+    {
+      "name": "right_knee_pitch",
+      "parent": "right_hip_pitch",
+      "pivot_world_at_zero_m": [
+        -0.017174829893573926,
+        -0.155,
+        0.2163247618285114
+      ],
+      "axis_parent": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "range_rad": [
+        0.0,
+        0.8
+      ],
+      "q_neutral_rad": 0.0,
+      "kp_nm_rad": 100.0,
+      "kd_nm_s_rad": 0.875,
+      "torque_peak_limit_nm": 12.0,
+      "continuous_design_limit_nm": 6.4,
+      "speed_limit_rad_s": 4.1887902047863905,
+      "armature_kg_m2": 0.02357424,
+      "frictionloss_nm": 0.4,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_36_v3",
+      "limits_status": "OWNER_SELECTED_DEVELOPMENT_CANDIDATE_NOT_CONTINUOUS_MOTION_ADMITTED",
+      "actuation_joint": "right_knee_pitch",
+      "reference_range_020_rad": [
+        -0.2,
+        0.3
+      ],
+      "reference_axis": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "owner": "right_knee_pitch",
+      "axis_origin_world_mm": [
+        -17.174829893573925,
+        -155.0,
+        216.3247618285114
+      ],
+      "axis_world": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "actual_sku": "AK45-36 V3.0 KV80",
+      "drive_current_hardware": {
+        "name": "right_knee_pitch",
+        "model": "AK45-36 V3.0 KV80",
+        "actuated_joint": "right_knee_pitch",
+        "selected_continuous_design_limit_nm": 6.4,
+        "selected_peak_design_limit_nm": 12.0,
+        "selected_speed_limit_rad_s": 4.1887902047863905,
+        "kp_nm_rad": 100.0,
+        "kd_nm_s_rad": 0.875,
+        "manufacturer_rated_torque_nm": 8.0,
+        "manufacturer_peak_or_stall_nm": 24.0,
+        "reference_voltage_v": 24.0,
+        "simulation_voltage_window_v": [
+          20,
+          25.2
+        ],
+        "selected_torque_speed_curve_rad_s_nm": [
+          [
+            0.0,
+            12
+          ],
+          [
+            3.3510321638291125,
+            12
+          ],
+          [
+            3.7699111843077517,
+            10
+          ],
+          [
+            4.1887902047863905,
+            8
+          ],
+          [
+            4.607669225265029,
+            6
+          ],
+          [
+            5.445427266222309,
+            0
+          ]
+        ],
+        "gear_ratio": 36,
+        "xml_actuator_gear": 1.0,
+        "reflected_gear_inertia_already_in_joint_armature": true,
+        "damping_nm_s_rad": 0.01,
+        "logical_joint_frictionloss_nm": 0.4,
+        "actual_drive_joint_frictionloss_nm": 0.4,
+        "armature_at_logical_joint_kg_m2": 0.02357424,
+        "electrical_encoder_sign": 1.0,
+        "source_url": "https://www.cubemars.com/product/ak45-36-v3-0-kv80-robotic-actuator.html",
+        "source_basis": "Manufacturer24V loaded6Nm/44rpm,8Nm/40rpm,10Nm/36rpm workpoints; 12Nm/32rpm is conservative chart interpolation, not a continuous rating.",
+        "runtime_default_enforcement": "Continuous effort force/ctrl clamps inXML; 200Hz adapter additionally torque-speed/slew andaggregatepower. Peak disabled; no hidden duration or thermalmodel."
+      },
+      "mass_owner_binding": {
+        "owner": "right_knee_pitch",
+        "current_owner_mass_kg": 1.0855212369911982,
+        "note": "mass owning body aggregate; purchased actuator stator/output portions may belong to different bodies, never multiply full OEM mass per source leaf"
+      }
+    },
+    {
+      "name": "right_ankle_pitch",
+      "parent": "right_knee_pitch",
+      "pivot_world_at_zero_m": [
+        0.009576627833366786,
+        -0.155,
+        0.08100664866719004
+      ],
+      "axis_parent": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.6,
+        0.6
+      ],
+      "q_neutral_rad": 0.0,
+      "kp_nm_rad": 100.0,
+      "kd_nm_s_rad": 0.875,
+      "torque_peak_limit_nm": 12.0,
+      "continuous_design_limit_nm": 6.4,
+      "speed_limit_rad_s": 4.1887902047863905,
+      "armature_kg_m2": 0.02357424,
+      "frictionloss_nm": 0.4,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_36_v3",
+      "limits_status": "OWNER_SELECTED_DEVELOPMENT_CANDIDATE_NOT_CONTINUOUS_MOTION_ADMITTED",
+      "actuation_joint": "right_ankle_pitch",
+      "reference_range_020_rad": [
+        -0.6,
+        0.6
+      ],
+      "reference_axis": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "owner": "right_ankle_pitch",
+      "axis_origin_world_mm": [
+        9.576627833366786,
+        -155.0,
+        81.00664866719003
+      ],
+      "axis_world": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "actual_sku": "AK45-36 V3.0 KV80",
+      "drive_current_hardware": {
+        "name": "right_ankle_pitch",
+        "model": "AK45-36 V3.0 KV80",
+        "actuated_joint": "right_ankle_pitch",
+        "selected_continuous_design_limit_nm": 6.4,
+        "selected_peak_design_limit_nm": 12.0,
+        "selected_speed_limit_rad_s": 4.1887902047863905,
+        "kp_nm_rad": 100.0,
+        "kd_nm_s_rad": 0.875,
+        "manufacturer_rated_torque_nm": 8.0,
+        "manufacturer_peak_or_stall_nm": 24.0,
+        "reference_voltage_v": 24.0,
+        "simulation_voltage_window_v": [
+          20,
+          25.2
+        ],
+        "selected_torque_speed_curve_rad_s_nm": [
+          [
+            0.0,
+            12
+          ],
+          [
+            3.3510321638291125,
+            12
+          ],
+          [
+            3.7699111843077517,
+            10
+          ],
+          [
+            4.1887902047863905,
+            8
+          ],
+          [
+            4.607669225265029,
+            6
+          ],
+          [
+            5.445427266222309,
+            0
+          ]
+        ],
+        "gear_ratio": 36,
+        "xml_actuator_gear": 1.0,
+        "reflected_gear_inertia_already_in_joint_armature": true,
+        "damping_nm_s_rad": 0.01,
+        "logical_joint_frictionloss_nm": 0.4,
+        "actual_drive_joint_frictionloss_nm": 0.4,
+        "armature_at_logical_joint_kg_m2": 0.02357424,
+        "electrical_encoder_sign": 1.0,
+        "source_url": "https://www.cubemars.com/product/ak45-36-v3-0-kv80-robotic-actuator.html",
+        "source_basis": "Manufacturer24V loaded6Nm/44rpm,8Nm/40rpm,10Nm/36rpm workpoints; 12Nm/32rpm is conservative chart interpolation, not a continuous rating.",
+        "runtime_default_enforcement": "Continuous effort force/ctrl clamps inXML; 200Hz adapter additionally torque-speed/slew andaggregatepower. Peak disabled; no hidden duration or thermalmodel."
+      },
+      "mass_owner_binding": {
+        "owner": "right_ankle_pitch",
+        "current_owner_mass_kg": 0.5468299154619204,
+        "note": "mass owning body aggregate; purchased actuator stator/output portions may belong to different bodies, never multiply full OEM mass per source leaf"
+      }
+    },
+    {
+      "name": "right_ankle_roll",
+      "parent": "right_ankle_pitch",
+      "pivot_world_at_zero_m": [
+        0.07014999999999999,
+        -0.155,
+        0.030654999999999988
+      ],
+      "axis_parent": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.25,
+        0.25
+      ],
+      "q_neutral_rad": 0.0,
+      "kp_nm_rad": 20.0,
+      "kd_nm_s_rad": 0.175,
+      "torque_peak_limit_nm": 4.0,
+      "continuous_design_limit_nm": 2.0,
+      "speed_limit_rad_s": 12.56637061435917,
+      "armature_kg_m2": 0.0015733,
+      "frictionloss_nm": 0.05,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_10_v3",
+      "limits_status": "OWNER_SELECTED_DEVELOPMENT_CANDIDATE_NOT_CONTINUOUS_MOTION_ADMITTED",
+      "actuation_joint": "right_ankle_roll",
+      "reference_range_020_rad": [
+        -0.25,
+        0.25
+      ],
+      "reference_axis": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "owner": "right_ankle_roll",
+      "axis_origin_world_mm": [
+        70.14999999999999,
+        -155.0,
+        30.654999999999987
+      ],
+      "axis_world": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "actual_sku": "AK45-10 V3.0 KV75",
+      "drive_current_hardware": {
+        "name": "right_ankle_roll",
+        "model": "AK45-10 V3.0 KV75",
+        "actuated_joint": "right_ankle_roll",
+        "selected_continuous_design_limit_nm": 2.0,
+        "selected_peak_design_limit_nm": 4.0,
+        "selected_speed_limit_rad_s": 12.56637061435917,
+        "kp_nm_rad": 20.0,
+        "kd_nm_s_rad": 0.175,
+        "manufacturer_rated_torque_nm": 2.5,
+        "manufacturer_peak_or_stall_nm": 7.0,
+        "reference_voltage_v": 24.0,
+        "simulation_voltage_window_v": [
+          20,
+          25.2
+        ],
+        "selected_torque_speed_curve_rad_s_nm": [
+          [
+            0.0,
+            7
+          ],
+          [
+            12.56637061435917,
+            2.5
+          ],
+          [
+            18.84955592153876,
+            0
+          ]
+        ],
+        "gear_ratio": 10,
+        "xml_actuator_gear": 1.0,
+        "reflected_gear_inertia_already_in_joint_armature": true,
+        "damping_nm_s_rad": 0.01,
+        "logical_joint_frictionloss_nm": 0.05,
+        "actual_drive_joint_frictionloss_nm": 0.05,
+        "armature_at_logical_joint_kg_m2": 0.0015733,
+        "electrical_encoder_sign": 1.0,
+        "source_url": "https://www.cubemars.com/product/ak45-10-v3-0-kv75-robotic-actuator.html",
+        "source_basis": "Conservative chord from manufacturer rated2.5Nm/120rpm to no-load180rpm; chart is higher. Peak remains separately capped.",
+        "runtime_default_enforcement": "Continuous effort force/ctrl clamps inXML; 200Hz adapter additionally torque-speed/slew andaggregatepower. Peak disabled; no hidden duration or thermalmodel."
+      },
+      "mass_owner_binding": {
+        "owner": "right_ankle_roll",
+        "current_owner_mass_kg": 0.4316020763089152,
+        "note": "mass owning body aggregate; purchased actuator stator/output portions may belong to different bodies, never multiply full OEM mass per source leaf"
+      }
+    },
+    {
+      "name": "left_hip_yaw",
+      "parent": "torso",
+      "pivot_world_at_zero_m": [
+        -0.06,
+        0.06,
+        0.351675
+      ],
+      "axis_parent": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "range_rad": [
+        -0.06,
+        0.57
+      ],
+      "q_neutral_rad": 0.0,
+      "kp_nm_rad": 12.0,
+      "kd_nm_s_rad": 0.175,
+      "torque_peak_limit_nm": 1.8,
+      "continuous_design_limit_nm": 1.8,
+      "speed_limit_rad_s": 12.56637061435917,
+      "armature_kg_m2": 0.0015733,
+      "frictionloss_nm": 0.05,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_10_v3",
+      "limits_status": "OWNER_SELECTED_DEVELOPMENT_CANDIDATE_NOT_CONTINUOUS_MOTION_ADMITTED",
+      "actual_motor_electrical_angle_sign": -1.0,
+      "actuation_joint": "left_hip_yaw",
+      "manufacturer_rated_torque_nm": 2.5,
+      "motor_selected_continuous_limit_nm": 2.0,
+      "chain_hard_limit_all_modes_nm": 1.8,
+      "source_upgrade_packet": {
+        "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/robots/goose_v0_2/evidence/hip_yaw_oldham_steel_009/c01/integration_handoff.json",
+        "sha256": "276f17da73e447c513ace550f2ce1d6d201c116ab7a8ed9a7df58ca963ec8614",
+        "bytes": 67895
+      },
+      "armature_basis": "157.33 g cm2 x internal 10 squared, external 1:1; lumped rotor cross terms omitted",
+      "frictionloss_basis": "0.05 Nm engineering proxy; not measured",
+      "reference_range_020_rad": [
+        -0.28,
+        0.57
+      ],
+      "reference_axis": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "owner": "left_hip_yaw",
+      "axis_origin_world_mm": [
+        -60.0,
+        60.0,
+        351.675
+      ],
+      "axis_world": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "actual_sku": "AK45-10 V3.0 KV75",
+      "drive_current_hardware": {
+        "name": "left_hip_yaw",
+        "model": "AK45-10 V3.0 KV75",
+        "actuated_joint": "left_hip_yaw",
+        "selected_continuous_design_limit_nm": 1.8,
+        "selected_peak_design_limit_nm": 1.8,
+        "selected_speed_limit_rad_s": 12.56637061435917,
+        "kp_nm_rad": 12.0,
+        "kd_nm_s_rad": 0.175,
+        "manufacturer_rated_torque_nm": 2.5,
+        "manufacturer_peak_or_stall_nm": 7.0,
+        "reference_voltage_v": 24.0,
+        "simulation_voltage_window_v": [
+          20,
+          25.2
+        ],
+        "selected_torque_speed_curve_rad_s_nm": [
+          [
+            0.0,
+            7.0
+          ],
+          [
+            12.56637061435917,
+            2.5
+          ],
+          [
+            18.84955592153876,
+            0.0
+          ]
+        ],
+        "gear_ratio": 10,
+        "xml_actuator_gear": 1.0,
+        "reflected_gear_inertia_already_in_joint_armature": true,
+        "damping_nm_s_rad": 0.01,
+        "logical_joint_frictionloss_nm": 0.05,
+        "actual_drive_joint_frictionloss_nm": 0.05,
+        "armature_at_logical_joint_kg_m2": 0.0015733,
+        "electrical_encoder_sign": -1.0,
+        "source_url": "https://www.cubemars.com/product/ak45-10-v3-0-kv75-robotic-actuator.html",
+        "source_basis": "Manufacturer24V2.5Nm/120rpm andno-load180rpm; project chord interpolation,22.2/24 speed scaling engineering assumption. Motor80% cap2Nm separated fromOwner1.8Nm chain cap; no measured22.2V curve.",
+        "runtime_default_enforcement": "XMLctrl/forcerange ±1.8Nm allmodes; referenceadapter continuous/torque-speed/slew/aggregate350W; peakdisabled andcannot bypasschaincap.",
+        "armature_at_actual_drive_joint_kg_m2": 0.0015733,
+        "manufacturer_rotor_inertia_g_cm2": 157.33,
+        "manufacturer_rotor_inertia_kg_m2": 1.5733e-05,
+        "actual_drive_armature_source": "internal 10:1 reflected once at direct hip yaw; rotor cross inertia omitted",
+        "manufacturer_backdrive_nm": 0.1,
+        "motor_selected_continuous_design_limit_nm": 2.0,
+        "drive_chain_continuous_hard_limit_nm": 1.8,
+        "all_actual_execution_modes_chain_hard_limit_nm": 1.8,
+        "source_upgrade_packet": {
+          "path": "/home/ethan/.codex/worktrees/goose-delivery-navigation/Sai_Rotbots/robots/goose_v0_2/evidence/hip_yaw_oldham_steel_009/c01/integration_handoff.json",
+          "sha256": "276f17da73e447c513ace550f2ce1d6d201c116ab7a8ed9a7df58ca963ec8614",
+          "bytes": 67895
+        }
+      },
+      "mass_owner_binding": {
+        "owner": "left_hip_yaw",
+        "current_owner_mass_kg": 0.6982951329762974,
+        "note": "mass owning body aggregate; purchased actuator stator/output portions may belong to different bodies, never multiply full OEM mass per source leaf"
+      }
+    },
+    {
+      "name": "left_hip_roll",
+      "parent": "left_hip_yaw",
+      "pivot_world_at_zero_m": [
+        0.01275607470908649,
+        0.058,
+        0.29
+      ],
+      "axis_parent": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.2,
+        0.2
+      ],
+      "q_neutral_rad": 0.0,
+      "kp_nm_rad": 100.0,
+      "kd_nm_s_rad": 0.875,
+      "torque_peak_limit_nm": 12.0,
+      "continuous_design_limit_nm": 6.4,
+      "speed_limit_rad_s": 4.1887902047863905,
+      "armature_kg_m2": 0.02357424,
+      "frictionloss_nm": 0.4,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_36_v3",
+      "limits_status": "OWNER_SELECTED_DEVELOPMENT_CANDIDATE_NOT_CONTINUOUS_MOTION_ADMITTED",
+      "actual_motor_electrical_angle_sign": -1.0,
+      "actuation_joint": "left_hip_roll",
+      "reference_range_020_rad": [
+        -0.2,
+        0.2
+      ],
+      "reference_axis": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "owner": "left_hip_roll",
+      "axis_origin_world_mm": [
+        12.75607470908649,
+        58.0,
+        290.0
+      ],
+      "axis_world": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "actual_sku": "AK45-36 V3.0 KV80",
+      "drive_current_hardware": {
+        "name": "left_hip_roll",
+        "model": "AK45-36 V3.0 KV80",
+        "actuated_joint": "left_hip_roll",
+        "selected_continuous_design_limit_nm": 6.4,
+        "selected_peak_design_limit_nm": 12.0,
+        "selected_speed_limit_rad_s": 4.1887902047863905,
+        "kp_nm_rad": 100.0,
+        "kd_nm_s_rad": 0.875,
+        "manufacturer_rated_torque_nm": 8.0,
+        "manufacturer_peak_or_stall_nm": 24.0,
+        "reference_voltage_v": 24.0,
+        "simulation_voltage_window_v": [
+          20,
+          25.2
+        ],
+        "selected_torque_speed_curve_rad_s_nm": [
+          [
+            0.0,
+            12
+          ],
+          [
+            3.3510321638291125,
+            12
+          ],
+          [
+            3.7699111843077517,
+            10
+          ],
+          [
+            4.1887902047863905,
+            8
+          ],
+          [
+            4.607669225265029,
+            6
+          ],
+          [
+            5.445427266222309,
+            0
+          ]
+        ],
+        "gear_ratio": 36,
+        "xml_actuator_gear": 1.0,
+        "reflected_gear_inertia_already_in_joint_armature": true,
+        "damping_nm_s_rad": 0.01,
+        "logical_joint_frictionloss_nm": 0.4,
+        "actual_drive_joint_frictionloss_nm": 0.4,
+        "armature_at_logical_joint_kg_m2": 0.02357424,
+        "electrical_encoder_sign": -1.0,
+        "source_url": "https://www.cubemars.com/product/ak45-36-v3-0-kv80-robotic-actuator.html",
+        "source_basis": "Manufacturer24V loaded6Nm/44rpm,8Nm/40rpm,10Nm/36rpm workpoints; 12Nm/32rpm is conservative chart interpolation, not a continuous rating.",
+        "runtime_default_enforcement": "Continuous effort force/ctrl clamps inXML; 200Hz adapter additionally torque-speed/slew andaggregatepower. Peak disabled; no hidden duration or thermalmodel."
+      },
+      "mass_owner_binding": {
+        "owner": "left_hip_roll",
+        "current_owner_mass_kg": 0.7031206284886596,
+        "note": "mass owning body aggregate; purchased actuator stator/output portions may belong to different bodies, never multiply full OEM mass per source leaf"
+      }
+    },
+    {
+      "name": "left_hip_pitch",
+      "parent": "left_hip_roll",
+      "pivot_world_at_zero_m": [
+        0.01275607470908649,
+        0.155,
+        0.3206454814052301
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.8,
+        0.8
+      ],
+      "q_neutral_rad": 0.0,
+      "kp_nm_rad": 100.0,
+      "kd_nm_s_rad": 0.875,
+      "torque_peak_limit_nm": 12.0,
+      "continuous_design_limit_nm": 6.4,
+      "speed_limit_rad_s": 4.1887902047863905,
+      "armature_kg_m2": 0.02357424,
+      "frictionloss_nm": 0.4,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_36_v3",
+      "limits_status": "OWNER_SELECTED_DEVELOPMENT_CANDIDATE_NOT_CONTINUOUS_MOTION_ADMITTED",
+      "actuation_joint": "left_hip_pitch",
+      "reference_range_020_rad": [
+        -0.8,
+        0.8
+      ],
+      "reference_axis": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "owner": "left_hip_pitch",
+      "axis_origin_world_mm": [
+        12.75607470908649,
+        155.0,
+        320.6454814052301
+      ],
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "actual_sku": "AK45-36 V3.0 KV80",
+      "drive_current_hardware": {
+        "name": "left_hip_pitch",
+        "model": "AK45-36 V3.0 KV80",
+        "actuated_joint": "left_hip_pitch",
+        "selected_continuous_design_limit_nm": 6.4,
+        "selected_peak_design_limit_nm": 12.0,
+        "selected_speed_limit_rad_s": 4.1887902047863905,
+        "kp_nm_rad": 100.0,
+        "kd_nm_s_rad": 0.875,
+        "manufacturer_rated_torque_nm": 8.0,
+        "manufacturer_peak_or_stall_nm": 24.0,
+        "reference_voltage_v": 24.0,
+        "simulation_voltage_window_v": [
+          20,
+          25.2
+        ],
+        "selected_torque_speed_curve_rad_s_nm": [
+          [
+            0.0,
+            12
+          ],
+          [
+            3.3510321638291125,
+            12
+          ],
+          [
+            3.7699111843077517,
+            10
+          ],
+          [
+            4.1887902047863905,
+            8
+          ],
+          [
+            4.607669225265029,
+            6
+          ],
+          [
+            5.445427266222309,
+            0
+          ]
+        ],
+        "gear_ratio": 36,
+        "xml_actuator_gear": 1.0,
+        "reflected_gear_inertia_already_in_joint_armature": true,
+        "damping_nm_s_rad": 0.01,
+        "logical_joint_frictionloss_nm": 0.4,
+        "actual_drive_joint_frictionloss_nm": 0.4,
+        "armature_at_logical_joint_kg_m2": 0.02357424,
+        "electrical_encoder_sign": 1.0,
+        "source_url": "https://www.cubemars.com/product/ak45-36-v3-0-kv80-robotic-actuator.html",
+        "source_basis": "Manufacturer24V loaded6Nm/44rpm,8Nm/40rpm,10Nm/36rpm workpoints; 12Nm/32rpm is conservative chart interpolation, not a continuous rating.",
+        "runtime_default_enforcement": "Continuous effort force/ctrl clamps inXML; 200Hz adapter additionally torque-speed/slew andaggregatepower. Peak disabled; no hidden duration or thermalmodel."
+      },
+      "mass_owner_binding": {
+        "owner": "left_hip_pitch",
+        "current_owner_mass_kg": 0.9121063859363454,
+        "note": "mass owning body aggregate; purchased actuator stator/output portions may belong to different bodies, never multiply full OEM mass per source leaf"
+      }
+    },
+    {
+      "name": "left_knee_pitch",
+      "parent": "left_hip_pitch",
+      "pivot_world_at_zero_m": [
+        -0.017174829893573926,
+        0.155,
+        0.2163247618285114
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.8,
+        0.0
+      ],
+      "q_neutral_rad": 0.0,
+      "kp_nm_rad": 100.0,
+      "kd_nm_s_rad": 0.875,
+      "torque_peak_limit_nm": 12.0,
+      "continuous_design_limit_nm": 6.4,
+      "speed_limit_rad_s": 4.1887902047863905,
+      "armature_kg_m2": 0.02357424,
+      "frictionloss_nm": 0.4,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_36_v3",
+      "limits_status": "OWNER_SELECTED_DEVELOPMENT_CANDIDATE_NOT_CONTINUOUS_MOTION_ADMITTED",
+      "actuation_joint": "left_knee_pitch",
+      "reference_range_020_rad": [
+        -0.3,
+        0.2
+      ],
+      "reference_axis": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "owner": "left_knee_pitch",
+      "axis_origin_world_mm": [
+        -17.174829893573925,
+        155.0,
+        216.3247618285114
+      ],
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "actual_sku": "AK45-36 V3.0 KV80",
+      "drive_current_hardware": {
+        "name": "left_knee_pitch",
+        "model": "AK45-36 V3.0 KV80",
+        "actuated_joint": "left_knee_pitch",
+        "selected_continuous_design_limit_nm": 6.4,
+        "selected_peak_design_limit_nm": 12.0,
+        "selected_speed_limit_rad_s": 4.1887902047863905,
+        "kp_nm_rad": 100.0,
+        "kd_nm_s_rad": 0.875,
+        "manufacturer_rated_torque_nm": 8.0,
+        "manufacturer_peak_or_stall_nm": 24.0,
+        "reference_voltage_v": 24.0,
+        "simulation_voltage_window_v": [
+          20,
+          25.2
+        ],
+        "selected_torque_speed_curve_rad_s_nm": [
+          [
+            0.0,
+            12
+          ],
+          [
+            3.3510321638291125,
+            12
+          ],
+          [
+            3.7699111843077517,
+            10
+          ],
+          [
+            4.1887902047863905,
+            8
+          ],
+          [
+            4.607669225265029,
+            6
+          ],
+          [
+            5.445427266222309,
+            0
+          ]
+        ],
+        "gear_ratio": 36,
+        "xml_actuator_gear": 1.0,
+        "reflected_gear_inertia_already_in_joint_armature": true,
+        "damping_nm_s_rad": 0.01,
+        "logical_joint_frictionloss_nm": 0.4,
+        "actual_drive_joint_frictionloss_nm": 0.4,
+        "armature_at_logical_joint_kg_m2": 0.02357424,
+        "electrical_encoder_sign": 1.0,
+        "source_url": "https://www.cubemars.com/product/ak45-36-v3-0-kv80-robotic-actuator.html",
+        "source_basis": "Manufacturer24V loaded6Nm/44rpm,8Nm/40rpm,10Nm/36rpm workpoints; 12Nm/32rpm is conservative chart interpolation, not a continuous rating.",
+        "runtime_default_enforcement": "Continuous effort force/ctrl clamps inXML; 200Hz adapter additionally torque-speed/slew andaggregatepower. Peak disabled; no hidden duration or thermalmodel."
+      },
+      "mass_owner_binding": {
+        "owner": "left_knee_pitch",
+        "current_owner_mass_kg": 1.0364931317250272,
+        "note": "mass owning body aggregate; purchased actuator stator/output portions may belong to different bodies, never multiply full OEM mass per source leaf"
+      }
+    },
+    {
+      "name": "left_ankle_pitch",
+      "parent": "left_knee_pitch",
+      "pivot_world_at_zero_m": [
+        0.009576627833366786,
+        0.155,
+        0.08100664866719004
+      ],
+      "axis_parent": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.6,
+        0.6
+      ],
+      "q_neutral_rad": 0.0,
+      "kp_nm_rad": 100.0,
+      "kd_nm_s_rad": 0.875,
+      "torque_peak_limit_nm": 12.0,
+      "continuous_design_limit_nm": 6.4,
+      "speed_limit_rad_s": 4.1887902047863905,
+      "armature_kg_m2": 0.02357424,
+      "frictionloss_nm": 0.4,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_36_v3",
+      "limits_status": "OWNER_SELECTED_DEVELOPMENT_CANDIDATE_NOT_CONTINUOUS_MOTION_ADMITTED",
+      "actuation_joint": "left_ankle_pitch",
+      "reference_range_020_rad": [
+        -0.6,
+        0.6
+      ],
+      "reference_axis": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "owner": "left_ankle_pitch",
+      "axis_origin_world_mm": [
+        9.576627833366786,
+        155.0,
+        81.00664866719003
+      ],
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "actual_sku": "AK45-36 V3.0 KV80",
+      "drive_current_hardware": {
+        "name": "left_ankle_pitch",
+        "model": "AK45-36 V3.0 KV80",
+        "actuated_joint": "left_ankle_pitch",
+        "selected_continuous_design_limit_nm": 6.4,
+        "selected_peak_design_limit_nm": 12.0,
+        "selected_speed_limit_rad_s": 4.1887902047863905,
+        "kp_nm_rad": 100.0,
+        "kd_nm_s_rad": 0.875,
+        "manufacturer_rated_torque_nm": 8.0,
+        "manufacturer_peak_or_stall_nm": 24.0,
+        "reference_voltage_v": 24.0,
+        "simulation_voltage_window_v": [
+          20,
+          25.2
+        ],
+        "selected_torque_speed_curve_rad_s_nm": [
+          [
+            0.0,
+            12
+          ],
+          [
+            3.3510321638291125,
+            12
+          ],
+          [
+            3.7699111843077517,
+            10
+          ],
+          [
+            4.1887902047863905,
+            8
+          ],
+          [
+            4.607669225265029,
+            6
+          ],
+          [
+            5.445427266222309,
+            0
+          ]
+        ],
+        "gear_ratio": 36,
+        "xml_actuator_gear": 1.0,
+        "reflected_gear_inertia_already_in_joint_armature": true,
+        "damping_nm_s_rad": 0.01,
+        "logical_joint_frictionloss_nm": 0.4,
+        "actual_drive_joint_frictionloss_nm": 0.4,
+        "armature_at_logical_joint_kg_m2": 0.02357424,
+        "electrical_encoder_sign": 1.0,
+        "source_url": "https://www.cubemars.com/product/ak45-36-v3-0-kv80-robotic-actuator.html",
+        "source_basis": "Manufacturer24V loaded6Nm/44rpm,8Nm/40rpm,10Nm/36rpm workpoints; 12Nm/32rpm is conservative chart interpolation, not a continuous rating.",
+        "runtime_default_enforcement": "Continuous effort force/ctrl clamps inXML; 200Hz adapter additionally torque-speed/slew andaggregatepower. Peak disabled; no hidden duration or thermalmodel."
+      },
+      "mass_owner_binding": {
+        "owner": "left_ankle_pitch",
+        "current_owner_mass_kg": 0.5456198896897745,
+        "note": "mass owning body aggregate; purchased actuator stator/output portions may belong to different bodies, never multiply full OEM mass per source leaf"
+      }
+    },
+    {
+      "name": "left_ankle_roll",
+      "parent": "left_ankle_pitch",
+      "pivot_world_at_zero_m": [
+        0.07014999999999999,
+        0.155,
+        0.030654999999999988
+      ],
+      "axis_parent": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "range_rad": [
+        -0.25,
+        0.25
+      ],
+      "q_neutral_rad": 0.0,
+      "kp_nm_rad": 20.0,
+      "kd_nm_s_rad": 0.175,
+      "torque_peak_limit_nm": 4.0,
+      "continuous_design_limit_nm": 2.0,
+      "speed_limit_rad_s": 12.56637061435917,
+      "armature_kg_m2": 0.0015733,
+      "frictionloss_nm": 0.05,
+      "damping_nm_s_rad": 0.01,
+      "actuator": "ak45_10_v3",
+      "limits_status": "OWNER_SELECTED_DEVELOPMENT_CANDIDATE_NOT_CONTINUOUS_MOTION_ADMITTED",
+      "actuation_joint": "left_ankle_roll",
+      "reference_range_020_rad": [
+        -0.25,
+        0.25
+      ],
+      "reference_axis": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "owner": "left_ankle_roll",
+      "axis_origin_world_mm": [
+        70.14999999999999,
+        155.0,
+        30.654999999999987
+      ],
+      "axis_world": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "actual_sku": "AK45-10 V3.0 KV75",
+      "drive_current_hardware": {
+        "name": "left_ankle_roll",
+        "model": "AK45-10 V3.0 KV75",
+        "actuated_joint": "left_ankle_roll",
+        "selected_continuous_design_limit_nm": 2.0,
+        "selected_peak_design_limit_nm": 4.0,
+        "selected_speed_limit_rad_s": 12.56637061435917,
+        "kp_nm_rad": 20.0,
+        "kd_nm_s_rad": 0.175,
+        "manufacturer_rated_torque_nm": 2.5,
+        "manufacturer_peak_or_stall_nm": 7.0,
+        "reference_voltage_v": 24.0,
+        "simulation_voltage_window_v": [
+          20,
+          25.2
+        ],
+        "selected_torque_speed_curve_rad_s_nm": [
+          [
+            0.0,
+            7
+          ],
+          [
+            12.56637061435917,
+            2.5
+          ],
+          [
+            18.84955592153876,
+            0
+          ]
+        ],
+        "gear_ratio": 10,
+        "xml_actuator_gear": 1.0,
+        "reflected_gear_inertia_already_in_joint_armature": true,
+        "damping_nm_s_rad": 0.01,
+        "logical_joint_frictionloss_nm": 0.05,
+        "actual_drive_joint_frictionloss_nm": 0.05,
+        "armature_at_logical_joint_kg_m2": 0.0015733,
+        "electrical_encoder_sign": 1.0,
+        "source_url": "https://www.cubemars.com/product/ak45-10-v3-0-kv75-robotic-actuator.html",
+        "source_basis": "Conservative chord from manufacturer rated2.5Nm/120rpm to no-load180rpm; chart is higher. Peak remains separately capped.",
+        "runtime_default_enforcement": "Continuous effort force/ctrl clamps inXML; 200Hz adapter additionally torque-speed/slew andaggregatepower. Peak disabled; no hidden duration or thermalmodel."
+      },
+      "mass_owner_binding": {
+        "owner": "left_ankle_roll",
+        "current_owner_mass_kg": 0.4316114209413799,
+        "note": "mass owning body aggregate; purchased actuator stator/output portions may belong to different bodies, never multiply full OEM mass per source leaf"
+      }
+    }
+  ],
+  "public_joint_order": [
+    "neck_yaw",
+    "neck_pitch",
+    "neck_mid_pitch",
+    "head_pitch",
+    "head_roll",
+    "beak_input_rotor",
+    "right_hip_yaw",
+    "right_hip_roll",
+    "right_hip_pitch",
+    "right_knee_pitch",
+    "right_ankle_pitch",
+    "right_ankle_roll",
+    "left_hip_yaw",
+    "left_hip_roll",
+    "left_hip_pitch",
+    "left_knee_pitch",
+    "left_ankle_pitch",
+    "left_ankle_roll"
+  ],
+  "candidate_joint_axes": {
+    "neck_yaw": {
+      "owner": "neck_yaw",
+      "origin_mm": [
+        29.449999999999996,
+        0.0,
+        374.30499999999995
+      ],
+      "axis_world": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "neck_pitch": {
+      "owner": "neck_pitch",
+      "origin_mm": [
+        29.449999999999996,
+        0.0,
+        440.3049999999999
+      ],
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    "neck_mid_pitch": {
+      "owner": "neck_mid_pitch",
+      "origin_mm": [
+        -43.55000000000001,
+        0.0,
+        544.3050000000001
+      ],
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    "head_pitch": {
+      "owner": "head_pitch",
+      "origin_mm": [
+        28.449999999999996,
+        0.0,
+        665.3050000000001
+      ],
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    "head_roll": {
+      "owner": "head_roll",
+      "origin_mm": [
+        67.45,
+        0.0,
+        645.8050000000001
+      ],
+      "axis_world": [
+        1.0,
+        0.0,
+        0.0
+      ]
+    },
+    "beak_hinge": {
+      "owner": "beak_hinge",
+      "origin_mm": [
+        146.45,
+        0.0,
+        636.3050000000002
+      ],
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    "beak_input_rotor": {
+      "owner": "beak_input_rotor",
+      "origin_mm": [
+        115.45,
+        0.0,
+        661.3050000000001
+      ],
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    "beak_coupler_link": {
+      "owner": "beak_coupler_link",
+      "origin_mm": [
+        108.58781341562555,
+        0.0,
+        657.7464475862746
+      ],
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    "right_hip_yaw": {
+      "owner": "right_hip_yaw",
+      "origin_mm": [
+        -60.0,
+        -60.0,
+        351.675
+      ],
+      "axis_world": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "right_hip_roll": {
+      "owner": "right_hip_roll",
+      "origin_mm": [
+        12.75607470908649,
+        -58.0,
+        290.0
+      ],
+      "axis_world": [
+        1.0,
+        0.0,
+        0.0
+      ]
+    },
+    "right_hip_pitch": {
+      "owner": "right_hip_pitch",
+      "origin_mm": [
+        12.75607470908649,
+        -155.0,
+        320.6454814052301
+      ],
+      "axis_world": [
+        0.0,
+        -1.0,
+        0.0
+      ]
+    },
+    "right_knee_pitch": {
+      "owner": "right_knee_pitch",
+      "origin_mm": [
+        -17.174829893573925,
+        -155.0,
+        216.3247618285114
+      ],
+      "axis_world": [
+        0.0,
+        -1.0,
+        0.0
+      ]
+    },
+    "right_ankle_pitch": {
+      "owner": "right_ankle_pitch",
+      "origin_mm": [
+        9.576627833366786,
+        -155.0,
+        81.00664866719003
+      ],
+      "axis_world": [
+        0.0,
+        -1.0,
+        0.0
+      ]
+    },
+    "right_ankle_roll": {
+      "owner": "right_ankle_roll",
+      "origin_mm": [
+        70.14999999999999,
+        -155.0,
+        30.654999999999987
+      ],
+      "axis_world": [
+        1.0,
+        0.0,
+        0.0
+      ]
+    },
+    "left_hip_yaw": {
+      "owner": "left_hip_yaw",
+      "origin_mm": [
+        -60.0,
+        60.0,
+        351.675
+      ],
+      "axis_world": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "left_hip_roll": {
+      "owner": "left_hip_roll",
+      "origin_mm": [
+        12.75607470908649,
+        58.0,
+        290.0
+      ],
+      "axis_world": [
+        1.0,
+        0.0,
+        0.0
+      ]
+    },
+    "left_hip_pitch": {
+      "owner": "left_hip_pitch",
+      "origin_mm": [
+        12.75607470908649,
+        155.0,
+        320.6454814052301
+      ],
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    "left_knee_pitch": {
+      "owner": "left_knee_pitch",
+      "origin_mm": [
+        -17.174829893573925,
+        155.0,
+        216.3247618285114
+      ],
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    "left_ankle_pitch": {
+      "owner": "left_ankle_pitch",
+      "origin_mm": [
+        9.576627833366786,
+        155.0,
+        81.00664866719003
+      ],
+      "axis_world": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    "left_ankle_roll": {
+      "owner": "left_ankle_roll",
+      "origin_mm": [
+        70.14999999999999,
+        155.0,
+        30.654999999999987
+      ],
+      "axis_world": [
+        1.0,
+        0.0,
+        0.0
+      ]
+    },
+    "left_yaw_input_rotor": {
+      "owner": "left_yaw_input_rotor",
+      "origin_mm": [
+        -35.78514488828251,
+        70.0,
+        370.0
+      ],
+      "axis_world": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "right_yaw_input_rotor": {
+      "owner": "right_yaw_input_rotor",
+      "origin_mm": [
+        -35.78514488828251,
+        -70.0,
+        370.0
+      ],
+      "axis_world": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    }
+  },
+  "free_root": {
+    "type": "free",
+    "source_to_runtime_translation_m": [
+      0,
+      0,
+      0.015
+    ],
+    "qualified_support_paths": false,
+    "note": "Free-root dynamic support cannot be inherited from finite grounded poses"
+  },
+  "reference_passive_linkage": [
+    {
+      "name": "beak_hinge",
+      "nonlinear_beak_linkage": true,
+      "range_rad": [
+        0.0,
+        0.35
+      ]
+    },
+    {
+      "name": "beak_coupler_link",
+      "nonlinear_beak_linkage": true,
+      "limited": false
+    }
+  ],
+  "beak_transmission": {
+    "geometry": {
+      "A": [
+        129.0,
+        601.0
+      ],
+      "O": [
+        160.0,
+        576.0
+      ],
+      "rin": 7.73,
+      "rout": 29.87,
+      "L": 15,
+      "phase": 2.4531
+    },
+    "input_rom_rad": [
+      -1.4982586645399691,
+      0.0
+    ],
+    "output_rom_rad": [
+      0.0,
+      0.35
+    ]
+  },
+  "drive_timing": {
+    "physics_dt_s": 0.0005,
+    "drive_dt_s": 0.005,
+    "policy_dt_s": 0.02
+  },
+  "drive_power_supply": {
+    "main": "6S battery designbus20..25.2V, reference curves24V; no performancecredit above24V",
+    "nominal_bus_v": 22.2,
+    "torque_speed_curve_reference_v": 24,
+    "head_roll": "Regulated5V branch for XC330-M288; old factstable24V inheritedfield is explicitly rejected",
+    "mechanical_positive_budget_w": 350.0,
+    "electrical_power_or_current_hard_cap_implemented": false,
+    "efficiency_and_voltage_sag": "Not measured/simulated;350W is mechanical designbudget, not electrical wattmeter/currentguarantee",
+    "high_voltage_derating": "For bus below24V adapter speed-axis of curves scaleslinearly byV/24; no additionaltorquecredit",
+    "brake": "Negative mechanical power is not freeenergy claim; regenerative voltage/brake/thermal hardware pending"
+  },
+  "peak_output_enabled": false,
+  "qualification": {
+    "continuous_native_motion_admitted": false,
+    "arbitrary_joint_combinations_safe": false,
+    "necessary_four_task_paths_complete": false,
+    "current_MCI_task_dynamics_validated": false,
+    "whole_approved": false,
+    "training_ready": false,
+    "manufacturing_released": false
+  },
+  "known_open": [
+    "Right K local selected-port distance0.8mm atq0/+0.8 versus1.3mm target; leftK -0.8 distance query failed.",
+    "Current whole native clearance and coupled domains remain open; finite independent source samples do not certify box product.",
+    "Four orientation getup and moving support paths not established; tow/grasp references have old partial MCI.",
+    "Current source and exact contact manifest must be combined with this motion and current owner MCI before successor runtime admission."
+  ]
+}
