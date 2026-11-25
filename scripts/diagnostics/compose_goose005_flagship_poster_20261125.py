@@ -11,6 +11,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import re
 from pathlib import Path
 
 import numpy as np
@@ -28,6 +29,7 @@ COLORWAY_SQUAD = ART / "showcase_renders/colorways/goose_v02_four_colorways_squa
 FIG_A2 = ART / "hip_b2_a2_a3/fig_a2_b2r2_converged_fea_and_closed_loop.png"
 FIG_A3 = ART / "front_shell_relief/fig_a3_body016_yoke_relief_envelope.png"
 FIG_B1 = ART / "environment_board/eda_fab_release_003/fig_b1_env_pcb_fab_6layers_drc0.png"
+PCB_FILE = ART / "environment_board/eda_fab_release_003/environment_main.kicad_pcb"
 FIG_B2 = ART / "sanyo24_fan_b1/fig_b2_sanyo24_voltage_window_and_fuse_access.png"
 FIG_C1 = ART / "sailab_005_43_delivery/fig_c1_sailab005_43_mci_and_gpu_bench.png"
 
@@ -144,6 +146,290 @@ def project_3d_to_render_px(
     u = img_w * 0.5 + f_px * (xc / zc)
     v = img_h * 0.5 - f_px * (yc / zc)
     return u, v
+
+
+def parse_kicad_pcb(pcb_path: Path) -> dict:
+    """Parse real Edge.Cuts, copper segments, vias, and footprints/pads directly from environment_main.kicad_pcb."""
+    txt = pcb_path.read_text()
+
+    # Exact Edge.Cuts polygon (ordered around the 35.60 x 34.50 mm outline with bottom M2 reliefs)
+    edge_segs = []
+    for m in re.finditer(
+        r"\(gr_line\s+\(start\s+([0-9.\-]+)\s+([0-9.\-]+)\)\s+\(end\s+([0-9.\-]+)\s+([0-9.\-]+)\).*?\(layer\s+\"Edge\.Cuts\"\)",
+        txt,
+        re.S,
+    ):
+        edge_segs.append(((float(m.group(1)), float(m.group(2))), (float(m.group(3)), float(m.group(4)))))
+
+    # Chain edge segments into a closed polygon
+    edge_poly: list[tuple[float, float]] = []
+    if edge_segs:
+        rem = list(edge_segs)
+        a, b = rem.pop(0)
+        edge_poly = [a, b]
+        while rem:
+            last = edge_poly[-1]
+            found = False
+            for i, (p0, p1) in enumerate(rem):
+                if math.hypot(p0[0] - last[0], p0[1] - last[1]) < 1e-3:
+                    edge_poly.append(p1)
+                    rem.pop(i)
+                    found = True
+                    break
+                if math.hypot(p1[0] - last[0], p1[1] - last[1]) < 1e-3:
+                    edge_poly.append(p0)
+                    rem.pop(i)
+                    found = True
+                    break
+            if not found:
+                break
+
+    segs_by_layer: dict[str, list[tuple[float, float, float, float, float]]] = {
+        "F.Cu": [],
+        "In1.Cu": [],
+        "In4.Cu": [],
+        "B.Cu": [],
+    }
+    for m in re.finditer(
+        r"\(segment\s+\(start\s+([0-9.\-]+)\s+([0-9.\-]+)\)\s+\(end\s+([0-9.\-]+)\s+([0-9.\-]+)\)\s+\(width\s+([0-9.\-]+)\)\s+\(layer\s+\"([^\"]+)\"\)",
+        txt,
+    ):
+        lyr = m.group(6)
+        if lyr in segs_by_layer:
+            segs_by_layer[lyr].append((float(m.group(1)), float(m.group(2)), float(m.group(3)), float(m.group(4)), float(m.group(5))))
+
+    vias = []
+    for m in re.finditer(
+        r"\(via\s+\(at\s+([0-9.\-]+)\s+([0-9.\-]+)\)\s+\(size\s+([0-9.\-]+)\)\s+\(drill\s+([0-9.\-]+)\)",
+        txt,
+    ):
+        vias.append((float(m.group(1)), float(m.group(2)), float(m.group(3)), float(m.group(4))))
+
+    pads_by_layer: dict[str, list[tuple[float, float, float, float]]] = {"F.Cu": [], "B.Cu": []}
+    ic_bodies: dict[str, list[tuple[float, float, float, float, str, tuple[float, float] | None]]] = {"F.Cu": [], "B.Cu": []}
+    fp_starts = [m.start() for m in re.finditer(r"\n  \(footprint\s+\"", txt)]
+    for idx, st in enumerate(fp_starts):
+        en = fp_starts[idx + 1] if idx + 1 < len(fp_starts) else txt.find("\n  (segment", st)
+        if en == -1:
+            en = len(txt)
+        blk = txt[st:en]
+        m_hdr = re.search(r"\(footprint\s+\"([^\"]+)\"\s+\(layer\s+\"(F\.Cu|B\.Cu)\"\)", blk)
+        m_at = re.search(r"\n    \(at\s+([0-9.\-]+)\s+([0-9.\-]+)(?:\s+([0-9.\-]+))?\)", blk)
+        if not m_hdr or not m_at:
+            continue
+        fp_name = m_hdr.group(1).split(":")[-1]
+        lyr = m_hdr.group(2)
+        fx, fy = float(m_at.group(1)), float(m_at.group(2))
+        rot_deg = float(m_at.group(3)) if m_at.group(3) else 0.0
+        rad = math.radians(-rot_deg)
+        ca, sa = math.cos(rad), math.sin(rad)
+
+        fp_pads = []
+        pin1_xy = None
+        for pm in re.finditer(
+            r"\(pad\s+\"([^\"]+)\"\s+smd\s+\w+\s+\(at\s+([0-9.\-]+)\s+([0-9.\-]+)(?:\s+[0-9.\-]+)?\)\s+\(size\s+([0-9.\-]+)\s+([0-9.\-]+)\)",
+            blk,
+        ):
+            pnum = pm.group(1)
+            lx, ly = float(pm.group(2)), float(pm.group(3))
+            sx, sy = float(pm.group(4)), float(pm.group(5))
+            wx = fx + lx * ca - ly * sa
+            wy = fy + lx * sa + ly * ca
+            pads_by_layer[lyr].append((wx, wy, sx, sy))
+            fp_pads.append((wx, wy, sx, sy))
+            if pnum == "1":
+                pin1_xy = (wx, wy)
+
+        # Build authentic silkscreen courtyard outline for multi-pin ICs / connectors
+        if len(fp_pads) >= 4:
+            x0 = min(p[0] - p[2] * 0.5 for p in fp_pads)
+            x1 = max(p[0] + p[2] * 0.5 for p in fp_pads)
+            y0 = min(p[1] - p[3] * 0.5 for p in fp_pads)
+            y1 = max(p[1] + p[3] * 0.5 for p in fp_pads)
+            # For dual-row SOIC/TSSOP/headers, inset body cleanly between opposing pin rows
+            bw, bh = x1 - x0, y1 - y0
+            if bw > 2.2 and bh > 2.2:
+                ic_bodies[lyr].append((x0, y0, x1, y1, fp_name, pin1_xy))
+
+    return {
+        "edge_poly": edge_poly,
+        "segs_by_layer": segs_by_layer,
+        "vias": vias,
+        "pads_by_layer": pads_by_layer,
+        "ic_bodies": ic_bodies,
+    }
+
+
+def _render_single_enig_board(pcb_data: dict, side: str, size_px: tuple[int, int]) -> Image.Image:
+    """Render one supersampled realistic matte-emerald & ENIG-gold PCB side (F.Cu or B.Cu)."""
+    ss = 3
+    w, h = size_px[0] * ss, size_px[1] * ss
+    img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+
+    # Board extents: X in [0.4, 36.0] (35.6 mm), Y in [0.5, 35.0] (34.5 mm)
+    bx0, by0, bx1, by1 = 0.4, 0.5, 36.0, 35.0
+    bw_mm, bh_mm = bx1 - bx0, by1 - by0
+    pad_px = 16 * ss
+    scale = min((w - 2 * pad_px) / bw_mm, (h - 2 * pad_px) / bh_mm)
+    ox = (w - bw_mm * scale) * 0.5 - bx0 * scale
+    oy = (h - bh_mm * scale) * 0.5 - by0 * scale
+
+    def to_px(x_mm: float, y_mm: float) -> tuple[float, float]:
+        return (ox + x_mm * scale, oy + y_mm * scale)
+
+    poly_px = [to_px(x, y) for x, y in pcb_data["edge_poly"]]
+
+    # 1. Soft physical drop shadow behind board silhouette
+    sh_off = 5 * ss
+    draw.polygon([(x + sh_off, y + sh_off) for x, y in poly_px], fill=(15, 22, 32, 85))
+
+    # 2. Matte emerald green FR4 solder mask substrate with crisp golden-copper board rim
+    draw.polygon(poly_px, fill=(13, 86, 48, 255))
+
+    # 3. Subtle translucent inner copper routing shadow (gives authentic multi-layer PCB depth!)
+    inner_layer = "In1.Cu" if side == "F.Cu" else "In4.Cu"
+    for x0, y0, x1, y1, wid in pcb_data["segs_by_layer"][inner_layer]:
+        lw = max(1, int(round(wid * scale * 1.15)))
+        p0, p1 = to_px(x0, y0), to_px(x1, y1)
+        draw.line([p0, p1], fill=(20, 114, 65, 165), width=lw)
+
+    # 4. Active surface copper traces under glossy green solder mask (#28B463)
+    for x0, y0, x1, y1, wid in pcb_data["segs_by_layer"][side]:
+        lw = max(2, int(round(wid * scale * 1.35)))
+        p0, p1 = to_px(x0, y0), to_px(x1, y1)
+        draw.line([p0, p1], fill=(38, 174, 96, 255), width=lw)
+        r = lw * 0.5
+        if r >= 1.2:
+            draw.ellipse([p0[0] - r, p0[1] - r, p0[0] + r, p0[1] + r], fill=(38, 174, 96, 255))
+            draw.ellipse([p1[0] - r, p1[1] - r, p1[0] + r, p1[1] + r], fill=(38, 174, 96, 255))
+
+    # 5. Crisp white silkscreen IC outlines & Pin-1 polarity dots
+    for x0, y0, x1, y1, fp_name, pin1_xy in pcb_data["ic_bodies"][side]:
+        # Draw subtle dark IC body courtyard inset between left/right pin rows
+        ins_x = (x1 - x0) * 0.24
+        ins_y = (y1 - y0) * 0.04
+        if (x1 - x0) > 3.2 and (y1 - y0) > 2.2:
+            q0 = to_px(x0 + ins_x, y0 + ins_y)
+            q1 = to_px(x1 - ins_x, y1 - ins_y)
+            draw.rectangle([q0[0], q0[1], q1[0], q1[1]], fill=(10, 68, 38, 210), outline=(232, 240, 236, 220), width=max(2, int(round(0.11 * scale))))
+            if pin1_xy is not None:
+                p1x, p1y = to_px(pin1_xy[0], pin1_xy[1])
+                cx_i = (q0[0] + q1[0]) * 0.5
+                dx_dot = q0[0] + 0.45 * scale if p1x < cx_i else q1[0] - 0.45 * scale
+                dy_dot = q0[1] + 0.45 * scale if p1y < (q0[1] + q1[1]) * 0.5 else q1[1] - 0.45 * scale
+                rd = max(2.2, 0.22 * scale)
+                draw.ellipse([dx_dot - rd, dy_dot - rd, dx_dot + rd, dy_dot + rd], fill=(248, 250, 252, 245))
+
+    # 6. Gleaming ENIG 24k Gold SMD Pads (#EAC04E with warm specular highlight & darker chamfer rim)
+    for px, py, sx, sy in pcb_data["pads_by_layer"][side]:
+        p0 = to_px(px - sx * 0.5, py - sy * 0.5)
+        p1 = to_px(px + sx * 0.5, py + sy * 0.5)
+        draw.rectangle([p0[0], p0[1], p1[0], p1[1]], fill=(235, 190, 74, 255), outline=(172, 128, 34, 255), width=max(1, ss // 2))
+        if (p1[0] - p0[0]) > 4 and (p1[1] - p0[1]) > 4:
+            draw.line([(p0[0] + 1, p0[1] + 1), (p1[0] - 1, p0[1] + 1)], fill=(252, 228, 146, 230), width=max(1, ss // 2))
+
+    # 7. 419 ENIG Gold-Ringed Through-Vias with dark micro-drills
+    for vx, vy, vsz, vdr in pcb_data["vias"]:
+        cx, cy = to_px(vx, vy)
+        ro = max(2.3, vsz * 0.55 * scale)
+        ri = max(1.1, vdr * 0.55 * scale)
+        draw.ellipse([cx - ro, cy - ro, cx + ro, cy + ro], fill=(224, 179, 68, 255), outline=(150, 112, 30, 220), width=1)
+        draw.ellipse([cx - ri, cy - ri, cx + ri, cy + ri], fill=(18, 23, 31, 255))
+
+    # 8. Crisp routed FR4 copper-gold board edge outline
+    draw.polygon(poly_px, outline=(198, 174, 108, 255), width=max(2, int(round(0.22 * scale))))
+
+    return img.resize(size_px, Image.Resampling.LANCZOS)
+
+
+def render_enig_pcb_panel(pcb_path: Path, width: int, height: int) -> Image.Image:
+    """Compose a realistic Top + Bottom ENIG Green-Gold 6-Layer PCB + Stackup card panel."""
+    pcb_data = parse_kicad_pcb(pcb_path)
+    panel = Image.new("RGB", (width, height), (246, 247, 249))
+    draw = ImageDraw.Draw(panel)
+
+    # Top sleek dark header inside panel
+    hdr_h = 38
+    draw.rectangle([0, 0, width, hdr_h], fill=(20, 26, 36))
+    draw.rectangle([0, hdr_h - 3, width, hdr_h], fill=(38, 174, 96))
+    f_hdr = load_font(16, bold=True)
+    f_cap = load_font(14, bold=True)
+    f_stk_b = load_font(13, bold=True)
+    f_stk_n = load_font(13, bold=False)
+
+    draw.text((14, 9), "6-LAYER ENIG ENVIRONMENT PCB  (35.6 × 34.5 × 0.8 mm)", font=f_hdr, fill=(242, 246, 250))
+
+    # Upper zone: TOP (F.Cu) + BOTTOM (B.Cu) real ENIG boards side by side
+    board_area_top = hdr_h + 6
+    board_sz = min((width - 28) // 2, 268)
+    top_img = _render_single_enig_board(pcb_data, "F.Cu", (board_sz, board_sz))
+    bot_img = _render_single_enig_board(pcb_data, "B.Cu", (board_sz, board_sz))
+
+    gap_x = (width - 2 * board_sz) // 3
+    lx = gap_x
+    rx_b = 2 * gap_x + board_sz
+    panel.paste(top_img, (lx, board_area_top), top_img)
+    panel.paste(bot_img, (rx_b, board_area_top), bot_img)
+
+    cap_y = board_area_top + board_sz + 2
+    t1 = "TOP · L1 F.Cu (1,791 segs)"
+    t2 = "BOTTOM · L6 B.Cu (1,670 segs)"
+    draw.text((lx + (board_sz - draw.textlength(t1, font=f_cap)) / 2, cap_y), t1, font=f_cap, fill=(24, 32, 44))
+    draw.text((rx_b + (board_sz - draw.textlength(t2, font=f_cap)) / 2, cap_y), t2, font=f_cap, fill=(24, 32, 44))
+
+    # Lower zone: Clean 6-Layer FR4 Cross-Section Stackup Diagram + Spec Table
+    stk_top = cap_y + 24
+    stk_bot = height - 10
+    draw.rounded_rectangle([12, stk_top, width - 12, stk_bot], radius=10, fill=(255, 255, 255), outline=(218, 222, 228), width=2)
+
+    draw.text((24, stk_top + 8), "6-LAYER STACKUP CROSS-SECTION (0.8 mm FR4 · 0 DRC · 419 PTH)", font=load_font(13, bold=True), fill=(20, 26, 36))
+
+    layers_info = [
+        ("L1  F.Cu", "Top Signal & Connectors", "1,791 segs", (38, 174, 96)),
+        ("L2  In1.Cu", "Inner Signal Routing", "877 segs", (240, 178, 36)),
+        ("L3  In2.Cu", "Solid Ref GND Plane", "1,021 mm²", (42, 168, 224)),
+        ("L4  In3.Cu", "ENV_V5 Power Plane", "1,015 mm²", (142, 108, 226)),
+        ("L5  In4.Cu", "Inner Signal Routing", "913 segs", (46, 196, 148)),
+        ("L6  B.Cu", "Bottom IC Array & Bus", "1,670 segs", (238, 128, 42)),
+    ]
+
+    # Left cross-section drawing (x: 24..210)
+    sx0, sx1 = 26, 204
+    y_start = stk_top + 32
+    y_span = (stk_bot - 12) - y_start
+    step_y = y_span / len(layers_info)
+
+    # FR4 green dielectric core backdrop behind copper strata
+    draw.rounded_rectangle([sx0, y_start, sx1, stk_bot - 12], radius=5, fill=(214, 232, 218), outline=(140, 178, 150), width=1)
+
+    for i, (lname, ldesc, lcnt, lcol) in enumerate(layers_info):
+        ly = y_start + i * step_y + step_y * 0.25
+        lh = max(6, int(step_y * 0.48))
+        # Solid planes span full width; signal layers draw segmented copper traces
+        if i in (2, 3):
+            draw.rectangle([sx0 + 6, ly, sx1 - 6, ly + lh], fill=lcol)
+        else:
+            for seg_a, seg_b in ((0.04, 0.24), (0.30, 0.56), (0.62, 0.78), (0.83, 0.96)):
+                xa = sx0 + (sx1 - sx0) * seg_a
+                xb = sx0 + (sx1 - sx0) * seg_b
+                draw.rectangle([xa, ly, xb, ly + lh], fill=lcol)
+
+        # Right side aligned text table
+        tx = sx1 + 16
+        draw.rounded_rectangle([tx, ly, tx + 10, ly + lh], radius=2, fill=lcol)
+        draw.text((tx + 16, ly - 3), lname, font=f_stk_b, fill=(24, 30, 41))
+        draw.text((tx + 104, ly - 3), ldesc, font=f_stk_n, fill=(76, 86, 102))
+        cw = draw.textlength(lcnt, font=f_stk_b)
+        draw.text((width - 24 - cw, ly - 3), lcnt, font=f_stk_b, fill=(20, 110, 58) if i in (0, 5) else (62, 72, 88))
+
+    # Draw 2 realistic ENIG gold through-via barrels penetrating L1 -> L6
+    for vx_rel in (0.27, 0.805):
+        vx = sx0 + (sx1 - sx0) * vx_rel
+        draw.rectangle([vx - 5, y_start - 1, vx + 5, stk_bot - 11], fill=(228, 184, 68), outline=(145, 110, 28), width=1)
+        draw.rectangle([vx - 2, y_start, vx + 2, stk_bot - 12], fill=(26, 32, 42))
+
+    return panel
 
 
 def draw_bullet(draw: ImageDraw.ImageDraw, x: int, y: int, label: str, val: str, max_w: int, f_lbl, f_val, dot_col=C_ORANGE) -> int:
@@ -446,13 +732,13 @@ def main():
     yc = draw_bullet(draw, rx, yc, "24 V Direct Fan OVP/Clamp:", f"+{ovp_gap_mv:.1f} mV WC gap · {mc_pass:,}/{mc_trials:,} MC pass · 17.62 V floor", 1080, f_b_lbl, f_b_val)
     yc = draw_bullet(draw, rx, yc, "Serviceable 1 A Fuse Pocket:", f"0.000 mm³ hit · 15/15 cover clear · 98.04 mm 6P tap · +{fan_delta_g:.1f} g", 1080, f_b_lbl, f_b_val)
 
-    im_b1 = Image.open(FIG_B1)
     im_b2 = Image.open(FIG_B2)
-    crop_pcb = im_b1.crop((1055, 1620, 2360, 2385))   # Cold Gerber + Drills + Repaired Loci
-    crop_fan = im_b2.crop((1334, 40, 2400, 1300))     # Panel B: 50,000-Trial Monte Carlo Separation
     rmid_x = (col_r[0] + col_r[1]) // 2
-    paste_fit(poster, crop_pcb, (rx, yc + 4, rmid_x + 38, 940))
-    paste_fit(poster, crop_fan, (rmid_x + 54, yc + 4, col_r[1] - 24, 940))
+    pcb_box = (rx, yc + 4, rmid_x + 48, 940)
+    enig_pcb_panel = render_enig_pcb_panel(PCB_FILE, pcb_box[2] - pcb_box[0], pcb_box[3] - pcb_box[1])
+    paste_fit(poster, enig_pcb_panel, pcb_box, border_col=(214, 218, 224), radius=10)
+    crop_fan = im_b2.crop((1334, 40, 2400, 1300))     # Panel B: 50,000-Trial Monte Carlo Separation
+    paste_fit(poster, crop_fan, (rmid_x + 62, yc + 4, col_r[1] - 24, 940))
 
     # Card 5: SaiLab Virtual Goose 005/43 (y=980..1524)
     yc = draw_card(draw, (col_r[0], 980, col_r[1], 1524), "5. SAILAB VIRTUAL GOOSE (005/43 BUNDLE)", C_AMBER)
